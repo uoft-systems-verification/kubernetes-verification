@@ -1,0 +1,15 @@
+{
+  "image": "tchajed/sys-verif:v2.4.0",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "maximedenes.vscoq",
+        "mr-konn.generic-input-method",
+        "ms-vscode.makefile-tools"
+      ]
+    }
+  },
+  "postCreateCommand": "sudo chown vscode:vscode /workspaces/*"
+}

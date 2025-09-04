@@ -1,0 +1,9 @@
+[submodule "perennial"]
+	path = perennial
+	branch = tchajed/better-signed-automation
+	url = https://github.com/mit-pdos/perennial
+
+[submodule "kubernetes"]
+	path = kubernetes
+	url = https://github.com/marshtompsxd/kubernetes.git
+	branch = xudong/verify-1.34

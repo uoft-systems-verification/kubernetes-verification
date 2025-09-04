@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-rocq:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+      - uses: coq-community/docker-coq-action@v1
+        with:
+          coq_version: "9.0"
+          ocaml_version: "default"
+          install: ""
+          # for permissions issue, see: https://github.com/coq-community/docker-coq-action#permissions.
+          before_script: |
+            sudo chown -R 1000:1000 .
+          script: |
+            startGroup Build
+              make -j4 -k vok
+            endGroup
+          uninstall: |
+            make clean
+      - name: Revert permissions
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .
+
+  build-go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "go"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go/go.mod"
+          cache-dependency-path: "go/go.sum"
+
+      - name: Check style
+        run: |
+          gofmt -w -s .
+          git diff --exit-code
+
+      - name: Install dependencies
+        run: go get -t ./...
+      - name: go test
+        run: go test -vet=all -v ./...
+
+      - name: Install new goose
+        run: go install github.com/goose-lang/goose/cmd/goose@new
+      - name: Check goose output
+        working-directory: "."
+        run: |
+          ./scripts/goose.sh replicaset
+          git diff --exit-code

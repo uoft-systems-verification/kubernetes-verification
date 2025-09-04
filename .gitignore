@@ -1,0 +1,18 @@
+_built/
+*.vo
+*.vos
+*.vok
+.rocqdeps.d
+*.glob
+*.cache
+*.aux
+.rocq-native/
+# for perennial's rocqc.py timing
+.timing.sqlite3
+# SF's extraction chapter
+*.ml
+*.mli
+# temporary files for getting Rocq output
+*.out
+# Rocq output cache
+.template-cache/
