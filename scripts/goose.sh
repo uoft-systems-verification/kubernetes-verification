@@ -3,13 +3,13 @@
 set -e
 
 usage() {
-  echo "Usage: $0 <CONTROLLER>"
+  echo "Usage: $0 <K8SPATH>"
   echo
-  echo "Runs goose on code in kubernetes/pkg/controller/CONTROLLER and outputs to src/code."
+  echo "Runs goose on code in K8SPATH and outputs to src/code."
 }
 
 # Variable to hold the controller name
-CONTROLLER=""
+K8SPATH=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -23,8 +23,8 @@ while [[ $# -gt 0 ]]; do
     exit 1
     ;;
   *)
-    if [[ -z "$CONTROLLER" ]]; then
-      CONTROLLER="$1"
+    if [[ -z "$K8SPATH" ]]; then
+      K8SPATH="$1"
     else
       echo "Error: Too many arguments provided."
       usage
@@ -35,9 +35,9 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# Check if CONTROLLER is provided
-if [[ -z "$CONTROLLER" ]]; then
-  echo "Error: No CONTROLLER provided."
+# Check if K8SPATH is provided
+if [[ -z "$K8SPATH" ]]; then
+  echo "Error: No K8SPATH provided."
   usage
   exit 1
 fi
@@ -63,9 +63,9 @@ else
 fi
 
 # Construct the go_path variable
-controller_path="kubernetes/pkg/controller/$CONTROLLER"
+code_path="$K8SPATH"
 
 # Run goose on the specified path
 # Ignore errors as goose cannot handle some code snippet
-"${GOOSE[@]}" -ignore-errors -out "$GOOSE_OUTPUT" -dir "$controller_path" ./...
-"${PROOFGEN[@]}" -out "$PROOFGEN_OUTPUT" -configdir "$GOOSE_CONFIG_DIR" -dir "$controller_path" ./...
+"${GOOSE[@]}" -ignore-errors -out "$GOOSE_OUTPUT" -dir "$code_path" ./...
+"${PROOFGEN[@]}" -out "$PROOFGEN_OUTPUT" -configdir "$GOOSE_CONFIG_DIR" -dir "$code_path" ./...
