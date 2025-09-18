@@ -15,6 +15,8 @@ Definition Pod : go_type := structT [
   "Namespace" :: stringT;
   "Name" :: stringT
 ].
+#[global] Typeclasses Opaque Pod.
+#[global] Opaque Pod.
 
 Definition PodKey : go_string := "k8s.io/kubernetes/pkg/controller/simplreplicaset.PodKey"%go.
 
