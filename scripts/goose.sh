@@ -3,41 +3,50 @@
 set -e
 
 usage() {
-  echo "Usage: $0 <K8SPATH>"
+  echo "Usage: $0 [-dir GO_DIR] <PKG_PATTERN>"
   echo
-  echo "Runs goose on code in K8SPATH and outputs to src/code."
+  echo "-dir GO_DIR     Optional; passed to goose/proofgen as -dir GO_DIR (module root)."
+  echo "PKG_PATTERN     Package pattern to process (e.g., './...' or './k8s.io/kubernetes/pkg/controller/replicaset')."
 }
 
-# Variable to hold the controller name
-K8SPATH=""
-
+# Parse args
+GO_DIR=""
+CODE_PATH=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  -h | -help | --help)
-    usage
-    exit 0
-    ;;
-  -*)
-    echo "Error: Unknown argument '$1'."
-    usage
-    exit 1
-    ;;
-  *)
-    if [[ -z "$K8SPATH" ]]; then
-      K8SPATH="$1"
-    else
-      echo "Error: Too many arguments provided."
+    -h|--help|-help)
+      usage
+      exit 0
+      ;;
+    -dir)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: -dir requires an argument"
+        usage
+        exit 1
+      fi
+      GO_DIR="$2"
+      shift 2
+      ;;
+    -*)
+      echo "Error: unknown option '$1'"
       usage
       exit 1
-    fi
-    ;;
+      ;;
+    *)
+      if [[ -z "$CODE_PATH" ]]; then
+        CODE_PATH="$1"
+      else
+        echo "Error: too many positional arguments"
+        usage
+        exit 1
+      fi
+      shift
+      ;;
   esac
-  shift
 done
 
-# Check if K8SPATH is provided
-if [[ -z "$K8SPATH" ]]; then
-  echo "Error: No K8SPATH provided."
+if [[ -z "$CODE_PATH" ]]; then
+  echo "Error: missing package pattern argument"
   usage
   exit 1
 fi
@@ -62,10 +71,12 @@ else
   PROOFGEN=("go" "run" "github.com/goose-lang/goose/cmd/proofgen@new")
 fi
 
-# Construct the go_path variable
-code_path="$K8SPATH"
-
 # Run goose on the specified path
 # Ignore errors as goose cannot handle some code snippet
-"${GOOSE[@]}" -ignore-errors -out "$GOOSE_OUTPUT" -dir "$code_path" ./...
-"${PROOFGEN[@]}" -out "$PROOFGEN_OUTPUT" -configdir "$GOOSE_CONFIG_DIR" -dir "$code_path" ./...
+DIR_ARGS=()
+if [[ -n "$GO_DIR" ]]; then
+  DIR_ARGS=("-dir" "$GO_DIR")
+fi
+
+"${GOOSE[@]}" -ignore-errors -out "$GOOSE_OUTPUT" "${DIR_ARGS[@]}" "$CODE_PATH"
+"${PROOFGEN[@]}" -out "$PROOFGEN_OUTPUT" -configdir "$GOOSE_CONFIG_DIR" "${DIR_ARGS[@]}" "$CODE_PATH"
