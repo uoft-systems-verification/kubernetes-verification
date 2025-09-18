@@ -1,0 +1,3 @@
+translate = ["!*"]
+
+imports = ["k8s.io/component-base/metrics"]

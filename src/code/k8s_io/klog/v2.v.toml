@@ -1,0 +1,3 @@
+translate = ["!*"]
+
+imports = ["github.com/go-logr/logr"]
