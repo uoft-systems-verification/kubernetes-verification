@@ -5,6 +5,7 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR/.."
 
+scripts/goose.sh -dir kubernetes ./pkg/api/v1/pod
 scripts/goose.sh -dir kubernetes ./pkg/controller
 scripts/goose.sh -dir kubernetes ./pkg/controller/replicaset
 scripts/goose.sh -dir kubernetes ./pkg/controller/replicaset/metrics

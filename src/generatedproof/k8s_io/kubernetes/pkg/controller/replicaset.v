@@ -19,6 +19,7 @@ Require Export New.generatedproof.k8s_io.client_go.listers.core.v1.
 Require Export New.generatedproof.k8s_io.client_go.tools.cache.
 Require Export New.generatedproof.k8s_io.client_go.util.workqueue.
 Require Export New.generatedproof.k8s_io.klog.v2.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.replicaset.metrics.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.features.
@@ -97,6 +98,7 @@ Global Instance is_pkg_defined_pure_replicaset : IsPkgDefinedPure replicaset :=
       is_pkg_defined_pure code.k8s_io.client_go.tools.cache.cache ∧
       is_pkg_defined_pure code.k8s_io.client_go.util.workqueue.workqueue ∧
       is_pkg_defined_pure code.k8s_io.klog.v2.klog ∧
+      is_pkg_defined_pure code.k8s_io.kubernetes.pkg.api.v1.pod.pod ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.replicaset.metrics.metrics ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.features.features ∧
@@ -129,6 +131,7 @@ Global Program Instance is_pkg_defined_replicaset : IsPkgDefined replicaset :=
        is_pkg_defined code.k8s_io.client_go.tools.cache.cache ∗
        is_pkg_defined code.k8s_io.client_go.util.workqueue.workqueue ∗
        is_pkg_defined code.k8s_io.klog.v2.klog ∗
+       is_pkg_defined code.k8s_io.kubernetes.pkg.api.v1.pod.pod ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.replicaset.metrics.metrics ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.features.features ∗

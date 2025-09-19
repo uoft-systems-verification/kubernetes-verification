@@ -17,6 +17,7 @@ Require Export New.code.k8s_io.client_go.listers.core.v1.
 Require Export New.code.k8s_io.client_go.tools.cache.
 Require Export New.code.k8s_io.client_go.util.workqueue.
 Require Export New.code.k8s_io.klog.v2.
+Require Export New.code.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.replicaset.metrics.
 Require Export New.code.k8s_io.kubernetes.pkg.features.
@@ -944,7 +945,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(ReplicaSetC
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.sort.sort; code.time.time; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.runtime.runtime; code.k8s_io.apiserver.pkg.util.feature.feature; code.k8s_io.client_go.kubernetes.kubernetes; code.k8s_io.client_go.listers.apps.v1.v1; code.k8s_io.client_go.listers.core.v1.v1; code.k8s_io.client_go.tools.cache.cache; code.k8s_io.client_go.util.workqueue.workqueue; code.k8s_io.klog.v2.klog; code.k8s_io.kubernetes.pkg.controller.controller; code.k8s_io.kubernetes.pkg.controller.replicaset.metrics.metrics; code.k8s_io.kubernetes.pkg.features.features; code.k8s_io.utils.clock.clock; code.k8s_io.utils.ptr.ptr; code.k8s_io.client_go.kubernetes.typed.apps.v1.v1];
+    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.sort.sort; code.time.time; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.runtime.runtime; code.k8s_io.apiserver.pkg.util.feature.feature; code.k8s_io.client_go.kubernetes.kubernetes; code.k8s_io.client_go.listers.apps.v1.v1; code.k8s_io.client_go.listers.core.v1.v1; code.k8s_io.client_go.tools.cache.cache; code.k8s_io.client_go.util.workqueue.workqueue; code.k8s_io.klog.v2.klog; code.k8s_io.kubernetes.pkg.api.v1.pod.pod; code.k8s_io.kubernetes.pkg.controller.controller; code.k8s_io.kubernetes.pkg.controller.replicaset.metrics.metrics; code.k8s_io.kubernetes.pkg.features.features; code.k8s_io.utils.clock.clock; code.k8s_io.utils.ptr.ptr; code.k8s_io.client_go.kubernetes.typed.apps.v1.v1];
   |}.
 
 Axiom _'init : val.
@@ -958,6 +959,7 @@ Definition initialize' : val :=
       do:  (features.initialize' #());;;
       do:  (metrics.initialize' #());;;
       do:  (controller.initialize' #());;;
+      do:  (pod.initialize' #());;;
       do:  (klog.initialize' #());;;
       do:  (workqueue.initialize' #());;;
       do:  (cache.initialize' #());;;
