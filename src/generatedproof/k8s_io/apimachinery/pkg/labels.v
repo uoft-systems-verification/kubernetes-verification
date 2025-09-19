@@ -25,21 +25,21 @@ Admitted.
 Global Instance into_val_typed_Labels `{ffi_syntax} : IntoValTyped Labels.t labels.Labels.
 Admitted.
 
-(* type labels.Set *)
-Module Set_.
+(* type labels.Set' *)
+Module Set'.
 Section def.
 Context `{ffi_syntax}.
 Axiom t : Type.
 End def.
-End Set_.
+End Set'.
 
-Global Instance bounded_size_Set : BoundedTypeSize labels.Set_.
+Global Instance bounded_size_Set' : BoundedTypeSize labels.Set'.
 Admitted.
 
-Global Instance into_val_Set `{ffi_syntax} : IntoVal Set_.t.
+Global Instance into_val_Set' `{ffi_syntax} : IntoVal Set'.t.
 Admitted.
 
-Global Instance into_val_typed_Set `{ffi_syntax} : IntoValTyped Set_.t labels.Set_.
+Global Instance into_val_typed_Set' `{ffi_syntax} : IntoValTyped Set'.t labels.Set'.
 Admitted.
 
 (* type labels.Requirements *)
