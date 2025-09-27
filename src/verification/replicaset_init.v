@@ -28,23 +28,23 @@ Context `{!globalsGS Σ} {go_ctx: GoContext}.
 #[global] Instance : IsPkgInit code.k8s_io.api.apps.v1.v1 := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.api.apps.v1.v1 := build_get_is_pkg_init_wf.
 
+#[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.types.types := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.types.types := build_get_is_pkg_init_wf.
+
+#[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 := build_get_is_pkg_init_wf.
+
 #[global] Instance : IsPkgInit code.k8s_io.api.core.v1.v1 := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.api.core.v1.v1 := build_get_is_pkg_init_wf.
 
 #[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.api.errors.errors := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.api.errors.errors := build_get_is_pkg_init_wf.
 
-#[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 := build_get_is_pkg_init_wf.
-
 #[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.labels.labels := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.labels.labels := build_get_is_pkg_init_wf.
 
 #[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.runtime.schema.schema := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.runtime.schema.schema := build_get_is_pkg_init_wf.
-
-#[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.types.types := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.types.types := build_get_is_pkg_init_wf.
 
 #[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.util.runtime.runtime := define_is_pkg_init True%I.
 #[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.util.runtime.runtime := build_get_is_pkg_init_wf.

@@ -16,12 +16,14 @@ Lemma wp_PodKey (pod: loc) (name namespace: go_string) :
       pod ↦s[simplreplicaset.Pod :: "Namespace"] namespace }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
+  wp_alloc pod_ptr as "pod_ptr".
+  wp_pures.
   wp_auto.
   replace ((namespace ++ "/"%go) ++ name) with (namespace ++ "/"%go ++ name).
   - iApply "HΦ".
     iFrame.
-  - Search ((_ ++ _) ++ _).
-    rewrite app_assoc.
+  - rewrite app_assoc.
     done.
 Qed.
 
@@ -191,7 +193,7 @@ Proof.
   wp_start as "H". iNamed "H".
   wp_alloc pods_ptr as "pods_ptr". wp_auto.
   iRename "podKeys" into "podKeys_ptr".
-  Search (sint.Z (slice.len_f _)).
+  (* Search (sint.Z (slice.len_f _)). *)
   iDestruct (own_slice_len with "pods") as %Hlen.
   wp_apply (wp_slice_make3 (V:=go_string)).
   {  word. }
@@ -214,7 +216,7 @@ Proof.
     wp_apply (wp_slice_append with "[$keys $own_keys_cap $sl]") as "%new_keys (new_keys & own_new_keys_cap & sl)".
     iSplit.
     { done. }
-    Locate slice.t.
+    (* Locate slice.t. *)
     (* Set Printing Implicit. *)
     (* Set Printing All. *)
     (* Set Printing Coercions. *)
