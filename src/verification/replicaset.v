@@ -10,15 +10,16 @@ Section proof.
 Context `{hG: !heapGS Σ}.
 Context `{!globalsGS Σ} {go_ctx: GoContext}.
 
-(* TODO: fix the precondition to talk about ObjectMeta *)
 Lemma wp_PodKey (pod: loc) (name namespace: go_string) :
   {{{ is_pkg_init replicaset ∗
-      "name" :: pod ↦s[v1.Pod :: "Name"] name ∗
-      "namespace" :: pod ↦s[v1.Pod :: "Namespace"] namespace }}}
+      struct.field_ref_f v1.Pod "ObjectMeta" pod ↦s[v1.ObjectMeta :: "Name"] name ∗
+      struct.field_ref_f v1.Pod "ObjectMeta" pod ↦s[v1.ObjectMeta :: "Namespace"] namespace
+  }}}
     @! controller.PodKey #pod
   {{{ RET #(namespace ++ "/" ++ name)%go;
-      pod ↦s[v1.Pod :: "Name"] name ∗
-      pod ↦s[v1.Pod :: "Namespace"] namespace }}}.
+      struct.field_ref_f v1.Pod "ObjectMeta" pod ↦s[v1.ObjectMeta :: "Name"] name ∗
+      struct.field_ref_f v1.Pod "ObjectMeta" pod ↦s[v1.ObjectMeta :: "Namespace"] namespace
+  }}}.
 Proof.
 Admitted.
 
@@ -43,12 +44,10 @@ Lemma wp_getPodsRankedByRelatedPodsOnSameNode (podsToRank relatedPods: slice.t) 
       "relatedPods" :: relatedPods ↦* relatedPods_els ∗
       "podsToRank_els" :: ([∗ list] pod_l ∈ podsToRank_els,
         ∃ (nodename: go_string),
-          struct.field_ref_f v1.PodSpec "NodeName"
-            (struct.field_ref_f v1.Pod "Spec" pod_l) ↦ nodename) ∗
+          struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename) ∗
       "relatedPods_els" :: ([∗ list] pod_l ∈ relatedPods_els,
         ∃ (nodename: go_string),
-          struct.field_ref_f v1.PodSpec "NodeName"
-            (struct.field_ref_f v1.Pod "Spec" pod_l) ↦ nodename)
+          struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
   }}}
     @! replicaset.getPodsRankedByRelatedPodsOnSameNode #podsToRank #relatedPods
   {{{ ranks now,
@@ -60,8 +59,7 @@ Lemma wp_getPodsRankedByRelatedPodsOnSameNode (podsToRank relatedPods: slice.t) 
       podsToRank ↦* podsToRank_els ∗
       ([∗ list] pod_l ∈ podsToRank_els,
         ∃ (nodename: go_string),
-          struct.field_ref_f v1.PodSpec "NodeName"
-            (struct.field_ref_f v1.Pod "Spec" pod_l) ↦ nodename)
+          struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -210,19 +208,21 @@ Lemma wp_getPodKeys (pods: slice.t) (pods_els: list loc) :
   {{{ is_pkg_init replicaset ∗
       "pods" :: pods ↦* pods_els ∗
       "pods_els" :: ([∗ list] pod_l ∈ pods_els,
-         ∃ (name namespace: go_string),
-          "name" :: pod_l ↦s[v1.Pod :: "Name"] name ∗
-          "namespace" :: pod_l ↦s[v1.Pod :: "Namespace"] namespace) }}}
+        ∃ (name namespace: go_string),
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace)
+  }}}
     @! replicaset.getPodKeys #pods
   {{{ (keys: slice.t) (keys_els: list go_string), RET #keys;
     pods ↦* pods_els ∗
     keys ↦* keys_els ∗
     ⌜length keys_els = length pods_els⌝ ∗
     ([∗ list] i ↦ pod_l; key ∈ pods_els; keys_els,
-       ∃ (name namespace: go_string),
-         pod_l ↦s[v1.Pod :: "Name"] name ∗
-         pod_l ↦s[v1.Pod :: "Namespace"] namespace ∗
-         ⌜key = (namespace ++ "/" ++ name)%go⌝) }}}.
+      ∃ (name namespace: go_string),
+        struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+        struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace ∗
+        ⌜key = (namespace ++ "/" ++ name)%go⌝)
+  }}}.
 Proof.
   wp_start as "H". iNamed "H".
   iDestruct (own_slice_len with "pods") as %Hlen.
@@ -248,13 +248,13 @@ Proof.
       "%Hlen_keys" :: ⌜length keys_els = sint.nat i⌝ ∗
       "Hprei" :: ([∗ list] j ↦ pod_l; key ∈ take (sint.nat i) pods_els; keys_els,
         ∃ (name namespace: go_string),
-           pod_l ↦s[v1.Pod :: "Name"] name ∗
-           pod_l ↦s[v1.Pod :: "Namespace"] namespace ∗
-           ⌜key = (namespace ++ "/" ++ name)%go⌝) ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace ∗
+          ⌜key = (namespace ++ "/" ++ name)%go⌝) ∗
       "Hposti" :: ([∗ list] pod_l ∈ drop (sint.nat i) pods_els,
-                    ∃ (name namespace: go_string),
-                      pod_l ↦s[v1.Pod :: "Name"] name ∗
-                      pod_l ↦s[v1.Pod :: "Namespace"] namespace)
+        ∃ (name namespace: go_string),
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace)
   )%I.
 
   iAssert (I) with "[podKeys_ptr pod_ptr keys own_keys_cap pods_els i_ptr]" as "Hinv".
@@ -286,10 +286,10 @@ Proof.
     iAssert (
       (([∗ list] pod_l ∈ drop (sint.nat (word.add i (W64 1))) pods_els,
         ∃ name namespace : go_string,
-          pod_l ↦s[v1.Pod :: "Name"] name ∗
-          pod_l ↦s[v1.Pod :: "Namespace"] namespace) ∗
-        (∃ name : go_string, x ↦s[v1.Pod :: "Name"] name) ∗
-        (∃ namespace : go_string, x ↦s[v1.Pod :: "Namespace"] namespace))%I
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace) ∗
+        (∃ name : go_string, struct.field_ref_f v1.Pod "ObjectMeta" x ↦s[v1.ObjectMeta :: "Name"] name) ∗
+        (∃ namespace : go_string, struct.field_ref_f v1.Pod "ObjectMeta" x ↦s[v1.ObjectMeta :: "Namespace"] namespace))%I
     ) with "[Hposti]" as "(Hpostiaddone & ((%name & name) & (%namespace & namespace)))".
     {
       iEval (rewrite (drop_S _ _ _ Hx)) in "Hposti".
@@ -312,8 +312,8 @@ Proof.
     iAssert (
       ([∗ list] pod_l;key ∈ take (sint.nat (word.add i (W64 1))) pods_els;new_keys_els,
         ∃ name namespace : go_string,
-          pod_l ↦s[v1.Pod :: "Name"] name ∗
-          pod_l ↦s[v1.Pod :: "Namespace"] namespace ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Name"] name ∗
+          struct.field_ref_f v1.Pod "ObjectMeta" pod_l ↦s[v1.ObjectMeta :: "Namespace"] namespace ∗
           ⌜key = namespace ++ "/"%go ++ name⌝)%I
     ) with "[Hprei name namespace]" as "Hpreiaddone".
     {
