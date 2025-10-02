@@ -1,9 +1,5 @@
 From verification Require Import prelude empty_ffi.
 From verification Require Import replicaset_init.
-Require Import New.code.k8s_io.api.core.v1.
-Require Import New.code.k8s_io.api.apps.v1.
-Require Import New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
-Require Import New.code.k8s_io.kubernetes.pkg.controller.
 
 
 Section proof.
@@ -25,18 +21,235 @@ Admitted.
 
 (* TODO: add the precondition on p *)
 Lemma wp_IsPodActive (p: loc) :
-  {{{ is_pkg_init replicaset }}}
+  {{{ is_pkg_init controller }}}
     @! controller.IsPodActive #p
   {{{ (v: bool), RET #v; True }}}.
 Proof.
 Admitted.
 
-Lemma wp_Now :
-  {{{ is_pkg_init replicaset }}}
-    @! v1.Now #()
-  {{{ (now: v1.Time.t), RET #now; True }}}.
+(* TODO: add the precondition on p *)
+Lemma wp_IsPodReady (p: loc) :
+  {{{ is_pkg_init pod }}}
+    @! pod.IsPodReady #p
+  {{{ (v: bool), RET #v; True }}}.
 Proof.
 Admitted.
+
+Lemma wp_Now :
+  {{{ is_pkg_init v1 }}}
+    @! v1.Now #()
+  {{{ (v: v1.Time.t), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_time_Now :
+  {{{ is_pkg_init time }}}
+    @! time.Now #()
+  {{{ (v: time.Time.t), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_time_After (t u: time.Time.t):
+  {{{ is_pkg_init time }}}
+    t @ (time.Time.id) @ "After" #u
+  {{{ (v: bool), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_time_Sub (t u: time.Time.t):
+  {{{ is_pkg_init time }}}
+    t @ (time.Time.id) @ "Sub" #u
+  {{{ (v: time.Duration.t), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_time_Milliseconds (d: time.Duration.t):
+  {{{ is_pkg_init time }}}
+    d @ (time.Duration.id) @ "Milliseconds" #()
+  {{{ (v: w64), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_global_addr_metrics_SortingDeletionAgeRatio:
+  {{{ is_pkg_init metrics }}}
+    ![# ptrT] (# (global_addr metrics.SortingDeletionAgeRatio))
+  {{{ (hist: loc), RET #hist;
+    ∀ (f: w64),
+    {{{ is_pkg_init metrics }}}
+      hist @ (ptrT.id metrics.Histogram.id) @ "Observe" #f
+    {{{RET #(); True }}}
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_reportSortingDeletionAgeRatioMetric (filteredPods: slice.t) (diff: w64) (filteredPods_els: list loc) :
+  {{{ is_pkg_init replicaset ∗
+    "filteredPods" :: filteredPods ↦* filteredPods_els ∗
+    "%diff" :: ⌜0 ≤ sint.Z diff < sint.Z (slice.len_f filteredPods)⌝ ∗
+    "filteredPods_els" :: ([∗ list] pod_l ∈ filteredPods_els,
+        ∃ (time: time.Time.t),
+          (struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+            (struct.field_ref_f v1.Pod "ObjectMeta" pod_l)) ↦s[v1.Time :: "Time"] time)
+  }}}
+    @! replicaset.reportSortingDeletionAgeRatioMetric #filteredPods #diff
+  {{{ RET #();
+    filteredPods ↦* filteredPods_els ∗
+    ([∗ list] pod_l ∈ filteredPods_els,
+        ∃ (time: time.Time.t),
+          (struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+            (struct.field_ref_f v1.Pod "ObjectMeta" pod_l)) ↦s[v1.Time :: "Time"] time)
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  wp_alloc diff_ptr as "diff_ptr". wp_auto.
+  wp_alloc filteredPods_ptr as "filteredPods_ptr". wp_auto.
+  wp_apply wp_time_Now.
+  iIntros (now) "_". wp_auto.
+  Transparent slice.for_range. wp_call. wp_auto.
+  iRename "now" into "now_ptr".
+  iRename "youngestTime" into "youngestTime_ptr".
+  iRename "pod" into "pod_ptr".
+  iRename "i" into "i_ptr".
+  iDestruct (own_slice_len with "filteredPods") as %filteredPods_len.
+  iDestruct (own_slice_wf with "filteredPods") as %filteredPods_cap.
+  set I := (
+    ∃ (i: w64) (p: loc) (youngestTime: time.Time.t),
+      "i_ptr" :: i_ptr ↦ i ∗
+      "pod_ptr" :: pod_ptr ↦ p ∗
+      "youngestTime_ptr" :: youngestTime_ptr ↦ youngestTime ∗
+      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f filteredPods)⌝
+  )%I.
+  iAssert (I) with "[i_ptr pod_ptr youngestTime_ptr]" as "Hinv".
+  {
+    iExists (W64 0), (default_val loc), ({|
+      time.Time.wall' := W64 0;
+      time.Time.ext' := W64 0;
+      time.Time.loc' := null
+    |}).
+    iFrame. iPureIntro. word.
+  }
+  wp_for "Hinv".
+  wp_if_destruct; wp_auto.
+  - wp_pure.
+    { word. }
+    assert ((sint.nat i < length filteredPods_els)%nat) as fileredPods_els_len by word.
+    pose proof (list_lookup_lt filteredPods_els (sint.nat i) fileredPods_els_len) as [x Hx].
+    wp_apply (wp_load_slice_elem with "[$filteredPods]") as "filteredPods".
+    { word. }
+    { iPureIntro. exact Hx. }
+    iDestruct (big_sepL_lookup_acc with "filteredPods_els") as "[x others]".
+    { exact Hx. }
+    iDestruct "x" as (time) "x". wp_auto.
+    wp_apply wp_time_After. iIntros (v) "_".
+    destruct v; wp_auto.
+    + wp_apply wp_IsPodReady. iIntros (v') "_".
+      destruct v'.
+      all: (
+        wp_auto; iApply wp_for_post_do; wp_auto;
+        iAssert ((
+             [∗ list] pod_l ∈ filteredPods_els,
+               ∃ time : time.Time.t,
+                 struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+                   (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time
+           )%I) with "[x others]" as "filteredPods_els";
+          [ iApply "others"; iExists time; iFrame
+          | iFrame; iPureIntro; word ]
+      ).
+    + iApply wp_for_post_do. wp_auto.
+      iAssert ((
+         [∗ list] pod_l ∈ filteredPods_els,
+           ∃ time : time.Time.t,
+             struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+               (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time
+       )%I) with "[x others]" as "filteredPods_els".
+      { iApply "others". iExists time. iFrame. }
+      iFrame. iPureIntro. word.
+  - wp_apply wp_slice_slice_pure.
+    { iPureIntro. word. }
+    iDestruct (own_slice_f 0 diff with "filteredPods") as "(before_slice & slice & after_slice )".
+    { word. }
+    iDestruct (own_slice_len with "slice") as %slice_len.
+    destruct slice_len as [subslice_len slice_len_nonneg].
+    iClear "pod_ptr i_ptr".
+    clear pod_ptr i_ptr i p I Hi n.
+    wp_auto.
+    Transparent slice.for_range. wp_call. wp_auto.
+    iRename "i" into "i_ptr".
+    iRename "pod" into "pod_ptr".
+    set I := (
+      ∃ (i: w64) (p: loc),
+        "i_ptr" :: i_ptr ↦ i ∗
+        "pod_ptr" :: pod_ptr ↦ p ∗
+        "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f (slice.slice_f filteredPods ptrT (W64 0) diff))⌝
+    )%I.
+    iAssert (I) with "[i_ptr pod_ptr]" as "Hinv".
+    {
+      iExists (W64 0), (default_val loc).
+      iFrame. iPureIntro. word.
+    }
+    wp_for "Hinv".
+    wp_if_destruct.
+    + wp_auto.
+      wp_pure.
+      {
+        rewrite /slice.slice_f /=.
+        word.
+      }
+      set sub_filteredPods_els := (subslice (sint.nat (W64 0)) (sint.nat diff) filteredPods_els)%I.
+      assert ((sint.nat i < length sub_filteredPods_els)%nat) as slice_els_len.
+      {
+        rewrite subslice_len /slice.slice_f /=.
+        word.
+      }
+      pose proof (list_lookup_lt sub_filteredPods_els (sint.nat i) slice_els_len) as [x Hx].
+      wp_apply (wp_load_slice_elem with "[$slice]") as "slice".
+      { word. }
+      { iPureIntro. exact Hx. }
+      wp_apply wp_IsPodReady. iIntros (v) "_".
+      destruct v; wp_auto.
+      * assert (filteredPods_els !! sint.nat i = Some x) as Hlookup_filtered.
+        { 
+          subst sub_filteredPods_els.
+          have H0 : (sint.nat (W64 0) = 0)%nat by word.
+          rewrite /subslice drop_0 lookup_take // in Hx.
+          have Hj_diff : (sint.nat i < sint.nat diff)%nat by word.
+          rewrite decide_True in Hx; first by apply Hj_diff.
+          exact Hx.
+        }
+        iDestruct (big_sepL_lookup_acc with "filteredPods_els") as "[x others]".
+        { exact Hlookup_filtered. }
+        iDestruct "x" as (time) "x". wp_auto.
+        wp_apply wp_time_Sub. iIntros (v0) "_". wp_auto.
+        wp_apply wp_time_Milliseconds. iIntros (v1) "_". wp_auto.
+        wp_apply wp_time_Sub. iIntros (v2) "_". wp_auto.
+        wp_apply wp_time_Milliseconds. iIntros (v3) "_". wp_auto.
+        wp_apply wp_make_nondet_float64. iIntros (x0) "_". wp_auto.
+        wp_apply wp_globals_get.
+        wp_apply wp_global_addr_metrics_SortingDeletionAgeRatio. iIntros (hist) "hist_observe". wp_auto.
+        wp_apply "hist_observe".
+        iApply wp_for_post_do. wp_auto.
+        iAssert ((
+           [∗ list] pod_l ∈ filteredPods_els,
+             ∃ time : time.Time.t,
+               struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+                 (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time
+         )%I) with "[x others]" as "filteredPods_els".
+        { iApply "others". iExists time. iFrame. }
+        iFrame.
+        iPureIntro.
+        rewrite /slice.slice_f /=.
+        word.
+      * iApply wp_for_post_continue. wp_auto.
+        iFrame.
+        iPureIntro.
+        rewrite /slice.slice_f /=.
+        word.
+    + iApply "HΦ".
+      iPoseProof (own_slice_f (W64 0) diff filteredPods with
+              "[$before_slice $slice $after_slice]") as "filteredPods".
+      { word. }
+      iFrame.
+Qed.
 
 Lemma wp_getPodsRankedByRelatedPodsOnSameNode (podsToRank relatedPods: slice.t) (podsToRank_els relatedPods_els: list loc) :
   {{{ is_pkg_init replicaset ∗
