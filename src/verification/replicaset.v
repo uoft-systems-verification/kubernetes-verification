@@ -82,6 +82,23 @@ Lemma wp_global_addr_metrics_SortingDeletionAgeRatio:
 Proof.
 Admitted.
 
+Lemma wp_Sort_ActivePodsWithRanks (filteredPods ranks: slice.t) (now: v1.Time.t) (filteredPods_els: list loc) (ranks_els: list w64) :
+  {{{ is_pkg_init sort ∗
+    "filteredPods" :: filteredPods ↦* filteredPods_els ∗
+    "ranks" :: ranks ↦* ranks_els
+  }}}
+  @! sort.Sort (#(interface.mk controller.ActivePodsWithRanks.id (# {|
+    controller.ActivePodsWithRanks.Pods' := filteredPods;
+    controller.ActivePodsWithRanks.Rank' := ranks;
+    controller.ActivePodsWithRanks.Now' := now;
+  |})))
+  {{{ sorted_filteredPods_els, RET #();
+    filteredPods ↦* sorted_filteredPods_els ∗
+    ⌜Permutation sorted_filteredPods_els filteredPods_els⌝
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_reportSortingDeletionAgeRatioMetric (filteredPods: slice.t) (diff: w64) (filteredPods_els: list loc) :
   {{{ is_pkg_init replicaset ∗
     "filteredPods" :: filteredPods ↦* filteredPods_els ∗
@@ -263,13 +280,14 @@ Lemma wp_getPodsRankedByRelatedPodsOnSameNode (podsToRank relatedPods: slice.t) 
           struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
   }}}
     @! replicaset.getPodsRankedByRelatedPodsOnSameNode #podsToRank #relatedPods
-  {{{ ranks now,
+  {{{ ranks now (ranks_els: list w64),
       RET #{| 
         controller.ActivePodsWithRanks.Pods' := podsToRank;
         controller.ActivePodsWithRanks.Rank' := ranks;
         controller.ActivePodsWithRanks.Now' := now;
       |};
       podsToRank ↦* podsToRank_els ∗
+      ranks ↦* ranks_els ∗
       ([∗ list] pod_l ∈ podsToRank_els,
         ∃ (nodename: go_string),
           struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
@@ -415,6 +433,139 @@ Proof.
       iIntros (now) "_". wp_auto.
       iApply "HΦ".
       iFrame.
+Qed.
+
+Lemma big_sepL_permutation {A} (Φ: A → iProp Σ) (l1 l2: list A) :
+  Permutation l1 l2 →
+  ([∗ list] x ∈ l2, Φ x) -∗ ([∗ list] x ∈ l1, Φ x).
+Proof.
+  iIntros (Hp) "H".
+  iInduction Hp as [|x l l' Hp IH|x y l|l l' l'' Hp1 IH1 Hp2 IH2] "IH"; simpl.
+  - iExact "H".
+  - iDestruct "H" as "[Hx H]".
+    iSpecialize ("IH" with "H").
+    iFrame.    
+  - iDestruct "H" as "(Hx & Hy & H)".
+    iFrame.
+  - iSpecialize ("IH1" with "H").
+    iSpecialize ("IH" with "IH1").
+    iFrame.
+Qed.
+
+Lemma wp_getPodsToDelete (filteredPods relatedPods: slice.t) (diff: w64) (filteredPods_els relatedPods_els: list loc) :
+  {{{ is_pkg_init replicaset ∗
+    "filteredPods" :: filteredPods ↦* filteredPods_els ∗
+    "relatedPods" :: relatedPods ↦* relatedPods_els ∗
+    "%diff" :: ⌜0 ≤ sint.Z diff ≤ sint.Z (slice.len_f filteredPods)⌝ ∗
+    "filteredPods_els" :: ([∗ list] pod_l ∈ filteredPods_els,
+        ∃ (time: time.Time.t) (nodename: go_string),
+          (struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+            (struct.field_ref_f v1.Pod "ObjectMeta" pod_l)) ↦s[v1.Time :: "Time"] time ∗
+          struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename) ∗
+    "relatedPods_els" :: ([∗ list] pod_l ∈ relatedPods_els,
+        ∃ (time: time.Time.t) (nodename: go_string),
+          (struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+            (struct.field_ref_f v1.Pod "ObjectMeta" pod_l)) ↦s[v1.Time :: "Time"] time ∗
+          struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
+  }}}
+    @! replicaset.getPodsToDelete #filteredPods #relatedPods #diff
+  {{{ (v: slice.t) (v_els: list loc) (sorted_filteredPods_els: list loc), RET #v;
+    v ↦* v_els ∗
+    ⌜Permutation sorted_filteredPods_els filteredPods_els⌝ ∗
+    ⌜v_els = take (sint.nat diff) sorted_filteredPods_els⌝
+  }}}.
+Proof.
+    wp_start as "H". iNamed "H". wp_auto. iRename "diff" into "diff_ptr".
+    wp_alloc relatedPods_ptr as "relatedPods_ptr". wp_auto.
+    wp_alloc filteredPods_ptr as "filteredPods_ptr". wp_auto.
+    iAssert (
+      ([∗ list] pod_l ∈ filteredPods_els,
+         ∃ time : time.Time.t,
+           struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+             (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time) ∗
+      ([∗ list] pod_l ∈ filteredPods_els,
+         ∃ nodename : go_string,
+           struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
+    )%I with "[filteredPods_els]" as "[filteredPods_els_time filteredPods_els_nodename]".
+    {
+      iInduction (filteredPods_els) as [|pod_l filteredPods_els] "IH".
+      - rewrite !big_sepL_nil. done.
+      - rewrite !big_sepL_cons.
+        iDestruct "filteredPods_els" as "((%time & %nodename & Htime & Hnodename) & Htl)".
+        iSpecialize ("IH" with "Htl").
+        iDestruct "IH" as "[Htimelist Hnodenamelist]".
+        iSplitL "Htime Htimelist"; iFrame.
+    }
+    iAssert (
+      ([∗ list] pod_l ∈ relatedPods_els,
+         ∃ time : time.Time.t,
+           struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+             (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time) ∗
+      ([∗ list] pod_l ∈ relatedPods_els,
+         ∃ nodename : go_string,
+           struct.field_ref_f v1.Pod "Spec" pod_l ↦s[v1.PodSpec :: "NodeName"] nodename)
+    )%I with "[relatedPods_els]" as "[relatedPods_els_time relatedPods_els_nodename]".
+    {
+      iInduction (relatedPods_els) as [|pod_l relatedPods_els] "IH".
+      - rewrite !big_sepL_nil. done.
+      - rewrite !big_sepL_cons.
+        iDestruct "relatedPods_els" as "((%time & %nodename & Htime & Hnodename) & Htl)".
+        iSpecialize ("IH" with "Htl").
+        iDestruct "IH" as "[Htimelist Hnodenamelist]".
+        iSplitL "Htime Htimelist"; iFrame.
+    }
+    wp_if_destruct; wp_auto.
+    - wp_apply (wp_getPodsRankedByRelatedPodsOnSameNode filteredPods relatedPods with "[$filteredPods $relatedPods $filteredPods_els_nodename $relatedPods_els_nodename]").
+      iIntros (ranks now ranks_els) "(filteredPods & ranks & filteredPods_els_nodename)". wp_auto.
+      wp_apply (wp_Sort_ActivePodsWithRanks with "[$filteredPods $ranks]").
+      iIntros (sorted_filteredPods_els) "[filteredPods %perm_eq]". wp_auto.
+      iAssert ([∗ list] pod_l ∈ sorted_filteredPods_els,
+        ∃ time : time.Time.t,
+          struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+            (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time
+      )%I with "[filteredPods_els_time]" as "sorted_filteredPods_els_time".
+      {
+        iApply (big_sepL_permutation
+          (λ pod_l,
+            ∃ time : time.Time.t,
+              struct.field_ref_f v1.ObjectMeta "CreationTimestamp"
+                (struct.field_ref_f v1.Pod "ObjectMeta" pod_l) ↦s[v1.Time :: "Time"] time)%I
+          sorted_filteredPods_els
+          filteredPods_els).
+        { exact perm_eq. }
+        iExact "filteredPods_els_time".
+      }
+      wp_apply (wp_reportSortingDeletionAgeRatioMetric with "[$filteredPods $sorted_filteredPods_els_time]").
+      { iPureIntro. word. }
+      iIntros "[filteredPods sorted_filteredPods_els]". wp_auto.
+      iDestruct (own_slice_len with "filteredPods") as %filteredPods_len.
+      iDestruct (own_slice_wf with "filteredPods") as %filteredPods_cap.
+      wp_apply (wp_slice_slice_pure).
+      { word. }
+      iApply "HΦ".
+      iAssert (slice.slice_f filteredPods ptrT (W64 0) diff ↦* take (sint.nat diff) sorted_filteredPods_els)%I with "[filteredPods]" as "slice_filteredPods".
+      {
+        iDestruct (own_slice_f 0 diff with "filteredPods") as "(before_slice & slice & after_slice )".
+        { word. }
+        rewrite /subslice drop_0.
+        iFrame.
+      }
+      iFrame.
+      iSplit; iPureIntro; done.
+    - iDestruct (own_slice_len with "filteredPods") as %filteredPods_len.
+      iDestruct (own_slice_wf with "filteredPods") as %filteredPods_cap.
+      wp_apply (wp_slice_slice_pure).
+      { word. }
+      iApply "HΦ".
+      iAssert (slice.slice_f filteredPods ptrT (W64 0) diff ↦* take (sint.nat diff) filteredPods_els)%I with "[filteredPods]" as "slice_filteredPods".
+      {
+        iDestruct (own_slice_f 0 diff with "filteredPods") as "(before_slice & slice & after_slice )".
+        { word. }
+        rewrite /subslice drop_0.
+        iFrame.
+      }
+      iFrame.
+      iSplit; iPureIntro; done.
 Qed.
 
 Lemma wp_getPodKeys (pods: slice.t) (pods_els: list loc) :
