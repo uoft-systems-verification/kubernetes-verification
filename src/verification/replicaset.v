@@ -440,7 +440,7 @@ Lemma big_sepL_permutation {A} (Φ: A → iProp Σ) (l1 l2: list A) :
   ([∗ list] x ∈ l2, Φ x) -∗ ([∗ list] x ∈ l1, Φ x).
 Proof.
   iIntros (Hp) "H".
-  iInduction Hp as [|x l l' Hp IH|x y l|l l' l'' Hp1 IH1 Hp2 IH2] "IH"; simpl.
+  iInduction Hp as [ | | | ] "IH"; simpl.
   - iExact "H".
   - iDestruct "H" as "[Hx H]".
     iSpecialize ("IH" with "H").
