@@ -1,8 +1,34 @@
-From verification Require Import prelude empty_ffi.
+From verification Require Import prelude empty_ffi model.
 From verification.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t (gset KKey.t)}.
+Context `{!auth_setG Σ KKey.t}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+
+Axiom split_meta_namespace_key : go_string → option (go_string * go_string).
+
+Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s:
+  {{{ is_pkg_init replicaset ∗
+      is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      ∃ namespace name,
+        ⌜ split_meta_namespace_key key = Some (namespace, name)⌝ ∗
+        ⌜ rs_key = {| KKey.kind := KKind.ReplicaSet; KKey.namespace := namespace; KKey.name := name |} ⌝ ∗
+        rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
+        rs_key [[ γ_children ]]↦ s 
+        (* ∗
+        ⌜ rs.(v1.ReplicaSet.Spec'.Replicas') = n ⌝ *)
+  }}}
+  rsc @ (ptrT.id replicaset.ReplicaSetController.id) @ "syncReplicaSet" #ctx #key
+  {{{ (err : error.t) s', RET #err;
+      rs_key [[ γ_children ]]↦ s' ∗
+      if decide (err = interface.nil) then
+        True (* TODO: size s' = desired replicas *)
+      else
+        True (* TODO: size s' is closer to desired replicas compared to n *)
+  }}}.
+Proof. Admitted.
 
 Lemma wp_PodKey (pod: loc) (name namespace: go_string) :
   {{{ is_pkg_init replicaset ∗
