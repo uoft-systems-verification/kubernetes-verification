@@ -1,7 +1,7 @@
 From Perennial.algebra Require Import auth_map.
 From New.proof.github_com.goose_lang.goose.model.channel Require Import auth_set.
 Require Import New.proof.sync.
-From verification Require Import replicaset_init.
+From verification.k8s_io.api.core Require Export v1_init.
 
 Module KKey.
   Record t := mk {

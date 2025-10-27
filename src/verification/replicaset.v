@@ -1,10 +1,8 @@
 From verification Require Import prelude empty_ffi.
-From verification Require Import replicaset_init.
-
+From verification.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
-Context `{!globalsGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Lemma wp_PodKey (pod: loc) (name namespace: go_string) :
   {{{ is_pkg_init replicaset ∗
