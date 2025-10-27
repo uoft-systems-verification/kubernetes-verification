@@ -5,7 +5,7 @@ Section proof.
 Context `{!mapG Σ KKey.t KObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Axiom split_meta_namespace_key : go_string → option (go_string * go_string).
 
