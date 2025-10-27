@@ -1,3 +1,4 @@
+(* Copied from https://github.com/tchajed/sys-verif-fa25-proofs *)
 (* slightly extend Perennial's proof setup *)
 From New.proof Require Export proof_prelude.
 From iris_named_props Require Import named_props.

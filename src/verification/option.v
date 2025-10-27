@@ -1,3 +1,4 @@
+(* Copied from https://github.com/tchajed/sys-verif-fa25-proofs *)
 From stdpp Require Export base.
 From Coq Require Export ssreflect.
 From Coq Require Export Lia.

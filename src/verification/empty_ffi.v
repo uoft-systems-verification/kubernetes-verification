@@ -1,3 +1,4 @@
+(* Copied from https://github.com/tchajed/sys-verif-fa25-proofs *)
 From Perennial.goose_lang Require Import lang lifting typing.
 
 #[export] Instance empty_ext : ffi_syntax :=
