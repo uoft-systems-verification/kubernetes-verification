@@ -5,6 +5,7 @@ Require Export New.code.k8s_io.api.apps.v1.
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.code.k8s_io.apimachinery.pkg.labels.
 Require Export New.code.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.code.k8s_io.apimachinery.pkg.types.
 Require Export New.code.k8s_io.apimachinery.pkg.util.runtime.
@@ -43,7 +44,7 @@ Definition ReplicaSetController : go_type := structT [
 #[global] Typeclasses Opaque ReplicaSetController.
 #[global] Opaque ReplicaSetController.
 
-(* go: replica_set.go:58:34 *)
+(* go: replica_set.go:59:34 *)
 Definition ReplicaSetController__getReplicaSetsWithSameControllerⁱᵐᵖˡ : val :=
   λ: "rsc" "logger" "rs",
     exception_do (let: "rsc" := (mem.alloc "rsc") in
@@ -101,7 +102,7 @@ Definition slowStartBatch : go_string := "kubernetes_model/simplereplicaset.slow
    Does NOT modify <activePods>.
    It will requeue the replica set in case of an error while creating/deleting pods.
 
-   go: replica_set.go:81:34 *)
+   go: replica_set.go:82:34 *)
 Definition ReplicaSetController__manageReplicasⁱᵐᵖˡ : val :=
   λ: "rsc" "ctx" "activePods" "rs",
     exception_do (let: "rsc" := (mem.alloc "rsc") in
@@ -326,7 +327,7 @@ Definition ReplicaSetController__manageReplicasⁱᵐᵖˡ : val :=
    meaning it did not expect to see any more of its pods created or deleted. This function is not meant to be
    invoked concurrently with the same key.
 
-   go: replica_set.go:179:34 *)
+   go: replica_set.go:180:34 *)
 Definition ReplicaSetController__syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "rsc" "ctx" "key",
     exception_do (let: "rsc" := (mem.alloc "rsc") in
@@ -402,7 +403,7 @@ Definition min : go_string := "kubernetes_model/simplereplicaset.min"%go.
 
 (* goose doesn't support Go's built-in min with final type int, so we define our own int
 
-   go: replica_set.go:221:6 *)
+   go: replica_set.go:222:6 *)
 Definition minⁱᵐᵖˡ : val :=
   λ: "a" "b",
     exception_do (let: "b" := (mem.alloc "b") in
@@ -423,7 +424,7 @@ Definition minⁱᵐᵖˡ : val :=
 
    It returns the number of successful calls to the function.
 
-   go: replica_set.go:240:6 *)
+   go: replica_set.go:241:6 *)
 Definition slowStartBatchⁱᵐᵖˡ : val :=
   λ: "count" "initialBatchSize" "fn",
     exception_do (let: "fn" := (mem.alloc "fn") in
@@ -489,7 +490,7 @@ Definition slowStartBatchⁱᵐᵖˡ : val :=
 (* getIndirectlyRelatedPods returns all pods that are owned by any ReplicaSet
    that is owned by the given ReplicaSet's owner.
 
-   go: replica_set.go:268:34 *)
+   go: replica_set.go:269:34 *)
 Definition ReplicaSetController__getIndirectlyRelatedPodsⁱᵐᵖˡ : val :=
   λ: "rsc" "logger" "rs",
     exception_do (let: "rsc" := (mem.alloc "rsc") in
@@ -581,7 +582,7 @@ Definition ReplicaSetController__getIndirectlyRelatedPodsⁱᵐᵖˡ : val :=
 
 Definition getPodsRankedByRelatedPodsOnSameNode : go_string := "kubernetes_model/simplereplicaset.getPodsRankedByRelatedPodsOnSameNode"%go.
 
-(* go: replica_set.go:294:6 *)
+(* go: replica_set.go:295:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (mem.alloc "relatedPods") in
@@ -619,7 +620,7 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ : val :=
        "Now" ::= "$Now"
      }])).
 
-(* go: replica_set.go:308:6 *)
+(* go: replica_set.go:309:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (mem.alloc "diff") in
@@ -670,7 +671,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(ReplicaSetC
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.sort.sort; code.sync.sync; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.runtime.runtime; code.k8s_io.client_go.listers.apps.v1.v1; code.k8s_io.client_go.listers.core.v1.v1; code.k8s_io.client_go.tools.cache.cache; code.k8s_io.klog.v2.klog; code.k8s_io.kubernetes.pkg.controller.controller];
+    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.sort.sort; code.sync.sync; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.runtime.runtime; code.k8s_io.client_go.listers.apps.v1.v1; code.k8s_io.client_go.listers.core.v1.v1; code.k8s_io.client_go.tools.cache.cache; code.k8s_io.klog.v2.klog; code.k8s_io.kubernetes.pkg.controller.controller];
   |}.
 
 Definition initialize' : val :=
@@ -684,6 +685,7 @@ Definition initialize' : val :=
       do:  (runtime.initialize' #());;;
       do:  (types.initialize' #());;;
       do:  (schema.initialize' #());;;
+      do:  (labels.initialize' #());;;
       do:  (v1.initialize' #());;;
       do:  (errors.initialize' #());;;
       do:  (v1.initialize' #());;;

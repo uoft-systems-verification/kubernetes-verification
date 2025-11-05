@@ -8,6 +8,7 @@ Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.runtime.
@@ -173,6 +174,7 @@ Global Instance is_pkg_defined_pure_simplereplicaset : IsPkgDefinedPure simplere
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.errors.errors ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.runtime.runtime ∧
@@ -196,6 +198,7 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.errors.errors ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+       is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.util.runtime.runtime ∗
