@@ -13,6 +13,7 @@ scripts/goose.sh -dir kubernetes ./pkg/features
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/api/core/v1
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/api/apps/v1
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/api/errors
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/api/meta
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/apis/meta/v1
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/labels
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/runtime/schema
@@ -31,3 +32,6 @@ scripts/goose.sh -dir kubernetes ./vendor/github.com/go-logr/logr
 scripts/goose.sh -dir kubernetes ./vendor/k8s.io/klog/v2
 scripts/goose.sh -dir kubernetes ./vendor/k8s.io/utils/clock
 scripts/goose.sh -dir kubernetes ./vendor/k8s.io/utils/ptr
+
+scripts/goose.sh -dir kubernetes_model ./simplereplicaset
+scripts/goose.sh -dir kubernetes_model ./simpleapiserver
