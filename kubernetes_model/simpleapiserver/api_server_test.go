@@ -1,4 +1,4 @@
-package model
+package simpleapiserver
 
 import (
 	"testing"
@@ -13,12 +13,7 @@ import (
 func resetStateForTest(t *testing.T) {
 	t.Helper()
 
-	stateMu.Lock()
-	defer stateMu.Unlock()
-
-	state.m = make(map[KKey]interface{})
-	state.uidCounter = 0
-	state.resourceVersionCounter = 0
+	Init()
 }
 
 func TestCreateGetAndList(t *testing.T) {

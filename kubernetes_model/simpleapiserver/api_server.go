@@ -1,4 +1,4 @@
-package model
+package simpleapiserver
 
 import (
 	"fmt"
@@ -48,32 +48,47 @@ type State struct {
 }
 
 var (
-	stateMu sync.Mutex
-	state   = State{
-		m: make(map[KKey]interface{}),
-		// indexer is used for filtering, e.g., by object owner
-		indexer: Indexers{
-			NamespaceIndex: func(obj interface{}) ([]string, error) {
-				meta, err := meta.Accessor(obj)
-				if err != nil {
-					return []string{""}, fmt.Errorf("object has no meta: %v", err)
-				}
-				return []string{meta.GetNamespace()}, nil
-			},
-			PodControllerUIDIndex: func(obj interface{}) ([]string, error) {
-				pod, ok := obj.(*corev1.Pod)
-				if !ok {
-					return nil, nil
-				}
-				if ref := metav1.GetControllerOf(pod); ref != nil {
-					return []string{string(ref.UID)}, nil
-				}
-				return []string{OrphanPodIndexKeyForNamespace(pod.Namespace)}, nil
-			},
-		},
-	}
+	stateMu  sync.Mutex
+	state    State
 	nameRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
+
+func init() {
+	Init()
+}
+
+func namespaceIndex(obj interface{}) ([]string, error) {
+	metaObj, err := meta.Accessor(obj)
+	if err != nil {
+		return []string{""}, fmt.Errorf("object has no meta: %v", err)
+	}
+	return []string{metaObj.GetNamespace()}, nil
+}
+
+func podControllerUIDIndex(obj interface{}) ([]string, error) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, nil
+	}
+	if ref := metav1.GetControllerOf(pod); ref != nil {
+		return []string{string(ref.UID)}, nil
+	}
+	return []string{OrphanPodIndexKeyForNamespace(pod.Namespace)}, nil
+}
+
+func Init() {
+	stateMu.Lock()
+	defer stateMu.Unlock()
+
+	state.m = make(map[KKey]interface{})
+	state.uidCounter = 0
+	state.resourceVersionCounter = 0
+	// indexer is used for filtering, e.g., by object owner
+	state.indexer = Indexers{
+		NamespaceIndex:        namespaceIndex,
+		PodControllerUIDIndex: podControllerUIDIndex,
+	}
+}
 
 func OrphanPodIndexKeyForNamespace(namespace string) string {
 	return OrphanPodIndexKey + "/" + namespace
@@ -178,7 +193,7 @@ func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
 }
 
 func randomSuffix(n int) string {
-	const randomSuffixChars = "abcdefghijklmnopqrstuvwxyz0123456789"
+	const randomSuffixChars string = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = randomSuffixChars[nameRand.Intn(len(randomSuffixChars))]
@@ -335,4 +350,14 @@ func PodGet(namespace, name string) (*corev1.Pod, error) {
 	}
 
 	return pod, nil
+}
+
+func PodDelete(namespace, name string) error {
+	key := KKey{
+		Kind:      "Pod",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	return Delete(key)
 }
