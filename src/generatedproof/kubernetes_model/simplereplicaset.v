@@ -2,6 +2,7 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.fmt.
+Require Export New.generatedproof.kubernetes_model.simpleapiserver.
 Require Export New.generatedproof.sort.
 Require Export New.generatedproof.sync.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
@@ -12,8 +13,6 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.runtime.
-Require Export New.generatedproof.k8s_io.client_go.listers.apps.v1.
-Require Export New.generatedproof.k8s_io.client_go.listers.core.v1.
 Require Export New.generatedproof.k8s_io.client_go.tools.cache.
 Require Export New.generatedproof.k8s_io.klog.v2.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
@@ -31,14 +30,7 @@ Section def.
 Context `{ffi_syntax}.
 Record t := mk {
   GroupVersionKind' : schema.GroupVersionKind.t;
-  podControl' : controller.PodControlInterface.t;
-  podIndexer' : cache.Indexer.t;
   burstReplicas' : w64;
-  syncHandler' : func.t;
-  expectations' : loc;
-  rsLister' : v1.ReplicaSetLister.t;
-  rsIndexer' : cache.Indexer.t;
-  podLister' : v1.PodLister.t;
 }.
 End def.
 End ReplicaSetController.
@@ -52,25 +44,18 @@ Global Instance ReplicaSetController_wf : struct.Wf simplereplicaset.ReplicaSetC
 Proof. apply _. Qed.
 
 Global Instance settable_ReplicaSetController : Settable ReplicaSetController.t :=
-  settable! ReplicaSetController.mk < ReplicaSetController.GroupVersionKind'; ReplicaSetController.podControl'; ReplicaSetController.podIndexer'; ReplicaSetController.burstReplicas'; ReplicaSetController.syncHandler'; ReplicaSetController.expectations'; ReplicaSetController.rsLister'; ReplicaSetController.rsIndexer'; ReplicaSetController.podLister' >.
+  settable! ReplicaSetController.mk < ReplicaSetController.GroupVersionKind'; ReplicaSetController.burstReplicas' >.
 Global Instance into_val_ReplicaSetController : IntoVal ReplicaSetController.t :=
   {| to_val_def v :=
     struct.val_aux simplereplicaset.ReplicaSetController [
     "GroupVersionKind" ::= #(ReplicaSetController.GroupVersionKind' v);
-    "podControl" ::= #(ReplicaSetController.podControl' v);
-    "podIndexer" ::= #(ReplicaSetController.podIndexer' v);
-    "burstReplicas" ::= #(ReplicaSetController.burstReplicas' v);
-    "syncHandler" ::= #(ReplicaSetController.syncHandler' v);
-    "expectations" ::= #(ReplicaSetController.expectations' v);
-    "rsLister" ::= #(ReplicaSetController.rsLister' v);
-    "rsIndexer" ::= #(ReplicaSetController.rsIndexer' v);
-    "podLister" ::= #(ReplicaSetController.podLister' v)
+    "burstReplicas" ::= #(ReplicaSetController.burstReplicas' v)
     ]%struct
   |}.
 
 Global Program Instance into_val_typed_ReplicaSetController : IntoValTyped ReplicaSetController.t simplereplicaset.ReplicaSetController :=
 {|
-  default_val := ReplicaSetController.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
+  default_val := ReplicaSetController.mk (default_val _) (default_val _);
 |}.
 Next Obligation. solve_to_val_type. Qed.
 Next Obligation. solve_zero_val. Qed.
@@ -80,60 +65,25 @@ Final Obligation. solve_decision. Qed.
 Global Instance into_val_struct_field_ReplicaSetController_GroupVersionKind : IntoValStructField "GroupVersionKind" simplereplicaset.ReplicaSetController ReplicaSetController.GroupVersionKind'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_ReplicaSetController_podControl : IntoValStructField "podControl" simplereplicaset.ReplicaSetController ReplicaSetController.podControl'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_podIndexer : IntoValStructField "podIndexer" simplereplicaset.ReplicaSetController ReplicaSetController.podIndexer'.
-Proof. solve_into_val_struct_field. Qed.
-
 Global Instance into_val_struct_field_ReplicaSetController_burstReplicas : IntoValStructField "burstReplicas" simplereplicaset.ReplicaSetController ReplicaSetController.burstReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_syncHandler : IntoValStructField "syncHandler" simplereplicaset.ReplicaSetController ReplicaSetController.syncHandler'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_expectations : IntoValStructField "expectations" simplereplicaset.ReplicaSetController ReplicaSetController.expectations'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_rsLister : IntoValStructField "rsLister" simplereplicaset.ReplicaSetController ReplicaSetController.rsLister'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_rsIndexer : IntoValStructField "rsIndexer" simplereplicaset.ReplicaSetController ReplicaSetController.rsIndexer'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_podLister : IntoValStructField "podLister" simplereplicaset.ReplicaSetController ReplicaSetController.podLister'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSetController GroupVersionKind' podControl' podIndexer' burstReplicas' syncHandler' expectations' rsLister' rsIndexer' podLister':
+Global Instance wp_struct_make_ReplicaSetController GroupVersionKind' burstReplicas':
   PureWp True
     (struct.make #simplereplicaset.ReplicaSetController (alist_val [
       "GroupVersionKind" ::= #GroupVersionKind';
-      "podControl" ::= #podControl';
-      "podIndexer" ::= #podIndexer';
-      "burstReplicas" ::= #burstReplicas';
-      "syncHandler" ::= #syncHandler';
-      "expectations" ::= #expectations';
-      "rsLister" ::= #rsLister';
-      "rsIndexer" ::= #rsIndexer';
-      "podLister" ::= #podLister'
+      "burstReplicas" ::= #burstReplicas'
     ]))%struct
-    #(ReplicaSetController.mk GroupVersionKind' podControl' podIndexer' burstReplicas' syncHandler' expectations' rsLister' rsIndexer' podLister').
+    #(ReplicaSetController.mk GroupVersionKind' burstReplicas').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
 Global Instance ReplicaSetController_struct_fields_split dq l (v : ReplicaSetController.t) :
   StructFieldsSplit dq l v (
     "HGroupVersionKind" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "GroupVersionKind"]{dq} v.(ReplicaSetController.GroupVersionKind') ∗
-    "HpodControl" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "podControl"]{dq} v.(ReplicaSetController.podControl') ∗
-    "HpodIndexer" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "podIndexer"]{dq} v.(ReplicaSetController.podIndexer') ∗
-    "HburstReplicas" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "burstReplicas"]{dq} v.(ReplicaSetController.burstReplicas') ∗
-    "HsyncHandler" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "syncHandler"]{dq} v.(ReplicaSetController.syncHandler') ∗
-    "Hexpectations" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "expectations"]{dq} v.(ReplicaSetController.expectations') ∗
-    "HrsLister" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "rsLister"]{dq} v.(ReplicaSetController.rsLister') ∗
-    "HrsIndexer" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "rsIndexer"]{dq} v.(ReplicaSetController.rsIndexer') ∗
-    "HpodLister" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "podLister"]{dq} v.(ReplicaSetController.podLister')
+    "HburstReplicas" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "burstReplicas"]{dq} v.(ReplicaSetController.burstReplicas')
   ).
 Proof.
   rewrite /named.
@@ -142,13 +92,6 @@ Proof.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (ReplicaSetController.GroupVersionKind' v)) (simplereplicaset.ReplicaSetController) "GroupVersionKind"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.podControl' v)) (simplereplicaset.ReplicaSetController) "podControl"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.podIndexer' v)) (simplereplicaset.ReplicaSetController) "podIndexer"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.burstReplicas' v)) (simplereplicaset.ReplicaSetController) "burstReplicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.syncHandler' v)) (simplereplicaset.ReplicaSetController) "syncHandler"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.expectations' v)) (simplereplicaset.ReplicaSetController) "expectations"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.rsLister' v)) (simplereplicaset.ReplicaSetController) "rsLister"%go.
-  simpl_one_flatten_struct (# (ReplicaSetController.rsIndexer' v)) (simplereplicaset.ReplicaSetController) "rsIndexer"%go.
 
   solve_field_ref_f.
 Qed.
@@ -168,6 +111,7 @@ Global Instance is_pkg_defined_pure_simplereplicaset : IsPkgDefinedPure simplere
       is_pkg_defined_pure_single simplereplicaset ∧
       is_pkg_defined_pure code.context.context ∧
       is_pkg_defined_pure code.fmt.fmt ∧
+      is_pkg_defined_pure code.kubernetes_model.simpleapiserver.simpleapiserver ∧
       is_pkg_defined_pure code.sort.sort ∧
       is_pkg_defined_pure code.sync.sync ∧
       is_pkg_defined_pure code.k8s_io.api.apps.v1.v1 ∧
@@ -178,8 +122,6 @@ Global Instance is_pkg_defined_pure_simplereplicaset : IsPkgDefinedPure simplere
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.runtime.runtime ∧
-      is_pkg_defined_pure code.k8s_io.client_go.listers.apps.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.client_go.listers.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.client_go.tools.cache.cache ∧
       is_pkg_defined_pure code.k8s_io.klog.v2.klog ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
@@ -192,6 +134,7 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
       (is_pkg_defined_single simplereplicaset ∗
        is_pkg_defined code.context.context ∗
        is_pkg_defined code.fmt.fmt ∗
+       is_pkg_defined code.kubernetes_model.simpleapiserver.simpleapiserver ∗
        is_pkg_defined code.sort.sort ∗
        is_pkg_defined code.sync.sync ∗
        is_pkg_defined code.k8s_io.api.apps.v1.v1 ∗
@@ -202,14 +145,28 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
        is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.util.runtime.runtime ∗
-       is_pkg_defined code.k8s_io.client_go.listers.apps.v1.v1 ∗
-       is_pkg_defined code.k8s_io.client_go.listers.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.client_go.tools.cache.cache ∗
        is_pkg_defined code.k8s_io.klog.v2.klog ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
+
+Global Instance wp_func_call_validateControllerRef :
+  WpFuncCall simplereplicaset.validateControllerRef _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_CreatePods :
+  WpFuncCall simplereplicaset.CreatePods _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_CreatePodsWithGenerateName :
+  WpFuncCall simplereplicaset.CreatePodsWithGenerateName _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_FilterPodsByOwner :
+  WpFuncCall simplereplicaset.FilterPodsByOwner _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_min :
   WpFuncCall simplereplicaset.min _ (is_pkg_defined simplereplicaset) :=

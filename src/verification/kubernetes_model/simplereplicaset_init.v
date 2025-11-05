@@ -14,6 +14,7 @@ From verification.k8s_io.client_go.tools Require Export cache_init.
 From verification.k8s_io.klog Require Export klog_init.
 From verification.k8s_io.kubernetes.pkg Require Export controller_init.
 From verification Require Export sort_init.
+From verification.kubernetes_model Require Export simpleapiserver_init.
 Require Export New.generatedproof.kubernetes_model.simplereplicaset.
 
 

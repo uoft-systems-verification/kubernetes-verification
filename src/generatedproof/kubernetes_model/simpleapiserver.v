@@ -5,6 +5,7 @@ Require Export New.generatedproof.math.rand.
 Require Export New.generatedproof.strconv.
 Require Export New.generatedproof.sync.
 Require Export New.generatedproof.time.
+Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.meta.
@@ -230,6 +231,7 @@ Global Instance is_pkg_defined_pure_simpleapiserver : IsPkgDefinedPure simpleapi
       is_pkg_defined_pure code.strconv.strconv ∧
       is_pkg_defined_pure code.sync.sync ∧
       is_pkg_defined_pure code.time.time ∧
+      is_pkg_defined_pure code.k8s_io.api.apps.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.errors.errors ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.meta.meta ∧
@@ -249,6 +251,7 @@ Global Program Instance is_pkg_defined_simpleapiserver : IsPkgDefined simpleapis
        is_pkg_defined code.strconv.strconv ∗
        is_pkg_defined code.sync.sync ∗
        is_pkg_defined code.time.time ∗
+       is_pkg_defined code.k8s_io.api.apps.v1.v1 ∗
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.errors.errors ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.meta.meta ∗
@@ -280,16 +283,12 @@ Global Instance wp_func_call_Get :
   WpFuncCall simpleapiserver.Get _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_List :
-  WpFuncCall simpleapiserver.List _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_filterByLabelSelector :
   WpFuncCall simpleapiserver.filterByLabelSelector _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_ListBySelector :
-  WpFuncCall simpleapiserver.ListBySelector _ (is_pkg_defined simpleapiserver) :=
+Global Instance wp_func_call_List :
+  WpFuncCall simpleapiserver.List _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Index :

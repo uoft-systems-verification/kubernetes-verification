@@ -1,5 +1,6 @@
 From New.proof Require Export context fmt.
 From verification Require Export prelude.
+From verification.k8s_io.api.apps Require Export v1_init.
 From verification.k8s_io.api.core Require Export v1_init.
 From verification.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From verification.k8s_io.apimachinery.pkg.api Require Export meta_init.

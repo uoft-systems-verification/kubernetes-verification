@@ -48,7 +48,10 @@ func TestCreateGetAndList(t *testing.T) {
 		t.Fatalf("Get returned different object pointer")
 	}
 
-	list := List("Pod", "default")
+	list, err := List("Pod", "default", labels.Everything())
+	if err != nil {
+		t.Fatalf("List returned error: %v", err)
+	}
 	if len(list) != 1 {
 		t.Fatalf("expected 1 pod in list, got %d", len(list))
 	}
@@ -84,9 +87,9 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err := ListBySelector("Pod", "default", selector)
+	items, err := List("Pod", "default", selector)
 	if err != nil {
-		t.Fatalf("ListBySelector returned error: %v", err)
+		t.Fatalf("List returned error: %v", err)
 	}
 	if len(items) != 1 {
 		t.Fatalf("expected exactly 1 pod matching selector, got %d", len(items))
@@ -99,9 +102,9 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err = ListBySelector("Pod", "default", selector)
+	items, err = List("Pod", "default", selector)
 	if err != nil {
-		t.Fatalf("ListBySelector returned error: %v", err)
+		t.Fatalf("List returned error: %v", err)
 	}
 	if len(items) != 2 {
 		t.Fatalf("expected 2 pods with app=demo, got %d", len(items))
@@ -274,8 +277,8 @@ func TestIndexAndByIndexWithNamespace(t *testing.T) {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
-	seed := &metav1.ObjectMeta{Namespace: "default"}
-	items, err := Index("Pod", NamespaceIndex, seed)
+	metadata := &metav1.ObjectMeta{Namespace: "default"}
+	items, err := Index("Pod", NamespaceIndex, metadata)
 	if err != nil {
 		t.Fatalf("Index returned error: %v", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -36,6 +37,7 @@ type Indexers map[string]IndexFunc
 
 const (
 	NamespaceIndex        = "namespace"
+	ControllerUIDIndex    = "controllerUID"
 	PodControllerUIDIndex = "podControllerUID"
 	OrphanPodIndexKey     = "_ORPHAN_POD"
 )
@@ -76,6 +78,18 @@ func podControllerUIDIndex(obj interface{}) ([]string, error) {
 	return []string{OrphanPodIndexKeyForNamespace(pod.Namespace)}, nil
 }
 
+func controllerUIDIndex(obj interface{}) ([]string, error) {
+	rs, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return []string{}, nil
+	}
+	controllerRef := metav1.GetControllerOf(rs)
+	if controllerRef == nil {
+		return []string{}, nil
+	}
+	return []string{string(controllerRef.UID)}, nil
+}
+
 func Init() {
 	stateMu.Lock()
 	defer stateMu.Unlock()
@@ -87,6 +101,7 @@ func Init() {
 	state.indexer = Indexers{
 		NamespaceIndex:        namespaceIndex,
 		PodControllerUIDIndex: podControllerUIDIndex,
+		ControllerUIDIndex:    controllerUIDIndex,
 	}
 }
 
@@ -102,7 +117,7 @@ func Get(key KKey) (interface{}, bool) {
 	return item, exists
 }
 
-func List(kind, namespace string) (items []interface{}) {
+func list(kind, namespace string) (items []interface{}) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
 
@@ -130,8 +145,8 @@ func filterByLabelSelector(items []interface{}, selector labels.Selector) ([]int
 	return filtered_items, nil
 }
 
-func ListBySelector(kind, namespace string, selector labels.Selector) ([]interface{}, error) {
-	return filterByLabelSelector(List(kind, namespace), selector)
+func List(kind, namespace string, selector labels.Selector) ([]interface{}, error) {
+	return filterByLabelSelector(list(kind, namespace), selector)
 }
 
 func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
@@ -155,7 +170,7 @@ func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
 	}
 
 	var items []interface{}
-	for _, val := range List(kind, metav1.NamespaceAll) {
+	for _, val := range list(kind, metav1.NamespaceAll) {
 		values, err := indexFunc(val)
 		if err != nil {
 			return nil, err
@@ -177,7 +192,11 @@ func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
 	}
 
 	var items []interface{}
-	for _, val := range List(kind, metav1.NamespaceAll) {
+	listed, err := List(kind, metav1.NamespaceAll, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+	for _, val := range listed {
 		values, err := indexFunc(val)
 		if err != nil {
 			return nil, err
@@ -352,6 +371,36 @@ func PodGet(namespace, name string) (*corev1.Pod, error) {
 	return pod, nil
 }
 
+func PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
+	objs, err := List("Pod", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	pods := make([]*corev1.Pod, 0, len(objs))
+	for _, obj := range objs {
+		pod, ok := obj.(*corev1.Pod)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.Pod")
+		}
+		pods = append(pods, pod)
+	}
+
+	return pods, nil
+}
+
+func PodCreate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	obj, err := Create("Pod", namespace, pod)
+
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry is not a *v1.Pod")
+	}
+
+	return pod, err
+}
+
 func PodDelete(namespace, name string) error {
 	key := KKey{
 		Kind:      "Pod",
@@ -361,3 +410,42 @@ func PodDelete(namespace, name string) error {
 
 	return Delete(key)
 }
+
+func ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
+	key := KKey{
+		Kind:      "ReplicaSet",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, exists := Get(key)
+	if !exists {
+		return nil, errors.NewNotFound(appsv1.Resource("replicaset"), name)
+	}
+
+	rs, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for replicaset %s/%s is not a *v1.ReplicaSet", namespace, name)
+	}
+
+	return rs, nil
+}
+
+// func ReplicaSetByIndex(indexName, indexedValue string) ([]*appsv1.ReplicaSet, error) {
+// 	objs, err := ByIndex("ReplicaSet", indexName, indexedValue)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	rss := make([]*appsv1.ReplicaSet, 0, len(objs))
+// 	for _, obj := range objs {
+// 		rs, ok := obj.(*appsv1.ReplicaSet)
+// 		if !ok {
+// 			return nil, fmt.Errorf("state entry is not a *v1.ReplicaSet")
+// 		}
+// 		rss = append(rss, rs)
+// 	}
+
+// 	return rss, nil
+// }

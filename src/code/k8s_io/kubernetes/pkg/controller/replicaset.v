@@ -344,7 +344,7 @@ Definition ReplicaSetController__manageReplicasⁱᵐᵖˡ : val :=
             else do:  #()));;;
             return: #())
             ) in
-          do:  (Fork ("$go" "a0"))));;;
+          do:  (Fork ("$go" "$a0"))));;;
         do:  ((method_call #(ptrT.id sync.WaitGroup.id) #"Wait"%go "wg") #());;;
         chan.select [chan.select_receive (![type.chanT #error] "errCh") (λ: "$recvVal",
            let: "err" := (mem.alloc (type.zero_val #error)) in
