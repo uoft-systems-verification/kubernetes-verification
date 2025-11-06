@@ -170,10 +170,6 @@ Global Instance wp_method_call_ReplicaSetController'ptr_getReplicaSetsWithSameCo
   WpMethodCall (ptrT.id replicaset.ReplicaSetController.id) "getReplicaSetsWithSameController" _ (is_pkg_defined replicaset) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_ReplicaSetController'ptr_manageReplicas :
-  WpMethodCall (ptrT.id replicaset.ReplicaSetController.id) "manageReplicas" _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_method_call).
-
 Global Instance wp_method_call_ReplicaSetController'ptr_syncReplicaSet :
   WpMethodCall (ptrT.id replicaset.ReplicaSetController.id) "syncReplicaSet" _ (is_pkg_defined replicaset) :=
   ltac:(solve_wp_method_call).

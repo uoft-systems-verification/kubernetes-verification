@@ -146,7 +146,7 @@ Proof.
   wp_alloc filteredPods_ptr as "filteredPods_ptr". wp_auto.
   wp_apply wp_time_Now.
   iIntros (now) "_". wp_auto.
-  Transparent slice.for_range. wp_call. wp_auto.
+  Transparent slice.for_range.
   iRename "now" into "now_ptr".
   iRename "youngestTime" into "youngestTime_ptr".
   iRename "pod" into "pod_ptr".
@@ -170,7 +170,7 @@ Proof.
     iFrame. iPureIntro. word.
   }
   wp_for "Hinv".
-  wp_if_destruct; wp_auto.
+  wp_if_destruct.
   - wp_pure.
     { word. }
     assert ((sint.nat i < length filteredPods_els)%nat) as fileredPods_els_len by word.
@@ -214,7 +214,7 @@ Proof.
     iClear "pod_ptr i_ptr".
     clear pod_ptr i_ptr i p I Hi n.
     wp_auto.
-    Transparent slice.for_range. wp_call. wp_auto.
+    Transparent slice.for_range.
     iRename "i" into "i_ptr".
     iRename "pod" into "pod_ptr".
     set I := (
@@ -230,8 +230,7 @@ Proof.
     }
     wp_for "Hinv".
     wp_if_destruct.
-    + wp_auto.
-      wp_pure.
+    + wp_pure.
       {
         rewrite /slice.slice_f /=.
         word.
@@ -324,8 +323,7 @@ Proof.
   wp_apply (wp_map_make (K:=go_string) (V:=w64)); [done..|].
   iIntros (podsOnNode) "podsOnNode". wp_auto.
   iRename "pod" into "pod_ptr".
-  Transparent slice.for_range. wp_call.
-  wp_auto.
+  Transparent slice.for_range.
   iRename "i" into "i_ptr".
   iDestruct (own_slice_len with "relatedPods") as %relatedPodslen.
   set I := (
@@ -343,7 +341,7 @@ Proof.
     word.
   }
   wp_for "Hinv".
-  wp_if_destruct; wp_auto.
+  wp_if_destruct.
   - wp_pure.
     { word. }
     assert ((sint.nat i < length relatedPods_els)%nat) as HlenrelatedPods_els by word.
@@ -393,7 +391,7 @@ Proof.
     rewrite length_replicate in rankslen.
     iRename "pod" into "pod_ptr".
     iRename "i" into "i_ptr".
-    Transparent slice.for_range. wp_call.
+    Transparent slice.for_range.
     wp_alloc j_ptr as "j_ptr". wp_auto.
     set I := (
       ∃ (i: w64) (j: w64) (p: loc) (ranks_els: list w64) (m: gmap go_string w64),
@@ -416,7 +414,7 @@ Proof.
       word.
     }
     wp_for "Hinv".
-    wp_if_destruct; wp_auto.
+    wp_if_destruct.
     + wp_pure.
       { word. }
       assert ((sint.nat j < length podsToRank_els)%nat) as HlenpodsToRank_els by word.
@@ -538,7 +536,7 @@ Proof.
         iDestruct "IH" as "[Htimelist Hnodenamelist]".
         iSplitL "Htime Htimelist"; iFrame.
     }
-    wp_if_destruct; wp_auto.
+    wp_if_destruct.
     - wp_apply (wp_getPodsRankedByRelatedPodsOnSameNode filteredPods relatedPods with "[$filteredPods $relatedPods $filteredPods_els_nodename $relatedPods_els_nodename]").
       iIntros (ranks now ranks_els) "(filteredPods & ranks & filteredPods_els_nodename)". wp_auto.
       wp_apply (wp_Sort_ActivePodsWithRanks with "[$filteredPods $ranks]").
@@ -621,8 +619,8 @@ Proof.
   iIntros (keys) "(keys & own_keys_cap & %Heq)". wp_auto.
   iRename "pod" into "pod_ptr".
   (* unfold slice.for_range to a loop *)
-  Transparent slice.for_range. wp_call.
-  wp_alloc i_ptr as "i_ptr".
+  Transparent slice.for_range.
+  iRename "i" into "i_ptr".
   wp_pures.
 
   set I := (

@@ -1,6 +1,6 @@
 translate = [
   "ReplicaSetController.getReplicaSetsWithSameController",
-  "ReplicaSetController.manageReplicas",
+  # "ReplicaSetController.manageReplicas",
   "ReplicaSetController.syncReplicaSet",
   "ReplicaSetController.claimPods",
   "ReplicaSetController.getIndirectlyRelatedPods",

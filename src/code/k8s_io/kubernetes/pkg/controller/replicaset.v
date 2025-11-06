@@ -123,242 +123,6 @@ Definition ReplicaSetController__getReplicaSetsWithSameControllerⁱᵐᵖˡ : v
     else do:  #()));;;
     return: (![#sliceT] "relatedRSs")).
 
-Definition getPodKeys : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.getPodKeys"%go.
-
-Definition getPodsToDelete : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.getPodsToDelete"%go.
-
-Definition slowStartBatch : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.slowStartBatch"%go.
-
-(* manageReplicas checks and updates replicas for the given ReplicaSet.
-   Does NOT modify <activePods>.
-   It will requeue the replica set in case of an error while creating/deleting pods.
-
-   go: replica_set.go:596:34 *)
-Definition ReplicaSetController__manageReplicasⁱᵐᵖˡ : val :=
-  λ: "rsc" "ctx" "activePods" "rs",
-    exception_do (let: "rsc" := (mem.alloc "rsc") in
-    let: "rs" := (mem.alloc "rs") in
-    let: "activePods" := (mem.alloc "activePods") in
-    let: "ctx" := (mem.alloc "ctx") in
-    let: "diff" := (mem.alloc (type.zero_val #intT)) in
-    let: "$r0" := ((let: "$a0" := (![#sliceT] "activePods") in
-    slice.len "$a0") - (s_to_w64 (![#int32T] (![#ptrT] (struct.field_ref #v1.ReplicaSetSpec #"Replicas"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs"))))))) in
-    do:  ("diff" <-[#intT] "$r0");;;
-    let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "rsKey" := (mem.alloc (type.zero_val #stringT)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-    (![#funcT] (globals.get #controller.KeyFunc)) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("rsKey" <-[#stringT] "$r0");;;
-    do:  ("err" <-[#error] "$r1");;;
-    (if: (~ (interface.eq (![#error] "err") #interface.nil))
-    then
-      do:  (let: "$a0" := (let: "$a0" := #"couldn't get key for %v %#v: %v"%go in
-      let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] (struct.field_ref #schema.GroupVersionKind #"Kind"%go (struct.field_ref #ReplicaSetController #"GroupVersionKind"%go (![#ptrT] "rsc"))))) in
-      let: "$sl1" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-      let: "$sl2" := (![#error] "err") in
-      slice.literal #interfaceT ["$sl0"; "$sl1"; "$sl2"])) in
-      (func_call #fmt.Errorf) "$a0" "$a1") in
-      (func_call #runtime.HandleError) "$a0");;;
-      return: (#interface.nil)
-    else do:  #());;;
-    let: "logger" := (mem.alloc (type.zero_val #logr.Logger)) in
-    let: "$r0" := (let: "$a0" := (![#context.Context] "ctx") in
-    (func_call #klog.FromContext) "$a0") in
-    do:  ("logger" <-[#logr.Logger] "$r0");;;
-    (if: int_lt (![#intT] "diff") #(W64 0)
-    then
-      do:  ("diff" <-[#intT] ((![#intT] "diff") * #(W64 (- 1))));;;
-      (if: int_gt (![#intT] "diff") (![#intT] (struct.field_ref #ReplicaSetController #"burstReplicas"%go (![#ptrT] "rsc")))
-      then
-        let: "$r0" := (![#intT] (struct.field_ref #ReplicaSetController #"burstReplicas"%go (![#ptrT] "rsc"))) in
-        do:  ("diff" <-[#intT] "$r0")
-      else do:  #());;;
-      do:  (let: "$a0" := (![#logr.Logger] "logger") in
-      let: "$a1" := (![#stringT] "rsKey") in
-      let: "$a2" := (![#intT] "diff") in
-      (method_call #(ptrT.id controller.UIDTrackingControllerExpectations.id) #"ExpectCreations"%go (![#ptrT] (struct.field_ref #ReplicaSetController #"expectations"%go (![#ptrT] "rsc")))) "$a0" "$a1" "$a2");;;
-      do:  (let: "$a0" := #"Too few replicas"%go in
-      let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id #"replicaSet"%go) in
-      let: "$sl1" := (interface.make #klog.ObjectRef.id (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-      (func_call #klog.KObj) "$a0")) in
-      let: "$sl2" := (interface.make #stringT.id #"need"%go) in
-      let: "$sl3" := (interface.make #int32T.id (![#int32T] (![#ptrT] (struct.field_ref #v1.ReplicaSetSpec #"Replicas"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs")))))) in
-      let: "$sl4" := (interface.make #stringT.id #"creating"%go) in
-      let: "$sl5" := (interface.make #intT.id (![#intT] "diff")) in
-      slice.literal #interfaceT ["$sl0"; "$sl1"; "$sl2"; "$sl3"; "$sl4"; "$sl5"])) in
-      (method_call #logr.Logger.id #"Info"%go (let: "$a0" := #(W64 2) in
-      (method_call #logr.Logger.id #"V"%go (![#logr.Logger] "logger")) "$a0")) "$a0" "$a1");;;
-      let: "err" := (mem.alloc (type.zero_val #error)) in
-      let: "successfulCreations" := (mem.alloc (type.zero_val #intT)) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![#intT] "diff") in
-      let: "$a1" := #(W64 controller.SlowStartInitialBatchSize) in
-      let: "$a2" := (λ: <>,
-        exception_do (let: "err" := (mem.alloc (type.zero_val #error)) in
-        let: "$r0" := (let: "$a0" := (![#context.Context] "ctx") in
-        let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
-        let: "$a2" := (struct.field_ref #v1.ReplicaSetSpec #"Template"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs"))) in
-        let: "$a3" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-        let: "$a4" := (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-        let: "$a1" := (![#schema.GroupVersionKind] (struct.field_ref #ReplicaSetController #"GroupVersionKind"%go (![#ptrT] "rsc"))) in
-        (func_call #v1.NewControllerRef) "$a0" "$a1") in
-        (interface.get #"CreatePods"%go (![#controller.PodControlInterface] (struct.field_ref #ReplicaSetController #"podControl"%go (![#ptrT] "rsc")))) "$a0" "$a1" "$a2" "$a3" "$a4") in
-        do:  ("err" <-[#error] "$r0");;;
-        (if: (~ (interface.eq (![#error] "err") #interface.nil))
-        then
-          (if: let: "$a0" := (![#error] "err") in
-          let: "$a1" := v1.NamespaceTerminatingCause in
-          (func_call #errors.HasStatusCause) "$a0" "$a1"
-          then return: (#interface.nil)
-          else do:  #())
-        else do:  #());;;
-        return: (![#error] "err"))
-        ) in
-      (func_call #slowStartBatch) "$a0" "$a1" "$a2") in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  ("successfulCreations" <-[#intT] "$r0");;;
-      do:  ("err" <-[#error] "$r1");;;
-      (let: "skippedPods" := (mem.alloc (type.zero_val #intT)) in
-      let: "$r0" := ((![#intT] "diff") - (![#intT] "successfulCreations")) in
-      do:  ("skippedPods" <-[#intT] "$r0");;;
-      (if: int_gt (![#intT] "skippedPods") #(W64 0)
-      then
-        do:  (let: "$a0" := #"Slow-start failure. Skipping creation of pods, decrementing expectations"%go in
-        let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id #"podsSkipped"%go) in
-        let: "$sl1" := (interface.make #intT.id (![#intT] "skippedPods")) in
-        let: "$sl2" := (interface.make #stringT.id #"kind"%go) in
-        let: "$sl3" := (interface.make #stringT.id (![#stringT] (struct.field_ref #schema.GroupVersionKind #"Kind"%go (struct.field_ref #ReplicaSetController #"GroupVersionKind"%go (![#ptrT] "rsc"))))) in
-        let: "$sl4" := (interface.make #stringT.id #"replicaSet"%go) in
-        let: "$sl5" := (interface.make #klog.ObjectRef.id (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-        (func_call #klog.KObj) "$a0")) in
-        slice.literal #interfaceT ["$sl0"; "$sl1"; "$sl2"; "$sl3"; "$sl4"; "$sl5"])) in
-        (method_call #logr.Logger.id #"Info"%go (let: "$a0" := #(W64 2) in
-        (method_call #logr.Logger.id #"V"%go (![#logr.Logger] "logger")) "$a0")) "$a0" "$a1");;;
-        (let: "i" := (mem.alloc (type.zero_val #intT)) in
-        let: "$r0" := #(W64 0) in
-        do:  ("i" <-[#intT] "$r0");;;
-        (for: (λ: <>, int_lt (![#intT] "i") (![#intT] "skippedPods")); (λ: <>, do:  ("i" <-[#intT] ((![#intT] "i") + #(W64 1)))) := λ: <>,
-          do:  (let: "$a0" := (![#logr.Logger] "logger") in
-          let: "$a1" := (![#stringT] "rsKey") in
-          (method_call #(ptrT.id controller.UIDTrackingControllerExpectations.id) #"CreationObserved"%go (![#ptrT] (struct.field_ref #ReplicaSetController #"expectations"%go (![#ptrT] "rsc")))) "$a0" "$a1")))
-      else do:  #()));;;
-      return: (![#error] "err")
-    else
-      (if: int_gt (![#intT] "diff") #(W64 0)
-      then
-        (if: int_gt (![#intT] "diff") (![#intT] (struct.field_ref #ReplicaSetController #"burstReplicas"%go (![#ptrT] "rsc")))
-        then
-          let: "$r0" := (![#intT] (struct.field_ref #ReplicaSetController #"burstReplicas"%go (![#ptrT] "rsc"))) in
-          do:  ("diff" <-[#intT] "$r0")
-        else do:  #());;;
-        do:  (let: "$a0" := #"Too many replicas"%go in
-        let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id #"replicaSet"%go) in
-        let: "$sl1" := (interface.make #klog.ObjectRef.id (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-        (func_call #klog.KObj) "$a0")) in
-        let: "$sl2" := (interface.make #stringT.id #"need"%go) in
-        let: "$sl3" := (interface.make #int32T.id (![#int32T] (![#ptrT] (struct.field_ref #v1.ReplicaSetSpec #"Replicas"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs")))))) in
-        let: "$sl4" := (interface.make #stringT.id #"deleting"%go) in
-        let: "$sl5" := (interface.make #intT.id (![#intT] "diff")) in
-        slice.literal #interfaceT ["$sl0"; "$sl1"; "$sl2"; "$sl3"; "$sl4"; "$sl5"])) in
-        (method_call #logr.Logger.id #"Info"%go (let: "$a0" := #(W64 2) in
-        (method_call #logr.Logger.id #"V"%go (![#logr.Logger] "logger")) "$a0")) "$a0" "$a1");;;
-        let: "err" := (mem.alloc (type.zero_val #error)) in
-        let: "relatedPods" := (mem.alloc (type.zero_val #sliceT)) in
-        let: ("$ret0", "$ret1") := (let: "$a0" := (![#logr.Logger] "logger") in
-        let: "$a1" := (![#ptrT] "rs") in
-        (method_call #(ptrT.id ReplicaSetController.id) #"getIndirectlyRelatedPods"%go (![#ptrT] "rsc")) "$a0" "$a1") in
-        let: "$r0" := "$ret0" in
-        let: "$r1" := "$ret1" in
-        do:  ("relatedPods" <-[#sliceT] "$r0");;;
-        do:  ("err" <-[#error] "$r1");;;
-        do:  (let: "$a0" := (![#error] "err") in
-        (func_call #runtime.HandleError) "$a0");;;
-        let: "podsToDelete" := (mem.alloc (type.zero_val #sliceT)) in
-        let: "$r0" := (let: "$a0" := (![#sliceT] "activePods") in
-        let: "$a1" := (![#sliceT] "relatedPods") in
-        let: "$a2" := (![#intT] "diff") in
-        (func_call #getPodsToDelete) "$a0" "$a1" "$a2") in
-        do:  ("podsToDelete" <-[#sliceT] "$r0");;;
-        do:  (let: "$a0" := (![#logr.Logger] "logger") in
-        let: "$a1" := (![#stringT] "rsKey") in
-        let: "$a2" := (let: "$a0" := (![#sliceT] "podsToDelete") in
-        (func_call #getPodKeys) "$a0") in
-        (method_call #(ptrT.id controller.UIDTrackingControllerExpectations.id) #"ExpectDeletions"%go (![#ptrT] (struct.field_ref #ReplicaSetController #"expectations"%go (![#ptrT] "rsc")))) "$a0" "$a1" "$a2");;;
-        let: "errCh" := (mem.alloc (type.zero_val (type.chanT #error))) in
-        let: "$r0" := (chan.make #error (![#intT] "diff")) in
-        do:  ("errCh" <-[type.chanT #error] "$r0");;;
-        let: "wg" := (mem.alloc (type.zero_val #sync.WaitGroup)) in
-        do:  (let: "$a0" := (![#intT] "diff") in
-        (method_call #(ptrT.id sync.WaitGroup.id) #"Add"%go "wg") "$a0");;;
-        let: "$range" := (![#sliceT] "podsToDelete") in
-        (let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-        slice.for_range #ptrT "$range" (λ: "$key" "$value",
-          do:  ("pod" <-[#ptrT] "$value");;;
-          do:  "$key";;;
-          let: "$a0" := (![#ptrT] "pod") in
-          let: "$go" := (λ: "targetPod",
-            with_defer: (let: "targetPod" := (mem.alloc "targetPod") in
-            do:  (let: "$f" := (method_call #(ptrT.id sync.WaitGroup.id) #"Done"%go "wg") in
-            "$defer" <-[#funcT] (let: "$oldf" := (![#funcT] "$defer") in
-            (λ: <>,
-              "$f" #();;
-              "$oldf" #()
-              )));;;
-            (let: "err" := (mem.alloc (type.zero_val #error)) in
-            let: "$r0" := (let: "$a0" := (![#context.Context] "ctx") in
-            let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
-            let: "$a2" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "targetPod")))) in
-            let: "$a3" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-            (interface.get #"DeletePod"%go (![#controller.PodControlInterface] (struct.field_ref #ReplicaSetController #"podControl"%go (![#ptrT] "rsc")))) "$a0" "$a1" "$a2" "$a3") in
-            do:  ("err" <-[#error] "$r0");;;
-            (if: (~ (interface.eq (![#error] "err") #interface.nil))
-            then
-              let: "podKey" := (mem.alloc (type.zero_val #stringT)) in
-              let: "$r0" := (let: "$a0" := (![#ptrT] "targetPod") in
-              (func_call #controller.PodKey) "$a0") in
-              do:  ("podKey" <-[#stringT] "$r0");;;
-              do:  (let: "$a0" := (![#logr.Logger] "logger") in
-              let: "$a1" := (![#stringT] "rsKey") in
-              let: "$a2" := (![#stringT] "podKey") in
-              (method_call #(ptrT.id controller.UIDTrackingControllerExpectations.id) #"DeletionObserved"%go (![#ptrT] (struct.field_ref #ReplicaSetController #"expectations"%go (![#ptrT] "rsc")))) "$a0" "$a1" "$a2");;;
-              (if: (~ (let: "$a0" := (![#error] "err") in
-              (func_call #errors.IsNotFound) "$a0"))
-              then
-                do:  (let: "$a0" := #"Failed to delete pod, decremented expectations"%go in
-                let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id #"pod"%go) in
-                let: "$sl1" := (interface.make #stringT.id (![#stringT] "podKey")) in
-                let: "$sl2" := (interface.make #stringT.id #"kind"%go) in
-                let: "$sl3" := (interface.make #stringT.id (![#stringT] (struct.field_ref #schema.GroupVersionKind #"Kind"%go (struct.field_ref #ReplicaSetController #"GroupVersionKind"%go (![#ptrT] "rsc"))))) in
-                let: "$sl4" := (interface.make #stringT.id #"replicaSet"%go) in
-                let: "$sl5" := (interface.make #klog.ObjectRef.id (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-                (func_call #klog.KObj) "$a0")) in
-                slice.literal #interfaceT ["$sl0"; "$sl1"; "$sl2"; "$sl3"; "$sl4"; "$sl5"])) in
-                (method_call #logr.Logger.id #"Info"%go (let: "$a0" := #(W64 2) in
-                (method_call #logr.Logger.id #"V"%go (![#logr.Logger] "logger")) "$a0")) "$a0" "$a1");;;
-                do:  (let: "$chan" := (![type.chanT #error] "errCh") in
-                let: "$v" := (![#error] "err") in
-                chan.send "$chan" "$v")
-              else do:  #())
-            else do:  #()));;;
-            return: #())
-            ) in
-          do:  (Fork ("$go" "$a0"))));;;
-        do:  ((method_call #(ptrT.id sync.WaitGroup.id) #"Wait"%go "wg") #());;;
-        chan.select [chan.select_receive (![type.chanT #error] "errCh") (λ: "$recvVal",
-           let: "err" := (mem.alloc (type.zero_val #error)) in
-           let: "$r0" := (Fst "$recvVal") in
-           do:  ("err" <-[#error] "$r0");;;
-           (if: (~ (interface.eq (![#error] "err") #interface.nil))
-           then return: (![#error] "err")
-           else do:  #())
-           )] (chan.select_default (λ: <>,
-          do:  #()
-          ))
-      else do:  #()));;;
-    return: (#interface.nil)).
-
 Definition updateReplicaSetStatus : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.updateReplicaSetStatus"%go.
 
 Definition calculateStatus : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.calculateStatus"%go.
@@ -632,6 +396,8 @@ Definition ReplicaSetController__claimPodsⁱᵐᵖˡ : val :=
     (method_call #(ptrT.id controller.PodControllerRefManager.id) #"ClaimPods"%go (![#ptrT] "cm")) "$a0" "$a1" "$a2")) in
     return: ("$ret0", "$ret1")).
 
+Definition slowStartBatch : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.slowStartBatch"%go.
+
 (* getIndirectlyRelatedPods returns all pods that are owned by any ReplicaSet
    that is owned by the given ReplicaSet's owner.
 
@@ -724,6 +490,8 @@ Definition ReplicaSetController__getIndirectlyRelatedPodsⁱᵐᵖˡ : val :=
     (method_call #logr.Logger.id #"Info"%go (let: "$a0" := #(W64 4) in
     (method_call #logr.Logger.id #"V"%go (![#logr.Logger] "logger")) "$a0")) "$a0" "$a1");;;
     return: (![#sliceT] "relatedPods", #interface.nil)).
+
+Definition getPodsToDelete : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.getPodsToDelete"%go.
 
 Definition reportSortingDeletionAgeRatioMetric : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.reportSortingDeletionAgeRatioMetric"%go.
 
@@ -841,6 +609,8 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ : val :=
        "Now" ::= "$Now"
      }])).
 
+Definition getPodKeys : go_string := "k8s.io/kubernetes/pkg/controller/replicaset.getPodKeys"%go.
+
 (* go: replica_set.go:918:6 *)
 Definition getPodKeysⁱᵐᵖˡ : val :=
   λ: "pods",
@@ -927,6 +697,8 @@ Axiom ReplicaSetController__enqueueRSⁱᵐᵖˡ : val.
 Axiom ReplicaSetController__enqueueRSAfterⁱᵐᵖˡ : val.
 
 Axiom ReplicaSetController__getPodReplicaSetsⁱᵐᵖˡ : val.
+
+Axiom ReplicaSetController__manageReplicasⁱᵐᵖˡ : val.
 
 Axiom ReplicaSetController__processNextWorkItemⁱᵐᵖˡ : val.
 

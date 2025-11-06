@@ -4,15 +4,12 @@ Require Export New.generatedproof.context.
 Require Export New.generatedproof.fmt.
 Require Export New.generatedproof.kubernetes_model.simpleapiserver.
 Require Export New.generatedproof.sort.
-Require Export New.generatedproof.sync.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
-Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
-Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.runtime.
 Require Export New.generatedproof.k8s_io.client_go.tools.cache.
 Require Export New.generatedproof.k8s_io.klog.v2.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
@@ -23,80 +20,6 @@ Require Export New.code.kubernetes_model.simplereplicaset.
 Set Default Proof Using "Type".
 
 Module simplereplicaset.
-
-(* type simplereplicaset.ReplicaSetController *)
-Module ReplicaSetController.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  GroupVersionKind' : schema.GroupVersionKind.t;
-  burstReplicas' : w64;
-}.
-End def.
-End ReplicaSetController.
-
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent simplereplicaset.ReplicaSetController.
-#[local] Typeclasses Transparent simplereplicaset.ReplicaSetController.
-
-Global Instance ReplicaSetController_wf : struct.Wf simplereplicaset.ReplicaSetController.
-Proof. apply _. Qed.
-
-Global Instance settable_ReplicaSetController : Settable ReplicaSetController.t :=
-  settable! ReplicaSetController.mk < ReplicaSetController.GroupVersionKind'; ReplicaSetController.burstReplicas' >.
-Global Instance into_val_ReplicaSetController : IntoVal ReplicaSetController.t :=
-  {| to_val_def v :=
-    struct.val_aux simplereplicaset.ReplicaSetController [
-    "GroupVersionKind" ::= #(ReplicaSetController.GroupVersionKind' v);
-    "burstReplicas" ::= #(ReplicaSetController.burstReplicas' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ReplicaSetController : IntoValTyped ReplicaSetController.t simplereplicaset.ReplicaSetController :=
-{|
-  default_val := ReplicaSetController.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_GroupVersionKind : IntoValStructField "GroupVersionKind" simplereplicaset.ReplicaSetController ReplicaSetController.GroupVersionKind'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetController_burstReplicas : IntoValStructField "burstReplicas" simplereplicaset.ReplicaSetController ReplicaSetController.burstReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSetController GroupVersionKind' burstReplicas':
-  PureWp True
-    (struct.make #simplereplicaset.ReplicaSetController (alist_val [
-      "GroupVersionKind" ::= #GroupVersionKind';
-      "burstReplicas" ::= #burstReplicas'
-    ]))%struct
-    #(ReplicaSetController.mk GroupVersionKind' burstReplicas').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ReplicaSetController_struct_fields_split dq l (v : ReplicaSetController.t) :
-  StructFieldsSplit dq l v (
-    "HGroupVersionKind" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "GroupVersionKind"]{dq} v.(ReplicaSetController.GroupVersionKind') ∗
-    "HburstReplicas" ∷ l ↦s[simplereplicaset.ReplicaSetController :: "burstReplicas"]{dq} v.(ReplicaSetController.burstReplicas')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ReplicaSetController.GroupVersionKind' v)) (simplereplicaset.ReplicaSetController) "GroupVersionKind"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
 
 Section names.
 
@@ -113,15 +36,12 @@ Global Instance is_pkg_defined_pure_simplereplicaset : IsPkgDefinedPure simplere
       is_pkg_defined_pure code.fmt.fmt ∧
       is_pkg_defined_pure code.kubernetes_model.simpleapiserver.simpleapiserver ∧
       is_pkg_defined_pure code.sort.sort ∧
-      is_pkg_defined_pure code.sync.sync ∧
       is_pkg_defined_pure code.k8s_io.api.apps.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.errors.errors ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.runtime.runtime ∧
       is_pkg_defined_pure code.k8s_io.client_go.tools.cache.cache ∧
       is_pkg_defined_pure code.k8s_io.klog.v2.klog ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
@@ -136,15 +56,12 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
        is_pkg_defined code.fmt.fmt ∗
        is_pkg_defined code.kubernetes_model.simpleapiserver.simpleapiserver ∗
        is_pkg_defined code.sort.sort ∗
-       is_pkg_defined code.sync.sync ∗
        is_pkg_defined code.k8s_io.api.apps.v1.v1 ∗
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.errors.errors ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.util.runtime.runtime ∗
        is_pkg_defined code.k8s_io.client_go.tools.cache.cache ∗
        is_pkg_defined code.k8s_io.klog.v2.klog ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
@@ -152,28 +69,28 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
-Global Instance wp_func_call_validateControllerRef :
-  WpFuncCall simplereplicaset.validateControllerRef _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_CreatePods :
-  WpFuncCall simplereplicaset.CreatePods _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_CreatePodsWithGenerateName :
-  WpFuncCall simplereplicaset.CreatePodsWithGenerateName _ (is_pkg_defined simplereplicaset) :=
+Global Instance wp_func_call_CreatePod :
+  WpFuncCall simplereplicaset.CreatePod _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_FilterPodsByOwner :
   WpFuncCall simplereplicaset.FilterPodsByOwner _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_min :
-  WpFuncCall simplereplicaset.min _ (is_pkg_defined simplereplicaset) :=
+Global Instance wp_func_call_getReplicaSetsWithSameController :
+  WpFuncCall simplereplicaset.getReplicaSetsWithSameController _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_slowStartBatch :
-  WpFuncCall simplereplicaset.slowStartBatch _ (is_pkg_defined simplereplicaset) :=
+Global Instance wp_func_call_manageReplicas :
+  WpFuncCall simplereplicaset.manageReplicas _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_syncReplicaSet :
+  WpFuncCall simplereplicaset.syncReplicaSet _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_getIndirectlyRelatedPods :
+  WpFuncCall simplereplicaset.getIndirectlyRelatedPods _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_getPodsRankedByRelatedPodsOnSameNode :
@@ -183,62 +100,6 @@ Global Instance wp_func_call_getPodsRankedByRelatedPodsOnSameNode :
 Global Instance wp_func_call_getPodsToDelete :
   WpFuncCall simplereplicaset.getPodsToDelete _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
-
-Global Instance wp_method_call_ReplicaSetController_Empty :
-  WpMethodCall simplereplicaset.ReplicaSetController.id "Empty" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController_GroupKind :
-  WpMethodCall simplereplicaset.ReplicaSetController.id "GroupKind" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController_GroupVersion :
-  WpMethodCall simplereplicaset.ReplicaSetController.id "GroupVersion" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController_String :
-  WpMethodCall simplereplicaset.ReplicaSetController.id "String" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController_ToAPIVersionAndKind :
-  WpMethodCall simplereplicaset.ReplicaSetController.id "ToAPIVersionAndKind" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_Empty :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "Empty" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_GroupKind :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "GroupKind" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_GroupVersion :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "GroupVersion" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_String :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "String" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_ToAPIVersionAndKind :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "ToAPIVersionAndKind" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_getIndirectlyRelatedPods :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "getIndirectlyRelatedPods" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_getReplicaSetsWithSameController :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "getReplicaSetsWithSameController" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_manageReplicas :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "manageReplicas" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_ReplicaSetController'ptr_syncReplicaSet :
-  WpMethodCall (ptrT.id simplereplicaset.ReplicaSetController.id) "syncReplicaSet" _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_method_call).
 
 End names.
 End simplereplicaset.
