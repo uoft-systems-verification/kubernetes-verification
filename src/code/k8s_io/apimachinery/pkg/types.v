@@ -34,7 +34,9 @@ Axiom ApplyYAMLPatchType : val.
 
 Axiom ApplyCBORPatchType : val.
 
-Axiom UID : go_type.
+Definition UID : go_type := stringT.
+#[global] Typeclasses Opaque UID.
+#[global] Opaque UID.
 
 Definition vars' : list (go_string * go_type) := [].
 

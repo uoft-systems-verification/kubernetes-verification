@@ -1,3 +1,38 @@
-translate = ["!*"]
+translate = [
+    "Pod",
+    "PodSpec",
+    "PodStatus",
+    "Affinity",
+    "Container",
+    "ContainerStatus",
+    "DNSPolicy",
+    "EphemeralContainer",
+    "HostAlias",
+    "HostIP",
+    "LocalObjectReference",
+    "PodCondition",
+    "PodDNSConfig",
+    "PodExtendedResourceClaimStatus",
+    "PodIP",
+    "PodOS",
+    "PodPhase",
+    "PodQOSClass",
+    "PodReadinessGate",
+    "PodResourceClaim",
+    "PodResourceClaimStatus",
+    "PodSchedulingGate",
+    "PodSecurityContext",
+    "PodResizeStatus",
+    "PreemptionPolicy",
+    "ResourceList",
+    "ResourceRequirements",
+    "RestartPolicy",
+    "Toleration",
+    "TopologySpreadConstraint",
+    "Volume",
+]
 
-imports = ["!*"]
+imports = [
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/api/resource",
+]

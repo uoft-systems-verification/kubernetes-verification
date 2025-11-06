@@ -1,3 +1,12 @@
-translate = ["!*"]
+translate = [
+    "TypeMeta",
+    "ObjectMeta",
+    "OwnerReference",
+    "ManagedFieldsEntry",
+    "Time",
+]
 
-imports = ["!*"]
+imports = [
+    "time",
+    "k8s.io/apimachinery/pkg/types",
+]

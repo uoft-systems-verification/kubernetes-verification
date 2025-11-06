@@ -61,20 +61,14 @@ Admitted.
 
 (* type types.UID *)
 Module UID.
+
+#[global] Transparent types.UID.
+#[global] Typeclasses Transparent types.UID.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Definition t := go_string.
 End def.
 End UID.
-
-Global Instance bounded_size_UID : BoundedTypeSize types.UID.
-Admitted.
-
-Global Instance into_val_UID `{ffi_syntax} : IntoVal UID.t.
-Admitted.
-
-Global Instance into_val_typed_UID `{ffi_syntax} : IntoValTyped UID.t types.UID.
-Admitted.
 
 Section names.
 
