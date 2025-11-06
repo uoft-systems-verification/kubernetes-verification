@@ -1,6 +1,6 @@
 [submodule "perennial"]
 	path = perennial
-	branch = tchajed/better-signed-automation
+	branch = master
 	url = https://github.com/mit-pdos/perennial
 
 [submodule "kubernetes"]
