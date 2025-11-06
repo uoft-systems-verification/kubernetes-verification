@@ -20,9 +20,12 @@ vo: $(PROJ_VFILES:.v=.vo) update-submodules
 vos: $(PROJ_VFILES:.v=.vos) update-submodules
 vok: $(PROJ_VFILES:.v=.vok) update-submodules
 
+# use xargs to avoid hitting ARG_MAX
 .rocqdeps.d: $(ALL_VFILES) _CoqProject | update-submodules
 	@echo "ROCQ dep $@"
-	$(Q)rocq dep -vos -f _CoqProject $(ALL_VFILES) > $@
+	$(Q)find $(SRC_DIRS) \
+		-not -path "perennial/external/coqutil/etc/coq-scripts/*" \
+		-name "*.v" -print0 | xargs -0 -r rocq dep -vos -f _CoqProject > $@
 
 # do not try to build dependencies if cleaning
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
