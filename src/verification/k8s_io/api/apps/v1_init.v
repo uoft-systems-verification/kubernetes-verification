@@ -1,4 +1,5 @@
 Require Export New.generatedproof.k8s_io.api.apps.v1.
+From verification.k8s_io.api.core Require Export v1_init.
 
 
 Section proof.

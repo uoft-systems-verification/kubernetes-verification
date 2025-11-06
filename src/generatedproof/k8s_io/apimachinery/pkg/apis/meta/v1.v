@@ -1135,52 +1135,168 @@ Admitted.
 Module LabelSelector.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  MatchLabels' : loc;
+  MatchExpressions' : slice.t;
+}.
 End def.
 End LabelSelector.
 
-Global Instance bounded_size_LabelSelector : BoundedTypeSize v1.LabelSelector.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent v1.LabelSelector.
+#[local] Typeclasses Transparent v1.LabelSelector.
 
-Global Instance into_val_LabelSelector `{ffi_syntax} : IntoVal LabelSelector.t.
-Admitted.
+Global Instance LabelSelector_wf : struct.Wf v1.LabelSelector.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_LabelSelector `{ffi_syntax} : IntoValTyped LabelSelector.t v1.LabelSelector.
-Admitted.
+Global Instance settable_LabelSelector : Settable LabelSelector.t :=
+  settable! LabelSelector.mk < LabelSelector.MatchLabels'; LabelSelector.MatchExpressions' >.
+Global Instance into_val_LabelSelector : IntoVal LabelSelector.t :=
+  {| to_val_def v :=
+    struct.val_aux v1.LabelSelector [
+    "MatchLabels" ::= #(LabelSelector.MatchLabels' v);
+    "MatchExpressions" ::= #(LabelSelector.MatchExpressions' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_LabelSelector : IntoValTyped LabelSelector.t v1.LabelSelector :=
+{|
+  default_val := LabelSelector.mk (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_LabelSelector_MatchLabels : IntoValStructField "MatchLabels" v1.LabelSelector LabelSelector.MatchLabels'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_LabelSelector_MatchExpressions : IntoValStructField "MatchExpressions" v1.LabelSelector LabelSelector.MatchExpressions'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_LabelSelector MatchLabels' MatchExpressions':
+  PureWp True
+    (struct.make #v1.LabelSelector (alist_val [
+      "MatchLabels" ::= #MatchLabels';
+      "MatchExpressions" ::= #MatchExpressions'
+    ]))%struct
+    #(LabelSelector.mk MatchLabels' MatchExpressions').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance LabelSelector_struct_fields_split dq l (v : LabelSelector.t) :
+  StructFieldsSplit dq l v (
+    "HMatchLabels" ∷ l ↦s[v1.LabelSelector :: "MatchLabels"]{dq} v.(LabelSelector.MatchLabels') ∗
+    "HMatchExpressions" ∷ l ↦s[v1.LabelSelector :: "MatchExpressions"]{dq} v.(LabelSelector.MatchExpressions')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (LabelSelector.MatchLabels' v)) (v1.LabelSelector) "MatchLabels"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
+
+(* type v1.LabelSelectorOperator *)
+Module LabelSelectorOperator.
+
+#[global] Transparent v1.LabelSelectorOperator.
+#[global] Typeclasses Transparent v1.LabelSelectorOperator.
+Section def.
+Context `{ffi_syntax}.
+Definition t := go_string.
+End def.
+End LabelSelectorOperator.
 
 (* type v1.LabelSelectorRequirement *)
 Module LabelSelectorRequirement.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  Key' : go_string;
+  Operator' : LabelSelectorOperator.t;
+  Values' : slice.t;
+}.
 End def.
 End LabelSelectorRequirement.
 
-Global Instance bounded_size_LabelSelectorRequirement : BoundedTypeSize v1.LabelSelectorRequirement.
-Admitted.
-
-Global Instance into_val_LabelSelectorRequirement `{ffi_syntax} : IntoVal LabelSelectorRequirement.t.
-Admitted.
-
-Global Instance into_val_typed_LabelSelectorRequirement `{ffi_syntax} : IntoValTyped LabelSelectorRequirement.t v1.LabelSelectorRequirement.
-Admitted.
-
-(* type v1.LabelSelectorOperator *)
-Module LabelSelectorOperator.
-Section def.
+Section instances.
 Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End LabelSelectorOperator.
+#[local] Transparent v1.LabelSelectorRequirement.
+#[local] Typeclasses Transparent v1.LabelSelectorRequirement.
 
-Global Instance bounded_size_LabelSelectorOperator : BoundedTypeSize v1.LabelSelectorOperator.
-Admitted.
+Global Instance LabelSelectorRequirement_wf : struct.Wf v1.LabelSelectorRequirement.
+Proof. apply _. Qed.
 
-Global Instance into_val_LabelSelectorOperator `{ffi_syntax} : IntoVal LabelSelectorOperator.t.
-Admitted.
+Global Instance settable_LabelSelectorRequirement : Settable LabelSelectorRequirement.t :=
+  settable! LabelSelectorRequirement.mk < LabelSelectorRequirement.Key'; LabelSelectorRequirement.Operator'; LabelSelectorRequirement.Values' >.
+Global Instance into_val_LabelSelectorRequirement : IntoVal LabelSelectorRequirement.t :=
+  {| to_val_def v :=
+    struct.val_aux v1.LabelSelectorRequirement [
+    "Key" ::= #(LabelSelectorRequirement.Key' v);
+    "Operator" ::= #(LabelSelectorRequirement.Operator' v);
+    "Values" ::= #(LabelSelectorRequirement.Values' v)
+    ]%struct
+  |}.
 
-Global Instance into_val_typed_LabelSelectorOperator `{ffi_syntax} : IntoValTyped LabelSelectorOperator.t v1.LabelSelectorOperator.
-Admitted.
+Global Program Instance into_val_typed_LabelSelectorRequirement : IntoValTyped LabelSelectorRequirement.t v1.LabelSelectorRequirement :=
+{|
+  default_val := LabelSelectorRequirement.mk (default_val _) (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_LabelSelectorRequirement_Key : IntoValStructField "Key" v1.LabelSelectorRequirement LabelSelectorRequirement.Key'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_LabelSelectorRequirement_Operator : IntoValStructField "Operator" v1.LabelSelectorRequirement LabelSelectorRequirement.Operator'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_LabelSelectorRequirement_Values : IntoValStructField "Values" v1.LabelSelectorRequirement LabelSelectorRequirement.Values'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_LabelSelectorRequirement Key' Operator' Values':
+  PureWp True
+    (struct.make #v1.LabelSelectorRequirement (alist_val [
+      "Key" ::= #Key';
+      "Operator" ::= #Operator';
+      "Values" ::= #Values'
+    ]))%struct
+    #(LabelSelectorRequirement.mk Key' Operator' Values').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance LabelSelectorRequirement_struct_fields_split dq l (v : LabelSelectorRequirement.t) :
+  StructFieldsSplit dq l v (
+    "HKey" ∷ l ↦s[v1.LabelSelectorRequirement :: "Key"]{dq} v.(LabelSelectorRequirement.Key') ∗
+    "HOperator" ∷ l ↦s[v1.LabelSelectorRequirement :: "Operator"]{dq} v.(LabelSelectorRequirement.Operator') ∗
+    "HValues" ∷ l ↦s[v1.LabelSelectorRequirement :: "Values"]{dq} v.(LabelSelectorRequirement.Values')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (LabelSelectorRequirement.Key' v)) (v1.LabelSelectorRequirement) "Key"%go.
+  simpl_one_flatten_struct (# (LabelSelectorRequirement.Operator' v)) (v1.LabelSelectorRequirement) "Operator"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type v1.FieldSelectorRequirement *)
 Module FieldSelectorRequirement.

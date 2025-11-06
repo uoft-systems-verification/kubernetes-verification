@@ -4,6 +4,9 @@ translate = [
     "OwnerReference",
     "ManagedFieldsEntry",
     "Time",
+    "LabelSelector",
+    "LabelSelectorRequirement",
+    "LabelSelectorOperator",
 ]
 
 imports = [

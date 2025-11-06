@@ -1956,7 +1956,12 @@ Definition Pod : go_type := structT [
 
 Axiom PodList : go_type.
 
-Axiom PodTemplateSpec : go_type.
+Definition PodTemplateSpec : go_type := structT [
+  "ObjectMeta" :: v1.ObjectMeta;
+  "Spec" :: PodSpec
+].
+#[global] Typeclasses Opaque PodTemplateSpec.
+#[global] Opaque PodTemplateSpec.
 
 Axiom PodTemplate : go_type.
 

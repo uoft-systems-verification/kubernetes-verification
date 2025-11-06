@@ -5415,18 +5415,75 @@ Admitted.
 Module PodTemplateSpec.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  ObjectMeta' : v1.ObjectMeta.t;
+  Spec' : PodSpec.t;
+}.
 End def.
 End PodTemplateSpec.
 
-Global Instance bounded_size_PodTemplateSpec : BoundedTypeSize v1.PodTemplateSpec.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent v1.PodTemplateSpec.
+#[local] Typeclasses Transparent v1.PodTemplateSpec.
 
-Global Instance into_val_PodTemplateSpec `{ffi_syntax} : IntoVal PodTemplateSpec.t.
-Admitted.
+Global Instance PodTemplateSpec_wf : struct.Wf v1.PodTemplateSpec.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_PodTemplateSpec `{ffi_syntax} : IntoValTyped PodTemplateSpec.t v1.PodTemplateSpec.
-Admitted.
+Global Instance settable_PodTemplateSpec : Settable PodTemplateSpec.t :=
+  settable! PodTemplateSpec.mk < PodTemplateSpec.ObjectMeta'; PodTemplateSpec.Spec' >.
+Global Instance into_val_PodTemplateSpec : IntoVal PodTemplateSpec.t :=
+  {| to_val_def v :=
+    struct.val_aux v1.PodTemplateSpec [
+    "ObjectMeta" ::= #(PodTemplateSpec.ObjectMeta' v);
+    "Spec" ::= #(PodTemplateSpec.Spec' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_PodTemplateSpec : IntoValTyped PodTemplateSpec.t v1.PodTemplateSpec :=
+{|
+  default_val := PodTemplateSpec.mk (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_PodTemplateSpec_ObjectMeta : IntoValStructField "ObjectMeta" v1.PodTemplateSpec PodTemplateSpec.ObjectMeta'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_PodTemplateSpec_Spec : IntoValStructField "Spec" v1.PodTemplateSpec PodTemplateSpec.Spec'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_PodTemplateSpec ObjectMeta' Spec':
+  PureWp True
+    (struct.make #v1.PodTemplateSpec (alist_val [
+      "ObjectMeta" ::= #ObjectMeta';
+      "Spec" ::= #Spec'
+    ]))%struct
+    #(PodTemplateSpec.mk ObjectMeta' Spec').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance PodTemplateSpec_struct_fields_split dq l (v : PodTemplateSpec.t) :
+  StructFieldsSplit dq l v (
+    "HObjectMeta" ∷ l ↦s[v1.PodTemplateSpec :: "ObjectMeta"]{dq} v.(PodTemplateSpec.ObjectMeta') ∗
+    "HSpec" ∷ l ↦s[v1.PodTemplateSpec :: "Spec"]{dq} v.(PodTemplateSpec.Spec')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (PodTemplateSpec.ObjectMeta' v)) (v1.PodTemplateSpec) "ObjectMeta"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type v1.PodTemplate *)
 Module PodTemplate.

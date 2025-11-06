@@ -616,11 +616,24 @@ Definition FieldSelectorQueryParam : go_string := "k8s.io/apimachinery/pkg/apis/
 
 Axiom Patch : go_type.
 
-Axiom LabelSelector : go_type.
+Definition LabelSelector : go_type := structT [
+  "MatchLabels" :: mapT stringT stringT;
+  "MatchExpressions" :: sliceT
+].
+#[global] Typeclasses Opaque LabelSelector.
+#[global] Opaque LabelSelector.
 
-Axiom LabelSelectorRequirement : go_type.
+Definition LabelSelectorOperator : go_type := stringT.
+#[global] Typeclasses Opaque LabelSelectorOperator.
+#[global] Opaque LabelSelectorOperator.
 
-Axiom LabelSelectorOperator : go_type.
+Definition LabelSelectorRequirement : go_type := structT [
+  "Key" :: stringT;
+  "Operator" :: LabelSelectorOperator;
+  "Values" :: sliceT
+].
+#[global] Typeclasses Opaque LabelSelectorRequirement.
+#[global] Opaque LabelSelectorRequirement.
 
 Axiom LabelSelectorOpIn : val.
 

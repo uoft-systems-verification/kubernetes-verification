@@ -30,6 +30,7 @@ translate = [
     "Toleration",
     "TopologySpreadConstraint",
     "Volume",
+    "PodTemplateSpec",
 ]
 
 imports = [
