@@ -1,4 +1,4 @@
-From New.proof Require Export context fmt.
+From New.proof Require Export context fmt time.
 From verification Require Export prelude.
 From verification.k8s_io.api.apps Require Export v1_init.
 From verification.k8s_io.api.core Require Export v1_init.
@@ -23,7 +23,6 @@ From verification.k8s_io.kubernetes.pkg Require Export features_init.
 From verification.k8s_io.utils Require Export clock_init.
 From verification.k8s_io.utils Require Export ptr_init.
 From verification Require Export sort_init.
-From verification Require Export time_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.replicaset.
 
 
