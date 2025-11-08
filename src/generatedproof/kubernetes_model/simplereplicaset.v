@@ -3,15 +3,12 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.fmt.
 Require Export New.generatedproof.kubernetes_model.simpleapiserver.
-Require Export New.generatedproof.sort.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
-Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.client_go.tools.cache.
-Require Export New.generatedproof.k8s_io.klog.v2.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.golang.theory.
 
@@ -35,15 +32,12 @@ Global Instance is_pkg_defined_pure_simplereplicaset : IsPkgDefinedPure simplere
       is_pkg_defined_pure code.context.context ∧
       is_pkg_defined_pure code.fmt.fmt ∧
       is_pkg_defined_pure code.kubernetes_model.simpleapiserver.simpleapiserver ∧
-      is_pkg_defined_pure code.sort.sort ∧
       is_pkg_defined_pure code.k8s_io.api.apps.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.errors.errors ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
       is_pkg_defined_pure code.k8s_io.client_go.tools.cache.cache ∧
-      is_pkg_defined_pure code.k8s_io.klog.v2.klog ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
   |}.
 
@@ -55,15 +49,12 @@ Global Program Instance is_pkg_defined_simplereplicaset : IsPkgDefined simplerep
        is_pkg_defined code.context.context ∗
        is_pkg_defined code.fmt.fmt ∗
        is_pkg_defined code.kubernetes_model.simpleapiserver.simpleapiserver ∗
-       is_pkg_defined code.sort.sort ∗
        is_pkg_defined code.k8s_io.api.apps.v1.v1 ∗
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.errors.errors ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
        is_pkg_defined code.k8s_io.client_go.tools.cache.cache ∗
-       is_pkg_defined code.k8s_io.klog.v2.klog ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
@@ -77,28 +68,12 @@ Global Instance wp_func_call_FilterPodsByOwner :
   WpFuncCall simplereplicaset.FilterPodsByOwner _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_getReplicaSetsWithSameController :
-  WpFuncCall simplereplicaset.getReplicaSetsWithSameController _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_manageReplicas :
   WpFuncCall simplereplicaset.manageReplicas _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_syncReplicaSet :
   WpFuncCall simplereplicaset.syncReplicaSet _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_getIndirectlyRelatedPods :
-  WpFuncCall simplereplicaset.getIndirectlyRelatedPods _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_getPodsRankedByRelatedPodsOnSameNode :
-  WpFuncCall simplereplicaset.getPodsRankedByRelatedPodsOnSameNode _ (is_pkg_defined simplereplicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_getPodsToDelete :
-  WpFuncCall simplereplicaset.getPodsToDelete _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
 End names.
