@@ -27,11 +27,10 @@ func TestCreateGetAndList(t *testing.T) {
 		},
 	}
 
-	obj, err := Create("Pod", "default", pod)
+	created, err := PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	created := obj.(*corev1.Pod)
 	if created.UID == "" {
 		t.Fatalf("expected UID to be set on created pod")
 	}
@@ -39,23 +38,22 @@ func TestCreateGetAndList(t *testing.T) {
 		t.Fatalf("expected resourceVersion 1, got %s", created.ResourceVersion)
 	}
 
-	key := KKey{Kind: "Pod", Namespace: "default", Name: "pod-1"}
-	stored, exists := Get(key)
-	if !exists {
-		t.Fatalf("expected pod to exist in state")
+	stored, err := PodGet("default", "pod-1")
+	if err != nil {
+		t.Fatalf("error when getting pod")
 	}
-	if stored != created {
-		t.Fatalf("Get returned different object pointer")
+	if stored.ResourceVersion != created.ResourceVersion {
+		t.Fatalf("Get returned different object")
 	}
 
-	list, err := List("Pod", "default", labels.Everything())
+	list, err := PodList("default", labels.Everything())
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
 	if len(list) != 1 {
 		t.Fatalf("expected 1 pod in list, got %d", len(list))
 	}
-	if list[0] != created {
+	if list[0].ResourceVersion != created.ResourceVersion {
 		t.Fatalf("List returned unexpected object")
 	}
 }
@@ -73,13 +71,13 @@ func TestListBySelector(t *testing.T) {
 		}
 	}
 
-	if _, err := Create("Pod", "default", makePod("pod-a", map[string]string{"app": "demo", "tier": "backend"})); err != nil {
+	if _, err := PodCreate("default", makePod("pod-a", map[string]string{"app": "demo", "tier": "backend"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "default", makePod("pod-b", map[string]string{"app": "demo", "tier": "frontend"})); err != nil {
+	if _, err := PodCreate("default", makePod("pod-b", map[string]string{"app": "demo", "tier": "frontend"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "default", makePod("pod-c", map[string]string{"app": "other"})); err != nil {
+	if _, err := PodCreate("default", makePod("pod-c", map[string]string{"app": "other"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -87,14 +85,14 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err := List("Pod", "default", selector)
+	items, err := PodList("default", selector)
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
 	if len(items) != 1 {
 		t.Fatalf("expected exactly 1 pod matching selector, got %d", len(items))
 	}
-	if pod := items[0].(*corev1.Pod); pod.Name != "pod-a" {
+	if pod := items[0]; pod.Name != "pod-a" {
 		t.Fatalf("expected pod-a, got %s", pod.Name)
 	}
 
@@ -102,7 +100,7 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err = List("Pod", "default", selector)
+	items, err = PodList("default", selector)
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
@@ -111,7 +109,7 @@ func TestListBySelector(t *testing.T) {
 	}
 	found := map[string]bool{}
 	for _, item := range items {
-		found[item.(*corev1.Pod).Name] = true
+		found[item.Name] = true
 	}
 	if !found["pod-a"] || !found["pod-b"] {
 		t.Fatalf("expected pods pod-a and pod-b, got %#v", found)
@@ -128,11 +126,10 @@ func TestCreateWithGenerateName(t *testing.T) {
 		},
 	}
 
-	obj, err := Create("Pod", "default", pod)
+	created, err := PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	created := obj.(*corev1.Pod)
 	if created.Name == "" {
 		t.Fatalf("expected generated name to be assigned")
 	}
@@ -151,20 +148,18 @@ func TestUpdate(t *testing.T) {
 			Labels:    map[string]string{"app": "demo"},
 		},
 	}
-	obj, err := Create("Pod", "default", pod)
+	created, err := PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	created := obj.(*corev1.Pod)
 
 	updated := created.DeepCopy()
 	updated.Labels["version"] = "v2"
 
-	obj, err = Update("Pod", "default", updated)
+	updatedPod, err := PodUpdate("default", updated)
 	if err != nil {
 		t.Fatalf("Update returned error: %v", err)
 	}
-	updatedPod := obj.(*corev1.Pod)
 	if updatedPod.ResourceVersion != "2" {
 		t.Fatalf("expected resourceVersion 2 after update, got %s", updatedPod.ResourceVersion)
 	}
@@ -182,16 +177,15 @@ func TestUpdateConflict(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-	obj, err := Create("Pod", "default", pod)
+	created, err := PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	created := obj.(*corev1.Pod)
 
 	conflicting := created.DeepCopy()
 	conflicting.SetResourceVersion("999")
 
-	_, err = Update("Pod", "default", conflicting)
+	_, err = PodUpdate("default", conflicting)
 	if err == nil {
 		t.Fatalf("expected conflict error on outdated update")
 	}
@@ -209,16 +203,15 @@ func TestDeleteWithoutFinalizers(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-	if _, err := Create("Pod", "default", pod); err != nil {
+	if _, err := PodCreate("default", pod); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
-	key := KKey{Kind: "Pod", Namespace: "default", Name: "pod-1"}
-	if err := Delete(key); err != nil {
+	if err := PodDelete("default", "pod-1"); err != nil {
 		t.Fatalf("Delete returned error: %v", err)
 	}
 
-	if _, exists := Get(key); exists {
+	if _, err := PodGet("default", "pod-1"); err == nil {
 		t.Fatalf("expected pod to be removed after delete without finalizers")
 	}
 }
@@ -233,23 +226,21 @@ func TestDeleteWithFinalizers(t *testing.T) {
 			Finalizers: []string{"cleanup"},
 		},
 	}
-	obj, err := Create("Pod", "default", pod)
+	created, err := PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	created := obj.(*corev1.Pod)
 	originalRV := created.ResourceVersion
 
-	key := KKey{Kind: "Pod", Namespace: "default", Name: "pod-1"}
-	if err := Delete(key); err != nil {
+	if err := PodDelete("default", "pod-1"); err != nil {
 		t.Fatalf("Delete returned error: %v", err)
 	}
 
-	stored, exists := Get(key)
-	if !exists {
+	storedPod, err := PodGet("default", "pod-1")
+	if err != nil {
 		t.Fatalf("expected pod to remain due to finalizer")
 	}
-	storedPod := stored.(*corev1.Pod)
+
 	if storedPod.DeletionTimestamp == nil {
 		t.Fatalf("expected deletion timestamp to be set when finalizers present")
 	}
@@ -270,10 +261,10 @@ func TestIndexAndByIndexWithNamespace(t *testing.T) {
 		}
 	}
 
-	if _, err := Create("Pod", "default", makePod("pod-a", "default")); err != nil {
+	if _, err := PodCreate("default", makePod("pod-a", "default")); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "kube-system", makePod("pod-b", "kube-system")); err != nil {
+	if _, err := PodCreate("kube-system", makePod("pod-b", "kube-system")); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -347,16 +338,16 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		},
 	}
 
-	if _, err := Create("Pod", "default", podWithControllerOwner); err != nil {
+	if _, err := PodCreate("default", podWithControllerOwner); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "default", podWithControllerOwner2); err != nil {
+	if _, err := PodCreate("default", podWithControllerOwner2); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "default", podWithOwner); err != nil {
+	if _, err := PodCreate("default", podWithOwner); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := Create("Pod", "default", podOrphan); err != nil {
+	if _, err := PodCreate("default", podOrphan); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 

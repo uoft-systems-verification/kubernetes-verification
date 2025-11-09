@@ -109,7 +109,8 @@ func OrphanPodIndexKeyForNamespace(namespace string) string {
 	return OrphanPodIndexKey + "/" + namespace
 }
 
-func Get(key KKey) (interface{}, bool) {
+// Object returned here must be treated as read-only.
+func objGet(key KKey) (interface{}, bool) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
 
@@ -117,7 +118,8 @@ func Get(key KKey) (interface{}, bool) {
 	return item, exists
 }
 
-func list(kind, namespace string) (items []interface{}) {
+// Objects returned here must be treated as read-only.
+func objList(kind, namespace string) (items []interface{}) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
 
@@ -145,70 +147,8 @@ func filterByLabelSelector(items []interface{}, selector labels.Selector) ([]int
 	return filtered_items, nil
 }
 
-func List(kind, namespace string, selector labels.Selector) ([]interface{}, error) {
-	return filterByLabelSelector(list(kind, namespace), selector)
-}
-
-func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
-	indexFunc, ok := state.indexer[indexName]
-	if !ok {
-		return nil, fmt.Errorf("index %q does not exist", indexName)
-	}
-
-	indexedValues, err := indexFunc(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(indexedValues) == 0 {
-		return nil, nil
-	}
-
-	indexedValueSet := make(map[string]struct{}, len(indexedValues))
-	for _, v := range indexedValues {
-		indexedValueSet[v] = struct{}{}
-	}
-
-	var items []interface{}
-	for _, val := range list(kind, metav1.NamespaceAll) {
-		values, err := indexFunc(val)
-		if err != nil {
-			return nil, err
-		}
-		for _, v := range values {
-			if _, match := indexedValueSet[v]; match {
-				items = append(items, val)
-				break
-			}
-		}
-	}
-	return items, nil
-}
-
-func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
-	indexFunc, ok := state.indexer[indexName]
-	if !ok {
-		return nil, fmt.Errorf("index %q does not exist", indexName)
-	}
-
-	var items []interface{}
-	listed, err := List(kind, metav1.NamespaceAll, labels.Everything())
-	if err != nil {
-		return nil, err
-	}
-	for _, val := range listed {
-		values, err := indexFunc(val)
-		if err != nil {
-			return nil, err
-		}
-		for _, v := range values {
-			if v == indexedValue {
-				items = append(items, val)
-				break
-			}
-		}
-	}
-	return items, nil
+func objListBySelector(kind, namespace string, selector labels.Selector) ([]interface{}, error) {
+	return filterByLabelSelector(objList(kind, namespace), selector)
 }
 
 func randomSuffix(n int) string {
@@ -220,8 +160,20 @@ func randomSuffix(n int) string {
 	return string(b)
 }
 
-func Create(kind, namespace string, obj interface{}) (interface{}, error) {
-	metadata, err := meta.Accessor(obj)
+func deepCopy(obj interface{}) interface{} {
+	switch o := obj.(type) {
+	case *corev1.Pod:
+		return o.DeepCopy()
+	case *appsv1.ReplicaSet:
+		return o.DeepCopy()
+	default:
+		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
+	}
+}
+
+func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
+	objCopy := deepCopy(obj)
+	metadata, err := meta.Accessor(objCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
 	}
@@ -266,13 +218,13 @@ func Create(kind, namespace string, obj interface{}) (interface{}, error) {
 	state.resourceVersionCounter++
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))
 
-	state.m[key] = obj
-
-	return obj, nil
+	state.m[key] = objCopy
+	return objCopy, nil
 }
 
-func Update(kind, namespace string, obj interface{}) (interface{}, error) {
-	metadata, err := meta.Accessor(obj)
+func objUpdate(kind, namespace string, obj interface{}) (interface{}, error) {
+	objCopy := deepCopy(obj)
+	metadata, err := meta.Accessor(objCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
 	}
@@ -316,12 +268,11 @@ func Update(kind, namespace string, obj interface{}) (interface{}, error) {
 	state.resourceVersionCounter++
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))
 
-	state.m[key] = obj
-
-	return obj, nil
+	state.m[key] = objCopy
+	return objCopy, nil
 }
 
-func Delete(key KKey) error {
+func objDelete(key KKey) error {
 	stateMu.Lock()
 	defer stateMu.Unlock()
 
@@ -350,6 +301,68 @@ func Delete(key KKey) error {
 	return nil
 }
 
+// Objects returned here must be treated as read-only.
+func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
+	indexFunc, ok := state.indexer[indexName]
+	if !ok {
+		return nil, fmt.Errorf("index %q does not exist", indexName)
+	}
+
+	indexedValues, err := indexFunc(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(indexedValues) == 0 {
+		return nil, nil
+	}
+
+	indexedValueSet := make(map[string]struct{}, len(indexedValues))
+	for _, v := range indexedValues {
+		indexedValueSet[v] = struct{}{}
+	}
+
+	var items []interface{}
+	for _, val := range objList(kind, metav1.NamespaceAll) {
+		values, err := indexFunc(val)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range values {
+			if _, match := indexedValueSet[v]; match {
+				items = append(items, val)
+				break
+			}
+		}
+	}
+	return items, nil
+}
+
+// Objects returned here must be treated as read-only.
+func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
+	indexFunc, ok := state.indexer[indexName]
+	if !ok {
+		return nil, fmt.Errorf("index %q does not exist", indexName)
+	}
+
+	var items []interface{}
+	listed := objList(kind, metav1.NamespaceAll)
+	for _, val := range listed {
+		values, err := indexFunc(val)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range values {
+			if v == indexedValue {
+				items = append(items, val)
+				break
+			}
+		}
+	}
+	return items, nil
+}
+
+// Object returned here must be treated as read-only.
 func PodGet(namespace, name string) (*corev1.Pod, error) {
 	key := KKey{
 		Kind:      "Pod",
@@ -357,7 +370,7 @@ func PodGet(namespace, name string) (*corev1.Pod, error) {
 		Name:      name,
 	}
 
-	obj, exists := Get(key)
+	obj, exists := objGet(key)
 	if !exists {
 		return nil, errors.NewNotFound(corev1.Resource("pod"), name)
 	}
@@ -371,8 +384,9 @@ func PodGet(namespace, name string) (*corev1.Pod, error) {
 	return pod, nil
 }
 
+// Object returned here must be treated as read-only.
 func PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
-	objs, err := List("Pod", namespace, selector)
+	objs, err := objListBySelector("Pod", namespace, selector)
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +404,25 @@ func PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) 
 }
 
 func PodCreate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
-	obj, err := Create("Pod", namespace, pod)
+	obj, err := objCreate("Pod", namespace, pod)
+	if err != nil {
+		return nil, err
+	}
+
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry is not a *v1.Pod")
+	}
+
+	return pod, err
+}
+
+func PodUpdate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	obj, err := objUpdate("Pod", namespace, pod)
+	if err != nil {
+		return nil, err
+	}
 
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
@@ -408,7 +440,7 @@ func PodDelete(namespace, name string) error {
 		Name:      name,
 	}
 
-	return Delete(key)
+	return objDelete(key)
 }
 
 func ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
@@ -418,7 +450,7 @@ func ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
 		Name:      name,
 	}
 
-	obj, exists := Get(key)
+	obj, exists := objGet(key)
 	if !exists {
 		return nil, errors.NewNotFound(appsv1.Resource("replicaset"), name)
 	}

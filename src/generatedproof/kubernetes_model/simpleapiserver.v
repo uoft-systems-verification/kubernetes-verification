@@ -279,16 +279,8 @@ Global Instance wp_func_call_OrphanPodIndexKeyForNamespace :
   WpFuncCall simpleapiserver.OrphanPodIndexKeyForNamespace _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_Get :
-  WpFuncCall simpleapiserver.Get _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_filterByLabelSelector :
   WpFuncCall simpleapiserver.filterByLabelSelector _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_List :
-  WpFuncCall simpleapiserver.List _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Index :
@@ -297,18 +289,6 @@ Global Instance wp_func_call_Index :
 
 Global Instance wp_func_call_ByIndex :
   WpFuncCall simpleapiserver.ByIndex _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_Create :
-  WpFuncCall simpleapiserver.Create _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_Update :
-  WpFuncCall simpleapiserver.Update _ (is_pkg_defined simpleapiserver) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_Delete :
-  WpFuncCall simpleapiserver.Delete _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodGet :
