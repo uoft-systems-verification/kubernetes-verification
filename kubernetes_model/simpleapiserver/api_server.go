@@ -151,8 +151,9 @@ func objListBySelector(kind, namespace string, selector labels.Selector) ([]inte
 	return filterByLabelSelector(objList(kind, namespace), selector)
 }
 
+var randomSuffixChars = []byte("abcdefghijklmnopqrstuvwxyz0123456789")
+
 func randomSuffix(n int) string {
-	const randomSuffixChars string = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = randomSuffixChars[nameRand.Intn(len(randomSuffixChars))]

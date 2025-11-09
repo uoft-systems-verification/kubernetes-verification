@@ -271,6 +271,10 @@ Global Instance wp_func_call_podControllerUIDIndex :
   WpFuncCall simpleapiserver.podControllerUIDIndex _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_controllerUIDIndex :
+  WpFuncCall simpleapiserver.controllerUIDIndex _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_Init :
   WpFuncCall simpleapiserver.Init _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
@@ -279,8 +283,40 @@ Global Instance wp_func_call_OrphanPodIndexKeyForNamespace :
   WpFuncCall simpleapiserver.OrphanPodIndexKeyForNamespace _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_objGet :
+  WpFuncCall simpleapiserver.objGet _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objList :
+  WpFuncCall simpleapiserver.objList _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_filterByLabelSelector :
   WpFuncCall simpleapiserver.filterByLabelSelector _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objListBySelector :
+  WpFuncCall simpleapiserver.objListBySelector _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_randomSuffix :
+  WpFuncCall simpleapiserver.randomSuffix _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_deepCopy :
+  WpFuncCall simpleapiserver.deepCopy _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objCreate :
+  WpFuncCall simpleapiserver.objCreate _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objUpdate :
+  WpFuncCall simpleapiserver.objUpdate _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objDelete :
+  WpFuncCall simpleapiserver.objDelete _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Index :
@@ -295,8 +331,24 @@ Global Instance wp_func_call_PodGet :
   WpFuncCall simpleapiserver.PodGet _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_PodList :
+  WpFuncCall simpleapiserver.PodList _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_PodCreate :
+  WpFuncCall simpleapiserver.PodCreate _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_PodUpdate :
+  WpFuncCall simpleapiserver.PodUpdate _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_PodDelete :
   WpFuncCall simpleapiserver.PodDelete _ (is_pkg_defined simpleapiserver) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_ReplicaSetGet :
+  WpFuncCall simpleapiserver.ReplicaSetGet _ (is_pkg_defined simpleapiserver) :=
   ltac:(solve_wp_func_call).
 
 End names.
