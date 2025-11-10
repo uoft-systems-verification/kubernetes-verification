@@ -46,6 +46,22 @@ func FilterPodsByOwner(owner *metav1.ObjectMeta) ([]*v1.Pod, error) {
 	return result, nil
 }
 
+func IsPodActive(p *v1.Pod) bool {
+	return v1.PodSucceeded != p.Status.Phase &&
+		v1.PodFailed != p.Status.Phase &&
+		p.DeletionTimestamp == nil
+}
+
+func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
+	var result []*v1.Pod
+	for _, p := range pods {
+		if IsPodActive(p) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
 func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	_, err := controller.KeyFunc(rs)
@@ -88,9 +104,11 @@ func syncReplicaSet(namespace, name string) error {
 		return err
 	}
 
+	allActivePods := FilterActivePods(allRSPods)
+
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(allRSPods, rs)
+		manageReplicasErr = manageReplicas(allActivePods, rs)
 	}
 
 	return manageReplicasErr

@@ -62,6 +62,14 @@ Global Instance wp_func_call_FilterPodsByOwner :
   WpFuncCall simplereplicaset.FilterPodsByOwner _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_IsPodActive :
+  WpFuncCall simplereplicaset.IsPodActive _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_FilterActivePods :
+  WpFuncCall simplereplicaset.FilterActivePods _ (is_pkg_defined simplereplicaset) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_manageReplicas :
   WpFuncCall simplereplicaset.manageReplicas _ (is_pkg_defined simplereplicaset) :=
   ltac:(solve_wp_func_call).
