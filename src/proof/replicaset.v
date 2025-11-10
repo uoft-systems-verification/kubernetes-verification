@@ -1,5 +1,5 @@
-From verification Require Import prelude empty_ffi model.
-From verification.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
+From proof Require Import prelude empty_ffi model.
+From proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 
 Section proof.
 Context `{!mapG Σ KKey.t KObject.t}.

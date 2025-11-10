@@ -1,6 +1,6 @@
 Require Export New.generatedproof.k8s_io.api.core.v1.
-From verification.k8s_io.apimachinery.pkg.api Require Export resource_init.
-From verification.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From proof.k8s_io.apimachinery.pkg.api Require Export resource_init.
+From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 
 
 Section proof.

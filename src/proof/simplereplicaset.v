@@ -1,5 +1,5 @@
-From verification Require Import prelude empty_ffi simpleapiserver.
-From verification.kubernetes_model Require Export simplereplicaset_init.
+From proof Require Import prelude empty_ffi simpleapiserver.
+From proof.kubernetes_model Require Export simplereplicaset_init.
 
 Section proof.
 Context `{!mapG Σ KKey.t KObject.t}.

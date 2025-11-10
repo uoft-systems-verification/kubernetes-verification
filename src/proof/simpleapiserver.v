@@ -2,8 +2,8 @@ From Perennial.algebra Require Export auth_map.
 From New.proof.github_com.goose_lang.goose.model.channel Require Export auth_set.
 Require Export New.proof.sync.
 
-From verification.kubernetes_model Require Export simpleapiserver_init.
-From verification Require Import prelude empty_ffi.
+From proof.kubernetes_model Require Export simpleapiserver_init.
+From proof Require Import prelude empty_ffi.
 Export simpleapiserver.simpleapiserver.
 
 Module KKey.

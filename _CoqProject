@@ -1,5 +1,5 @@
 # Copied from https://github.com/tchajed/sys-verif-fa25-proofs
--Q src/verification verification
+-Q src/proof proof
 -arg -w -arg +deprecated-instance-without-locality
 # don't allow ambiguous coercions
 -arg -w -arg +ambiguous-paths

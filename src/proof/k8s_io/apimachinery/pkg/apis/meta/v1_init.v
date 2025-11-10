@@ -1,5 +1,5 @@
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
-From verification.k8s_io.apimachinery.pkg Require Export types_init.
+From proof.k8s_io.apimachinery.pkg Require Export types_init.
 From New.proof Require Export time.
 
 
