@@ -6,7 +6,7 @@ From proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From proof.k8s_io.kubernetes.pkg Require Export controller_init.
-From proof.kubernetes_model Require Export simpleapiserver_init.
+From proof.kubernetes_model Require Export apimodel_init.
 Require Export New.generatedproof.kubernetes_model.simplereplicaset.
 
 

@@ -1,4 +1,4 @@
-From proof Require Import prelude empty_ffi simpleapiserver.
+From proof Require Import prelude empty_ffi apimodel.
 From proof.kubernetes_model Require Export simplereplicaset_init.
 
 Section proof.

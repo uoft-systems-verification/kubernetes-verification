@@ -35,4 +35,4 @@ scripts/goose.sh -dir kubernetes ./vendor/k8s.io/utils/clock
 scripts/goose.sh -dir kubernetes ./vendor/k8s.io/utils/ptr
 
 scripts/goose.sh -dir kubernetes_model ./simplereplicaset
-scripts/goose.sh -dir kubernetes_model ./simpleapiserver
+scripts/goose.sh -dir kubernetes_model ./apimodel

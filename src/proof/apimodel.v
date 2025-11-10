@@ -2,9 +2,9 @@ From Perennial.algebra Require Export auth_map.
 From New.proof.github_com.goose_lang.goose.model.channel Require Export auth_set.
 Require Export New.proof.sync.
 
-From proof.kubernetes_model Require Export simpleapiserver_init.
+From proof.kubernetes_model Require Export apimodel_init.
 From proof Require Import prelude empty_ffi.
-Export simpleapiserver.simpleapiserver.
+Export apimodel.apimodel.
 
 Module KKey.
   Global Instance eq_dec : EqDecision KKey.t.
@@ -78,7 +78,7 @@ Definition kubernetes_state_consistent (abs_state: gmap KKey.t KObject.t) (child
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
   ∃ (l: loc) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
-    "state_m_addr" ∷ (global_addr simpleapiserver.state) ↦s[ simpleapiserver.State :: "m" ] l ∗
+    "state_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] l ∗
     "own_phys" ∷ l ↦$ phys_state ∗
     "own_abs" ∷ map_ctx γ_state 1 abs_state ∗
     "phys_abs_rep" ∷ state_rep phys_state abs_state ∗
@@ -88,13 +88,13 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp �
 
 
 Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
-  is_Mutex (global_addr simpleapiserver.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
+  is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
 
 Lemma wp_objGet (key: KKey.t) γ_state γ_children γ_fresh_keys:
-  {{{ is_pkg_init simpleapiserver ∗
+  {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys
   }}}
-    @! simpleapiserver.objGet #key
+    @! apimodel.objGet #key
   {{{ (obj: interface.t) (exists': bool), RET (#obj, #exists');
     True
   }}}.
@@ -119,10 +119,10 @@ Qed.
 
 
 Lemma wp_PodGet (namespace name: go_string) γ_state γ_children γ_fresh_keys:
-  {{{ is_pkg_init simpleapiserver ∗
+  {{{ is_pkg_init apimodel ∗
       is_kubernetes_state γ_state γ_children γ_fresh_keys
   }}}
-    @! simpleapiserver.PodGet #namespace #name
+    @! apimodel.PodGet #namespace #name
   {{{ (l: loc) (err: error.t) dq2 (pod: v1.Pod.t), RET (#l, #err);
     if decide (err = interface.nil) then
       l ↦{dq2} pod
@@ -134,11 +134,11 @@ Admitted.
 
 
 Lemma wp_PodGet_with_ptsto_mut_state (namespace name: go_string) γ_state γ_children γ_fresh_keys dq pod:
-  {{{ is_pkg_init simpleapiserver ∗
+  {{{ is_pkg_init apimodel ∗
       is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       ptsto_mut γ_state (mk_pod_key namespace name) dq (KObject.Pod pod)
   }}}
-    @! simpleapiserver.PodGet #namespace #name
+    @! apimodel.PodGet #namespace #name
   {{{ (l: loc) (err: error.t) dq2, RET (#l, #err);
     ⌜ err = interface.nil ⌝ ∗
     l ↦{dq2} pod ∗
@@ -148,7 +148,7 @@ Admitted.
 
 
 (* Lemma wp_PodList_with_ptsto_mut_children (namespace: go_string) (l: loc) γ_state γ_fresh_keys dq pods:
-  {{{ is_pkg_init simpleapiserver ∗
+  {{{ is_pkg_init apimodel ∗
       is_kubernetes_state l γ_state γ_fresh_keys ∗
 
   }}} *)

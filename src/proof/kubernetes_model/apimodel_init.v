@@ -10,13 +10,13 @@ From proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From proof.k8s_io.apimachinery.pkg.types Require Export types_init.
 From proof Require Export strconv_init.
 From proof Require Export rand_init.
-Require Export New.generatedproof.kubernetes_model.simpleapiserver.
+Require Export New.generatedproof.kubernetes_model.apimodel.
 
 
 Section proof.
 Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
 
-#[global] Instance : IsPkgInit code.kubernetes_model.simpleapiserver.simpleapiserver := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.kubernetes_model.simpleapiserver.simpleapiserver := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit code.kubernetes_model.apimodel.apimodel := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf code.kubernetes_model.apimodel.apimodel := build_get_is_pkg_init_wf.
 
 End proof.

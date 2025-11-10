@@ -15,13 +15,13 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.golang.theory.
 
-Require Export New.code.kubernetes_model.simpleapiserver.
+Require Export New.code.kubernetes_model.apimodel.
 
 Set Default Proof Using "Type".
 
-Module simpleapiserver.
+Module apimodel.
 
-(* type simpleapiserver.KKey *)
+(* type apimodel.KKey *)
 Module KKey.
 Section def.
 Context `{ffi_syntax}.
@@ -35,24 +35,24 @@ End KKey.
 
 Section instances.
 Context `{ffi_syntax}.
-#[local] Transparent simpleapiserver.KKey.
-#[local] Typeclasses Transparent simpleapiserver.KKey.
+#[local] Transparent apimodel.KKey.
+#[local] Typeclasses Transparent apimodel.KKey.
 
-Global Instance KKey_wf : struct.Wf simpleapiserver.KKey.
+Global Instance KKey_wf : struct.Wf apimodel.KKey.
 Proof. apply _. Qed.
 
 Global Instance settable_KKey : Settable KKey.t :=
   settable! KKey.mk < KKey.Kind'; KKey.Name'; KKey.Namespace' >.
 Global Instance into_val_KKey : IntoVal KKey.t :=
   {| to_val_def v :=
-    struct.val_aux simpleapiserver.KKey [
+    struct.val_aux apimodel.KKey [
     "Kind" ::= #(KKey.Kind' v);
     "Name" ::= #(KKey.Name' v);
     "Namespace" ::= #(KKey.Namespace' v)
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_KKey : IntoValTyped KKey.t simpleapiserver.KKey :=
+Global Program Instance into_val_typed_KKey : IntoValTyped KKey.t apimodel.KKey :=
 {|
   default_val := KKey.mk (default_val _) (default_val _) (default_val _);
 |}.
@@ -61,20 +61,20 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_KKey_Kind : IntoValStructField "Kind" simpleapiserver.KKey KKey.Kind'.
+Global Instance into_val_struct_field_KKey_Kind : IntoValStructField "Kind" apimodel.KKey KKey.Kind'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_KKey_Name : IntoValStructField "Name" simpleapiserver.KKey KKey.Name'.
+Global Instance into_val_struct_field_KKey_Name : IntoValStructField "Name" apimodel.KKey KKey.Name'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_KKey_Namespace : IntoValStructField "Namespace" simpleapiserver.KKey KKey.Namespace'.
+Global Instance into_val_struct_field_KKey_Namespace : IntoValStructField "Namespace" apimodel.KKey KKey.Namespace'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_KKey Kind' Name' Namespace':
   PureWp True
-    (struct.make #simpleapiserver.KKey (alist_val [
+    (struct.make #apimodel.KKey (alist_val [
       "Kind" ::= #Kind';
       "Name" ::= #Name';
       "Namespace" ::= #Namespace'
@@ -85,9 +85,9 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance KKey_struct_fields_split dq l (v : KKey.t) :
   StructFieldsSplit dq l v (
-    "HKind" ∷ l ↦s[simpleapiserver.KKey :: "Kind"]{dq} v.(KKey.Kind') ∗
-    "HName" ∷ l ↦s[simpleapiserver.KKey :: "Name"]{dq} v.(KKey.Name') ∗
-    "HNamespace" ∷ l ↦s[simpleapiserver.KKey :: "Namespace"]{dq} v.(KKey.Namespace')
+    "HKind" ∷ l ↦s[apimodel.KKey :: "Kind"]{dq} v.(KKey.Kind') ∗
+    "HName" ∷ l ↦s[apimodel.KKey :: "Name"]{dq} v.(KKey.Name') ∗
+    "HNamespace" ∷ l ↦s[apimodel.KKey :: "Namespace"]{dq} v.(KKey.Namespace')
   ).
 Proof.
   rewrite /named.
@@ -95,37 +95,37 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (KKey.Kind' v)) (simpleapiserver.KKey) "Kind"%go.
-  simpl_one_flatten_struct (# (KKey.Name' v)) (simpleapiserver.KKey) "Name"%go.
+  simpl_one_flatten_struct (# (KKey.Kind' v)) (apimodel.KKey) "Kind"%go.
+  simpl_one_flatten_struct (# (KKey.Name' v)) (apimodel.KKey) "Name"%go.
 
   solve_field_ref_f.
 Qed.
 
 End instances.
 
-(* type simpleapiserver.IndexFunc *)
+(* type apimodel.IndexFunc *)
 Module IndexFunc.
 
-#[global] Transparent simpleapiserver.IndexFunc.
-#[global] Typeclasses Transparent simpleapiserver.IndexFunc.
+#[global] Transparent apimodel.IndexFunc.
+#[global] Typeclasses Transparent apimodel.IndexFunc.
 Section def.
 Context `{ffi_syntax}.
 Definition t := func.t.
 End def.
 End IndexFunc.
 
-(* type simpleapiserver.Indexers *)
+(* type apimodel.Indexers *)
 Module Indexers.
 
-#[global] Transparent simpleapiserver.Indexers.
-#[global] Typeclasses Transparent simpleapiserver.Indexers.
+#[global] Transparent apimodel.Indexers.
+#[global] Typeclasses Transparent apimodel.Indexers.
 Section def.
 Context `{ffi_syntax}.
 Definition t := loc.
 End def.
 End Indexers.
 
-(* type simpleapiserver.State *)
+(* type apimodel.State *)
 Module State.
 Section def.
 Context `{ffi_syntax}.
@@ -140,17 +140,17 @@ End State.
 
 Section instances.
 Context `{ffi_syntax}.
-#[local] Transparent simpleapiserver.State.
-#[local] Typeclasses Transparent simpleapiserver.State.
+#[local] Transparent apimodel.State.
+#[local] Typeclasses Transparent apimodel.State.
 
-Global Instance State_wf : struct.Wf simpleapiserver.State.
+Global Instance State_wf : struct.Wf apimodel.State.
 Proof. apply _. Qed.
 
 Global Instance settable_State : Settable State.t :=
   settable! State.mk < State.m'; State.uidCounter'; State.resourceVersionCounter'; State.indexer' >.
 Global Instance into_val_State : IntoVal State.t :=
   {| to_val_def v :=
-    struct.val_aux simpleapiserver.State [
+    struct.val_aux apimodel.State [
     "m" ::= #(State.m' v);
     "uidCounter" ::= #(State.uidCounter' v);
     "resourceVersionCounter" ::= #(State.resourceVersionCounter' v);
@@ -158,7 +158,7 @@ Global Instance into_val_State : IntoVal State.t :=
     ]%struct
   |}.
 
-Global Program Instance into_val_typed_State : IntoValTyped State.t simpleapiserver.State :=
+Global Program Instance into_val_typed_State : IntoValTyped State.t apimodel.State :=
 {|
   default_val := State.mk (default_val _) (default_val _) (default_val _) (default_val _);
 |}.
@@ -167,23 +167,23 @@ Next Obligation. solve_zero_val. Qed.
 Next Obligation. solve_to_val_inj. Qed.
 Final Obligation. solve_decision. Qed.
 
-Global Instance into_val_struct_field_State_m : IntoValStructField "m" simpleapiserver.State State.m'.
+Global Instance into_val_struct_field_State_m : IntoValStructField "m" apimodel.State State.m'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_State_uidCounter : IntoValStructField "uidCounter" simpleapiserver.State State.uidCounter'.
+Global Instance into_val_struct_field_State_uidCounter : IntoValStructField "uidCounter" apimodel.State State.uidCounter'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" simpleapiserver.State State.resourceVersionCounter'.
+Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" apimodel.State State.resourceVersionCounter'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_State_indexer : IntoValStructField "indexer" simpleapiserver.State State.indexer'.
+Global Instance into_val_struct_field_State_indexer : IntoValStructField "indexer" apimodel.State State.indexer'.
 Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
 Global Instance wp_struct_make_State m' uidCounter' resourceVersionCounter' indexer':
   PureWp True
-    (struct.make #simpleapiserver.State (alist_val [
+    (struct.make #apimodel.State (alist_val [
       "m" ::= #m';
       "uidCounter" ::= #uidCounter';
       "resourceVersionCounter" ::= #resourceVersionCounter';
@@ -195,10 +195,10 @@ Proof. solve_struct_make_pure_wp. Qed.
 
 Global Instance State_struct_fields_split dq l (v : State.t) :
   StructFieldsSplit dq l v (
-    "Hm" ∷ l ↦s[simpleapiserver.State :: "m"]{dq} v.(State.m') ∗
-    "HuidCounter" ∷ l ↦s[simpleapiserver.State :: "uidCounter"]{dq} v.(State.uidCounter') ∗
-    "HresourceVersionCounter" ∷ l ↦s[simpleapiserver.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
-    "Hindexer" ∷ l ↦s[simpleapiserver.State :: "indexer"]{dq} v.(State.indexer')
+    "Hm" ∷ l ↦s[apimodel.State :: "m"]{dq} v.(State.m') ∗
+    "HuidCounter" ∷ l ↦s[apimodel.State :: "uidCounter"]{dq} v.(State.uidCounter') ∗
+    "HresourceVersionCounter" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
+    "Hindexer" ∷ l ↦s[apimodel.State :: "indexer"]{dq} v.(State.indexer')
   ).
 Proof.
   rewrite /named.
@@ -206,9 +206,9 @@ Proof.
   unfold_typed_pointsto; split_pointsto_app.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (State.m' v)) (simpleapiserver.State) "m"%go.
-  simpl_one_flatten_struct (# (State.uidCounter' v)) (simpleapiserver.State) "uidCounter"%go.
-  simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (simpleapiserver.State) "resourceVersionCounter"%go.
+  simpl_one_flatten_struct (# (State.m' v)) (apimodel.State) "m"%go.
+  simpl_one_flatten_struct (# (State.uidCounter' v)) (apimodel.State) "uidCounter"%go.
+  simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (apimodel.State) "resourceVersionCounter"%go.
 
   solve_field_ref_f.
 Qed.
@@ -222,10 +222,10 @@ Context `{!globalsGS Σ}.
 Context {go_ctx : GoContext}.
 #[local] Transparent is_pkg_defined is_pkg_defined_pure.
 
-Global Instance is_pkg_defined_pure_simpleapiserver : IsPkgDefinedPure simpleapiserver :=
+Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
   {|
     is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single simpleapiserver ∧
+      is_pkg_defined_pure_single apimodel ∧
       is_pkg_defined_pure code.fmt.fmt ∧
       is_pkg_defined_pure code.math.rand.rand ∧
       is_pkg_defined_pure code.strconv.strconv ∧
@@ -242,10 +242,10 @@ Global Instance is_pkg_defined_pure_simpleapiserver : IsPkgDefinedPure simpleapi
   |}.
 
 #[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_simpleapiserver : IsPkgDefined simpleapiserver :=
+Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
   {|
     is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single simpleapiserver ∗
+      (is_pkg_defined_single apimodel ∗
        is_pkg_defined code.fmt.fmt ∗
        is_pkg_defined code.math.rand.rand ∗
        is_pkg_defined code.strconv.strconv ∗
@@ -264,92 +264,92 @@ Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
 Global Instance wp_func_call_namespaceIndex :
-  WpFuncCall simpleapiserver.namespaceIndex _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.namespaceIndex _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_podControllerUIDIndex :
-  WpFuncCall simpleapiserver.podControllerUIDIndex _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.podControllerUIDIndex _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_controllerUIDIndex :
-  WpFuncCall simpleapiserver.controllerUIDIndex _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.controllerUIDIndex _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Init :
-  WpFuncCall simpleapiserver.Init _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.Init _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_OrphanPodIndexKeyForNamespace :
-  WpFuncCall simpleapiserver.OrphanPodIndexKeyForNamespace _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.OrphanPodIndexKeyForNamespace _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objGet :
-  WpFuncCall simpleapiserver.objGet _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objList :
-  WpFuncCall simpleapiserver.objList _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objList _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_filterByLabelSelector :
-  WpFuncCall simpleapiserver.filterByLabelSelector _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.filterByLabelSelector _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objListBySelector :
-  WpFuncCall simpleapiserver.objListBySelector _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objListBySelector _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_randomSuffix :
-  WpFuncCall simpleapiserver.randomSuffix _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.randomSuffix _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_deepCopy :
-  WpFuncCall simpleapiserver.deepCopy _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.deepCopy _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objCreate :
-  WpFuncCall simpleapiserver.objCreate _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objCreate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objUpdate :
-  WpFuncCall simpleapiserver.objUpdate _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objUpdate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objDelete :
-  WpFuncCall simpleapiserver.objDelete _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.objDelete _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_Index :
-  WpFuncCall simpleapiserver.Index _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.Index _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_ByIndex :
-  WpFuncCall simpleapiserver.ByIndex _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.ByIndex _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodGet :
-  WpFuncCall simpleapiserver.PodGet _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.PodGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodList :
-  WpFuncCall simpleapiserver.PodList _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.PodList _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodCreate :
-  WpFuncCall simpleapiserver.PodCreate _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.PodCreate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodUpdate :
-  WpFuncCall simpleapiserver.PodUpdate _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.PodUpdate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodDelete :
-  WpFuncCall simpleapiserver.PodDelete _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.PodDelete _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_ReplicaSetGet :
-  WpFuncCall simpleapiserver.ReplicaSetGet _ (is_pkg_defined simpleapiserver) :=
+  WpFuncCall apimodel.ReplicaSetGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 End names.
-End simpleapiserver.
+End apimodel.

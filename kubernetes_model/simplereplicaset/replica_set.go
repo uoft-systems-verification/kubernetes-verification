@@ -2,7 +2,7 @@ package simplereplicaset
 
 import (
 	"fmt"
-	"kubernetes_model/simpleapiserver"
+	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -26,13 +26,13 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 	if len(labels.Set(pod.Labels)) == 0 {
 		return fmt.Errorf("unable to create pods, no labels")
 	}
-	_, err = simpleapiserver.PodCreate(namespace, pod)
+	_, err = apimodel.PodCreate(namespace, pod)
 	return err
 }
 
 func FilterPodsByOwner(owner *metav1.ObjectMeta) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
-	pods, err := simpleapiserver.ByIndex("Pod", simpleapiserver.PodControllerUIDIndex, string(owner.UID))
+	pods, err := apimodel.ByIndex("Pod", apimodel.PodControllerUIDIndex, string(owner.UID))
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	} else if diff > 0 {
 		podsToDelete := activePods[:diff]
 		for _, pod := range podsToDelete {
-			if err := simpleapiserver.PodDelete(rs.Namespace, pod.Name); err != nil {
+			if err := apimodel.PodDelete(rs.Namespace, pod.Name); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}
@@ -91,7 +91,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 }
 
 func syncReplicaSet(namespace, name string) error {
-	rs, err := simpleapiserver.ReplicaSetGet(namespace, name)
+	rs, err := apimodel.ReplicaSetGet(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}

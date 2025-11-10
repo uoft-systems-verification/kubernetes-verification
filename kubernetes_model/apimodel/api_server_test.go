@@ -1,4 +1,4 @@
-package simpleapiserver
+package apimodel
 
 import (
 	"testing"
