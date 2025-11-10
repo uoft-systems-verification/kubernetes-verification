@@ -1,4 +1,4 @@
-From New.proof Require Export context fmt time.
+From New.proof Require Export sync fmt time.
 From verification Require Export prelude.
 From verification.k8s_io.api.apps Require Export v1_init.
 From verification.k8s_io.api.core Require Export v1_init.

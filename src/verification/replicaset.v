@@ -9,24 +9,24 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Axiom split_meta_namespace_key : go_string → option (go_string * go_string).
 
-Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s:
+Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s (n: w32):
   {{{ is_pkg_init replicaset ∗
       is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       ∃ namespace name,
         ⌜ split_meta_namespace_key key = Some (namespace, name)⌝ ∗
         ⌜ rs_key = {| KKey.kind := KKind.ReplicaSet; KKey.namespace := namespace; KKey.name := name |} ⌝ ∗
         rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
-        rs_key [[ γ_children ]]↦ s 
-        (* ∗
-        ⌜ rs.(v1.ReplicaSet.Spec'.Replicas') = n ⌝ *)
+        rs_key [[ γ_children ]]↦ s ∗
+        rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas') ↦ n
   }}}
   rsc @ (ptrT.id replicaset.ReplicaSetController.id) @ "syncReplicaSet" #ctx #key
   {{{ (err : error.t) s', RET #err;
       rs_key [[ γ_children ]]↦ s' ∗
       if decide (err = interface.nil) then
-        True (* TODO: size s' = desired replicas *)
+        ⌜ size s' = sint.nat n ⌝
       else
-        True (* TODO: size s' is closer to desired replicas compared to n *)
+        ⌜ Z.abs (Z.of_nat (size s') - sint.Z n) <
+          Z.abs (Z.of_nat (size s) - sint.Z n) ⌝
   }}}.
 Proof. Admitted.
 

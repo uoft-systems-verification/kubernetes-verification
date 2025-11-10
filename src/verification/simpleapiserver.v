@@ -43,6 +43,10 @@ Definition mk_pod_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
 
+Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
+  {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
+
+
 Definition pod_well_formed (pod: v1.Pod.t) (namespace name: go_string) : Prop :=
  True.
 

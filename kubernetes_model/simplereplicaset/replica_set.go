@@ -1,7 +1,6 @@
 package simplereplicaset
 
 import (
-	"context"
 	"fmt"
 	"kubernetes_model/simpleapiserver"
 
@@ -10,7 +9,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -20,7 +18,7 @@ import (
 // * concurrent creation/deletion
 // * sort before deletion
 
-func CreatePod(ctx context.Context, namespace string, template *v1.PodTemplateSpec, controllerObject *apps.ReplicaSet, controllerRef *metav1.OwnerReference) error {
+func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject *apps.ReplicaSet, controllerRef *metav1.OwnerReference) error {
 	pod, err := controller.GetPodFromTemplate(template, controllerObject, controllerRef)
 	if err != nil {
 		return err
@@ -48,7 +46,7 @@ func FilterPodsByOwner(owner *metav1.ObjectMeta) ([]*v1.Pod, error) {
 	return result, nil
 }
 
-func manageReplicas(ctx context.Context, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
+func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	_, err := controller.KeyFunc(rs)
 	if err != nil {
@@ -57,7 +55,7 @@ func manageReplicas(ctx context.Context, activePods []*v1.Pod, rs *apps.ReplicaS
 	if diff < 0 {
 		diff *= -1
 		for i := 0; i < diff; i++ {
-			err := CreatePod(ctx, rs.Namespace, &rs.Spec.Template, rs, metav1.NewControllerRef(rs, apps.SchemeGroupVersion.WithKind("ReplicaSet")))
+			err := CreatePod(rs.Namespace, &rs.Spec.Template, rs, metav1.NewControllerRef(rs, apps.SchemeGroupVersion.WithKind("ReplicaSet")))
 			if err != nil {
 				return err
 			}
@@ -76,11 +74,7 @@ func manageReplicas(ctx context.Context, activePods []*v1.Pod, rs *apps.ReplicaS
 	return nil
 }
 
-func syncReplicaSet(ctx context.Context, key string) error {
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		return err
-	}
+func syncReplicaSet(namespace, name string) error {
 	rs, err := simpleapiserver.ReplicaSetGet(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil
@@ -96,7 +90,7 @@ func syncReplicaSet(ctx context.Context, key string) error {
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(ctx, allRSPods, rs)
+		manageReplicasErr = manageReplicas(allRSPods, rs)
 	}
 
 	return manageReplicasErr
