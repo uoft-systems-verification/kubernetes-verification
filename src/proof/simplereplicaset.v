@@ -19,21 +19,17 @@ Lemma wp_syncReplicaSet namespace name
       is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       ⌜ rs_key = mk_replicaset_key namespace name ⌝ ∗
       rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
-      ([∗ map] key ↦ v ∈ child_pods,
-        key [[ γ_state ]]↦ KObject.Pod v ∗
-        ⌜ key ∈ child_keys ⌝) ∗
+      ([∗ map] key ↦ v ∈ child_pods, key [[ γ_state ]]↦ KObject.Pod v) ∗
       rs_key [[ γ_children ]]↦ child_keys ∗
-      ⌜ size child_pods = size child_keys ⌝ ∗
+      ⌜ child_keys = dom child_pods ⌝ ∗
       rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas') ↦ n
   }}}
   @! simplereplicaset.syncReplicaSet #namespace #name
   {{{ (err : error.t) child_keys' child_pods', RET #err;
       rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
-      ([∗ map] key ↦ v ∈ child_pods',
-        key [[ γ_state ]]↦ KObject.Pod v ∗
-        ⌜ key ∈ child_keys' ⌝) ∗
+      ([∗ map] key ↦ v ∈ child_pods', key [[ γ_state ]]↦ KObject.Pod v) ∗
       rs_key [[ γ_children ]]↦ child_keys' ∗
-      ⌜ size child_pods' = size child_keys' ⌝ ∗
+      ⌜ child_keys' = dom child_pods' ⌝ ∗
       if decide (err = interface.nil) then
         ⌜ size child_keys' = sint.nat n ⌝
       else
