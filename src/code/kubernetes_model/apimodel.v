@@ -68,7 +68,7 @@ Definition nameRand : go_string := "kubernetes_model/apimodel.nameRand"%go.
 
 Definition namespaceIndex : go_string := "kubernetes_model/apimodel.namespaceIndex"%go.
 
-(* go: api_server.go:62:6 *)
+(* go: api_model.go:62:6 *)
 Definition namespaceIndexⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -95,7 +95,7 @@ Definition podControllerUIDIndex : go_string := "kubernetes_model/apimodel.podCo
 
 Definition OrphanPodIndexKeyForNamespace : go_string := "kubernetes_model/apimodel.OrphanPodIndexKeyForNamespace"%go.
 
-(* go: api_server.go:70:6 *)
+(* go: api_model.go:70:6 *)
 Definition podControllerUIDIndexⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -124,7 +124,7 @@ Definition podControllerUIDIndexⁱᵐᵖˡ : val :=
 
 Definition controllerUIDIndex : go_string := "kubernetes_model/apimodel.controllerUIDIndex"%go.
 
-(* go: api_server.go:81:6 *)
+(* go: api_model.go:81:6 *)
 Definition controllerUIDIndexⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -150,7 +150,7 @@ Definition controllerUIDIndexⁱᵐᵖˡ : val :=
 
 Definition Init : go_string := "kubernetes_model/apimodel.Init"%go.
 
-(* go: api_server.go:93:6 *)
+(* go: api_model.go:93:6 *)
 Definition Initⁱᵐᵖˡ : val :=
   λ: <>,
     with_defer: (do:  ((method_call #(ptrT.id sync.Mutex.id) #"Lock"%go (globals.get #stateMu)) #());;;
@@ -176,7 +176,7 @@ Definition Initⁱᵐᵖˡ : val :=
     do:  ((struct.field_ref #State #"indexer"%go (globals.get #state)) <-[#Indexers] "$r0");;;
     return: #()).
 
-(* go: api_server.go:108:6 *)
+(* go: api_model.go:108:6 *)
 Definition OrphanPodIndexKeyForNamespaceⁱᵐᵖˡ : val :=
   λ: "namespace",
     exception_do (let: "namespace" := (mem.alloc "namespace") in
@@ -186,7 +186,7 @@ Definition objGet : go_string := "kubernetes_model/apimodel.objGet"%go.
 
 (* Object returned here must be treated as read-only.
 
-   go: api_server.go:113:6 *)
+   go: api_model.go:113:6 *)
 Definition objGetⁱᵐᵖˡ : val :=
   λ: "key",
     with_defer: (let: "key" := (mem.alloc "key") in
@@ -210,7 +210,7 @@ Definition objList : go_string := "kubernetes_model/apimodel.objList"%go.
 
 (* Objects returned here must be treated as read-only.
 
-   go: api_server.go:122:6 *)
+   go: api_model.go:122:6 *)
 Definition objListⁱᵐᵖˡ : val :=
   λ: "kind" "namespace",
     with_defer: (let: "items" := (mem.alloc (type.zero_val #sliceT)) in
@@ -244,7 +244,7 @@ Definition objListⁱᵐᵖˡ : val :=
 
 Definition filterByLabelSelector : go_string := "kubernetes_model/apimodel.filterByLabelSelector"%go.
 
-(* go: api_server.go:136:6 *)
+(* go: api_model.go:136:6 *)
 Definition filterByLabelSelectorⁱᵐᵖˡ : val :=
   λ: "items" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -279,7 +279,7 @@ Definition filterByLabelSelectorⁱᵐᵖˡ : val :=
 
 Definition objListBySelector : go_string := "kubernetes_model/apimodel.objListBySelector"%go.
 
-(* go: api_server.go:150:6 *)
+(* go: api_model.go:150:6 *)
 Definition objListBySelectorⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -296,7 +296,7 @@ Definition randomSuffixChars : go_string := "kubernetes_model/apimodel.randomSuf
 
 Definition randomSuffix : go_string := "kubernetes_model/apimodel.randomSuffix"%go.
 
-(* go: api_server.go:156:6 *)
+(* go: api_model.go:156:6 *)
 Definition randomSuffixⁱᵐᵖˡ : val :=
   λ: "n",
     exception_do (let: "n" := (mem.alloc "n") in
@@ -315,7 +315,7 @@ Definition randomSuffixⁱᵐᵖˡ : val :=
 
 Definition deepCopy : go_string := "kubernetes_model/apimodel.deepCopy"%go.
 
-(* go: api_server.go:164:6 *)
+(* go: api_model.go:164:6 *)
 Definition deepCopyⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -340,7 +340,7 @@ Definition deepCopyⁱᵐᵖˡ : val :=
 
 Definition objCreate : go_string := "kubernetes_model/apimodel.objCreate"%go.
 
-(* go: api_server.go:175:6 *)
+(* go: api_model.go:175:6 *)
 Definition objCreateⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "obj",
     with_defer: (let: "obj" := (mem.alloc "obj") in
@@ -457,7 +457,7 @@ Definition objCreateⁱᵐᵖˡ : val :=
 
 Definition objUpdate : go_string := "kubernetes_model/apimodel.objUpdate"%go.
 
-(* go: api_server.go:226:6 *)
+(* go: api_model.go:226:6 *)
 Definition objUpdateⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "obj",
     with_defer: (let: "obj" := (mem.alloc "obj") in
@@ -593,7 +593,7 @@ Definition objUpdateⁱᵐᵖˡ : val :=
 
 Definition objDelete : go_string := "kubernetes_model/apimodel.objDelete"%go.
 
-(* go: api_server.go:276:6 *)
+(* go: api_model.go:276:6 *)
 Definition objDeleteⁱᵐᵖˡ : val :=
   λ: "key",
     with_defer: (let: "key" := (mem.alloc "key") in
@@ -665,7 +665,7 @@ Definition Index : go_string := "kubernetes_model/apimodel.Index"%go.
 
 (* Objects returned here must be treated as read-only.
 
-   go: api_server.go:306:6 *)
+   go: api_model.go:306:6 *)
 Definition Indexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -762,7 +762,7 @@ Definition ByIndex : go_string := "kubernetes_model/apimodel.ByIndex"%go.
 
 (* Objects returned here must be treated as read-only.
 
-   go: api_server.go:343:6 *)
+   go: api_model.go:343:6 *)
 Definition ByIndexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "indexedValue",
     exception_do (let: "indexedValue" := (mem.alloc "indexedValue") in
@@ -824,7 +824,7 @@ Definition PodGet : go_string := "kubernetes_model/apimodel.PodGet"%go.
 
 (* Object returned here must be treated as read-only.
 
-   go: api_server.go:367:6 *)
+   go: api_model.go:367:6 *)
 Definition PodGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -875,7 +875,7 @@ Definition PodList : go_string := "kubernetes_model/apimodel.PodList"%go.
 
 (* Object returned here must be treated as read-only.
 
-   go: api_server.go:389:6 *)
+   go: api_model.go:389:6 *)
 Definition PodListⁱᵐᵖˡ : val :=
   λ: "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -924,7 +924,7 @@ Definition PodListⁱᵐᵖˡ : val :=
 
 Definition PodCreate : go_string := "kubernetes_model/apimodel.PodCreate"%go.
 
-(* go: api_server.go:407:6 *)
+(* go: api_model.go:407:6 *)
 Definition PodCreateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -958,7 +958,7 @@ Definition PodCreateⁱᵐᵖˡ : val :=
 
 Definition PodUpdate : go_string := "kubernetes_model/apimodel.PodUpdate"%go.
 
-(* go: api_server.go:422:6 *)
+(* go: api_model.go:422:6 *)
 Definition PodUpdateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -992,7 +992,7 @@ Definition PodUpdateⁱᵐᵖˡ : val :=
 
 Definition PodDelete : go_string := "kubernetes_model/apimodel.PodDelete"%go.
 
-(* go: api_server.go:437:6 *)
+(* go: api_model.go:437:6 *)
 Definition PodDeleteⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1012,7 +1012,7 @@ Definition PodDeleteⁱᵐᵖˡ : val :=
 
 Definition ReplicaSetGet : go_string := "kubernetes_model/apimodel.ReplicaSetGet"%go.
 
-(* go: api_server.go:447:6 *)
+(* go: api_model.go:447:6 *)
 Definition ReplicaSetGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
