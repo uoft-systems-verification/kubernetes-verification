@@ -283,6 +283,10 @@ Global Instance wp_func_call_OrphanPodIndexKeyForNamespace :
   WpFuncCall apimodel.OrphanPodIndexKeyForNamespace _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_deepCopy :
+  WpFuncCall apimodel.deepCopy _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_objGet :
   WpFuncCall apimodel.objGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
@@ -301,10 +305,6 @@ Global Instance wp_func_call_objListBySelector :
 
 Global Instance wp_func_call_randomSuffix :
   WpFuncCall apimodel.randomSuffix _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_deepCopy :
-  WpFuncCall apimodel.deepCopy _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objCreate :
@@ -331,8 +331,16 @@ Global Instance wp_func_call_PodGet :
   WpFuncCall apimodel.PodGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_PodMutGet :
+  WpFuncCall apimodel.PodMutGet _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_PodList :
   WpFuncCall apimodel.PodList _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_PodMutList :
+  WpFuncCall apimodel.PodMutList _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_PodCreate :
@@ -349,6 +357,10 @@ Global Instance wp_func_call_PodDelete :
 
 Global Instance wp_func_call_ReplicaSetGet :
   WpFuncCall apimodel.ReplicaSetGet _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_ReplicaSetMutGet :
+  WpFuncCall apimodel.ReplicaSetMutGet _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 End names.

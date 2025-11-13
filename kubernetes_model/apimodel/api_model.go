@@ -109,16 +109,29 @@ func OrphanPodIndexKeyForNamespace(namespace string) string {
 	return OrphanPodIndexKey + "/" + namespace
 }
 
-// Object returned here must be treated as read-only.
+func deepCopy(obj interface{}) interface{} {
+	switch o := obj.(type) {
+	case *corev1.Pod:
+		return o.DeepCopy()
+	case *appsv1.ReplicaSet:
+		return o.DeepCopy()
+	default:
+		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
+	}
+}
+
 func objGet(key KKey) (interface{}, bool) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
 
 	item, exists := state.m[key]
-	return item, exists
+	if exists {
+		return deepCopy(item), exists
+	} else {
+		return nil, exists
+	}
 }
 
-// Objects returned here must be treated as read-only.
 func objList(kind, namespace string) (items []interface{}) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
@@ -126,7 +139,7 @@ func objList(kind, namespace string) (items []interface{}) {
 	for key, val := range state.m {
 		if kind == key.Kind {
 			if namespace == metav1.NamespaceAll || namespace == key.Namespace {
-				items = append(items, val)
+				items = append(items, deepCopy(val))
 			}
 		}
 	}
@@ -159,17 +172,6 @@ func randomSuffix(n int) string {
 		b[i] = randomSuffixChars[nameRand.Intn(len(randomSuffixChars))]
 	}
 	return string(b)
-}
-
-func deepCopy(obj interface{}) interface{} {
-	switch o := obj.(type) {
-	case *corev1.Pod:
-		return o.DeepCopy()
-	case *appsv1.ReplicaSet:
-		return o.DeepCopy()
-	default:
-		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
-	}
 }
 
 func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
@@ -302,7 +304,7 @@ func objDelete(key KKey) error {
 	return nil
 }
 
-// Objects returned here must be treated as read-only.
+// Returned value must be treated as read-only.
 func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
 	indexFunc, ok := state.indexer[indexName]
 	if !ok {
@@ -339,7 +341,7 @@ func Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
 	return items, nil
 }
 
-// Objects returned here must be treated as read-only.
+// Returned value must be treated as read-only.
 func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
 	indexFunc, ok := state.indexer[indexName]
 	if !ok {
@@ -363,8 +365,12 @@ func ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
 	return items, nil
 }
 
-// Object returned here must be treated as read-only.
+// Returned value must be treated as read-only.
 func PodGet(namespace, name string) (*corev1.Pod, error) {
+	return PodMutGet(namespace, name)
+}
+
+func PodMutGet(namespace, name string) (*corev1.Pod, error) {
 	key := KKey{
 		Kind:      "Pod",
 		Namespace: namespace,
@@ -385,8 +391,12 @@ func PodGet(namespace, name string) (*corev1.Pod, error) {
 	return pod, nil
 }
 
-// Object returned here must be treated as read-only.
+// Returned value must be treated as read-only.
 func PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
+	return PodMutList(namespace, selector)
+}
+
+func PodMutList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
 	objs, err := objListBySelector("Pod", namespace, selector)
 	if err != nil {
 		return nil, err
@@ -444,7 +454,12 @@ func PodDelete(namespace, name string) error {
 	return objDelete(key)
 }
 
+// Returned value must be treated as read-only.
 func ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
+	return ReplicaSetMutGet(namespace, name)
+}
+
+func ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, error) {
 	key := KKey{
 		Kind:      "ReplicaSet",
 		Namespace: namespace,
