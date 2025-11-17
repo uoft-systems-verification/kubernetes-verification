@@ -4,6 +4,7 @@ Require Export New.proof.sync.
 
 From proof.kubernetes_model Require Export apimodel_init.
 From proof Require Import prelude empty_ffi.
+From proof Require Export deepcopy well_formed.
 Export apimodel.apimodel.
 
 Module KKey.
@@ -42,10 +43,8 @@ Context `{!auth_setG Σ KKey.t}.
 Definition mk_pod_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
-
 Definition extract_pod_key pod : KKey.t :=
   mk_pod_key pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name').
-
 
 Definition extract_kobject_metadata kobj : v1.ObjectMeta.t :=
   match kobj with
@@ -53,31 +52,8 @@ Definition extract_kobject_metadata kobj : v1.ObjectMeta.t :=
   | KObject.ReplicaSet rs => rs.(v1.ReplicaSet.ObjectMeta')
   end.
 
-
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
-
-Definition object_meta_well_formed (m: v1.ObjectMeta.t) : iProp Σ :=
-  ⌜ m.(v1.ObjectMeta.UID') ≠ "_ORPHAN_POD"%go ⌝.
-
-Definition pod_well_formed (pod: v1.Pod.t) : iProp Σ :=
-  object_meta_well_formed pod.(v1.Pod.ObjectMeta').
-
-Axiom pod_well_formed_for_creation: v1.Pod.t → iProp Σ.
-
-Definition pod_nn_well_formed (pod: v1.Pod.t) (namespace name: go_string) : iProp Σ :=
-  ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
-  ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-  pod_well_formed pod.
-
-Definition replicaset_well_formed (rs: v1.ReplicaSet.t) : iProp Σ :=
-  object_meta_well_formed rs.(v1.ReplicaSet.ObjectMeta') ∗
-  ∃ (v: w32), rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas') ↦ v ∗ ⌜ 0 ≤ sint.Z v ⌝.
-
-Definition replicaset_nn_well_formed (rs: v1.ReplicaSet.t) (namespace name: go_string) : iProp Σ :=
-  ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
-  ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-  replicaset_well_formed rs.
 
 Definition pod_rep k v1 v2 ptr pod : iProp Σ :=
   "%interface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
@@ -99,10 +75,8 @@ Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey
       ∃ (ptr: loc) (rs: v1.ReplicaSet.t), replicaset_rep k v1 v2 ptr rs
     else False%I.
 
-
 Definition kubernetes_state_consistent (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t): Prop := 
   True.
-
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
   ∃ (l: loc) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
@@ -114,58 +88,8 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp �
     "own_fresh_keys" ∷ auth_set_auth γ_fresh_keys fresh_keys ∗
     "%consistent" ∷ ⌜ kubernetes_state_consistent abs_state children fresh_keys ⌝.
 
-
 Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
   is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
-
-Definition symmetric_iProp {A} (R : A → A → iProp Σ) :=
-  ∀ x y, R x y ⊣⊢ R y x.
-
-(* TODO: finish the deepcopy definition *)
-
-Definition deepcopy_of_w32_loc (src dst: loc) : iProp Σ :=
-  ⌜src = null ↔ dst = null⌝ ∧
-  ∀ (v1 v2: w32), src ↦ v1 -∗ dst ↦ v2 -∗ ⌜ v1 = v2 ⌝.
-
-Definition deepcopy_of_type_meta (src dst: v1.TypeMeta.t) : iProp Σ :=
-  ⌜ src = dst ⌝.
-
-Definition deepcopy_of_object_meta (src dst: v1.ObjectMeta.t) : iProp Σ :=
-  True%I.
-
-Definition deepcopy_of_pod_spec (src dst: v1.PodSpec.t) : iProp Σ :=
-  True%I.
-
-Definition deepcopy_of_pod_status (src dst: v1.PodStatus.t) : iProp Σ :=
-  True%I.
-
-Definition deepcopy_of_pod (src dst: v1.Pod.t) : iProp Σ :=
-  deepcopy_of_type_meta src.(v1.Pod.TypeMeta') dst.(v1.Pod.TypeMeta') ∗
-  deepcopy_of_object_meta src.(v1.Pod.ObjectMeta') dst.(v1.Pod.ObjectMeta') ∗
-  deepcopy_of_pod_spec src.(v1.Pod.Spec') dst.(v1.Pod.Spec') ∗
-  deepcopy_of_pod_status src.(v1.Pod.Status') dst.(v1.Pod.Status').
-
-Definition deepcopy_of_replicaset_spec (src dst: v1.ReplicaSetSpec.t) : iProp Σ :=
-  deepcopy_of_w32_loc src.(v1.ReplicaSetSpec.Replicas') dst.(v1.ReplicaSetSpec.Replicas').
-
-Definition deepcopy_of_replicaset_status (src dst: v1.ReplicaSetStatus.t) : iProp Σ :=
-  True%I.
-
-Definition deepcopy_of_replicaset (src dst: v1.ReplicaSet.t) : iProp Σ :=
-  deepcopy_of_type_meta src.(v1.ReplicaSet.TypeMeta') dst.(v1.ReplicaSet.TypeMeta') ∗
-  deepcopy_of_object_meta src.(v1.ReplicaSet.ObjectMeta') dst.(v1.ReplicaSet.ObjectMeta') ∗
-  deepcopy_of_replicaset_spec src.(v1.ReplicaSet.Spec') dst.(v1.ReplicaSet.Spec') ∗
-  deepcopy_of_replicaset_status src.(v1.ReplicaSet.Status') dst.(v1.ReplicaSet.Status').
-
-Lemma deepcopy_of_pod_symmetric:
-  symmetric_iProp deepcopy_of_pod.
-Proof.
-Admitted.
-
-Lemma deepcopy_of_replicaset_symmetric:
-  symmetric_iProp deepcopy_of_replicaset.
-Proof.
-Admitted.
 
 Definition pod_has_controller_parent_uid (pod: v1.Pod.t) (os: list v1.OwnerReference.t) (o: v1.OwnerReference.t) (c: bool) : iProp Σ :=
   pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') ↦* os ∗
@@ -177,15 +101,6 @@ Definition is_pod_controller_uid_index (pod: v1.Pod.t) (indexed_value: go_string
   (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = indexed_value ⌝) ∨
   (¬(∃ os o c, pod_has_controller_parent_uid pod os o c) ∗ ⌜ indexed_value = "_ORPHAN_POD"%go ⌝).
 
-Lemma well_formed_preserved_by_deepcopy_replicaset rs1 rs2 namespace name:
-  deepcopy_of_replicaset rs1 rs2 -∗
-    replicaset_nn_well_formed rs1 namespace name -∗
-      deepcopy_of_replicaset rs1 rs2 ∗
-      replicaset_nn_well_formed rs1 namespace name ∗
-      replicaset_nn_well_formed rs2 namespace name.
-Proof.
-Admitted.
-
 Lemma decide_kind_is_replicaset kind:
   kind = "ReplicaSet"%go →
     bool_decide (kind = "ReplicaSet"%go) = true ∧
@@ -196,7 +111,6 @@ Proof.
   - apply bool_decide_true; exact Hkind.
   - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
 Qed.
-
 
 Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t):
   {{{ is_pkg_init apimodel ∗
@@ -240,7 +154,6 @@ Proof.
   done. *)
 Admitted.
 
-
 Lemma wp_PodGet (namespace name: go_string) γ_state γ_children γ_fresh_keys:
   {{{ is_pkg_init apimodel ∗
       is_kubernetes_state γ_state γ_children γ_fresh_keys
@@ -254,7 +167,6 @@ Lemma wp_PodGet (namespace name: go_string) γ_state γ_children γ_fresh_keys:
   }}}.
 Proof.
 Admitted.
-
 
 Lemma wp_podControllerUIDIndex_with_controller_parent obj ptr pod:
   {{{ is_pkg_init apimodel ∗
@@ -377,7 +289,6 @@ Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod pa
 Proof.
 Admitted.
 
-
 Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owned_rs:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
@@ -475,7 +386,6 @@ Proof.
   iApply "HΦ".
   iFrame. iPureIntro. done.
 Qed.
-
 
 Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys owned_rs:
   {{{ is_pkg_init apimodel ∗
