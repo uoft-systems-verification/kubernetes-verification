@@ -63,6 +63,8 @@ Definition object_meta_well_formed (m: v1.ObjectMeta.t) : iProp Σ :=
 Definition pod_well_formed (pod: v1.Pod.t) : iProp Σ :=
   object_meta_well_formed pod.(v1.Pod.ObjectMeta').
 
+Axiom pod_well_formed_for_creation: v1.Pod.t → iProp Σ.
+
 Definition pod_nn_well_formed (pod: v1.Pod.t) (namespace name: go_string) : iProp Σ :=
   ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
   ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
@@ -171,7 +173,7 @@ Definition pod_has_controller_parent_uid (pod: v1.Pod.t) (os: list v1.OwnerRefer
   o.(v1.OwnerReference.Controller') ↦ c ∗
   ⌜ c = true ⌝.
 
-Definition is_pod_controller_uid_index (pod: v1.Pod.t) (indexed_value: go_string): iProp Σ :=
+Definition is_pod_controller_uid_index (pod: v1.Pod.t) (indexed_value: go_string) : iProp Σ :=
   (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = indexed_value ⌝) ∨
   (¬(∃ os o c, pod_has_controller_parent_uid pod os o c) ∗ ⌜ indexed_value = "_ORPHAN_POD"%go ⌝).
 
@@ -326,17 +328,18 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value γ_state γ_childre
 Proof.
 Admitted.
 
-Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys:
+Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys uid:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%namespace_valid" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
+      "%uid" ∷ ⌜ uid = (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ⌝ ∗
+      "parent_uid" ∷ (∃ os o c, pod_has_controller_parent_uid to_create_pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = uid ⌝) ∗
       "%no_name" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝ ∗
-      "%generatename" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') ≠ ""%go⌝
-      (* TODO: specify that the to_create_pod's controller owner points to parent_key *)
-      (* TODO: specify that the to_create_pod's content is valid *)
+      "%generate_name" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') ≠ ""%go⌝ ∗
+      "well_formed_for_creation" ∷ pod_well_formed_for_creation to_create_pod
   }}}
     @! apimodel.objCreate #namespace #to_create_pod_ptr
   {{{ created_pod_ptr (err: error.t) created_pod new_key, RET (#created_pod_ptr, #err);
