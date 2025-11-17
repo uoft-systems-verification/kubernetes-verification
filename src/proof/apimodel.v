@@ -326,6 +326,54 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value γ_state γ_childre
 Proof.
 Admitted.
 
+Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys:
+  {{{ is_pkg_init apimodel ∗
+      "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
+      "%namespace_valid" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+      "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
+      "%no_name" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝ ∗
+      "%generatename" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') ≠ ""%go⌝
+      (* TODO: specify that the to_create_pod's controller owner points to parent_key *)
+      (* TODO: specify that the to_create_pod's content is valid *)
+  }}}
+    @! apimodel.objCreate #namespace #to_create_pod_ptr
+  {{{ created_pod_ptr (err: error.t) created_pod new_key, RET (#created_pod_ptr, #err);
+      ⌜ err = interface.nil ⌝ ∗
+      created_pod_ptr ↦ created_pod ∗
+      pod_well_formed created_pod ∗
+      ⌜ new_key = extract_pod_key created_pod ⌝ ∗
+      ⌜ new_key ∉ owned_child_keys ⌝ ∗
+      new_key [[ γ_state ]]↦ (KObject.Pod created_pod) ∗
+      parent_key [[ γ_state ]]↦ owned_parent ∗
+      parent_key [[ γ_children ]]↦ (owned_child_keys ∪ {[new_key]})
+      (* TODO: specify that created_pod shares some contents with to_create_pod *)
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys:
+  {{{ is_pkg_init apimodel ∗
+      "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
+      "%pod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
+      "%kind" ∷ ⌜ KKey.Kind' key = "Pod"%go ⌝
+  }}}
+    @! apimodel.objDelete #key
+  {{{ (err: error.t) pod, RET #err;
+      ⌜ err = interface.nil ⌝ ∗
+      (
+        key [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        parent_key [[ γ_children ]]↦ owned_child_keys ∗
+        ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
+      ) ∨
+      parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]})
+  }}}.
+Proof.
+Admitted.
+
 
 Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owned_rs:
   {{{ is_pkg_init apimodel ∗
