@@ -75,8 +75,7 @@ Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey
       ∃ (ptr: loc) (rs: v1.ReplicaSet.t), replicaset_rep k v1 v2 ptr rs
     else False%I.
 
-Definition kubernetes_state_consistent (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t): Prop := 
-  True.
+Axiom kubernetes_state_consistent: gmap KKey.t KObject.t → gmap KKey.t (gset KKey.t) → gset KKey.t → iProp Σ. 
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
   ∃ (l: loc) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
@@ -86,7 +85,7 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp �
     "phys_abs_rep" ∷ state_rep phys_state abs_state ∗
     "own_children" ∷ map_ctx γ_children 1 children ∗
     "own_fresh_keys" ∷ auth_set_auth γ_fresh_keys fresh_keys ∗
-    "%consistent" ∷ ⌜ kubernetes_state_consistent abs_state children fresh_keys ⌝.
+    "consistent" ∷ kubernetes_state_consistent abs_state children fresh_keys.
 
 Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
   is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
@@ -121,7 +120,7 @@ Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t)
   {{{ (obj': interface.t) (ptr': loc) (rs': v1.ReplicaSet.t), RET #obj';
       ⌜ obj' = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr' ⌝ ∗
       ptr' ↦ rs' ∗
-      deepcopy_of_replicaset rs rs' ∗
+      deepcopy_ReplicaSet rs rs' ∗
       ptr ↦ rs
   }}}.
 Proof.
@@ -201,14 +200,13 @@ Lemma wp_objList_pod_ptsto_mut kind namespace γ_state γ_children γ_fresh_keys
       ) ∗
       ([∗ map] key ↦ owned_pod ∈ owned_pod_map,
         if bool_decide (namespace = ""%go ∨ key.(KKey.Namespace') = namespace)
-        then ∃ pod, ⌜ pod ∈ pods ⌝ ∗ deepcopy_of_pod owned_pod pod
+        then ∃ pod, ⌜ pod ∈ pods ⌝ ∗ deepcopy_Pod owned_pod pod
         else ∀ pod, ⌜ pod ∈ pods → key ≠ extract_pod_key pod ⌝
       ) ∗
       ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod)
   }}}.
 Proof.
 Admitted.
-
 
 Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
   {{{ is_pkg_init apimodel ∗
@@ -302,7 +300,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owne
           ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
           ptr ↦ rs
       ) ∗
-      deepcopy_of_replicaset owned_rs rs ∗
+      deepcopy_ReplicaSet owned_rs rs ∗
       replicaset_nn_well_formed rs (KKey.Namespace' key) (KKey.Name' key) ∗
       key [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs)
   }}}.
@@ -337,14 +335,14 @@ Proof.
   rewrite /is_Some key_in_phys. wp_auto.
   wp_apply (wp_deepCopy_replicaset with "[$rs_ptr]").
   { iPureIntro. reflexivity. }
-  iIntros (obj' ptr' rs') "(%obj'_is_ptr & ptr' & rs'_is_deepcopy_of_rs & rs_ptr)".
-  iPoseProof (well_formed_preserved_by_deepcopy_replicaset owned_rs rs' (KKey.Namespace' key) (KKey.Name' key)
-  with "[$rs'_is_deepcopy_of_rs] [$replicaset_nn_well_formed]") as "(rs'_is_deepcopy_of_rs & replicaset_nn_well_formed & rs'_nn_well_formed)".
+  iIntros (obj' ptr' rs') "(%obj'_is_ptr & ptr' & rs'_is_deepcopy_rs & rs_ptr)".
+  iPoseProof (well_formed_preserved_by_deepcopy_ReplicaSet owned_rs rs' (KKey.Namespace' key) (KKey.Name' key)
+  with "[$rs'_is_deepcopy_rs] [$replicaset_nn_well_formed]") as "(rs'_is_deepcopy_rs & replicaset_nn_well_formed & rs'_nn_well_formed)".
   wp_auto.
   iAssert (state_rep phys_state abs_state %I) with "[rs_ptr other_rep replicaset_nn_well_formed]" as "phys_abs_rep".
   { iApply "other_rep". iExists ptr, owned_rs. iFrame. done. }
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-  with "[$own_Mutex state_m_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys]").
+  with "[$own_Mutex state_m_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys consistent]").
   { iFrame. done. }
   iApply ("HΦ" $! obj' true).
   iSplitR.
@@ -363,7 +361,7 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
       ⌜ err = interface.nil ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs) ∗
       l ↦ rs ∗
-      deepcopy_of_replicaset owned_rs rs ∗
+      deepcopy_ReplicaSet owned_rs rs ∗
       replicaset_nn_well_formed rs namespace name
   }}}.
 Proof.
@@ -397,7 +395,7 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
       ⌜ err = interface.nil ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs) ∗
       l ↦{dq} rs ∗
-      deepcopy_of_replicaset owned_rs rs ∗
+      deepcopy_ReplicaSet owned_rs rs ∗
       replicaset_nn_well_formed rs namespace name
   }}}.
 Proof.

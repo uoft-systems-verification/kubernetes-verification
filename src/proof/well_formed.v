@@ -31,10 +31,10 @@ Definition replicaset_nn_well_formed (rs: v1.ReplicaSet.t) (namespace name: go_s
   ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
   replicaset_well_formed rs.
 
-Lemma well_formed_preserved_by_deepcopy_replicaset rs1 rs2 namespace name:
-  deepcopy_of_replicaset rs1 rs2 -∗
+Lemma well_formed_preserved_by_deepcopy_ReplicaSet rs1 rs2 namespace name:
+  deepcopy_ReplicaSet rs1 rs2 -∗
     replicaset_nn_well_formed rs1 namespace name -∗
-      deepcopy_of_replicaset rs1 rs2 ∗
+      deepcopy_ReplicaSet rs1 rs2 ∗
       replicaset_nn_well_formed rs1 namespace name ∗
       replicaset_nn_well_formed rs2 namespace name.
 Proof.
