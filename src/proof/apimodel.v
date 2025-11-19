@@ -208,7 +208,8 @@ Lemma wp_objList_pod_ptsto_mut kind namespace γ_state γ_children γ_fresh_keys
 Proof.
 Admitted.
 
-Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
+Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
+  γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
@@ -220,33 +221,37 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value γ_state γ_childre
       "%index_name" ∷ ⌜ index_name = "podControllerUID"%go ⌝
   }}}
     @! apimodel.ByIndex #kind #index_name #indexed_value
-  {{{ (l: slice.t) (err: error.t) (objs: list interface.t) (pods: list v1.Pod.t), RET #l;
-      l ↦* objs ∗
-      ⌜ NoDup (map extract_pod_key pods) ⌝ ∗
-      ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc),
-        ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-        ptr ↦ pod ∗
-        pod_well_formed pod ∗
-        is_pod_controller_uid_index pod indexed_value
+  {{{ (l: slice.t) (err: error.t) (objs: list interface.t) (pods: list v1.Pod.t), RET (#l, #err);
+      "l" ∷ l ↦* objs ∗
+      "%err_is_nil" ∷ ⌜ err = interface.nil ⌝ ∗
+      "%pods_nodup" ∷ ⌜ NoDup (map extract_pod_key pods) ⌝ ∗
+      "obj_pts_to_pod" ∷ ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc),
+        ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
+        ptr ↦ pod
       ) ∗
-      ⌜ Forall (λ pod, owned_pod_map !! extract_pod_key pod = Some pod) pods ⌝ ∗
-      ⌜ dom owned_pod_map = list_to_set (extract_pod_key <$> pods) ⌝ ∗
-      parent_key [[ γ_state ]]↦ owned_parent ∗
-      ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
-      parent_key [[ γ_children ]]↦ owned_child_keys
+      "pods_well_formed" ∷ ([∗ list] pod ∈ pods,
+        pod_well_formed pod ∗
+        (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = indexed_value ⌝)
+      ) ∗
+      "%pods_found_in_map" ∷ ⌜ Forall (λ pod, owned_pod_map !! extract_pod_key pod = Some pod) pods ⌝ ∗
+      "%key_set_equal_dom_owned_pods" ∷  ⌜ list_to_set (extract_pod_key <$> pods) = dom owned_pod_map ⌝ ∗
+      "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
+      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys uid:
+Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod
+  γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%namespace_valid" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
-      "%uid" ∷ ⌜ uid = (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ⌝ ∗
-      "parent_uid" ∷ (∃ os o c, pod_has_controller_parent_uid to_create_pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = uid ⌝) ∗
+      "parent_uid" ∷ (∃ os o c, pod_has_controller_parent_uid to_create_pod os o c ∗
+        ⌜ o.(v1.OwnerReference.UID') = (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ⌝) ∗
       "%no_name" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝ ∗
       "%generate_name" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') ≠ ""%go⌝ ∗
       "well_formed_for_creation" ∷ pod_well_formed_for_creation to_create_pod
