@@ -1,4 +1,5 @@
 From proof Require Import prelude empty_ffi apimodel.
+From proof.big_op Require Import big_sepL.
 From proof.kubernetes_model Require Export simplereplicaset_init.
 
 Section proof.
@@ -53,8 +54,7 @@ Proof.
   iDestruct (own_slice_len with "l") as %l_len.
   iDestruct (own_slice_wf with "l") as %l_cap.
   iDestruct (big_sepL2_length with "obj_pts_to_pod") as %len.
-  set I := (
-    ∃ (i: w64) (result: slice.t) (ptrs: list loc) (v: interface.t),
+  iAssert ((∃ (i: w64) (result: slice.t) (ptrs: list loc) (v: interface.t),
       "i" :: i_ptr ↦ i ∗
       "result" :: result_ptr ↦ result ∗
       "ptrs" :: result ↦* ptrs ∗
@@ -63,8 +63,7 @@ Proof.
       "obj" ∷ obj_ptr ↦ v ∗
       "own_result_cap" :: own_slice_cap loc result (DfracOwn 1) ∗
       "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f l)⌝
-  )%I.
-  iAssert (I) with "[i result obj obj_pts_to_pod]" as "loop_inv".
+  )%I) with "[i result obj obj_pts_to_pod]" as "loop_inv".
   {
     iExists (W64 0), slice.nil, [], (default_val interface.t).
     iFrame. iFrame "#". iSplit.
@@ -75,22 +74,12 @@ Proof.
   wp_if_destruct.
   - wp_pure; first word.
     list_elem objs (sint.Z i) as obj.
-    wp_apply (wp_load_slice_elem with "[$l]"); [ word | eauto | iIntros "l" ].
-    wp_auto.
+    wp_apply (wp_load_slice_elem with "[$l]"); [ word | eauto | ].
+    iIntros "l". wp_auto.
     list_elem pods (sint.Z i) as pod.
-    assert (drop (sint.nat i) objs ≠ []) as objs_not_nil.
-    { intros objs_is_nil. apply drop_nil_inv in objs_is_nil. lia. }
-    assert (drop (sint.nat i) pods ≠ []) as pods_not_nil.
-    { intros pods_is_nil. apply drop_nil_inv in pods_is_nil. lia. }
-    assert ((drop (sint.nat i) objs) !! Z.to_nat 0 = Some obj) as objs_0_is_obj.
-    { rewrite lookup_drop Nat.add_0_r. exact Hobj_lookup. }
-    destruct (drop (sint.nat i) objs) as [|h objs'] eqn:objs_drop_destruct; [contradiction|].
-    inversion objs_0_is_obj; subst h. clear objs_0_is_obj.
-    assert ((drop (sint.nat i) pods) !! Z.to_nat 0 = Some pod) as pods_0_is_pod.
-    { rewrite lookup_drop Nat.add_0_r. exact Hpod_lookup. }
-    destruct (drop (sint.nat i) pods) as [|h pods'] eqn:pods_drop_destruct; [contradiction|].
-    inversion pods_0_is_pod; subst h. clear pods_0_is_pod.
-    iDestruct (big_sepL2_cons with "obj_pts_to_pod") as "[this_obj_pts_to_pod other_obj_pts_to_pod]".
+    iPoseProof (big_sepL2_destruct_cons _ (drop (sint.nat i) objs) (drop (sint.nat i) pods) obj pod with "[$obj_pts_to_pod]")
+    as "[this_obj_pts_to_pod other_obj_pts_to_pod]".
+    { rewrite !lookup_drop Nat.add_0_r. auto. }
     iDestruct "this_obj_pts_to_pod" as (this_ptr) "(%obj_made_of_ptr & this_ptr)".
     subst obj.
     unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
@@ -107,15 +96,11 @@ Proof.
     iExists (word.add i (W64 1)), result', (ptrs ++ [y]), (interface.mk (ptrT.id v1.Pod.id) (# y)).
     iFrame.
     iSplitL "other_obj_pts_to_pod".
-    + assert (objs' = drop 1 (drop (sint.nat i) objs)) as ->.
-      { rewrite objs_drop_destruct //=. }
-      assert (pods' = drop 1 (drop (sint.nat i) pods)) as ->.
-      { rewrite pods_drop_destruct //=. }
-      rewrite !drop_drop Nat.add_comm /=.
+    + rewrite !drop_drop Nat.add_comm /=.
       assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as ->.
       { word. }
       done.
-    + iSplitL; only 2: iPureIntro; try word.
+    + iSplitL; [ | iPureIntro; word ].
       assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as ->.
       { word. }
       assert (take (S (sint.nat i)) pods = take (sint.nat i) pods ++ [pod]) as ->.
