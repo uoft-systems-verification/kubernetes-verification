@@ -1,6 +1,6 @@
 {
 	"recommendations": [
-		"maximedenes.vscoq",
+		"rocq-prover.vsrocq",
 		"mr-konn.generic-input-method",
 		"ms-vscode.makefile-tools",
 		"wayou.vscode-todo-highlight",

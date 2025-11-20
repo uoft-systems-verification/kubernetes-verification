@@ -25,13 +25,21 @@
   "vscoq.goals.diff.mode": "off",
   "vscoq.completion.enable": false,
   "vscoq.proof.mode": 0,
+  "vsrocq.goals.diff.mode": "off",
+  "vsrocq.completion.enable": false,
+  "vsrocq.proof.mode": 0,
   "editor.unicodeHighlight.ambiguousCharacters": false,
   "generic-input-methods.input-methods": [
     {
       "name": "Iris Math",
       "commandName": "text.math",
-      "languages": ["coq"],
-      "triggers": ["\\"],
+      "languages": [
+        "coq",
+        "rocq"
+      ],
+      "triggers": [
+        "\\"
+      ],
       "dictionary": [
         // Standard LaTeX math notations
         {
