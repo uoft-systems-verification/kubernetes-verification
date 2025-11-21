@@ -3,6 +3,8 @@ From New.proof.github_com.goose_lang.goose.model.channel Require Export auth_set
 Require Export New.proof.sync.
 
 From proof.kubernetes_model Require Export apimodel_init.
+From proof.k8s_io.apimachinery.pkg.api Require Export meta.
+From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
 From proof Require Export deepcopy well_formed.
 Export apimodel.apimodel.
@@ -78,8 +80,10 @@ Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey
 Axiom kubernetes_state_consistent: gmap KKey.t KObject.t → gmap KKey.t (gset KKey.t) → gset KKey.t → iProp Σ. 
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
-  ∃ (l: loc) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
+  ∃ (l: loc) (uc: w64) (rvc: w64) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
     "state_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] l ∗
+    "state_uc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "uidCounter" ] uc ∗
+    "state_rvc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "resourceVersionCounter" ] rvc ∗
     "own_phys" ∷ l ↦$ phys_state ∗
     "own_abs" ∷ map_ctx γ_state 1 abs_state ∗
     "phys_abs_rep" ∷ state_rep phys_state abs_state ∗
@@ -99,6 +103,17 @@ Definition pod_has_controller_parent_uid (pod: v1.Pod.t) (os: list v1.OwnerRefer
 Definition is_pod_controller_uid_index (pod: v1.Pod.t) (indexed_value: go_string) : iProp Σ :=
   (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = indexed_value ⌝) ∨
   (¬(∃ os o c, pod_has_controller_parent_uid pod os o c) ∗ ⌜ indexed_value = "_ORPHAN_POD"%go ⌝).
+
+Lemma decide_kind_is_pod kind:
+  kind = "Pod"%go →
+    bool_decide (kind = "Pod"%go) = true ∧
+    bool_decide (kind = "ReplicaSet"%go) = false.
+Proof.
+  intros Hkind.
+  split.
+  - apply bool_decide_true; exact Hkind.
+  - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
+Qed.
 
 Lemma decide_kind_is_replicaset kind:
   kind = "ReplicaSet"%go →
@@ -208,6 +223,7 @@ Lemma wp_objList_pod_ptsto_mut kind namespace γ_state γ_children γ_fresh_keys
 Proof.
 Admitted.
 
+(* TODO: revisit this spec *)
 Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
   γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
   {{{ is_pkg_init apimodel ∗
@@ -233,7 +249,9 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
         pod_well_formed pod ∗
         (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = indexed_value ⌝)
       ) ∗
-      "%pods_found_in_map" ∷ ⌜ Forall (λ pod, owned_pod_map !! extract_pod_key pod = Some pod) pods ⌝ ∗
+      "pods_found_in_map" ∷ ([∗ list] pod ∈ pods, ∃ owned_pod,
+        ⌜ owned_pod_map !! extract_pod_key pod = Some owned_pod ⌝ ∗ deepcopy_Pod owned_pod pod
+      ) ∗
       "%key_set_equal_dom_owned_pods" ∷  ⌜ list_to_set (extract_pod_key <$> pods) = dom owned_pod_map ⌝ ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
@@ -271,7 +289,21 @@ Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod
 Proof.
 Admitted.
 
-Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys:
+Lemma pod_ptr_implements_v1_object i (ptr: loc):
+  i = interface.mk (ptrT.id v1.Pod.id) (# ptr) →
+    ∃ (o: v1.Object.t), i = interface.mk v1.Object.id (# o) ∧
+      o = interface.mk (ptrT.id v1.ObjectMeta.id) #(struct.field_ref_f v1.Pod "ObjectMeta" ptr).
+Proof.
+Admitted.
+
+Lemma wp_FormatInt (i: w64) (base: w64):
+  {{{ is_pkg_init apimodel }}}
+    @! strconv.FormatInt #i #base
+  {{{ (v: go_string), RET #v; True }}}.
+Proof.
+Admitted.
+
+Lemma wp_objDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
@@ -280,6 +312,96 @@ Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod pa
       "%kind" ∷ ⌜ KKey.Kind' key = "Pod"%go ⌝
   }}}
     @! apimodel.objDelete #key
+  {{{ (err: error.t) pod, RET #err;
+      ⌜ err = interface.nil ⌝ ∗
+      (
+        key [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        parent_key [[ γ_children ]]↦ owned_child_keys ∗
+        ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
+      ) ∨
+      parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]})
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  wp_apply wp_with_defer.
+  iIntros (defer) "defer". simpl subst. wp_auto. iRename "key" into "key_ptr".
+  wp_apply wp_globals_get.
+  wp_apply wp_Mutex__Lock; [done|].
+  iIntros "[own_Mutex H]". iNamed "H". wp_auto.
+  wp_apply wp_globals_get. wp_apply wp_globals_get.
+  iAssert (⌜ abs_state !! key = Some (KObject.Pod owned_pod) ⌝%I) with "[own_pod own_abs]" as "%key_in_abs".
+  { 
+    iDestruct (map_valid with "own_abs own_pod") as %Hlookup.
+    iPureIntro; exact Hlookup.
+  }
+  iAssert (⌜ ∃ obj, phys_state !! key = Some obj ⌝%I) with "[phys_abs_rep]" as "%key_in_phys".
+  {
+    iDestruct (big_sepM2_lookup_r with "phys_abs_rep") as (obj key_in_phys) "_".
+    { exact key_in_abs. }
+    iPureIntro. exists obj. exact key_in_phys.
+  }
+  destruct key_in_phys as [obj key_in_phys].
+  iDestruct (big_sepM2_lookup_acc _ _ _ _ _ _ key_in_phys key_in_abs with "phys_abs_rep") as "[k_rep other_rep]".
+  destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset].
+  { done. }
+  rewrite kind_is_pod.
+  iDestruct "k_rep" as "(%ptr & %rs0 & rs_rep)". iNamed "rs_rep".
+  inversion abs_v_is_pod as [Heq]. symmetry in Heq. subst. clear abs_v_is_pod.
+  wp_apply (wp_map_get with "[$own_phys]"). iIntros "own_phys". wp_auto.
+  rewrite /is_Some key_in_phys. wp_auto.
+  destruct (pod_ptr_implements_v1_object (interface.mk (ptrT.id v1.Pod.id) (# ptr)) ptr) as [o [interface_is_object object_is_ptr]].
+  { done. }
+  wp_apply wp_Accessor.
+  { done. }
+  iIntros (ret err) "(-> & ->)". wp_auto.
+  assert ((bool_decide (interface.nil = interface.nil)) = true) as nil_is_nil.
+  { rewrite bool_decide_true //. }
+  rewrite nil_is_nil. wp_auto.
+  iDestruct (struct_fields_split with "pod_ptr") as "H". iNamed "H".
+  wp_apply (wp_GetFinalizers with "[$HObjectMeta]").
+  iIntros (finalizers) "(-> & HObjectMeta)". wp_auto.
+  wp_if_destruct.
+  - wp_apply (wp_GetDeletionTimestamp with "[$HObjectMeta]").
+    iIntros (deletion_timestamp) "(-> & HObjectMeta)". wp_auto.
+    wp_if_destruct.
+    + wp_apply v1.wp_Now. iIntros (time) "_". wp_auto.
+      wp_apply (wp_SetDeletionTimestamp with "[$HObjectMeta]").
+      iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+      wp_apply wp_globals_get.
+      (* TODO: handle resource version counter overflow *)
+      wp_apply wp_globals_get. wp_apply wp_globals_get.
+      wp_apply wp_FormatInt. iIntros (rv_str) "_". wp_auto.
+      wp_apply (wp_SetResourceVersion with "[$HObjectMeta]").
+      iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+      wp_apply wp_globals_get.
+      wp_apply (wp_map_insert with "[$own_phys]").
+      iIntros "own_phys". wp_auto.
+      iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
+        with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "new_pod_ptr". simpl.
+      admit.
+    + wp_apply wp_globals_get.
+      wp_apply (wp_map_insert with "[$own_phys]").
+      iIntros "own_phys". wp_auto.
+      iDestruct (struct_fields_combine (V:=v1.Pod.t)
+        with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "pod_ptr".
+      admit.
+  - wp_apply wp_globals_get.
+    wp_apply (wp_map_delete with "[$own_phys]").
+    iIntros "own_phys". wp_auto.
+    iDestruct (struct_fields_combine (V:=v1.Pod.t)
+        with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "pod_ptr".
+    admit.
+Admitted.
+
+Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys:
+  {{{ is_pkg_init apimodel ∗
+      "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
+      "%pod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
+      "%kind" ∷ ⌜ KKey.Kind' key = "Pod"%go ⌝
+  }}}
+    @! apimodel.PodDelete #key
   {{{ (err: error.t) pod, RET #err;
       ⌜ err = interface.nil ⌝ ∗
       (
@@ -347,7 +469,7 @@ Proof.
   iAssert (state_rep phys_state abs_state %I) with "[rs_ptr other_rep replicaset_nn_well_formed]" as "phys_abs_rep".
   { iApply "other_rep". iExists ptr, owned_rs. iFrame. done. }
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-  with "[$own_Mutex state_m_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys consistent]").
+  with "[$own_Mutex state_m_addr state_uc_addr state_rvc_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys consistent]").
   { iFrame. done. }
   iApply ("HΦ" $! obj' true).
   iSplitR.

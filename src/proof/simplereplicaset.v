@@ -35,7 +35,9 @@ Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
         pod_well_formed pod ∗
         (∃ os o c, pod_has_controller_parent_uid pod os o c ∗ ⌜ o.(v1.OwnerReference.UID') = (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ⌝)
       ) ∗
-      ⌜ Forall (λ pod, owned_pod_map !! extract_pod_key pod = Some pod) pods ⌝ ∗
+      ([∗ list] pod ∈ pods, ∃ owned_pod,
+        ⌜ owned_pod_map !! extract_pod_key pod = Some owned_pod ⌝ ∗ deepcopy_Pod owned_pod pod
+      ) ∗
       ⌜ dom owned_pod_map = list_to_set (extract_pod_key <$> pods) ⌝ ∗
       parent_key [[ γ_state ]]↦ owned_parent ∗
       ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
@@ -92,7 +94,7 @@ Proof.
     wp_apply wp_slice_literal. iIntros (sl) "sl". wp_auto.
     wp_apply (wp_slice_append with "[$ptrs $own_result_cap $sl]").
     iIntros (result') "(ptrs & own_result_cap & sl)". wp_auto.
-    iApply wp_for_post_do. wp_auto. iFrame "owner HΦ err pods pods_well_formed owner_ptr l own_pods own_child_keys own_parent".
+    iApply wp_for_post_do. wp_auto. iFrame "owner HΦ err pods pods_well_formed pods_found_in_map owner_ptr l own_pods own_child_keys own_parent".
     iExists (word.add i (W64 1)), result', (ptrs ++ [y]), (interface.mk (ptrT.id v1.Pod.id) (# y)).
     iFrame.
     iSplitL "other_obj_pts_to_pod".

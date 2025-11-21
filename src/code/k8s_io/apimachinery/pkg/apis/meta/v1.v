@@ -340,7 +340,9 @@ Definition SelectorHasLabel : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1
 
 Axiom ObjectMetaAccessor : go_type.
 
-Axiom Object : go_type.
+Definition Object : go_type := interfaceT.
+#[global] Typeclasses Opaque Object.
+#[global] Opaque Object.
 
 Axiom ListMetaAccessor : go_type.
 
@@ -349,6 +351,260 @@ Axiom Common : go_type.
 Axiom ListInterface : go_type.
 
 Axiom Type' : go_type.
+
+Definition Time : go_type := structT [
+  "Time" :: time.Time
+].
+#[global] Typeclasses Opaque Time.
+#[global] Opaque Time.
+
+Definition ObjectMeta : go_type := structT [
+  "Name" :: stringT;
+  "GenerateName" :: stringT;
+  "Namespace" :: stringT;
+  "SelfLink" :: stringT;
+  "UID" :: types.UID;
+  "ResourceVersion" :: stringT;
+  "Generation" :: int64T;
+  "CreationTimestamp" :: Time;
+  "DeletionTimestamp" :: ptrT;
+  "DeletionGracePeriodSeconds" :: ptrT;
+  "Labels" :: mapT stringT stringT;
+  "Annotations" :: mapT stringT stringT;
+  "OwnerReferences" :: sliceT;
+  "Finalizers" :: sliceT;
+  "ManagedFields" :: sliceT
+].
+#[global] Typeclasses Opaque ObjectMeta.
+#[global] Opaque ObjectMeta.
+
+(* Namespace implements metav1.Object for any object with an ObjectMeta typed field. Allows
+   fast, direct access to metadata fields for API objects.
+
+   go: meta.go:135:25 *)
+Definition ObjectMeta__GetNamespaceⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#stringT] (struct.field_ref #ObjectMeta #"Namespace"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:136:25 *)
+Definition ObjectMeta__SetNamespaceⁱᵐᵖˡ : val :=
+  λ: "meta" "namespace",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "namespace" := (mem.alloc "namespace") in
+    let: "$r0" := (![#stringT] "namespace") in
+    do:  ((struct.field_ref #ObjectMeta #"Namespace"%go (![#ptrT] "meta")) <-[#stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:137:25 *)
+Definition ObjectMeta__GetNameⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#stringT] (struct.field_ref #ObjectMeta #"Name"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:138:25 *)
+Definition ObjectMeta__SetNameⁱᵐᵖˡ : val :=
+  λ: "meta" "name",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "name" := (mem.alloc "name") in
+    let: "$r0" := (![#stringT] "name") in
+    do:  ((struct.field_ref #ObjectMeta #"Name"%go (![#ptrT] "meta")) <-[#stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:139:25 *)
+Definition ObjectMeta__GetGenerateNameⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#stringT] (struct.field_ref #ObjectMeta #"GenerateName"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:140:25 *)
+Definition ObjectMeta__SetGenerateNameⁱᵐᵖˡ : val :=
+  λ: "meta" "generateName",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "generateName" := (mem.alloc "generateName") in
+    let: "$r0" := (![#stringT] "generateName") in
+    do:  ((struct.field_ref #ObjectMeta #"GenerateName"%go (![#ptrT] "meta")) <-[#stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:141:25 *)
+Definition ObjectMeta__GetUIDⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#types.UID] (struct.field_ref #ObjectMeta #"UID"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:142:25 *)
+Definition ObjectMeta__SetUIDⁱᵐᵖˡ : val :=
+  λ: "meta" "uid",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "uid" := (mem.alloc "uid") in
+    let: "$r0" := (![#types.UID] "uid") in
+    do:  ((struct.field_ref #ObjectMeta #"UID"%go (![#ptrT] "meta")) <-[#types.UID] "$r0");;;
+    return: #()).
+
+(* go: meta.go:143:25 *)
+Definition ObjectMeta__GetResourceVersionⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#stringT] (struct.field_ref #ObjectMeta #"ResourceVersion"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:144:25 *)
+Definition ObjectMeta__SetResourceVersionⁱᵐᵖˡ : val :=
+  λ: "meta" "version",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "version" := (mem.alloc "version") in
+    let: "$r0" := (![#stringT] "version") in
+    do:  ((struct.field_ref #ObjectMeta #"ResourceVersion"%go (![#ptrT] "meta")) <-[#stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:145:25 *)
+Definition ObjectMeta__GetGenerationⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#int64T] (struct.field_ref #ObjectMeta #"Generation"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:146:25 *)
+Definition ObjectMeta__SetGenerationⁱᵐᵖˡ : val :=
+  λ: "meta" "generation",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "generation" := (mem.alloc "generation") in
+    let: "$r0" := (![#int64T] "generation") in
+    do:  ((struct.field_ref #ObjectMeta #"Generation"%go (![#ptrT] "meta")) <-[#int64T] "$r0");;;
+    return: #()).
+
+(* go: meta.go:147:25 *)
+Definition ObjectMeta__GetSelfLinkⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#stringT] (struct.field_ref #ObjectMeta #"SelfLink"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:148:25 *)
+Definition ObjectMeta__SetSelfLinkⁱᵐᵖˡ : val :=
+  λ: "meta" "selfLink",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "selfLink" := (mem.alloc "selfLink") in
+    let: "$r0" := (![#stringT] "selfLink") in
+    do:  ((struct.field_ref #ObjectMeta #"SelfLink"%go (![#ptrT] "meta")) <-[#stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:149:25 *)
+Definition ObjectMeta__GetCreationTimestampⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#Time] (struct.field_ref #ObjectMeta #"CreationTimestamp"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:150:25 *)
+Definition ObjectMeta__SetCreationTimestampⁱᵐᵖˡ : val :=
+  λ: "meta" "creationTimestamp",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "creationTimestamp" := (mem.alloc "creationTimestamp") in
+    let: "$r0" := (![#Time] "creationTimestamp") in
+    do:  ((struct.field_ref #ObjectMeta #"CreationTimestamp"%go (![#ptrT] "meta")) <-[#Time] "$r0");;;
+    return: #()).
+
+(* go: meta.go:153:25 *)
+Definition ObjectMeta__GetDeletionTimestampⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#ptrT] (struct.field_ref #ObjectMeta #"DeletionTimestamp"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:154:25 *)
+Definition ObjectMeta__SetDeletionTimestampⁱᵐᵖˡ : val :=
+  λ: "meta" "deletionTimestamp",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "deletionTimestamp" := (mem.alloc "deletionTimestamp") in
+    let: "$r0" := (![#ptrT] "deletionTimestamp") in
+    do:  ((struct.field_ref #ObjectMeta #"DeletionTimestamp"%go (![#ptrT] "meta")) <-[#ptrT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:157:25 *)
+Definition ObjectMeta__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#ptrT] (struct.field_ref #ObjectMeta #"DeletionGracePeriodSeconds"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:160:25 *)
+Definition ObjectMeta__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val :=
+  λ: "meta" "deletionGracePeriodSeconds",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "deletionGracePeriodSeconds" := (mem.alloc "deletionGracePeriodSeconds") in
+    let: "$r0" := (![#ptrT] "deletionGracePeriodSeconds") in
+    do:  ((struct.field_ref #ObjectMeta #"DeletionGracePeriodSeconds"%go (![#ptrT] "meta")) <-[#ptrT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:163:25 *)
+Definition ObjectMeta__GetLabelsⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![type.mapT #stringT #stringT] (struct.field_ref #ObjectMeta #"Labels"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:164:25 *)
+Definition ObjectMeta__SetLabelsⁱᵐᵖˡ : val :=
+  λ: "meta" "labels",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "labels" := (mem.alloc "labels") in
+    let: "$r0" := (![type.mapT #stringT #stringT] "labels") in
+    do:  ((struct.field_ref #ObjectMeta #"Labels"%go (![#ptrT] "meta")) <-[type.mapT #stringT #stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:165:25 *)
+Definition ObjectMeta__GetAnnotationsⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![type.mapT #stringT #stringT] (struct.field_ref #ObjectMeta #"Annotations"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:166:25 *)
+Definition ObjectMeta__SetAnnotationsⁱᵐᵖˡ : val :=
+  λ: "meta" "annotations",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "annotations" := (mem.alloc "annotations") in
+    let: "$r0" := (![type.mapT #stringT #stringT] "annotations") in
+    do:  ((struct.field_ref #ObjectMeta #"Annotations"%go (![#ptrT] "meta")) <-[type.mapT #stringT #stringT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:167:25 *)
+Definition ObjectMeta__GetFinalizersⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#sliceT] (struct.field_ref #ObjectMeta #"Finalizers"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:168:25 *)
+Definition ObjectMeta__SetFinalizersⁱᵐᵖˡ : val :=
+  λ: "meta" "finalizers",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "finalizers" := (mem.alloc "finalizers") in
+    let: "$r0" := (![#sliceT] "finalizers") in
+    do:  ((struct.field_ref #ObjectMeta #"Finalizers"%go (![#ptrT] "meta")) <-[#sliceT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:169:25 *)
+Definition ObjectMeta__GetOwnerReferencesⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#sliceT] (struct.field_ref #ObjectMeta #"OwnerReferences"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:170:25 *)
+Definition ObjectMeta__SetOwnerReferencesⁱᵐᵖˡ : val :=
+  λ: "meta" "references",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "references" := (mem.alloc "references") in
+    let: "$r0" := (![#sliceT] "references") in
+    do:  ((struct.field_ref #ObjectMeta #"OwnerReferences"%go (![#ptrT] "meta")) <-[#sliceT] "$r0");;;
+    return: #()).
+
+(* go: meta.go:173:25 *)
+Definition ObjectMeta__GetManagedFieldsⁱᵐᵖˡ : val :=
+  λ: "meta" <>,
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    return: (![#sliceT] (struct.field_ref #ObjectMeta #"ManagedFields"%go (![#ptrT] "meta")))).
+
+(* go: meta.go:174:25 *)
+Definition ObjectMeta__SetManagedFieldsⁱᵐᵖˡ : val :=
+  λ: "meta" "managedFields",
+    exception_do (let: "meta" := (mem.alloc "meta") in
+    let: "managedFields" := (mem.alloc "managedFields") in
+    let: "$r0" := (![#sliceT] "managedFields") in
+    do:  ((struct.field_ref #ObjectMeta #"ManagedFields"%go (![#ptrT] "meta")) <-[#sliceT] "$r0");;;
+    return: #()).
 
 Axiom RFC3339Micro : go_string.
 
@@ -398,12 +654,6 @@ Definition AddToGroupVersion : go_string := "k8s.io/apimachinery/pkg/apis/meta/v
 
 Definition AddMetaToScheme : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1.AddMetaToScheme"%go.
 
-Definition Time : go_type := structT [
-  "Time" :: time.Time
-].
-#[global] Typeclasses Opaque Time.
-#[global] Opaque Time.
-
 Definition NewTime : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1.NewTime"%go.
 
 Definition Date : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1.Date"%go.
@@ -428,26 +678,6 @@ Axiom ObjectNameField : go_string.
 Axiom FinalizerOrphanDependents : go_string.
 
 Axiom FinalizerDeleteDependents : go_string.
-
-Definition ObjectMeta : go_type := structT [
-  "Name" :: stringT;
-  "GenerateName" :: stringT;
-  "Namespace" :: stringT;
-  "SelfLink" :: stringT;
-  "UID" :: types.UID;
-  "ResourceVersion" :: stringT;
-  "Generation" :: int64T;
-  "CreationTimestamp" :: Time;
-  "DeletionTimestamp" :: ptrT;
-  "DeletionGracePeriodSeconds" :: ptrT;
-  "Labels" :: mapT stringT stringT;
-  "Annotations" :: mapT stringT stringT;
-  "OwnerReferences" :: sliceT;
-  "Finalizers" :: sliceT;
-  "ManagedFields" :: sliceT
-].
-#[global] Typeclasses Opaque ObjectMeta.
-#[global] Opaque ObjectMeta.
 
 Axiom NamespaceDefault : go_string.
 
@@ -1805,37 +2035,7 @@ Axiom ObjectMeta__DeepCopyIntoⁱᵐᵖˡ : val.
 
 Axiom ObjectMeta__Descriptorⁱᵐᵖˡ : val.
 
-Axiom ObjectMeta__GetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetGenerationⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetLabelsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetNameⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetNamespaceⁱᵐᵖˡ : val.
-
 Axiom ObjectMeta__GetObjectMetaⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__GetUIDⁱᵐᵖˡ : val.
 
 Axiom ObjectMeta__Marshalⁱᵐᵖˡ : val.
 
@@ -1846,36 +2046,6 @@ Axiom ObjectMeta__MarshalToSizedBufferⁱᵐᵖˡ : val.
 Axiom ObjectMeta__ProtoMessageⁱᵐᵖˡ : val.
 
 Axiom ObjectMeta__Resetⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetGenerationⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetLabelsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetNameⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetNamespaceⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ObjectMeta__SetUIDⁱᵐᵖˡ : val.
 
 Axiom ObjectMeta__Sizeⁱᵐᵖˡ : val.
 

@@ -131,20 +131,14 @@ Admitted.
 
 (* type v1.Object *)
 Module Object.
+
+#[global] Transparent v1.Object.
+#[global] Typeclasses Transparent v1.Object.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Definition t := interface.t.
 End def.
 End Object.
-
-Global Instance bounded_size_Object : BoundedTypeSize v1.Object.
-Admitted.
-
-Global Instance into_val_Object `{ffi_syntax} : IntoVal Object.t.
-Admitted.
-
-Global Instance into_val_typed_Object `{ffi_syntax} : IntoValTyped Object.t v1.Object.
-Admitted.
 
 (* type v1.ListMetaAccessor *)
 Module ListMetaAccessor.
@@ -1726,6 +1720,126 @@ Global Program Instance is_pkg_defined_v1 : IsPkgDefined v1 :=
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetAnnotations :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetAnnotations" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetCreationTimestamp :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetCreationTimestamp" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetDeletionGracePeriodSeconds :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetDeletionGracePeriodSeconds" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetDeletionTimestamp :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetDeletionTimestamp" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetFinalizers :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetFinalizers" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetGenerateName :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetGenerateName" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetGeneration :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetGeneration" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetLabels :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetLabels" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetManagedFields :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetManagedFields" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetName :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetName" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetNamespace :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetNamespace" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetOwnerReferences :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetOwnerReferences" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetResourceVersion :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetResourceVersion" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetSelfLink :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetSelfLink" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_GetUID :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "GetUID" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetAnnotations :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetAnnotations" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetCreationTimestamp :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetCreationTimestamp" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetDeletionGracePeriodSeconds :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetDeletionGracePeriodSeconds" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetDeletionTimestamp :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetDeletionTimestamp" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetFinalizers :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetFinalizers" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetGenerateName :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetGenerateName" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetGeneration :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetGeneration" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetLabels :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetLabels" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetManagedFields :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetManagedFields" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetName :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetName" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetNamespace :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetNamespace" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetOwnerReferences :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetOwnerReferences" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetResourceVersion :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetResourceVersion" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetSelfLink :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetSelfLink" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_ObjectMeta'ptr_SetUID :
+  WpMethodCall (ptrT.id v1.ObjectMeta.id) "SetUID" _ (is_pkg_defined v1) :=
+  ltac:(solve_wp_method_call).
 
 End names.
 End v1.
