@@ -289,6 +289,8 @@ Lemma wp_PodCreate_without_name namespace to_create_pod_ptr to_create_pod
 Proof.
 Admitted.
 
+(* FIXME: this spec is wrong because o's value should be a Pod pointer. will fix it after Goose has better support for
+  interface method dispatch *)
 Lemma pod_ptr_implements_v1_object i (ptr: loc):
   i = interface.mk (ptrT.id v1.Pod.id) (# ptr) →
     ∃ (o: v1.Object.t), i = interface.mk v1.Object.id (# o) ∧
