@@ -7,6 +7,7 @@ From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
 From proof Require Export deepcopy well_formed.
+From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
 Module KKey.
@@ -343,7 +344,7 @@ Proof.
     iPureIntro. exists obj. exact key_in_phys.
   }
   destruct key_in_phys as [obj key_in_phys].
-  iDestruct (big_sepM2_lookup_acc _ _ _ _ _ _ key_in_phys key_in_abs with "phys_abs_rep") as "[k_rep other_rep]".
+  iDestruct (big_sepM2_split_singleton _ key _ _ phys_state abs_state key_in_phys key_in_abs with "phys_abs_rep") as "[k_rep other_rep]".
   destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset].
   { done. }
   rewrite kind_is_pod.

@@ -5,7 +5,6 @@ Set Default Proof Using "Type".
 
 Section list.
   Context {PROP : bi}.
-  Implicit Types (P Q : PROP).
   Implicit Types (A : Type).
 
   Lemma big_sepL_destruct_cons {A} (Φ: nat → A → PROP) (l : list A) (v : A) :
