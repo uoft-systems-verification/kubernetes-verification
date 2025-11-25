@@ -339,9 +339,42 @@ Definition randomSuffixⁱᵐᵖˡ : val :=
       do:  ((slice.elem_ref #byteT (![#sliceT] "b") (![#intT] "i")) <-[#byteT] "$r0")));;;
     return: (string.from_bytes (![#sliceT] "b"))).
 
-Definition objCreate : go_string := "kubernetes_model/apimodel.objCreate"%go.
+Definition generateNewName : go_string := "kubernetes_model/apimodel.generateNewName"%go.
 
 (* go: api_model.go:177:6 *)
+Definition generateNewNameⁱᵐᵖˡ : val :=
+  λ: "kind" "namespace" "generateName",
+    exception_do (let: "generateName" := (mem.alloc "generateName") in
+    let: "namespace" := (mem.alloc "namespace") in
+    let: "kind" := (mem.alloc "kind") in
+    (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
+      let: "name" := (mem.alloc (type.zero_val #stringT)) in
+      let: "$r0" := ((![#stringT] "generateName") + (let: "$a0" := #(W64 5) in
+      (func_call #randomSuffix) "$a0")) in
+      do:  ("name" <-[#stringT] "$r0");;;
+      let: "key" := (mem.alloc (type.zero_val #KKey)) in
+      let: "$r0" := (let: "$Kind" := (![#stringT] "kind") in
+      let: "$Name" := (![#stringT] "name") in
+      let: "$Namespace" := (![#stringT] "namespace") in
+      struct.make #KKey [{
+        "Kind" ::= "$Kind";
+        "Name" ::= "$Name";
+        "Namespace" ::= "$Namespace"
+      }]) in
+      do:  ("key" <-[#KKey] "$r0");;;
+      (let: "exists" := (mem.alloc (type.zero_val #boolT)) in
+      let: ("$ret0", "$ret1") := (map.get (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("exists" <-[#boolT] "$r1");;;
+      (if: (~ (![#boolT] "exists"))
+      then return: (![#stringT] "name")
+      else do:  #())))).
+
+Definition objCreate : go_string := "kubernetes_model/apimodel.objCreate"%go.
+
+(* go: api_model.go:191:6 *)
 Definition objCreateⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "obj",
     with_defer: (let: "obj" := (mem.alloc "obj") in
@@ -388,32 +421,13 @@ Definition objCreateⁱᵐᵖˡ : val :=
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")
       else do:  #());;;
-      (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
-        let: "$r0" := ((![#stringT] "generateName") + (let: "$a0" := #(W64 5) in
-        (func_call #randomSuffix) "$a0")) in
-        do:  ("name" <-[#stringT] "$r0");;;
-        let: "key" := (mem.alloc (type.zero_val #KKey)) in
-        let: "$r0" := (let: "$Kind" := (![#stringT] "kind") in
-        let: "$Name" := (![#stringT] "name") in
-        let: "$Namespace" := (![#stringT] "namespace") in
-        struct.make #KKey [{
-          "Kind" ::= "$Kind";
-          "Name" ::= "$Name";
-          "Namespace" ::= "$Namespace"
-        }]) in
-        do:  ("key" <-[#KKey] "$r0");;;
-        (let: "exists" := (mem.alloc (type.zero_val #boolT)) in
-        let: ("$ret0", "$ret1") := (map.get (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key")) in
-        let: "$r0" := "$ret0" in
-        let: "$r1" := "$ret1" in
-        do:  "$r0";;;
-        do:  ("exists" <-[#boolT] "$r1");;;
-        (if: (~ (![#boolT] "exists"))
-        then
-          do:  (let: "$a0" := (![#stringT] "name") in
-          (interface.get #"SetName"%go (![#v1.Object] "metadata")) "$a0");;;
-          break: #()
-        else do:  #())))
+      let: "$r0" := (let: "$a0" := (![#stringT] "kind") in
+      let: "$a1" := (![#stringT] "namespace") in
+      let: "$a2" := (![#stringT] "generateName") in
+      (func_call #generateNewName) "$a0" "$a1" "$a2") in
+      do:  ("name" <-[#stringT] "$r0");;;
+      do:  (let: "$a0" := (![#stringT] "name") in
+      (interface.get #"SetName"%go (![#v1.Object] "metadata")) "$a0")
     else do:  #());;;
     let: "key" := (mem.alloc (type.zero_val #KKey)) in
     let: "$r0" := (let: "$Kind" := (![#stringT] "kind") in
@@ -458,7 +472,7 @@ Definition objCreateⁱᵐᵖˡ : val :=
 
 Definition objUpdate : go_string := "kubernetes_model/apimodel.objUpdate"%go.
 
-(* go: api_model.go:228:6 *)
+(* go: api_model.go:232:6 *)
 Definition objUpdateⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "obj",
     with_defer: (let: "obj" := (mem.alloc "obj") in
@@ -594,7 +608,7 @@ Definition objUpdateⁱᵐᵖˡ : val :=
 
 Definition objDelete : go_string := "kubernetes_model/apimodel.objDelete"%go.
 
-(* go: api_model.go:278:6 *)
+(* go: api_model.go:282:6 *)
 Definition objDeleteⁱᵐᵖˡ : val :=
   λ: "key",
     with_defer: (let: "key" := (mem.alloc "key") in
@@ -664,7 +678,7 @@ Definition Index : go_string := "kubernetes_model/apimodel.Index"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:307:6 *)
+   go: api_model.go:311:6 *)
 Definition Indexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -761,7 +775,7 @@ Definition ByIndex : go_string := "kubernetes_model/apimodel.ByIndex"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:344:6 *)
+   go: api_model.go:348:6 *)
 Definition ByIndexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "indexedValue",
     exception_do (let: "indexedValue" := (mem.alloc "indexedValue") in
@@ -825,7 +839,7 @@ Definition PodMutGet : go_string := "kubernetes_model/apimodel.PodMutGet"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:368:6 *)
+   go: api_model.go:372:6 *)
 Definition PodGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -835,7 +849,7 @@ Definition PodGetⁱᵐᵖˡ : val :=
     (func_call #PodMutGet) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:372:6 *)
+(* go: api_model.go:376:6 *)
 Definition PodMutGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -888,7 +902,7 @@ Definition PodMutList : go_string := "kubernetes_model/apimodel.PodMutList"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:394:6 *)
+   go: api_model.go:398:6 *)
 Definition PodListⁱᵐᵖˡ : val :=
   λ: "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -898,7 +912,7 @@ Definition PodListⁱᵐᵖˡ : val :=
     (func_call #PodMutList) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:398:6 *)
+(* go: api_model.go:402:6 *)
 Definition PodMutListⁱᵐᵖˡ : val :=
   λ: "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -947,7 +961,7 @@ Definition PodMutListⁱᵐᵖˡ : val :=
 
 Definition PodCreate : go_string := "kubernetes_model/apimodel.PodCreate"%go.
 
-(* go: api_model.go:416:6 *)
+(* go: api_model.go:420:6 *)
 Definition PodCreateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -981,7 +995,7 @@ Definition PodCreateⁱᵐᵖˡ : val :=
 
 Definition PodUpdate : go_string := "kubernetes_model/apimodel.PodUpdate"%go.
 
-(* go: api_model.go:431:6 *)
+(* go: api_model.go:435:6 *)
 Definition PodUpdateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1015,7 +1029,7 @@ Definition PodUpdateⁱᵐᵖˡ : val :=
 
 Definition PodDelete : go_string := "kubernetes_model/apimodel.PodDelete"%go.
 
-(* go: api_model.go:446:6 *)
+(* go: api_model.go:450:6 *)
 Definition PodDeleteⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1039,7 +1053,7 @@ Definition ReplicaSetMutGet : go_string := "kubernetes_model/apimodel.ReplicaSet
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:457:6 *)
+   go: api_model.go:461:6 *)
 Definition ReplicaSetGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1049,7 +1063,7 @@ Definition ReplicaSetGetⁱᵐᵖˡ : val :=
     (func_call #ReplicaSetMutGet) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:461:6 *)
+(* go: api_model.go:465:6 *)
 Definition ReplicaSetMutGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1098,7 +1112,7 @@ Definition ReplicaSetMutGetⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [(stateMu, sync.Mutex); (state, State); (nameRand, ptrT); (randomSuffixChars, sliceT)].
 
-Definition functions' : list (go_string * val) := [(namespaceIndex, namespaceIndexⁱᵐᵖˡ); (podControllerUIDIndex, podControllerUIDIndexⁱᵐᵖˡ); (controllerUIDIndex, controllerUIDIndexⁱᵐᵖˡ); (Init, Initⁱᵐᵖˡ); (OrphanPodIndexKeyForNamespace, OrphanPodIndexKeyForNamespaceⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (objGet, objGetⁱᵐᵖˡ); (objList, objListⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (objListBySelector, objListBySelectorⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (objCreate, objCreateⁱᵐᵖˡ); (objUpdate, objUpdateⁱᵐᵖˡ); (objDelete, objDeleteⁱᵐᵖˡ); (Index, Indexⁱᵐᵖˡ); (ByIndex, ByIndexⁱᵐᵖˡ); (PodGet, PodGetⁱᵐᵖˡ); (PodMutGet, PodMutGetⁱᵐᵖˡ); (PodList, PodListⁱᵐᵖˡ); (PodMutList, PodMutListⁱᵐᵖˡ); (PodCreate, PodCreateⁱᵐᵖˡ); (PodUpdate, PodUpdateⁱᵐᵖˡ); (PodDelete, PodDeleteⁱᵐᵖˡ); (ReplicaSetGet, ReplicaSetGetⁱᵐᵖˡ); (ReplicaSetMutGet, ReplicaSetMutGetⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(namespaceIndex, namespaceIndexⁱᵐᵖˡ); (podControllerUIDIndex, podControllerUIDIndexⁱᵐᵖˡ); (controllerUIDIndex, controllerUIDIndexⁱᵐᵖˡ); (Init, Initⁱᵐᵖˡ); (OrphanPodIndexKeyForNamespace, OrphanPodIndexKeyForNamespaceⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (objGet, objGetⁱᵐᵖˡ); (objList, objListⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (objListBySelector, objListBySelectorⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (generateNewName, generateNewNameⁱᵐᵖˡ); (objCreate, objCreateⁱᵐᵖˡ); (objUpdate, objUpdateⁱᵐᵖˡ); (objDelete, objDeleteⁱᵐᵖˡ); (Index, Indexⁱᵐᵖˡ); (ByIndex, ByIndexⁱᵐᵖˡ); (PodGet, PodGetⁱᵐᵖˡ); (PodMutGet, PodMutGetⁱᵐᵖˡ); (PodList, PodListⁱᵐᵖˡ); (PodMutList, PodMutListⁱᵐᵖˡ); (PodCreate, PodCreateⁱᵐᵖˡ); (PodUpdate, PodUpdateⁱᵐᵖˡ); (PodDelete, PodDeleteⁱᵐᵖˡ); (ReplicaSetGet, ReplicaSetGetⁱᵐᵖˡ); (ReplicaSetMutGet, ReplicaSetMutGetⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [(KKey.id, []); (ptrT.id KKey.id, []); (IndexFunc.id, []); (ptrT.id IndexFunc.id, []); (Indexers.id, []); (ptrT.id Indexers.id, []); (State.id, []); (ptrT.id State.id, [])].
 

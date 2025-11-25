@@ -307,6 +307,10 @@ Global Instance wp_func_call_randomSuffix :
   WpFuncCall apimodel.randomSuffix _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_generateNewName :
+  WpFuncCall apimodel.generateNewName _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_objCreate :
   WpFuncCall apimodel.objCreate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
