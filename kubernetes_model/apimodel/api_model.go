@@ -296,7 +296,6 @@ func objDelete(key KKey) error {
 			state.resourceVersionCounter++
 			metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))
 		}
-		state.m[key] = obj
 		return nil
 	}
 

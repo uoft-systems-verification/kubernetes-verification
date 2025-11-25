@@ -653,8 +653,6 @@ Definition objDeleteⁱᵐᵖˡ : val :=
         (func_call #strconv.FormatInt) "$a0" "$a1") in
         (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0")
       else do:  #());;;
-      let: "$r0" := (![#interfaceT] "obj") in
-      do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key") "$r0");;;
       return: (#interface.nil)
     else do:  #());;;
     do:  (let: "$a0" := (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) in
@@ -666,7 +664,7 @@ Definition Index : go_string := "kubernetes_model/apimodel.Index"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:308:6 *)
+   go: api_model.go:307:6 *)
 Definition Indexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -763,7 +761,7 @@ Definition ByIndex : go_string := "kubernetes_model/apimodel.ByIndex"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:345:6 *)
+   go: api_model.go:344:6 *)
 Definition ByIndexⁱᵐᵖˡ : val :=
   λ: "kind" "indexName" "indexedValue",
     exception_do (let: "indexedValue" := (mem.alloc "indexedValue") in
@@ -827,7 +825,7 @@ Definition PodMutGet : go_string := "kubernetes_model/apimodel.PodMutGet"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:369:6 *)
+   go: api_model.go:368:6 *)
 Definition PodGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -837,7 +835,7 @@ Definition PodGetⁱᵐᵖˡ : val :=
     (func_call #PodMutGet) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:373:6 *)
+(* go: api_model.go:372:6 *)
 Definition PodMutGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -890,7 +888,7 @@ Definition PodMutList : go_string := "kubernetes_model/apimodel.PodMutList"%go.
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:395:6 *)
+   go: api_model.go:394:6 *)
 Definition PodListⁱᵐᵖˡ : val :=
   λ: "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -900,7 +898,7 @@ Definition PodListⁱᵐᵖˡ : val :=
     (func_call #PodMutList) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:399:6 *)
+(* go: api_model.go:398:6 *)
 Definition PodMutListⁱᵐᵖˡ : val :=
   λ: "namespace" "selector",
     exception_do (let: "selector" := (mem.alloc "selector") in
@@ -949,7 +947,7 @@ Definition PodMutListⁱᵐᵖˡ : val :=
 
 Definition PodCreate : go_string := "kubernetes_model/apimodel.PodCreate"%go.
 
-(* go: api_model.go:417:6 *)
+(* go: api_model.go:416:6 *)
 Definition PodCreateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -983,7 +981,7 @@ Definition PodCreateⁱᵐᵖˡ : val :=
 
 Definition PodUpdate : go_string := "kubernetes_model/apimodel.PodUpdate"%go.
 
-(* go: api_model.go:432:6 *)
+(* go: api_model.go:431:6 *)
 Definition PodUpdateⁱᵐᵖˡ : val :=
   λ: "namespace" "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1017,7 +1015,7 @@ Definition PodUpdateⁱᵐᵖˡ : val :=
 
 Definition PodDelete : go_string := "kubernetes_model/apimodel.PodDelete"%go.
 
-(* go: api_model.go:447:6 *)
+(* go: api_model.go:446:6 *)
 Definition PodDeleteⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1041,7 +1039,7 @@ Definition ReplicaSetMutGet : go_string := "kubernetes_model/apimodel.ReplicaSet
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:458:6 *)
+   go: api_model.go:457:6 *)
 Definition ReplicaSetGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1051,7 +1049,7 @@ Definition ReplicaSetGetⁱᵐᵖˡ : val :=
     (func_call #ReplicaSetMutGet) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:462:6 *)
+(* go: api_model.go:461:6 *)
 Definition ReplicaSetMutGetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in

@@ -10,17 +10,17 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Definition object_meta_well_formed (m: v1.ObjectMeta.t) : iProp Σ :=
-  ⌜ m.(v1.ObjectMeta.UID') ≠ "_ORPHAN_POD"%go ⌝.
+  "uid_well_formed" ∷ ⌜ m.(v1.ObjectMeta.UID') ≠ "_ORPHAN_POD"%go ⌝.
 
 Definition pod_well_formed (pod: v1.Pod.t) : iProp Σ :=
-  object_meta_well_formed pod.(v1.Pod.ObjectMeta').
+  "pod_metadata_well_formed" ∷ object_meta_well_formed pod.(v1.Pod.ObjectMeta').
 
 Axiom pod_well_formed_for_creation: v1.Pod.t → iProp Σ.
 
 Definition pod_nn_well_formed (pod: v1.Pod.t) (namespace name: go_string) : iProp Σ :=
-  ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
-  ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-  pod_well_formed pod.
+  "%namespace_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
+  "%name_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
+  "pod_well_formed" ∷ pod_well_formed pod.
 
 Definition replicaset_well_formed (rs: v1.ReplicaSet.t) : iProp Σ :=
   object_meta_well_formed rs.(v1.ReplicaSet.ObjectMeta') ∗
