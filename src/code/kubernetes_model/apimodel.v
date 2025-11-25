@@ -380,6 +380,13 @@ Definition objCreateⁱᵐᵖˡ : val :=
     with_defer: (let: "obj" := (mem.alloc "obj") in
     let: "namespace" := (mem.alloc "namespace") in
     let: "kind" := (mem.alloc "kind") in
+    do:  ((method_call #(ptrT.id sync.Mutex.id) #"Lock"%go (globals.get #stateMu)) #());;;
+    do:  (let: "$f" := (method_call #(ptrT.id sync.Mutex.id) #"Unlock"%go (globals.get #stateMu)) in
+    "$defer" <-[#funcT] (let: "$oldf" := (![#funcT] "$defer") in
+    (λ: <>,
+      "$f" #();;
+      "$oldf" #()
+      )));;;
     let: "objCopy" := (mem.alloc (type.zero_val #interfaceT)) in
     let: "$r0" := (let: "$a0" := (![#interfaceT] "obj") in
     (func_call #deepCopy) "$a0") in
@@ -405,13 +412,6 @@ Definition objCreateⁱᵐᵖˡ : val :=
     let: "generateName" := (mem.alloc (type.zero_val #stringT)) in
     let: "$r0" := ((interface.get #"GetGenerateName"%go (![#v1.Object] "metadata")) #()) in
     do:  ("generateName" <-[#stringT] "$r0");;;
-    do:  ((method_call #(ptrT.id sync.Mutex.id) #"Lock"%go (globals.get #stateMu)) #());;;
-    do:  (let: "$f" := (method_call #(ptrT.id sync.Mutex.id) #"Unlock"%go (globals.get #stateMu)) in
-    "$defer" <-[#funcT] (let: "$oldf" := (![#funcT] "$defer") in
-    (λ: <>,
-      "$f" #();;
-      "$oldf" #()
-      )));;;
     (if: (![#stringT] "name") = #""%go
     then
       (if: (![#stringT] "generateName") = #""%go
@@ -479,6 +479,13 @@ Definition objUpdateⁱᵐᵖˡ : val :=
     with_defer: (let: "obj" := (mem.alloc "obj") in
     let: "namespace" := (mem.alloc "namespace") in
     let: "kind" := (mem.alloc "kind") in
+    do:  ((method_call #(ptrT.id sync.Mutex.id) #"Lock"%go (globals.get #stateMu)) #());;;
+    do:  (let: "$f" := (method_call #(ptrT.id sync.Mutex.id) #"Unlock"%go (globals.get #stateMu)) in
+    "$defer" <-[#funcT] (let: "$oldf" := (![#funcT] "$defer") in
+    (λ: <>,
+      "$f" #();;
+      "$oldf" #()
+      )));;;
     let: "objCopy" := (mem.alloc (type.zero_val #interfaceT)) in
     let: "$r0" := (let: "$a0" := (![#interfaceT] "obj") in
     (func_call #deepCopy) "$a0") in
@@ -508,13 +515,6 @@ Definition objUpdateⁱᵐᵖˡ : val :=
        slice.literal #interfaceT ["$sl0"])) in
        (func_call #fmt.Errorf) "$a0" "$a1")
     else do:  #());;;
-    do:  ((method_call #(ptrT.id sync.Mutex.id) #"Lock"%go (globals.get #stateMu)) #());;;
-    do:  (let: "$f" := (method_call #(ptrT.id sync.Mutex.id) #"Unlock"%go (globals.get #stateMu)) in
-    "$defer" <-[#funcT] (let: "$oldf" := (![#funcT] "$defer") in
-    (λ: <>,
-      "$f" #();;
-      "$oldf" #()
-      )));;;
     let: "key" := (mem.alloc (type.zero_val #KKey)) in
     let: "$r0" := (let: "$Kind" := (![#stringT] "kind") in
     let: "$Name" := (![#stringT] "name") in

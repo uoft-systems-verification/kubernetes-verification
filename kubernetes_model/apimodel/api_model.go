@@ -189,6 +189,9 @@ func generateNewName(kind, namespace, generateName string) string {
 }
 
 func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
+	stateMu.Lock()
+	defer stateMu.Unlock()
+
 	objCopy := deepCopy(obj)
 	metadata, err := meta.Accessor(objCopy)
 	if err != nil {
@@ -197,9 +200,6 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 
 	name := metadata.GetName()
 	generateName := metadata.GetGenerateName()
-
-	stateMu.Lock()
-	defer stateMu.Unlock()
 
 	if name == "" {
 		if generateName == "" {
@@ -230,6 +230,9 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 }
 
 func objUpdate(kind, namespace string, obj interface{}) (interface{}, error) {
+	stateMu.Lock()
+	defer stateMu.Unlock()
+
 	objCopy := deepCopy(obj)
 	metadata, err := meta.Accessor(objCopy)
 	if err != nil {
@@ -240,9 +243,6 @@ func objUpdate(kind, namespace string, obj interface{}) (interface{}, error) {
 	if name == "" {
 		return nil, fmt.Errorf("object of kind %q must specify a name for update", kind)
 	}
-
-	stateMu.Lock()
-	defer stateMu.Unlock()
 
 	key := KKey{
 		Kind:      kind,
