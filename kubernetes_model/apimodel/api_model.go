@@ -174,6 +174,20 @@ func randomSuffix(n int) string {
 	return string(b)
 }
 
+func generateNewName(kind, namespace, generateName string) string {
+	for {
+		name := generateName + randomSuffix(5)
+		key := KKey{
+			Kind:      kind,
+			Name:      name,
+			Namespace: namespace,
+		}
+		if _, exists := state.m[key]; !exists {
+			return name
+		}
+	}
+}
+
 func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 	objCopy := deepCopy(obj)
 	metadata, err := meta.Accessor(objCopy)
@@ -191,18 +205,8 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 		if generateName == "" {
 			return nil, fmt.Errorf("object of kind %q must specify a name or generateName", kind)
 		}
-		for {
-			name = generateName + randomSuffix(5)
-			key := KKey{
-				Kind:      kind,
-				Name:      name,
-				Namespace: namespace,
-			}
-			if _, exists := state.m[key]; !exists {
-				metadata.SetName(name)
-				break
-			}
-		}
+		name = generateNewName(kind, namespace, generateName)
+		metadata.SetName(name)
 	}
 
 	key := KKey{
