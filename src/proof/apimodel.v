@@ -327,7 +327,8 @@ Proof.
   iIntros. iExists pod. iFrame. done.
 Qed.
 
-Lemma wp_objDelete_ptsto_mut key
+(* TODO: Revisit this spec and see if owned_grandchild_keys is necessary *)
+Lemma wp_objDelete_pod_ptsto_mut key
   γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
@@ -339,14 +340,14 @@ Lemma wp_objDelete_ptsto_mut key
   }}}
     @! apimodel.objDelete #key
   {{{ (err: error.t) pod, RET #err;
-      ⌜ err = interface.nil ⌝ ∗
-      ((
-        key [[ γ_state ]]↦ (KObject.Pod pod) ∗
-        parent_key [[ γ_children ]]↦ owned_child_keys ∗
-        key [[ γ_children ]]↦ owned_grandchild_keys ∗
-        ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
+      "err_is_nil" ∷ ⌜ err = interface.nil ⌝ ∗
+      "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
+        "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
+        "own_grandchild_keys" ∷ key [[ γ_children ]]↦ owned_grandchild_keys ∗
+        "%deletiontimestamp_notnull" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
       ) ∨
-      parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]}))
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]}))
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -633,26 +634,32 @@ Proof.
     done.
 Qed.
 
-Lemma wp_PodDelete_ptsto_mut key γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys:
+Lemma wp_PodDelete_ptsto_mut namespace name
+  γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
+      "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
-      "%pod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
-      "%kind" ∷ ⌜ KKey.Kind' key = "Pod"%go ⌝
+      "own_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ_children ]]↦ owned_grandchild_keys ∗
+      "%pod_is_child" ∷ ⌜ (mk_pod_key namespace name) ∈ owned_child_keys ⌝
   }}}
-    @! apimodel.PodDelete #key
+    @! apimodel.PodDelete #namespace #name
   {{{ (err: error.t) pod, RET #err;
-      ⌜ err = interface.nil ⌝ ∗
-      (
-        key [[ γ_state ]]↦ (KObject.Pod pod) ∗
-        parent_key [[ γ_children ]]↦ owned_child_keys ∗
-        ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
+      "err_is_nil" ∷ ⌜ err = interface.nil ⌝ ∗
+      "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
+        "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
+        "own_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ_children ]]↦ owned_grandchild_keys ∗
+        "%deletiontimestamp_notnull" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
       ) ∨
-      parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]})
+      "own_child_keys" ∷ parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[mk_pod_key namespace name]}))
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_objDelete_pod_ptsto_mut with "[$own_pod $own_child_keys $own_grandchild_keys]").
+  { iFrame "#". done. }
+  iIntros (err pod) "H". iNamed "H". wp_auto. iApply "HΦ". iFrame.
+Qed.
 
 Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owned_rs:
   {{{ is_pkg_init apimodel ∗
