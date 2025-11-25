@@ -462,17 +462,12 @@ Proof.
           destruct Hlookup_child as [(Heq_child & Hchild_eq) | (Hneq_child & Hlookup_child)];
           destruct Hlookup_parent as [(Heq_parent & Hparent_eq) | (Hneq_parent & Hlookup_parent)].
           - subst child_key k child parent.
-            exfalso.
-            apply (no_self_parenting key s key Hlookup_children Hchild_in_s).
-            reflexivity.
+            exfalso. by apply (no_self_parenting key s key Hlookup_children Hchild_in_s).
           - subst child_key child.
-            rewrite updated_pod_owner_references_eq.
-            iApply "children_point_to_parent". done.
+            rewrite updated_pod_owner_references_eq. iApply "children_point_to_parent". done.
           - subst k parent.
-            rewrite updated_pod_uid_eq.
-            iApply "children_point_to_parent". done.
-          - iApply ("children_point_to_parent" $! k s parent child_key child).
-            iPureIntro. done.
+            rewrite updated_pod_uid_eq. iApply "children_point_to_parent". done.
+          - iApply ("children_point_to_parent" $! k s parent child_key child). iPureIntro. done.
         }
         iIntros (k s parent child_key child) "[(%Hlookup_children & %Hlookup_child & %Hlookup_parent) Hmeta]".
         rewrite lookup_insert_Some in Hlookup_child.
@@ -480,24 +475,21 @@ Proof.
         destruct Hlookup_child as [(Heq_child & Hchild_eq) | (Hneq_child & Hlookup_child)];
         destruct Hlookup_parent as [(Heq_parent & Hparent_eq) | (Hneq_parent & Hlookup_parent)].
         - subst child_key k child parent.
-          rewrite updated_pod_owner_references_eq.
-          rewrite updated_pod_uid_eq.
+          rewrite updated_pod_owner_references_eq updated_pod_uid_eq.
           iDestruct ("only_children_point_to_parent" $! key s (KObject.Pod owned_pod) key (KObject.Pod owned_pod)
             with "[Hmeta]") as "%Hkey_in_s".
-          { iFrame "Hmeta". iPureIntro. split; [|split]; assumption. }
-          exfalso.
-          apply (no_self_parenting key s key Hlookup_children Hkey_in_s).
-          reflexivity.
+          { iFrame "Hmeta". iPureIntro. split; [|split]; done. }
+          exfalso. by apply (no_self_parenting key s key Hlookup_children Hkey_in_s).
         - subst child_key child.
           rewrite updated_pod_owner_references_eq.
           iApply ("only_children_point_to_parent" $! k s parent key (KObject.Pod owned_pod) with "[Hmeta]").
-          iFrame "Hmeta". iPureIntro. split; [|split]; assumption.
+          iFrame "Hmeta". iPureIntro. split; [|split]; done.
         - subst k parent.
           rewrite updated_pod_uid_eq.
           iApply ("only_children_point_to_parent" $! key s (KObject.Pod owned_pod) child_key child with "[Hmeta]").
-          iFrame "Hmeta". iPureIntro. split; [|split]; assumption.
+          iFrame "Hmeta". iPureIntro. split; [|split]; done.
         - iApply ("only_children_point_to_parent" $! k s parent child_key child with "[Hmeta]").
-          iFrame "Hmeta". iPureIntro. split; [|split]; assumption.
+          iFrame "Hmeta". iPureIntro. split; [|split]; done.
       }
       wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
       with "[$own_Mutex state_m_addr state_uc_addr state_rvc_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys consistent]").
@@ -548,79 +540,41 @@ Proof.
       iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitL "children_point_to_parent"]]]]]].
       { iPureIntro. set_solver. }
       {
-        iPureIntro.
-        intros k s Hlookup.
-        rewrite lookup_delete_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & Hlookup).
-        rewrite lookup_insert_Some in Hlookup.
-        destruct Hlookup as [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)].
-        - assert (owned_child_keys ⊆ dom abs_state) as owned_children_in_abs.
+        iPureIntro. intros k s Hlookup.
+        rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
+        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
+        - subst k s. rewrite dom_delete_L.
+          assert (owned_child_keys ⊆ dom abs_state) as owned_children_in_abs.
           { apply children_exist with (k := parent_key). exact parent_key_in_children. }
-          subst k s.
-          rewrite dom_delete_L.
           set_solver.
         - rewrite dom_delete_L.
-          assert (s ⊆ dom abs_state) as s_in_abs.
-          { apply children_exist with (k := k). exact Hlookup. }
+          assert (s ⊆ dom abs_state) as s_in_abs by (apply children_exist with (k := k); exact Hlookup).
           assert (s ## owned_child_keys) as s_disj_owned.
-          {
-            destruct (decide (k = parent_key)) as [Heq | Hneq].
-            - subst k. congruence.
-            - apply children_disjoint with (k1 := k) (k2 := parent_key); assumption.
-          }
+          { destruct (decide (k = parent_key)); [congruence|]. eapply children_disjoint; done. }
           assert (key ∉ s) as key_not_in_s.
-          {
-            intros Hcontra.
-            assert (key ∈ owned_child_keys) by exact pod_is_child.
-            set_solver.
-          }
+          { intros Hcontra. assert (key ∈ owned_child_keys) by exact pod_is_child. set_solver. }
           set_solver.
       }
       {
-        iPureIntro.
-        intros k s child_key Hlookup Hchild_in_s.
-        rewrite lookup_delete_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & Hlookup).
-        rewrite lookup_insert_Some in Hlookup.
-        destruct Hlookup as [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)].
-        - subst k s.
-          assert (child_key ∈ owned_child_keys) as child_in_owned.
-          { set_solver. }
-          apply parents_children_same_namespace with (k := parent_key) (s := owned_child_keys).
-          + exact parent_key_in_children.
-          + exact child_in_owned.
-        - apply parents_children_same_namespace with (k := k) (s := s).
-          + exact Hlookup.
-          + exact Hchild_in_s.
+        iPureIntro. intros k s child_key Hlookup Hchild_in_s.
+        rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
+        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
+        - subst k s. eapply parents_children_same_namespace; [exact parent_key_in_children | set_solver].
+        - eapply parents_children_same_namespace; done.
       }
       {
-        iPureIntro.
-        intros k s child_key Hlookup Hchild_in_s.
-        rewrite lookup_delete_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & Hlookup).
-        rewrite lookup_insert_Some in Hlookup.
-        destruct Hlookup as [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)].
-        - subst k s.
-          assert (child_key ∈ owned_child_keys) as child_in_owned.
-          { set_solver. }
-          apply no_self_parenting with (k := parent_key) (s := owned_child_keys).
-          + exact parent_key_in_children.
-          + exact child_in_owned.
-        - apply no_self_parenting with (k := k) (s := s).
-          + exact Hlookup.
-          + exact Hchild_in_s.
+        iPureIntro. intros k s child_key Hlookup Hchild_in_s.
+        rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
+        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
+        - subst k s. eapply no_self_parenting; [exact parent_key_in_children | set_solver].
+        - eapply no_self_parenting; done.
       }
       {
-        iPureIntro.
-        intros k1 s1 k2 s2 Hlookup1 Hlookup2.
-        rewrite lookup_delete_Some in Hlookup1.
-        rewrite lookup_delete_Some in Hlookup2.
-        destruct Hlookup1 as (Hk1_neq_key & Hlookup1).
-        destruct Hlookup2 as (Hk2_neq_key & Hlookup2).
-        rewrite lookup_insert_Some in Hlookup1.
-        rewrite lookup_insert_Some in Hlookup2.
-        destruct Hlookup1 as [(Hk1_eq & Hs1_eq) | (Hk1_neq_parent & Hlookup1)];
-        destruct Hlookup2 as [(Hk2_eq & Hs2_eq) | (Hk2_neq_parent & Hlookup2)].
+        iPureIntro. intros k1 s1 k2 s2 Hlookup1 Hlookup2.
+        rewrite lookup_delete_Some lookup_insert_Some in Hlookup1.
+        rewrite lookup_delete_Some lookup_insert_Some in Hlookup2.
+        destruct Hlookup1 as (Hk1_neq_key & [(Hk1_eq & Hs1_eq) | (Hk1_neq_parent & Hlookup1)]);
+        destruct Hlookup2 as (Hk2_neq_key & [(Hk2_eq & Hs2_eq) | (Hk2_neq_parent & Hlookup2)]).
         - subst k1 k2 s1 s2.
           assert (owned_child_keys ## owned_child_keys) as disj_self.
           { apply children_disjoint with (k1 := parent_key) (k2 := parent_key); assumption. }
@@ -639,43 +593,37 @@ Proof.
       {
         iIntros (k s parent child_key child) "(%Hchildren_lookup & %Hchild_lookup & %Hparent_lookup & %Hchild_in_s)".
         rewrite lookup_delete_Some in Hchildren_lookup.
-        destruct Hchildren_lookup as (Hk_neq_key, Hchildren_lookup).
         rewrite lookup_delete_Some in Hchild_lookup.
-        destruct Hchild_lookup as (Hchild_key_neq_key, Hchild_lookup).
         rewrite lookup_delete_Some in Hparent_lookup.
+        destruct Hchildren_lookup as (Hk_neq_key, Hchildren_lookup).
+        destruct Hchild_lookup as (Hchild_key_neq_key, Hchild_lookup).
         destruct Hparent_lookup as (Hk_neq_key', Hparent_lookup).
         rewrite lookup_insert_Some in Hchildren_lookup.
         destruct Hchildren_lookup as [(Hk_eq, Hs_eq) | (Hk_neq_parent, Hchildren_lookup)].
         - subst k s.
-          assert (child_key ∈ owned_child_keys) as child_in_owned.
-          { set_solver. }
           iApply ("children_point_to_parent" $! parent_key owned_child_keys parent child_key child).
-          iPureIntro.
-          split; [|split; [|split]]; assumption.
+          iPureIntro. split; [|split; [|split]]; try done; set_solver.
         - iApply ("children_point_to_parent" $! k s parent child_key child).
-          iPureIntro.
-          split; [|split; [|split]]; assumption.
+          iPureIntro. split; [|split; [|split]]; done.
       }
       iIntros (k s parent child_key child) "[(%Hchildren_lookup & %Hchild_lookup & %Hparent_lookup) Hmeta]".
       rewrite lookup_delete_Some in Hchildren_lookup.
-      destruct Hchildren_lookup as (Hk_neq_key, Hchildren_lookup).
       rewrite lookup_delete_Some in Hchild_lookup.
-      destruct Hchild_lookup as (Hchild_key_neq_key, Hchild_lookup).
       rewrite lookup_delete_Some in Hparent_lookup.
+      destruct Hchildren_lookup as (Hk_neq_key, Hchildren_lookup).
+      destruct Hchild_lookup as (Hchild_key_neq_key, Hchild_lookup).
       destruct Hparent_lookup as (Hk_neq_key', Hparent_lookup).
       rewrite lookup_insert_Some in Hchildren_lookup.
       destruct Hchildren_lookup as [(Hk_eq, Hs_eq) | (Hk_neq_parent, Hchildren_lookup)].
       - subst k s.
         iDestruct ("only_children_point_to_parent" $! parent_key owned_child_keys parent child_key child
           with "[Hmeta]") as "%Hchild_in_owned".
-        { iFrame "Hmeta". iPureIntro. split; [|split]; assumption. }
-        iPureIntro.
-        set_solver.
+        { iFrame "Hmeta". iPureIntro. split; [|split]; done. }
+        iPureIntro. set_solver.
       - iDestruct ("only_children_point_to_parent" $! k s parent child_key child
           with "[Hmeta]") as "%Hchild_in_s".
-        { iFrame "Hmeta". iPureIntro. split; [|split]; assumption. }
-        iPureIntro.
-        exact Hchild_in_s.
+        { iFrame "Hmeta". iPureIntro. split; [|split]; done. }
+        iPureIntro. exact Hchild_in_s.
     }
     wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
       with "[$own_Mutex state_m_addr state_uc_addr state_rvc_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys consistent]").
