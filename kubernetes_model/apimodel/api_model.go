@@ -226,7 +226,7 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))
 
 	state.m[key] = objCopy
-	return objCopy, nil
+	return deepCopy(objCopy), nil
 }
 
 func objUpdate(kind, namespace string, obj interface{}) (interface{}, error) {
@@ -276,7 +276,7 @@ func objUpdate(kind, namespace string, obj interface{}) (interface{}, error) {
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))
 
 	state.m[key] = objCopy
-	return objCopy, nil
+	return deepCopy(objCopy), nil
 }
 
 func objDelete(key KKey) error {

@@ -468,7 +468,8 @@ Definition objCreateⁱᵐᵖˡ : val :=
     (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![#interfaceT] "objCopy") in
     do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key") "$r0");;;
-    return: (![#interfaceT] "objCopy", #interface.nil)).
+    return: (let: "$a0" := (![#interfaceT] "objCopy") in
+     (func_call #deepCopy) "$a0", #interface.nil)).
 
 Definition objUpdate : go_string := "kubernetes_model/apimodel.objUpdate"%go.
 
@@ -604,7 +605,8 @@ Definition objUpdateⁱᵐᵖˡ : val :=
     (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![#interfaceT] "objCopy") in
     do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key") "$r0");;;
-    return: (![#interfaceT] "objCopy", #interface.nil)).
+    return: (let: "$a0" := (![#interfaceT] "objCopy") in
+     (func_call #deepCopy) "$a0", #interface.nil)).
 
 Definition objDelete : go_string := "kubernetes_model/apimodel.objDelete"%go.
 
