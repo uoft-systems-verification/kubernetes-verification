@@ -343,8 +343,9 @@ Definition generateNewName : go_string := "kubernetes_model/apimodel.generateNew
 
 (* go: api_model.go:177:6 *)
 Definition generateNewNameⁱᵐᵖˡ : val :=
-  λ: "kind" "namespace" "generateName",
-    exception_do (let: "generateName" := (mem.alloc "generateName") in
+  λ: "kind" "namespace" "generateName" "m",
+    exception_do (let: "m" := (mem.alloc "m") in
+    let: "generateName" := (mem.alloc "generateName") in
     let: "namespace" := (mem.alloc "namespace") in
     let: "kind" := (mem.alloc "kind") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
@@ -363,7 +364,7 @@ Definition generateNewNameⁱᵐᵖˡ : val :=
       }]) in
       do:  ("key" <-[#KKey] "$r0");;;
       (let: "exists" := (mem.alloc (type.zero_val #boolT)) in
-      let: ("$ret0", "$ret1") := (map.get (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) (![#KKey] "key")) in
+      let: ("$ret0", "$ret1") := (map.get (![type.mapT #KKey #interfaceT] "m") (![#KKey] "key")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  "$r0";;;
@@ -424,7 +425,8 @@ Definition objCreateⁱᵐᵖˡ : val :=
       let: "$r0" := (let: "$a0" := (![#stringT] "kind") in
       let: "$a1" := (![#stringT] "namespace") in
       let: "$a2" := (![#stringT] "generateName") in
-      (func_call #generateNewName) "$a0" "$a1" "$a2") in
+      let: "$a3" := (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (globals.get #state))) in
+      (func_call #generateNewName) "$a0" "$a1" "$a2" "$a3") in
       do:  ("name" <-[#stringT] "$r0");;;
       do:  (let: "$a0" := (![#stringT] "name") in
       (interface.get #"SetName"%go (![#v1.Object] "metadata")) "$a0")
@@ -1147,7 +1149,7 @@ Definition initialize' : val :=
       (func_call #rand.NewSource) "$a0") in
       (func_call #rand.New) "$a0") in
       do:  ((globals.get #nameRand) <-[#ptrT] "$r0");;;
-      let: "$r0" := (string.to_bytes #"abcdefghijklmnopqrstuvwxyz0123456789"%go) in
+      let: "$r0" := (string.to_bytes #"bcdfghjklmnpqrstvwxz2456789"%go) in
       do:  ((globals.get #randomSuffixChars) <-[#sliceT] "$r0");;;
       do:  ((λ: <>,
         exception_do (do:  ((func_call #Init) #());;;

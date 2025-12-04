@@ -164,7 +164,7 @@ func objListBySelector(kind, namespace string, selector labels.Selector) ([]inte
 	return filterByLabelSelector(objList(kind, namespace), selector)
 }
 
-var randomSuffixChars = []byte("abcdefghijklmnopqrstuvwxyz0123456789")
+var randomSuffixChars = []byte("bcdfghjklmnpqrstvwxz2456789")
 
 func randomSuffix(n int) string {
 	b := make([]byte, n)
@@ -174,7 +174,7 @@ func randomSuffix(n int) string {
 	return string(b)
 }
 
-func generateNewName(kind, namespace, generateName string) string {
+func generateNewName(kind, namespace, generateName string, m map[KKey]interface{}) string {
 	for {
 		name := generateName + randomSuffix(5)
 		key := KKey{
@@ -182,7 +182,7 @@ func generateNewName(kind, namespace, generateName string) string {
 			Name:      name,
 			Namespace: namespace,
 		}
-		if _, exists := state.m[key]; !exists {
+		if _, exists := m[key]; !exists {
 			return name
 		}
 	}
@@ -205,7 +205,7 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 		if generateName == "" {
 			return nil, fmt.Errorf("object of kind %q must specify a name or generateName", kind)
 		}
-		name = generateNewName(kind, namespace, generateName)
+		name = generateNewName(kind, namespace, generateName, state.m)
 		metadata.SetName(name)
 	}
 

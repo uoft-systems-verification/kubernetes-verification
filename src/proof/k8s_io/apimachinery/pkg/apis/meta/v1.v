@@ -16,6 +16,45 @@ Lemma wp_Now:
 Proof.
 Admitted.
 
+Lemma wp_GetName (ptr: loc) (meta: v1.ObjectMeta.t):
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      "ptr" ∷ ptr ↦ meta
+  }}}
+    ptr @ (ptrT.id v1.ObjectMeta.id) @ "GetName" #()
+  {{{ (name: go_string), RET #name;
+      ⌜ name = meta.(v1.ObjectMeta.Name') ⌝ ∗
+      ptr ↦ meta
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
+Qed.
+
+Lemma wp_GetGenerateName (ptr: loc) (meta: v1.ObjectMeta.t):
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      "ptr" ∷ ptr ↦ meta
+  }}}
+    ptr @ (ptrT.id v1.ObjectMeta.id) @ "GetGenerateName" #()
+  {{{ (generate_name: go_string), RET #generate_name;
+      ⌜ generate_name = meta.(v1.ObjectMeta.GenerateName') ⌝ ∗
+      ptr ↦ meta
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
+Qed.
+
+Lemma wp_SetName (ptr: loc) (meta: v1.ObjectMeta.t) (name: go_string):
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      "ptr" ∷ ptr ↦ meta
+  }}}
+    ptr @ (ptrT.id v1.ObjectMeta.id) @ "SetName" #name
+  {{{ (meta': v1.ObjectMeta.t), RET #();
+      ⌜ meta' = meta <| v1.ObjectMeta.Name' := name |> ⌝ ∗
+      ptr ↦ meta'
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
+Qed.
+
 Lemma wp_GetDeletionTimestamp (ptr: loc) (meta: v1.ObjectMeta.t):
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
       "ptr" ∷ ptr ↦ meta
@@ -63,6 +102,19 @@ Lemma wp_GetFinalizers (ptr: loc) (meta: v1.ObjectMeta.t):
   {{{ (finalizers: slice.t), RET #finalizers;
       ⌜ finalizers = meta.(v1.ObjectMeta.Finalizers') ⌝ ∗
       ptr ↦ meta
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
+Qed.
+
+Lemma wp_SetUID (ptr: loc) (meta: v1.ObjectMeta.t) (uid: go_string):
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      "ptr" ∷ ptr ↦ meta
+  }}}
+    ptr @ (ptrT.id v1.ObjectMeta.id) @ "SetUID" #uid
+  {{{ (meta': v1.ObjectMeta.t), RET #();
+      ⌜ meta' = meta <| v1.ObjectMeta.UID' := uid |> ⌝ ∗
+      ptr ↦ meta'
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
