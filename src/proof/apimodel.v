@@ -61,12 +61,6 @@ Definition extract_kobject_metadata kobj : v1.ObjectMeta.t :=
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
-Definition has_controller_parent (oslice: slice.t) (os: list v1.OwnerReference.t) (o: v1.OwnerReference.t) (c: bool) : iProp Σ :=
-  oslice ↦* os ∗ ⌜ o ∈ os ⌝ ∗ o.(v1.OwnerReference.Controller') ↦ c ∗ ⌜ c = true ⌝.
-
-Definition has_controller_parent_of (oslice: slice.t) (uid: go_string) : iProp Σ :=
-  ∃ os o c, has_controller_parent oslice os o c ∗ ⌜ o.(v1.OwnerReference.UID') = uid ⌝.
-
 Lemma decide_kind_is_pod kind:
   kind = "Pod"%go →
     bool_decide (kind = "Pod"%go) = true ∧
@@ -93,13 +87,13 @@ Definition pod_rep k v1 v2 ptr pod : iProp Σ :=
   "%interface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "pod_ptr" ∷ ptr ↦ pod ∗
   "%abs_v_is_pod" ∷ ⌜ v2 = KObject.Pod pod ⌝ ∗
-  "pod_nn_well_formed" ∷ pod_nn_well_formed pod (KKey.Namespace' k) (KKey.Name' k).
+  "#pod_nn_well_formed" ∷ pod_nn_well_formed pod (KKey.Namespace' k) (KKey.Name' k).
 
 Definition replicaset_rep k v1 v2 ptr rs : iProp Σ :=
   "%interface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "rs_ptr" ∷ ptr ↦ rs ∗
   "%abs_v_is_rs" ∷ ⌜ v2 = KObject.ReplicaSet rs ⌝ ∗
-  "replicaset_nn_well_formed" ∷ replicaset_nn_well_formed rs (KKey.Namespace' k) (KKey.Name' k).
+  "#replicaset_nn_well_formed" ∷ replicaset_nn_well_formed rs (KKey.Namespace' k) (KKey.Name' k).
 
 Definition obj_rep k v1 v2 : iProp Σ :=
   (if bool_decide (KKey.Kind' k = "Pod"%go) then
@@ -111,9 +105,9 @@ Definition obj_rep k v1 v2 : iProp Σ :=
 Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) : iProp Σ :=
   [∗ map] k ↦ v1; v2 ∈ phys_state; abs_state, obj_rep k v1 v2.
 
-Definition kubernetes_state_consistent (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : iProp Σ :=
+Definition kubernetes_state_consistent (used_uid: gset go_string) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : iProp Σ :=
   (* All parents exist; this means holding a children gmap fragment implies the parent exists in abs_state *)
-  "%parents_exist" ∷ ⌜ dom children ⊆ dom abs_state ⌝ ∗
+  "%parents_exist" ∷ ⌜ dom children = dom abs_state ⌝ ∗
   (* All children exist *)
   "%children_exist" ∷ ⌜ ∀ k s, children !! k = Some s → s ⊆ dom abs_state ⌝ ∗
   (* parents and children live in the same namespace *)
@@ -126,29 +120,41 @@ Definition kubernetes_state_consistent (abs_state: gmap KKey.t KObject.t) (child
   "%fresh_keys_absent" ∷ ⌜ fresh_keys ## dom abs_state ⌝ ∗
   (* Fresh keys are reserved *)
   "%fresh_keys_reserved" ∷ ⌜ ∀ k, k ∈ fresh_keys → reserved_key k ⌝ ∗
+  (* Each object has a unique uid *)
+  "%no_duplicate_uid" ∷ ⌜ ∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
+    (extract_kobject_metadata obj1).(v1.ObjectMeta.UID') = (extract_kobject_metadata obj2).(v1.ObjectMeta.UID') → k1 = k2 ⌝ ∗
+  (* Any existing object's uid is in the set used_uid *)
+  "%existing_uid_is_used" ∷ ⌜ ∀ k obj, abs_state !! k = Some obj → (extract_kobject_metadata obj).(v1.ObjectMeta.UID') ∈ used_uid ⌝ ∗
   (* All of the children have the controller owner reference pointing to the parent's uid *)
-  "children_point_to_parent" ∷ (∀ k s parent child_key child,
+  "#children_point_to_parent" ∷ □ (∀ k s parent child_key child,
     ⌜ children !! k = Some s ∧ abs_state !! child_key = Some child ∧ abs_state !! k = Some parent ∧ child_key ∈ s⌝ -∗
       has_controller_parent_of (extract_kobject_metadata child).(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata parent).(v1.ObjectMeta.UID')
   ) ∗
   (* Only the children have the controller owner reference pointing to the parent's uid *)
-  "only_children_point_to_parent" ∷ (∀ k s parent child_key child,
+  "#only_children_point_to_parent" ∷ □ (∀ k s parent child_key child,
     ⌜ children !! k = Some s ∧ abs_state !! child_key = Some child ∧ abs_state !! k = Some parent ⌝ ∗
     has_controller_parent_of (extract_kobject_metadata child).(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata parent).(v1.ObjectMeta.UID') -∗
       ⌜ child_key ∈ s ⌝
-  ).
+  ) ∗
+  (* A parent must be some object that has existed; in other words, children cannot guess a parent's uid *)
+  "#parent_uid_is_used" ∷ □ (∀ k obj uid, ⌜ abs_state !! k = Some obj ⌝ -∗
+    has_controller_parent_of (extract_kobject_metadata obj).(v1.ObjectMeta.OwnerReferences') uid -∗
+      ⌜ uid ∈ used_uid ⌝).
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
-  ∃ (l: loc) (uc: w64) (rvc: w64) (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
-    "state_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] l ∗
-    "state_uc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "uidCounter" ] uc ∗
+  ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
+    (phys_state: gmap KKey.t interface.t) (used_uid: gmap go_string unit)
+    (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
+    "state_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] phys_state_l ∗
+    "state_used_uid_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "usedUID" ] used_uid_l ∗
     "state_rvc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "resourceVersionCounter" ] rvc ∗
-    "own_phys" ∷ l ↦$ phys_state ∗
+    "own_phys" ∷ phys_state_l ↦$ phys_state ∗
+    "own_used_uid" ∷ used_uid_l ↦$ used_uid ∗
     "own_abs" ∷ map_ctx γ_state 1 abs_state ∗
     "phys_abs_rep" ∷ state_rep phys_state abs_state ∗
     "own_children" ∷ map_ctx γ_children 1 children ∗
     "own_fresh_keys" ∷ auth_set_auth γ_fresh_keys fresh_keys ∗
-    "consistent" ∷ kubernetes_state_consistent abs_state children fresh_keys.
+    "#consistent" ∷ kubernetes_state_consistent (dom used_uid) abs_state children fresh_keys.
 
 Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
   is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
@@ -192,22 +198,6 @@ Lemma wp_objGet (key: KKey.t) γ_state γ_children γ_fresh_keys:
       True
   }}}.
 Proof.
-  wp_start as "H". iNamed "H".
-  wp_apply wp_with_defer. simpl subst.
-  iIntros (defer) "defer". wp_auto. iRename "key" into "key_ptr".
-  wp_apply wp_globals_get.
-  wp_apply wp_Mutex__Lock.
-  { done. }
-  iIntros "[own_Mutex H]". iNamed "H". wp_auto.
-  wp_apply wp_globals_get. wp_apply wp_globals_get.
-  wp_apply (wp_map_get with "[$own_phys]").
-  iIntros "own_phys". wp_auto.
-  (* wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-    with "[$own_Mutex state_m_addr own_phys own_abs phys_abs_rep own_children own_fresh_keys]").
-  { iFrame. done. }
-  iApply ("HΦ" $! (default interface.nil (phys_state !! key))
-                 (bool_decide (is_Some (phys_state !! key)))).
-  done. *)
 Admitted.
 
 Lemma wp_PodGet (namespace name: go_string) γ_state γ_children γ_fresh_keys:
@@ -319,6 +309,18 @@ Lemma wp_generateNewName kind namespace (generate_name : go_string) m (phys_stat
 Proof.
 Admitted.
 
+Lemma wp_generateNewUID m (used_uid : gmap go_string unit):
+  {{{ is_pkg_init apimodel ∗
+      "m" ∷ m ↦$ used_uid
+  }}}
+    @! apimodel.generateNewUID #m
+  {{{ uid, RET #uid;
+      ⌜ used_uid !! uid = None ⌝ ∗
+      m ↦$ used_uid
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
   {{{ is_pkg_init fmt ∗
       "string_slice" ∷ string_slice ↦* string_list
@@ -344,6 +346,15 @@ Proof.
   iIntros. iExists pod. iFrame. done.
 Qed.
 
+Global Instance wp_struct_make_unit:
+  PureWp True
+    (struct.make #(structT []) (alist_val []))%struct
+    #().
+Proof.
+  erewrite <- struct_val_aux_nil.
+  apply wp_struct_make; cbn; auto.
+Qed.
+
 Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
   to_create_pod_ptr to_create_pod γ_state γ_children γ_fresh_keys parent_key owned_parent owned_child_keys:
   {{{ is_pkg_init apimodel ∗
@@ -354,25 +365,26 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
       "%kind" ∷ ⌜ kind = "Pod"%go ⌝ ∗
       "%interface_is_rs_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #to_create_pod_ptr ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
-      "to_create_pod_is_child" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∗
-      "well_formed_for_creation" ∷ pod_to_create_nn_well_formed to_create_pod namespace ""%go
+      "#to_create_pod_is_child" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∗
+      "#to_create_pod_well_formed" ∷ pod_to_create_well_formed to_create_pod ∗
+      "%to_create_pod_namespace_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ∨ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = ""%go ⌝ ∗
+      "%to_create_pod_name_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝
   }}}
     @! apimodel.objCreate #kind #namespace #obj
-  {{{ created_obj (err: error.t) created_pod_ptr created_pod new_key owned_grandchild_keys, RET (#created_obj, #err);
+  {{{ returned_obj (err: error.t) returned_pod_ptr returned_pod new_key created_pod owned_grandchild_keys, RET (#returned_obj, #err);
       ⌜ err = interface.nil ⌝ ∗
-      ⌜ created_obj = interface.mk (ptrT.id v1.Pod.id) #created_pod_ptr ⌝ ∗
-      created_pod_ptr ↦ created_pod ∗
-      pod_well_formed created_pod ∗
-      ⌜ new_key = extract_pod_key created_pod ⌝ ∗
+      ⌜ returned_obj = interface.mk (ptrT.id v1.Pod.id) #returned_pod_ptr ⌝ ∗
+      returned_pod_ptr ↦ returned_pod ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
       new_key [[ γ_state ]]↦ (KObject.Pod created_pod) ∗
       parent_key [[ γ_state ]]↦ owned_parent ∗
       parent_key [[ γ_children ]]↦ (owned_child_keys ∪ {[new_key]}) ∗
-      new_key [[ γ_children ]]↦ owned_grandchild_keys
-      (* TODO: specify that created_pod shares some contents with to_create_pod *)
+      new_key [[ γ_children ]]↦ owned_grandchild_keys ∗
+      deepcopy_Pod created_pod returned_pod
+      (* TODO: specify that created_pod shares the same content with to_create_pod *)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". iNamed "well_formed_for_creation".
+  wp_start as "H". iNamed "H".
   wp_apply wp_with_defer.
   iIntros (defer) "defer". simpl subst. wp_auto.
   wp_apply wp_globals_get.
@@ -380,32 +392,35 @@ Proof.
   iIntros "[own_Mutex H]". iNamed "H". wp_auto.
   wp_apply wp_globals_get.
   wp_apply (wp_deepCopy_pod with "[$to_create_pod_ptr]"); [done|].
-  iIntros (copied_obj copied_ptr copied_pod) "(-> & copied_ptr & deepcopy & to_create_pod_ptr)". wp_auto.
+  iIntros (copied_obj copied_ptr copied_pod) "(-> & copied_ptr & deepcopy_to_create_pod & to_create_pod_ptr)". wp_auto.
   wp_apply wp_Accessor; [done|].
   iIntros (o err) "(-> & ->)". wp_auto.
   assert ((bool_decide (interface.nil = interface.nil)) = true) as nil_is_nil.
   { rewrite bool_decide_true //. }
   rewrite nil_is_nil. wp_auto.
   iDestruct (struct_fields_split with "copied_ptr") as "H". iNamed "H".
+  wp_bind.
+  wp_apply (wp_SetNamespace with "[$HObjectMeta]").
+  iIntros (meta') "(-> & HObjectMeta)". wp_auto.
   wp_apply (wp_GetName with "[$HObjectMeta]").
   iIntros (name) "(-> & HObjectMeta)". wp_auto.
   wp_apply (wp_GetGenerateName with "[$HObjectMeta]").
   iIntros (generate_name) "(-> & HObjectMeta)". wp_auto.
   iAssert (⌜ v1.ObjectMeta.Name' (v1.Pod.ObjectMeta' copied_pod) = ""%go ⌝%I) as "->".
   {
-    iDestruct "deepcopy" as "(_ & deepcopy_ObjectMeta & _ & _)".
+    iDestruct "deepcopy_to_create_pod" as "(_ & deepcopy_ObjectMeta & _ & _)".
     iDestruct "deepcopy_ObjectMeta" as "(%deepcopy_ObjectMeta_pure & _ )".
-    iPureIntro. intuition. rewrite name_match in H. done.
+    iPureIntro. rewrite to_create_pod_name_valid in deepcopy_ObjectMeta_pure. intuition.
   }
   iAssert (⌜ v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) = v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' to_create_pod) ⌝%I) as "%generate_name_eq".
   {
-    iDestruct "deepcopy" as "(_ & deepcopy_ObjectMeta & _ & _)".
+    iDestruct "deepcopy_to_create_pod" as "(_ & deepcopy_ObjectMeta & _ & _)".
     iDestruct "deepcopy_ObjectMeta" as "(%deepcopy_ObjectMeta_pure & _ )".
     iPureIntro. intuition.
   }
   iAssert (⌜ v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) ≠ ""%go ⌝%I) as "%generate_name_not_empty".
   {
-    iDestruct "pod_to_create_well_formed" as "(pod_metadata_to_create_well_formed & _ & _)".
+    iDestruct "to_create_pod_well_formed" as "(pod_metadata_to_create_well_formed & _ & _)".
     iDestruct "pod_metadata_to_create_well_formed" as "%generate_name_and_name".
     iPureIntro. rewrite generate_name_eq. apply generate_name_and_name. done.
   }
@@ -418,12 +433,14 @@ Proof.
   wp_apply wp_globals_get.
   wp_apply (wp_map_get with "[$own_phys]"). iIntros "own_phys". wp_auto.
   rewrite /is_Some new_key_not_in_phys. wp_auto.
-  wp_apply wp_globals_get. wp_apply wp_globals_get. wp_apply wp_globals_get.
-  wp_bind. wp_apply wp_slice_literal.
-  iIntros (sl) "sl". wp_auto. wp_bind. wp_apply (wp_fmt_Sprintf with "[$sl]").
-  iIntros (formatted_string) "_". wp_auto.
+  wp_apply wp_globals_get.
+  wp_apply (wp_generateNewUID with "[$own_used_uid]").
+  iIntros (generated_uid) "(%generated_uid_is_not_used & own_used_uid)". wp_auto.
   wp_apply (wp_SetUID with "[$HObjectMeta]").
   iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+  wp_apply wp_globals_get.
+  wp_apply (wp_map_insert with "[$own_used_uid]").
+  iIntros "own_used_uid". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get. wp_apply wp_globals_get.
   wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
   wp_apply (wp_SetResourceVersion with "[$HObjectMeta]").
@@ -435,7 +452,7 @@ Proof.
     with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "copied_ptr". simpl.
   iDestruct (rename_pod with "copied_ptr") as "(%created_pod & copied_ptr & %created_pod_eq)".
   wp_apply (wp_deepCopy_pod with "[$copied_ptr]"); [done|].
-  iIntros (copied_obj' copied_ptr' copied_pod') "(-> & copied_ptr' & deepcopy' & copied_ptr)". wp_auto.
+  iIntros (returned_obj returned_ptr returned_pod) "(-> & returned_ptr & deepcopy_created_pod & copied_ptr)". wp_auto.
   set new_key := {| KKey.Kind' := "Pod"; KKey.Name' := name; KKey.Namespace' := KKey.Namespace' parent_key |}.
   fold new_key in new_key_not_in_phys.
   fold new_key in new_key_not_reserved.
@@ -451,39 +468,45 @@ Proof.
   { intros Heq. congruence. }
   iAssert (⌜ <[parent_key:=owned_child_keys ∪ {[new_key]}]> children !! new_key = None ⌝%I) with "[consistent]" as "%new_key_not_in_children_after_update".
   { iNamed "consistent". iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in new_key_not_in_abs. set_solver. }
+  iAssert (⌜ new_key ∉ owned_child_keys ⌝ %I) as "%new_key_not_in_owned_child_keys".
+  { iNamed "consistent". iPureIntro.
+    assert (owned_child_keys ⊆ dom abs_state) as owned_in_abs.
+    { apply children_exist with (k := parent_key). exact parent_key_in_children. }
+    apply not_elem_of_dom in new_key_not_in_abs.
+    set_solver.
+  }
   iMod (map_alloc new_key (KObject.Pod created_pod) with "[$own_abs]") as "[own_abs own_pod]"; [eauto|].
   iMod (auth_map.map_update _ _ (owned_child_keys ∪ {[new_key]}) with "own_children own_child_keys")
     as "[own_children own_child_keys]".
-  (* TODO: we need to prove that there is no existing object that points to new_key as its controller parent *)
   iMod (map_alloc new_key ∅ with "[$own_children]") as "[own_children own_grandchild_keys]"; [eauto|].
   set phys_state' := <[new_key:=interface.mk (ptrT.id v1.Pod.id) (# copied_ptr)]> phys_state.
+  set used_uid' := <[generated_uid:=()]> used_uid.
   set abs_state' := <[new_key:=KObject.Pod created_pod]> abs_state.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
-  iAssert (pod_nn_well_formed created_pod new_key.(KKey.Namespace') new_key.(KKey.Name') %I) with "[pod_to_create_well_formed]" as "created_pod_well_formed".
+  iAssert (pod_nn_well_formed created_pod new_key.(KKey.Namespace') new_key.(KKey.Name') %I)
+  with "[to_create_pod_well_formed]" as "created_pod_nn_well_formed".
   { admit. }
   iAssert (state_rep phys_state' abs_state' %I)
-  with "[copied_ptr created_pod_well_formed phys_abs_rep]" as "phys_abs_rep".
+  with "[copied_ptr phys_abs_rep]" as "phys_abs_rep".
   {
     unfold state_rep. unfold phys_state'. unfold abs_state'.
     rewrite (big_sepM2_insert _ phys_state abs_state new_key _ _ new_key_not_in_phys new_key_not_in_abs).
-    iSplitL "copied_ptr created_pod_well_formed".
+    iSplitL "copied_ptr".
     {
       unfold obj_rep.
       assert (bool_decide (KKey.Kind' new_key = "Pod"%go) = true) as kind_is_pod.
       { apply bool_decide_true. unfold new_key. simpl. reflexivity. }
       rewrite kind_is_pod.
       iExists copied_ptr, created_pod.
-      unfold pod_rep. iFrame. iPureIntro. split; [reflexivity|reflexivity].
+      unfold pod_rep. iFrame "#". iFrame. iPureIntro. done.
     }
     { done. }
   }
   iAssert (has_controller_parent_of created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') %I)
-  with "[to_create_pod_is_child deepcopy]" as "created_pod_is_child".
-  {
-    admit.
-  }
-  iAssert (kubernetes_state_consistent abs_state' children' fresh_keys %I)
-  with "[consistent created_pod_is_child]"  as "consistent".
+  with "[deepcopy_to_create_pod]" as "#created_pod_is_child".
+  { admit. }
+  iAssert (kubernetes_state_consistent (dom used_uid') abs_state' children' fresh_keys %I)
+  as "consistent'".
   {
     iNamed "consistent".
     assert (dom children' = dom children ∪ {[new_key]}) as children_dom_simpl.
@@ -497,7 +520,14 @@ Proof.
       rewrite parent_union_eq.
       set_solver.
     }
-    iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitL "children_point_to_parent created_pod_is_child"]]]]]]].
+    assert (created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID') = generated_uid) as created_uid_eq.
+    { rewrite created_pod_eq. done. }
+    assert (generated_uid ∉ dom used_uid) as generated_not_in_used.
+    { apply not_elem_of_dom. exact generated_uid_is_not_used. }
+    iDestruct "created_pod_nn_well_formed" as "(_ & _ & created_pod_well_formed)".
+    iDestruct "created_pod_well_formed" as "(created_pod_metadata_wf & _)".
+    iDestruct "created_pod_metadata_wf" as "(_ & #at_most_one_controller_parent)".
+    iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR ]]]]]]]]]].
     { iPureIntro. unfold abs_state'. unfold children'. rewrite children_dom_simpl. rewrite dom_insert_L. set_solver. }
     { iPureIntro.
       intros k s Hlookup.
@@ -600,109 +630,206 @@ Proof.
       set_solver.
     }
     { iPureIntro. apply fresh_keys_reserved. }
-    { (* children_point_to_parent *)
-      iIntros (k s parent child_key child) "%H".
+    { iPureIntro.
+      intros k1 k2 obj1 obj2 Hlookup1 Hlookup2 Huid_eq.
+      unfold abs_state' in Hlookup1, Hlookup2.
+      rewrite lookup_insert_Some in Hlookup1.
+      rewrite lookup_insert_Some in Hlookup2.
+      destruct Hlookup1 as [(Hk1_eq & Hobj1_eq) | (Hk1_neq & Hlookup1)];
+      destruct Hlookup2 as [(Hk2_eq & Hobj2_eq) | (Hk2_neq & Hlookup2)].
+      - subst. reflexivity.
+      - subst k1 obj1.
+        exfalso.
+        assert ((extract_kobject_metadata obj2).(v1.ObjectMeta.UID') ∈ dom used_uid) as obj2_uid_in_used.
+        { apply existing_uid_is_used with (k := k2). exact Hlookup2. }
+        rewrite created_uid_eq in Huid_eq.
+        rewrite <- Huid_eq in obj2_uid_in_used.
+        contradiction.
+      - subst k2 obj2.
+        exfalso.
+        assert ((extract_kobject_metadata obj1).(v1.ObjectMeta.UID') ∈ dom used_uid) as obj1_uid_in_used.
+        { apply existing_uid_is_used with (k := k1). exact Hlookup1. }
+        rewrite created_uid_eq in Huid_eq.
+        rewrite Huid_eq in obj1_uid_in_used.
+        contradiction.
+      - apply no_duplicate_uid with (obj1 := obj1) (obj2 := obj2); assumption.
+    }
+    { iPureIntro. intros k obj Hlookup_abs_state. unfold abs_state', used_uid'.
+      rewrite dom_insert_L. rewrite lookup_insert_Some in Hlookup_abs_state.
+      destruct Hlookup_abs_state as [(Hk_eq & Hs_eq) | (Hk_neq & Hlookup_abs_state)].
+      - subst k obj. set_solver.
+      - set_solver.
+    }
+    { iIntros (k s parent child_key child) "%H".
       destruct H as (Hlookup_children & Hlookup_child & Hlookup_parent & Hchild_in_s).
       unfold children' in Hlookup_children. unfold abs_state' in Hlookup_child, Hlookup_parent.
       rewrite lookup_insert_Some in Hlookup_children.
       destruct Hlookup_children as [(Hk_eq & Hs_eq) | (Hk_neq & Hlookup_children)].
-      - (* k = new_key, so s = ∅ *)
-        subst k s. set_solver.
+      - subst k s. set_solver.
       - rewrite lookup_insert_Some in Hlookup_children.
         destruct Hlookup_children as [(Hk_eq_parent & Hs_eq) | (Hk_neq_parent & Hlookup_children)].
-        + (* k = parent_key, so s = owned_child_keys ∪ {[new_key]} *)
-          subst k s.
+        + subst k s.
           assert (child_key ∈ owned_child_keys ∨ child_key = new_key) as Hchild_cases.
           { set_solver. }
           destruct Hchild_cases as [Hchild_in_owned | Hchild_eq_new].
-          * (* child_key is an old child *)
-            rewrite lookup_insert_Some in Hlookup_child.
+          * rewrite lookup_insert_Some in Hlookup_child.
             rewrite lookup_insert_Some in Hlookup_parent.
             destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
-            { (* child_key = new_key, contradiction with Hchild_in_owned *)
-              subst child_key.
+            { subst child_key.
               assert (new_key ∈ owned_child_keys) as contra.
               { exact Hchild_in_owned. }
               assert (owned_child_keys ⊆ dom abs_state) as owned_in_abs.
               { apply children_exist with (k := parent_key). exact parent_key_in_children. }
               apply not_elem_of_dom in new_key_not_in_abs.
               set_solver. }
-            { (* child_key ≠ new_key *)
-              destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
-              { (* parent_key = new_key, contradiction *)
-                apply not_elem_of_dom in new_key_not_in_abs.
+            { destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
+              { apply not_elem_of_dom in new_key_not_in_abs.
                 assert (parent_key ∈ dom abs_state) as contra.
                 { apply elem_of_dom. exists owned_parent. exact parent_key_in_abs. }
                 congruence. }
-              { (* both in old state *)
+              { iModIntro.
                 iApply "children_point_to_parent". iPureIntro.
                 split; [exact parent_key_in_children|].
                 split; [exact Hlookup_child|].
                 split; [exact Hlookup_parent|].
                 exact Hchild_in_owned. } }
-          * (* child_key = new_key, so this is the newly created pod *)
-            subst child_key.
+          * subst child_key.
             rewrite lookup_insert_Some in Hlookup_child.
             rewrite lookup_insert_Some in Hlookup_parent.
             destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
-            { (* new_key = new_key, so child is the newly created pod *)
-              subst child.
+            { subst child.
               destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
-              { (* parent_key = new_key, contradiction *)
-                (* Hparent_eq: new_key = parent_key, new_key_neq_parent_key: new_key ≠ parent_key *)
-                exfalso. apply new_key_neq_parent_key. exact Hparent_eq. }
-              { (* parent_key ≠ new_key *)
-                (* Hlookup_parent : abs_state !! parent_key = Some parent *)
-                assert (parent = owned_parent) as ->.
+              { exfalso. apply new_key_neq_parent_key. exact Hparent_eq. }
+              { assert (parent = owned_parent) as ->.
                 { rewrite parent_key_in_abs in Hlookup_parent. injection Hlookup_parent as ->. reflexivity. }
                 iApply "created_pod_is_child". } }
-            { (* new_key ≠ new_key, contradiction *)
-              congruence. }
-        + (* k is some other key *)
-          rewrite lookup_insert_Some in Hlookup_child.
+            { congruence. }
+        + rewrite lookup_insert_Some in Hlookup_child.
           rewrite lookup_insert_Some in Hlookup_parent.
           destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
-          * (* child_key = new_key *)
-            subst child_key child.
+          * subst child_key child.
             destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
-            { (* k = new_key - contradiction because new_key not in old children *)
-              subst k.
+            { subst k.
               apply not_elem_of_dom in new_key_not_in_children.
               assert (new_key ∈ dom children) as contra.
               { apply elem_of_dom. exists s. exact Hlookup_children. }
               contradiction. }
-            { (* k ≠ new_key *)
-              assert (new_key ∈ s) as new_key_in_s.
+            { assert (new_key ∈ s) as new_key_in_s.
               { exact Hchild_in_s. }
               assert (s ⊆ dom abs_state) as s_in_abs.
               { apply children_exist with (k := k). exact Hlookup_children. }
               apply not_elem_of_dom in new_key_not_in_abs.
               set_solver. }
-          * (* child_key ≠ new_key *)
-            destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
-            { (* k = new_key - contradiction because new_key not in old children *)
-              subst k.
+          * destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)].
+            { subst k.
               apply not_elem_of_dom in new_key_not_in_children.
               assert (new_key ∈ dom children) as contra.
               { apply elem_of_dom. exists s. exact Hlookup_children. }
               contradiction. }
-            { (* both child_key and k are in old state *)
+            { iModIntro.
               iApply "children_point_to_parent". iPureIntro.
               split; [exact Hlookup_children|].
               split; [exact Hlookup_child|].
               split; [exact Hlookup_parent|].
               exact Hchild_in_s. }
     }
-    { (* only_children_point_to_parent *)
-      iIntros (k s parent child_key child) "[%H HparentRef]".
+    {
+      iModIntro.
+      iIntros (k s parent child_key child) "[%H #HparentRef]".
       destruct H as (Hlookup_children & Hlookup_child & Hlookup_parent).
       unfold children' in Hlookup_children. unfold abs_state' in Hlookup_child, Hlookup_parent.
       rewrite lookup_insert_Some in Hlookup_children.
       destruct Hlookup_children as [(Hk_eq & Hs_eq) | (Hk_neq & Hlookup_children)].
-      - admit.
-      - admit.
+      - subst k s.
+        rewrite lookup_insert_Some in Hlookup_parent.
+        destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)]; [|congruence].
+        subst parent.
+        rewrite lookup_insert_Some in Hlookup_child.
+        destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
+        + subst child_key child.
+          simpl.
+          iAssert (⌜(extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') = created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID')⌝%I) as "%uid_eq".
+          {
+            iDestruct ("at_most_one_controller_parent" $!
+              (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
+              created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID')
+              with "created_pod_is_child HparentRef") as "%uid_eq".
+            done.
+          }
+          iAssert (⌜(extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ≠ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID')⌝%I) as "%uid_neq".
+          {
+            iPureIntro.
+            intros Heq.
+            assert ((extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∈ dom used_uid) as parent_uid_in_used.
+            { apply existing_uid_is_used with (k := parent_key). exact parent_key_in_abs. }
+            rewrite created_uid_eq in Heq.
+            rewrite Heq in parent_uid_in_used.
+            contradiction.
+          }
+          congruence.
+        + iAssert (⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID') ∈ dom used_uid ⌝%I) as "%created_pod_uid_is_used".
+          { iApply ("parent_uid_is_used" $! child_key child); [done|done]. }
+          iAssert (⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID') ∉ dom used_uid ⌝%I) as "%created_pod_uid_is_not_used".
+          { rewrite created_uid_eq. iPureIntro. apply not_elem_of_dom. done. }
+          done.
+      - rewrite lookup_insert_Some in Hlookup_children.
+        destruct Hlookup_children as [(Hk_eq & Hs_eq) | (Hk_neq' & Hlookup_children)].
+        + subst k s.
+          rewrite lookup_insert_Some in Hlookup_parent.
+          destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)]; [congruence|].
+          rewrite lookup_insert_Some in Hlookup_child.
+          destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
+          * subst child_key. iPureIntro. set_solver.
+          * iAssert (⌜ child_key ∈ owned_child_keys ⌝%I) as "%child_key_in_owned_child_keys".
+            {
+              iApply ("only_children_point_to_parent" $! parent_key owned_child_keys parent child_key child).
+              iFrame "#".
+              done.
+            }
+            iPureIntro. set_solver.
+        + rewrite lookup_insert_Some in Hlookup_parent.
+          destruct Hlookup_parent as [(Hparent_eq & Hparent_obj_eq) | (Hparent_neq & Hlookup_parent)]; [congruence|].
+          rewrite lookup_insert_Some in Hlookup_child.
+          destruct Hlookup_child as [(Hchild_eq & Hchild_obj_eq) | (Hchild_neq & Hlookup_child)].
+          * subst child_key child.
+            iAssert (⌜ parent_key = k ⌝%I) as "%k_eq".
+            {
+              iDestruct ("at_most_one_controller_parent" $!
+                (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
+                (extract_kobject_metadata parent).(v1.ObjectMeta.UID')
+                with "created_pod_is_child HparentRef") as "%uid_eq".
+              iPureIntro.
+              eapply no_duplicate_uid; [done|done|done].
+            }
+            done.
+          * iApply ("only_children_point_to_parent" $! k s parent child_key child).
+            iFrame "#".
+            done.
+    }
+    {
+      iModIntro.
+      iIntros (k obj uid) "%Hlookup_obj #HparentRef".
+      unfold abs_state', used_uid' in Hlookup_obj.
+      rewrite lookup_insert_Some in Hlookup_obj.
+      destruct Hlookup_obj as [(Hk_eq & Hobj_eq) | (Hk_neq & Hlookup_obj)].
+      - subst k obj.
+        iDestruct ("at_most_one_controller_parent" $! uid (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
+          with "HparentRef created_pod_is_child") as "%uid_eq".
+        iPureIntro.
+        rewrite dom_insert_L.
+        assert ((extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∈ dom used_uid) as parent_uid_in_used.
+        { apply existing_uid_is_used with (k := parent_key). exact parent_key_in_abs. }
+        rewrite uid_eq. set_solver.
+      - iDestruct ("parent_uid_is_used" $! k obj uid with "[] HparentRef") as "%uid_in_used".
+        { done. }
+        iPureIntro. rewrite dom_insert_L. set_solver.
     }
   }
+  wp_bind.
+  wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
+    with "[$own_Mutex $state_m_addr $state_used_uid_addr $state_rvc_addr $own_phys $own_used_uid $own_abs $phys_abs_rep $own_children $own_fresh_keys]").
+  { iFrame "#". }
+  iApply "HΦ". iFrame "returned_ptr". iFrame. iFrame "#". done.
 Admitted.
 
 Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr to_create_pod

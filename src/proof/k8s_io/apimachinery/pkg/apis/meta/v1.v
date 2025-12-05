@@ -55,6 +55,19 @@ Proof.
   wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
 Qed.
 
+Lemma wp_SetNamespace (ptr: loc) (meta: v1.ObjectMeta.t) (namespace: go_string):
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      "ptr" ∷ ptr ↦ meta
+  }}}
+    ptr @ (ptrT.id v1.ObjectMeta.id) @ "SetNamespace" #namespace
+  {{{ (meta': v1.ObjectMeta.t), RET #();
+      ⌜ meta' = meta <| v1.ObjectMeta.Namespace' := namespace |> ⌝ ∗
+      ptr ↦ meta'
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. done.
+Qed.
+
 Lemma wp_GetDeletionTimestamp (ptr: loc) (meta: v1.ObjectMeta.t):
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
       "ptr" ∷ ptr ↦ meta

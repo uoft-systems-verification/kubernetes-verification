@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 // What's missing in this model:
@@ -44,7 +45,7 @@ const (
 
 type State struct {
 	m                      map[KKey]interface{}
-	uidCounter             int64
+	usedUID                map[string]struct{}
 	resourceVersionCounter int64
 	indexer                Indexers
 }
@@ -95,7 +96,7 @@ func Init() {
 	defer stateMu.Unlock()
 
 	state.m = make(map[KKey]interface{})
-	state.uidCounter = 0
+	state.usedUID = make(map[string]struct{})
 	state.resourceVersionCounter = 0
 	// indexer is used for filtering, e.g., by object owner
 	state.indexer = Indexers{
@@ -188,6 +189,16 @@ func generateNewName(kind, namespace, generateName string, m map[KKey]interface{
 	}
 }
 
+func generateNewUID(m map[string]struct{}) string {
+	for {
+		uid := uuid.NewUUID()
+		uidStr := string(uid)
+		if _, exists := m[uidStr]; !exists {
+			return uidStr
+		}
+	}
+}
+
 func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 	stateMu.Lock()
 	defer stateMu.Unlock()
@@ -197,6 +208,8 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
 	}
+
+	metadata.SetNamespace(namespace)
 
 	name := metadata.GetName()
 	generateName := metadata.GetGenerateName()
@@ -219,8 +232,9 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 		return nil, errors.NewAlreadyExists(schema.GroupResource{Resource: kind}, name)
 	}
 
-	state.uidCounter++
-	metadata.SetUID(types.UID(fmt.Sprintf("uid-%d", state.uidCounter)))
+	newUID := generateNewUID(state.usedUID)
+	metadata.SetUID(types.UID(newUID))
+	state.usedUID[newUID] = struct{}{}
 
 	state.resourceVersionCounter++
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))

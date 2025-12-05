@@ -13,6 +13,7 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.uuid.
 Require Export New.golang.theory.
 
 Require Export New.code.kubernetes_model.apimodel.
@@ -131,7 +132,7 @@ Section def.
 Context `{ffi_syntax}.
 Record t := mk {
   m' : loc;
-  uidCounter' : w64;
+  usedUID' : loc;
   resourceVersionCounter' : w64;
   indexer' : Indexers.t;
 }.
@@ -147,12 +148,12 @@ Global Instance State_wf : struct.Wf apimodel.State.
 Proof. apply _. Qed.
 
 Global Instance settable_State : Settable State.t :=
-  settable! State.mk < State.m'; State.uidCounter'; State.resourceVersionCounter'; State.indexer' >.
+  settable! State.mk < State.m'; State.usedUID'; State.resourceVersionCounter'; State.indexer' >.
 Global Instance into_val_State : IntoVal State.t :=
   {| to_val_def v :=
     struct.val_aux apimodel.State [
     "m" ::= #(State.m' v);
-    "uidCounter" ::= #(State.uidCounter' v);
+    "usedUID" ::= #(State.usedUID' v);
     "resourceVersionCounter" ::= #(State.resourceVersionCounter' v);
     "indexer" ::= #(State.indexer' v)
     ]%struct
@@ -170,7 +171,7 @@ Final Obligation. solve_decision. Qed.
 Global Instance into_val_struct_field_State_m : IntoValStructField "m" apimodel.State State.m'.
 Proof. solve_into_val_struct_field. Qed.
 
-Global Instance into_val_struct_field_State_uidCounter : IntoValStructField "uidCounter" apimodel.State State.uidCounter'.
+Global Instance into_val_struct_field_State_usedUID : IntoValStructField "usedUID" apimodel.State State.usedUID'.
 Proof. solve_into_val_struct_field. Qed.
 
 Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" apimodel.State State.resourceVersionCounter'.
@@ -181,22 +182,22 @@ Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_State m' uidCounter' resourceVersionCounter' indexer':
+Global Instance wp_struct_make_State m' usedUID' resourceVersionCounter' indexer':
   PureWp True
     (struct.make #apimodel.State (alist_val [
       "m" ::= #m';
-      "uidCounter" ::= #uidCounter';
+      "usedUID" ::= #usedUID';
       "resourceVersionCounter" ::= #resourceVersionCounter';
       "indexer" ::= #indexer'
     ]))%struct
-    #(State.mk m' uidCounter' resourceVersionCounter' indexer').
+    #(State.mk m' usedUID' resourceVersionCounter' indexer').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
 Global Instance State_struct_fields_split dq l (v : State.t) :
   StructFieldsSplit dq l v (
     "Hm" ∷ l ↦s[apimodel.State :: "m"]{dq} v.(State.m') ∗
-    "HuidCounter" ∷ l ↦s[apimodel.State :: "uidCounter"]{dq} v.(State.uidCounter') ∗
+    "HusedUID" ∷ l ↦s[apimodel.State :: "usedUID"]{dq} v.(State.usedUID') ∗
     "HresourceVersionCounter" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
     "Hindexer" ∷ l ↦s[apimodel.State :: "indexer"]{dq} v.(State.indexer')
   ).
@@ -207,7 +208,7 @@ Proof.
 
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (State.m' v)) (apimodel.State) "m"%go.
-  simpl_one_flatten_struct (# (State.uidCounter' v)) (apimodel.State) "uidCounter"%go.
+  simpl_one_flatten_struct (# (State.usedUID' v)) (apimodel.State) "usedUID"%go.
   simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (apimodel.State) "resourceVersionCounter"%go.
 
   solve_field_ref_f.
@@ -238,7 +239,8 @@ Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types;
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.uuid.uuid;
   |}.
 
 #[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
@@ -258,7 +260,8 @@ Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
        is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.types.types)%I
+       is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
+       is_pkg_defined code.k8s_io.apimachinery.pkg.util.uuid.uuid)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
@@ -309,6 +312,10 @@ Global Instance wp_func_call_randomSuffix :
 
 Global Instance wp_func_call_generateNewName :
   WpFuncCall apimodel.generateNewName _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_generateNewUID :
+  WpFuncCall apimodel.generateNewUID _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_objCreate :

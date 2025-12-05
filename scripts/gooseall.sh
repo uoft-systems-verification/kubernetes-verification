@@ -20,6 +20,7 @@ scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/labels
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/runtime/schema
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/types
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/util/runtime
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/util/uuid
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apiserver/pkg/util/feature
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/kubernetes
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/kubernetes/typed/apps/v1
