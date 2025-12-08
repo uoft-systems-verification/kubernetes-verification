@@ -87,13 +87,17 @@ Definition pod_rep k v1 v2 ptr pod : iProp Σ :=
   "%interface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "pod_ptr" ∷ ptr ↦ pod ∗
   "%abs_v_is_pod" ∷ ⌜ v2 = KObject.Pod pod ⌝ ∗
-  "#pod_nn_well_formed" ∷ pod_nn_well_formed pod (KKey.Namespace' k) (KKey.Name' k).
+  "%namespace_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
+  "%name_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
+  "#pod_well_formed" ∷ pod_well_formed pod.
 
 Definition replicaset_rep k v1 v2 ptr rs : iProp Σ :=
   "%interface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "rs_ptr" ∷ ptr ↦ rs ∗
   "%abs_v_is_rs" ∷ ⌜ v2 = KObject.ReplicaSet rs ⌝ ∗
-  "#replicaset_nn_well_formed" ∷ replicaset_nn_well_formed rs (KKey.Namespace' k) (KKey.Name' k).
+  "%rs_namespace_match" ∷ ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
+  "%rs_name_match" ∷ ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
+  "#replicaset_well_formed" ∷ replicaset_well_formed rs.
 
 Definition obj_rep k v1 v2 : iProp Σ :=
   (if bool_decide (KKey.Kind' k = "Pod"%go) then
@@ -483,7 +487,9 @@ Proof.
   set used_uid' := <[generated_uid:=()]> used_uid.
   set abs_state' := <[new_key:=KObject.Pod created_pod]> abs_state.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
-  iAssert (pod_nn_well_formed created_pod new_key.(KKey.Namespace') new_key.(KKey.Name') %I)
+  iAssert (("%namespace_match" ∷ ⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = new_key.(KKey.Namespace') ⌝ ∗
+            "%name_match" ∷ ⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = new_key.(KKey.Name') ⌝ ∗
+            "#pod_well_formed" ∷ pod_well_formed created_pod) %I)
   with "[to_create_pod_well_formed]" as "created_pod_nn_well_formed".
   { admit. }
   iAssert (state_rep phys_state' abs_state' %I)
@@ -941,20 +947,21 @@ Proof.
       iMod (auth_map.map_update _ _ (KObject.Pod updated_pod) with "own_abs own_pod")
         as "[own_abs own_pod]".
       iAssert (state_rep phys_state (<[key:=KObject.Pod updated_pod]> abs_state) %I)
-      with "[pod_ptr other_rep pod_nn_well_formed]" as "phys_abs_rep".
+      with "[pod_ptr other_rep]" as "phys_abs_rep".
       {
         assert (delete key abs_state = delete key (<[key:=KObject.Pod updated_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
-        iAssert (pod_nn_well_formed updated_pod (KKey.Namespace' key) (KKey.Name' key)%I)
-        as "#pod_nn_well_formed'".
+        iAssert (("%namespace_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
+                  "%name_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
+                  "#pod_well_formed" ∷ pod_well_formed updated_pod)%I)
+        as "(% & % & #pod_well_formed')".
         {
-          iNamed "pod_nn_well_formed".
-          unfold pod_nn_well_formed. unfold pod_well_formed. unfold object_meta_well_formed.
+          unfold pod_well_formed. unfold object_meta_well_formed.
           subst updated_pod. simpl. iFrame "#". done.
         }
         iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (KObject.Pod updated_pod)%I)
         with "[pod_ptr]" as "k_rep".
-        { unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod. iFrame. iFrame "#". done. }
+        { unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod. unfold pod_rep. iFrame. iFrame "#". done. }
         assert ((<[key:=KObject.Pod updated_pod]> abs_state) !! key = Some (KObject.Pod updated_pod)) as key_in_new_abs.
         { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [reflexivity | contradiction]. }
         iApply (big_sepM2_split_singleton _ key _ (KObject.Pod updated_pod) phys_state (<[key:=KObject.Pod updated_pod]> abs_state)
@@ -1271,7 +1278,9 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owne
           ptr ↦ rs
       ) ∗
       deepcopy_ReplicaSet owned_rs rs ∗
-      replicaset_nn_well_formed rs (KKey.Namespace' key) (KKey.Name' key) ∗
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
+      replicaset_well_formed rs ∗
       key [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs)
   }}}.
 Proof.
@@ -1284,7 +1293,7 @@ Proof.
   iIntros "[own_Mutex H]". iNamed "H". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get.
   iAssert (⌜ abs_state !! key = Some (KObject.ReplicaSet owned_rs) ⌝%I) with "[own_rs own_abs]" as "%key_in_abs".
-  { 
+  {
     iDestruct (map_valid with "own_abs own_rs") as %Hlookup.
     iPureIntro; exact Hlookup.
   }
@@ -1307,9 +1316,11 @@ Proof.
   { iPureIntro. reflexivity. }
   iIntros (obj' ptr' rs') "(%obj'_is_ptr & ptr' & rs'_is_deepcopy_rs & rs_ptr)".
   iPoseProof (well_formed_preserved_by_deepcopy_ReplicaSet owned_rs rs' (KKey.Namespace' key) (KKey.Name' key)
-  with "[$rs'_is_deepcopy_rs] [$replicaset_nn_well_formed]") as "(rs'_is_deepcopy_rs & _ & #rs'_nn_well_formed)".
+  with "[$rs'_is_deepcopy_rs] [%] [%] [$replicaset_well_formed]") as "(rs'_is_deepcopy_rs & _ & % & % & #rs'_well_formed)".
+  { done. }
+  { done. }
   wp_auto.
-  iAssert (state_rep phys_state abs_state %I) with "[rs_ptr other_rep replicaset_nn_well_formed]" as "phys_abs_rep".
+  iAssert (state_rep phys_state abs_state %I) with "[rs_ptr other_rep]" as "phys_abs_rep".
   { iApply "other_rep". iExists ptr, owned_rs. iFrame. iFrame "#". done. }
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
   with "[$own_Mutex state_m_addr state_used_uid_addr state_rvc_addr own_phys own_used_uid own_abs phys_abs_rep own_children own_fresh_keys consistent]").
@@ -1332,13 +1343,15 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs) ∗
       l ↦ rs ∗
       deepcopy_ReplicaSet owned_rs rs ∗
-      replicaset_nn_well_formed rs namespace name
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
+      replicaset_well_formed rs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_objGet_replicaset_ptsto_mut with "[$own_rs]").
   { iFrame "#". done. }
-  iIntros (obj exists' rs') "(%exists'_is_true & (%ptr & %obj_is_ptr & ptr) & deepcopy & well_formed & own_rs)".
+  iIntros (obj exists' rs') "(%exists'_is_true & (%ptr & %obj_is_ptr & ptr) & deepcopy & % & % & #well_formed & own_rs)".
   subst exists' obj.
   wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
@@ -1352,7 +1365,7 @@ Proof.
   subst ptr.
   wp_auto.
   iApply "HΦ".
-  iFrame. iPureIntro. done.
+  iFrame. iFrame "#". iPureIntro. done.
 Qed.
 
 Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys owned_rs:
@@ -1366,15 +1379,17 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs) ∗
       l ↦{dq} rs ∗
       deepcopy_ReplicaSet owned_rs rs ∗
-      replicaset_nn_well_formed rs namespace name
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
+      ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
+      replicaset_well_formed rs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_ReplicaSetMutGet_ptsto_mut with "[$own_rs]").
   { done. }
-  iIntros (l err rs') "(%err_is_nil & own_rs & l & deepcopy & well_formed)".
+  iIntros (l err rs') "(%err_is_nil & own_rs & l & deepcopy & % & % & #well_formed)".
   wp_auto.
-  iApply "HΦ". iFrame. done.
+  iApply "HΦ". iFrame. iFrame "#". done.
 Qed.
 
 End proof.
