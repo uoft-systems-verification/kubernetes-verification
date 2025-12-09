@@ -89,7 +89,7 @@ Definition pod_rep k v1 v2 ptr pod : iProp Σ :=
   "%abs_v_is_pod" ∷ ⌜ v2 = KObject.Pod pod ⌝ ∗
   "%namespace_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%name_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "#pod_well_formed" ∷ pod_well_formed pod.
+  "#well_formed_Pod" ∷ well_formed_Pod pod.
 
 Definition replicaset_rep k v1 v2 ptr rs : iProp Σ :=
   "%interface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
@@ -97,7 +97,7 @@ Definition replicaset_rep k v1 v2 ptr rs : iProp Σ :=
   "%abs_v_is_rs" ∷ ⌜ v2 = KObject.ReplicaSet rs ⌝ ∗
   "%rs_namespace_match" ∷ ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%rs_name_match" ∷ ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "#replicaset_well_formed" ∷ replicaset_well_formed rs.
+  "#well_formed_ReplicaSet" ∷ well_formed_ReplicaSet rs.
 
 Definition obj_rep k v1 v2 : iProp Σ :=
   (if bool_decide (KKey.Kind' k = "Pod"%go) then
@@ -230,7 +230,7 @@ Lemma wp_podControllerUIDIndex_with_controller_parent obj ptr pod:
       ⌜ indexed_value_list = [indexed_value] ⌝ ∗
       (
         has_controller_parent_of pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') indexed_value ∨
-        (¬(∃ os o c, has_controller_parent pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') os o c) ∗ ⌜ indexed_value = "_ORPHAN_POD"%go ⌝)
+        (¬(∃ os i o c, has_controller_parent pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') os i o c) ∗ ⌜ indexed_value = "_ORPHAN_POD"%go ⌝)
       )
   }}}.
 Proof.
@@ -249,7 +249,7 @@ Lemma wp_objList_pod_ptsto_mut kind namespace γ_state γ_children γ_fresh_keys
       ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc),
         ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
         ptr ↦ pod ∗
-        pod_well_formed pod ∗
+        well_formed_Pod pod ∗
         ⌜ namespace = ""%go ∨ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝
       ) ∗
       ([∗ map] key ↦ owned_pod ∈ owned_pod_map,
@@ -285,7 +285,7 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
         ptr ↦ pod
       ) ∗
       "pods_well_formed" ∷ ([∗ list] pod ∈ pods,
-        pod_well_formed pod ∗
+        well_formed_Pod pod ∗
         has_controller_parent_of pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') indexed_value
       ) ∗
       "pods_found_in_map" ∷ ([∗ list] pod ∈ pods, ∃ owned_pod,
@@ -370,7 +370,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
       "%interface_is_rs_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #to_create_pod_ptr ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
       "#to_create_pod_is_child" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∗
-      "#to_create_pod_well_formed" ∷ pod_to_create_well_formed to_create_pod ∗
+      "#well_formed_to_create_Pod" ∷ well_formed_to_create_Pod to_create_pod ∗
       "%to_create_pod_namespace_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ∨ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = ""%go ⌝ ∗
       "%to_create_pod_name_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝
   }}}
@@ -424,7 +424,7 @@ Proof.
   }
   iAssert (⌜ v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) ≠ ""%go ⌝%I) as "%generate_name_not_empty".
   {
-    iDestruct "to_create_pod_well_formed" as "(pod_metadata_to_create_well_formed & _ & _)".
+    iDestruct "well_formed_to_create_Pod" as "(pod_metadata_to_create_well_formed & _ & _)".
     iDestruct "pod_metadata_to_create_well_formed" as "%generate_name_and_name".
     iPureIntro. rewrite generate_name_eq. apply generate_name_and_name. done.
   }
@@ -489,8 +489,8 @@ Proof.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
   iAssert (("%namespace_match" ∷ ⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = new_key.(KKey.Namespace') ⌝ ∗
             "%name_match" ∷ ⌜ created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = new_key.(KKey.Name') ⌝ ∗
-            "#pod_well_formed" ∷ pod_well_formed created_pod) %I)
-  with "[to_create_pod_well_formed]" as "created_pod_nn_well_formed".
+            "#well_formed_Pod" ∷ well_formed_Pod created_pod) %I)
+  with "[well_formed_to_create_Pod]" as "created_pod_nn_well_formed".
   { admit. }
   iAssert (state_rep phys_state' abs_state' %I)
   with "[copied_ptr phys_abs_rep]" as "phys_abs_rep".
@@ -530,9 +530,10 @@ Proof.
     { rewrite created_pod_eq. done. }
     assert (generated_uid ∉ dom used_uid) as generated_not_in_used.
     { apply not_elem_of_dom. exact generated_uid_is_not_used. }
-    iDestruct "created_pod_nn_well_formed" as "(_ & _ & created_pod_well_formed)".
-    iDestruct "created_pod_well_formed" as "(created_pod_metadata_wf & _)".
-    iDestruct "created_pod_metadata_wf" as "(_ & #at_most_one_controller_parent)".
+    iDestruct "created_pod_nn_well_formed" as "(_ & _ & created_well_formed_Pod)".
+    iDestruct "created_well_formed_Pod" as "(created_pod_metadata_wf & _)".
+    iDestruct "created_pod_metadata_wf" as "(_ & #well_formed_OwnerReferences)".
+    iDestruct "well_formed_OwnerReferences" as "#at_most_one_controller_parent".
     iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR ]]]]]]]]]].
     { iPureIntro. unfold abs_state'. unfold children'. rewrite children_dom_simpl. rewrite dom_insert_L. set_solver. }
     { iPureIntro.
@@ -756,7 +757,8 @@ Proof.
           simpl.
           iAssert (⌜(extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') = created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID')⌝%I) as "%uid_eq".
           {
-            iDestruct ("at_most_one_controller_parent" $!
+            iDestruct (at_most_one_controller_parent_implies_same_uid with "at_most_one_controller_parent") as "#at_most_one_controller_parent_uid".
+            iDestruct ("at_most_one_controller_parent_uid" $!
               (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
               created_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.UID')
               with "created_pod_is_child HparentRef") as "%uid_eq".
@@ -800,7 +802,8 @@ Proof.
           * subst child_key child.
             iAssert (⌜ parent_key = k ⌝%I) as "%k_eq".
             {
-              iDestruct ("at_most_one_controller_parent" $!
+              iDestruct (at_most_one_controller_parent_implies_same_uid with "at_most_one_controller_parent") as "#at_most_one_controller_parent_uid".
+              iDestruct ("at_most_one_controller_parent_uid" $!
                 (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
                 (extract_kobject_metadata parent).(v1.ObjectMeta.UID')
                 with "created_pod_is_child HparentRef") as "%uid_eq".
@@ -819,7 +822,8 @@ Proof.
       rewrite lookup_insert_Some in Hlookup_obj.
       destruct Hlookup_obj as [(Hk_eq & Hobj_eq) | (Hk_neq & Hlookup_obj)].
       - subst k obj.
-        iDestruct ("at_most_one_controller_parent" $! uid (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
+        iDestruct (at_most_one_controller_parent_implies_same_uid with "at_most_one_controller_parent") as "#at_most_one_controller_parent_uid".
+        iDestruct ("at_most_one_controller_parent_uid" $! uid (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
           with "HparentRef created_pod_is_child") as "%uid_eq".
         iPureIntro.
         rewrite dom_insert_L.
@@ -847,13 +851,15 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr to_create_
       "%namespace_valid" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
       "parent_uid" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∗
-      "well_formed_for_creation" ∷ pod_to_create_nn_well_formed to_create_pod namespace ""%go
+      "#well_formed_to_create_Pod" ∷ well_formed_to_create_Pod to_create_pod ∗
+      "%to_create_pod_namespace_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ∨ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = ""%go ⌝ ∗
+      "%to_create_pod_name_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝
   }}}
     @! apimodel.PodCreate #namespace #to_create_pod_ptr
   {{{ created_pod_ptr (err: error.t) created_pod new_key, RET (#created_pod_ptr, #err);
       ⌜ err = interface.nil ⌝ ∗
       created_pod_ptr ↦ created_pod ∗
-      pod_well_formed created_pod ∗
+      well_formed_Pod created_pod ∗
       ⌜ new_key = extract_pod_key created_pod ⌝ ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
       new_key [[ γ_state ]]↦ (KObject.Pod created_pod) ∗
@@ -862,7 +868,6 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr to_create_
       (* TODO: specify that created_pod shares some contents with to_create_pod *)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H".
 Admitted.
 
 (* TODO: Revisit this spec and see if owned_grandchild_keys is necessary *)
@@ -953,10 +958,10 @@ Proof.
         { rewrite delete_insert_eq. reflexivity. }
         iAssert (("%namespace_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
                   "%name_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
-                  "#pod_well_formed" ∷ pod_well_formed updated_pod)%I)
-        as "(% & % & #pod_well_formed')".
+                  "#well_formed_Pod" ∷ well_formed_Pod updated_pod)%I)
+        as "(% & % & #well_formed_Pod')".
         {
-          unfold pod_well_formed. unfold object_meta_well_formed.
+          unfold well_formed_Pod. unfold well_formed_ObjectMeta.
           subst updated_pod. simpl. iFrame "#". done.
         }
         iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (KObject.Pod updated_pod)%I)
@@ -1280,7 +1285,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys owne
       deepcopy_ReplicaSet owned_rs rs ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
-      replicaset_well_formed rs ∗
+      well_formed_ReplicaSet rs ∗
       key [[ γ_state ]]↦ (KObject.ReplicaSet owned_rs)
   }}}.
 Proof.
@@ -1316,7 +1321,7 @@ Proof.
   { iPureIntro. reflexivity. }
   iIntros (obj' ptr' rs') "(%obj'_is_ptr & ptr' & rs'_is_deepcopy_rs & rs_ptr)".
   iPoseProof (well_formed_preserved_by_deepcopy_ReplicaSet owned_rs rs' (KKey.Namespace' key) (KKey.Name' key)
-  with "[$rs'_is_deepcopy_rs] [%] [%] [$replicaset_well_formed]") as "(rs'_is_deepcopy_rs & _ & % & % & #rs'_well_formed)".
+  with "[$rs'_is_deepcopy_rs] [%] [%] [$well_formed_ReplicaSet]") as "(rs'_is_deepcopy_rs & _ & % & % & #rs'_well_formed)".
   { done. }
   { done. }
   wp_auto.
@@ -1345,7 +1350,7 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
       deepcopy_ReplicaSet owned_rs rs ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-      replicaset_well_formed rs
+      well_formed_ReplicaSet rs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -1381,7 +1386,7 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
       deepcopy_ReplicaSet owned_rs rs ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-      replicaset_well_formed rs
+      well_formed_ReplicaSet rs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.

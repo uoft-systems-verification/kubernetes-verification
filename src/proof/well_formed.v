@@ -9,70 +9,90 @@ From proof Require Export deepcopy.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
-Definition has_controller_parent (oslice: slice.t) (os: list v1.OwnerReference.t) (o: v1.OwnerReference.t) (c: bool) : iProp Σ :=
-  oslice ↦*□ os ∗ ⌜ o ∈ os ⌝ ∗ o.(v1.OwnerReference.Controller') ↦□ c ∗ ⌜ c = true ⌝.
+Definition has_controller_parent l os i o c : iProp Σ :=
+  l ↦*□ os ∗ ⌜ os !! i = Some o ⌝ ∗ o.(v1.OwnerReference.Controller') ↦□ c ∗ ⌜ c = true ⌝.
 
-Definition has_controller_parent_of (oslice: slice.t) (uid: go_string) : iProp Σ :=
-  ∃ os o c, has_controller_parent oslice os o c ∗ ⌜ o.(v1.OwnerReference.UID') = uid ⌝.
+Definition has_controller_parent_of l uid : iProp Σ :=
+  ∃ os i o c, has_controller_parent l os i o c ∗ ⌜ o.(v1.OwnerReference.UID') = uid ⌝.
 
-Definition object_meta_well_formed (m: v1.ObjectMeta.t) : iProp Σ :=
+Definition has_controller_parent_at l i : iProp Σ :=
+  ∃ os o c, has_controller_parent l os i o c.
+
+Definition well_formed_OwnerReferences l : iProp Σ :=
+  (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
+  "#at_most_one_controller_parent" ∷ □ ∀ i1 i2,
+    has_controller_parent_at l i1 -∗ has_controller_parent_at l i2 -∗ ⌜ i1 = i2 ⌝.
+
+Definition well_formed_ObjectMeta (m: v1.ObjectMeta.t) : iProp Σ :=
   "%uid_well_formed" ∷ ⌜ m.(v1.ObjectMeta.UID') ≠ "_ORPHAN_POD"%go ⌝ ∗
-  (* Kubernetes guarantees there is only one element in OwnerReferences' whose Controller' is true,
-  but here we only need a weaker specification saying that if there are two controller parents then they are the same. *)
-  "#at_most_one_controller_parent" ∷ □ ∀ uid1 uid2,
-    has_controller_parent_of m.(v1.ObjectMeta.OwnerReferences') uid1 -∗ 
-      has_controller_parent_of m.(v1.ObjectMeta.OwnerReferences') uid2 -∗
-        ⌜ uid1 = uid2 ⌝.
+  "#well_formed_OwnerReferences" ∷ well_formed_OwnerReferences m.(v1.ObjectMeta.OwnerReferences').
 
-Axiom pod_spec_well_formed: v1.PodSpec.t → iProp Σ.
-Global Instance pod_spec_well_formed_persistent spec : Persistent (pod_spec_well_formed spec).
+Lemma at_most_one_controller_parent_implies_same_uid o:
+  (□ ∀ i1 i2, has_controller_parent_at o i1 -∗ has_controller_parent_at o i2 -∗ ⌜ i1 = i2 ⌝)
+  ⊢ (□ ∀ uid1 uid2, has_controller_parent_of o uid1 -∗ has_controller_parent_of o uid2 -∗ ⌜ uid1 = uid2 ⌝).
+Proof.
+  iIntros "#H". iModIntro.
+  iIntros (uid1 uid2) "Huid1 Huid2".
+  iDestruct "Huid1" as (os1 i1 o1 c1) "[Hparent1 %Huid1]".
+  iDestruct "Huid2" as (os2 i2 o2 c2) "[Hparent2 %Huid2]".
+  iDestruct ("H" $! i1 i2 with "[Hparent1] [Hparent2]") as "%Hi_eq".
+  { iExists os1, o1, c1. iFrame "Hparent1". }
+  { iExists os2, o2, c2. iFrame "Hparent2". }
+  subst i2.
+  iDestruct "Hparent1" as "(#Hos1 & %Hlookup1 & _)".
+  iDestruct "Hparent2" as "(#Hos2 & %Hlookup2 & _)".
+  iDestruct (own_slice_agree with "Hos1 Hos2") as %Hos_eq.
+  subst os2.
+  rewrite Hlookup1 in Hlookup2.
+  injection Hlookup2 as <-.
+  iPureIntro.
+  congruence.
+Qed.
+
+Axiom well_formed_PodSpec: v1.PodSpec.t → iProp Σ.
+Global Instance well_formed_PodSpec_persistent spec : Persistent (well_formed_PodSpec spec).
 Proof. Admitted.
 
-Axiom pod_status_well_formed: v1.PodStatus.t → iProp Σ.
-Global Instance pod_status_well_formed_persistent status : Persistent (pod_status_well_formed status).
+Axiom well_formed_PodStatus: v1.PodStatus.t → iProp Σ.
+Global Instance well_formed_PodStatus_persistent status : Persistent (well_formed_PodStatus status).
 Proof. Admitted.
 
-Definition pod_well_formed (pod: v1.Pod.t) : iProp Σ :=
-  "#pod_metadata_well_formed" ∷ object_meta_well_formed pod.(v1.Pod.ObjectMeta') ∗
-  "#pod_spec_well_formed" ∷ pod_spec_well_formed pod.(v1.Pod.Spec') ∗
-  "#pod_status_well_formed" ∷ pod_status_well_formed pod.(v1.Pod.Status').
+Definition well_formed_Pod (pod: v1.Pod.t) : iProp Σ :=
+  "#pod_metadata_well_formed" ∷ well_formed_ObjectMeta pod.(v1.Pod.ObjectMeta') ∗
+  "#well_formed_PodSpec" ∷ well_formed_PodSpec pod.(v1.Pod.Spec') ∗
+  "#well_formed_PodStatus" ∷ well_formed_PodStatus pod.(v1.Pod.Status').
 
-Definition object_meta_to_create_well_formed (m: v1.ObjectMeta.t) : iProp Σ :=
+Definition well_formed_to_create_ObjectMeta (m: v1.ObjectMeta.t) : iProp Σ :=
   "%generatename_not_empty_if_name_empty" ∷ ⌜ m.(v1.ObjectMeta.Name') = ""%go → m.(v1.ObjectMeta.GenerateName') ≠ ""%go ⌝.
 
-Axiom pod_spec_to_create_well_formed: v1.PodSpec.t → iProp Σ.
-Global Instance pod_spec_to_create_well_formed_persistent spec : Persistent (pod_spec_to_create_well_formed spec).
+Axiom well_formed_to_create_PodSpec: v1.PodSpec.t → iProp Σ.
+Global Instance well_formed_to_create_PodSpec_persistent spec : Persistent (well_formed_to_create_PodSpec spec).
 Proof. Admitted.
 
-Axiom pod_status_to_create_well_formed: v1.PodStatus.t → iProp Σ.
-Global Instance pod_status_to_create_well_formed_persistent status : Persistent (pod_status_to_create_well_formed status).
+Axiom well_formed_to_create_PodStatus: v1.PodStatus.t → iProp Σ.
+Global Instance well_formed_to_create_PodStatus_persistent status : Persistent (well_formed_to_create_PodStatus status).
 Proof. Admitted.
 
-Definition pod_to_create_well_formed (pod: v1.Pod.t) : iProp Σ :=
-  "#pod_metadata_to_create_well_formed" ∷ object_meta_to_create_well_formed pod.(v1.Pod.ObjectMeta') ∗
-  "#pod_spec_to_create_well_formed" ∷ pod_spec_to_create_well_formed pod.(v1.Pod.Spec') ∗
-  "#pod_status_to_create_well_formed" ∷ pod_status_to_create_well_formed pod.(v1.Pod.Status').
+Definition well_formed_to_create_Pod (pod: v1.Pod.t) : iProp Σ :=
+  "#pod_metadata_to_create_well_formed" ∷ well_formed_to_create_ObjectMeta pod.(v1.Pod.ObjectMeta') ∗
+  "#well_formed_to_create_PodSpec" ∷ well_formed_to_create_PodSpec pod.(v1.Pod.Spec') ∗
+  "#well_formed_to_create_PodStatus" ∷ well_formed_to_create_PodStatus pod.(v1.Pod.Status').
 
-Definition pod_to_create_nn_well_formed (pod: v1.Pod.t) (namespace name: go_string) : iProp Σ :=
-  "%namespace_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
-  "%name_match" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-  "#pod_to_create_well_formed" ∷ pod_to_create_well_formed pod.
-
-Definition replicaset_well_formed (rs: v1.ReplicaSet.t) : iProp Σ :=
-  object_meta_well_formed rs.(v1.ReplicaSet.ObjectMeta') ∗
+Definition well_formed_ReplicaSet (rs: v1.ReplicaSet.t) : iProp Σ :=
+  well_formed_ObjectMeta rs.(v1.ReplicaSet.ObjectMeta') ∗
   ∃ (v: w32), rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas') ↦□ v ∗ ⌜ 0 ≤ sint.Z v ⌝.
 
 Lemma well_formed_preserved_by_deepcopy_ReplicaSet rs1 rs2 namespace name:
   deepcopy_ReplicaSet rs1 rs2 -∗
     ⌜ rs1.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ -∗
     ⌜ rs1.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ -∗
-    replicaset_well_formed rs1 -∗
+    well_formed_ReplicaSet rs1 -∗
       deepcopy_ReplicaSet rs1 rs2 ∗
       ⌜ rs1.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ rs1.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
       ⌜ rs2.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ rs2.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') = name ⌝ ∗
-      replicaset_well_formed rs2.
+      well_formed_ReplicaSet rs2.
 Proof.
 Admitted.
 

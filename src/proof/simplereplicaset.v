@@ -32,7 +32,7 @@ Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
       ⌜ NoDup (map extract_pod_key pods) ⌝ ∗
       ([∗ list] ptr ; pod ∈ ptrs ; pods, ptr ↦ pod) ∗
       ([∗ list] pod ∈ pods,
-        pod_well_formed pod ∗
+        well_formed_Pod pod ∗
         has_controller_parent_of pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
       ) ∗
       ([∗ list] pod ∈ pods, ∃ owned_pod,
