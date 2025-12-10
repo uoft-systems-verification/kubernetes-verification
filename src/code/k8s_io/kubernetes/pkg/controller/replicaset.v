@@ -230,7 +230,9 @@ Definition ReplicaSetController__syncReplicaSetⁱᵐᵖˡ : val :=
     let: "allRSPods" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#cache.Indexer] (struct.field_ref #ReplicaSetController #"podIndexer"%go (![#ptrT] "rsc"))) in
     let: "$a1" := (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")) in
-    (func_call #controller.FilterPodsByOwner) "$a0" "$a1") in
+    let: "$a2" := (![#stringT] (struct.field_ref #schema.GroupVersionKind #"Kind"%go (struct.field_ref #ReplicaSetController #"GroupVersionKind"%go (![#ptrT] "rsc")))) in
+    let: "$a3" := #true in
+    (func_call #controller.FilterPodsByOwner) "$a0" "$a1" "$a2" "$a3") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("allRSPods" <-[#sliceT] "$r0");;;

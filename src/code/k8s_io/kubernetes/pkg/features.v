@@ -282,6 +282,8 @@ Axiom SizeMemoryBackedVolumes : val.
 
 Axiom StatefulSetAutoDeletePVC : val.
 
+Axiom StatefulSetSemanticRevisionComparison : go_string.
+
 Axiom StorageCapacityScoring : val.
 
 Axiom StorageNamespaceIndex : val.

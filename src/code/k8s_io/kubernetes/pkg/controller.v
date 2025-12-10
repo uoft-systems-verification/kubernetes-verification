@@ -76,9 +76,7 @@ Axiom SlowStartInitialBatchSize : Z.
 
 Axiom PodNodeNameKeyIndex : go_string.
 
-Axiom OrphanPodIndexKey : go_string.
-
-Axiom PodControllerUIDIndex : go_string.
+Axiom PodControllerIndex : go_string.
 
 Definition UpdateTaintBackoff : go_string := "k8s.io/kubernetes/pkg/controller.UpdateTaintBackoff"%go.
 
@@ -206,9 +204,9 @@ Definition FilterReplicaSets : go_string := "k8s.io/kubernetes/pkg/controller.Fi
 
 Definition AddPodNodeNameIndexer : go_string := "k8s.io/kubernetes/pkg/controller.AddPodNodeNameIndexer"%go.
 
-Definition OrphanPodIndexKeyForNamespace : go_string := "k8s.io/kubernetes/pkg/controller.OrphanPodIndexKeyForNamespace"%go.
+Definition PodControllerIndexKey : go_string := "k8s.io/kubernetes/pkg/controller.PodControllerIndexKey"%go.
 
-Definition AddPodControllerUIDIndexer : go_string := "k8s.io/kubernetes/pkg/controller.AddPodControllerUIDIndexer"%go.
+Definition AddPodControllerIndexer : go_string := "k8s.io/kubernetes/pkg/controller.AddPodControllerIndexer"%go.
 
 Definition FilterPodsByOwner : go_string := "k8s.io/kubernetes/pkg/controller.FilterPodsByOwner"%go.
 
@@ -302,9 +300,9 @@ Axiom FilterReplicaSetsⁱᵐᵖˡ : val.
 
 Axiom AddPodNodeNameIndexerⁱᵐᵖˡ : val.
 
-Axiom OrphanPodIndexKeyForNamespaceⁱᵐᵖˡ : val.
+Axiom PodControllerIndexKeyⁱᵐᵖˡ : val.
 
-Axiom AddPodControllerUIDIndexerⁱᵐᵖˡ : val.
+Axiom AddPodControllerIndexerⁱᵐᵖˡ : val.
 
 Axiom FilterPodsByOwnerⁱᵐᵖˡ : val.
 
@@ -320,7 +318,7 @@ Axiom ComputeHashⁱᵐᵖˡ : val.
 
 Axiom AddOrUpdateLabelsOnNodeⁱᵐᵖˡ : val.
 
-Definition functions' : list (go_string * val) := [(NewPodControllerRefManager, NewPodControllerRefManagerⁱᵐᵖˡ); (NewReplicaSetControllerRefManager, NewReplicaSetControllerRefManagerⁱᵐᵖˡ); (RecheckDeletionTimestamp, RecheckDeletionTimestampⁱᵐᵖˡ); (NewControllerRevisionControllerRefManager, NewControllerRevisionControllerRefManagerⁱᵐᵖˡ); (ownerRefControllerPatch, ownerRefControllerPatchⁱᵐᵖˡ); (GenerateDeleteOwnerRefStrategicMergeBytes, GenerateDeleteOwnerRefStrategicMergeBytesⁱᵐᵖˡ); (ownerReference, ownerReferenceⁱᵐᵖˡ); (NoResyncPeriodFunc, NoResyncPeriodFuncⁱᵐᵖˡ); (StaticResyncPeriodFunc, StaticResyncPeriodFuncⁱᵐᵖˡ); (NewControllerExpectations, NewControllerExpectationsⁱᵐᵖˡ); (NewUIDTrackingControllerExpectations, NewUIDTrackingControllerExpectationsⁱᵐᵖˡ); (getPodsLabelSet, getPodsLabelSetⁱᵐᵖˡ); (getPodsFinalizers, getPodsFinalizersⁱᵐᵖˡ); (getPodsAnnotationSet, getPodsAnnotationSetⁱᵐᵖˡ); (getPodsPrefix, getPodsPrefixⁱᵐᵖˡ); (validateControllerRef, validateControllerRefⁱᵐᵖˡ); (GetPodFromTemplate, GetPodFromTemplateⁱᵐᵖˡ); (afterOrZero, afterOrZeroⁱᵐᵖˡ); (logarithmicRankDiff, logarithmicRankDiffⁱᵐᵖˡ); (podReadyTime, podReadyTimeⁱᵐᵖˡ); (maxContainerRestarts, maxContainerRestartsⁱᵐᵖˡ); (compareMaxContainerRestarts, compareMaxContainerRestartsⁱᵐᵖˡ); (FilterClaimedPods, FilterClaimedPodsⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (FilterTerminatingPods, FilterTerminatingPodsⁱᵐᵖˡ); (CountTerminatingPods, CountTerminatingPodsⁱᵐᵖˡ); (nextPodAvailabilityCheck, nextPodAvailabilityCheckⁱᵐᵖˡ); (findMinNextPodAvailabilitySimpleCheck, findMinNextPodAvailabilitySimpleCheckⁱᵐᵖˡ); (FindMinNextPodAvailabilityCheck, FindMinNextPodAvailabilityCheckⁱᵐᵖˡ); (IsPodActive, IsPodActiveⁱᵐᵖˡ); (IsPodTerminating, IsPodTerminatingⁱᵐᵖˡ); (FilterActiveReplicaSets, FilterActiveReplicaSetsⁱᵐᵖˡ); (FilterReplicaSets, FilterReplicaSetsⁱᵐᵖˡ); (AddPodNodeNameIndexer, AddPodNodeNameIndexerⁱᵐᵖˡ); (OrphanPodIndexKeyForNamespace, OrphanPodIndexKeyForNamespaceⁱᵐᵖˡ); (AddPodControllerUIDIndexer, AddPodControllerUIDIndexerⁱᵐᵖˡ); (FilterPodsByOwner, FilterPodsByOwnerⁱᵐᵖˡ); (PodKey, PodKeyⁱᵐᵖˡ); (AddOrUpdateTaintOnNode, AddOrUpdateTaintOnNodeⁱᵐᵖˡ); (RemoveTaintOffNode, RemoveTaintOffNodeⁱᵐᵖˡ); (PatchNodeTaints, PatchNodeTaintsⁱᵐᵖˡ); (ComputeHash, ComputeHashⁱᵐᵖˡ); (AddOrUpdateLabelsOnNode, AddOrUpdateLabelsOnNodeⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(NewPodControllerRefManager, NewPodControllerRefManagerⁱᵐᵖˡ); (NewReplicaSetControllerRefManager, NewReplicaSetControllerRefManagerⁱᵐᵖˡ); (RecheckDeletionTimestamp, RecheckDeletionTimestampⁱᵐᵖˡ); (NewControllerRevisionControllerRefManager, NewControllerRevisionControllerRefManagerⁱᵐᵖˡ); (ownerRefControllerPatch, ownerRefControllerPatchⁱᵐᵖˡ); (GenerateDeleteOwnerRefStrategicMergeBytes, GenerateDeleteOwnerRefStrategicMergeBytesⁱᵐᵖˡ); (ownerReference, ownerReferenceⁱᵐᵖˡ); (NoResyncPeriodFunc, NoResyncPeriodFuncⁱᵐᵖˡ); (StaticResyncPeriodFunc, StaticResyncPeriodFuncⁱᵐᵖˡ); (NewControllerExpectations, NewControllerExpectationsⁱᵐᵖˡ); (NewUIDTrackingControllerExpectations, NewUIDTrackingControllerExpectationsⁱᵐᵖˡ); (getPodsLabelSet, getPodsLabelSetⁱᵐᵖˡ); (getPodsFinalizers, getPodsFinalizersⁱᵐᵖˡ); (getPodsAnnotationSet, getPodsAnnotationSetⁱᵐᵖˡ); (getPodsPrefix, getPodsPrefixⁱᵐᵖˡ); (validateControllerRef, validateControllerRefⁱᵐᵖˡ); (GetPodFromTemplate, GetPodFromTemplateⁱᵐᵖˡ); (afterOrZero, afterOrZeroⁱᵐᵖˡ); (logarithmicRankDiff, logarithmicRankDiffⁱᵐᵖˡ); (podReadyTime, podReadyTimeⁱᵐᵖˡ); (maxContainerRestarts, maxContainerRestartsⁱᵐᵖˡ); (compareMaxContainerRestarts, compareMaxContainerRestartsⁱᵐᵖˡ); (FilterClaimedPods, FilterClaimedPodsⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (FilterTerminatingPods, FilterTerminatingPodsⁱᵐᵖˡ); (CountTerminatingPods, CountTerminatingPodsⁱᵐᵖˡ); (nextPodAvailabilityCheck, nextPodAvailabilityCheckⁱᵐᵖˡ); (findMinNextPodAvailabilitySimpleCheck, findMinNextPodAvailabilitySimpleCheckⁱᵐᵖˡ); (FindMinNextPodAvailabilityCheck, FindMinNextPodAvailabilityCheckⁱᵐᵖˡ); (IsPodActive, IsPodActiveⁱᵐᵖˡ); (IsPodTerminating, IsPodTerminatingⁱᵐᵖˡ); (FilterActiveReplicaSets, FilterActiveReplicaSetsⁱᵐᵖˡ); (FilterReplicaSets, FilterReplicaSetsⁱᵐᵖˡ); (AddPodNodeNameIndexer, AddPodNodeNameIndexerⁱᵐᵖˡ); (PodControllerIndexKey, PodControllerIndexKeyⁱᵐᵖˡ); (AddPodControllerIndexer, AddPodControllerIndexerⁱᵐᵖˡ); (FilterPodsByOwner, FilterPodsByOwnerⁱᵐᵖˡ); (PodKey, PodKeyⁱᵐᵖˡ); (AddOrUpdateTaintOnNode, AddOrUpdateTaintOnNodeⁱᵐᵖˡ); (RemoveTaintOffNode, RemoveTaintOffNodeⁱᵐᵖˡ); (PatchNodeTaints, PatchNodeTaintsⁱᵐᵖˡ); (ComputeHash, ComputeHashⁱᵐᵖˡ); (AddOrUpdateLabelsOnNode, AddOrUpdateLabelsOnNodeⁱᵐᵖˡ)].
 
 Axiom BaseControllerRefManager__CanAdoptⁱᵐᵖˡ : val.
 
