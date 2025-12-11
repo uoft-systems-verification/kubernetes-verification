@@ -190,6 +190,8 @@ Proof.
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
 Qed.
 
+(* TODO: try to use a record and make it pure *)
+(* TODO: write invariant in the style of ∀ k, Φ k m and develop a lemma/tactic to reason about inserted map *)
 Definition kubernetes_state_consistent (used_uid: gset go_string) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : iProp Σ :=
   (* All parents exist; this means holding a children gmap fragment implies the parent exists in abs_state *)
   "%Hparents_exist" ∷ ⌜ dom children = dom abs_state ⌝ ∗
@@ -203,7 +205,7 @@ Definition kubernetes_state_consistent (used_uid: gset go_string) (abs_state: gm
   "%Hchildren_disjoint" ∷ ⌜ ∀ k1 s1 k2 s2, k1 ≠ k2 → children !! k1 = Some s1 → children !! k2 = Some s2 → s1 ## s2 ⌝ ∗
   (* Fresh keys are not used by any existing object *)
   "%Hfresh_keys_absent" ∷ ⌜ fresh_keys ## dom abs_state ⌝ ∗
-  (* Fresh keys are reserved *)
+  (* Fresh keys are reserved *) (* TODO: need better spec on private space of names *)
   "%Hfresh_keys_reserved" ∷ ⌜ ∀ k, k ∈ fresh_keys → reserved_key k ⌝ ∗
   (* Each object has a unique uid *)
   "%Hno_duplicate_uid" ∷ ⌜ ∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
@@ -243,8 +245,7 @@ Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: P
       "own_pure_pod" ∷ Pod.own pod pure_pod
   }}}
     @! apimodel.deepCopy #obj
-  {{{ (obj': interface.t) (ptr': loc) (pod': v1.Pod.t), RET #obj';
-      ⌜ obj' = interface.mk (ptrT.id v1.Pod.id) #ptr' ⌝ ∗
+  {{{ (ptr': loc) (pod': v1.Pod.t), RET #(interface.mk (ptrT.id v1.Pod.id) #ptr');
       ptr' ↦ pod' ∗
       Pod.own pod' pure_pod ∗
       ptr ↦ pod ∗
@@ -260,8 +261,7 @@ Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t)
       "own_pure_rs" ∷ ReplicaSet.own rs pure_rs
   }}}
     @! apimodel.deepCopy #obj
-  {{{ (obj': interface.t) (ptr': loc) (rs': v1.ReplicaSet.t), RET #obj';
-      ⌜ obj' = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr' ⌝ ∗
+  {{{ (ptr': loc) (rs': v1.ReplicaSet.t), RET #(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr');
       ptr' ↦ rs' ∗
       ReplicaSet.own rs' pure_rs ∗
       ptr ↦ rs ∗

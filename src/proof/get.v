@@ -24,9 +24,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
       "Hown_rs" ∷ key [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.objGet #key
-  {{{ obj exists' ptr rs, RET (#obj, #exists');
-      ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-      ⌜ exists' = true ⌝ ∗
+  {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
       ptr ↦ rs ∗
       ReplicaSet.own rs pure_rs ∗
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
@@ -37,6 +35,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
 Proof.
   wp_start as "H". iNamed "H".
   wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
+    (* TODO: use the style of experiments/glob.v *)
   wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamed "H". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get.
   iAssert (⌜ abs_state !! key = Some (KObject.ReplicaSet pure_rs) ⌝%I) with "[Hown_rs Hown_abs]" as "%Hkey_in_abs".
@@ -54,14 +53,13 @@ Proof.
   wp_apply (wp_map_get with "[$Hown_phys]"). iIntros "Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys. wp_auto.
   wp_apply (wp_deepCopy_replicaset with "[$Hrs_ptr $Hdeepown_rs]"); [done|].
-  iIntros (copied_obj copied_ptr copied_rs) "(%H_copied_obj_is_ptr & Hcopied_ptr & Hdeepown_copied_rs & Hrs_ptr & Hdeepown_rs)". wp_auto.
+  iIntros (copied_ptr copied_rs) "(Hcopied_ptr & Hdeepown_copied_rs & Hrs_ptr & Hdeepown_rs)". wp_auto.
   iAssert (state_rep phys_state abs_state %I) with "[Hrs_ptr Hother_rep Hdeepown_rs]" as "Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr, rs, pure_rs. iFrame. done. }
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
   with "[$Hown_Mutex Hstate_m_addr Hstate_used_uid_addr Hstate_rvc_addr Hown_phys Hown_used_uid Hown_abs Hphys_abs_rep Hown_children Hown_fresh_keys]").
   { iFrame. iFrame "#". }
-  iApply ("HΦ" $! copied_obj true copied_ptr copied_rs).
-  iFrame. done.
+  iApply "HΦ". iFrame. done.
 Qed.
 
 Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
@@ -70,9 +68,8 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
       "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetMutGet #namespace #name
-  {{{ l (err: error.t) rs, RET (#l, #err);
+  {{{ l rs, RET (#l, #(interface.nil));
       l ↦ rs ∗
-      ⌜ err = interface.nil ⌝ ∗
       ReplicaSet.own rs pure_rs ∗
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
@@ -82,7 +79,7 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_objGet_replicaset_ptsto_mut with "[$Hown_rs]"); [iFrame "#"; done|].
-  iIntros (obj exists' ptr rs) "(-> & -> & Hptr & Hdeepown_rs & %Hwell_formed_pure_rs & -> & -> & Hown_pure_rs)". wp_auto.
+  iIntros (ptr rs) "(Hptr & Hdeepown_rs & %Hwell_formed_pure_rs & -> & -> & Hown_pure_rs)". wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists ptr. done. }
   iIntros (y ok) "%if_ok".
@@ -100,9 +97,8 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
       "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetGet #namespace #name
-  {{{ l (err: error.t) rs dq, RET (#l, #err);
+  {{{ l rs dq, RET (#l, #interface.nil);
       l ↦{dq} rs ∗
-      ⌜ err = interface.nil ⌝ ∗
       ReplicaSet.own rs pure_rs ∗
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
@@ -112,7 +108,7 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_ReplicaSetMutGet_ptsto_mut with "[$Hown_rs]"); [done|].
-  iIntros (l err rs) "(Hl & -> & Hdeepown_rs & %Hwell_formed_pure_rs & -> & -> & Hown_rs)". wp_auto.
+  iIntros (l rs) "(Hl & Hdeepown_rs & %Hwell_formed_pure_rs & -> & -> & Hown_rs)". wp_auto.
   iApply "HΦ". iFrame. done.
 Qed.
 
