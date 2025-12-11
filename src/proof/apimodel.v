@@ -285,14 +285,14 @@ Lemma wp_generateNewName kind namespace (generate_name : go_string) m (phys_stat
 Proof.
 Admitted.
 
-Lemma wp_generateNewUID m (used_uid : gmap go_string unit):
+Lemma wp_generateNewUID l (used_uid : gmap go_string unit):
   {{{ is_pkg_init apimodel ∗
-      "m" ∷ m ↦$ used_uid
+      "Hl" ∷ l ↦$ used_uid
   }}}
-    @! apimodel.generateNewUID #m
-  {{{ uid, RET #uid;
-      ⌜ used_uid !! uid = None ⌝ ∗
-      m ↦$ used_uid
+    @! apimodel.generateNewUID #l
+  {{{ generated_uid, RET #generated_uid;
+      ⌜ used_uid !! generated_uid = None ⌝ ∗
+      l ↦$ <[generated_uid:=()]> used_uid
   }}}.
 Proof.
 Admitted.

@@ -189,11 +189,12 @@ func generateNewName(kind, namespace, generateName string, m map[KKey]interface{
 	}
 }
 
-func generateNewUID(m map[string]struct{}) string {
+func generateNewUID(usedUID map[string]struct{}) string {
 	for {
 		uid := uuid.NewUUID()
 		uidStr := string(uid)
-		if _, exists := m[uidStr]; !exists {
+		if _, exists := usedUID[uidStr]; !exists {
+			usedUID[uidStr] = struct{}{}
 			return uidStr
 		}
 	}
@@ -234,7 +235,6 @@ func objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 
 	newUID := generateNewUID(state.usedUID)
 	metadata.SetUID(types.UID(newUID))
-	state.usedUID[newUID] = struct{}{}
 
 	state.resourceVersionCounter++
 	metadata.SetResourceVersion(strconv.FormatInt(state.resourceVersionCounter, 10))

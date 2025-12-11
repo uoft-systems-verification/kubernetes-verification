@@ -76,7 +76,6 @@ Proof.
   wp_apply wp_globals_get. wp_apply (wp_generateNewUID with "[$Hown_used_uid]").
   iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hown_used_uid)". wp_auto.
   wp_apply (wp_SetUID with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_map_insert with "[$Hown_used_uid]"). iIntros "Hown_used_uid". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get. wp_apply wp_globals_get.
   wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
   wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.

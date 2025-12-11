@@ -381,8 +381,8 @@ Definition generateNewUID : go_string := "kubernetes_model/apimodel.generateNewU
 
 (* go: api_model.go:192:6 *)
 Definition generateNewUIDⁱᵐᵖˡ : val :=
-  λ: "m",
-    exception_do (let: "m" := (mem.alloc "m") in
+  λ: "usedUID",
+    exception_do (let: "usedUID" := (mem.alloc "usedUID") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
       let: "uid" := (mem.alloc (type.zero_val #types.UID)) in
       let: "$r0" := ((func_call #uuid.NewUUID) #()) in
@@ -392,18 +392,24 @@ Definition generateNewUIDⁱᵐᵖˡ : val :=
       do:  ("uidStr" <-[#stringT] "$r0");;;
       (let: "exists" := (mem.alloc (type.zero_val #boolT)) in
       let: ("$ret0", "$ret1") := (map.get (![type.mapT #stringT (type.structT [
-      ])] "m") (![#stringT] "uidStr")) in
+      ])] "usedUID") (![#stringT] "uidStr")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  "$r0";;;
       do:  ("exists" <-[#boolT] "$r1");;;
       (if: (~ (![#boolT] "exists"))
-      then return: (![#stringT] "uidStr")
+      then
+        let: "$r0" := (struct.make (type.structT [
+        ]) [{
+        }]) in
+        do:  (map.insert (![type.mapT #stringT (type.structT [
+        ])] "usedUID") (![#stringT] "uidStr") "$r0");;;
+        return: (![#stringT] "uidStr")
       else do:  #())))).
 
 Definition objCreate : go_string := "kubernetes_model/apimodel.objCreate"%go.
 
-(* go: api_model.go:202:6 *)
+(* go: api_model.go:203:6 *)
 Definition objCreateⁱᵐᵖˡ : val :=
   λ: "kind" "namespace" "obj",
     with_defer: (let: "obj" := (mem.alloc "obj") in
@@ -494,11 +500,6 @@ Definition objCreateⁱᵐᵖˡ : val :=
     do:  ("newUID" <-[#stringT] "$r0");;;
     do:  (let: "$a0" := (![#stringT] "newUID") in
     (interface.get #"SetUID"%go (![#v1.Object] "metadata")) "$a0");;;
-    let: "$r0" := (struct.make (type.structT [
-    ]) [{
-    }]) in
-    do:  (map.insert (![type.mapT #stringT (type.structT [
-    ])] (struct.field_ref #State #"usedUID"%go (globals.get #state))) (![#stringT] "newUID") "$r0");;;
     do:  ((struct.field_ref #State #"resourceVersionCounter"%go (globals.get #state)) <-[#int64T] ((![#int64T] (struct.field_ref #State #"resourceVersionCounter"%go (globals.get #state))) + #(W64 1)));;;
     do:  (let: "$a0" := (let: "$a0" := (![#int64T] (struct.field_ref #State #"resourceVersionCounter"%go (globals.get #state))) in
     let: "$a1" := #(W64 10) in
