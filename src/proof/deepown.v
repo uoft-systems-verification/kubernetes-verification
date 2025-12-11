@@ -5,64 +5,207 @@ From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof Require Export time.
 From proof Require Import prelude empty_ffi.
 
-Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Module PureOwnerReference.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  APIVersion' : go_string;
+  Kind' : go_string;
+  Name' : go_string;
+  UID' : types.UID.t;
+  Controller' : option bool;
+  BlockOwnerDeletion' : option bool;
+}.
+End def.
+End PureOwnerReference.
 
-Axiom deepown_Time: time.Time.t → iProp Σ.
-Global Instance deepown_Time_persistent v : Persistent (deepown_Time v).
-Proof. Admitted.
+Module OwnerReference.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.OwnerReference.t) (v: PureOwnerReference.t): iProp Σ :=
+  ⌜ c.(v1.OwnerReference.APIVersion') = v.(PureOwnerReference.APIVersion') ⌝ ∗
+  ⌜ c.(v1.OwnerReference.Kind') = v.(PureOwnerReference.Kind') ⌝ ∗
+  ⌜ c.(v1.OwnerReference.Name') = v.(PureOwnerReference.Name') ⌝ ∗
+  ⌜ c.(v1.OwnerReference.UID') = v.(PureOwnerReference.UID') ⌝ ∗
+  (match v.(PureOwnerReference.Controller') with
+  | None => ⌜ c.(v1.OwnerReference.Controller') = null ⌝
+  | Some b => ∃ controller, c.(v1.OwnerReference.Controller') ↦ controller ∗ ⌜ controller = b ⌝
+  end) ∗
+  (match v.(PureOwnerReference.BlockOwnerDeletion') with
+  | None => ⌜ c.(v1.OwnerReference.BlockOwnerDeletion') = null ⌝
+  | Some b => ∃ block_owner_deletion,
+    c.(v1.OwnerReference.BlockOwnerDeletion') ↦ block_owner_deletion ∗ ⌜ block_owner_deletion = b ⌝
+  end).
+End def.
+End OwnerReference.
 
-Definition deepown_Time_loc l: iProp Σ :=
-  ⌜ l = null ⌝ ∨ ∃ (v: time.Time.t), l ↦□ v ∗ deepown_Time v.
+Module PureObjectMeta.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  Name' : go_string;
+  GenerateName' : go_string;
+  Namespace' : go_string;
+  SelfLink' : go_string;
+  UID' : types.UID.t;
+  ResourceVersion' : go_string;
+  Generation' : w64;
+  (* CreationTimestamp' : Time.t; *)
+  (* DeletionTimestamp' : loc; *)
+  DeletionGracePeriodSeconds' : option w64;
+  Labels' : option (gmap go_string go_string);
+  Annotations' : option (gmap go_string go_string);
+  OwnerReferences' : option (list PureOwnerReference.t);
+  Finalizers' : option (list go_string);
+  (* ManagedFields' : slice.t; *)
+}.
+End def.
+End PureObjectMeta.
 
-Definition deepown_w64_loc l : iProp Σ :=
-  ⌜ l = null ⌝ ∨ ∃ (v: w64), l ↦□ v.
+Module ObjectMeta.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.ObjectMeta.t) (v: PureObjectMeta.t): iProp Σ :=
+  "%Hown_name" ∷ ⌜ c.(v1.ObjectMeta.Name') = v.(PureObjectMeta.Name') ⌝ ∗
+  "%Hown_generatename" ∷ ⌜ c.(v1.ObjectMeta.GenerateName') = v.(PureObjectMeta.GenerateName') ⌝ ∗
+  "%Hown_namespace" ∷ ⌜ c.(v1.ObjectMeta.Namespace') = v.(PureObjectMeta.Namespace') ⌝ ∗
+  "%Hown_selflink" ∷ ⌜ c.(v1.ObjectMeta.SelfLink') = v.(PureObjectMeta.SelfLink') ⌝ ∗
+  "%Hown_uid" ∷ ⌜ c.(v1.ObjectMeta.UID') = v.(PureObjectMeta.UID') ⌝ ∗
+  "%Hown_resourceversion" ∷ ⌜ c.(v1.ObjectMeta.ResourceVersion') = v.(PureObjectMeta.ResourceVersion') ⌝ ∗
+  "%Hown_generation" ∷ ⌜ c.(v1.ObjectMeta.Generation') = v.(PureObjectMeta.Generation') ⌝ ∗
+  "Hown_deletiongraceperiodseconds" ∷ (match v.(PureObjectMeta.DeletionGracePeriodSeconds') with
+  | None => ⌜ c.(v1.ObjectMeta.DeletionGracePeriodSeconds') = null ⌝
+  | Some i => ∃ deletion_grace_period_seconds,
+    c.(v1.ObjectMeta.DeletionGracePeriodSeconds') ↦ deletion_grace_period_seconds ∗ ⌜ deletion_grace_period_seconds = i ⌝
+  end) ∗
+  "Hown_labels" ∷ (match v.(PureObjectMeta.Labels') with
+  | None => ⌜ c.(v1.ObjectMeta.Labels') = null ⌝
+  | Some m => ∃ labels, c.(v1.ObjectMeta.Labels') ↦$ labels ∗ ⌜ labels = m ⌝
+  end) ∗
+  "Hown_annotations" ∷ (match v.(PureObjectMeta.Annotations') with
+  | None => ⌜ c.(v1.ObjectMeta.Annotations') = null ⌝
+  | Some m => ∃ annotations, c.(v1.ObjectMeta.Annotations') ↦$ annotations ∗ ⌜ annotations = m ⌝
+  end) ∗
+  "Hown_ownerreferences" ∷ (match v.(PureObjectMeta.OwnerReferences') with
+  | None => ⌜ c.(v1.ObjectMeta.OwnerReferences') = slice.nil ⌝
+  | Some os => ∃ owner_references,
+    c.(v1.ObjectMeta.OwnerReferences') ↦* owner_references ∗ [∗list] oc;ov ∈ owner_references;os, OwnerReference.own oc ov
+  end) ∗
+  "Hown_finalizers" ∷ (match v.(PureObjectMeta.Finalizers') with
+  | None => ⌜ c.(v1.ObjectMeta.Finalizers') = slice.nil ⌝
+  | Some fs => ∃ finalizers, c.(v1.ObjectMeta.Finalizers') ↦* finalizers ∗ ⌜ finalizers = fs ⌝
+  end).
+End def.
+End ObjectMeta.
 
-Definition deepown_bool_loc l : iProp Σ :=
-  ⌜ l = null ⌝ ∨ ∃ (v: bool), l ↦□ v.
+Module PurePodSpec.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {}.
+End def.
+End PurePodSpec.
 
-Definition deepown_string_slice l : iProp Σ :=
-  ⌜ l = slice.nil ⌝ ∨ ∃ (vs: list go_string), l ↦*□ vs.
+Module PodSpec.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.PodSpec.t) (v: PurePodSpec.t): iProp Σ := True%I.
+End def.
+End PodSpec.
 
-Definition deepown_string_string_map l : iProp Σ :=
-  ⌜ l = null ⌝ ∨ ∃ (v: gmap go_string go_string), l ↦$□ v.
+Module PurePodStatus.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {}.
+End def.
+End PurePodStatus.
 
-Definition deepown_OwnerReference (v: v1.OwnerReference.t) : iProp Σ :=
-  deepown_bool_loc v.(v1.OwnerReference.Controller') ∗
-  deepown_bool_loc v.(v1.OwnerReference.BlockOwnerDeletion').
+Module PodStatus.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.PodStatus.t) (v: PurePodStatus.t): iProp Σ := True%I.
+End def.
+End PodStatus.
 
-Definition deepown_OwnerReference_slice l : iProp Σ :=
-  ⌜ l = slice.nil ⌝ ∨
-  ∃ (vs : list v1.OwnerReference.t), l ↦*□ vs ∗ [∗ list] v ∈ vs, deepown_OwnerReference v.
+Module PurePod.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : PureObjectMeta.t;
+  Spec' : PurePodSpec.t;
+  Status' : PurePodStatus.t;
+}.
+End def.
+End PurePod.
 
-Axiom deepown_ManagedFieldsEntry: v1.ManagedFieldsEntry.t → iProp Σ.
-Global Instance deepown_ManagedFieldsEntry_persistent v : Persistent (deepown_ManagedFieldsEntry v).
-Proof. Admitted.
+Module Pod.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.Pod.t) (v: PurePod.t): iProp Σ :=
+  "%Hown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(PurePod.TypeMeta') ⌝ ∗
+  "Hown_objectmeta" ∷ ObjectMeta.own c.(v1.Pod.ObjectMeta') v.(PurePod.ObjectMeta') ∗
+  "Hown_podspec" ∷ PodSpec.own c.(v1.Pod.Spec') v.(PurePod.Spec') ∗
+  "Hown_podstatus" ∷ PodStatus.own c.(v1.Pod.Status') v.(PurePod.Status').
+End def.
+End Pod.
 
-Definition deepown_ManagedFieldsEntry_slice l : iProp Σ :=
-  ⌜ l = slice.nil ⌝ ∨
-  ∃ (vs : list v1.ManagedFieldsEntry.t), l ↦*□ vs ∗ [∗ list] v ∈ vs, deepown_ManagedFieldsEntry v.
+Module PureReplicaSetSpec.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  Replicas' : option w32;
+  MinReadySeconds' : w32;
+  (* Selector' : loc; *)
+  (* Template' : v1.PodTemplateSpec.t; *)
+}.
+End def.
+End PureReplicaSetSpec.
 
-Definition deepown_ObjectMeta (v: v1.ObjectMeta.t) : iProp Σ :=
-  deepown_Time_loc v.(v1.ObjectMeta.DeletionTimestamp') ∗
-  deepown_w64_loc v.(v1.ObjectMeta.DeletionGracePeriodSeconds') ∗
-  deepown_string_string_map v.(v1.ObjectMeta.Labels') ∗
-  deepown_string_string_map v.(v1.ObjectMeta.Annotations') ∗
-  deepown_OwnerReference_slice v.(v1.ObjectMeta.OwnerReferences') ∗
-  deepown_string_slice v.(v1.ObjectMeta.Finalizers') ∗
-  deepown_ManagedFieldsEntry_slice v.(v1.ObjectMeta.ManagedFields').
+Module ReplicaSetSpec.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.ReplicaSetSpec.t) (v: PureReplicaSetSpec.t): iProp Σ :=
+  match v.(PureReplicaSetSpec.Replicas') with
+  | None => ⌜ c.(v1.ReplicaSetSpec.Replicas') =  null ⌝
+  | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦ replicas ∗ ⌜ replicas = i ⌝
+  end ∗
+  ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(PureReplicaSetSpec.MinReadySeconds') ⌝.
+End def.
+End ReplicaSetSpec.
 
-Axiom deepown_PodSpec: v1.PodSpec.t → iProp Σ.
-Global Instance deepown_PodSpec_persistent v : Persistent (deepown_PodSpec v).
-Proof. Admitted.
+Module PureReplicaSetStatus.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {}.
+End def.
+End PureReplicaSetStatus.
 
-Axiom deepown_PodStatus: v1.PodStatus.t → iProp Σ.
-Global Instance deepown_PodStatus_persistent v : Persistent (deepown_PodStatus v).
-Proof. Admitted.
+Module ReplicaSetStatus.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.ReplicaSetStatus.t) (v: PureReplicaSetStatus.t): iProp Σ := True%I.
+End def.
+End ReplicaSetStatus.
 
-Definition deepown_Pod (v: v1.Pod.t) : iProp Σ :=
-  deepown_ObjectMeta v.(v1.Pod.ObjectMeta') ∗
-  deepown_PodSpec v.(v1.Pod.Spec') ∗
-  deepown_PodStatus v.(v1.Pod.Status').
+Module PureReplicaSet.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : PureObjectMeta.t;
+  Spec' : PureReplicaSetSpec.t;
+  Status' : PureReplicaSetStatus.t;
+}.
+End def.
+End PureReplicaSet.
 
-End proof.
+Module ReplicaSet.
+Section def.
+Context `{ffi_syntax} `{hG: !heapGS Σ}.
+Definition own (c: v1.ReplicaSet.t) (v: PureReplicaSet.t): iProp Σ :=
+  ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(PureReplicaSet.TypeMeta') ⌝ ∗
+  ObjectMeta.own c.(v1.ReplicaSet.ObjectMeta') v.(PureReplicaSet.ObjectMeta') ∗
+  ReplicaSetSpec.own c.(v1.ReplicaSet.Spec') v.(PureReplicaSet.Spec') ∗
+  ReplicaSetStatus.own c.(v1.ReplicaSet.Status') v.(PureReplicaSet.Status').
+End def.
+End ReplicaSet.
