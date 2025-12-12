@@ -6,7 +6,7 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export well_formed apimodel.
+From proof Require Export apimodel.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
@@ -26,22 +26,22 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
       "%Hinterface_is_rs_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #to_create_pod_ptr ⌝ ∗
       "Hto_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
-      "Hdeep_own_to_create_pod" ∷ Pod.own to_create_pod to_create_pure_pod ∗
+      "Hdeep_own_to_create_pod" ∷ PurePod.own to_create_pod to_create_pure_pod ∗
       "%Hto_create_pure_pod_namespace_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ∨
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
         valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
-      "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (extract_kobject_metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
-      "%Hwell_formed_to_create_Pod" ∷ ⌜ well_formed_to_create_Pod to_create_pure_pod ⌝ ∗
+      "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%Hwell_formed_uninitialized" ∷ ⌜ PurePod.well_formed_uninitialized to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
   }}}
     @! apimodel.objCreate #kind #namespace #obj
   {{{ created_pod_ptr created_pod created_pure_pod new_key, RET (#(interface.mk (ptrT.id v1.Pod.id) #created_pod_ptr), #interface.nil);
       created_pod_ptr ↦ created_pod ∗
-      Pod.own created_pod created_pure_pod ∗
-      ⌜ well_formed_Pod created_pure_pod ⌝ ∗
+      PurePod.own created_pod created_pure_pod ∗
+      ⌜ PurePod.well_formed created_pure_pod ⌝ ∗
       ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
       new_key [[ γ_state ]]↦ (PureKObject.Pod created_pure_pod) ∗
@@ -89,7 +89,7 @@ Proof.
     <| PureObjectMeta.UID' := generated_uid |>
     <| PureObjectMeta.ResourceVersion' := rv_str |>.
   set created_pure_pod := to_create_pure_pod <| PurePod.ObjectMeta' := created_pure_meta |>.
-  iAssert (Pod.own created_pod created_pure_pod) with "[Hdeep_own_copied_pod]" as "Hdeep_own_created_pod".
+  iAssert (PurePod.own created_pod created_pure_pod) with "[Hdeep_own_copied_pod]" as "Hdeep_own_created_pod".
   { iNamed "Hdeep_own_copied_pod". iFrame. iSplitR; [iPureIntro; rewrite Hcreated_pod_eq //|].
     iNamed "Hown_objectmeta". rewrite Hcreated_pod_eq //. iFrame. iPureIntro. done. }
   wp_apply (wp_deepCopy_pod with "[$Hcopied_ptr $Hdeep_own_created_pod]"); [done|].
@@ -124,12 +124,12 @@ Proof.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
   iAssert ((⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = new_key.(KKey.Namespace') ⌝ ∗
       ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = new_key.(KKey.Name') ⌝ ∗
-      ⌜ well_formed_Pod created_pure_pod ⌝) %I)
-  as "(%Hnamespace_match & %Hname_match & %Hwell_formed_Pod)".
+      ⌜ PurePod.well_formed created_pure_pod ⌝) %I)
+  as "(%Hnamespace_match & %Hname_match & %Hwell_formed)".
   { iPureIntro. split; [done|split;[done|]].
-    unfold well_formed_Pod. unfold well_formed_to_create_Pod in Hwell_formed_to_create_Pod.
+    unfold PurePod.well_formed. unfold PurePod.well_formed_uninitialized in Hwell_formed_uninitialized.
     split; [|split; [intuition|intuition]].
-    unfold well_formed_ObjectMeta. unfold well_formed_to_create_ObjectMeta in Hwell_formed_to_create_Pod. intuition. }
+    unfold PureObjectMeta.well_formed. unfold PureObjectMeta.well_formed_uninitialized in Hwell_formed_uninitialized. intuition. }
   iAssert (state_rep phys_state' abs_state' %I) with "[Hcopied_ptr Hdeepown_created_pod Hinv_Hphys_abs_rep]" as "Hinv_Hphys_abs_rep".
   { unfold state_rep. unfold phys_state'. unfold abs_state'.
     rewrite (big_sepM2_insert _ phys_state abs_state new_key _ _ Hnew_key_not_in_phys Hnew_key_not_in_abs).
@@ -153,12 +153,12 @@ Proof.
       { set_solver. }
       set_solver.
     }
-    assert (PureObjectMeta.UID' (extract_kobject_metadata (PureKObject.Pod created_pure_pod)) = generated_uid) as Hcreated_pure_pod_uiq_eq.
+    assert (PureObjectMeta.UID' (PureKObject.metadata (PureKObject.Pod created_pure_pod)) = generated_uid) as Hcreated_pure_pod_uiq_eq.
     { intuition. }
     assert (generated_uid ∉ dom used_uid) as Hgenerated_not_in_used.
     { apply not_elem_of_dom. exact Hgenerated_uid_is_not_used. }
     assert (obj_has_controller_parent_of (PureKObject.Pod created_pure_pod) (KKey.Kind' parent_key)
-      (KKey.Name' parent_key) (PureObjectMeta.UID' (extract_kobject_metadata owned_parent)))
+      (KKey.Name' parent_key) (PureObjectMeta.UID' (PureKObject.metadata owned_parent)))
       as Hcreated_pure_pod_has_controller_parent_of_owned_parent by done.
     destruct Hinv_Hghost_well_formed.
     apply mk.
@@ -235,10 +235,10 @@ Proof.
       destruct Hlookup1 as [(<- & <-) | (Hk1_neq & Hlookup1)];
       destruct Hlookup2 as [(<- & <-) | (Hk2_neq & Hlookup2)].
       + done.
-      + assert ((extract_kobject_metadata obj2).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj2_uid_in_used.
+      + assert ((PureKObject.metadata obj2).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj2_uid_in_used.
         { apply Hexisting_uid_is_used with (k := k2). done. }
         rewrite <-Huid_eq, Hcreated_pure_pod_uiq_eq in Hobj2_uid_in_used. done.
-      + assert ((extract_kobject_metadata obj1).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj1_uid_in_used.
+      + assert ((PureKObject.metadata obj1).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj1_uid_in_used.
         { apply Hexisting_uid_is_used with (k := k1). done. }
         rewrite Huid_eq Hcreated_pure_pod_uiq_eq in Hobj1_uid_in_used. done.
       + apply Hno_duplicate_uid with (obj1 := obj1) (obj2 := obj2); done.
@@ -266,7 +266,7 @@ Proof.
           -- eapply Hchildren_point_to_parent; [done|done|done|done].
       + intros Hobj_has_controller_parent_of.
         destruct Hlookup_c as [(<- & <-) | (Hkey_c_neq & Hlookup_c)].
-        * assert (well_formed_kobject (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
+        * assert (PureKObject.well_formed (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
           pose proof (well_formed_obj_has_at_most_one_controller_parent (PureKObject.Pod created_pure_pod) Hwell_formed_kobject
             _ _ _ _ _ _ Hobj_has_controller_parent_of Hcreated_pure_pod_has_controller_parent_of_owned_parent) as (Hkind_eq & Hname_eq & Huid_eq).
           destruct Hlookup_p as [(<- & <-) | (Hkey_p_neq & Hlookup_p)].
@@ -294,7 +294,7 @@ Proof.
       unfold abs_state' in Hlookup_abs.
       rewrite lookup_insert_Some in Hlookup_abs.
       destruct Hlookup_abs as [(<- & <-) | (Hk_neq & Hlookup_abs)].
-      + assert (well_formed_kobject (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
+      + assert (PureKObject.well_formed (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
         pose proof (well_formed_obj_has_at_most_one_controller_parent (PureKObject.Pod created_pure_pod) Hwell_formed_kobject
           _ _ _ _ _ _ Hhas_parent Hcreated_pure_pod_has_controller_parent_of_owned_parent) as (Hkind_eq & Hname_eq & ->).
         pose proof (Hexisting_uid_is_used parent_key owned_parent Hparent_key_in_abs).
@@ -317,8 +317,8 @@ Qed.
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%namespace_valid" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "to_create_pod_ptr" ∷ to_create_pod_ptr ↦ to_create_pod ∗
-      "parent_uid" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ∗
-      "#well_formed_to_create_Pod" ∷ well_formed_to_create_Pod to_create_pod ∗
+      "parent_uid" ∷ has_controller_parent_of to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (PureKObject.metadata owned_parent).(v1.ObjectMeta.UID') ∗
+      "#PurePod.well_formed_uninitialized" ∷ PurePod.well_formed_uninitialized to_create_pod ∗
       "%to_create_pod_namespace_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = namespace ∨ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = ""%go ⌝ ∗
       "%to_create_pod_name_valid" ∷ ⌜ to_create_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = ""%go ⌝
   }}}
@@ -326,7 +326,7 @@ Qed.
   {{{ created_pod_ptr (err: error.t) created_pod new_key, RET (#created_pod_ptr, #err);
       ⌜ err = interface.nil ⌝ ∗
       created_pod_ptr ↦ created_pod ∗
-      well_formed_Pod created_pod ∗
+      PurePod.well_formed created_pod ∗
       ⌜ new_key = extract_pod_key created_pod ⌝ ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
       new_key [[ γ_state ]]↦ (PureKObject.Pod created_pod) ∗

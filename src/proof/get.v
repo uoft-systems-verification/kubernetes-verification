@@ -6,7 +6,7 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export well_formed apimodel.
+From proof Require Export apimodel.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
@@ -26,8 +26,8 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
     @! apimodel.objGet #key
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
       ptr ↦ rs ∗
-      ReplicaSet.own rs pure_rs ∗
-      ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
+      PureReplicaSet.own rs pure_rs ∗
+      ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
       key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
@@ -70,8 +70,8 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
     @! apimodel.ReplicaSetMutGet #namespace #name
   {{{ l rs, RET (#l, #(interface.nil));
       l ↦ rs ∗
-      ReplicaSet.own rs pure_rs ∗
-      ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
+      PureReplicaSet.own rs pure_rs ∗
+      ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
@@ -99,8 +99,8 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
     @! apimodel.ReplicaSetGet #namespace #name
   {{{ l rs dq, RET (#l, #interface.nil);
       l ↦{dq} rs ∗
-      ReplicaSet.own rs pure_rs ∗
-      ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
+      PureReplicaSet.own rs pure_rs ∗
+      ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
@@ -121,7 +121,7 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
       "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%owned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝ ∗
-      "%indexed_value" ∷ ⌜ indexed_value = (extract_kobject_metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%indexed_value" ∷ ⌜ indexed_value = (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "%kind" ∷ ⌜ kind = "Pod"%go ⌝ ∗
       "%index_name" ∷ ⌜ index_name = "podControllerUID"%go ⌝
   }}}
@@ -132,10 +132,10 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
       "obj_pts_to_pod" ∷ ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc) (owned_pod : PurePod.t),
         ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
         ptr ↦ pod ∗
-        Pod.own pod owned_pod ∗
+        PurePod.own pod owned_pod ∗
         ⌜ ∃ k, owned_pod_map !! k = Some owned_pod ⌝ ∗
         ⌜ obj_has_controller_parent_of (PureKObject.Pod owned_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') indexed_value ⌝ ∗
-        ⌜ well_formed_Pod owned_pod ⌝
+        ⌜ PurePod.well_formed owned_pod ⌝
       ) ∗
       "%key_set_equal_dom_owned_pods" ∷  ⌜ list_to_set (extract_pod_key <$> pods) = dom owned_pod_map ⌝ ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗

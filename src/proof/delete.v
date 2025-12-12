@@ -6,7 +6,7 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export well_formed.
+From proof Require Export apimodel.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
@@ -105,10 +105,10 @@ Proof.
         { rewrite delete_insert_eq. reflexivity. }
         iAssert (("%namespace_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
                   "%name_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
-                  "#well_formed_Pod" ∷ well_formed_Pod updated_pod)%I)
-        as "(% & % & #well_formed_Pod')".
+                  "#PurePod.well_formed" ∷ PurePod.well_formed updated_pod)%I)
+        as "(% & % & #PurePod.well_formed')".
         {
-          unfold well_formed_Pod. unfold well_formed_ObjectMeta.
+          unfold PurePod.well_formed. unfold PureObjectMeta.well_formed.
           subst updated_pod. simpl. iFrame "#". done.
         }
         iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (PureKObject.Pod updated_pod)%I)
@@ -134,10 +134,10 @@ Proof.
           rewrite union_eq.
           reflexivity.
         }
-        assert ((extract_kobject_metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.OwnerReferences') = (extract_kobject_metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.OwnerReferences'))
+        assert ((PureKObject.metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.OwnerReferences') = (PureKObject.metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.OwnerReferences'))
         as updated_pod_owner_references_eq.
         { simpl. subst updated_pod. simpl. reflexivity. }
-        assert ((extract_kobject_metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.UID') = (extract_kobject_metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.UID'))
+        assert ((PureKObject.metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.UID') = (PureKObject.metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.UID'))
         as updated_pod_uid_eq.
         { simpl. subst updated_pod. simpl. reflexivity. }
         iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR ]]]]]]]]]].

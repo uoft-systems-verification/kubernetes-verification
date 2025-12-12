@@ -23,7 +23,7 @@ Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
       "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%owned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝ ∗
-      "%indexed_value" ∷ ⌜ metadata.(v1.ObjectMeta.UID') = (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID') ⌝
+      "%indexed_value" ∷ ⌜ metadata.(v1.ObjectMeta.UID') = (PureKObject.metadata owned_parent).(v1.ObjectMeta.UID') ⌝
   }}}
   @! simplereplicaset.FilterPodsByOwner #owner
   {{{ (l: slice.t) (err: error.t) (ptrs: list loc) (pods: list v1.Pod.t), RET (#l, #err);
@@ -32,8 +32,8 @@ Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
       ⌜ NoDup (map extract_pod_key pods) ⌝ ∗
       ([∗ list] ptr ; pod ∈ ptrs ; pods, ptr ↦ pod) ∗
       ([∗ list] pod ∈ pods,
-        well_formed_Pod pod ∗
-        has_controller_parent_of pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (extract_kobject_metadata owned_parent).(v1.ObjectMeta.UID')
+        PurePod.well_formed pod ∗
+        has_controller_parent_of pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.OwnerReferences') (PureKObject.metadata owned_parent).(v1.ObjectMeta.UID')
       ) ∗
       ([∗ list] pod ∈ pods, ∃ owned_pod,
         ⌜ owned_pod_map !! extract_pod_key pod = Some owned_pod ⌝ ∗ deepcopy_Pod owned_pod pod

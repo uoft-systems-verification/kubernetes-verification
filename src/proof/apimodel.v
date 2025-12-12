@@ -6,35 +6,9 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export well_formed.
+From proof Require Export pure_objects.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
-
-Module KKey.
-  Global Instance eq_dec : EqDecision KKey.t.
-  Proof. solve_decision. Qed.
-
-  Global Instance countable : Countable KKey.t.
-  Proof.
-    refine (inj_countable'
-              (λ k, (KKey.Kind' k,
-                     KKey.Name' k,
-                     KKey.Namespace' k))
-              (λ '(kind, name, namespace),
-                KKey.mk kind name namespace)
-              _).
-    intros []; reflexivity.
-  Qed.
-End KKey.
-
-Module PureKObject.
-  Inductive t :=
-  | Pod (p : PurePod.t)
-  | ReplicaSet (rs : PureReplicaSet.t).
-End PureKObject.
-
-Global Existing Instance KKey.eq_dec.
-Global Existing Instance KKey.countable.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
@@ -54,18 +28,6 @@ Definition extract_pod_key pod : KKey.t :=
 
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
-
-Definition extract_kobject_metadata kobj : PureObjectMeta.t :=
-  match kobj with
-  | PureKObject.Pod p => p.(PurePod.ObjectMeta')
-  | PureKObject.ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
-  end.
-
-Definition well_formed_kobject kobj : Prop :=
-  match kobj with
-  | PureKObject.Pod p => well_formed_Pod p
-  | PureKObject.ReplicaSet rs => well_formed_ReplicaSet rs
-  end.
 
 Lemma decide_kind_is_pod kind:
   kind = "Pod"%go →
@@ -93,19 +55,19 @@ Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "Hpod_ptr" ∷ ptr ↦ pod ∗
   "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
-  "Hdeepown_pod" ∷ Pod.own pod pure_pod ∗
+  "Hdeepown_pod" ∷ PurePod.own pod pure_pod ∗
   "%Hnamespace_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hname_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "%Hwell_formed_Pod" ∷ ⌜ well_formed_Pod pure_pod ⌝.
+  "%pod_well_formed" ∷ ⌜ PurePod.well_formed pure_pod ⌝.
 
 Definition replicaset_rep k v1 v2 ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "Hrs_ptr" ∷ ptr ↦ rs ∗
   "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
-  "Hdeepown_rs" ∷ ReplicaSet.own rs pure_rs ∗
+  "Hdeepown_rs" ∷ PureReplicaSet.own rs pure_rs ∗
   "%Hrs_namespace_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hrs_name_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "%Hwell_formed_ReplicaSet" ∷ ⌜ well_formed_ReplicaSet pure_rs ⌝.
+  "%rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝.
 
 Definition obj_rep k v1 v2 : iProp Σ :=
   (if bool_decide (KKey.Kind' k = "Pod"%go) then
@@ -125,11 +87,11 @@ Definition has_controller_parent_of (os: list PureOwnerReference.t) kind name ui
     o.(PureOwnerReference.UID') = uid.
 
 Definition obj_has_controller_parent_of child kind name uid: Prop :=
-  ∃ os, (extract_kobject_metadata child).(PureObjectMeta.OwnerReferences') = Some os ∧
+  ∃ os, (PureKObject.metadata child).(PureObjectMeta.OwnerReferences') = Some os ∧
     has_controller_parent_of os kind name uid.
 
 Lemma well_formed_owner_references_has_at_most_one_controller_parent os:
-  well_formed_OwnerReferences os →
+  PureOwnerReference.list_well_formed os →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       has_controller_parent_of os kind1 name1 uid1 →
         has_controller_parent_of os kind2 name2 uid2 →
@@ -139,7 +101,7 @@ Proof.
   unfold has_controller_parent_of in H1, H2.
   destruct H1 as (i1 & o1 & Hlookup1 & Hctrl1 & Hkind1 & Hname1 & Huid1).
   destruct H2 as (i2 & o2 & Hlookup2 & Hctrl2 & Hkind2 & Hname2 & Huid2).
-  unfold well_formed_OwnerReferences in Hwf.
+  unfold PureOwnerReference.list_well_formed in Hwf.
   assert (i1 = i2) as Heq.
   { apply (Hwf i1 o1 i2 o2).
     split; [|split; [|split]]; assumption. }
@@ -154,7 +116,7 @@ Proof.
 Qed.
 
 Lemma well_formed_obj_has_at_most_one_controller_parent obj:
-  well_formed_kobject obj →
+  PureKObject.well_formed obj →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       obj_has_controller_parent_of obj kind1 name1 uid1 →
         obj_has_controller_parent_of obj kind2 name2 uid2 →
@@ -169,20 +131,20 @@ Proof.
   subst os2.
   destruct obj as [pod | rs].
   - (* Pod case *)
-    unfold well_formed_kobject in Hwf.
-    unfold well_formed_Pod in Hwf.
+    unfold PureKObject.well_formed in Hwf.
+    unfold PurePod.well_formed in Hwf.
     destruct Hwf as (Hwf_meta & _).
-    unfold well_formed_ObjectMeta in Hwf_meta.
+    unfold PureObjectMeta.well_formed in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
     simpl in Hownerref1.
     destruct (PureObjectMeta.OwnerReferences' (PurePod.ObjectMeta' pod)) as [os|]; [|discriminate].
     injection Hownerref1 as <-.
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
   - (* ReplicaSet case *)
-    unfold well_formed_kobject in Hwf.
-    unfold well_formed_ReplicaSet in Hwf.
+    unfold PureKObject.well_formed in Hwf.
+    unfold PureReplicaSet.well_formed in Hwf.
     destruct Hwf as (Hwf_meta & _).
-    unfold well_formed_ObjectMeta in Hwf_meta.
+    unfold PureObjectMeta.well_formed in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
     simpl in Hownerref1.
     destruct (PureObjectMeta.OwnerReferences' (PureReplicaSet.ObjectMeta' rs)) as [os|]; [|discriminate].
@@ -200,11 +162,11 @@ mk {
   Hfresh_keys_absent: (fresh_keys ## dom abs_state);
   Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_key k);
   Hno_duplicate_uid: (∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
-    (extract_kobject_metadata obj1).(PureObjectMeta.UID') = (extract_kobject_metadata obj2).(PureObjectMeta.UID') → k1 = k2);
-  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (extract_kobject_metadata obj).(PureObjectMeta.UID') ∈ used_uid);
+    (PureKObject.metadata obj1).(PureObjectMeta.UID') = (PureKObject.metadata obj2).(PureObjectMeta.UID') → k1 = k2);
+  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (PureKObject.metadata obj).(PureObjectMeta.UID') ∈ used_uid);
   Hchildren_point_to_parent: (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (extract_kobject_metadata obj_p).(PureObjectMeta.UID')));
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID')));
   Hparent_uid_is_used: (∀ k obj kind name uid, abs_state !! k = Some obj →
     obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
 }.
@@ -231,14 +193,14 @@ Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: P
   {{{ is_pkg_init apimodel ∗
       "%interface_is_pod_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
       "pod_ptr" ∷ ptr ↦ pod ∗
-      "own_pure_pod" ∷ Pod.own pod pure_pod
+      "own_pure_pod" ∷ PurePod.own pod pure_pod
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (pod': v1.Pod.t), RET #(interface.mk (ptrT.id v1.Pod.id) #ptr');
       ptr' ↦ pod' ∗
-      Pod.own pod' pure_pod ∗
+      PurePod.own pod' pure_pod ∗
       ptr ↦ pod ∗
-      Pod.own pod pure_pod
+      PurePod.own pod pure_pod
   }}}.
 Proof.
 Admitted.
@@ -247,14 +209,14 @@ Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t)
   {{{ is_pkg_init apimodel ∗
       "%interface_is_rs_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
       "rs_ptr" ∷ ptr ↦ rs ∗
-      "own_pure_rs" ∷ ReplicaSet.own rs pure_rs
+      "own_pure_rs" ∷ PureReplicaSet.own rs pure_rs
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (rs': v1.ReplicaSet.t), RET #(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr');
       ptr' ↦ rs' ∗
-      ReplicaSet.own rs' pure_rs ∗
+      PureReplicaSet.own rs' pure_rs ∗
       ptr ↦ rs ∗
-      ReplicaSet.own rs pure_rs
+      PureReplicaSet.own rs pure_rs
   }}}.
 Proof.
 Admitted.
