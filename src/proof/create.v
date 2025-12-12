@@ -53,7 +53,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
 Proof.
   wp_start as "H". iNamed "H".
   wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
-  wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamed "H". wp_auto.
+  wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_deepCopy_pod with "[$Hto_create_pod_ptr $Hdeep_own_to_create_pod]"); [done|].
   iIntros (copied_ptr copied_pod) "(Hcopied_ptr & Hdeep_own_copied_pod & Hto_create_pod_ptr & Hdeep_own_to_create_pod)". wp_auto.
   wp_apply wp_Accessor; [done|]. iIntros (o err) "(-> & ->)". wp_auto.
@@ -68,18 +68,18 @@ Proof.
   { iNamed "Hdeep_own_copied_pod". iNamed "Hown_objectmeta". iPureIntro.
     destruct Hto_create_pure_pod_generate_name_valid as [H _]. congruence. }
   wp_auto. wp_if_destruct; [done|]. rewrite bool_decide_false //. wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_generateNewName with "[$Hown_phys]").
-  iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_key_not_reserved & Hown_phys)". wp_auto.
+  wp_apply wp_globals_get. wp_apply (wp_generateNewName with "[$Hinv_Hown_phys]").
+  iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_key_not_reserved & Hinv_Hown_phys)". wp_auto.
   wp_apply (wp_SetName with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_map_get with "[$Hown_phys]"). iIntros "Hown_phys". wp_auto.
+  wp_apply wp_globals_get. wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hnew_key_not_in_phys. wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_generateNewUID with "[$Hown_used_uid]").
-  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hown_used_uid)". wp_auto.
+  wp_apply wp_globals_get. wp_apply (wp_generateNewUID with "[$Hinv_Hown_used_uid]").
+  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hinv_Hown_used_uid)". wp_auto.
   wp_apply (wp_SetUID with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get. wp_apply wp_globals_get.
   wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
   wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_map_insert with "[$Hown_phys]"). iIntros "Hown_phys". wp_auto.
+  wp_apply wp_globals_get. wp_apply (wp_map_insert with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
     with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hcopied_ptr". simpl.
   iDestruct (rename_pod with "Hcopied_ptr") as (created_pod) "(Hcopied_ptr & %Hcreated_pod_eq)".
@@ -96,28 +96,28 @@ Proof.
   iIntros (returned_ptr returned_pod) "(Hreturned_ptr & Hdeepown_returned_pod & Hcopied_ptr & Hdeepown_created_pod)". wp_auto.
   set new_key := {| KKey.Kind' := "Pod"; KKey.Name' := new_name; KKey.Namespace' := KKey.Namespace' parent_key |}.
   fold new_key in Hnew_key_not_in_phys. fold new_key in Hnew_key_not_reserved.
-  iAssert (⌜ abs_state !! new_key = None ⌝%I) with "[Hphys_abs_rep]" as "%Hnew_key_not_in_abs".
-  { iDestruct (big_sepM2_dom with "Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_phys. set_solver. }
+  iAssert (⌜ abs_state !! new_key = None ⌝%I) with "[Hinv_Hphys_abs_rep]" as "%Hnew_key_not_in_abs".
+  { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_phys. set_solver. }
   assert (children !! new_key = None) as Hnew_key_not_in_children.
-  { destruct Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
-  iAssert (⌜ abs_state !! parent_key = Some (owned_parent) ⌝%I) with "[Hown_parent Hown_abs]" as "%Hparent_key_in_abs".
-  { iDestruct (map_valid with "Hown_abs Hown_parent") as %Hlookup. iPureIntro; exact Hlookup. }
-  iAssert (⌜ children !! parent_key = Some (owned_child_keys) ⌝%I) with "[Hown_child_keys Hown_children]" as "%Hparent_key_in_children".
-  { iDestruct (map_valid with "Hown_children Hown_child_keys") as %Hlookup. iPureIntro; exact Hlookup. }
+  { destruct Hinv_Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
+  iAssert (⌜ abs_state !! parent_key = Some (owned_parent) ⌝%I) with "[Hown_parent Hinv_Hown_abs]" as "%Hparent_key_in_abs".
+  { iDestruct (map_valid with "Hinv_Hown_abs Hown_parent") as %Hlookup. iPureIntro; exact Hlookup. }
+  iAssert (⌜ children !! parent_key = Some (owned_child_keys) ⌝%I) with "[Hown_child_keys Hinv_Hown_children]" as "%Hparent_key_in_children".
+  { iDestruct (map_valid with "Hinv_Hown_children Hown_child_keys") as %Hlookup. iPureIntro; exact Hlookup. }
   assert (new_key ≠ parent_key) as Hnew_key_neq_parent_key.
   { intros Heq. congruence. }
   assert (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children !! new_key = None) as Hnew_key_not_in_children_after_update.
-  { destruct Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
+  { destruct Hinv_Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
   assert (new_key ∉ owned_child_keys) as Hnew_key_not_in_owned_child_keys.
-  { destruct Hghost_well_formed.
+  { destruct Hinv_Hghost_well_formed.
     assert (owned_child_keys ⊆ dom abs_state) as Howned_in_abs.
     { apply Hchildren_exist with (k := parent_key). exact Hparent_key_in_children. }
     apply not_elem_of_dom in Hnew_key_not_in_abs.
     set_solver. }
-  iMod (map_alloc new_key (KObject.Pod created_pure_pod) with "[$Hown_abs]") as "[Hown_abs Hown_pod]"; [eauto|].
-  iMod (auth_map.map_update _ _ (owned_child_keys ∪ {[new_key]}) with "Hown_children Hown_child_keys")
-    as "[Hown_children Hown_child_keys]".
-  iMod (map_alloc new_key ∅ with "[$Hown_children]") as "[Hown_children Hown_grandchild_keys]"; [eauto|].
+  iMod (map_alloc new_key (KObject.Pod created_pure_pod) with "[$Hinv_Hown_abs]") as "[Hinv_Hown_abs Hown_pod]"; [eauto|].
+  iMod (auth_map.map_update _ _ (owned_child_keys ∪ {[new_key]}) with "Hinv_Hown_children Hown_child_keys")
+    as "[Hinv_Hown_children Hown_child_keys]".
+  iMod (map_alloc new_key ∅ with "[$Hinv_Hown_children]") as "[Hinv_Hown_children Hown_grandchild_keys]"; [eauto|].
   set phys_state' := <[new_key:=interface.mk (ptrT.id v1.Pod.id) (# copied_ptr)]> phys_state.
   set used_uid' := <[generated_uid:=()]> used_uid.
   set abs_state' := <[new_key:=KObject.Pod created_pure_pod]> abs_state.
@@ -130,7 +130,7 @@ Proof.
     unfold well_formed_Pod. unfold well_formed_to_create_Pod in Hwell_formed_to_create_Pod.
     split; [|split; [intuition|intuition]].
     unfold well_formed_ObjectMeta. unfold well_formed_to_create_ObjectMeta in Hwell_formed_to_create_Pod. intuition. }
-  iAssert (state_rep phys_state' abs_state' %I) with "[Hcopied_ptr Hdeepown_created_pod Hphys_abs_rep]" as "Hphys_abs_rep".
+  iAssert (state_rep phys_state' abs_state' %I) with "[Hcopied_ptr Hdeepown_created_pod Hinv_Hphys_abs_rep]" as "Hinv_Hphys_abs_rep".
   { unfold state_rep. unfold phys_state'. unfold abs_state'.
     rewrite (big_sepM2_insert _ phys_state abs_state new_key _ _ Hnew_key_not_in_phys Hnew_key_not_in_abs).
     iSplitL "Hcopied_ptr Hdeepown_created_pod".
@@ -141,7 +141,7 @@ Proof.
       iExists copied_ptr, created_pod, created_pure_pod.
       unfold pod_rep. iFrame "#". iFrame. iPureIntro. done.
     - done. }
-  assert (ghost_well_formed (dom used_uid') abs_state' children' fresh_keys ) as Hghost_well_formed'.
+  assert (ghost_well_formed (dom used_uid') abs_state' children' fresh_keys ) as Hinv_Hghost_well_formed'.
   {
     assert (dom children' = dom children ∪ {[new_key]}) as Hdom_children_eq.
     {
@@ -160,7 +160,7 @@ Proof.
     assert (obj_has_controller_parent_of (KObject.Pod created_pure_pod) (KKey.Kind' parent_key)
       (KKey.Name' parent_key) (PureObjectMeta.UID' (extract_kobject_metadata owned_parent)))
       as Hcreated_pure_pod_has_controller_parent_of_owned_parent by done.
-    destruct Hghost_well_formed.
+    destruct Hinv_Hghost_well_formed.
     apply mk.
     - unfold abs_state'. unfold children'. rewrite Hdom_children_eq. rewrite dom_insert_L. set_solver.
     - intros k s Hlookup.
@@ -302,9 +302,10 @@ Proof.
       + pose proof (Hparent_uid_is_used k obj kind name uid Hlookup_abs Hhas_parent).
         unfold used_uid'. set_solver.
   }
+  iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-    with "[$Hown_Mutex $Hstate_m_addr $Hstate_used_uid_addr $Hstate_rvc_addr $Hown_phys $Hown_used_uid $Hown_abs $Hphys_abs_rep $Hown_children $Hown_fresh_keys]").
-  { iFrame "#". done. }
+    with "[$Hown_Mutex H]").
+  { iNamed "H". iFrame. iFrame "#". done. }
   iApply "HΦ". iFrame "Hreturned_ptr". iFrame. done.
 Qed.
 
