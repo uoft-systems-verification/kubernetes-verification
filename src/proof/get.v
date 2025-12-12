@@ -58,7 +58,7 @@ Proof.
   { iApply "Hother_rep". iExists ptr, rs, pure_rs. iFrame. done. }
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
   with "[$Hown_Mutex Hstate_m_addr Hstate_used_uid_addr Hstate_rvc_addr Hown_phys Hown_used_uid Hown_abs Hphys_abs_rep Hown_children Hown_fresh_keys]").
-  { iFrame. iFrame "#". }
+  { iFrame. iFrame "#". done. }
   iApply "HΦ". iFrame. done.
 Qed.
 

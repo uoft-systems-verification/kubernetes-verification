@@ -190,35 +190,24 @@ Proof.
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
 Qed.
 
-(* TODO: try to use a record and make it pure *)
-(* TODO: write invariant in the style of ∀ k, Φ k m and develop a lemma/tactic to reason about inserted map *)
-Definition kubernetes_state_consistent (used_uid: gset go_string) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : iProp Σ :=
-  (* All parents exist; this means holding a children gmap fragment implies the parent exists in abs_state *)
-  "%Hparents_exist" ∷ ⌜ dom children = dom abs_state ⌝ ∗
-  (* All children exist *)
-  "%Hchildren_exist" ∷ ⌜ ∀ k s, children !! k = Some s → s ⊆ dom abs_state ⌝ ∗
-  (* parents and children live in the same namespace *)
-  "%Hparents_children_same_namespace" ∷ ⌜ ∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace') ⌝ ∗
-  (* No one can be their own parent *)
-  "%Hno_self_parenting" ∷ ⌜ ∀ k s child_key, children !! k = Some s → child_key ∈ s → child_key ≠ k ⌝ ∗
-  (* Each children has only one parent -- the children gsets are disjoint *)
-  "%Hchildren_disjoint" ∷ ⌜ ∀ k1 s1 k2 s2, k1 ≠ k2 → children !! k1 = Some s1 → children !! k2 = Some s2 → s1 ## s2 ⌝ ∗
-  (* Fresh keys are not used by any existing object *)
-  "%Hfresh_keys_absent" ∷ ⌜ fresh_keys ## dom abs_state ⌝ ∗
-  (* Fresh keys are reserved *) (* TODO: need better spec on private space of names *)
-  "%Hfresh_keys_reserved" ∷ ⌜ ∀ k, k ∈ fresh_keys → reserved_key k ⌝ ∗
-  (* Each object has a unique uid *)
-  "%Hno_duplicate_uid" ∷ ⌜ ∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
-    (extract_kobject_metadata obj1).(PureObjectMeta.UID') = (extract_kobject_metadata obj2).(PureObjectMeta.UID') → k1 = k2 ⌝ ∗
-  (* Any existing object's uid is in the set used_uid *)
-  "%Hexisting_uid_is_used" ∷ ⌜ ∀ k obj, abs_state !! k = Some obj → (extract_kobject_metadata obj).(PureObjectMeta.UID') ∈ used_uid ⌝ ∗
-  (* A child is in the children set iff the child has the controller owner reference pointing to the parent *)
-  "%Hchildren_point_to_parent" ∷ ⌜ ∀ key_p obj_p key_c obj_c s,
+Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
+mk {
+  Hparents_exist: (dom children = dom abs_state);
+  Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
+  Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));
+  Hno_self_parenting: (∀ k s child_key, children !! k = Some s → child_key ∈ s → child_key ≠ k);
+  Hchildren_disjoint: (∀ k1 s1 k2 s2, k1 ≠ k2 → children !! k1 = Some s1 → children !! k2 = Some s2 → s1 ## s2);
+  Hfresh_keys_absent: (fresh_keys ## dom abs_state);
+  Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_key k);
+  Hno_duplicate_uid: (∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
+    (extract_kobject_metadata obj1).(PureObjectMeta.UID') = (extract_kobject_metadata obj2).(PureObjectMeta.UID') → k1 = k2);
+  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (extract_kobject_metadata obj).(PureObjectMeta.UID') ∈ used_uid);
+  Hchildren_point_to_parent: (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (extract_kobject_metadata obj_p).(PureObjectMeta.UID')) ⌝ ∗
-  (* A parent must be some object that has existed; in other words, children cannot guess a parent's uid *)
-  "%Hparent_uid_is_used" ∷ ⌜ ∀ k obj kind name uid, abs_state !! k = Some obj →
-    obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid ⌝.
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (extract_kobject_metadata obj_p).(PureObjectMeta.UID')));
+  Hparent_uid_is_used: (∀ k obj kind name uid, abs_state !! k = Some obj →
+    obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
+}.
 
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
   ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
@@ -230,10 +219,10 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp �
     "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
     "Hown_used_uid" ∷ used_uid_l ↦$ used_uid ∗
     "Hown_abs" ∷ map_ctx γ_state 1 abs_state ∗
-    "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
     "Hown_children" ∷ map_ctx γ_children 1 children ∗
     "Hown_fresh_keys" ∷ auth_set_auth γ_fresh_keys fresh_keys ∗
-    "#Hconsistent" ∷ kubernetes_state_consistent (dom used_uid) abs_state children fresh_keys.
+    "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
+    "%Hghost_well_formed" ∷ ⌜ ghost_well_formed (dom used_uid) abs_state children fresh_keys ⌝.
 
 Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
   is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
