@@ -13,7 +13,7 @@ Export apimodel.apimodel.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -21,7 +21,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
   {{{ is_pkg_init apimodel ∗
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "%Hkind_eq" ∷ ⌜ KKey.Kind' key = "ReplicaSet"%go ⌝ ∗
-      "Hown_rs" ∷ key [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      "Hown_rs" ∷ key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.objGet #key
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
@@ -30,14 +30,14 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
-      key [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
   wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
   wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get.
-  iAssert (⌜ abs_state !! key = Some (KObject.ReplicaSet pure_rs) ⌝%I) with "[Hown_rs Hinv_Hown_abs]" as "%Hkey_in_abs".
+  iAssert (⌜ abs_state !! key = Some (PureKObject.ReplicaSet pure_rs) ⌝%I) with "[Hown_rs Hinv_Hown_abs]" as "%Hkey_in_abs".
   { iDestruct (map_valid with "Hinv_Hown_abs Hown_rs") as %Hlookup.
     iPureIntro; exact Hlookup. }
   iAssert (⌜ ∃ obj, phys_state !! key = Some obj ⌝%I) with "[Hinv_Hphys_abs_rep]" as "%Hinv_Hkey_in_phys".
@@ -65,7 +65,7 @@ Qed.
 Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetMutGet #namespace #name
   {{{ l rs, RET (#l, #(interface.nil));
@@ -74,7 +74,7 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
-      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -94,7 +94,7 @@ Qed.
 Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetGet #namespace #name
   {{{ l rs dq, RET (#l, #interface.nil);
@@ -103,7 +103,7 @@ Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_ke
       ⌜ well_formed_ReplicaSet pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
-      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (KObject.ReplicaSet pure_rs)
+      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -118,7 +118,7 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
-      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
+      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%owned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝ ∗
       "%indexed_value" ∷ ⌜ indexed_value = (extract_kobject_metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
@@ -134,12 +134,12 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
         ptr ↦ pod ∗
         Pod.own pod owned_pod ∗
         ⌜ ∃ k, owned_pod_map !! k = Some owned_pod ⌝ ∗
-        ⌜ obj_has_controller_parent_of (KObject.Pod owned_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') indexed_value ⌝ ∗
+        ⌜ obj_has_controller_parent_of (PureKObject.Pod owned_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') indexed_value ⌝ ∗
         ⌜ well_formed_Pod owned_pod ⌝
       ) ∗
       "%key_set_equal_dom_owned_pods" ∷  ⌜ list_to_set (extract_pod_key <$> pods) = dom owned_pod_map ⌝ ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
-      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
+      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
   }}}.
 Proof.

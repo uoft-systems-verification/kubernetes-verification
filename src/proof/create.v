@@ -13,7 +13,7 @@ Export apimodel.apimodel.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -32,7 +32,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
         valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
-      "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (KObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (extract_kobject_metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (extract_kobject_metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "%Hwell_formed_to_create_Pod" ∷ ⌜ well_formed_to_create_Pod to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
@@ -44,7 +44,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace obj
       ⌜ well_formed_Pod created_pure_pod ⌝ ∗
       ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
-      new_key [[ γ_state ]]↦ (KObject.Pod created_pure_pod) ∗
+      new_key [[ γ_state ]]↦ (PureKObject.Pod created_pure_pod) ∗
       parent_key [[ γ_state ]]↦ owned_parent ∗
       parent_key [[ γ_children ]]↦ (owned_child_keys ∪ {[new_key]}) ∗
       new_key [[ γ_children ]]↦ ∅
@@ -114,13 +114,13 @@ Proof.
     { apply Hchildren_exist with (k := parent_key). exact Hparent_key_in_children. }
     apply not_elem_of_dom in Hnew_key_not_in_abs.
     set_solver. }
-  iMod (map_alloc new_key (KObject.Pod created_pure_pod) with "[$Hinv_Hown_abs]") as "[Hinv_Hown_abs Hown_pod]"; [eauto|].
+  iMod (map_alloc new_key (PureKObject.Pod created_pure_pod) with "[$Hinv_Hown_abs]") as "[Hinv_Hown_abs Hown_pod]"; [eauto|].
   iMod (auth_map.map_update _ _ (owned_child_keys ∪ {[new_key]}) with "Hinv_Hown_children Hown_child_keys")
     as "[Hinv_Hown_children Hown_child_keys]".
   iMod (map_alloc new_key ∅ with "[$Hinv_Hown_children]") as "[Hinv_Hown_children Hown_grandchild_keys]"; [eauto|].
   set phys_state' := <[new_key:=interface.mk (ptrT.id v1.Pod.id) (# copied_ptr)]> phys_state.
   set used_uid' := <[generated_uid:=()]> used_uid.
-  set abs_state' := <[new_key:=KObject.Pod created_pure_pod]> abs_state.
+  set abs_state' := <[new_key:=PureKObject.Pod created_pure_pod]> abs_state.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
   iAssert ((⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = new_key.(KKey.Namespace') ⌝ ∗
       ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = new_key.(KKey.Name') ⌝ ∗
@@ -153,11 +153,11 @@ Proof.
       { set_solver. }
       set_solver.
     }
-    assert (PureObjectMeta.UID' (extract_kobject_metadata (KObject.Pod created_pure_pod)) = generated_uid) as Hcreated_pure_pod_uiq_eq.
+    assert (PureObjectMeta.UID' (extract_kobject_metadata (PureKObject.Pod created_pure_pod)) = generated_uid) as Hcreated_pure_pod_uiq_eq.
     { intuition. }
     assert (generated_uid ∉ dom used_uid) as Hgenerated_not_in_used.
     { apply not_elem_of_dom. exact Hgenerated_uid_is_not_used. }
-    assert (obj_has_controller_parent_of (KObject.Pod created_pure_pod) (KKey.Kind' parent_key)
+    assert (obj_has_controller_parent_of (PureKObject.Pod created_pure_pod) (KKey.Kind' parent_key)
       (KKey.Name' parent_key) (PureObjectMeta.UID' (extract_kobject_metadata owned_parent)))
       as Hcreated_pure_pod_has_controller_parent_of_owned_parent by done.
     destruct Hinv_Hghost_well_formed.
@@ -266,8 +266,8 @@ Proof.
           -- eapply Hchildren_point_to_parent; [done|done|done|done].
       + intros Hobj_has_controller_parent_of.
         destruct Hlookup_c as [(<- & <-) | (Hkey_c_neq & Hlookup_c)].
-        * assert (well_formed_kobject (KObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
-          pose proof (well_formed_obj_has_at_most_one_controller_parent (KObject.Pod created_pure_pod) Hwell_formed_kobject
+        * assert (well_formed_kobject (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
+          pose proof (well_formed_obj_has_at_most_one_controller_parent (PureKObject.Pod created_pure_pod) Hwell_formed_kobject
             _ _ _ _ _ _ Hobj_has_controller_parent_of Hcreated_pure_pod_has_controller_parent_of_owned_parent) as (Hkind_eq & Hname_eq & Huid_eq).
           destruct Hlookup_p as [(<- & <-) | (Hkey_p_neq & Hlookup_p)].
           -- exfalso.
@@ -294,8 +294,8 @@ Proof.
       unfold abs_state' in Hlookup_abs.
       rewrite lookup_insert_Some in Hlookup_abs.
       destruct Hlookup_abs as [(<- & <-) | (Hk_neq & Hlookup_abs)].
-      + assert (well_formed_kobject (KObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
-        pose proof (well_formed_obj_has_at_most_one_controller_parent (KObject.Pod created_pure_pod) Hwell_formed_kobject
+      + assert (well_formed_kobject (PureKObject.Pod created_pure_pod)) as Hwell_formed_kobject by done.
+        pose proof (well_formed_obj_has_at_most_one_controller_parent (PureKObject.Pod created_pure_pod) Hwell_formed_kobject
           _ _ _ _ _ _ Hhas_parent Hcreated_pure_pod_has_controller_parent_of_owned_parent) as (Hkind_eq & Hname_eq & ->).
         pose proof (Hexisting_uid_is_used parent_key owned_parent Hparent_key_in_abs).
         unfold used_uid'. set_solver.
@@ -329,7 +329,7 @@ Qed.
       well_formed_Pod created_pod ∗
       ⌜ new_key = extract_pod_key created_pod ⌝ ∗
       ⌜ new_key ∉ owned_child_keys ⌝ ∗
-      new_key [[ γ_state ]]↦ (KObject.Pod created_pod) ∗
+      new_key [[ γ_state ]]↦ (PureKObject.Pod created_pod) ∗
       parent_key [[ γ_state ]]↦ owned_parent ∗
       parent_key [[ γ_children ]]↦ (owned_child_keys ∪ {[new_key]})
       (* TODO: specify that created_pod shares some contents with to_create_pod *)

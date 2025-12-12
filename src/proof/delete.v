@@ -13,7 +13,7 @@ Export apimodel.apimodel.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -22,7 +22,7 @@ Lemma wp_objDelete_pod_ptsto_mut key
   γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
+      "own_pod" ∷ key [[ γ_state ]]↦ (PureKObject.Pod owned_pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "own_grandchild_keys" ∷ key [[ γ_children ]]↦ owned_grandchild_keys ∗
       "%pod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
@@ -32,7 +32,7 @@ Lemma wp_objDelete_pod_ptsto_mut key
   {{{ (err: error.t) pod, RET #err;
       "err_is_nil" ∷ ⌜ err = interface.nil ⌝ ∗
       "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
-        "own_pod" ∷ key [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        "own_pod" ∷ key [[ γ_state ]]↦ (PureKObject.Pod pod) ∗
         "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
         "own_grandchild_keys" ∷ key [[ γ_children ]]↦ owned_grandchild_keys ∗
         "%deletiontimestamp_notnull" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝
@@ -47,7 +47,7 @@ Proof.
   wp_apply wp_Mutex__Lock; [done|].
   iIntros "[own_Mutex H]". iNamed "H". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get.
-  iAssert (⌜ abs_state !! key = Some (KObject.Pod owned_pod) ⌝%I) with "[own_pod own_abs]" as "%key_in_abs".
+  iAssert (⌜ abs_state !! key = Some (PureKObject.Pod owned_pod) ⌝%I) with "[own_pod own_abs]" as "%key_in_abs".
   { iDestruct (map_valid with "own_abs own_pod") as %Hlookup. iPureIntro; exact Hlookup. }
   iAssert (⌜ children !! parent_key = Some owned_child_keys ⌝%I) with "[own_children own_child_keys]" as "%parent_key_in_children".
   { iDestruct (map_valid with "own_children own_child_keys") as %Hlookup. iPureIntro; exact Hlookup. }
@@ -63,7 +63,7 @@ Proof.
   iDestruct (big_sepM2_split_singleton _ key _ _ phys_state abs_state key_in_phys key_in_abs with "phys_abs_rep") as "[k_rep other_rep]".
   destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset].
   { done. }
-  iAssert (∃ (ptr: loc) (pod: v1.Pod.t), pod_rep key obj (KObject.Pod owned_pod) ptr pod)%I 
+  iAssert (∃ (ptr: loc) (pod: v1.Pod.t), pod_rep key obj (PureKObject.Pod owned_pod) ptr pod)%I 
   with "[k_rep]" as "(%ptr & %pod & pod_rep)".
   { unfold obj_rep. rewrite kind_is_pod. done. }
   iNamed "pod_rep".
@@ -96,12 +96,12 @@ Proof.
       iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
         with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "pod_ptr". simpl.
       iDestruct (rename_pod with "pod_ptr") as "(%updated_pod & pod_ptr & %updated_pod_eq)".
-      iMod (auth_map.map_update _ _ (KObject.Pod updated_pod) with "own_abs own_pod")
+      iMod (auth_map.map_update _ _ (PureKObject.Pod updated_pod) with "own_abs own_pod")
         as "[own_abs own_pod]".
-      iAssert (state_rep phys_state (<[key:=KObject.Pod updated_pod]> abs_state) %I)
+      iAssert (state_rep phys_state (<[key:=PureKObject.Pod updated_pod]> abs_state) %I)
       with "[pod_ptr other_rep]" as "phys_abs_rep".
       {
-        assert (delete key abs_state = delete key (<[key:=KObject.Pod updated_pod]> abs_state)) as ->.
+        assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
         iAssert (("%namespace_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
                   "%name_match" ∷ ⌜ updated_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
@@ -111,22 +111,22 @@ Proof.
           unfold well_formed_Pod. unfold well_formed_ObjectMeta.
           subst updated_pod. simpl. iFrame "#". done.
         }
-        iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (KObject.Pod updated_pod)%I)
+        iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (PureKObject.Pod updated_pod)%I)
         with "[pod_ptr]" as "k_rep".
         { unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod. unfold pod_rep. iFrame. iFrame "#". done. }
-        assert ((<[key:=KObject.Pod updated_pod]> abs_state) !! key = Some (KObject.Pod updated_pod)) as key_in_new_abs.
+        assert ((<[key:=PureKObject.Pod updated_pod]> abs_state) !! key = Some (PureKObject.Pod updated_pod)) as key_in_new_abs.
         { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [reflexivity | contradiction]. }
-        iApply (big_sepM2_split_singleton _ key _ (KObject.Pod updated_pod) phys_state (<[key:=KObject.Pod updated_pod]> abs_state)
+        iApply (big_sepM2_split_singleton _ key _ (PureKObject.Pod updated_pod) phys_state (<[key:=PureKObject.Pod updated_pod]> abs_state)
           key_in_phys key_in_new_abs with "[k_rep other_rep]").
         iFrame.
       }
-      iAssert (kubernetes_state_consistent (dom used_uid) (<[key:=KObject.Pod updated_pod]> abs_state) children fresh_keys %I)
+      iAssert (kubernetes_state_consistent (dom used_uid) (<[key:=PureKObject.Pod updated_pod]> abs_state) children fresh_keys %I)
       as "consistent'".
       {
         iNamed "consistent".
         assert (parent_key ≠ key) as parent_neq_key.
         { specialize (no_self_parenting parent_key owned_child_keys key parent_key_in_children pod_is_child). done. }
-        assert (dom (<[key:=KObject.Pod updated_pod]> abs_state) = dom abs_state) as abs_dom_simpl.
+        assert (dom (<[key:=PureKObject.Pod updated_pod]> abs_state) = dom abs_state) as abs_dom_simpl.
         {
           rewrite dom_insert_L.
           assert ({[key]} ∪ dom abs_state = dom abs_state) as union_eq.
@@ -134,10 +134,10 @@ Proof.
           rewrite union_eq.
           reflexivity.
         }
-        assert ((extract_kobject_metadata (KObject.Pod updated_pod)).(v1.ObjectMeta.OwnerReferences') = (extract_kobject_metadata (KObject.Pod owned_pod)).(v1.ObjectMeta.OwnerReferences'))
+        assert ((extract_kobject_metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.OwnerReferences') = (extract_kobject_metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.OwnerReferences'))
         as updated_pod_owner_references_eq.
         { simpl. subst updated_pod. simpl. reflexivity. }
-        assert ((extract_kobject_metadata (KObject.Pod updated_pod)).(v1.ObjectMeta.UID') = (extract_kobject_metadata (KObject.Pod owned_pod)).(v1.ObjectMeta.UID'))
+        assert ((extract_kobject_metadata (PureKObject.Pod updated_pod)).(v1.ObjectMeta.UID') = (extract_kobject_metadata (PureKObject.Pod owned_pod)).(v1.ObjectMeta.UID'))
         as updated_pod_uid_eq.
         { simpl. subst updated_pod. simpl. reflexivity. }
         iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR; [|iSplitR ]]]]]]]]]].
@@ -194,17 +194,17 @@ Proof.
           destruct Hlookup_parent as [(Heq_parent & Hparent_eq) | (Hneq_parent & Hlookup_parent)].
           - subst child_key k child parent.
             rewrite updated_pod_owner_references_eq updated_pod_uid_eq.
-            iDestruct ("only_children_point_to_parent" $! key s (KObject.Pod owned_pod) key (KObject.Pod owned_pod)
+            iDestruct ("only_children_point_to_parent" $! key s (PureKObject.Pod owned_pod) key (PureKObject.Pod owned_pod)
               with "[Hmeta]") as "%Hkey_in_s".
             { iFrame "Hmeta". iPureIntro. split; [|split]; done. }
             exfalso. by apply (no_self_parenting key s key Hlookup_children Hkey_in_s).
           - subst child_key child.
             rewrite updated_pod_owner_references_eq.
-            iApply ("only_children_point_to_parent" $! k s parent key (KObject.Pod owned_pod) with "[Hmeta]").
+            iApply ("only_children_point_to_parent" $! k s parent key (PureKObject.Pod owned_pod) with "[Hmeta]").
             iFrame "Hmeta". iPureIntro. split; [|split]; done.
           - subst k parent.
             rewrite updated_pod_uid_eq.
-            iApply ("only_children_point_to_parent" $! key s (KObject.Pod owned_pod) child_key child with "[Hmeta]").
+            iApply ("only_children_point_to_parent" $! key s (PureKObject.Pod owned_pod) child_key child with "[Hmeta]").
             iFrame "Hmeta". iPureIntro. split; [|split]; done.
           - iApply ("only_children_point_to_parent" $! k s parent child_key child with "[Hmeta]").
             iFrame "Hmeta". iPureIntro. split; [|split]; done.
@@ -393,7 +393,7 @@ Lemma wp_PodDelete_ptsto_mut namespace name
   γ_state γ_children γ_fresh_keys owned_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (KObject.Pod owned_pod) ∗
+      "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (PureKObject.Pod owned_pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "own_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ_children ]]↦ owned_grandchild_keys ∗
       "%pod_is_child" ∷ ⌜ (mk_pod_key namespace name) ∈ owned_child_keys ⌝
@@ -402,7 +402,7 @@ Lemma wp_PodDelete_ptsto_mut namespace name
   {{{ (err: error.t) pod, RET #err;
       "err_is_nil" ∷ ⌜ err = interface.nil ⌝ ∗
       "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
-        "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (KObject.Pod pod) ∗
+        "own_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (PureKObject.Pod pod) ∗
         "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
         "own_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ_children ]]↦ owned_grandchild_keys ∗
         "%deletiontimestamp_notnull" ∷ ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') ≠ null ⌝

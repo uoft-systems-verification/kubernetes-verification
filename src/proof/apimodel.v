@@ -27,11 +27,11 @@ Module KKey.
   Qed.
 End KKey.
 
-Module KObject.
+Module PureKObject.
   Inductive t :=
   | Pod (p : PurePod.t)
   | ReplicaSet (rs : PureReplicaSet.t).
-End KObject.
+End PureKObject.
 
 Global Existing Instance KKey.eq_dec.
 Global Existing Instance KKey.countable.
@@ -39,7 +39,7 @@ Global Existing Instance KKey.countable.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -57,14 +57,14 @@ Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
 
 Definition extract_kobject_metadata kobj : PureObjectMeta.t :=
   match kobj with
-  | KObject.Pod p => p.(PurePod.ObjectMeta')
-  | KObject.ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
+  | PureKObject.Pod p => p.(PurePod.ObjectMeta')
+  | PureKObject.ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
   end.
 
 Definition well_formed_kobject kobj : Prop :=
   match kobj with
-  | KObject.Pod p => well_formed_Pod p
-  | KObject.ReplicaSet rs => well_formed_ReplicaSet rs
+  | PureKObject.Pod p => well_formed_Pod p
+  | PureKObject.ReplicaSet rs => well_formed_ReplicaSet rs
   end.
 
 Lemma decide_kind_is_pod kind:
@@ -92,7 +92,7 @@ Qed.
 Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "Hpod_ptr" ∷ ptr ↦ pod ∗
-  "%Habs_v_is_pod" ∷ ⌜ v2 = KObject.Pod pure_pod ⌝ ∗
+  "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
   "Hdeepown_pod" ∷ Pod.own pod pure_pod ∗
   "%Hnamespace_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hname_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
@@ -101,7 +101,7 @@ Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
 Definition replicaset_rep k v1 v2 ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "Hrs_ptr" ∷ ptr ↦ rs ∗
-  "%Habs_v_is_rs" ∷ ⌜ v2 = KObject.ReplicaSet pure_rs ⌝ ∗
+  "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
   "Hdeepown_rs" ∷ ReplicaSet.own rs pure_rs ∗
   "%Hrs_namespace_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hrs_name_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
@@ -114,7 +114,7 @@ Definition obj_rep k v1 v2 : iProp Σ :=
     ∃ (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t), replicaset_rep k v1 v2 ptr rs pure_rs
   else False)%I.
 
-Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObject.t) : iProp Σ :=
+Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t PureKObject.t) : iProp Σ :=
   [∗ map] k ↦ v1; v2 ∈ phys_state; abs_state, obj_rep k v1 v2.
 
 Definition has_controller_parent_of (os: list PureOwnerReference.t) kind name uid : Prop :=
@@ -190,7 +190,7 @@ Proof.
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
 Qed.
 
-Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
+Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk {
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
@@ -212,7 +212,7 @@ mk {
 Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
   ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
     (phys_state: gmap KKey.t interface.t) (used_uid: gmap go_string unit)
-    (abs_state: gmap KKey.t KObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
+    (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
     "Hstate_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] phys_state_l ∗
     "Hstate_used_uid_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "usedUID" ] used_uid_l ∗
     "Hstate_rvc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "resourceVersionCounter" ] rvc ∗
