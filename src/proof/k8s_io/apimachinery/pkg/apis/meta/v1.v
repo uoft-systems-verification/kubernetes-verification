@@ -2,7 +2,7 @@ Require Export New.proof.sync.
 
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From proof.k8s_io.api.core Require Export v1_init.
-From proof Require Import prelude empty_ffi.
+From proof Require Import prelude empty_ffi pure_objects.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
@@ -10,8 +10,8 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Lemma wp_Now:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 }}}
     @! v1.Now #()
-  {{{ (v: v1.Time.t), RET #v;
-    True
+  {{{ (c: v1.Time.t) v, RET #c;
+    PureTime.own c v
   }}}.
 Proof.
 Admitted.

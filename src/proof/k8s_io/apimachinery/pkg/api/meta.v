@@ -12,9 +12,8 @@ Lemma wp_Accessor i ptr:
       ⌜i = interface.mk (ptrT.id v1.Pod.id) (# ptr)⌝
   }}}
     @! meta.Accessor #i
-  {{{ o (err: error.t), RET (#o, #err);
-      ⌜ o = interface.mk (ptrT.id v1.ObjectMeta.id) #(struct.field_ref_f v1.Pod "ObjectMeta" ptr) ⌝ ∗
-      ⌜ err = interface.nil ⌝
+  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(struct.field_ref_f v1.Pod "ObjectMeta" ptr)), #interface.nil);
+    True%I
   }}}.
 Proof.
   (* wp_start as "H". iNamed "H". wp_auto. subst.

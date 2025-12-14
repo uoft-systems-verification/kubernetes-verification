@@ -56,7 +56,7 @@ Proof.
   wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_deepCopy_pod with "[$Hto_create_pod_ptr $Hdeep_own_to_create_pod]"); [done|].
   iIntros (copied_ptr copied_pod) "(Hcopied_ptr & Hdeep_own_copied_pod & Hto_create_pod_ptr & Hdeep_own_to_create_pod)". wp_auto.
-  wp_apply wp_Accessor; [done|]. iIntros (o err) "(-> & ->)". wp_auto.
+  wp_apply wp_Accessor; [done|].
   rewrite bool_decide_true //. wp_auto.
   iDestruct (struct_fields_split with "Hcopied_ptr") as "H". iNamed "H".
   wp_apply (wp_SetNamespace with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.

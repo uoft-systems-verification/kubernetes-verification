@@ -13,6 +13,14 @@ Axiom valid_name: go_string → Prop.
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
 Axiom valid_namespace: go_string → Prop.
 
+Module PureTime.
+Section def.
+Context `{hG: !heapGS Σ}.
+Axiom t : Type.
+Axiom own : v1.Time.t → t → iProp Σ.
+End def.
+End PureTime.
+
 Module PureOwnerReference.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -60,8 +68,8 @@ Record t := mk {
   UID' : types.UID.t;
   ResourceVersion' : go_string;
   Generation' : w64;
-  (* CreationTimestamp' : Time.t; *)
-  (* DeletionTimestamp' : loc; *)
+  CreationTimestamp' : PureTime.t;
+  DeletionTimestamp' : option PureTime.t;
   DeletionGracePeriodSeconds' : option w64;
   Labels' : option (gmap go_string go_string);
   Annotations' : option (gmap go_string go_string);
@@ -97,6 +105,12 @@ Definition own (c: v1.ObjectMeta.t) (v: t): iProp Σ :=
   "%Hown_uid" ∷ ⌜ c.(v1.ObjectMeta.UID') = v.(UID') ⌝ ∗
   "%Hown_resourceversion" ∷ ⌜ c.(v1.ObjectMeta.ResourceVersion') = v.(ResourceVersion') ⌝ ∗
   "%Hown_generation" ∷ ⌜ c.(v1.ObjectMeta.Generation') = v.(Generation') ⌝ ∗
+  "Hown_creationtimestamp" ∷ PureTime.own c.(v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') ∗
+  "Hown_deletiontimestamp" ∷ (match v.(DeletionTimestamp') with
+  | None => ⌜ c.(v1.ObjectMeta.DeletionTimestamp') = null ⌝
+  | Some d => ∃ deletion_timestamp,
+    c.(v1.ObjectMeta.DeletionTimestamp') ↦ deletion_timestamp ∗ PureTime.own deletion_timestamp d
+  end) ∗
   "Hown_deletiongraceperiodseconds" ∷ (match v.(DeletionGracePeriodSeconds') with
   | None => ⌜ c.(v1.ObjectMeta.DeletionGracePeriodSeconds') = null ⌝
   | Some i => ∃ deletion_grace_period_seconds,
@@ -127,7 +141,7 @@ Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
 Axiom well_formed: t → Prop.
-Definition own (c: v1.PodSpec.t) (v: t): iProp Σ := True%I.
+Axiom own : v1.PodSpec.t → t → iProp Σ.
 End def.
 End PurePodSpec.
 
@@ -136,7 +150,7 @@ Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
 Axiom well_formed: t → Prop.
-Definition own (c: v1.PodStatus.t) (v: t): iProp Σ := True%I.
+Axiom own : v1.PodStatus.t → t → iProp Σ.
 End def.
 End PurePodStatus.
 
@@ -193,7 +207,7 @@ Module PureReplicaSetStatus.
 Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
-Definition own (c: v1.ReplicaSetStatus.t) (v: t): iProp Σ := True%I.
+Axiom own : v1.ReplicaSetStatus.t → t → iProp Σ.
 End def.
 End PureReplicaSetStatus.
 
