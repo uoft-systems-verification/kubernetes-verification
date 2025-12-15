@@ -111,6 +111,8 @@ Definition own (c: v1.ObjectMeta.t) (v: t): iProp Σ :=
   | Some d => ∃ deletion_timestamp,
     c.(v1.ObjectMeta.DeletionTimestamp') ↦ deletion_timestamp ∗ PureTime.own deletion_timestamp d
   end) ∗
+  (* TODO: use consistent style for deepown *)
+  "%Hown_deletiontimestamp_none" ∷ ⌜ v.(DeletionTimestamp') = None ↔ c.(v1.ObjectMeta.DeletionTimestamp') = null⌝ ∗
   "Hown_deletiongraceperiodseconds" ∷ (match v.(DeletionGracePeriodSeconds') with
   | None => ⌜ c.(v1.ObjectMeta.DeletionGracePeriodSeconds') = null ⌝
   | Some i => ∃ deletion_grace_period_seconds,
