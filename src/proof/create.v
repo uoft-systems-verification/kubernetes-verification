@@ -56,12 +56,11 @@ Proof.
   wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_deepCopy_pod with "[$Hto_create_pod_ptr $Hdeep_own_to_create_pod]"); [done|].
   iIntros (copied_ptr copied_pod) "(Hcopied_ptr & Hdeep_own_copied_pod & Hto_create_pod_ptr & Hdeep_own_to_create_pod)". wp_auto.
-  wp_apply wp_Accessor; [done|].
-  rewrite bool_decide_true //. wp_auto.
+  wp_apply wp_Accessor; [done|]. rewrite bool_decide_true //. wp_auto.
   iDestruct (struct_fields_split with "Hcopied_ptr") as "H". iNamed "H".
-  wp_apply (wp_SetNamespace with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
-  wp_apply (wp_GetName with "[$HObjectMeta]"). iIntros (name) "(-> & HObjectMeta)". wp_auto.
-  wp_apply (wp_GetGenerateName with "[$HObjectMeta]"). iIntros (generate_name) "(-> & HObjectMeta)". wp_auto.
+  wp_apply (wp_SetNamespace with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
+  wp_apply (wp_GetName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
+  wp_apply (wp_GetGenerateName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   iAssert (⌜ v1.ObjectMeta.Name' (v1.Pod.ObjectMeta' copied_pod) = ""%go ⌝%I) as "->".
   { iNamed "Hdeep_own_copied_pod". iNamed "Hown_objectmeta". iPureIntro. congruence. }
   iAssert (⌜ v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) ≠ ""%go ⌝%I) as "%Hgenerate_name_not_empty".
@@ -70,15 +69,15 @@ Proof.
   wp_auto. wp_if_destruct; [done|]. rewrite bool_decide_false //. wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_generateNewName with "[$Hinv_Hown_phys]").
   iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_key_not_reserved & Hinv_Hown_phys)". wp_auto.
-  wp_apply (wp_SetName with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+  wp_apply (wp_SetName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hnew_key_not_in_phys. wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_generateNewUID with "[$Hinv_Hown_used_uid]").
   iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hinv_Hown_used_uid)". wp_auto.
-  wp_apply (wp_SetUID with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+  wp_apply (wp_SetUID with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get. wp_apply wp_globals_get.
   wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
-  wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+  wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_map_insert with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
     with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hcopied_ptr". simpl.
@@ -303,8 +302,7 @@ Proof.
         unfold used_uid'. set_solver.
   }
   iCombineNamed "Hinv_*" as "H".
-  wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-    with "[$Hown_Mutex H]").
+  wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
   { iNamed "H". iFrame. iFrame "#". done. }
   iApply "HΦ". iFrame "Hreturned_ptr". iFrame. done.
 Qed.

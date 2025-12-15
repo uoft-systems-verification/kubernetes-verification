@@ -38,33 +38,30 @@ Lemma wp_objDelete_pod_ptsto_mut key
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]}))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H".
-  wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
-  wp_apply wp_globals_get.
-  wp_apply wp_Mutex__Lock; [done|].
-  iIntros "[Hown_Mutex H]". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
+  wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply wp_globals_get. wp_apply wp_globals_get.
   iAssert (⌜ abs_state !! key = Some (PureKObject.Pod pure_pod) ⌝%I) as "%Hkey_in_abs".
-  { iDestruct (map_valid with "Hown_abs Hown_pod") as %Hlookup. iPureIntro; done. }
+  { iDestruct (map_valid with "Hinv_Hown_abs Hown_pod") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ children !! parent_key = Some owned_child_keys ⌝%I) as "%Hparent_key_in_children".
-  { iDestruct (map_valid with "Hown_children Hown_child_keys") as %Hlookup. iPureIntro; done. }
+  { iDestruct (map_valid with "Hinv_Hown_children Hown_child_keys") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ children !! key = Some owned_grandchild_keys ⌝%I) as "%Hkey_in_children".
-  { iDestruct (map_valid with "Hown_children Hown_grandchild_keys") as %Hlookup. iPureIntro; done. }
+  { iDestruct (map_valid with "Hinv_Hown_children Hown_grandchild_keys") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ ∃ obj, phys_state !! key = Some obj ⌝%I) as "%Hkey_in_phys".
   {
-    iDestruct (big_sepM2_lookup_r with "Hphys_abs_rep") as (obj Hkey_in_phys) "_"; [done|].
+    iDestruct (big_sepM2_lookup_r with "Hinv_Hphys_abs_rep") as (obj Hkey_in_phys) "_"; [done|].
     iPureIntro. exists obj. done.
   }
   destruct Hkey_in_phys as [obj Hkey_in_phys].
   iDestruct (big_sepM2_split_singleton _ key _ _ phys_state abs_state Hkey_in_phys Hkey_in_abs
-    with "Hphys_abs_rep") as "[Hk_rep Hother_rep]".
+    with "Hinv_Hphys_abs_rep") as "[Hk_rep Hother_rep]".
   destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset]; [done|].
   iAssert (∃ ptr v1 v2, pod_rep key obj (PureKObject.Pod pure_pod) ptr v1 v2)%I
   with "[Hk_rep]" as "(%ptr & %pod & Hpod_rep)".
   { unfold obj_rep. rewrite kind_is_pod. done. }
   iNamed "Hpod_rep".
   injection Habs_v_is_pod as Heq. subst v2.
-  wp_apply (wp_map_get with "[$Hown_phys]"). iIntros "Hown_phys". wp_auto.
+  wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys. wp_auto.
   wp_apply wp_Accessor; [done|].
   assert ((bool_decide (interface.nil = interface.nil)) = true) as nil_is_nil.
@@ -72,21 +69,15 @@ Proof.
   rewrite nil_is_nil. wp_auto.
   iDestruct (struct_fields_split with "Hpod_ptr") as "H". iNamed "H".
   wp_apply (wp_GetFinalizers with "[$HObjectMeta]").
-  iIntros (finalizers) "(-> & HObjectMeta)". wp_auto.
+  iIntros "HObjectMeta". wp_auto.
   wp_if_destruct.
-  - wp_apply (wp_GetDeletionTimestamp with "[$HObjectMeta]").
-    iIntros (deletion_timestamp) "(-> & HObjectMeta)". wp_auto.
+  - wp_apply (wp_GetDeletionTimestamp with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
     wp_if_destruct.
-    + wp_apply v1.wp_Now.
-      iIntros (time pure_time) "Hdeepown_time". wp_auto.
-      wp_apply (wp_SetDeletionTimestamp with "[$HObjectMeta]").
-      iIntros (meta') "(-> & HObjectMeta)". wp_auto. wp_bind.
-      wp_apply wp_globals_get.
-      (* TODO: fix the resource version counter overflow in the Go code *)
-      wp_apply wp_globals_get. wp_bind. wp_apply wp_globals_get.
+    + wp_apply v1.wp_Now. iIntros (time pure_time) "Hdeepown_time". wp_auto.
+      wp_apply (wp_SetDeletionTimestamp with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
+      wp_apply wp_globals_get. wp_apply wp_globals_get. wp_bind. wp_apply wp_globals_get.
       wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
-      wp_apply (wp_SetResourceVersion with "[$HObjectMeta]").
-      iIntros (meta') "(-> & HObjectMeta)". wp_auto.
+      wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
       iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
         with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr". simpl.
       iDestruct (rename_pod with "Hpod_ptr") as "(%updated_pod & Hpod_ptr & %Hupdated_pod_eq)".
@@ -94,18 +85,17 @@ Proof.
         <| PureObjectMeta.ResourceVersion' := rv_str |>
         <| PureObjectMeta.DeletionTimestamp' := Some pure_time |>.
       set updated_pure_pod := pure_pod <| PurePod.ObjectMeta' := updated_pure_meta |>.
-      iMod (auth_map.map_update _ _ (PureKObject.Pod updated_pure_pod) with "Hown_abs Hown_pod")
-        as "[Hown_abs Hown_pod]".
+      iMod (auth_map.map_update _ _ (PureKObject.Pod updated_pure_pod) with "Hinv_Hown_abs Hown_pod")
+        as "[Hinv_Hown_abs Hown_pod]".
       iAssert (state_rep phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) %I)
-      with "[Hpod_ptr Hother_rep Hdeepown_pod Hdeepown_time now]" as "Hphys_abs_rep".
+      with "[Hpod_ptr Hother_rep Hdeepown_pod Hdeepown_time now]" as "Hinv_Hphys_abs_rep".
       {
         assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
         iAssert ((⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
                   ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
                   ⌜ PurePod.well_formed updated_pure_pod ⌝)%I)
-        as "(%Hnamespace_match' & %Hname_match' & %well_formed')".
-        {
+        as "(%Hnamespace_match' & %Hname_match' & %well_formed')". {
           unfold PurePod.well_formed. unfold PureObjectMeta.well_formed.
           subst updated_pod. simpl. iFrame "#". done.
         }
@@ -124,17 +114,16 @@ Proof.
         iFrame.
       }
       assert (ghost_well_formed (dom used_uid) (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) children fresh_keys)
-      as Hghost_well_formed'.
+      as Hinv_Hghost_well_formed'.
       {
-        destruct Hghost_well_formed.
+        destruct Hinv_Hghost_well_formed.
         assert (parent_key ≠ key) as parent_neq_key.
         { specialize (Hno_self_parenting parent_key owned_child_keys key Hparent_key_in_children Hpod_is_child). done. }
         assert (dom (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) = dom abs_state) as abs_dom_simpl.
         {
           rewrite dom_insert_L.
-          assert ({[key]} ∪ dom abs_state = dom abs_state) as union_eq.
+          assert ({[key]} ∪ dom abs_state = dom abs_state) as ->.
           { set_solver. }
-          rewrite union_eq.
           reflexivity.
         }
         assert ((PureKObject.metadata (PureKObject.Pod updated_pure_pod)).(PureObjectMeta.OwnerReferences') = (PureKObject.metadata (PureKObject.Pod pure_pod)).(PureObjectMeta.OwnerReferences'))
@@ -154,18 +143,18 @@ Proof.
         - intros k1 k2 obj1 obj2 Hlookup1 Hlookup2 Huid_eq.
           rewrite lookup_insert_Some in Hlookup1.
           rewrite lookup_insert_Some in Hlookup2.
-          destruct Hlookup1 as [(Hk1_eq & Hobj1_eq) | (Hk1_neq & Hlookup_obj1)];
-          destruct Hlookup2 as [(Hk2_eq & Hobj2_eq) | (Hk2_neq & Hlookup_obj2)].
-          + subst k1 k2. done.
-          + subst k1. eapply Hno_duplicate_uid; [eauto|eauto|].
+          destruct Hlookup1 as [(<- & Hobj1_eq) | (Hk1_neq & Hlookup_obj1)];
+          destruct Hlookup2 as [(<- & Hobj2_eq) | (Hk2_neq & Hlookup_obj2)].
+          + done.
+          + eapply Hno_duplicate_uid; [eauto|eauto|].
             rewrite -Huid_eq -Hobj1_eq. done.
-          + subst k2. eapply Hno_duplicate_uid; [eauto|eauto|].
+          + eapply Hno_duplicate_uid; [eauto|eauto|].
             rewrite Huid_eq -Hobj2_eq. done.
           + eapply Hno_duplicate_uid; [eauto|eauto|done].
         - intros k obj Hlookup.
           rewrite lookup_insert_Some in Hlookup.
-          destruct Hlookup as [(Hk_eq & Hobj_eq) | (Hk_neq & Hlookup_obj)].
-          + subst k obj. rewrite updated_pure_pod_uid_eq. eapply Hexisting_uid_is_used. done.
+          destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup_obj)].
+          + rewrite updated_pure_pod_uid_eq. eapply Hexisting_uid_is_used. done.
           + eapply Hexisting_uid_is_used. done.
         - intros key_p obj_p key_c obj_c s Hlookup_p Hlookup_c Hlookup_children.
           rewrite lookup_insert_Some in Hlookup_p.
@@ -194,58 +183,48 @@ Proof.
             eapply Hparent_uid_is_used; [done|done].
           + eapply Hparent_uid_is_used; [done|done].
       }
-      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-      with "[$Hown_Mutex Hstate_m_addr Hstate_used_uid_addr Hstate_rvc_addr Hown_phys Hown_used_uid Hown_abs Hphys_abs_rep Hown_children Hown_fresh_keys]").
-      { iFrame. iFrame "#". done. }
+      iCombineNamed "Hinv_*" as "H".
+      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+      { iNamed "H". iFrame. iFrame "#". done. }
       iApply "HΦ". iLeft. iFrame. done.
     + iDestruct (struct_fields_combine (V:=v1.Pod.t) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr".
-      iAssert (⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝%I) as "%Hdeletiontimestamp_not_none".
-      {
-        iNamed "Hdeepown_pod". iNamed "Hown_objectmeta". iPureIntro. intros H. apply Hown_deletiontimestamp_none in H. done.
-      }
-      iAssert (state_rep phys_state abs_state %I) with "[Hpod_ptr Hother_rep Hdeepown_pod]" as "Hphys_abs_rep".
-      {
+      iAssert (⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝%I) as "%Hdeletiontimestamp_not_none". {
+        iNamed "Hdeepown_pod". iNamed "Hown_objectmeta". iPureIntro. intros H. apply Hown_deletiontimestamp_none in H. done. }
+      iAssert (state_rep phys_state abs_state %I) with "[Hpod_ptr Hother_rep Hdeepown_pod]" as "Hinv_Hphys_abs_rep". {
         iApply big_sepM2_split_singleton; [done | done|]. iFrame. unfold obj_rep. rewrite kind_is_pod.
-        iExists ptr, pod, pure_pod. iFrame. iFrame "#". done.
-      }
-      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-        with "[$Hown_Mutex Hstate_m_addr Hstate_used_uid_addr Hstate_rvc_addr Hown_phys Hown_used_uid Hown_abs Hphys_abs_rep Hown_children Hown_fresh_keys]").
-      { iFrame. iFrame "#". done. }
+        iExists ptr, pod, pure_pod. iFrame. iFrame "#". done. }
+      iCombineNamed "Hinv_*" as "H".
+      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+      { iNamed "H". iFrame. iFrame "#". done. }
       iApply "HΦ". iLeft. iFrame. done.
-  - wp_apply wp_globals_get.
-    wp_apply (wp_map_delete with "[$Hown_phys]").
-    iIntros "Hown_phys". wp_auto.
+  - wp_apply wp_globals_get. wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
     iDestruct (struct_fields_combine (V:=v1.Pod.t)
       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr".
-    iMod (auth_map.map_delete with "Hown_pod Hown_abs") as "Hown_abs".
-    iMod (auth_map.map_update _ _ (owned_child_keys ∖ {[key]}) with "Hown_children Hown_child_keys")
-      as "[Hown_children Hown_child_keys]".
-    iMod (auth_map.map_delete with "Hown_grandchild_keys Hown_children") as "Hown_children".
-    iAssert (state_rep (delete key phys_state) (delete key abs_state) %I) with "[Hother_rep]" as "Hphys_abs_rep".
-    { done. }
-    assert (ghost_well_formed (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=owned_child_keys ∖ {[key]}]> children)) fresh_keys) as Hghost_well_formed'.
+    iMod (auth_map.map_delete with "Hown_pod Hinv_Hown_abs") as "Hinv_Hown_abs".
+    iMod (auth_map.map_update _ _ (owned_child_keys ∖ {[key]}) with "Hinv_Hown_children Hown_child_keys")
+      as "[Hinv_Hown_children Hown_child_keys]".
+    iMod (auth_map.map_delete with "Hown_grandchild_keys Hinv_Hown_children") as "Hinv_Hown_children".
+    iAssert (state_rep (delete key phys_state) (delete key abs_state) %I) with "[Hother_rep]" as "Hinv_Hphys_abs_rep"; [done|].
+    assert (ghost_well_formed (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=owned_child_keys ∖ {[key]}]> children)) fresh_keys) as Hinv_Hghost_well_formed'.
     {
-      destruct Hghost_well_formed.
+      destruct Hinv_Hghost_well_formed.
       assert (parent_key ≠ key) as parent_neq_key.
       { specialize (Hno_self_parenting parent_key owned_child_keys key Hparent_key_in_children Hpod_is_child). done. }
       assert (dom (delete key (<[parent_key:=owned_child_keys ∖ {[key]}]> children)) = dom (delete key children) )
-      as Hdom_children_eq.
-      {
+      as Hdom_children_eq. {
         assert (key ≠ parent_key) as key_neq_parent by (symmetry; exact parent_neq_key).
         rewrite !dom_delete_L dom_insert_L.
         assert (parent_key ∈ dom children) as parent_in_children_dom.
         { apply elem_of_dom. exists owned_child_keys. exact Hparent_key_in_children. }
-        assert ({[parent_key]} ∪ dom children = dom children) as union_eq.
+        assert ({[parent_key]} ∪ dom children = dom children) as ->.
         { set_solver. }
-        rewrite union_eq.
-        reflexivity.
-      }
+        reflexivity. }
       apply mk.
       - set_solver.
       - intros k s Hlookup.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
-        + subst k s. rewrite dom_delete_L.
+        destruct Hlookup as (Hk_neq_key & [(<- & <-) | (Hk_neq_parent & Hlookup)]).
+        + rewrite dom_delete_L.
           assert (owned_child_keys ⊆ dom abs_state) as owned_children_in_abs.
           { apply Hchildren_exist with (k := parent_key). exact Hparent_key_in_children. }
           set_solver.
@@ -258,29 +237,26 @@ Proof.
           set_solver.
       - intros k s child_key Hlookup Hchild_in_s.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
-        + subst k s. eapply Hparents_children_same_namespace; [exact Hparent_key_in_children | set_solver].
+        destruct Hlookup as (Hk_neq_key & [(<- & <-) | (Hk_neq_parent & Hlookup)]).
+        + eapply Hparents_children_same_namespace; [exact Hparent_key_in_children | set_solver].
         + eapply Hparents_children_same_namespace; done.
-      -
-        intros k s child_key Hlookup Hchild_in_s.
+      - intros k s child_key Hlookup Hchild_in_s.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
-        destruct Hlookup as (Hk_neq_key & [(Hk_eq & Hs_eq) | (Hk_neq_parent & Hlookup)]).
-        + subst k s. eapply Hno_self_parenting; [exact Hparent_key_in_children | set_solver].
+        destruct Hlookup as (Hk_neq_key & [(<- & <-) | (Hk_neq_parent & Hlookup)]).
+        + eapply Hno_self_parenting; [exact Hparent_key_in_children | set_solver].
         + eapply Hno_self_parenting; done.
       - intros k1 s1 k2 s2 Hk1_neq_k2 Hlookup1 Hlookup2.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup1.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup2.
-        destruct Hlookup1 as (Hk1_neq_key & [(Hk1_eq & Hs1_eq) | (Hk1_neq_parent & Hlookup1)]);
-        [destruct Hlookup2 as (Hk2_neq_key & [(Hk2_eq & Hs2_eq) | (Hk2_neq_parent & Hlookup2)]) |
-         destruct Hlookup2 as (Hk2_neq_key & [(Hk2_eq & Hs2_eq) | (Hk2_neq_parent & Hlookup2)])].
-        + subst k1 k2. contradiction.
-        + subst k1 s1.
-          assert (owned_child_keys ## s2) as disj_orig.
+        destruct Hlookup1 as (Hk1_neq_key & [(<- & <-) | (Hk1_neq_parent & Hlookup1)]);
+        [destruct Hlookup2 as (Hk2_neq_key & [(<- & <-) | (Hk2_neq_parent & Hlookup2)]) |
+         destruct Hlookup2 as (Hk2_neq_key & [(<- & <-) | (Hk2_neq_parent & Hlookup2)])].
+        + contradiction.
+        + assert (owned_child_keys ## s2) as disj_orig.
           { apply Hchildren_disjoint with (k1 := parent_key) (k2 := k2); [|assumption|assumption].
             intros Heq. subst. contradiction. }
           set_solver.
-        + subst k2 s2.
-          assert (s1 ## owned_child_keys) as disj_orig.
+        + assert (s1 ## owned_child_keys) as disj_orig.
           { apply Hchildren_disjoint with (k1 := k1) (k2 := parent_key); [|assumption|assumption].
             intros Heq. subst. contradiction. }
           set_solver.
@@ -306,14 +282,11 @@ Proof.
         destruct Hlookup_p as [Hkey_p_neq' Hlookup_p];
         destruct Hlookup_c as [Hkey_c_neq Hlookup_c];
         rewrite lookup_insert_Some in Hlookup_children;
-        destruct Hlookup_children as [(<- & <-) | (Hkey_p_neq'', Hlookup_children)].
-        + intros Hkey_c_in_s.
-          eapply Hchildren_point_to_parent; [done|done|done|set_solver].
-        + intros Hkey_c_in_s.
-          eapply Hchildren_point_to_parent; [done|done|done|done].
+        destruct Hlookup_children as [(<- & <-) | (Hkey_p_neq'' & Hlookup_children)].
+        + intros Hkey_c_in_s. eapply Hchildren_point_to_parent; [done|done|done|set_solver].
+        + intros Hkey_c_in_s. eapply Hchildren_point_to_parent; [done|done|done|done].
         + intros Hobj_has_controller_parent_of.
-          pose proof ((proj2 (Hchildren_point_to_parent _ _ _ _ _ Hlookup_p Hlookup_c Hparent_key_in_children) Hobj_has_controller_parent_of)).
-          set_solver.
+          pose proof ((proj2 (Hchildren_point_to_parent _ _ _ _ _ Hlookup_p Hlookup_c Hparent_key_in_children) Hobj_has_controller_parent_of)). set_solver.
         + intros Hobj_has_controller_parent_of.
           pose proof ((proj2 (Hchildren_point_to_parent _ _ _ _ _ Hlookup_p Hlookup_c Hlookup_children) Hobj_has_controller_parent_of)). done.
       - intros k obj kind name uid Hlookup.
@@ -321,12 +294,11 @@ Proof.
         destruct Hlookup as (Hk_neq_key & Hlookup_obj).
         eapply Hparent_uid_is_used. done.
     }
-    wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
-      with "[$Hown_Mutex Hstate_m_addr Hstate_used_uid_addr Hstate_rvc_addr Hown_phys Hown_used_uid Hown_abs Hphys_abs_rep Hown_children Hown_fresh_keys]").
-    { iFrame. iFrame "#". done. }
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
     iApply "HΦ". iFrame.
-    Unshelve.
-    done.
+    Unshelve. done.
 Qed.
 
 Lemma wp_PodDelete_ptsto_mut namespace name
