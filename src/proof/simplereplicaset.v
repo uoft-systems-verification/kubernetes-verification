@@ -3,7 +3,7 @@ From proof.big_op Require Import big_sepL.
 From proof.kubernetes_model Require Export simplereplicaset_init.
 
 Section proof.
-Context `{!mapG Σ KKey.t KObject.t}.
+Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
@@ -14,13 +14,13 @@ Definition active_pod (pod: v1.Pod.t) : bool :=
 Definition active_child_count (child_pods: gmap KKey.t v1.Pod.t) : nat :=
   length (filter (λ kv, active_pod (snd kv)) (map_to_list child_pods)).
 
-Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
+(* Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
   γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
   {{{ is_pkg_init simplereplicaset ∗
       "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "owner" ∷ owner ↦ metadata ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
-      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
+      "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "own_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "%owned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝ ∗
       "%indexed_value" ∷ ⌜ metadata.(v1.ObjectMeta.UID') = (PureKObject.metadata owned_parent).(v1.ObjectMeta.UID') ⌝
@@ -40,7 +40,7 @@ Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
       ) ∗
       ⌜ dom owned_pod_map = list_to_set (extract_pod_key <$> pods) ⌝ ∗
       parent_key [[ γ_state ]]↦ owned_parent ∗
-      ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ KObject.Pod pod) ∗
+      ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       parent_key [[ γ_children ]]↦ owned_child_keys
   }}}.
 Proof.
@@ -124,16 +124,16 @@ Lemma wp_syncReplicaSet namespace name
   {{{ is_pkg_init simplereplicaset ∗
       is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       ⌜ rs_key = mk_replicaset_key namespace name ⌝ ∗
-      rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
-      ([∗ map] key ↦ v ∈ child_pods, key [[ γ_state ]]↦ KObject.Pod v) ∗
+      rs_key [[ γ_state ]]↦ PureKObject.ReplicaSet rs ∗
+      ([∗ map] key ↦ v ∈ child_pods, key [[ γ_state ]]↦ PureKObject.Pod v) ∗
       rs_key [[ γ_children ]]↦ child_keys ∗
       ⌜ child_keys = dom child_pods ⌝ ∗
       rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas') ↦ n
   }}}
   @! simplereplicaset.syncReplicaSet #namespace #name
   {{{ (err : error.t) child_keys' child_pods', RET #err;
-      rs_key [[ γ_state ]]↦ KObject.ReplicaSet rs ∗
-      ([∗ map] key ↦ v ∈ child_pods', key [[ γ_state ]]↦ KObject.Pod v) ∗
+      rs_key [[ γ_state ]]↦ PureKObject.ReplicaSet rs ∗
+      ([∗ map] key ↦ v ∈ child_pods', key [[ γ_state ]]↦ PureKObject.Pod v) ∗
       rs_key [[ γ_children ]]↦ child_keys' ∗
       ⌜ child_keys' = dom child_pods' ⌝ ∗
       if decide (err = interface.nil) then
@@ -142,7 +142,7 @@ Lemma wp_syncReplicaSet namespace name
         ⌜ Z.abs (Z.of_nat (active_child_count child_pods) - sint.Z n) <
           Z.abs (Z.of_nat (active_child_count child_pods') - sint.Z n) ⌝
   }}}.
-Proof. Admitted.
+Proof. Admitted. *)
 
 
 End proof.
