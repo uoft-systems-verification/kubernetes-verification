@@ -11,7 +11,7 @@ Lemma wp_Now:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 }}}
     @! v1.Now #()
   {{{ (c: v1.Time.t) v, RET #c;
-    PureTime.own c v
+    PureTime.deepown c v
   }}}.
 Proof.
 Admitted.

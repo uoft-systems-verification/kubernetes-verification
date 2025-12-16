@@ -53,18 +53,16 @@ Qed.
 
 Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-  "Hpod_ptr" ∷ ptr ↦ pod ∗
   "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
-  "Hdeepown_pod" ∷ PurePod.own pod pure_pod ∗
+  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod ∗
   "%Hnamespace_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hname_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
   "%pod_well_formed" ∷ ⌜ PurePod.well_formed pure_pod ⌝.
 
 Definition replicaset_rep k v1 v2 ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-  "Hrs_ptr" ∷ ptr ↦ rs ∗
   "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
-  "Hdeepown_rs" ∷ PureReplicaSet.own rs pure_rs ∗
+  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs ∗
   "%Hrs_namespace_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hrs_name_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
   "%rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝.
@@ -191,39 +189,33 @@ Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
 
 Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t):
   {{{ is_pkg_init apimodel ∗
-      "%interface_is_pod_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-      "pod_ptr" ∷ ptr ↦ pod ∗
-      "own_pure_pod" ∷ PurePod.own pod pure_pod
+      ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
+      PurePod.deepown_l ptr pod pure_pod
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (pod': v1.Pod.t), RET #(interface.mk (ptrT.id v1.Pod.id) #ptr');
-      ptr' ↦ pod' ∗
-      PurePod.own pod' pure_pod ∗
-      ptr ↦ pod ∗
-      PurePod.own pod pure_pod
+      PurePod.deepown_l ptr' pod' pure_pod ∗
+      PurePod.deepown_l ptr pod pure_pod
   }}}.
 Proof.
 Admitted.
 
 Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t):
   {{{ is_pkg_init apimodel ∗
-      "%interface_is_rs_ptr" ∷ ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-      "rs_ptr" ∷ ptr ↦ rs ∗
-      "own_pure_rs" ∷ PureReplicaSet.own rs pure_rs
+      ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
+      PureReplicaSet.deepown_l ptr rs pure_rs
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (rs': v1.ReplicaSet.t), RET #(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr');
-      ptr' ↦ rs' ∗
-      PureReplicaSet.own rs' pure_rs ∗
-      ptr ↦ rs ∗
-      PureReplicaSet.own rs pure_rs
+      PureReplicaSet.deepown_l ptr' rs' pure_rs ∗
+      PureReplicaSet.deepown_l ptr rs pure_rs
   }}}.
 Proof.
 Admitted.
 
 Lemma wp_generateNewName kind namespace (generate_name : go_string) m (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
-      "m" ∷ m ↦$ phys_state
+      m ↦$ phys_state
   }}}
     @! apimodel.generateNewName #kind #namespace #generate_name #m
   {{{ new_name, RET #new_name;
@@ -238,7 +230,7 @@ Admitted.
 
 Lemma wp_generateNewUID l (used_uid : gmap go_string unit):
   {{{ is_pkg_init apimodel ∗
-      "Hl" ∷ l ↦$ used_uid
+      l ↦$ used_uid
   }}}
     @! apimodel.generateNewUID #l
   {{{ generated_uid, RET #generated_uid;
@@ -250,7 +242,7 @@ Admitted.
 
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
   {{{ is_pkg_init fmt ∗
-      "string_slice" ∷ string_slice ↦* string_list
+      string_slice ↦* string_list
   }}}
     @! fmt.Sprintf #format #string_slice
   {{{ (v: go_string), RET #v;

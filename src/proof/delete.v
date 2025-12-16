@@ -67,6 +67,7 @@ Proof.
   assert ((bool_decide (interface.nil = interface.nil)) = true) as nil_is_nil.
   { rewrite bool_decide_true //. }
   rewrite nil_is_nil. wp_auto.
+  iDestruct "Hdeepown_l_pod" as "[Hpod_ptr Hdeepown_pod]".
   iDestruct (struct_fields_split with "Hpod_ptr") as "H". iNamed "H".
   wp_apply (wp_GetFinalizers with "[$HObjectMeta]").
   iIntros "HObjectMeta". wp_auto.
@@ -88,7 +89,7 @@ Proof.
       iMod (auth_map.map_update _ _ (PureKObject.Pod updated_pure_pod) with "Hinv_Hown_abs Hown_pod")
         as "[Hinv_Hown_abs Hown_pod]".
       iAssert (state_rep phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) %I)
-      with "[Hpod_ptr Hother_rep Hdeepown_pod Hdeepown_time now]" as "Hinv_Hphys_abs_rep".
+      with "[Hpod_ptr Hdeepown_pod Hother_rep Hdeepown_time now]" as "Hinv_Hphys_abs_rep".
       {
         assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
@@ -99,14 +100,14 @@ Proof.
           unfold PurePod.well_formed. unfold PureObjectMeta.well_formed.
           subst updated_pod. simpl. iFrame "#". done.
         }
-        iAssert (PurePod.own updated_pod updated_pure_pod%I) with "[Hdeepown_pod Hdeepown_time now]" as "Hdeepown_pod'".
+        iAssert (PurePod.deepown_l ptr updated_pod updated_pure_pod%I) with "[Hpod_ptr Hdeepown_pod Hdeepown_time now]" as "Hdeepown_l_pod'".
         { iNamed "Hdeepown_pod". iFrame. iSplitR; [iPureIntro; rewrite Hupdated_pod_eq //|].
-          iNamed "Hown_objectmeta". rewrite Hupdated_pod_eq //.
+          iNamed "Hdeepown_objectmeta". rewrite Hupdated_pod_eq //.
           iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".
           { by iDestruct (typed_pointsto_not_null with "now") as %?. }
           iFrame. iPureIntro. done. }
         iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (PureKObject.Pod updated_pure_pod)%I)
-        with "[Hpod_ptr Hdeepown_pod']" as "Hk_rep".
+        with "[Hdeepown_l_pod']" as "Hk_rep".
         { unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod, updated_pure_pod. unfold pod_rep. iFrame. done. }
         iApply (big_sepM2_split_singleton _ key _ (PureKObject.Pod updated_pure_pod) phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)
           Hkey_in_phys with "[Hk_rep Hother_rep]").
@@ -189,7 +190,7 @@ Proof.
       iApply "HΦ". iLeft. iFrame. done.
     + iDestruct (struct_fields_combine (V:=v1.Pod.t) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr".
       iAssert (⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝%I) as "%Hdeletiontimestamp_not_none". {
-        iNamed "Hdeepown_pod". iNamed "Hown_objectmeta". iPureIntro. intros H. apply Hown_deletiontimestamp_none in H. done. }
+        iNamed "Hdeepown_pod". iNamed "Hdeepown_objectmeta". iPureIntro. intros H. apply (proj2 Hdeepown_deletiontimestamp_none) in H. done. }
       iAssert (state_rep phys_state abs_state %I) with "[Hpod_ptr Hother_rep Hdeepown_pod]" as "Hinv_Hphys_abs_rep". {
         iApply big_sepM2_split_singleton; [done | done|]. iFrame. unfold obj_rep. rewrite kind_is_pod.
         iExists ptr, pod, pure_pod. iFrame. iFrame "#". done. }
