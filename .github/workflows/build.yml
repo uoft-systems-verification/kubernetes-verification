@@ -10,7 +10,7 @@ jobs:
   build-rocq:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: "recursive"
       - uses: coq-community/docker-coq-action@v1
