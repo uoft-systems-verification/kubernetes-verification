@@ -27,8 +27,8 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
       PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
+      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = key.(KKey.Namespace') ⌝ ∗
+      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = key.(KKey.Name') ⌝ ∗
       key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
@@ -47,13 +47,17 @@ Proof.
   iDestruct (big_sepM2_lookup_acc _ _ _ _ _ _ Hinv_Hkey_in_phys Hkey_in_abs with "Hinv_Hphys_abs_rep") as "[Hk_rep Hother_rep]".
   destruct decide_kind_is_replicaset with (KKey.Kind' key) as [Hkind_is_replicaset Hkind_is_not_pod]; [done|].
   unfold obj_rep. rewrite Hkind_is_replicaset Hkind_is_not_pod.
-  iDestruct "Hk_rep" as "(%ptr & %rs & H)". iNamed "H". injection Habs_v_is_rs as <-.
+  iDestruct "Hk_rep" as "(%ptr & %rs & %pure_rs' & H)". iNamed "H". injection Habs_v_is_rs as <-.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hinv_Hkey_in_phys. wp_auto.
   wp_apply (wp_deepCopy_replicaset with "[$Hdeepown_l_rs]"); [done|].
   iIntros (copied_ptr copied_rs) "(Hdeepown_l_copied_rs & Hdeepown_l_rs)". wp_auto.
-  iAssert (state_rep phys_state abs_state %I) with "[Hdeepown_l_rs Hother_rep]" as "Hinv_Hphys_abs_rep".
+  iAssert (state_rep phys_state abs_state) with "[Hdeepown_l_rs Hother_rep]" as "Hinv_Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr, rs, pure_rs. iFrame. done. }
+  assert (PureKObject.agree_with_key (PureKObject.ReplicaSet pure_rs) key ∧ PureKObject.well_formed (PureKObject.ReplicaSet pure_rs))
+    as [Hagree Hwell_formed].
+  { destruct Hinv_Hghost_well_formed. apply Habs_state_well_formed. exact Hkey_in_abs. }
+  destruct Hagree as [Hkind [Hnamespace Hname]].
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys)
   with "[$Hown_Mutex H]").

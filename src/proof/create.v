@@ -36,10 +36,12 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
   }}}
     @! apimodel.objCreate #kind #namespace #(interface.mk (ptrT.id v1.Pod.id) #to_create_pod_ptr)
-  {{{ created_pod_ptr created_pod created_pure_pod new_key, RET (#(interface.mk (ptrT.id v1.Pod.id) #created_pod_ptr), #interface.nil);
+  {{{ created_pod_ptr created_pod created_pure_pod new_name new_key, RET (#(interface.mk (ptrT.id v1.Pod.id) #created_pod_ptr), #interface.nil);
       "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod 1 ∗
       "%Hwell_formed" ∷ ⌜ PurePod.well_formed created_pure_pod ⌝ ∗
-      "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
+      "%Hnamespace_matches" ∷ ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
+      "%Hname_matches" ∷ ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = new_name ⌝ ∗
+      "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace new_name ⌝ ∗
       "%Hnew_key_notin" ∷ ⌜ new_key ∉ owned_child_keys ⌝ ∗
       "Hown_created_pure_pod" ∷ new_key [[ γ_state ]]↦ (PureKObject.Pod created_pure_pod) ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
@@ -119,14 +121,6 @@ Proof.
   set used_uid' := <[generated_uid:=()]> used_uid.
   set abs_state' := <[new_key:=PureKObject.Pod created_pure_pod]> abs_state.
   set children' := (<[new_key:=∅]> (<[parent_key:=owned_child_keys ∪ {[new_key]}]> children)).
-  iAssert ((⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = new_key.(KKey.Namespace') ⌝ ∗
-      ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = new_key.(KKey.Name') ⌝ ∗
-      ⌜ PurePod.well_formed created_pure_pod ⌝) %I)
-  as "(%Hnamespace_match & %Hname_match & %Hwell_formed)".
-  { iPureIntro. split; [done|split;[done|]].
-    unfold PurePod.well_formed. unfold PurePod.well_formed_uninitialized in Hwell_formed_uninitialized.
-    split; [|split; [intuition|intuition]].
-    unfold PureObjectMeta.well_formed. unfold PureObjectMeta.well_formed_uninitialized in Hwell_formed_uninitialized. intuition. }
   iAssert (state_rep phys_state' abs_state' %I) with "[Hdeepown_l_created_pod Hinv_Hphys_abs_rep]" as "Hinv_Hphys_abs_rep".
   { unfold state_rep. unfold phys_state'. unfold abs_state'.
     rewrite (big_sepM2_insert _ phys_state abs_state new_key _ _ Hnew_key_not_in_phys Hnew_key_not_in_abs).
@@ -138,6 +132,12 @@ Proof.
       iExists copied_ptr, created_pod, created_pure_pod.
       unfold pod_rep. iFrame "#". iFrame. iPureIntro. done.
     - done. }
+  assert (PurePod.well_formed created_pure_pod) as Hwell_formed.
+  { unfold PurePod.well_formed. unfold PurePod.well_formed_uninitialized in Hwell_formed_uninitialized.
+    split_and!; [|intuition|intuition].
+    unfold PureObjectMeta.well_formed. 
+    unfold PureObjectMeta.well_formed_uninitialized in Hwell_formed_uninitialized.
+    intuition. }
   assert (ghost_well_formed (dom used_uid') abs_state' children' fresh_keys ) as Hinv_Hghost_well_formed'.
   {
     assert (dom children' = dom children ∪ {[new_key]}) as Hdom_children_eq.
@@ -159,6 +159,11 @@ Proof.
       as Hcreated_pure_pod_has_controller_parent_of_owned_parent by done.
     destruct Hinv_Hghost_well_formed.
     apply mk.
+    - intros k obj Hlookup. unfold abs_state' in Hlookup.
+      rewrite lookup_insert_Some in Hlookup.
+      destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup)].
+      + split; [done|done].
+      + eapply Habs_state_well_formed. done.
     - unfold abs_state'. unfold children'. rewrite Hdom_children_eq. rewrite dom_insert_L. set_solver.
     - intros k s Hlookup.
       unfold children' in Hlookup. unfold abs_state'.
@@ -323,10 +328,12 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys
   }}}
     @! apimodel.PodCreate #namespace #to_create_pod_ptr
-  {{{ created_pod_ptr created_pod created_pure_pod new_key, RET (#created_pod_ptr, #interface.nil);
+  {{{ created_pod_ptr created_pod created_pure_pod new_name new_key, RET (#created_pod_ptr, #interface.nil);
       "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod 1 ∗
       "%Hwell_formed" ∷ ⌜ PurePod.well_formed created_pure_pod ⌝ ∗
-      "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
+      "%Hnamespace_matches" ∷ ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
+      "%Hname_matches" ∷ ⌜ created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = new_name ⌝ ∗
+      "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace new_name ⌝ ∗
       "%Hnew_key_notin" ∷ ⌜ new_key ∉ owned_child_keys ⌝ ∗
       "Hown_created_pure_pod" ∷ new_key [[ γ_state ]]↦ (PureKObject.Pod created_pure_pod) ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
@@ -338,7 +345,7 @@ Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_objCreate_pod_without_name_ptsto_mut with "[$Hdeepown_l_to_create_pod $Hown_child_keys $Hown_parent]").
   { iFrame "#". done. }
-  iIntros (created_pod_ptr created_pod created_pure_pod new_key) "H". iNamed "H". wp_auto.
+  iIntros (created_pod_ptr created_pod created_pure_pod new_name new_key) "H". iNamed "H". wp_auto.
   rewrite bool_decide_true //. wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists created_pod_ptr. done. }

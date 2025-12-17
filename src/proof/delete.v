@@ -56,11 +56,11 @@ Proof.
   iDestruct (big_sepM2_split_singleton _ key _ _ phys_state abs_state Hkey_in_phys Hkey_in_abs
     with "Hinv_Hphys_abs_rep") as "[Hk_rep Hother_rep]".
   destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset]; [done|].
-  iAssert (∃ ptr v1 v2, pod_rep key obj (PureKObject.Pod pure_pod) ptr v1 v2)%I
-  with "[Hk_rep]" as "(%ptr & %pod & Hpod_rep)".
-  { unfold obj_rep. rewrite kind_is_pod. done. }
+  iAssert (∃ ptr pod pure_pod', pod_rep obj (PureKObject.Pod pure_pod) ptr pod pure_pod')%I
+  with "[Hk_rep]" as "(%ptr & %pod & %pure_pod' & Hpod_rep)".
+  { unfold obj_rep. rewrite kind_is_pod. iDestruct "Hk_rep" as "(%ptr & %pod & %pure_pod' & H)". iExists ptr, pod, pure_pod'. iFrame. }
   iNamed "Hpod_rep".
-  injection Habs_v_is_pod as Heq. subst v2.
+  injection Habs_v_is_pod as <-.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys. wp_auto.
   wp_apply wp_Accessor; [done|].
@@ -90,30 +90,18 @@ Proof.
         as "[Hinv_Hown_abs Hown_pod]".
       iAssert (state_rep phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) %I)
       with "[Hpod_ptr Hdeepown_pod Hother_rep Hdeepown_time now]" as "Hinv_Hphys_abs_rep".
-      {
-        assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)) as ->.
+      { assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
-        iAssert ((⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
-                  ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
-                  ⌜ PurePod.well_formed updated_pure_pod ⌝)%I)
-        as "(%Hnamespace_match' & %Hname_match' & %well_formed')". {
-          unfold PurePod.well_formed. unfold PureObjectMeta.well_formed.
-          subst updated_pod. simpl. iFrame "#". done.
-        }
-        iAssert (PurePod.deepown_l ptr updated_pod updated_pure_pod 1) with "[Hpod_ptr Hdeepown_pod Hdeepown_time now]" as "Hdeepown_l_pod'".
-        { iNamed "Hdeepown_pod". iFrame. iSplitR; [iPureIntro; rewrite Hupdated_pod_eq //|].
-          iNamed "Hdeepown_objectmeta". rewrite Hupdated_pod_eq //.
-          iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".
-          { by iDestruct (typed_pointsto_not_null with "now") as %?. }
-          iFrame. iPureIntro. done. }
-        iAssert (obj_rep key (interface.mk (ptrT.id v1.Pod.id) (# ptr)) (PureKObject.Pod updated_pure_pod)%I)
-        with "[Hdeepown_l_pod']" as "Hk_rep".
-        { unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod, updated_pure_pod. unfold pod_rep. iFrame. done. }
         iApply (big_sepM2_split_singleton _ key _ (PureKObject.Pod updated_pure_pod) phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)
-          Hkey_in_phys with "[Hk_rep Hother_rep]").
-        { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [reflexivity | contradiction]. }
-        iFrame.
-      }
+          Hkey_in_phys with "[$Hother_rep Hpod_ptr Hdeepown_pod Hdeepown_time now]").
+        { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [done|done]. }
+        unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod, updated_pure_pod. unfold pod_rep.
+        iSplit;[done|iSplit;[done|]].
+        iNamed "Hdeepown_pod". iFrame. iSplitR; [iPureIntro; rewrite Hupdated_pod_eq //|].
+        iNamed "Hdeepown_objectmeta". rewrite Hupdated_pod_eq //.
+        iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".
+        { by iDestruct (typed_pointsto_not_null with "now") as %?. }
+        iFrame. iPureIntro. done. }
       assert (ghost_well_formed (dom used_uid) (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) children fresh_keys)
       as Hinv_Hghost_well_formed'.
       {
@@ -121,19 +109,27 @@ Proof.
         assert (parent_key ≠ key) as parent_neq_key.
         { specialize (Hno_self_parenting parent_key owned_child_keys key Hparent_key_in_children Hpod_is_child). done. }
         assert (dom (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) = dom abs_state) as abs_dom_simpl.
-        {
-          rewrite dom_insert_L.
+        { rewrite dom_insert_L.
           assert ({[key]} ∪ dom abs_state = dom abs_state) as ->.
           { set_solver. }
-          reflexivity.
-        }
+          reflexivity. }
         assert ((PureKObject.metadata (PureKObject.Pod updated_pure_pod)).(PureObjectMeta.OwnerReferences') = (PureKObject.metadata (PureKObject.Pod pure_pod)).(PureObjectMeta.OwnerReferences'))
         as updated_pure_pod_owner_references_eq.
         { simpl. subst updated_pure_pod. simpl. reflexivity. }
         assert ((PureKObject.metadata (PureKObject.Pod updated_pure_pod)).(PureObjectMeta.UID') = (PureKObject.metadata (PureKObject.Pod pure_pod)).(PureObjectMeta.UID'))
         as updated_pure_pod_uid_eq.
         { simpl. subst updated_pure_pod. simpl. reflexivity. }
+        assert (PureKObject.agree_with_key (PureKObject.Pod updated_pure_pod) key ∧ PureKObject.well_formed (PureKObject.Pod updated_pure_pod))
+          as [Hagree Hwell_formed].
+        { assert (PureKObject.agree_with_key (PureKObject.Pod pure_pod) key ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
+          as [Hagree Hwell_formed].
+          { apply Habs_state_well_formed. done. } done. }
         apply mk.
+        - intros k obj Hlookup.
+          rewrite lookup_insert_Some in Hlookup.
+          destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup)].
+          + done.
+          + eapply Habs_state_well_formed. done.
         - set_solver.
         - intros k s Hlookup. specialize (Hchildren_exist k s Hlookup). rewrite dom_insert_L. set_solver.
         - apply Hparents_children_same_namespace.
@@ -221,6 +217,8 @@ Proof.
         { set_solver. }
         reflexivity. }
       apply mk.
+      - intros k obj Hlookup. rewrite lookup_delete_Some in Hlookup.
+        eapply Habs_state_well_formed. intuition.
       - set_solver.
       - intros k s Hlookup.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.

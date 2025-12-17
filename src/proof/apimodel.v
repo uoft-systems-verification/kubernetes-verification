@@ -51,27 +51,21 @@ Proof.
   - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
 Qed.
 
-Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
+Definition pod_rep v1 v2 ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
-  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1 ∗
-  "%Hnamespace_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
-  "%Hname_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "%pod_well_formed" ∷ ⌜ PurePod.well_formed pure_pod ⌝.
+  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1.
 
-Definition replicaset_rep k v1 v2 ptr rs pure_rs : iProp Σ :=
+Definition replicaset_rep v1 v2 ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
-  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
-  "%Hrs_namespace_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
-  "%Hrs_name_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
-  "%rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝.
+  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs 1.
 
 Definition obj_rep k v1 v2 : iProp Σ :=
   (if bool_decide (KKey.Kind' k = "Pod"%go) then
-    ∃ (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t), pod_rep k v1 v2 ptr pod pure_pod
+    ∃ (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t), pod_rep v1 v2 ptr pod pure_pod
   else if bool_decide (KKey.Kind' k = "ReplicaSet"%go) then
-    ∃ (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t), replicaset_rep k v1 v2 ptr rs pure_rs
+    ∃ (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t), replicaset_rep v1 v2 ptr rs pure_rs
   else False)%I.
 
 Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t PureKObject.t) : iProp Σ :=
@@ -152,6 +146,7 @@ Qed.
 
 Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk {
+  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → PureKObject.agree_with_key obj k ∧ PureKObject.well_formed obj);
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
   Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));

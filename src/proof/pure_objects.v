@@ -255,38 +255,50 @@ End def.
 End PureReplicaSet.
 
 Module KKey.
-  Global Instance eq_dec : EqDecision KKey.t.
-  Proof. solve_decision. Qed.
+Global Instance eq_dec : EqDecision KKey.t.
+Proof. solve_decision. Qed.
 
-  Global Instance countable : Countable KKey.t.
-  Proof.
-    refine (inj_countable'
-              (λ k, (KKey.Kind' k,
-                     KKey.Name' k,
-                     KKey.Namespace' k))
-              (λ '(kind, name, namespace),
-                KKey.mk kind name namespace)
-              _).
-    intros []; reflexivity.
-  Qed.
+Global Instance countable : Countable KKey.t.
+Proof.
+  refine (inj_countable'
+            (λ k, (KKey.Kind' k,
+                   KKey.Name' k,
+                   KKey.Namespace' k))
+            (λ '(kind, name, namespace),
+              KKey.mk kind name namespace)
+            _).
+  intros []; reflexivity.
+Qed.
 End KKey.
 
 Module PureKObject.
-  Inductive t :=
-  | Pod (p : PurePod.t)
-  | ReplicaSet (rs : PureReplicaSet.t).
+Inductive t :=
+| Pod (p : PurePod.t)
+| ReplicaSet (rs : PureReplicaSet.t).
 
-  Definition well_formed kobj : Prop :=
-    match kobj with
-    | Pod p => PurePod.well_formed p
-    | ReplicaSet rs => PureReplicaSet.well_formed rs
-    end.
+Definition well_formed kobj : Prop :=
+  match kobj with
+  | Pod p => PurePod.well_formed p
+  | ReplicaSet rs => PureReplicaSet.well_formed rs
+  end.
 
-  Definition metadata kobj : PureObjectMeta.t :=
-    match kobj with
-    | Pod p => p.(PurePod.ObjectMeta')
-    | ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
-    end.
+Definition metadata kobj : PureObjectMeta.t :=
+  match kobj with
+  | Pod p => p.(PurePod.ObjectMeta')
+  | ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
+  end.
+
+Definition kind kobj : go_string :=
+  match kobj with
+  | Pod _ => "Pod"%go
+  | ReplicaSet _ => "ReplicaSet"%go
+  end.
+
+Definition agree_with_key kobj key : Prop :=
+  kind kobj = key.(KKey.Kind') ∧
+  (metadata kobj).(PureObjectMeta.Namespace') = key.(KKey.Namespace') ∧
+  (metadata kobj).(PureObjectMeta.Name') = key.(KKey.Name').
+
 End PureKObject.
 
 Global Existing Instance KKey.eq_dec.
