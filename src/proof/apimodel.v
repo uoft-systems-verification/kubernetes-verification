@@ -54,7 +54,7 @@ Qed.
 Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
-  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod ∗
+  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1 ∗
   "%Hnamespace_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hname_match" ∷ ⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
   "%pod_well_formed" ∷ ⌜ PurePod.well_formed pure_pod ⌝.
@@ -62,7 +62,7 @@ Definition pod_rep k v1 v2 ptr pod pure_pod : iProp Σ :=
 Definition replicaset_rep k v1 v2 ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
-  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs ∗
+  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
   "%Hrs_namespace_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' k) ⌝ ∗
   "%Hrs_name_match" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' k) ⌝ ∗
   "%rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝.
@@ -190,12 +190,12 @@ Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
 Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t):
   {{{ is_pkg_init apimodel ∗
       ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-      PurePod.deepown_l ptr pod pure_pod
+      PurePod.deepown_l ptr pod pure_pod 1
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (pod': v1.Pod.t), RET #(interface.mk (ptrT.id v1.Pod.id) #ptr');
-      PurePod.deepown_l ptr' pod' pure_pod ∗
-      PurePod.deepown_l ptr pod pure_pod
+      PurePod.deepown_l ptr' pod' pure_pod 1 ∗
+      PurePod.deepown_l ptr pod pure_pod 1
   }}}.
 Proof.
 Admitted.
@@ -203,12 +203,12 @@ Admitted.
 Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t):
   {{{ is_pkg_init apimodel ∗
       ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-      PureReplicaSet.deepown_l ptr rs pure_rs
+      PureReplicaSet.deepown_l ptr rs pure_rs 1
   }}}
     @! apimodel.deepCopy #obj
   {{{ (ptr': loc) (rs': v1.ReplicaSet.t), RET #(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr');
-      PureReplicaSet.deepown_l ptr' rs' pure_rs ∗
-      PureReplicaSet.deepown_l ptr rs pure_rs
+      PureReplicaSet.deepown_l ptr' rs' pure_rs 1 ∗
+      PureReplicaSet.deepown_l ptr rs pure_rs 1
   }}}.
 Proof.
 Admitted.

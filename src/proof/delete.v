@@ -100,7 +100,7 @@ Proof.
           unfold PurePod.well_formed. unfold PureObjectMeta.well_formed.
           subst updated_pod. simpl. iFrame "#". done.
         }
-        iAssert (PurePod.deepown_l ptr updated_pod updated_pure_pod%I) with "[Hpod_ptr Hdeepown_pod Hdeepown_time now]" as "Hdeepown_l_pod'".
+        iAssert (PurePod.deepown_l ptr updated_pod updated_pure_pod 1) with "[Hpod_ptr Hdeepown_pod Hdeepown_time now]" as "Hdeepown_l_pod'".
         { iNamed "Hdeepown_pod". iFrame. iSplitR; [iPureIntro; rewrite Hupdated_pod_eq //|].
           iNamed "Hdeepown_objectmeta". rewrite Hupdated_pod_eq //.
           iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".

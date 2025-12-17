@@ -24,7 +24,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace
       "%Hkind_is_pod" ∷ ⌜ kind = "Pod"%go ⌝ ∗
       "%Hnamespace_is_parent_namespace" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
-      "Hdeepown_l_to_create_pod" ∷ PurePod.deepown_l to_create_pod_ptr to_create_pod to_create_pure_pod ∗
+      "Hdeepown_l_to_create_pod" ∷ PurePod.deepown_l to_create_pod_ptr to_create_pod to_create_pure_pod 1 ∗
       "%Hto_create_pure_pod_namespace_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ∨
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
@@ -37,7 +37,7 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace
   }}}
     @! apimodel.objCreate #kind #namespace #(interface.mk (ptrT.id v1.Pod.id) #to_create_pod_ptr)
   {{{ created_pod_ptr created_pod created_pure_pod new_key, RET (#(interface.mk (ptrT.id v1.Pod.id) #created_pod_ptr), #interface.nil);
-      "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod ∗
+      "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod 1 ∗
       "%Hwell_formed" ∷ ⌜ PurePod.well_formed created_pure_pod ⌝ ∗
       "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       "%Hnew_key_notin" ∷ ⌜ new_key ∉ owned_child_keys ⌝ ∗
@@ -86,7 +86,7 @@ Proof.
     <| PureObjectMeta.UID' := generated_uid |>
     <| PureObjectMeta.ResourceVersion' := rv_str |>.
   set created_pure_pod := to_create_pure_pod <| PurePod.ObjectMeta' := created_pure_meta |>.
-  iAssert (PurePod.deepown created_pod created_pure_pod) with "[Hdeepown_copied_pod]" as "Hdeepown_created_pod".
+  iAssert (PurePod.deepown created_pod created_pure_pod 1) with "[Hdeepown_copied_pod]" as "Hdeepown_created_pod".
   { iNamed "Hdeepown_copied_pod". iFrame. iSplitR; [iPureIntro; rewrite Hcreated_pod_eq //|].
     iNamed "Hdeepown_objectmeta". rewrite Hcreated_pod_eq //. iFrame. iPureIntro. done. }
   wp_apply (wp_deepCopy_pod with "[Hcopied_ptr Hdeepown_created_pod]"); [iFrame;done|].
@@ -311,7 +311,7 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
       "%Hnamespace_is_parent_namespace" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
-      "Hdeepown_l_to_create_pod" ∷ PurePod.deepown_l to_create_pod_ptr to_create_pod to_create_pure_pod ∗
+      "Hdeepown_l_to_create_pod" ∷ PurePod.deepown_l to_create_pod_ptr to_create_pod to_create_pure_pod 1 ∗
       "%Hto_create_pure_pod_namespace_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ∨
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
@@ -324,7 +324,7 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr
   }}}
     @! apimodel.PodCreate #namespace #to_create_pod_ptr
   {{{ created_pod_ptr created_pod created_pure_pod new_key, RET (#created_pod_ptr, #interface.nil);
-      "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod ∗
+      "Hdeepown_created_pod" ∷ PurePod.deepown_l created_pod_ptr created_pod created_pure_pod 1 ∗
       "%Hwell_formed" ∷ ⌜ PurePod.well_formed created_pure_pod ⌝ ∗
       "%Hnew_key_eq" ∷ ⌜ new_key = mk_pod_key namespace created_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       "%Hnew_key_notin" ∷ ⌜ new_key ∉ owned_child_keys ⌝ ∗

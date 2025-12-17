@@ -25,7 +25,7 @@ Lemma wp_objGet_replicaset_ptsto_mut key γ_state γ_children γ_fresh_keys pure
   }}}
     @! apimodel.objGet #key
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
-      PureReplicaSet.deepown_l ptr rs pure_rs ∗
+      PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = (KKey.Namespace' key) ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = (KKey.Name' key) ⌝ ∗
@@ -64,11 +64,11 @@ Qed.
 Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetMutGet #namespace #name
-  {{{ ptr rs, RET (#ptr, #(interface.nil));
-      PureReplicaSet.deepown_l ptr rs pure_rs ∗
+  {{{ ptr rs, RET (#ptr, #interface.nil);
+      PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
@@ -76,7 +76,7 @@ Lemma wp_ReplicaSetMutGet_ptsto_mut namespace name γ_state γ_children γ_fresh
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_objGet_replicaset_ptsto_mut with "[$Hinv_Hown_rs]"); [iFrame "#"; done|].
+  wp_apply (wp_objGet_replicaset_ptsto_mut with "[$Hown_rs]"); [iFrame "#"; done|].
   iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & -> & -> & Hown_pure_rs)". wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists ptr. done. }
@@ -89,15 +89,14 @@ Proof.
   iApply "HΦ". iFrame. done.
 Qed.
 
-(* Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
+Lemma wp_ReplicaSetGet_ptsto_mut namespace name γ_state γ_children γ_fresh_keys pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
-      "Hinv_Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     @! apimodel.ReplicaSetGet #namespace #name
-  {{{ ptr rs dq, RET (#l, #interface.nil);
-      ptr ↦{dq} rs ∗
-      PureReplicaSet.deepown_l ptr rs pure_rs ∗
+  {{{ ptr rs dq, RET (#ptr, #interface.nil);
+      PureReplicaSet.deepown_l ptr rs pure_rs dq ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
@@ -105,10 +104,10 @@ Qed.
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_ReplicaSetMutGet_ptsto_mut with "[$Hinv_Hown_rs]"); [done|].
-  iIntros (l rs) "(Hl & Hdeepown_l_rs & %Hwell_formed_pure_rs & -> & -> & Hinv_Hown_rs)". wp_auto.
+  wp_apply (wp_ReplicaSetMutGet_ptsto_mut with "[$Hown_rs]"); [done|].
+  iIntros (l rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & -> & -> & Hown_rs)". wp_auto.
   iApply "HΦ". iFrame. done.
-Qed. *)
+Qed.
 
 (* TODO: revisit this spec *)
 Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
@@ -130,7 +129,7 @@ Lemma wp_ByIndex_pod_ptsto_mut kind index_name indexed_value
       "obj_pts_to_pod" ∷ ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc) (owned_pod : PurePod.t),
         ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
         ptr ↦ pod ∗
-        PurePod.deepown pod owned_pod ∗
+        PurePod.deepown pod owned_pod 1 ∗
         ⌜ ∃ k, owned_pod_map !! k = Some owned_pod ⌝ ∗
         ⌜ obj_has_controller_parent_of (PureKObject.Pod owned_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') indexed_value ⌝ ∗
         ⌜ PurePod.well_formed owned_pod ⌝

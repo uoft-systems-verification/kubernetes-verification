@@ -33,19 +33,19 @@ Record t := mk {
   BlockOwnerDeletion' : option bool;
 }.
 
-Definition deepown (c: v1.OwnerReference.t) (v: t): iProp Σ :=
+Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_apiversion" ∷ ⌜ c.(v1.OwnerReference.APIVersion') = v.(APIVersion') ⌝ ∗
   "%Hdeepown_kind" ∷ ⌜ c.(v1.OwnerReference.Kind') = v.(Kind') ⌝ ∗
   "%Hdeepown_name" ∷ ⌜ c.(v1.OwnerReference.Name') = v.(Name') ⌝ ∗
   "%Hdeepown_uid" ∷ ⌜ c.(v1.OwnerReference.UID') = v.(UID') ⌝ ∗
   "%Hdeepown_controller_none" ∷ ⌜c.(v1.OwnerReference.Controller') = null ↔ v.(Controller') = None⌝ ∗
   "Hdeepown_controller_some" ∷ (match v.(Controller') with
-  | Some vc => ∃ cc, c.(v1.OwnerReference.Controller') ↦ cc ∗ ⌜ cc = vc ⌝
+  | Some vc => ∃ cc, c.(v1.OwnerReference.Controller') ↦{dq} cc ∗ ⌜ cc = vc ⌝
   | None => True%I
   end) ∗
   "%Hdeepown_blockownerdeleton_none" ∷ ⌜c.(v1.OwnerReference.BlockOwnerDeletion') = null ↔ v.(BlockOwnerDeletion') = None⌝ ∗
   "Hdeepown_blockownerdeleton_some" ∷ (match v.(BlockOwnerDeletion') with
-  | Some vb => ∃ cb, c.(v1.OwnerReference.BlockOwnerDeletion') ↦ cb ∗ ⌜ cb = vb ⌝
+  | Some vb => ∃ cb, c.(v1.OwnerReference.BlockOwnerDeletion') ↦{dq} cb ∗ ⌜ cb = vb ⌝
   | None => True%I
   end).
 
@@ -98,7 +98,7 @@ Definition well_formed_uninitialized (m: t) : Prop :=
   | Some os => PureOwnerReference.list_well_formed os
   end.
 
-Definition deepown (c: v1.ObjectMeta.t) (v: t): iProp Σ :=
+Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_name" ∷ ⌜ c.(v1.ObjectMeta.Name') = v.(Name') ⌝ ∗
   "%Hdeepown_generatename" ∷ ⌜ c.(v1.ObjectMeta.GenerateName') = v.(GenerateName') ⌝ ∗
   "%Hdeepown_namespace" ∷ ⌜ c.(v1.ObjectMeta.Namespace') = v.(Namespace') ⌝ ∗
@@ -109,37 +109,37 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t): iProp Σ :=
   "Hdeepown_creationtimestamp" ∷ PureTime.deepown c.(v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') ∗
   "%Hdeepown_deletiontimestamp_none" ∷ ⌜c.(v1.ObjectMeta.DeletionTimestamp') = null ↔ v.(DeletionTimestamp') = None⌝ ∗
   "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with
-  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦ cd ∗ PureTime.deepown cd vd
+  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦{dq} cd ∗ PureTime.deepown cd vd
   | None => True%I
   end) ∗
   "%Hdeepown_deletiongraceperiodseconds_none" ∷ ⌜c.(v1.ObjectMeta.DeletionGracePeriodSeconds') = null ↔ v.(DeletionGracePeriodSeconds') = None⌝ ∗
   "Hdeepown_deletiongraceperiodseconds_some" ∷ (match v.(DeletionGracePeriodSeconds') with
-  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionGracePeriodSeconds') ↦ cd ∗ ⌜ cd = vd ⌝
+  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionGracePeriodSeconds') ↦{dq} cd ∗ ⌜ cd = vd ⌝
   | None => True%I
   end) ∗
   "%Hdeepown_labels_none" ∷ ⌜c.(v1.ObjectMeta.Labels') = null ↔ v.(Labels') = None⌝ ∗
   "Hdeepown_labels_some" ∷ (match v.(Labels') with
-  | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦$ cl ∗ ⌜ cl = vl ⌝
+  | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${dq} cl ∗ ⌜ cl = vl ⌝
   | None => True%I
   end) ∗
   "%Hdeepown_annotations_none" ∷ ⌜c.(v1.ObjectMeta.Annotations') = null ↔ v.(Annotations') = None⌝ ∗
   "Hdeepown_annotations_some" ∷ (match v.(Annotations') with
-  | Some va => ∃ ca, c.(v1.ObjectMeta.Annotations') ↦$ ca ∗ ⌜ ca = va ⌝
+  | Some va => ∃ ca, c.(v1.ObjectMeta.Annotations') ↦${dq} ca ∗ ⌜ ca = va ⌝
   | None => True%I
   end) ∗
   "%Hdeepown_ownerreferences_none" ∷ ⌜c.(v1.ObjectMeta.OwnerReferences') = slice.nil ↔ v.(OwnerReferences') = None⌝ ∗
   "Hdeepown_ownerreferences_some" ∷ (match v.(OwnerReferences') with
-  | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦* cos ∗ [∗list] co;vo ∈ cos;vos, PureOwnerReference.deepown co vo
+  | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦*{dq} cos ∗ [∗list] co;vo ∈ cos;vos, PureOwnerReference.deepown co vo dq
   | None => True%I
   end) ∗
   "%Hdeepown_finalizers_none" ∷ ⌜c.(v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None⌝ ∗
   "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with
-  | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦* cfs ∗ ⌜ cfs = vfs ⌝
+  | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{dq} cfs ∗ ⌜ cfs = vfs ⌝
   | None => True%I
   end).
 
-Definition deepown_l l c v: iProp Σ :=
-  l ↦ c ∗ deepown c v.
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PureObjectMeta.
@@ -184,14 +184,14 @@ Definition well_formed_uninitialized (pod: t) : Prop :=
   (* PurePodSpec.well_formed_uninitialized pod.(Spec') ∧ *)
   (* PurePodStatus.well_formed_uninitialized pod.(Status'). *)
 
-Definition deepown (c: v1.Pod.t) (v: t): iProp Σ :=
+Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  "Hdeepown_objectmeta" ∷ PureObjectMeta.deepown c.(v1.Pod.ObjectMeta') v.(ObjectMeta') ∗
+  "Hdeepown_objectmeta" ∷ PureObjectMeta.deepown c.(v1.Pod.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_podspec" ∷ PurePodSpec.deepown c.(v1.Pod.Spec') v.(Spec') ∗
   "Hdeepown_podstatus" ∷ PurePodStatus.deepown c.(v1.Pod.Status') v.(Status').
 
-Definition deepown_l l c v: iProp Σ :=
-  l ↦ c ∗ deepown c v.
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PurePod.
@@ -206,16 +206,16 @@ Record t := mk {
   (* Template' : v1.PodTemplateSpec.t; *)
 }.
 
-Definition deepown (c: v1.ReplicaSetSpec.t) (v: t): iProp Σ :=
+Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-  | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦ replicas ∗ ⌜ replicas = i ⌝
+  | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
   | None => True%I
   end) ∗
   "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝.
 
-Definition deepown_l l c v: iProp Σ :=
-  l ↦ c ∗ deepown c v.
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PureReplicaSetSpec.
@@ -242,14 +242,14 @@ Definition well_formed (rs: t) : Prop :=
   PureObjectMeta.well_formed rs.(ObjectMeta') ∧
   (∃ (v: w32), rs.(Spec').(PureReplicaSetSpec.Replicas') = Some v ∧ 0 ≤ sint.Z v).
 
-Definition deepown (c: v1.ReplicaSet.t) (v: t): iProp Σ :=
-  ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  PureObjectMeta.deepown c.(v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') ∗
-  PureReplicaSetSpec.deepown c.(v1.ReplicaSet.Spec') v.(Spec') ∗
-  PureReplicaSetStatus.deepown c.(v1.ReplicaSet.Status') v.(Status').
+Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
+  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
+  "Hdeepown_objectmeta" ∷ PureObjectMeta.deepown c.(v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_spec" ∷ PureReplicaSetSpec.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ PureReplicaSetStatus.deepown c.(v1.ReplicaSet.Status') v.(Status').
 
-Definition deepown_l l c v: iProp Σ :=
-  l ↦ c ∗ deepown c v.
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PureReplicaSet.
