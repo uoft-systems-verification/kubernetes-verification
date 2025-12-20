@@ -161,13 +161,13 @@ mk {
     obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
 }.
 
-Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp Σ :=
+Definition kubernetes_inv γ_state γ_children γ_fresh_keys l: iProp Σ :=
   ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
     (phys_state: gmap KKey.t interface.t) (used_uid: gmap go_string unit)
     (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
-    "Hstate_m_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "m" ] phys_state_l ∗
-    "Hstate_used_uid_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "usedUID" ] used_uid_l ∗
-    "Hstate_rvc_addr" ∷ (global_addr apimodel.state) ↦s[ apimodel.State :: "resourceVersionCounter" ] rvc ∗
+    "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
+    "Hstate_used_uid_addr" ∷ l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
+    "Hstate_rvc_addr" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"] rvc ∗
     "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
     "Hown_used_uid" ∷ used_uid_l ↦$ used_uid ∗
     "Hown_abs" ∷ map_ctx γ_state 1 abs_state ∗
@@ -176,8 +176,10 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys: iProp �
     "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
     "%Hghost_well_formed" ∷ ⌜ ghost_well_formed (dom used_uid) abs_state children fresh_keys ⌝.
 
-Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
-  is_Mutex (global_addr apimodel.stateMu) (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
+Definition is_kubernetes γ_state γ_children γ_fresh_keys l : iProp Σ :=
+  ∃ (mu_l: loc),
+    "Hmu" ∷ l ↦s[apimodel.State :: "mu"]□ mu_l ∗
+    "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ_state γ_children γ_fresh_keys l).
 
 Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t):
   {{{ is_pkg_init apimodel ∗
@@ -205,29 +207,33 @@ Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t)
 Proof.
 Admitted.
 
-Lemma wp_generateNewName kind namespace (generate_name : go_string) m (phys_state : gmap KKey.t interface.t):
+Lemma wp_State__generateNewName (l : loc) (m_ptr : loc) (kind namespace generate_name : go_string) (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
       ⌜ ¬ reserved_name generate_name ⌝ ∗
-      m ↦$ phys_state
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
   }}}
-    @! apimodel.generateNewName #kind #namespace #generate_name #m
+    l @ (ptrT.id apimodel.State.id) @ "generateNewName" #kind #namespace #generate_name
   {{{ (new_name: go_string), RET #new_name;
       ⌜ new_name ≠ ""%go ∧ valid_name new_name ⌝ ∗
       ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
       ⌜ unreserved_generated_name new_name ⌝ ∗
-      m ↦$ phys_state
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_generateNewUID l (used_uid : gmap go_string unit):
+Lemma wp_State__generateNewUIDAndUpdate (l : loc) (used_uid_ptr : loc) (used_uid : gmap go_string unit):
   {{{ is_pkg_init apimodel ∗
-      l ↦$ used_uid
+      l ↦s[apimodel.State :: "usedUID"] used_uid_ptr ∗
+      used_uid_ptr ↦$ used_uid
   }}}
-    @! apimodel.generateNewUID #l
-  {{{ generated_uid, RET #generated_uid;
+    l @ (ptrT.id apimodel.State.id) @ "generateNewUIDAndUpdate" #()
+  {{{ (generated_uid : go_string), RET #generated_uid;
       ⌜ used_uid !! generated_uid = None ⌝ ∗
-      l ↦$ <[generated_uid:=()]> used_uid
+      l ↦s[apimodel.State :: "usedUID"] used_uid_ptr ∗
+      used_uid_ptr ↦$ <[generated_uid:=()]> used_uid
   }}}.
 Proof.
 Admitted.

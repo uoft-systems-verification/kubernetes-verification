@@ -14,6 +14,7 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.uuid.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.golang.theory.
 
 Require Export New.code.kubernetes_model.apimodel.
@@ -21,6 +22,96 @@ Require Export New.code.kubernetes_model.apimodel.
 Set Default Proof Using "Type".
 
 Module apimodel.
+
+(* type apimodel.State *)
+Module State.
+Section def.
+Context `{ffi_syntax}.
+Record t := mk {
+  m' : loc;
+  usedUID' : loc;
+  resourceVersionCounter' : w64;
+  mu' : loc;
+}.
+End def.
+End State.
+
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent apimodel.State.
+#[local] Typeclasses Transparent apimodel.State.
+
+Global Instance State_wf : struct.Wf apimodel.State.
+Proof. apply _. Qed.
+
+Global Instance settable_State : Settable State.t :=
+  settable! State.mk < State.m'; State.usedUID'; State.resourceVersionCounter'; State.mu' >.
+Global Instance into_val_State : IntoVal State.t :=
+  {| to_val_def v :=
+    struct.val_aux apimodel.State [
+    "m" ::= #(State.m' v);
+    "usedUID" ::= #(State.usedUID' v);
+    "resourceVersionCounter" ::= #(State.resourceVersionCounter' v);
+    "mu" ::= #(State.mu' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_State : IntoValTyped State.t apimodel.State :=
+{|
+  default_val := State.mk (default_val _) (default_val _) (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_State_m : IntoValStructField "m" apimodel.State State.m'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_State_usedUID : IntoValStructField "usedUID" apimodel.State State.usedUID'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" apimodel.State State.resourceVersionCounter'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_State_mu : IntoValStructField "mu" apimodel.State State.mu'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_State m' usedUID' resourceVersionCounter' mu':
+  PureWp True
+    (struct.make #apimodel.State (alist_val [
+      "m" ::= #m';
+      "usedUID" ::= #usedUID';
+      "resourceVersionCounter" ::= #resourceVersionCounter';
+      "mu" ::= #mu'
+    ]))%struct
+    #(State.mk m' usedUID' resourceVersionCounter' mu').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance State_struct_fields_split dq l (v : State.t) :
+  StructFieldsSplit dq l v (
+    "Hm" ∷ l ↦s[apimodel.State :: "m"]{dq} v.(State.m') ∗
+    "HusedUID" ∷ l ↦s[apimodel.State :: "usedUID"]{dq} v.(State.usedUID') ∗
+    "HresourceVersionCounter" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
+    "Hmu" ∷ l ↦s[apimodel.State :: "mu"]{dq} v.(State.mu')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (State.m' v)) (apimodel.State) "m"%go.
+  simpl_one_flatten_struct (# (State.usedUID' v)) (apimodel.State) "usedUID"%go.
+  simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (apimodel.State) "resourceVersionCounter"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type apimodel.KKey *)
 Module KKey.
@@ -104,118 +195,6 @@ Qed.
 
 End instances.
 
-(* type apimodel.IndexFunc *)
-Module IndexFunc.
-
-#[global] Transparent apimodel.IndexFunc.
-#[global] Typeclasses Transparent apimodel.IndexFunc.
-Section def.
-Context `{ffi_syntax}.
-Definition t := func.t.
-End def.
-End IndexFunc.
-
-(* type apimodel.Indexers *)
-Module Indexers.
-
-#[global] Transparent apimodel.Indexers.
-#[global] Typeclasses Transparent apimodel.Indexers.
-Section def.
-Context `{ffi_syntax}.
-Definition t := loc.
-End def.
-End Indexers.
-
-(* type apimodel.State *)
-Module State.
-Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  m' : loc;
-  usedUID' : loc;
-  resourceVersionCounter' : w64;
-  indexer' : Indexers.t;
-}.
-End def.
-End State.
-
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent apimodel.State.
-#[local] Typeclasses Transparent apimodel.State.
-
-Global Instance State_wf : struct.Wf apimodel.State.
-Proof. apply _. Qed.
-
-Global Instance settable_State : Settable State.t :=
-  settable! State.mk < State.m'; State.usedUID'; State.resourceVersionCounter'; State.indexer' >.
-Global Instance into_val_State : IntoVal State.t :=
-  {| to_val_def v :=
-    struct.val_aux apimodel.State [
-    "m" ::= #(State.m' v);
-    "usedUID" ::= #(State.usedUID' v);
-    "resourceVersionCounter" ::= #(State.resourceVersionCounter' v);
-    "indexer" ::= #(State.indexer' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_State : IntoValTyped State.t apimodel.State :=
-{|
-  default_val := State.mk (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_State_m : IntoValStructField "m" apimodel.State State.m'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_State_usedUID : IntoValStructField "usedUID" apimodel.State State.usedUID'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" apimodel.State State.resourceVersionCounter'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_State_indexer : IntoValStructField "indexer" apimodel.State State.indexer'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_State m' usedUID' resourceVersionCounter' indexer':
-  PureWp True
-    (struct.make #apimodel.State (alist_val [
-      "m" ::= #m';
-      "usedUID" ::= #usedUID';
-      "resourceVersionCounter" ::= #resourceVersionCounter';
-      "indexer" ::= #indexer'
-    ]))%struct
-    #(State.mk m' usedUID' resourceVersionCounter' indexer').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance State_struct_fields_split dq l (v : State.t) :
-  StructFieldsSplit dq l v (
-    "Hm" ∷ l ↦s[apimodel.State :: "m"]{dq} v.(State.m') ∗
-    "HusedUID" ∷ l ↦s[apimodel.State :: "usedUID"]{dq} v.(State.usedUID') ∗
-    "HresourceVersionCounter" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
-    "Hindexer" ∷ l ↦s[apimodel.State :: "indexer"]{dq} v.(State.indexer')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (State.m' v)) (apimodel.State) "m"%go.
-  simpl_one_flatten_struct (# (State.usedUID' v)) (apimodel.State) "usedUID"%go.
-  simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (apimodel.State) "resourceVersionCounter"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
 Section names.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
@@ -240,7 +219,8 @@ Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.uuid.uuid;
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.uuid.uuid ∧
+      is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
   |}.
 
 #[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
@@ -261,118 +241,107 @@ Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
        is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.util.uuid.uuid)%I
+       is_pkg_defined code.k8s_io.apimachinery.pkg.util.uuid.uuid ∗
+       is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
-Global Instance wp_func_call_namespaceIndex :
-  WpFuncCall apimodel.namespaceIndex _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_podControllerUIDIndex :
-  WpFuncCall apimodel.podControllerUIDIndex _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_controllerUIDIndex :
-  WpFuncCall apimodel.controllerUIDIndex _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_Init :
-  WpFuncCall apimodel.Init _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_OrphanPodIndexKeyForNamespace :
-  WpFuncCall apimodel.OrphanPodIndexKeyForNamespace _ (is_pkg_defined apimodel) :=
+Global Instance wp_func_call_NewState :
+  WpFuncCall apimodel.NewState _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_deepCopy :
   WpFuncCall apimodel.deepCopy _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_objGet :
-  WpFuncCall apimodel.objGet _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_objList :
-  WpFuncCall apimodel.objList _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_filterByLabelSelector :
   WpFuncCall apimodel.filterByLabelSelector _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_objListBySelector :
-  WpFuncCall apimodel.objListBySelector _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_randomSuffix :
   WpFuncCall apimodel.randomSuffix _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_generateNewName :
-  WpFuncCall apimodel.generateNewName _ (is_pkg_defined apimodel) :=
+Global Instance wp_func_call_index_of :
+  WpFuncCall apimodel.index_of _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_generateNewUID :
-  WpFuncCall apimodel.generateNewUID _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_ByIndex :
+  WpMethodCall (ptrT.id apimodel.State.id) "ByIndex" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_objCreate :
-  WpFuncCall apimodel.objCreate _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_Index :
+  WpMethodCall (ptrT.id apimodel.State.id) "Index" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_objUpdate :
-  WpFuncCall apimodel.objUpdate _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodCreate :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodCreate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_objDelete :
-  WpFuncCall apimodel.objDelete _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodDelete :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodDelete" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_Index :
-  WpFuncCall apimodel.Index _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodGet :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_ByIndex :
-  WpFuncCall apimodel.ByIndex _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodList :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodList" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodGet :
-  WpFuncCall apimodel.PodGet _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodMutGet :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodMutGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodMutGet :
-  WpFuncCall apimodel.PodMutGet _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodMutList :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodMutList" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodList :
-  WpFuncCall apimodel.PodList _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_PodUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodMutList :
-  WpFuncCall apimodel.PodMutList _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_ReplicaSetGet :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodCreate :
-  WpFuncCall apimodel.PodCreate _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_ReplicaSetMutGet :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetMutGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodUpdate :
-  WpFuncCall apimodel.PodUpdate _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_generateNewName :
+  WpMethodCall (ptrT.id apimodel.State.id) "generateNewName" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_PodDelete :
-  WpFuncCall apimodel.PodDelete _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_generateNewUIDAndUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "generateNewUIDAndUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_ReplicaSetGet :
-  WpFuncCall apimodel.ReplicaSetGet _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_objCreate :
+  WpMethodCall (ptrT.id apimodel.State.id) "objCreate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
-Global Instance wp_func_call_ReplicaSetMutGet :
-  WpFuncCall apimodel.ReplicaSetMutGet _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
+Global Instance wp_method_call_State'ptr_objDelete :
+  WpMethodCall (ptrT.id apimodel.State.id) "objDelete" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_objGet :
+  WpMethodCall (ptrT.id apimodel.State.id) "objGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_objList :
+  WpMethodCall (ptrT.id apimodel.State.id) "objList" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_objListBySelector :
+  WpMethodCall (ptrT.id apimodel.State.id) "objListBySelector" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_objUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "objUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
 
 End names.
 End apimodel.

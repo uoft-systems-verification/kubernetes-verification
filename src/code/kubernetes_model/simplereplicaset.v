@@ -17,9 +17,11 @@ Section code.
 Context `{ffi_syntax}.
 
 
+Definition state : go_string := "kubernetes_model/simplereplicaset.state"%go.
+
 Definition CreatePod : go_string := "kubernetes_model/simplereplicaset.CreatePod"%go.
 
-(* go: replica_set.go:21:6 *)
+(* go: replica_set.go:27:6 *)
 Definition CreatePodⁱᵐᵖˡ : val :=
   λ: "namespace" "template" "controllerObject" "controllerRef",
     exception_do (let: "controllerRef" := (mem.alloc "controllerRef") in
@@ -48,7 +50,7 @@ Definition CreatePodⁱᵐᵖˡ : val :=
     else do:  #());;;
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
     let: "$a1" := (![#ptrT] "pod") in
-    (func_call #apimodel.PodCreate) "$a0" "$a1") in
+    (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -57,51 +59,112 @@ Definition CreatePodⁱᵐᵖˡ : val :=
 
 Definition FilterPodsByOwner : go_string := "kubernetes_model/simplereplicaset.FilterPodsByOwner"%go.
 
-(* go: replica_set.go:33:6 *)
+(* go: replica_set.go:39:6 *)
 Definition FilterPodsByOwnerⁱᵐᵖˡ : val :=
-  λ: "owner",
-    exception_do (let: "owner" := (mem.alloc "owner") in
+  λ: "owner" "ownerKind" "includeOrphanedPods",
+    exception_do (let: "includeOrphanedPods" := (mem.alloc "includeOrphanedPods") in
+    let: "ownerKind" := (mem.alloc "ownerKind") in
+    let: "owner" := (mem.alloc "owner") in
     let: "result" := (mem.alloc (type.zero_val #sliceT)) in
     let: "$r0" := #slice.nil in
     do:  ("result" <-[#sliceT] "$r0");;;
-    let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "pods" := (mem.alloc (type.zero_val #sliceT)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
-    let: "$a1" := #apimodel.PodControllerUIDIndex in
-    let: "$a2" := (![#types.UID] (struct.field_ref #v1.ObjectMeta #"UID"%go (![#ptrT] "owner"))) in
-    (func_call #apimodel.ByIndex) "$a0" "$a1" "$a2") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("pods" <-[#sliceT] "$r0");;;
-    do:  ("err" <-[#error] "$r1");;;
-    (if: (~ (interface.eq (![#error] "err") #interface.nil))
-    then return: (#slice.nil, ![#error] "err")
+    (if: (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (![#ptrT] "owner"))) in
+    StringLength "$a0") = #(W64 0)
+    then
+      return: (#slice.nil, let: "$a0" := #"no owner namespace provided"%go in
+       let: "$a1" := #slice.nil in
+       (func_call #fmt.Errorf) "$a0" "$a1")
     else do:  #());;;
-    let: "$range" := (![#sliceT] "pods") in
-    (let: "obj" := (mem.alloc (type.zero_val #interfaceT)) in
-    slice.for_range #interfaceT "$range" (λ: "$key" "$value",
-      do:  ("obj" <-[#interfaceT] "$value");;;
+    (if: (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (![#ptrT] "owner"))) in
+    StringLength "$a0") = #(W64 0)
+    then
+      return: (#slice.nil, let: "$a0" := #"no owner name provided"%go in
+       let: "$a1" := #slice.nil in
+       (func_call #fmt.Errorf) "$a0" "$a1")
+    else do:  #());;;
+    (if: (let: "$a0" := (![#types.UID] (struct.field_ref #v1.ObjectMeta #"UID"%go (![#ptrT] "owner"))) in
+    StringLength "$a0") = #(W64 0)
+    then
+      return: (#slice.nil, let: "$a0" := #"no owner uid provided"%go in
+       let: "$a1" := #slice.nil in
+       (func_call #fmt.Errorf) "$a0" "$a1")
+    else do:  #());;;
+    (if: (let: "$a0" := (![#stringT] "ownerKind") in
+    StringLength "$a0") = #(W64 0)
+    then
+      return: (#slice.nil, let: "$a0" := #"no owner kind provided"%go in
+       let: "$a1" := #slice.nil in
+       (func_call #fmt.Errorf) "$a0" "$a1")
+    else do:  #());;;
+    let: "keys" := (mem.alloc (type.zero_val #sliceT)) in
+    let: "$r0" := ((let: "$sl0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (![#ptrT] "owner"))) in
+    let: "$a1" := (mem.alloc (let: "$Name" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (![#ptrT] "owner"))) in
+    let: "$Kind" := (![#stringT] "ownerKind") in
+    let: "$UID" := (![#types.UID] (struct.field_ref #v1.ObjectMeta #"UID"%go (![#ptrT] "owner"))) in
+    struct.make #v1.OwnerReference [{
+      "APIVersion" ::= type.zero_val #stringT;
+      "Kind" ::= "$Kind";
+      "Name" ::= "$Name";
+      "UID" ::= "$UID";
+      "Controller" ::= type.zero_val #ptrT;
+      "BlockOwnerDeletion" ::= type.zero_val #ptrT
+    }])) in
+    (func_call #controller.PodControllerIndexKey) "$a0" "$a1") in
+    slice.literal #stringT ["$sl0"])) in
+    do:  ("keys" <-[#sliceT] "$r0");;;
+    (if: ![#boolT] "includeOrphanedPods"
+    then
+      let: "$r0" := (let: "$a0" := (![#sliceT] "keys") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (![#ptrT] "owner"))) in
+      let: "$a1" := #null in
+      (func_call #controller.PodControllerIndexKey) "$a0" "$a1") in
+      slice.literal #stringT ["$sl0"])) in
+      (slice.append #stringT) "$a0" "$a1") in
+      do:  ("keys" <-[#sliceT] "$r0")
+    else do:  #());;;
+    let: "$range" := (![#sliceT] "keys") in
+    (let: "key" := (mem.alloc (type.zero_val #stringT)) in
+    slice.for_range #stringT "$range" (λ: "$key" "$value",
+      do:  ("key" <-[#stringT] "$value");;;
       do:  "$key";;;
-      let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-      let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-      let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "obj") #(ptrT.id v1.Pod.id)) in
+      let: "err" := (mem.alloc (type.zero_val #error)) in
+      let: "pods" := (mem.alloc (type.zero_val #sliceT)) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
+      let: "$a1" := #controller.PodControllerIndex in
+      let: "$a2" := (![#stringT] "key") in
+      (method_call #(ptrT.id apimodel.State.id) #"ByIndex"%go (![#ptrT] (globals.get #state))) "$a0" "$a1" "$a2") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("pod" <-[#ptrT] "$r0");;;
-      do:  ("ok" <-[#boolT] "$r1");;;
-      (if: (~ (![#boolT] "ok"))
-      then continue: #()
+      do:  ("pods" <-[#sliceT] "$r0");;;
+      do:  ("err" <-[#error] "$r1");;;
+      (if: (~ (interface.eq (![#error] "err") #interface.nil))
+      then return: (#slice.nil, ![#error] "err")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![#sliceT] "result") in
-      let: "$a1" := ((let: "$sl0" := (![#ptrT] "pod") in
-      slice.literal #ptrT ["$sl0"])) in
-      (slice.append #ptrT) "$a0" "$a1") in
-      do:  ("result" <-[#sliceT] "$r0")));;;
+      let: "$range" := (![#sliceT] "pods") in
+      (let: "obj" := (mem.alloc (type.zero_val #interfaceT)) in
+      slice.for_range #interfaceT "$range" (λ: "$key" "$value",
+        do:  ("obj" <-[#interfaceT] "$value");;;
+        do:  "$key";;;
+        let: "ok" := (mem.alloc (type.zero_val #boolT)) in
+        let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
+        let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "obj") #(ptrT.id v1.Pod.id)) in
+        let: "$r0" := "$ret0" in
+        let: "$r1" := "$ret1" in
+        do:  ("pod" <-[#ptrT] "$r0");;;
+        do:  ("ok" <-[#boolT] "$r1");;;
+        (if: (~ (![#boolT] "ok"))
+        then continue: #()
+        else do:  #());;;
+        let: "$r0" := (let: "$a0" := (![#sliceT] "result") in
+        let: "$a1" := ((let: "$sl0" := (![#ptrT] "pod") in
+        slice.literal #ptrT ["$sl0"])) in
+        (slice.append #ptrT) "$a0" "$a1") in
+        do:  ("result" <-[#sliceT] "$r0")))));;;
     return: (![#sliceT] "result", #interface.nil)).
 
 Definition IsPodActive : go_string := "kubernetes_model/simplereplicaset.IsPodActive"%go.
 
-(* go: replica_set.go:49:6 *)
+(* go: replica_set.go:76:6 *)
 Definition IsPodActiveⁱᵐᵖˡ : val :=
   λ: "p",
     exception_do (let: "p" := (mem.alloc "p") in
@@ -109,7 +172,7 @@ Definition IsPodActiveⁱᵐᵖˡ : val :=
 
 Definition FilterActivePods : go_string := "kubernetes_model/simplereplicaset.FilterActivePods"%go.
 
-(* go: replica_set.go:55:6 *)
+(* go: replica_set.go:82:6 *)
 Definition FilterActivePodsⁱᵐᵖˡ : val :=
   λ: "pods",
     exception_do (let: "pods" := (mem.alloc "pods") in
@@ -132,7 +195,7 @@ Definition FilterActivePodsⁱᵐᵖˡ : val :=
 
 Definition manageReplicas : go_string := "kubernetes_model/simplereplicaset.manageReplicas"%go.
 
-(* go: replica_set.go:65:6 *)
+(* go: replica_set.go:92:6 *)
 Definition manageReplicasⁱᵐᵖˡ : val :=
   λ: "activePods" "rs",
     exception_do (let: "rs" := (mem.alloc "rs") in
@@ -186,7 +249,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
           (let: "err" := (mem.alloc (type.zero_val #error)) in
           let: "$r0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
           let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod")))) in
-          (func_call #apimodel.PodDelete) "$a0" "$a1") in
+          (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
           do:  ("err" <-[#error] "$r0");;;
           (if: (~ (interface.eq (![#error] "err") #interface.nil))
           then
@@ -200,7 +263,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
 
 Definition syncReplicaSet : go_string := "kubernetes_model/simplereplicaset.syncReplicaSet"%go.
 
-(* go: replica_set.go:93:6 *)
+(* go: replica_set.go:120:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -209,7 +272,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
     let: "rs" := (mem.alloc (type.zero_val #ptrT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
     let: "$a1" := (![#stringT] "name") in
-    (func_call #apimodel.ReplicaSetGet) "$a0" "$a1") in
+    (method_call #(ptrT.id apimodel.State.id) #"ReplicaSetGet"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("rs" <-[#ptrT] "$r0");;;
@@ -223,7 +286,9 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
     else do:  #());;;
     let: "allRSPods" := (mem.alloc (type.zero_val #sliceT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")) in
-    (func_call #FilterPodsByOwner) "$a0") in
+    let: "$a1" := #"ReplicaSet"%go in
+    let: "$a2" := #true in
+    (func_call #FilterPodsByOwner) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("allRSPods" <-[#sliceT] "$r0");;;
@@ -245,7 +310,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
     else do:  #());;;
     return: (![#error] "manageReplicasErr")).
 
-Definition vars' : list (go_string * go_type) := [].
+Definition vars' : list (go_string * go_type) := [(state, ptrT)].
 
 Definition functions' : list (go_string * val) := [(CreatePod, CreatePodⁱᵐᵖˡ); (FilterPodsByOwner, FilterPodsByOwnerⁱᵐᵖˡ); (IsPodActive, IsPodActiveⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
 
@@ -270,7 +335,12 @@ Definition initialize' : val :=
       do:  (v1.initialize' #());;;
       do:  (apimodel.initialize' #());;;
       do:  (fmt.initialize' #());;;
-      do:  (package.alloc simplereplicaset.simplereplicaset #()))
+      do:  (package.alloc simplereplicaset.simplereplicaset #());;;
+      do:  ((λ: <>,
+        exception_do (let: "$r0" := ((func_call #apimodel.NewState) #()) in
+        do:  ((globals.get #state) <-[#ptrT] "$r0");;;
+        return: #())
+        ) #()))
       ).
 
 End code.

@@ -83,7 +83,7 @@ Axiom kubernetes_state_well_formed : gmap KKey.t KObject.t → Prop.
 
 Axiom kubernetes_state_consistent : gmap KKey.t KObject.t → gmap KKey.t (gset KKey.t) → gset KKey.t → Prop.
 
-Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys : iProp Σ :=
+Definition kubernetes_inv γ_state γ_children γ_fresh_keys : iProp Σ :=
   ∃ (m_state : gmap KKey.t KObject.t) (m_children : gmap KKey.t (gset KKey.t)) (s_fresh_keys : gset KKey.t),
     "Hstate" ∷ map_ctx γ_state 1 m_state ∗
     "Hchildren" ∷ map_ctx γ_children 1 m_children ∗
@@ -91,10 +91,10 @@ Definition is_kubernetes_state_inner γ_state γ_children γ_fresh_keys : iProp 
     "%Hwellformed" ∷ ⌜ kubernetes_state_well_formed m_state ⌝ ∗
     "%Hconsistent" ∷ ⌜ kubernetes_state_consistent m_state m_children s_fresh_keys ⌝.
 
-Definition is_kubernetes_state γ_state γ_children γ_fresh_keys : iProp Σ :=
-  ∃ l, "#Hkinv" ∷ is_Mutex l (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys).
+Definition is_kubernetes γ_state γ_children γ_fresh_keys : iProp Σ :=
+  ∃ l, "#Hkinv" ∷ is_Mutex l (kubernetes_inv γ_state γ_children γ_fresh_keys).
 
-Global Instance is_kubernetes_state_persistent γ_state γ_children γ_fresh_keys : Persistent (is_kubernetes_state γ_state γ_children γ_fresh_keys).
+Global Instance is_kubernetes_persistent γ_state γ_children γ_fresh_keys : Persistent (is_kubernetes γ_state γ_children γ_fresh_keys).
 Proof. apply _. Qed.
 
 End model.

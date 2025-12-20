@@ -9,6 +9,7 @@ From proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From proof.k8s_io.apimachinery.pkg.types Require Export types_init.
 From proof.k8s_io.apimachinery.pkg.util Require Export uuid_init.
+From proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From proof Require Export strconv_init.
 From proof Require Export rand_init.
 Require Export New.generatedproof.kubernetes_model.apimodel.

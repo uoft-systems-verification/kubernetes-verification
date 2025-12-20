@@ -8,16 +8,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/kubernetes/pkg/controller"
 )
 
-func resetStateForTest(t *testing.T) {
+func resetStateForTest(t *testing.T) *State {
 	t.Helper()
 
-	Init()
+	return NewState()
 }
 
 func TestCreateGetAndList(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -27,7 +28,7 @@ func TestCreateGetAndList(t *testing.T) {
 		},
 	}
 
-	created, err := PodCreate("default", pod)
+	created, err := state.PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -38,7 +39,7 @@ func TestCreateGetAndList(t *testing.T) {
 		t.Fatalf("expected resourceVersion 1, got %s", created.ResourceVersion)
 	}
 
-	stored, err := PodGet("default", "pod-1")
+	stored, err := state.PodGet("default", "pod-1")
 	if err != nil {
 		t.Fatalf("error when getting pod")
 	}
@@ -46,7 +47,7 @@ func TestCreateGetAndList(t *testing.T) {
 		t.Fatalf("Get returned different object")
 	}
 
-	list, err := PodList("default", labels.Everything())
+	list, err := state.PodList("default", labels.Everything())
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
@@ -59,7 +60,7 @@ func TestCreateGetAndList(t *testing.T) {
 }
 
 func TestListBySelector(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	makePod := func(name string, labels map[string]string) *corev1.Pod {
 		return &corev1.Pod{
@@ -71,13 +72,13 @@ func TestListBySelector(t *testing.T) {
 		}
 	}
 
-	if _, err := PodCreate("default", makePod("pod-a", map[string]string{"app": "demo", "tier": "backend"})); err != nil {
+	if _, err := state.PodCreate("default", makePod("pod-a", map[string]string{"app": "demo", "tier": "backend"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := PodCreate("default", makePod("pod-b", map[string]string{"app": "demo", "tier": "frontend"})); err != nil {
+	if _, err := state.PodCreate("default", makePod("pod-b", map[string]string{"app": "demo", "tier": "frontend"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := PodCreate("default", makePod("pod-c", map[string]string{"app": "other"})); err != nil {
+	if _, err := state.PodCreate("default", makePod("pod-c", map[string]string{"app": "other"})); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
@@ -85,7 +86,7 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err := PodList("default", selector)
+	items, err := state.PodList("default", selector)
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
@@ -100,7 +101,7 @@ func TestListBySelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse selector: %v", err)
 	}
-	items, err = PodList("default", selector)
+	items, err = state.PodList("default", selector)
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
@@ -117,7 +118,7 @@ func TestListBySelector(t *testing.T) {
 }
 
 func TestCreateWithGenerateName(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -126,7 +127,7 @@ func TestCreateWithGenerateName(t *testing.T) {
 		},
 	}
 
-	created, err := PodCreate("default", pod)
+	created, err := state.PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -139,7 +140,7 @@ func TestCreateWithGenerateName(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -148,7 +149,7 @@ func TestUpdate(t *testing.T) {
 			Labels:    map[string]string{"app": "demo"},
 		},
 	}
-	created, err := PodCreate("default", pod)
+	created, err := state.PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -156,7 +157,7 @@ func TestUpdate(t *testing.T) {
 	updated := created.DeepCopy()
 	updated.Labels["version"] = "v2"
 
-	updatedPod, err := PodUpdate("default", updated)
+	updatedPod, err := state.PodUpdate("default", updated)
 	if err != nil {
 		t.Fatalf("Update returned error: %v", err)
 	}
@@ -169,7 +170,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateConflict(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,7 +178,7 @@ func TestUpdateConflict(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-	created, err := PodCreate("default", pod)
+	created, err := state.PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -185,7 +186,7 @@ func TestUpdateConflict(t *testing.T) {
 	conflicting := created.DeepCopy()
 	conflicting.SetResourceVersion("999")
 
-	_, err = PodUpdate("default", conflicting)
+	_, err = state.PodUpdate("default", conflicting)
 	if err == nil {
 		t.Fatalf("expected conflict error on outdated update")
 	}
@@ -195,7 +196,7 @@ func TestUpdateConflict(t *testing.T) {
 }
 
 func TestDeleteWithoutFinalizers(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -203,21 +204,21 @@ func TestDeleteWithoutFinalizers(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-	if _, err := PodCreate("default", pod); err != nil {
+	if _, err := state.PodCreate("default", pod); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
-	if err := PodDelete("default", "pod-1"); err != nil {
+	if err := state.PodDelete("default", "pod-1"); err != nil {
 		t.Fatalf("Delete returned error: %v", err)
 	}
 
-	if _, err := PodGet("default", "pod-1"); err == nil {
+	if _, err := state.PodGet("default", "pod-1"); err == nil {
 		t.Fatalf("expected pod to be removed after delete without finalizers")
 	}
 }
 
 func TestDeleteWithFinalizers(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -226,17 +227,17 @@ func TestDeleteWithFinalizers(t *testing.T) {
 			Finalizers: []string{"cleanup"},
 		},
 	}
-	created, err := PodCreate("default", pod)
+	created, err := state.PodCreate("default", pod)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 	originalRV := created.ResourceVersion
 
-	if err := PodDelete("default", "pod-1"); err != nil {
+	if err := state.PodDelete("default", "pod-1"); err != nil {
 		t.Fatalf("Delete returned error: %v", err)
 	}
 
-	storedPod, err := PodGet("default", "pod-1")
+	storedPod, err := state.PodGet("default", "pod-1")
 	if err != nil {
 		t.Fatalf("expected pod to remain due to finalizer")
 	}
@@ -249,66 +250,28 @@ func TestDeleteWithFinalizers(t *testing.T) {
 	}
 }
 
-func TestIndexAndByIndexWithNamespace(t *testing.T) {
-	resetStateForTest(t)
-
-	makePod := func(name, namespace string) *corev1.Pod {
-		return &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
-		}
-	}
-
-	if _, err := PodCreate("default", makePod("pod-a", "default")); err != nil {
-		t.Fatalf("Create returned error: %v", err)
-	}
-	if _, err := PodCreate("kube-system", makePod("pod-b", "kube-system")); err != nil {
-		t.Fatalf("Create returned error: %v", err)
-	}
-
-	metadata := &metav1.ObjectMeta{Namespace: "default"}
-	items, err := Index("Pod", NamespaceIndex, metadata)
-	if err != nil {
-		t.Fatalf("Index returned error: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected exactly 1 pod in index result, got %d", len(items))
-	}
-	pod := items[0].(*corev1.Pod)
-	if pod.Namespace != "default" {
-		t.Fatalf("expected pod from default namespace, got %s", pod.Namespace)
-	}
-
-	byIndexItems, err := ByIndex("Pod", NamespaceIndex, "kube-system")
-	if err != nil {
-		t.Fatalf("ByIndex returned error: %v", err)
-	}
-	if len(byIndexItems) != 1 {
-		t.Fatalf("expected exactly 1 pod from kube-system, got %d", len(byIndexItems))
-	}
-	if kubePod := byIndexItems[0].(*corev1.Pod); kubePod.Namespace != "kube-system" {
-		t.Fatalf("expected kube-system pod, got %s", kubePod.Namespace)
-	}
-}
-
 func TestIndexAndByIndexWithControllerUID(t *testing.T) {
-	resetStateForTest(t)
+	state := resetStateForTest(t)
 
 	controllerUID := types.UID("controller-uid")
 	controllerUID2 := types.UID("controller-uid2")
-	controller := true
+	isController := true
 	ownerRef := metav1.OwnerReference{
+		Kind:       "ReplicaSet",
+		Name:       "rs-1",
 		UID:        controllerUID,
-		Controller: &controller,
+		Controller: &isController,
 	}
 	ownerRef2 := metav1.OwnerReference{
+		Kind:       "ReplicaSet",
+		Name:       "rs-2",
 		UID:        controllerUID2,
-		Controller: &controller,
+		Controller: &isController,
 	}
 	ownerRef3 := metav1.OwnerReference{
-		UID: controllerUID2,
+		Kind: "ReplicaSet",
+		Name: "rs-3",
+		UID:  controllerUID2,
 	}
 	podWithControllerOwner := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -338,20 +301,20 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		},
 	}
 
-	if _, err := PodCreate("default", podWithControllerOwner); err != nil {
+	if _, err := state.PodCreate("default", podWithControllerOwner); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := PodCreate("default", podWithControllerOwner2); err != nil {
+	if _, err := state.PodCreate("default", podWithControllerOwner2); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := PodCreate("default", podWithOwner); err != nil {
+	if _, err := state.PodCreate("default", podWithOwner); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
-	if _, err := PodCreate("default", podOrphan); err != nil {
+	if _, err := state.PodCreate("default", podOrphan); err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
 
-	items, err := Index("Pod", PodControllerUIDIndex, podWithControllerOwner)
+	items, err := state.Index("Pod", controller.PodControllerIndex, podWithControllerOwner)
 	if err != nil {
 		t.Fatalf("Index returned error: %v", err)
 	}
@@ -362,7 +325,7 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		t.Fatalf("expected pod-owned, got %s", pod.Name)
 	}
 
-	items, err = Index("Pod", PodControllerUIDIndex, podWithControllerOwner2)
+	items, err = state.Index("Pod", controller.PodControllerIndex, podWithControllerOwner2)
 	if err != nil {
 		t.Fatalf("Index returned error: %v", err)
 	}
@@ -373,7 +336,7 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		t.Fatalf("expected pod-owned, got %s", pod.Name)
 	}
 
-	items, err = Index("Pod", PodControllerUIDIndex, podWithOwner)
+	items, err = state.Index("Pod", controller.PodControllerIndex, podWithOwner)
 	if err != nil {
 		t.Fatalf("Index returned error: %v", err)
 	}
@@ -388,7 +351,7 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		t.Fatalf("expected pods pod-orphan and pod-owned, got names %#v", found)
 	}
 
-	items, err = Index("Pod", PodControllerUIDIndex, podOrphan)
+	items, err = state.Index("Pod", controller.PodControllerIndex, podOrphan)
 	if err != nil {
 		t.Fatalf("Index returned error: %v", err)
 	}
@@ -403,7 +366,8 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		t.Fatalf("expected pods pod-orphan and pod-owned, got names %#v", found)
 	}
 
-	byOwner, err := ByIndex("Pod", PodControllerUIDIndex, string(controllerUID))
+	byOwnerKey := controller.PodControllerIndexKey("default", &ownerRef)
+	byOwner, err := state.ByIndex("Pod", controller.PodControllerIndex, byOwnerKey)
 	if err != nil {
 		t.Fatalf("ByIndex returned error: %v", err)
 	}
@@ -411,8 +375,8 @@ func TestIndexAndByIndexWithControllerUID(t *testing.T) {
 		t.Fatalf("ByIndex should return pod-owned, got %#v", byOwner)
 	}
 
-	orphanKey := OrphanPodIndexKeyForNamespace("default")
-	orphanPods, err := ByIndex("Pod", PodControllerUIDIndex, orphanKey)
+	orphanKey := controller.PodControllerIndexKey("default", nil)
+	orphanPods, err := state.ByIndex("Pod", controller.PodControllerIndex, orphanKey)
 	if err != nil {
 		t.Fatalf("ByIndex returned error: %v", err)
 	}

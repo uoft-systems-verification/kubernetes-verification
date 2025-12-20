@@ -11,7 +11,7 @@ Axiom split_meta_namespace_key : go_string → option (go_string * go_string).
 
 Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s (n: w32):
   {{{ is_pkg_init replicaset ∗
-      is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      is_kubernetes γ_state γ_children γ_fresh_keys ∗
       ∃ namespace name,
         ⌜ split_meta_namespace_key key = Some (namespace, name)⌝ ∗
         ⌜ rs_key = {| KKey.kind := KKind.ReplicaSet; KKey.namespace := namespace; KKey.name := name |} ⌝ ∗

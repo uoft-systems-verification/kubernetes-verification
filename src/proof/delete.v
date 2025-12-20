@@ -17,17 +17,17 @@ Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
-Lemma wp_objDelete_pod_ptsto_mut key
+Lemma wp_State__objDelete_pod l key
   γ_state γ_children γ_fresh_keys pure_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
-      "#Hinv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "#Hisk" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
       "%Hpod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
       "%Hkind_is_pod" ∷ ⌜ KKey.Kind' key = "Pod"%go ⌝ ∗
       "Hown_pod" ∷ key [[ γ_state ]]↦ (PureKObject.Pod pure_pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "Hown_grandchild_keys" ∷ key [[ γ_children ]]↦ owned_grandchild_keys
   }}}
-    @! apimodel.objDelete #key
+    l @ (ptrT.id apimodel.State.id) @ "objDelete" #key
   {{{ updated_pure_pod, RET #interface.nil;
       "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
         "%deletiontimestamp_notnull" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
@@ -38,9 +38,8 @@ Lemma wp_objDelete_pod_ptsto_mut key
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ (owned_child_keys ∖ {[key]}))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
-  wp_apply wp_globals_get. wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
-  wp_apply wp_globals_get. wp_apply wp_globals_get.
+  wp_start as "H". iNamed "H". iNamed "Hisk". wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   iAssert (⌜ abs_state !! key = Some (PureKObject.Pod pure_pod) ⌝%I) as "%Hkey_in_abs".
   { iDestruct (map_valid with "Hinv_Hown_abs Hown_pod") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ children !! parent_key = Some owned_child_keys ⌝%I) as "%Hparent_key_in_children".
@@ -76,7 +75,6 @@ Proof.
     wp_if_destruct.
     + wp_apply v1.wp_Now. iIntros (time pure_time) "Hdeepown_time". wp_auto.
       wp_apply (wp_SetDeletionTimestamp with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
-      wp_apply wp_globals_get. wp_apply wp_globals_get. wp_bind. wp_apply wp_globals_get.
       wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
       wp_apply (wp_SetResourceVersion with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
       iDestruct (struct_fields_combine (v:=v1.Pod.mk _ _ _ _)
@@ -181,7 +179,7 @@ Proof.
           + eapply Hparent_uid_is_used; [done|done].
       }
       iCombineNamed "Hinv_*" as "H".
-      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+      wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ_state γ_children γ_fresh_keys l) with "[$Hown_Mutex H]").
       { iNamed "H". iFrame. iFrame "#". done. }
       iApply "HΦ". iLeft. iFrame. done.
     + iDestruct (struct_fields_combine (V:=v1.Pod.t) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr".
@@ -191,10 +189,10 @@ Proof.
         iApply big_sepM2_split_singleton; [done | done|]. iFrame. unfold obj_rep. rewrite kind_is_pod.
         iExists ptr, pod, pure_pod. iFrame. iFrame "#". done. }
       iCombineNamed "Hinv_*" as "H".
-      wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+      wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ_state γ_children γ_fresh_keys l) with "[$Hown_Mutex H]").
       { iNamed "H". iFrame. iFrame "#". done. }
       iApply "HΦ". iLeft. iFrame. done.
-  - wp_apply wp_globals_get. wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
+  - wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
     iDestruct (struct_fields_combine (V:=v1.Pod.t)
       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hpod_ptr".
     iMod (auth_map.map_delete with "Hown_pod Hinv_Hown_abs") as "Hinv_Hown_abs".
@@ -294,22 +292,22 @@ Proof.
         eapply Hparent_uid_is_used. done.
     }
     iCombineNamed "Hinv_*" as "H".
-    wp_apply (wp_Mutex__Unlock _ (is_kubernetes_state_inner γ_state γ_children γ_fresh_keys) with "[$Hown_Mutex H]").
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ_state γ_children γ_fresh_keys l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iApply "HΦ". iFrame.
     Unshelve. done.
 Qed.
 
-Lemma wp_PodDelete_ptsto_mut namespace name
+Lemma wp_State__PodDelete l namespace name
   γ_state γ_children γ_fresh_keys pure_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
-      "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "#inv" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
       "Hown_pod" ∷ (mk_pod_key namespace name) [[ γ_state ]]↦ (PureKObject.Pod pure_pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
       "Hown_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ_children ]]↦ owned_grandchild_keys ∗
       "%Hpod_is_child" ∷ ⌜ (mk_pod_key namespace name) ∈ owned_child_keys ⌝
   }}}
-    @! apimodel.PodDelete #namespace #name
+    l @ (ptrT.id apimodel.State.id) @ "PodDelete" #namespace #name
   {{{ updated_pure_pod, RET #interface.nil;
       "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
         "%deletiontimestamp_notnull" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
@@ -321,7 +319,7 @@ Lemma wp_PodDelete_ptsto_mut namespace name
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_objDelete_pod_ptsto_mut with "[$Hown_pod $Hown_child_keys $Hown_grandchild_keys]").
+  wp_apply (wp_State__objDelete_pod with "[$Hown_pod $Hown_child_keys $Hown_grandchild_keys]").
   { iFrame "#". done. }
   iIntros (updated_pure_pod) "H". iNamed "H". wp_auto. iApply "HΦ". iFrame.
 Qed.

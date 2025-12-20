@@ -17,7 +17,7 @@ Definition active_child_count (child_pods: gmap KKey.t v1.Pod.t) : nat :=
 (* Lemma wp_FilterPodsByOwner owner (metadata: v1.ObjectMeta.t)
   γ_state γ_children γ_fresh_keys parent_key owned_parent owned_pod_map owned_child_keys:
   {{{ is_pkg_init simplereplicaset ∗
-      "#inv" ∷ is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      "#inv" ∷ is_kubernetes γ_state γ_children γ_fresh_keys ∗
       "owner" ∷ owner ↦ metadata ∗
       "own_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "own_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
@@ -122,7 +122,7 @@ Qed.
 Lemma wp_syncReplicaSet namespace name
   γ_state γ_children γ_fresh_keys rs_key rs child_keys child_pods (n: w32):
   {{{ is_pkg_init simplereplicaset ∗
-      is_kubernetes_state γ_state γ_children γ_fresh_keys ∗
+      is_kubernetes γ_state γ_children γ_fresh_keys ∗
       ⌜ rs_key = mk_replicaset_key namespace name ⌝ ∗
       rs_key [[ γ_state ]]↦ PureKObject.ReplicaSet rs ∗
       ([∗ map] key ↦ v ∈ child_pods, key [[ γ_state ]]↦ PureKObject.Pod v) ∗

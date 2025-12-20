@@ -18,6 +18,12 @@ import (
 // * concurrent creation/deletion
 // * sort before deletion
 
+var state *apimodel.State
+
+func init() {
+	state = apimodel.NewState()
+}
+
 func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject *apps.ReplicaSet, controllerRef *metav1.OwnerReference) error {
 	pod, err := controller.GetPodFromTemplate(template, controllerObject, controllerRef)
 	if err != nil {
@@ -26,22 +32,43 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 	if len(labels.Set(pod.Labels)) == 0 {
 		return fmt.Errorf("unable to create pods, no labels")
 	}
-	_, err = apimodel.PodCreate(namespace, pod)
+	_, err = state.PodCreate(namespace, pod)
 	return err
 }
 
-func FilterPodsByOwner(owner *metav1.ObjectMeta) ([]*v1.Pod, error) {
+func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string, includeOrphanedPods bool) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
-	pods, err := apimodel.ByIndex("Pod", apimodel.PodControllerUIDIndex, string(owner.UID))
-	if err != nil {
-		return nil, err
+
+	if len(owner.Namespace) == 0 {
+		return nil, fmt.Errorf("no owner namespace provided")
 	}
-	for _, obj := range pods {
-		pod, ok := obj.(*v1.Pod)
-		if !ok {
-			continue
+	if len(owner.Name) == 0 {
+		return nil, fmt.Errorf("no owner name provided")
+	}
+	if len(owner.UID) == 0 {
+		return nil, fmt.Errorf("no owner uid provided")
+	}
+	if len(ownerKind) == 0 {
+		return nil, fmt.Errorf("no owner kind provided")
+	}
+	// Always include the owner key, which identifies Pods that are controlled by the owner
+	keys := []string{controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})}
+	if includeOrphanedPods {
+		// Optionally include the unowned key, which identifies orphaned Pods in the owner's namespace and might be adopted by the owner later
+		keys = append(keys, controller.PodControllerIndexKey(owner.Namespace, nil))
+	}
+	for _, key := range keys {
+		pods, err := state.ByIndex("Pod", controller.PodControllerIndex, key)
+		if err != nil {
+			return nil, err
 		}
-		result = append(result, pod)
+		for _, obj := range pods {
+			pod, ok := obj.(*v1.Pod)
+			if !ok {
+				continue
+			}
+			result = append(result, pod)
+		}
 	}
 	return result, nil
 }
@@ -79,7 +106,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	} else if diff > 0 {
 		podsToDelete := activePods[:diff]
 		for _, pod := range podsToDelete {
-			if err := apimodel.PodDelete(rs.Namespace, pod.Name); err != nil {
+			if err := state.PodDelete(rs.Namespace, pod.Name); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}
@@ -91,7 +118,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 }
 
 func syncReplicaSet(namespace, name string) error {
-	rs, err := apimodel.ReplicaSetGet(namespace, name)
+	rs, err := state.ReplicaSetGet(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -99,7 +126,7 @@ func syncReplicaSet(namespace, name string) error {
 		return err
 	}
 
-	allRSPods, err := FilterPodsByOwner(&rs.ObjectMeta)
+	allRSPods, err := FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet", true)
 	if err != nil {
 		return err
 	}
