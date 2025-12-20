@@ -6,7 +6,7 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export pure_objects.
+From proof Require Export pure_objects names.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
@@ -16,9 +16,6 @@ Context `{!mapG Σ KKey.t interface.t}.
 Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
-
-(* TODO: Need a better spec to differentiate fresh keys from others. *)
-Axiom reserved_key: KKey.t → Prop.
 
 Definition mk_pod_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
@@ -153,7 +150,7 @@ mk {
   Hno_self_parenting: (∀ k s child_key, children !! k = Some s → child_key ∈ s → child_key ≠ k);
   Hchildren_disjoint: (∀ k1 s1 k2 s2, k1 ≠ k2 → children !! k1 = Some s1 → children !! k2 = Some s2 → s1 ## s2);
   Hfresh_keys_absent: (fresh_keys ## dom abs_state);
-  Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_key k);
+  Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_derived_name k.(KKey.Name'));
   Hno_duplicate_uid: (∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
     (PureKObject.metadata obj1).(PureObjectMeta.UID') = (PureKObject.metadata obj2).(PureObjectMeta.UID') → k1 = k2);
   Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (PureKObject.metadata obj).(PureObjectMeta.UID') ∈ used_uid);
@@ -210,14 +207,14 @@ Admitted.
 
 Lemma wp_generateNewName kind namespace (generate_name : go_string) m (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
+      ⌜ ¬ reserved_name generate_name ⌝ ∗
       m ↦$ phys_state
   }}}
     @! apimodel.generateNewName #kind #namespace #generate_name #m
-  {{{ new_name, RET #new_name;
+  {{{ (new_name: go_string), RET #new_name;
       ⌜ new_name ≠ ""%go ∧ valid_name new_name ⌝ ∗
       ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
-      (* we assume that the generated key never conflicts with fresh_keys *)
-      ⌜ ¬ reserved_key {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} ⌝ ∗
+      ⌜ unreserved_generated_name new_name ⌝ ∗
       m ↦$ phys_state
   }}}.
 Proof.

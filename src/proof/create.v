@@ -29,7 +29,8 @@ Lemma wp_objCreate_pod_without_name_ptsto_mut kind namespace
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
-        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
+        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ∧
+        ¬ reserved_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
       "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "%Hwell_formed_uninitialized" ∷ ⌜ PurePod.well_formed_uninitialized to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
@@ -67,8 +68,12 @@ Proof.
   { iNamed "Hdeepown_copied_pod". iNamed "Hdeepown_objectmeta". iPureIntro.
     destruct Hto_create_pure_pod_generate_name_valid as [H _]. congruence. }
   wp_auto. wp_if_destruct; [done|]. rewrite bool_decide_false //. wp_auto.
-  wp_apply wp_globals_get. wp_apply (wp_generateNewName with "[$Hinv_Hown_phys]").
-  iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_key_not_reserved & Hinv_Hown_phys)". wp_auto.
+  iAssert (⌜¬ reserved_name copied_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.GenerateName')⌝%I)
+  as "%Hcopied_pod_generate_name_not_reserved".
+  { iNamed "Hdeepown_copied_pod". iNamed "Hdeepown_objectmeta". iPureIntro.
+    rewrite Hdeepown_generatename. intuition. }
+  wp_apply wp_globals_get. wp_apply (wp_generateNewName with "[$Hinv_Hown_phys]"); [done|].
+  iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_name_not_reserved & Hinv_Hown_phys)". wp_auto.
   wp_apply (wp_SetName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply wp_globals_get. wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hnew_key_not_in_phys. wp_auto.
@@ -94,7 +99,7 @@ Proof.
   wp_apply (wp_deepCopy_pod with "[Hcopied_ptr Hdeepown_created_pod]"); [iFrame;done|].
   iIntros (returned_ptr returned_pod) "(Hdeepown_l_returned_pod & Hdeepown_l_created_pod)". wp_auto.
   set new_key := {| KKey.Kind' := "Pod"; KKey.Name' := new_name; KKey.Namespace' := KKey.Namespace' parent_key |}.
-  fold new_key in Hnew_key_not_in_phys. fold new_key in Hnew_key_not_reserved.
+  fold new_key in Hnew_key_not_in_phys.
   iAssert (⌜ abs_state !! new_key = None ⌝%I) with "[Hinv_Hphys_abs_rep]" as "%Hnew_key_not_in_abs".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_phys. set_solver. }
   assert (children !! new_key = None) as Hnew_key_not_in_children.
@@ -226,7 +231,9 @@ Proof.
       + apply Hchildren_disjoint with (k1 := k1) (k2 := k2); done.
     - unfold abs_state'. rewrite dom_insert_L.
       assert (new_key ∉ fresh_keys) as Hkey_not_in_fresh.
-      { intros Hin. apply Hfresh_keys_reserved in Hin. done. }
+      { intros Hin. apply Hfresh_keys_reserved in Hin. unfold new_key in Hin. simpl in Hin.
+        pose proof (no_conflict_between_derived_name_and_generated_name new_name new_name Hin Hnew_name_not_reserved).
+        done. }
       clear -Hfresh_keys_absent Hkey_not_in_fresh.
       set_solver.
     - apply Hfresh_keys_reserved.
@@ -321,7 +328,8 @@ Lemma wp_PodCreate_without_name_ptsto_mut namespace to_create_pod_ptr
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
-        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
+        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ∧
+        ¬ reserved_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
       "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "#Hwell_formed_uninitialized" ∷ ⌜ PurePod.well_formed_uninitialized to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
