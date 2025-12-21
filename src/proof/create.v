@@ -232,7 +232,7 @@ Proof.
     - unfold abs_state'. rewrite dom_insert_L.
       assert (new_key ∉ fresh_keys) as Hkey_not_in_fresh.
       { intros Hin. apply Hfresh_keys_reserved in Hin. unfold new_key in Hin. simpl in Hin.
-        pose proof (no_conflict_between_derived_name_and_generated_name new_name new_name Hin Hnew_name_not_reserved).
+        pose proof (derived_name_and_generated_name_neq new_name new_name Hin Hnew_name_not_reserved).
         done. }
       clear -Hfresh_keys_absent Hkey_not_in_fresh.
       set_solver.

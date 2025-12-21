@@ -24,24 +24,23 @@ Lemma wp_State__ByIndex_pod l kind index_name indexed_value
       "#Hisk" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
       "%Hkind" ∷ ⌜ kind = "Pod"%go ⌝ ∗
       "%Hindex_name" ∷ ⌜ index_name = "podController"%go ⌝ ∗
-      "%Hindexed_value" ∷ ⌜ indexed_value = (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%Hindexed_value" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
+                                            parent_key.(KKey.Kind') ++ "/"%go ++
+                                            parent_key.(KKey.Name') ++ "/"%go ++
+                                            (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "Hown_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys ∗
-      "%Howned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝
+      "%Hdom_eq" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ByIndex" #kind #index_name #indexed_value
-  {{{ objs_l (objs: list interface.t) (pods: list v1.Pod.t), RET (#objs_l, #interface.nil);
+  {{{ objs_l (objs: list interface.t) (pods: list v1.Pod.t) (pure_pods: list PurePod.t), RET (#objs_l, #interface.nil);
       "Hobjs_l" ∷ objs_l ↦* objs ∗
-      "Hobj_pts_to_pod" ∷ ([∗ list] obj ; pod ∈ objs ; pods, ∃ (ptr : loc) (owned_pod : PurePod.t),
-        ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-        ptr ↦ pod ∗
-        PurePod.deepown pod owned_pod 1 ∗
-        ⌜ ∃ k, owned_pod_map !! k = Some owned_pod ⌝ ∗
-        ⌜ obj_has_controller_parent_of (PureKObject.Pod owned_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') indexed_value ⌝ ∗
-        ⌜ PurePod.well_formed owned_pod ⌝
-      ) ∗
-      "%Hkey_set_equal_dom_owned_pods" ∷  ⌜ list_to_set (extract_pod_key <$> pods) = dom owned_pod_map ⌝ ∗
+      "Hobjs_pods" ∷ ([∗ list] obj;pod ∈ objs;pods, ∃ ptr, ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗ ptr ↦ pod) ∗
+      "Hpods_purepods" ∷ ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod 1) ∗
+      "%Hwell_formed_pure_pods" ∷ ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PurePod.well_formed pure_pod ⌝ ∗
+      "%Hlen_pure_pods" ∷ ⌜ length pure_pods = size owned_pod_map ⌝ ∗
+      "%Hkey_set_equal_dom_owned_pods" ∷  ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → ∃ k, owned_pod_map !! k = Some pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ_state ]]↦ owned_parent ∗
       "Hown_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ_state ]]↦ PureKObject.Pod pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ_children ]]↦ owned_child_keys

@@ -6,7 +6,7 @@ From proof.kubernetes_model Require Export apimodel_init.
 From proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From proof Require Import prelude empty_ffi.
-From proof Require Export pure_objects names.
+From proof Require Export pure_objects string.
 From proof.big_op Require Import big_sepL big_sepM.
 Export apimodel.apimodel.
 
