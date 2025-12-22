@@ -163,7 +163,7 @@ Proof.
       (KKey.Name' parent_key) (PureObjectMeta.UID' (PureKObject.metadata owned_parent)))
       as Hcreated_pure_pod_has_controller_parent_of_owned_parent by done.
     destruct Hinv_Hghost_well_formed.
-    apply mk.
+    apply mk_ghost_well_formed.
     - intros k obj Hlookup. unfold abs_state' in Hlookup.
       rewrite lookup_insert_Some in Hlookup.
       destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup)].

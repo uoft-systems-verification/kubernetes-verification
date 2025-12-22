@@ -122,7 +122,7 @@ Proof.
         { assert (PureKObject.agree_with_key (PureKObject.Pod pure_pod) key ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
           as [Hagree Hwell_formed].
           { apply Habs_state_well_formed. done. } done. }
-        apply mk.
+        apply mk_ghost_well_formed.
         - intros k obj Hlookup.
           rewrite lookup_insert_Some in Hlookup.
           destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup)].
@@ -214,7 +214,7 @@ Proof.
         assert ({[parent_key]} ∪ dom children = dom children) as ->.
         { set_solver. }
         reflexivity. }
-      apply mk.
+      apply mk_ghost_well_formed.
       - intros k obj Hlookup. rewrite lookup_delete_Some in Hlookup.
         eapply Habs_state_well_formed. intuition.
       - set_solver.
