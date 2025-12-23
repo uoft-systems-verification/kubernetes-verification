@@ -1,4 +1,4 @@
-From proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi.
 
 Section proof.
 

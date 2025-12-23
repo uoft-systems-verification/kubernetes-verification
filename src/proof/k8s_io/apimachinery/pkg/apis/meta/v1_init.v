@@ -1,5 +1,5 @@
-From proof Require Export prelude.
-From proof.k8s_io.apimachinery.pkg Require Export types_init.
+From New.proof Require Export prelude.
+From New.proof.k8s_io.apimachinery.pkg Require Export types_init.
 From New.proof Require Export time.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 

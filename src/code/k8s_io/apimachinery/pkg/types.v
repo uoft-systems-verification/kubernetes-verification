@@ -16,7 +16,7 @@ Context `{ffi_syntax}.
 
 Axiom NamespacedName : go_type.
 
-Axiom Separator : val.
+Axiom Separator : Z.
 
 Axiom NodeName : go_type.
 

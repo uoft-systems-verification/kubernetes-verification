@@ -1,4 +1,4 @@
-From proof.k8s_io.component_base Require Export featuregate_init.
+From New.proof.k8s_io.component_base Require Export featuregate_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.features.
 
 

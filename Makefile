@@ -1,31 +1,33 @@
-# Copied from https://github.com/tchajed/sys-verif-fa25-proofs
-SRC_DIRS := 'src' 'perennial'
-ALL_VFILES = $(shell find $(SRC_DIRS) \
-							-not -path "perennial/external/coqutil/etc/coq-scripts/*" \
-							-name "*.v" \
-						)
-PROJ_VFILES := $(shell find 'src' -name "*.v")
+SRC_DIR := 'src'
+PROJ_VFILES := $(shell find $(SRC_DIR) -name "*.v")
+GOOSE_CONFIG_FILES := $(shell find $(SRC_DIR) -name "*.v.toml")
+GO_DIR := '.'
+GO_FILES := $(shell find $(GO_DIR) -name "*.go")
 
 # extract any global arguments for Rocq from _CoqProject
 ROCQPROJECT_ARGS := $(shell sed -E -e '/^\#/d' -e "s/'([^']*)'/\1/g" -e 's/-arg //g' _CoqProject)
 
 # user configurable
 Q:=@
-ROCQ_ARGS := -noglob
+ROCQ_ARGS :=
 ROCQC := rocq compile
+ROCQ_DEP_ARGS := -w +module-not-found
 
 default: vo
+.PHONY: default
 
-vo: $(PROJ_VFILES:.v=.vo) update-submodules
-vos: $(PROJ_VFILES:.v=.vos) update-submodules
-vok: $(PROJ_VFILES:.v=.vok) update-submodules
+vo: $(PROJ_VFILES:.v=.vo)
+vos: $(PROJ_VFILES:.v=.vos)
+vok: $(PROJ_VFILES:.v=.vok)
 
-# use xargs to avoid hitting ARG_MAX
-.rocqdeps.d: $(ALL_VFILES) _CoqProject | update-submodules
+.goose-output: $(GO_FILES) $(GOOSE_CONFIG_FILES) goose.toml
+	@echo "GOOSE"
+	$(Q)go tool perennial-cli goose
+	@touch $@
+
+.rocqdeps.d: $(PROJ_VFILES) _CoqProject
 	@echo "ROCQ dep $@"
-	$(Q)find $(SRC_DIRS) \
-		-not -path "perennial/external/coqutil/etc/coq-scripts/*" \
-		-name "*.v" -print0 | xargs -0 -r rocq dep -vos -f _CoqProject > $@
+	$(Q)rocq dep $(ROCQ_DEP_ARGS) -vos -f _CoqProject $(PROJ_VFILES) > $@
 
 # do not try to build dependencies if cleaning
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
@@ -44,19 +46,15 @@ endif
 	@echo "ROCQ -vok $<"
 	$(Q)$(ROCQC) $(ROCQPROJECT_ARGS) -vok $(ROCQ_ARGS) $< -o $@
 
-.PHONY: update-submodules
-update-submodules:
-	@if [ -d .git/ ] && git submodule status | egrep -q '^[-+]' ; then \
-		echo "INFO: Updating git submodules"; \
-		git submodule update --init --recursive; \
-  fi
-
 clean:
 	@echo "CLEAN vo glob aux"
-	$(Q)find $(SRC_DIRS) \( -name "*.vo" -o -name "*.vo[sk]" \
+	$(Q)find $(SRC_DIR) \( -name "*.vo" -o -name "*.vo[sk]" \
 		-o -name ".*.aux" -o -name ".*.cache" -o -name "*.glob" \) -delete
-	$(Q)rm -f .timing.sqlite3
-	rm -f .rocqdeps.d
+	$(Q)for dir in $(SRC_DIR)/code $(SRC_DIR)/generatedproof; do \
+		if test -d "$$dir"; then find "$$dir" -name "*.v" -delete; fi \
+	done
+	$(Q)rm -f .goose-output
+	$(Q)rm -f .rocqdeps.d
 
 .PHONY: default
 .DELETE_ON_ERROR:

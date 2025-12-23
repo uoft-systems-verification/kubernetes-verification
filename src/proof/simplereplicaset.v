@@ -1,6 +1,6 @@
-From proof Require Import prelude empty_ffi apimodel.
-From proof.big_op Require Import big_sepL.
-From proof.kubernetes_model Require Export simplereplicaset_init.
+From New.proof Require Import prelude empty_ffi.
+From New.proof Require Export apimodel.
+From New.proof.kubernetes_model Require Export simplereplicaset_init.
 
 Section proof.
 Context `{!mapG Σ KKey.t PureKObject.t}.

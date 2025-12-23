@@ -1,5 +1,5 @@
 (* Copied from https://github.com/tchajed/sys-verif-fa25-proofs *)
-From Perennial.goose_lang Require Import lang lifting typing.
+From Perennial.goose_lang Require Import lang lifting.
 
 #[export] Instance empty_ext : ffi_syntax :=
   {| ffi_opcode := Empty_set;
@@ -26,10 +26,10 @@ From Perennial.goose_lang Require Import lang lifting typing.
   {| ffi_step := λ op v, Transitions.runF (λ s, (s, Val v));
     ffi_crash_step := λ _ _, True |}.
 
-#[export] Instance empty_val_ty : val_types :=
+(* #[export] Instance empty_val_ty : val_types :=
   {| ext_tys :=  Empty_set; |}.
 
 #[export] Instance empty_types : ext_types empty_ext :=
   {| val_tys := empty_val_ty;
     get_ext_tys := λ v '(t1, t2), True;
-  |}.
+  |}. *)

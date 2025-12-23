@@ -1,5 +1,5 @@
 Require Export New.generatedproof.k8s_io.klog.v2.
-From proof.github_com.go_logr Require Export logr_init.
+From New.proof.github_com.go_logr Require Export logr_init.
 
 
 Section proof.

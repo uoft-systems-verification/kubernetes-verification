@@ -1,8 +1,7 @@
-From Perennial.algebra Require Export auth_map.
-From New.proof.github_com.goose_lang.goose.model.channel Require Export auth_set.
-Require Import New.proof.sync.
-From proof.k8s_io.api.core Require Export v1_init.
-From proof.k8s_io.api.apps Require Import v1_init.
+From Perennial.algebra Require Export auth_map auth_set.
+Require Export New.proof.sync.
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.api.apps Require Import v1_init.
 
 Module KKind.
   Inductive t :=

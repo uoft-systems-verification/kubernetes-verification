@@ -1,8 +1,8 @@
 (* Copied from https://github.com/tchajed/sys-verif-fa25-proofs *)
 (* slightly extend Perennial's proof setup *)
-From New.proof Require Export proof_prelude.
 From iris_named_props Require Import named_props.
-From proof Require Export option.
+From New.proof Require Export proof_prelude.
+From New.proof Require Export option.
 From Coq Require Import Strings.Ascii.
 
 (* enable ASCII [name :: P] instead of Unicode [name ∷ P] for named

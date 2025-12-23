@@ -1,8 +1,6 @@
-Require Export New.proof.sync.
-
-From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From proof.k8s_io.api.core Require Export v1_init.
-From proof Require Import prelude empty_ffi pure_objects.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof Require Import prelude empty_ffi pure_objects.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.

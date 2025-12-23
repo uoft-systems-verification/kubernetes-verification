@@ -1,10 +1,9 @@
-Require Export New.proof.sync.
-From proof.k8s_io.api.apps Require Export v1_init.
-From proof.k8s_io.api.core Require Export v1_init.
-From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From proof.kubernetes_model Require Export apimodel_init.
+From New.proof.k8s_io.api.apps Require Export v1_init.
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export time.
-From proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)

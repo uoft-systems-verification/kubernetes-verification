@@ -1,8 +1,3 @@
-[submodule "perennial"]
-	path = perennial
-	branch = master
-	url = https://github.com/mit-pdos/perennial
-
 [submodule "kubernetes"]
 	path = kubernetes
 	url = https://github.com/marshtompsxd/kubernetes.git

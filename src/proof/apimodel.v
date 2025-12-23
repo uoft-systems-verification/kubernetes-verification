@@ -1,13 +1,11 @@
-From Perennial.algebra Require Export auth_map.
-From New.proof.github_com.goose_lang.goose.model.channel Require Export auth_set.
+From Perennial.algebra Require Export auth_map auth_set.
 Require Export New.proof.sync.
-
-From proof.kubernetes_model Require Export apimodel_init.
-From proof.k8s_io.apimachinery.pkg.api Require Export meta.
-From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
-From proof Require Import prelude empty_ffi.
-From proof Require Export pure_objects string.
-From proof.big_op Require Import big_sepL big_sepM.
+From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export meta.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
+From New.proof Require Import prelude empty_ffi.
+From New.proof Require Export pure_objects string.
+From New.proof.big_op Require Export big_sepL big_sepM.
 Export apimodel.apimodel.
 
 Section proof.

@@ -1,6 +1,6 @@
-From proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
-From proof.k8s_io.api.core Require Export v1_init.
-From proof Require Import prelude empty_ffi.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof Require Import prelude empty_ffi.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.

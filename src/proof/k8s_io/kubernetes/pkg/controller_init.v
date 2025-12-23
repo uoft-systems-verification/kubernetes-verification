@@ -1,4 +1,4 @@
-From proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 
 

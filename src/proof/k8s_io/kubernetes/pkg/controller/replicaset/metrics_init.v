@@ -1,4 +1,4 @@
-From proof.k8s_io.component_base Require Export metrics_init.
+From New.proof.k8s_io.component_base Require Export metrics_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.replicaset.metrics.
 
 
