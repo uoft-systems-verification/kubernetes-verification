@@ -161,7 +161,13 @@ mk_ghost_well_formed {
     obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
 }.
 
-Definition kubernetes_inv γ_state γ_children γ_fresh_keys l: iProp Σ :=
+Record KubernetesGname := mk_γk {
+  γ_state : gname;
+  γ_children : gname;
+  γ_fresh_keys : gname;
+}.
+
+Definition kubernetes_inv γ l: iProp Σ :=
   ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
     (phys_state: gmap KKey.t interface.t) (used_uid: gmap go_string unit)
     (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
@@ -170,16 +176,16 @@ Definition kubernetes_inv γ_state γ_children γ_fresh_keys l: iProp Σ :=
     "Hstate_rvc_addr" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"] rvc ∗
     "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
     "Hown_used_uid" ∷ used_uid_l ↦$ used_uid ∗
-    "Hown_abs" ∷ map_ctx γ_state 1 abs_state ∗
-    "Hown_children" ∷ map_ctx γ_children 1 children ∗
-    "Hown_fresh_keys" ∷ auth_set_auth γ_fresh_keys fresh_keys ∗
+    "Hown_abs" ∷ map_ctx γ.(γ_state) 1 abs_state ∗
+    "Hown_children" ∷ map_ctx γ.(γ_children) 1 children ∗
+    "Hown_fresh_keys" ∷ auth_set_auth γ.(γ_fresh_keys) fresh_keys ∗
     "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
     "%Hghost_well_formed" ∷ ⌜ ghost_well_formed (dom used_uid) abs_state children fresh_keys ⌝.
 
-Definition is_kubernetes γ_state γ_children γ_fresh_keys l : iProp Σ :=
+Definition is_kubernetes γ l : iProp Σ :=
   ∃ (mu_l: loc),
     "Hmu" ∷ l ↦s[apimodel.State :: "mu"]□ mu_l ∗
-    "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ_state γ_children γ_fresh_keys l).
+    "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ l).
 
 Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t):
   {{{ is_pkg_init apimodel ∗

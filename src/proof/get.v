@@ -17,11 +17,11 @@ Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
-Lemma wp_State__objGet_replicaset l key γ_state γ_children γ_fresh_keys pure_rs:
+Lemma wp_State__objGet_replicaset γ l key pure_rs:
   {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkind_eq" ∷ ⌜ KKey.Kind' key = "ReplicaSet"%go ⌝ ∗
-      "Hown_rs" ∷ key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "Hown_rs" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objGet" #key
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
@@ -29,7 +29,7 @@ Lemma wp_State__objGet_replicaset l key γ_state γ_children γ_fresh_keys pure_
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = key.(KKey.Namespace') ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = key.(KKey.Name') ⌝ ∗
-      key [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk".
@@ -58,16 +58,16 @@ Proof.
   { destruct Hinv_Hghost_well_formed. apply Habs_state_well_formed. exact Hkey_in_abs. }
   destruct Hagree as [Hkind [Hnamespace Hname]].
   iCombineNamed "Hinv_*" as "H".
-  wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ_state γ_children γ_fresh_keys l)
+  wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
   with "[$Hown_Mutex H]").
   { iNamed "H". iFrame. iFrame "#". done. }
   iApply "HΦ". iFrame. done.
 Qed.
 
-Lemma wp_State__ReplicaSetMutGet l namespace name γ_state γ_children γ_fresh_keys pure_rs:
+Lemma wp_State__ReplicaSetMutGet γ l namespace name pure_rs:
   {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
-      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ReplicaSetMutGet" #namespace #name
   {{{ ptr rs, RET (#ptr, #interface.nil);
@@ -75,7 +75,7 @@ Lemma wp_State__ReplicaSetMutGet l namespace name γ_state γ_children γ_fresh_
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
-      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -92,10 +92,10 @@ Proof.
   iApply "HΦ". iFrame. done.
 Qed.
 
-Lemma wp_State__ReplicaSetGet l namespace name γ_state γ_children γ_fresh_keys pure_rs:
+Lemma wp_State__ReplicaSetGet γ l namespace name pure_rs:
   {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ_state γ_children γ_fresh_keys l ∗
-      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ReplicaSetGet" #namespace #name
   {{{ ptr rs dq, RET (#ptr, #interface.nil);
@@ -103,7 +103,7 @@ Lemma wp_State__ReplicaSetGet l namespace name γ_state γ_children γ_fresh_key
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
       ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
-      (mk_replicaset_key namespace name) [[ γ_state ]]↦ (PureKObject.ReplicaSet pure_rs)
+      (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
