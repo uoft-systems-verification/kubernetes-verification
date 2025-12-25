@@ -6,7 +6,6 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export pure_objects string.
 From New.proof.big_op Require Export big_sepL big_sepM.
-Export apimodel.apimodel.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.

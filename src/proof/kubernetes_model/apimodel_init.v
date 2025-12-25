@@ -14,7 +14,6 @@ From New.proof Require Export strconv_init.
 From New.proof Require Export rand_init.
 Require Export New.generatedproof.kubernetes_model.apimodel.
 
-
 Section proof.
 Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
 

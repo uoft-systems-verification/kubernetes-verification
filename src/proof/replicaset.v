@@ -1,15 +1,15 @@
-From New.proof Require Import prelude empty_ffi model.
+From New.proof Require Import prelude empty_ffi.
 From New.proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 
 Section proof.
-Context `{!mapG Σ KKey.t KObject.t}.
+(* Context `{!mapG Σ KKey.t KObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
-Context `{!auth_setG Σ KKey.t}.
+Context `{!auth_setG Σ KKey.t}. *)
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Axiom split_meta_namespace_key : go_string → option (go_string * go_string).
 
-Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s (n: w32):
+(* Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ_state γ_children γ_fresh_keys rs_key rs s (n: w32):
   {{{ is_pkg_init replicaset ∗
       is_kubernetes γ_state γ_children γ_fresh_keys ∗
       ∃ namespace name,
@@ -28,7 +28,7 @@ Lemma wp_syncReplicaSet (rsc: loc) (ctx : context.Context.t) (key: go_string) γ
         ⌜ Z.abs (Z.of_nat (size s') - sint.Z n) <
           Z.abs (Z.of_nat (size s) - sint.Z n) ⌝
   }}}.
-Proof. Admitted.
+Proof. Admitted. *)
 
 Lemma wp_PodKey (pod: loc) (name namespace: go_string) :
   {{{ is_pkg_init replicaset ∗
