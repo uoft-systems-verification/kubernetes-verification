@@ -22,7 +22,8 @@ vok: $(PROJ_VFILES:.v=.vok)
 
 .goose-output: $(GO_FILES) $(GOOSE_CONFIG_FILES) goose.toml
 	@echo "GOOSE"
-	$(Q)go tool perennial-cli goose
+	$(Q)go tool perennial-cli goose --config goose-kubernetes-model.toml
+	$(Q)go tool perennial-cli goose --config goose-kubernetes.toml
 	@touch $@
 
 .rocqdeps.d: $(PROJ_VFILES) _CoqProject
