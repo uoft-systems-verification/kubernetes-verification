@@ -48,6 +48,9 @@ Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
   | None => True%I
   end).
 
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
+
 Definition list_well_formed (os: list t) : Prop :=
   (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
   ∀ i1 o1 i2 o2,

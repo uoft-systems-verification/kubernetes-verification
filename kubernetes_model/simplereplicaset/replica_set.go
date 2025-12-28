@@ -36,40 +36,22 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 	return err
 }
 
-func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string, includeOrphanedPods bool) ([]*v1.Pod, error) {
+func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
 
-	if len(owner.Namespace) == 0 {
-		return nil, fmt.Errorf("no owner namespace provided")
+	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})
+	pods, err := state.ByIndex("Pod", controller.PodControllerIndex, key)
+	if err != nil {
+		return nil, err
 	}
-	if len(owner.Name) == 0 {
-		return nil, fmt.Errorf("no owner name provided")
-	}
-	if len(owner.UID) == 0 {
-		return nil, fmt.Errorf("no owner uid provided")
-	}
-	if len(ownerKind) == 0 {
-		return nil, fmt.Errorf("no owner kind provided")
-	}
-	// Always include the owner key, which identifies Pods that are controlled by the owner
-	keys := []string{controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})}
-	if includeOrphanedPods {
-		// Optionally include the unowned key, which identifies orphaned Pods in the owner's namespace and might be adopted by the owner later
-		keys = append(keys, controller.PodControllerIndexKey(owner.Namespace, nil))
-	}
-	for _, key := range keys {
-		pods, err := state.ByIndex("Pod", controller.PodControllerIndex, key)
-		if err != nil {
-			return nil, err
+	for _, obj := range pods {
+		pod, ok := obj.(*v1.Pod)
+		if !ok {
+			continue
 		}
-		for _, obj := range pods {
-			pod, ok := obj.(*v1.Pod)
-			if !ok {
-				continue
-			}
-			result = append(result, pod)
-		}
+		result = append(result, pod)
 	}
+
 	return result, nil
 }
 
@@ -126,7 +108,7 @@ func syncReplicaSet(namespace, name string) error {
 		return err
 	}
 
-	allRSPods, err := FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet", true)
+	allRSPods, err := FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet")
 	if err != nil {
 		return err
 	}

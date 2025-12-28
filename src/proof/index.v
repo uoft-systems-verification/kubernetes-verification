@@ -25,9 +25,9 @@ Lemma wp_State__ByIndex_pod γ l kind index_name indexed_value
       "%Hdom_eq" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ByIndex" #kind #index_name #indexed_value
-  {{{ objs_l (objs: list interface.t) (pods: list v1.Pod.t) (pure_pods: list PurePod.t), RET (#objs_l, #interface.nil);
-      "Hobjs_l" ∷ objs_l ↦* objs ∗
-      "Hobjs_pods" ∷ ([∗ list] obj;pod ∈ objs;pods, ∃ ptr, ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗ ptr ↦ pod) ∗
+  {{{ objs_l (ptrs: list loc) (pods: list v1.Pod.t) (pure_pods: list PurePod.t), RET (#objs_l, #interface.nil);
+      "Hobjs_l" ∷ objs_l ↦* map (λ ptr, interface.mk (ptrT.id v1.Pod.id) #ptr) ptrs∗
+      "Hptrs_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, ptr ↦ pod) ∗
       "Hpods_purepods" ∷ ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod 1) ∗
       "%Hwell_formed_pure_pods" ∷ ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PurePod.well_formed pure_pod ⌝ ∗
       "%Hlen_pure_pods" ∷ ⌜ length pure_pods = size owned_pod_map ⌝ ∗

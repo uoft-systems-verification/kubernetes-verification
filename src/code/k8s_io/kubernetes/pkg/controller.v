@@ -76,7 +76,7 @@ Axiom SlowStartInitialBatchSize : Z.
 
 Axiom PodNodeNameKeyIndex : go_string.
 
-Axiom PodControllerIndex : go_string.
+Definition PodControllerIndex : go_string := "podController"%go.
 
 Definition UpdateTaintBackoff : go_string := "k8s.io/kubernetes/pkg/controller.UpdateTaintBackoff"%go.
 
