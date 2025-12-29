@@ -1,3 +1,3 @@
-translate = ["PodControllerIndex", "ActivePodsWithRanks"]
+translate = ["PodControllerIndex", "IsPodActive", "ActivePodsWithRanks"]
 
-imports = ["k8s.io/apimachinery/pkg/apis/meta/v1"]
+imports = ["k8s.io/api/core/v1", "k8s.io/apimachinery/pkg/apis/meta/v1"]

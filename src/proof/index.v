@@ -25,10 +25,10 @@ Lemma wp_State__ByIndex_pod γ l kind index_name indexed_value
       "%Hdom_eq" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ByIndex" #kind #index_name #indexed_value
-  {{{ objs_l (ptrs: list loc) (pods: list v1.Pod.t) (pure_pods: list PurePod.t), RET (#objs_l, #interface.nil);
+  {{{ objs_l (ptrs: list loc) (pods: list v1.Pod.t) (pure_pods: list PurePod.t) dq, RET (#objs_l, #interface.nil);
       "Hobjs_l" ∷ objs_l ↦* map (λ ptr, interface.mk (ptrT.id v1.Pod.id) #ptr) ptrs∗
-      "Hptrs_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, ptr ↦ pod) ∗
-      "Hpods_purepods" ∷ ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod 1) ∗
+      "Hptrs_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, ptr ↦{dq} pod) ∗
+      "Hpods_purepods" ∷ ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod dq) ∗
       "%Hwell_formed_pure_pods" ∷ ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PurePod.well_formed pure_pod ⌝ ∗
       "%Hlen_pure_pods" ∷ ⌜ length pure_pods = size owned_pod_map ⌝ ∗
       "%Hkey_set_equal_dom_owned_pods" ∷  ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → ∃ k, owned_pod_map !! k = Some pure_pod ⌝ ∗

@@ -158,9 +158,33 @@ End PurePodSpec.
 Module PurePodStatus.
 Section def.
 Context `{hG: !heapGS Σ}.
-Record t := mk {}.
+Record t := mk {
+  Phase' : go_string;
+  (* ObservedGeneration' : w64;
+  Phase' : PodPhase.t;
+  Conditions' : slice.t;
+  Message' : go_string;
+  Reason' : go_string;
+  NominatedNodeName' : go_string;
+  HostIP' : go_string;
+  HostIPs' : slice.t;
+  PodIP' : go_string;
+  PodIPs' : slice.t;
+  StartTime' : loc;
+  InitContainerStatuses' : slice.t;
+  ContainerStatuses' : slice.t;
+  QOSClass' : PodQOSClass.t;
+  EphemeralContainerStatuses' : slice.t;
+  Resize' : PodResizeStatus.t;
+  ResourceClaimStatuses' : slice.t;
+  ExtendedResourceClaimStatus' : loc; *)
+}.
+
 Axiom well_formed: t → Prop.
-Axiom deepown : v1.PodStatus.t → t → iProp Σ.
+
+Definition deepown (c: v1.PodStatus.t) (v: t): iProp Σ :=
+  "Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝.
+
 End def.
 End PurePodStatus.
 

@@ -1511,15 +1511,15 @@ Definition PodPhase : go_type := stringT.
 #[global] Typeclasses Opaque PodPhase.
 #[global] Opaque PodPhase.
 
-Axiom PodPending : val.
+Definition PodPending : val := #"Pending"%go.
 
-Axiom PodRunning : val.
+Definition PodRunning : val := #"Running"%go.
 
-Axiom PodSucceeded : val.
+Definition PodSucceeded : val := #"Succeeded"%go.
 
-Axiom PodFailed : val.
+Definition PodFailed : val := #"Failed"%go.
 
-Axiom PodUnknown : val.
+Definition PodUnknown : val := #"Unknown"%go.
 
 Axiom PodConditionType : go_type.
 

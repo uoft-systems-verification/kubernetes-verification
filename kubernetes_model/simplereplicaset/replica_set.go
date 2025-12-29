@@ -38,7 +38,6 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 
 func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
-
 	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})
 	pods, err := state.ByIndex("Pod", controller.PodControllerIndex, key)
 	if err != nil {
@@ -51,20 +50,13 @@ func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, e
 		}
 		result = append(result, pod)
 	}
-
 	return result, nil
-}
-
-func IsPodActive(p *v1.Pod) bool {
-	return v1.PodSucceeded != p.Status.Phase &&
-		v1.PodFailed != p.Status.Phase &&
-		p.DeletionTimestamp == nil
 }
 
 func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 	var result []*v1.Pod
 	for _, p := range pods {
-		if IsPodActive(p) {
+		if controller.IsPodActive(p) {
 			result = append(result, p)
 		}
 	}

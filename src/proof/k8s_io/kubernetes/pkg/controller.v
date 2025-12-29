@@ -12,12 +12,63 @@ Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
   }}}
   @! controller.PodControllerIndexKey #namespace #ownerReference
   {{{ index_key, RET #index_key;
-      ⌜ index_key =  namespace ++ "/"%go ++ 
+      ⌜ index_key = namespace ++ "/"%go ++ 
         owner_reference.(v1.OwnerReference.Kind') ++ "/"%go ++ 
         owner_reference.(v1.OwnerReference.Name') ++ "/"%go ++
         owner_reference.(v1.OwnerReference.UID')⌝
   }}}.
 Proof.
 Admitted.
+
+Definition is_pod_active (pod: v1.Pod.t): Prop :=
+  "Succeeded"%go ≠ pod.(v1.Pod.Status').(v1.PodStatus.Phase') ∧
+  "Failed"%go ≠ pod.(v1.Pod.Status').(v1.PodStatus.Phase') ∧
+	pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null.
+
+Lemma wp_IsPodActive p pod dq:
+  {{{ is_pkg_init controller ∗
+      p↦{dq}pod
+  }}}
+  @! controller.IsPodActive #p
+  {{{ RET #(bool_decide (is_pod_active pod));
+      p↦{dq}pod
+  }}}.
+Proof.
+  wp_start as "Hp".
+  wp_alloc p' as "Hp'".
+  unfold v1.PodSucceeded, v1.PodFailed. wp_auto.
+  iDestruct (struct_fields_split with "Hp") as "Hp". iNamed "Hp".
+  wp_auto.
+  destruct (bool_decide ("Succeeded"%go = pod.(v1.Pod.Status').(v1.PodStatus.Phase'))) eqn:HPhase1. all: rewrite HPhase1; wp_auto.
+  - assert (bool_decide (is_pod_active pod) = false) as ->.
+    { apply bool_decide_eq_false_2. unfold is_pod_active.
+      apply bool_decide_eq_true in HPhase1. naive_solver. }
+    shelve.
+  - destruct (bool_decide ("Failed"%go = pod.(v1.Pod.Status').(v1.PodStatus.Phase'))) eqn:HPhase2. all: rewrite HPhase2; wp_auto.
+    + assert (bool_decide (is_pod_active pod) = false) as ->.
+      { apply bool_decide_eq_false_2. unfold is_pod_active.
+        apply bool_decide_eq_true in HPhase2. naive_solver. }
+      shelve.
+    + destruct (bool_decide (pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null)) eqn:Hdt.
+      * assert (bool_decide (is_pod_active pod) = true) as ->.
+        { apply bool_decide_eq_true. unfold is_pod_active.
+          apply bool_decide_eq_false in HPhase1.
+          apply bool_decide_eq_false in HPhase2.
+          apply bool_decide_eq_true in Hdt. naive_solver. }
+        shelve.
+      * assert (bool_decide (is_pod_active pod) = false) as ->.
+        { apply bool_decide_eq_false_2. unfold is_pod_active.
+          apply bool_decide_eq_false in Hdt. naive_solver. }
+        shelve.
+    Unshelve.
+    all: iApply "HΦ";
+        iDestruct (struct_fields_combine (v:=pod) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hp";
+        iFrame.
+Qed.
+
+Definition is_pure_pod_active (pure_pod: PurePod.t): Prop :=
+  "Succeeded"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
+  "Failed"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
+	pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') = None.
 
 End proof.
