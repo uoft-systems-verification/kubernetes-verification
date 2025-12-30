@@ -83,7 +83,7 @@ Record t := mk {
 
 (* TODO: translate https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go to spec *)
 Definition well_formed (m: t) : Prop :=
-  (m.(GenerateName') ≠ ""%go → valid_name m.(GenerateName')) ∧
+  (m.(GenerateName') ≠ ""%go → (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ valid_name prefix) ∨ valid_name m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
   valid_name m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧

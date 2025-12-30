@@ -8,7 +8,6 @@ Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
-(* TODO: generate_name might or might not end with "-", and API server does not add "-" to the name *)
 Lemma wp_State__objCreate_pod_without_name γ l kind namespace obj
   to_create_pod_ptr to_create_pod to_create_pure_pod parent_key owned_parent owned_child_keys:
   {{{ is_pkg_init apimodel ∗
@@ -21,9 +20,8 @@ Lemma wp_State__objCreate_pod_without_name γ l kind namespace obj
       "%Hto_create_pure_pod_namespace_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ∨
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
-      "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
-        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ∧
-        ¬ reserved_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
+      "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ ∃ prefix, to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') = prefix ++ "-"%go ∧
+        valid_name prefix ∧ ¬ reserved_name prefix ⌝ ∗
       "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "%Hwell_formed_uninitialized" ∷ ⌜ PurePod.well_formed_uninitialized to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
@@ -45,6 +43,7 @@ Lemma wp_State__objCreate_pod_without_name γ l kind namespace obj
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk".
+  destruct Hto_create_pure_pod_generate_name_valid as (prefix & Hprefx & Hvalid_prefix & Hnot_reserved_prefix).
   wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply (wp_deepCopy_pod with "[$Hdeepown_l_to_create_pod]"); [done|].
@@ -52,20 +51,20 @@ Proof.
   wp_apply wp_Accessor_pod; [done|]. rewrite bool_decide_true //. wp_auto.
   iDestruct "Hdeepown_l_copied_pod" as "[Hcopied_ptr Hdeepown_copied_pod]".
   iDestruct (struct_fields_split with "Hcopied_ptr") as "H". iNamed "H".
+  iNamedPrefix "Hdeepown_copied_pod" "Hcopied_pod_". iNamedPrefix "Hcopied_pod_Hdeepown_objectmeta" "Hcopied_pod_".
   wp_apply (wp_SetNamespace with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply (wp_GetName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply (wp_GetGenerateName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
-  iAssert (⌜ v1.ObjectMeta.Name' (v1.Pod.ObjectMeta' copied_pod) = ""%go ⌝%I) as "->".
-  { iNamed "Hdeepown_copied_pod". iNamed "Hdeepown_objectmeta". iPureIntro. congruence. }
-  iAssert (⌜ v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) ≠ ""%go ⌝%I) as "%Hgenerate_name_not_empty".
-  { iNamed "Hdeepown_copied_pod". iNamed "Hdeepown_objectmeta". iPureIntro.
-    destruct Hto_create_pure_pod_generate_name_valid as [H _]. congruence. }
-  wp_auto. wp_if_destruct; [done|]. rewrite bool_decide_false //. wp_auto.
-  iAssert (⌜¬ reserved_name copied_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.GenerateName')⌝%I)
-  as "%Hcopied_pod_generate_name_not_reserved".
-  { iNamed "Hdeepown_copied_pod". iNamed "Hdeepown_objectmeta". iPureIntro.
-    rewrite Hdeepown_generatename. intuition. }
-  wp_apply (wp_State__generateNewName with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys]"); [done|].
+  assert (v1.ObjectMeta.Name' (v1.Pod.ObjectMeta' copied_pod) = ""%go) as -> by congruence.
+  wp_auto.
+  assert (v1.ObjectMeta.GenerateName' (v1.Pod.ObjectMeta' copied_pod) ≠ ""%go) as Hgenerate_name_not_empty.
+  { rewrite Hcopied_pod_Hdeepown_generatename. rewrite Hprefx. intro Hcontra. apply app_eq_nil in Hcontra.
+    destruct Hcontra as [_ Hcontra]. discriminate Hcontra. }
+  wp_if_destruct; [done|]. rewrite bool_decide_false //. wp_auto.
+  assert (copied_pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.GenerateName') = prefix ++ "-"%go) as ->.
+  { rewrite Hcopied_pod_Hdeepown_generatename. intuition. }
+  wp_apply (wp_State__generateNewName _ _ _ _ _ (prefix ++ "-"%go) with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys]").
+  { eauto. }
   iIntros (new_name) "(%Hnew_name_valid & %Hnew_key_not_in_phys & %Hnew_name_not_reserved & Hinv_Hstate_m_addr & Hinv_Hown_phys)". wp_auto.
   wp_apply (wp_SetName with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
@@ -85,9 +84,10 @@ Proof.
     <| PureObjectMeta.UID' := generated_uid |>
     <| PureObjectMeta.ResourceVersion' := rv_str |>.
   set created_pure_pod := to_create_pure_pod <| PurePod.ObjectMeta' := created_pure_meta |>.
-  iAssert (PurePod.deepown created_pod created_pure_pod 1) with "[Hdeepown_copied_pod]" as "Hdeepown_created_pod".
-  { iNamed "Hdeepown_copied_pod". iFrame. iSplitR; [iPureIntro; rewrite Hcreated_pod_eq //|].
-    iNamed "Hdeepown_objectmeta". rewrite Hcreated_pod_eq //. iFrame. iPureIntro. done. }
+  iCombineNamed "Hcopied_pod_*" as "H".
+  iAssert (PurePod.deepown created_pod created_pure_pod 1) with "[H]" as "Hdeepown_created_pod".
+  { iNamed "H". iFrame. iSplitR; [iPureIntro; rewrite Hcreated_pod_eq //|].
+    rewrite Hcreated_pod_eq //. iFrame. iPureIntro. done. }
   wp_apply (wp_deepCopy_pod with "[Hcopied_ptr Hdeepown_created_pod]"); [iFrame;done|].
   iIntros (returned_ptr returned_pod) "(Hdeepown_l_returned_pod & Hdeepown_l_created_pod)". wp_auto.
   set new_key := {| KKey.Kind' := "Pod"; KKey.Name' := new_name; KKey.Namespace' := KKey.Namespace' parent_key |}.
@@ -134,7 +134,9 @@ Proof.
     split_and!; [|intuition|intuition].
     unfold PureObjectMeta.well_formed. 
     unfold PureObjectMeta.well_formed_uninitialized in Hwell_formed_uninitialized.
-    intuition. }
+    split_and!.
+    1: intros; left; exists prefix; done.
+    all: intuition. }
   assert (ghost_well_formed (dom used_uid') abs_state' children' fresh_keys ) as Hinv_Hghost_well_formed'.
   {
     assert (dom children' = dom children ∪ {[new_key]}) as Hdom_children_eq.
@@ -319,9 +321,8 @@ Lemma wp_State__PodCreate_without_name γ l namespace to_create_pod_ptr
       "%Hto_create_pure_pod_namespace_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ∨
         to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ⌝ ∗
       "%Hto_create_pure_pod_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ⌝ ∗
-      "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ≠ ""%go ∧
-        valid_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ∧
-        ¬ reserved_name to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') ⌝ ∗
+      "%Hto_create_pure_pod_generate_name_valid" ∷ ⌜ ∃ prefix, to_create_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') = prefix ++ "-"%go ∧
+        valid_name prefix ∧ ¬ reserved_name prefix ⌝ ∗
       "%Hto_create_pure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod to_create_pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "#Hwell_formed_uninitialized" ∷ ⌜ PurePod.well_formed_uninitialized to_create_pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗

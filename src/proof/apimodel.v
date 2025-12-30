@@ -137,9 +137,9 @@ Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t)
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewName (l : loc) (m_ptr : loc) (kind namespace generate_name : go_string) (phys_state : gmap KKey.t interface.t):
+Lemma wp_State__generateNewName (l : loc) (m_ptr : loc) (kind namespace prefix generate_name : go_string) (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
-      ⌜ ¬ reserved_name generate_name ⌝ ∗
+      ⌜ generate_name = prefix ++ "-"%go ∧ ¬ reserved_name prefix ⌝ ∗
       l ↦s[apimodel.State :: "m"] m_ptr ∗
       m_ptr ↦$ phys_state
   }}}
