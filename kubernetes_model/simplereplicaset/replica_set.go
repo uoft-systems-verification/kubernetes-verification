@@ -1,14 +1,12 @@
 package simplereplicaset
 
 import (
-	"fmt"
 	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -28,9 +26,6 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 	pod, err := controller.GetPodFromTemplate(template, controllerObject, controllerRef)
 	if err != nil {
 		return err
-	}
-	if len(labels.Set(pod.Labels)) == 0 {
-		return fmt.Errorf("unable to create pods, no labels")
 	}
 	_, err = state.PodCreate(namespace, pod)
 	return err
@@ -65,14 +60,14 @@ func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 
 func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
-	_, err := controller.KeyFunc(rs)
-	if err != nil {
-		return nil
-	}
 	if diff < 0 {
 		diff *= -1
 		for i := 0; i < diff; i++ {
-			err := CreatePod(rs.Namespace, &rs.Spec.Template, rs, metav1.NewControllerRef(rs, apps.SchemeGroupVersion.WithKind("ReplicaSet")))
+			pod, err := controller.GetPodFromTemplate(&rs.Spec.Template, rs, metav1.NewControllerRef(rs, apps.SchemeGroupVersion.WithKind("ReplicaSet")))
+			if err != nil {
+				return err
+			}
+			_, err = state.PodCreate(rs.Namespace, pod)
 			if err != nil {
 				return err
 			}
