@@ -2,7 +2,7 @@ From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
-From New.proof Require Export time.
+From New.proof Require Export time string.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 
@@ -93,8 +93,13 @@ Definition well_formed (m: t) : Prop :=
   | Some os => PureOwnerReference.list_well_formed os
   end.
 
-Definition well_formed_uninitialized (m: t) : Prop :=
-  (m.(Name') = ""%go → m.(GenerateName') ≠ ""%go) ∧
+Definition well_formed_for_create_without_name (m: t) : Prop :=
+  (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
+  (* The max len of generate_name of the pod must be 58 so that the suffix can fit int:
+    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
+  length m.(GenerateName') ≤ 58 ∧
+  m.(Name') = ""%go ∧
+  (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace')) ∧
   match m.(OwnerReferences') with
   | None => True
   | Some os => PureOwnerReference.list_well_formed os
@@ -203,9 +208,9 @@ Definition well_formed (pod: t) : Prop :=
   PurePodSpec.well_formed pod.(Spec') ∧
   PurePodStatus.well_formed pod.(Status').
 
-Definition well_formed_uninitialized (pod: t) : Prop :=
-  PureObjectMeta.well_formed_uninitialized pod.(ObjectMeta') ∧
-  (* TODO: should we have well_formed_uninitialized for pod spec and pod status? *)
+Definition well_formed_for_create_without_name (pod: t) : Prop :=
+  PureObjectMeta.well_formed_for_create_without_name pod.(ObjectMeta') ∧
+  (* TODO: should we have well_formed_for_create_without_name for pod spec and pod status? *)
   PurePodSpec.well_formed pod.(Spec') ∧
   PurePodStatus.well_formed pod.(Status').
 

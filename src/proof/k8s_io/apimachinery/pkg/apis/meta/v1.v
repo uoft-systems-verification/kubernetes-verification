@@ -131,13 +131,12 @@ Definition new_controller_ref_well_formed controller_ref kind meta: Prop :=
 Lemma wp_NewControllerRef_replicaset owner gvk rs_l rs pure_rs dq:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
       ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
-      PureReplicaSet.deepown_l rs_l rs pure_rs dq ∗
-      ⌜ gvk.(schema.GroupVersionKind.Kind') = "ReplicaSet"%go ⌝
+      PureReplicaSet.deepown_l rs_l rs pure_rs dq
   }}}
     @! v1.NewControllerRef #owner #gvk
   {{{ l controller_ref pure_controller_ref, RET #l;
       PureOwnerReference.deepown_l l controller_ref pure_controller_ref 1 ∗
-      ⌜ new_controller_ref_well_formed pure_controller_ref "ReplicaSet"%go pure_rs.(PureReplicaSet.ObjectMeta') ⌝ ∗
+      ⌜ new_controller_ref_well_formed pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_rs.(PureReplicaSet.ObjectMeta') ⌝ ∗
       PureReplicaSet.deepown_l rs_l rs pure_rs dq
   }}}.
 Proof. Admitted.
