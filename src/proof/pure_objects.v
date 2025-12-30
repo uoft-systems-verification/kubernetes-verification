@@ -205,10 +205,9 @@ Definition well_formed (pod: t) : Prop :=
 
 Definition well_formed_uninitialized (pod: t) : Prop :=
   PureObjectMeta.well_formed_uninitialized pod.(ObjectMeta') ∧
+  (* TODO: should we have well_formed_uninitialized for pod spec and pod status? *)
   PurePodSpec.well_formed pod.(Spec') ∧
   PurePodStatus.well_formed pod.(Status').
-  (* PurePodSpec.well_formed_uninitialized pod.(Spec') ∧ *)
-  (* PurePodStatus.well_formed_uninitialized pod.(Status'). *)
 
 Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -222,6 +221,30 @@ Definition deepown_l l c v dq: iProp Σ :=
 End def.
 End PurePod.
 
+Module PurePodTemplateSpec.
+Section def.
+Context `{hG: !heapGS Σ}.
+Record t := mk {
+  ObjectMeta' : PureObjectMeta.t;
+  Spec' : PurePodSpec.t;
+}.
+
+Axiom meta_well_formed: PureObjectMeta.t → Prop.
+
+Definition well_formed (v: t) : Prop :=
+  meta_well_formed v.(ObjectMeta') ∧
+  PurePodSpec.well_formed v.(Spec').
+
+Definition deepown (c: v1.PodTemplateSpec.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_objectmeta" ∷ PureObjectMeta.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_podspec" ∷ PurePodSpec.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec').
+
+Definition deepown_l l c v dq: iProp Σ :=
+  l ↦{dq} c ∗ deepown c v dq.
+
+End def.
+End PurePodTemplateSpec.
+
 Module PureReplicaSetSpec.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -229,8 +252,11 @@ Record t := mk {
   Replicas' : option w32;
   MinReadySeconds' : w32;
   (* Selector' : loc; *)
-  (* Template' : v1.PodTemplateSpec.t; *)
+  Template' : PurePodTemplateSpec.t;
 }.
+
+Definition well_formed (v: t) : Prop :=
+  ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -238,7 +264,8 @@ Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
   | None => True%I
   end) ∗
-  "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝.
+  "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
+  "Hdeepown_template" ∷ PurePodTemplateSpec.deepown c.(v1.ReplicaSetSpec.Template') v.(Template') dq.
 
 Definition deepown_l l c v dq: iProp Σ :=
   l ↦{dq} c ∗ deepown c v dq.
@@ -250,6 +277,7 @@ Module PureReplicaSetStatus.
 Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
+Axiom well_formed : t → Prop.
 Axiom deepown : v1.ReplicaSetStatus.t → t → iProp Σ.
 End def.
 End PureReplicaSetStatus.
@@ -266,7 +294,8 @@ Record t := mk {
 
 Definition well_formed (rs: t) : Prop :=
   PureObjectMeta.well_formed rs.(ObjectMeta') ∧
-  (∃ (v: w32), rs.(Spec').(PureReplicaSetSpec.Replicas') = Some v ∧ 0 ≤ sint.Z v).
+  PureReplicaSetSpec.well_formed rs.(Spec') ∧
+  PureReplicaSetStatus.well_formed rs.(Status').
 
 Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -329,3 +358,76 @@ End PureKObject.
 
 Global Existing Instance KKey.eq_dec.
 Global Existing Instance KKey.countable.
+
+Definition os_has_controller_parent_of (os: list PureOwnerReference.t) kind name uid : Prop :=
+  ∃ i o, os !! i = Some o ∧
+    o.(PureOwnerReference.Controller') = Some true ∧
+    o.(PureOwnerReference.Kind') = kind ∧
+    o.(PureOwnerReference.Name') = name ∧
+    o.(PureOwnerReference.UID') = uid.
+
+Definition obj_has_controller_parent_of child kind name uid: Prop :=
+  ∃ os, (PureKObject.metadata child).(PureObjectMeta.OwnerReferences') = Some os ∧
+    os_has_controller_parent_of os kind name uid.
+
+Lemma well_formed_owner_references_has_at_most_one_controller_parent os:
+  PureOwnerReference.list_well_formed os →
+    ∀ kind1 name1 uid1 kind2 name2 uid2,
+      os_has_controller_parent_of os kind1 name1 uid1 →
+        os_has_controller_parent_of os kind2 name2 uid2 →
+          kind1 = kind2 ∧ name1 = name2 ∧ uid1 = uid2.
+Proof.
+  intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
+  unfold os_has_controller_parent_of in H1, H2.
+  destruct H1 as (i1 & o1 & Hlookup1 & Hctrl1 & Hkind1 & Hname1 & Huid1).
+  destruct H2 as (i2 & o2 & Hlookup2 & Hctrl2 & Hkind2 & Hname2 & Huid2).
+  unfold PureOwnerReference.list_well_formed in Hwf.
+  assert (i1 = i2) as Heq.
+  { apply (Hwf i1 o1 i2 o2).
+    split; [|split; [|split]]; assumption. }
+  subst i2.
+  rewrite Hlookup1 in Hlookup2.
+  injection Hlookup2 as ->.
+  split.
+  - rewrite <- Hkind1. exact Hkind2.
+  - split.
+    + rewrite <- Hname1. exact Hname2.
+    + rewrite <- Huid1. exact Huid2.
+Qed.
+
+Lemma well_formed_obj_has_at_most_one_controller_parent obj:
+  PureKObject.well_formed obj →
+    ∀ kind1 name1 uid1 kind2 name2 uid2,
+      obj_has_controller_parent_of obj kind1 name1 uid1 →
+        obj_has_controller_parent_of obj kind2 name2 uid2 →
+          kind1 = kind2 ∧ name1 = name2 ∧ uid1 = uid2.
+Proof.
+  intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
+  unfold obj_has_controller_parent_of in H1, H2.
+  destruct H1 as (os1 & Hownerref1 & Hhas_ctrl1).
+  destruct H2 as (os2 & Hownerref2 & Hhas_ctrl2).
+  rewrite Hownerref1 in Hownerref2.
+  injection Hownerref2 as Hos_eq.
+  subst os2.
+  destruct obj as [pod | rs].
+  - (* Pod case *)
+    unfold PureKObject.well_formed in Hwf.
+    unfold PurePod.well_formed in Hwf.
+    destruct Hwf as (Hwf_meta & _).
+    unfold PureObjectMeta.well_formed in Hwf_meta.
+    destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
+    simpl in Hownerref1.
+    destruct (PureObjectMeta.OwnerReferences' (PurePod.ObjectMeta' pod)) as [os|]; [|discriminate].
+    injection Hownerref1 as <-.
+    apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+  - (* ReplicaSet case *)
+    unfold PureKObject.well_formed in Hwf.
+    unfold PureReplicaSet.well_formed in Hwf.
+    destruct Hwf as (Hwf_meta & _).
+    unfold PureObjectMeta.well_formed in Hwf_meta.
+    destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
+    simpl in Hownerref1.
+    destruct (PureObjectMeta.OwnerReferences' (PureReplicaSet.ObjectMeta' rs)) as [os|]; [|discriminate].
+    injection Hownerref1 as <-.
+    apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+Qed.

@@ -1,5 +1,9 @@
+From New.proof Require Export fmt.
 From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export runtime_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 
 

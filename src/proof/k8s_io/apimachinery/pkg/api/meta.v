@@ -7,7 +7,7 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 (* FIXME: this spec is wrong because o's value should be a Pod pointer. will fix it after Goose has better support for
   interface method dispatch *)
-Lemma wp_Accessor i ptr:
+Lemma wp_Accessor_pod i ptr:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.meta ∗
       ⌜i = interface.mk (ptrT.id v1.Pod.id) (# ptr)⌝
   }}}

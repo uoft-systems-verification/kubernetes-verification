@@ -53,7 +53,7 @@ Proof.
   injection Habs_v_is_pod as <-.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys. wp_auto.
-  wp_apply wp_Accessor; [done|].
+  wp_apply wp_Accessor_pod; [done|].
   assert ((bool_decide (interface.nil = interface.nil)) = true) as nil_is_nil.
   { rewrite bool_decide_true //. }
   rewrite nil_is_nil. wp_auto.

@@ -38,7 +38,13 @@ Axiom GroupVersionResource : go_type.
 
 Axiom GroupKind : go_type.
 
-Axiom GroupVersionKind : go_type.
+Definition GroupVersionKind : go_type := structT [
+  "Group" :: stringT;
+  "Version" :: stringT;
+  "Kind" :: stringT
+].
+#[global] Typeclasses Opaque GroupVersionKind.
+#[global] Opaque GroupVersionKind.
 
 Axiom GroupVersion : go_type.
 

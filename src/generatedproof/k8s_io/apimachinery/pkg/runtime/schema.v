@@ -63,18 +63,83 @@ Admitted.
 Module GroupVersionKind.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  Group' : go_string;
+  Version' : go_string;
+  Kind' : go_string;
+}.
 End def.
 End GroupVersionKind.
 
-Global Instance bounded_size_GroupVersionKind : BoundedTypeSize schema.GroupVersionKind.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent schema.GroupVersionKind.
+#[local] Typeclasses Transparent schema.GroupVersionKind.
 
-Global Instance into_val_GroupVersionKind `{ffi_syntax} : IntoVal GroupVersionKind.t.
-Admitted.
+Global Instance GroupVersionKind_wf : struct.Wf schema.GroupVersionKind.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_GroupVersionKind `{ffi_syntax} : IntoValTyped GroupVersionKind.t schema.GroupVersionKind.
-Admitted.
+Global Instance settable_GroupVersionKind : Settable GroupVersionKind.t :=
+  settable! GroupVersionKind.mk < GroupVersionKind.Group'; GroupVersionKind.Version'; GroupVersionKind.Kind' >.
+Global Instance into_val_GroupVersionKind : IntoVal GroupVersionKind.t :=
+  {| to_val_def v :=
+    struct.val_aux schema.GroupVersionKind [
+    "Group" ::= #(GroupVersionKind.Group' v);
+    "Version" ::= #(GroupVersionKind.Version' v);
+    "Kind" ::= #(GroupVersionKind.Kind' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_GroupVersionKind : IntoValTyped GroupVersionKind.t schema.GroupVersionKind :=
+{|
+  default_val := GroupVersionKind.mk (default_val _) (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_GroupVersionKind_Group : IntoValStructField "Group" schema.GroupVersionKind GroupVersionKind.Group'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_GroupVersionKind_Version : IntoValStructField "Version" schema.GroupVersionKind GroupVersionKind.Version'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_GroupVersionKind_Kind : IntoValStructField "Kind" schema.GroupVersionKind GroupVersionKind.Kind'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_GroupVersionKind Group' Version' Kind':
+  PureWp True
+    (struct.make #schema.GroupVersionKind (alist_val [
+      "Group" ::= #Group';
+      "Version" ::= #Version';
+      "Kind" ::= #Kind'
+    ]))%struct
+    #(GroupVersionKind.mk Group' Version' Kind').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance GroupVersionKind_struct_fields_split dq l (v : GroupVersionKind.t) :
+  StructFieldsSplit dq l v (
+    "HGroup" ∷ l ↦s[schema.GroupVersionKind :: "Group"]{dq} v.(GroupVersionKind.Group') ∗
+    "HVersion" ∷ l ↦s[schema.GroupVersionKind :: "Version"]{dq} v.(GroupVersionKind.Version') ∗
+    "HKind" ∷ l ↦s[schema.GroupVersionKind :: "Kind"]{dq} v.(GroupVersionKind.Kind')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (GroupVersionKind.Group' v)) (schema.GroupVersionKind) "Group"%go.
+  simpl_one_flatten_struct (# (GroupVersionKind.Version' v)) (schema.GroupVersionKind) "Version"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type schema.GroupVersion *)
 Module GroupVersion.

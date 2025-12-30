@@ -66,6 +66,37 @@ Proof.
         iFrame.
 Qed.
 
+Definition generated_pod_well_formed pure_pod kind pure_meta : Prop :=
+  pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = ""%go ∧
+  pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.Name') = ""%go ∧
+  pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.GenerateName') = pure_meta.(PureObjectMeta.Name') ++ "-"%go ∧
+  obj_has_controller_parent_of (PureKObject.Pod pure_pod) kind pure_meta.(PureObjectMeta.Name') pure_meta.(PureObjectMeta.UID').
+
+Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
+  dq template pure_template rs_l rs pure_meta controller_ref pure_controller_ref:
+  {{{ is_pkg_init controller ∗
+      PurePodTemplateSpec.deepown_l template_l template pure_template dq ∗
+      ⌜ PurePodTemplateSpec.well_formed pure_template ⌝ ∗
+      ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
+      rs_l ↦{dq} rs ∗
+      PureObjectMeta.deepown rs.(v1.ReplicaSet.ObjectMeta') pure_meta dq ∗
+      ⌜ PureObjectMeta.well_formed pure_meta ⌝ ∗
+      (* The name must be shorter than 58 so that the max len of generate_name of the pod will be 58:
+      https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
+      ⌜ length pure_meta.(PureObjectMeta.Name') < 58 ⌝ ∗
+      PureOwnerReference.deepown_l controller_ref_l controller_ref pure_controller_ref dq
+  }}}
+  @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
+  {{{ pod_l pod pure_pod, RET (#pod_l, #interface.nil);
+      PurePod.deepown_l pod_l pod pure_pod 1 ∗
+      ⌜ generated_pod_well_formed pure_pod "ReplicaSet"%go pure_meta ⌝ ∗
+      ⌜ PurePod.well_formed_uninitialized pure_pod ⌝ ∗
+      PurePodTemplateSpec.deepown_l template_l template pure_template dq ∗
+      rs_l ↦{dq} rs ∗
+      PureObjectMeta.deepown rs.(v1.ReplicaSet.ObjectMeta') pure_meta dq
+  }}}.
+Proof. Admitted.
+
 Definition is_pure_pod_active (pure_pod: PurePod.t): Prop :=
   "Succeeded"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
   "Failed"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧

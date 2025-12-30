@@ -1,5 +1,4 @@
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof Require Import prelude empty_ffi pure_objects.
 
 Section proof.
@@ -121,5 +120,26 @@ Lemma wp_SetUID (ptr: loc) (meta: v1.ObjectMeta.t) (uid: go_string):
 Proof.
   wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame.
 Qed.
+
+Definition new_controller_ref_well_formed controller_ref kind meta: Prop :=
+  controller_ref.(PureOwnerReference.Kind') = kind ∧
+  controller_ref.(PureOwnerReference.Name') = meta.(PureObjectMeta.Name') ∧
+  controller_ref.(PureOwnerReference.UID') = meta.(PureObjectMeta.UID') ∧
+  controller_ref.(PureOwnerReference.BlockOwnerDeletion') = Some true ∧
+  controller_ref.(PureOwnerReference.Controller') = Some true.
+
+Lemma wp_NewControllerRef_replicaset owner gvk rs_l rs pure_rs dq:
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+      ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
+      PureReplicaSet.deepown_l rs_l rs pure_rs dq ∗
+      ⌜ gvk.(schema.GroupVersionKind.Kind') = "ReplicaSet"%go ⌝
+  }}}
+    @! v1.NewControllerRef #owner #gvk
+  {{{ l controller_ref pure_controller_ref, RET #l;
+      PureOwnerReference.deepown_l l controller_ref pure_controller_ref 1 ∗
+      ⌜ new_controller_ref_well_formed pure_controller_ref "ReplicaSet"%go pure_rs.(PureReplicaSet.ObjectMeta') ⌝ ∗
+      PureReplicaSet.deepown_l rs_l rs pure_rs dq
+  }}}.
+Proof. Admitted.
 
 End proof.

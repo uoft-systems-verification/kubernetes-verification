@@ -38,6 +38,12 @@ translate = [
     "ObjectMeta.SetOwnerReferences",
     "ObjectMeta.GetManagedFields",
     "ObjectMeta.SetManagedFields",
+    "NewControllerRef",
 ]
 
-imports = ["time", "k8s.io/apimachinery/pkg/types"]
+imports = [
+    "time",
+    "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/utils/ptr",
+]

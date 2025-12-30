@@ -8,6 +8,7 @@ Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
+(* TODO: generate_name might or might not end with "-", and API server does not add "-" to the name *)
 Lemma wp_State__objCreate_pod_without_name γ l kind namespace obj
   to_create_pod_ptr to_create_pod to_create_pure_pod parent_key owned_parent owned_child_keys:
   {{{ is_pkg_init apimodel ∗
@@ -48,7 +49,7 @@ Proof.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply (wp_deepCopy_pod with "[$Hdeepown_l_to_create_pod]"); [done|].
   iIntros (copied_ptr copied_pod) "(Hdeepown_l_copied_pod & Hdeepown_l_to_create_pod)". wp_auto.
-  wp_apply wp_Accessor; [done|]. rewrite bool_decide_true //. wp_auto.
+  wp_apply wp_Accessor_pod; [done|]. rewrite bool_decide_true //. wp_auto.
   iDestruct "Hdeepown_l_copied_pod" as "[Hcopied_ptr Hdeepown_copied_pod]".
   iDestruct (struct_fields_split with "Hcopied_ptr") as "H". iNamed "H".
   wp_apply (wp_SetNamespace with "[$HObjectMeta]"). iIntros "HObjectMeta". wp_auto.
