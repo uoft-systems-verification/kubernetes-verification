@@ -46,9 +46,30 @@ Definition GroupVersionKind : go_type := structT [
 #[global] Typeclasses Opaque GroupVersionKind.
 #[global] Opaque GroupVersionKind.
 
-Axiom GroupVersion : go_type.
+Definition GroupVersion : go_type := structT [
+  "Group" :: stringT;
+  "Version" :: stringT
+].
+#[global] Typeclasses Opaque GroupVersion.
+#[global] Opaque GroupVersion.
 
 Definition ParseGroupVersion : go_string := "k8s.io/apimachinery/pkg/runtime/schema.ParseGroupVersion"%go.
+
+(* WithKind creates a GroupVersionKind based on the method receiver's GroupVersion and the passed Kind.
+
+   go: group_version.go:230:24 *)
+Definition GroupVersion__WithKindⁱᵐᵖˡ : val :=
+  λ: "gv" "kind",
+    exception_do (let: "gv" := (mem.alloc "gv") in
+    let: "kind" := (mem.alloc "kind") in
+    return: (let: "$Group" := (![#stringT] (struct.field_ref #GroupVersion #"Group"%go "gv")) in
+     let: "$Version" := (![#stringT] (struct.field_ref #GroupVersion #"Version"%go "gv")) in
+     let: "$Kind" := (![#stringT] "kind") in
+     struct.make #GroupVersionKind [{
+       "Group" ::= "$Group";
+       "Version" ::= "$Version";
+       "Kind" ::= "$Kind"
+     }])).
 
 Axiom GroupVersions : go_type.
 
@@ -120,8 +141,6 @@ Axiom GroupVersion__KindForGroupVersionKindsⁱᵐᵖˡ : val.
 
 Axiom GroupVersion__Stringⁱᵐᵖˡ : val.
 
-Axiom GroupVersion__WithKindⁱᵐᵖˡ : val.
-
 Axiom GroupVersion__WithResourceⁱᵐᵖˡ : val.
 
 Axiom GroupVersions__Identifierⁱᵐᵖˡ : val.
@@ -132,7 +151,9 @@ Axiom emptyObjectKind__GroupVersionKindⁱᵐᵖˡ : val.
 
 Axiom emptyObjectKind__SetGroupVersionKindⁱᵐᵖˡ : val.
 
-Definition msets' : list (go_string * (list (go_string * val))) := [(GroupResource.id, [("Empty"%go, GroupResource__Emptyⁱᵐᵖˡ); ("String"%go, GroupResource__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupResource__WithVersionⁱᵐᵖˡ)]); (ptrT.id GroupResource.id, [("Empty"%go, GroupResource__Emptyⁱᵐᵖˡ); ("String"%go, GroupResource__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupResource__WithVersionⁱᵐᵖˡ)]); (GroupVersionResource.id, [("Empty"%go, GroupVersionResource__Emptyⁱᵐᵖˡ); ("GroupResource"%go, GroupVersionResource__GroupResourceⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionResource__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionResource__Stringⁱᵐᵖˡ)]); (ptrT.id GroupVersionResource.id, [("Empty"%go, GroupVersionResource__Emptyⁱᵐᵖˡ); ("GroupResource"%go, GroupVersionResource__GroupResourceⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionResource__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionResource__Stringⁱᵐᵖˡ)]); (GroupKind.id, [("Empty"%go, GroupKind__Emptyⁱᵐᵖˡ); ("String"%go, GroupKind__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupKind__WithVersionⁱᵐᵖˡ)]); (ptrT.id GroupKind.id, [("Empty"%go, GroupKind__Emptyⁱᵐᵖˡ); ("String"%go, GroupKind__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupKind__WithVersionⁱᵐᵖˡ)]); (GroupVersionKind.id, [("Empty"%go, GroupVersionKind__Emptyⁱᵐᵖˡ); ("GroupKind"%go, GroupVersionKind__GroupKindⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionKind__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionKind__Stringⁱᵐᵖˡ); ("ToAPIVersionAndKind"%go, GroupVersionKind__ToAPIVersionAndKindⁱᵐᵖˡ)]); (ptrT.id GroupVersionKind.id, [("Empty"%go, GroupVersionKind__Emptyⁱᵐᵖˡ); ("GroupKind"%go, GroupVersionKind__GroupKindⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionKind__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionKind__Stringⁱᵐᵖˡ); ("ToAPIVersionAndKind"%go, GroupVersionKind__ToAPIVersionAndKindⁱᵐᵖˡ)]); (GroupVersion.id, [("Empty"%go, GroupVersion__Emptyⁱᵐᵖˡ); ("Identifier"%go, GroupVersion__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersion__KindForGroupVersionKindsⁱᵐᵖˡ); ("String"%go, GroupVersion__Stringⁱᵐᵖˡ); ("WithKind"%go, GroupVersion__WithKindⁱᵐᵖˡ); ("WithResource"%go, GroupVersion__WithResourceⁱᵐᵖˡ)]); (ptrT.id GroupVersion.id, [("Empty"%go, GroupVersion__Emptyⁱᵐᵖˡ); ("Identifier"%go, GroupVersion__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersion__KindForGroupVersionKindsⁱᵐᵖˡ); ("String"%go, GroupVersion__Stringⁱᵐᵖˡ); ("WithKind"%go, GroupVersion__WithKindⁱᵐᵖˡ); ("WithResource"%go, GroupVersion__WithResourceⁱᵐᵖˡ)]); (GroupVersions.id, [("Identifier"%go, GroupVersions__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersions__KindForGroupVersionKindsⁱᵐᵖˡ)]); (ptrT.id GroupVersions.id, [("Identifier"%go, GroupVersions__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersions__KindForGroupVersionKindsⁱᵐᵖˡ)]); (emptyObjectKind.id, [("GroupVersionKind"%go, emptyObjectKind__GroupVersionKindⁱᵐᵖˡ); ("SetGroupVersionKind"%go, emptyObjectKind__SetGroupVersionKindⁱᵐᵖˡ)]); (ptrT.id emptyObjectKind.id, [("GroupVersionKind"%go, emptyObjectKind__GroupVersionKindⁱᵐᵖˡ); ("SetGroupVersionKind"%go, emptyObjectKind__SetGroupVersionKindⁱᵐᵖˡ)])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(GroupResource.id, [("Empty"%go, GroupResource__Emptyⁱᵐᵖˡ); ("String"%go, GroupResource__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupResource__WithVersionⁱᵐᵖˡ)]); (ptrT.id GroupResource.id, [("Empty"%go, GroupResource__Emptyⁱᵐᵖˡ); ("String"%go, GroupResource__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupResource__WithVersionⁱᵐᵖˡ)]); (GroupVersionResource.id, [("Empty"%go, GroupVersionResource__Emptyⁱᵐᵖˡ); ("GroupResource"%go, GroupVersionResource__GroupResourceⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionResource__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionResource__Stringⁱᵐᵖˡ)]); (ptrT.id GroupVersionResource.id, [("Empty"%go, GroupVersionResource__Emptyⁱᵐᵖˡ); ("GroupResource"%go, GroupVersionResource__GroupResourceⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionResource__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionResource__Stringⁱᵐᵖˡ)]); (GroupKind.id, [("Empty"%go, GroupKind__Emptyⁱᵐᵖˡ); ("String"%go, GroupKind__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupKind__WithVersionⁱᵐᵖˡ)]); (ptrT.id GroupKind.id, [("Empty"%go, GroupKind__Emptyⁱᵐᵖˡ); ("String"%go, GroupKind__Stringⁱᵐᵖˡ); ("WithVersion"%go, GroupKind__WithVersionⁱᵐᵖˡ)]); (GroupVersionKind.id, [("Empty"%go, GroupVersionKind__Emptyⁱᵐᵖˡ); ("GroupKind"%go, GroupVersionKind__GroupKindⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionKind__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionKind__Stringⁱᵐᵖˡ); ("ToAPIVersionAndKind"%go, GroupVersionKind__ToAPIVersionAndKindⁱᵐᵖˡ)]); (ptrT.id GroupVersionKind.id, [("Empty"%go, GroupVersionKind__Emptyⁱᵐᵖˡ); ("GroupKind"%go, GroupVersionKind__GroupKindⁱᵐᵖˡ); ("GroupVersion"%go, GroupVersionKind__GroupVersionⁱᵐᵖˡ); ("String"%go, GroupVersionKind__Stringⁱᵐᵖˡ); ("ToAPIVersionAndKind"%go, GroupVersionKind__ToAPIVersionAndKindⁱᵐᵖˡ)]); (GroupVersion.id, [("Empty"%go, GroupVersion__Emptyⁱᵐᵖˡ); ("Identifier"%go, GroupVersion__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersion__KindForGroupVersionKindsⁱᵐᵖˡ); ("String"%go, GroupVersion__Stringⁱᵐᵖˡ); ("WithKind"%go, GroupVersion__WithKindⁱᵐᵖˡ); ("WithResource"%go, GroupVersion__WithResourceⁱᵐᵖˡ)]); (ptrT.id GroupVersion.id, [("Empty"%go, GroupVersion__Emptyⁱᵐᵖˡ); ("Identifier"%go, GroupVersion__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersion__KindForGroupVersionKindsⁱᵐᵖˡ); ("String"%go, GroupVersion__Stringⁱᵐᵖˡ); ("WithKind"%go, (λ: "$r",
+                 method_call #GroupVersion.id #"WithKind"%go (![#GroupVersion] "$r")
+                 )%V); ("WithResource"%go, GroupVersion__WithResourceⁱᵐᵖˡ)]); (GroupVersions.id, [("Identifier"%go, GroupVersions__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersions__KindForGroupVersionKindsⁱᵐᵖˡ)]); (ptrT.id GroupVersions.id, [("Identifier"%go, GroupVersions__Identifierⁱᵐᵖˡ); ("KindForGroupVersionKinds"%go, GroupVersions__KindForGroupVersionKindsⁱᵐᵖˡ)]); (emptyObjectKind.id, [("GroupVersionKind"%go, emptyObjectKind__GroupVersionKindⁱᵐᵖˡ); ("SetGroupVersionKind"%go, emptyObjectKind__SetGroupVersionKindⁱᵐᵖˡ)]); (ptrT.id emptyObjectKind.id, [("GroupVersionKind"%go, emptyObjectKind__GroupVersionKindⁱᵐᵖˡ); ("SetGroupVersionKind"%go, emptyObjectKind__SetGroupVersionKindⁱᵐᵖˡ)])].
 
 #[global] Instance info' : PkgInfo schema.schema :=
   {|

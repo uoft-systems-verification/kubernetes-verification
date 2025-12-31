@@ -145,18 +145,75 @@ End instances.
 Module GroupVersion.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  Group' : go_string;
+  Version' : go_string;
+}.
 End def.
 End GroupVersion.
 
-Global Instance bounded_size_GroupVersion : BoundedTypeSize schema.GroupVersion.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent schema.GroupVersion.
+#[local] Typeclasses Transparent schema.GroupVersion.
 
-Global Instance into_val_GroupVersion `{ffi_syntax} : IntoVal GroupVersion.t.
-Admitted.
+Global Instance GroupVersion_wf : struct.Wf schema.GroupVersion.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_GroupVersion `{ffi_syntax} : IntoValTyped GroupVersion.t schema.GroupVersion.
-Admitted.
+Global Instance settable_GroupVersion : Settable GroupVersion.t :=
+  settable! GroupVersion.mk < GroupVersion.Group'; GroupVersion.Version' >.
+Global Instance into_val_GroupVersion : IntoVal GroupVersion.t :=
+  {| to_val_def v :=
+    struct.val_aux schema.GroupVersion [
+    "Group" ::= #(GroupVersion.Group' v);
+    "Version" ::= #(GroupVersion.Version' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_GroupVersion : IntoValTyped GroupVersion.t schema.GroupVersion :=
+{|
+  default_val := GroupVersion.mk (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_GroupVersion_Group : IntoValStructField "Group" schema.GroupVersion GroupVersion.Group'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_GroupVersion_Version : IntoValStructField "Version" schema.GroupVersion GroupVersion.Version'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_GroupVersion Group' Version':
+  PureWp True
+    (struct.make #schema.GroupVersion (alist_val [
+      "Group" ::= #Group';
+      "Version" ::= #Version'
+    ]))%struct
+    #(GroupVersion.mk Group' Version').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance GroupVersion_struct_fields_split dq l (v : GroupVersion.t) :
+  StructFieldsSplit dq l v (
+    "HGroup" ∷ l ↦s[schema.GroupVersion :: "Group"]{dq} v.(GroupVersion.Group') ∗
+    "HVersion" ∷ l ↦s[schema.GroupVersion :: "Version"]{dq} v.(GroupVersion.Version')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (GroupVersion.Group' v)) (schema.GroupVersion) "Group"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type schema.GroupVersions *)
 Module GroupVersions.
@@ -230,6 +287,14 @@ Global Program Instance is_pkg_defined_schema : IsPkgDefined schema :=
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
+
+Global Instance wp_method_call_GroupVersion_WithKind :
+  WpMethodCall schema.GroupVersion.id "WithKind" _ (is_pkg_defined schema) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_GroupVersion'ptr_WithKind :
+  WpMethodCall (ptrT.id schema.GroupVersion.id) "WithKind" _ (is_pkg_defined schema) :=
+  ltac:(solve_wp_method_call).
 
 End names.
 End schema.

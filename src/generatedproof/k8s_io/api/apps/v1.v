@@ -2,6 +2,7 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.golang.theory.
 
 Require Export New.code.k8s_io.api.apps.v1.
@@ -1003,7 +1004,8 @@ Global Instance is_pkg_defined_pure_v1 : IsPkgDefinedPure v1 :=
     is_pkg_defined_pure_def go_ctx :=
       is_pkg_defined_pure_single v1 ∧
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1;
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema;
   |}.
 
 #[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
@@ -1012,7 +1014,8 @@ Global Program Instance is_pkg_defined_v1 : IsPkgDefined v1 :=
     is_pkg_defined_def go_ctx :=
       (is_pkg_defined_single v1 ∗
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1)%I
+       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+       is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
