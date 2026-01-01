@@ -108,9 +108,9 @@ Proof.
         assert ((PureKObject.metadata (PureKObject.Pod updated_pure_pod)).(PureObjectMeta.UID') = (PureKObject.metadata (PureKObject.Pod pure_pod)).(PureObjectMeta.UID'))
         as updated_pure_pod_uid_eq.
         { simpl. subst updated_pure_pod. simpl. reflexivity. }
-        assert (PureKObject.agree_with_key (PureKObject.Pod updated_pure_pod) key ∧ PureKObject.well_formed (PureKObject.Pod updated_pure_pod))
+        assert (PureKObject.agree_with_key key (PureKObject.Pod updated_pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod updated_pure_pod))
           as [Hagree Hwell_formed].
-        { assert (PureKObject.agree_with_key (PureKObject.Pod pure_pod) key ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
+        { assert (PureKObject.agree_with_key key (PureKObject.Pod pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
           as [Hagree Hwell_formed].
           { apply Habs_state_well_formed. done. } done. }
         apply mk_ghost_well_formed.

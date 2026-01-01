@@ -54,6 +54,7 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
       "Hghostown_children" ∷ rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map ∗
       "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_keys, key [[ γ.(γ_children) ]]↦ s) ∗
       "%Hdom_eq" ∷ ⌜ dom pure_pod_map = dom grand_child_keys ⌝ ∗
+      "%Hagree_with_keys" ∷ ⌜ ∀ key pod, pure_pod_map !! key = Some pod → PureKObject.agree_with_key key (PureKObject.Pod pod) ⌝ ∗
       "%Hactive_map_eq" ∷ ⌜ active_pure_pod_map = filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map ⌝ ∗
       "%Hlen_size" ∷ ⌜ size active_pure_pod_map = sint.nat (slice.len_f pod_l_sl) ⌝ ∗
       "%Hin" ∷ ⌜ ∀ pure_pod, pure_pod ∈ active_pure_pods → ∃ k, active_pure_pod_map !! k = Some pure_pod ⌝ ∗
@@ -181,7 +182,7 @@ Proof.
       assert (ptrs !! sint.nat i = Some this_ptr) as Hlookup_ptrs.
       { eapply lookup_take_Some in Hthis_ptr_lookup. intuition. }
       assert (∃ active_pod, active_pods !! sint.nat i = Some active_pod) as [active_pod Hlookup_active_pods].
-      { admit. }
+      { apply lookup_lt_is_Some_2. rewrite <-Hlen. word. }
       iDestruct (big_sepL2_lookup with "Hptrs") as "Hthis_ptr".
       { apply Hlookup_ptrs. }
       { apply Hlookup_active_pods. }
@@ -297,6 +298,7 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       PureObjectMeta.deepown_l owner metadata pure_metadata dq ∗
       parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      ⌜ ∀ key pod, owned_pod_map !! key = Some pod → PureKObject.agree_with_key key (PureKObject.Pod pod) ⌝ ∗
       parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
   }}}.
 Proof.

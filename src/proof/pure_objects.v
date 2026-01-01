@@ -355,10 +355,10 @@ Definition kind kobj : go_string :=
   | ReplicaSet _ => "ReplicaSet"%go
   end.
 
-Definition agree_with_key kobj key : Prop :=
-  kind kobj = key.(KKey.Kind') ∧
-  (metadata kobj).(PureObjectMeta.Namespace') = key.(KKey.Namespace') ∧
-  (metadata kobj).(PureObjectMeta.Name') = key.(KKey.Name').
+Definition agree_with_key key kobj : Prop :=
+  key.(KKey.Kind') = kind kobj ∧
+  key.(KKey.Namespace') = (metadata kobj).(PureObjectMeta.Namespace') ∧
+  key.(KKey.Name') = (metadata kobj).(PureObjectMeta.Name').
 
 End PureKObject.
 

@@ -34,6 +34,7 @@ Lemma wp_State__ByIndex_pod γ l kind index_name indexed_value
       "%Hkey_set_equal_dom_owned_pods" ∷  ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → ∃ k, owned_pod_map !! k = Some pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       "Hown_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      "%Hown_pods_agree_with_keys" ∷ ⌜ ∀ key pod, owned_pod_map !! key = Some pod → PureKObject.agree_with_key key (PureKObject.Pod pod) ⌝ ∗
       "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
   }}}.
 Proof.

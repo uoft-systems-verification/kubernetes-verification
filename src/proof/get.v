@@ -18,8 +18,8 @@ Lemma wp_State__objGet_replicaset γ l key pure_rs:
   {{{ ptr rs, RET (#(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr), #true);
       PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = key.(KKey.Namespace') ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = key.(KKey.Name') ⌝ ∗
+      ⌜ key.(KKey.Namespace') = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') ⌝ ∗
+      ⌜ key.(KKey.Name') = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
@@ -44,7 +44,7 @@ Proof.
   iIntros (copied_ptr copied_rs) "(Hdeepown_l_copied_rs & Hdeepown_l_rs)". wp_auto.
   iAssert (state_rep phys_state abs_state) with "[Hdeepown_l_rs Hother_rep]" as "Hinv_Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr, rs, pure_rs. iFrame. done. }
-  assert (PureKObject.agree_with_key (PureKObject.ReplicaSet pure_rs) key ∧ PureKObject.well_formed (PureKObject.ReplicaSet pure_rs))
+  assert (PureKObject.agree_with_key key (PureKObject.ReplicaSet pure_rs) ∧ PureKObject.well_formed (PureKObject.ReplicaSet pure_rs))
     as [Hagree Hwell_formed].
   { destruct Hinv_Hghost_well_formed. apply Habs_state_well_formed. exact Hkey_in_abs. }
   destruct Hagree as [Hkind [Hnamespace Hname]].
@@ -64,14 +64,14 @@ Lemma wp_State__ReplicaSetMutGet γ l namespace name pure_rs:
   {{{ ptr rs, RET (#ptr, #interface.nil);
       PureReplicaSet.deepown_l ptr rs pure_rs 1 ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
+      ⌜ namespace = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') ⌝ ∗
+      ⌜ name = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_State__objGet_replicaset with "[$Hown_rs]"); [iFrame "#"; done|].
-  iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & -> & -> & Hown_pure_rs)". wp_auto.
+  iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & <- & <- & Hown_pure_rs)". wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists ptr. done. }
   iIntros (y ok) "%if_ok".
@@ -92,14 +92,14 @@ Lemma wp_State__ReplicaSetGet γ l namespace name pure_rs:
   {{{ ptr rs dq, RET (#ptr, #interface.nil);
       PureReplicaSet.deepown_l ptr rs pure_rs dq ∗
       ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = name ⌝ ∗
+      ⌜ namespace = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') ⌝ ∗
+      ⌜ name = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') ⌝ ∗
       (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_State__ReplicaSetMutGet with "[$Hown_rs]"); [done|].
-  iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & -> & -> & Hown_rs)". wp_auto.
+  iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & <- & <- & Hown_rs)". wp_auto.
   iApply "HΦ". iFrame. done.
 Qed.
 

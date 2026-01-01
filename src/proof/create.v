@@ -17,7 +17,8 @@ Lemma wp_State__objCreate_pod_without_name γ l kind namespace obj
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
       "%Hobj_is_pod" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #pod_ptr ⌝ ∗
       "Hdeepown_l_pod" ∷ PurePod.deepown_l pod_ptr pod pure_pod 1 ∗
-      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) parent_key.(KKey.Kind')
+        parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "%Hwell_formed" ∷ ⌜ PurePod.well_formed_for_create_without_name pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
@@ -91,7 +92,7 @@ Proof.
   iIntros (returned_ptr returned_pod) "(Hdeepown_l_returned_pod & Hdeepown_l_created_pod)". wp_auto.
   set new_key := {| KKey.Kind' := "Pod"; KKey.Name' := new_name; KKey.Namespace' := KKey.Namespace' parent_key |}.
   fold new_key in Hnew_key_not_in_phys.
-  iAssert (⌜ abs_state !! new_key = None ⌝%I) with "[Hinv_Hphys_abs_rep]" as "%Hnew_key_not_in_abs".
+  iAssert (⌜ abs_state !! new_key = None ⌝%I) as "%Hnew_key_not_in_abs".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_phys. set_solver. }
   assert (children !! new_key = None) as Hnew_key_not_in_children.
   { destruct Hinv_Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
@@ -316,7 +317,8 @@ Lemma wp_State__PodCreate_without_name γ l namespace pod_ptr
       "%Hnamespace_is_parent_namespace" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
       "Hdeepown_l_pod" ∷ PurePod.deepown_l pod_ptr pod pure_pod 1 ∗
-      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) parent_key.(KKey.Kind')
+        parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "#Hwell_formed" ∷ ⌜ PurePod.well_formed_for_create_without_name pure_pod ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
