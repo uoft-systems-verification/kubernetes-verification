@@ -1,7 +1,8 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export index.
+From New.proof Require Export index create delete.
 From New.proof.kubernetes_model Require Export simplereplicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
+From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 
 Section proof.
 Context `{!mapG Σ KKey.t PureKObject.t}.
@@ -32,6 +33,164 @@ Lemma wp_syncReplicaSet γ l namespace name
       ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) child_pure_pods') = sint.nat n ⌝
   }}}.
 Proof. Admitted.
+
+Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
+  (ptrs: list loc) active_pods active_pure_pods rs pure_rs rs_key pure_pod_map active_pure_pod_map grand_child_keys dq1 dq2 (n: w32):
+  {{{ is_pkg_init simplereplicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr simplereplicaset.state) ↦□ l ∗
+      "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
+      "Hpod_l_sl" ∷ pod_l_sl ↦* ptrs ∗
+      "Hptrs" ∷ ([∗ list] ptr;pod ∈ ptrs;active_pods, ptr ↦{dq1} pod) ∗
+      "Hdeepown_pods" ∷ ([∗ list] pod;pure_pod ∈ active_pods;active_pure_pods, PurePod.deepown pod pure_pod dq1) ∗
+      "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l rs_l rs pure_rs dq2 ∗
+      "%Hpure_rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
+      "%Hpure_rs_name_short" ∷ ⌜ length pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') < 58 ⌝ ∗
+      "%Hrs_key_namespace_eq" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = rs_key.(KKey.Namespace') ⌝ ∗
+      "%Hrs_key_name_eq" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') = rs_key.(KKey.Name') ⌝ ∗
+      "%Hrs_key_kind_eq" ∷ ⌜ rs_key.(KKey.Kind') = "ReplicaSet"%go ⌝ ∗
+      "Hghostown_rs" ∷ rs_key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs) ∗
+      "Hghostown_pods" ∷ ([∗ map] key ↦ pod ∈ pure_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      "Hghostown_children" ∷ rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map ∗
+      "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_keys, key [[ γ.(γ_children) ]]↦ s) ∗
+      "%Hdom_eq" ∷ ⌜ dom pure_pod_map = dom grand_child_keys ⌝ ∗
+      "%Hactive_map_eq" ∷ ⌜ active_pure_pod_map = filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map ⌝ ∗
+      "%Hlen_size" ∷ ⌜ size active_pure_pod_map = sint.nat (slice.len_f pod_l_sl) ⌝ ∗
+      "%Hin" ∷ ⌜ ∀ pure_pod, pure_pod ∈ active_pure_pods → ∃ k, active_pure_pod_map !! k = Some pure_pod ⌝ ∗
+      "%Hreplicas_eq" ∷ ⌜ pure_rs.(PureReplicaSet.Spec').(PureReplicaSetSpec.Replicas') = Some n ⌝
+  }}}
+  @! simplereplicaset.manageReplicas #pod_l_sl #rs_l
+  {{{ pure_pod_map' grand_child_keys', RET #interface.nil;
+      rs_key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs) ∗
+      ([∗ map] key ↦ pod ∈ pure_pod_map', key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map' ∗
+      ([∗ map] key ↦ s ∈ grand_child_keys', key [[ γ.(γ_children) ]]↦ s) ∗
+      ⌜ dom pure_pod_map' = dom grand_child_keys' ⌝ ∗
+      ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = sint.nat n ⌝
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". iDestruct "Hdeepown_l_rs" as "(Hrs_l & Hdeepown_rs)".
+  iDestruct (struct_fields_split with "Hrs_l") as "Hrs_l". iNamed "Hrs_l". wp_auto.
+  iNamedPrefix "Hdeepown_rs" "Hrs_". iNamedPrefix "Hrs_Hdeepown_spec" "Hrs_".
+  iAssert ((rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas')↦{dq2}n)%I) with "[Hrs_Hdeepown_replicas_some]" as "Hreplicas".
+  { rewrite Hreplicas_eq. iDestruct "Hrs_Hdeepown_replicas_some" as "(%replicas & Hreplicas & ->)". done. }
+  wp_auto.
+  iDestruct (own_slice_len with "Hpod_l_sl") as %(Hpod_l_sl_len1 & Hpod_l_sl_len2).
+  destruct Hpure_rs_well_formed as (Hpure_rs_meta_well_formed & Hpure_rs_spec_well_formed & _).
+  destruct Hpure_rs_spec_well_formed as (Hpure_rs_spec_replicas_well_formed & Hpure_rs_spec_template_well_formed).
+  assert (0 ≤ sint.Z n) as Hn.
+  { destruct Hpure_rs_spec_replicas_well_formed as (i & Hi_eq & Hi). rewrite Hi_eq in Hreplicas_eq. congruence. }
+  assert ((sint.Z (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n)))) = (sint.Z (slice.len_f pod_l_sl)) - (sint.Z n)) as ->.
+  { word. }
+  assert ((sint.Z (W64 0)) = 0) as -> by word.
+  wp_if_destruct.
+  - set I := (∃ (i: w64) (pure_pod_map': gmap KKey.t PurePod.t) (grand_child_keys': gmap KKey.t (gset KKey.t)),
+      "Hi_ptr" ∷ i_ptr ↦ i ∗
+      "Hghostown_pods" ∷ ([∗ map] key ↦ pod ∈ pure_pod_map', key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      "Hghostown_children" ∷ rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map' ∗
+      "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_keys', key [[ γ.(γ_children) ]]↦ s) ∗
+      "%Hdom_eq'" ∷ ⌜ dom pure_pod_map' = dom grand_child_keys' ⌝ ∗
+      "%Hpod_number'" ∷ ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = Z.to_nat ((sint.Z (slice.len_f pod_l_sl)) + sint.Z i) ⌝ ∗
+      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (word.mul (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))) (W64 (-1)))⌝
+    )%I.
+    iAssert (I) with "[i Hghostown_pods Hghostown_children Hghostown_grandchildren]" as "Hloop_inv". {
+    iExists (W64 0), pure_pod_map, grand_child_keys.
+    iFrame. iPureIntro. split_and!; [done|word|word|word]. }
+    wp_for "Hloop_inv". wp_if_destruct.
+    + wp_apply wp_globals_get. wp_apply schema.wp_GroupVersion__WithKind.
+      { (* TODO: why so cumbersome? *) iAssert (is_pkg_init code.k8s_io.api.apps.v1.v1) as "H". all: iPkgInit. }
+      iIntros (gvk) "%Hgvk". wp_auto.
+      wp_apply (v1.wp_NewControllerRef_replicaset with "[$HObjectMeta $Hrs_Hdeepown_objectmeta]"); [done|].
+      iIntros (controller_ref_l controller_ref pure_controller_ref) "(Hdeepown_controller_ref & %Hcontroller_ref_well_formed & HObjectMeta & Hrs_Hdeepown_objectmeta)". wp_auto.
+      iDestruct (struct_fields_split with "HSpec") as "HSpec". iNamed "HSpec".
+      wp_apply (controller.wp_GetPodFromTemplate with "[$HTemplate $Hrs_Hdeepown_template $HObjectMeta $Hrs_Hdeepown_objectmeta $Hdeepown_controller_ref]"); [done|].
+      iIntros (this_pod_l this_pod this_pure_pod) "(Hdeepown_l_this_pod & %Hobj_has_controller_parent_of & %Hthis_pod_well_formed 
+        & HTemplate & Hrs_Hdeepown_template & HObjectMeta & Hrs_Hdeepown_objectmeta)". wp_auto.
+      rewrite bool_decide_true //. wp_auto.
+      wp_apply wp_globals_get.
+      iAssert(⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') ⌝%I) as "->".
+      { iNamed "Hrs_Hdeepown_objectmeta". done. }
+      wp_apply (wp_State__PodCreate_without_name with "[$Hdeepown_l_this_pod $Hghostown_rs $Hghostown_children]").
+      { iFrame "#". iPureIntro. unfold PureObjectMeta.well_formed in Hpure_rs_meta_well_formed.
+        rewrite Hrs_key_kind_eq. rewrite <-Hrs_key_name_eq. split_and!. all: intuition. }
+      iIntros (created_pod_ptr created_pod created_pure_pod new_name new_key) "H".
+      iNamedPrefix "H" "Hfrom_create_". wp_auto.
+      rewrite bool_decide_true //. wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      assert (is_pure_pod_active created_pure_pod) as Hactive.
+      { (* TODO: find the right spec to prove this assert *) admit. }
+      iAssert (I) with "[Hi_ptr Hghostown_pods Hghostown_grandchildren Hfrom_create_Hown_created_pure_pod
+        Hfrom_create_Hown_child_keys Hfrom_create_Hown_grandchild_keys]" as "loop_inv".
+      { unfold I. iExists (word.add i (W64 1)), (<[new_key := created_pure_pod]> pure_pod_map'), (<[new_key := ∅]> grand_child_keys').
+        iFrame.
+        assert (pure_pod_map' !! new_key = None) as Hnot_in1.
+        { apply not_elem_of_dom. done. }
+        assert (grand_child_keys' !! new_key = None) as Hnot_in2.
+        { apply not_elem_of_dom. rewrite <-Hdom_eq'. done. }
+        iDestruct (big_sepM_insert _ pure_pod_map' new_key created_pure_pod Hnot_in1 with "[$Hghostown_pods $Hfrom_create_Hown_created_pure_pod]") as "Hghostown_pods".
+        iDestruct (big_sepM_insert _ grand_child_keys' new_key ∅ Hnot_in2 with "[$Hghostown_grandchildren $Hfrom_create_Hown_grandchild_keys]") as "Hghostown_grandchildren".
+        assert (dom pure_pod_map' ∪ {[new_key]} = dom (<[new_key:=created_pure_pod]> pure_pod_map')) as ->.
+        { rewrite dom_insert_L. rewrite union_comm_L. done. }
+        iFrame.
+        iPureIntro. split.
+        - rewrite !dom_insert_L. rewrite Hdom_eq'. done.
+        - rewrite map_filter_insert. simpl. destruct (decide (is_pure_pod_active created_pure_pod)); [|done].
+          rewrite map_size_insert. rewrite Hpod_number'.
+          assert (filter (λ kv : KKey.t * PurePod.t, is_pure_pod_active kv.2) pure_pod_map' !! new_key = None) as ->.
+          { rewrite map_lookup_filter. rewrite Hnot_in1. done. }
+          word.
+      }
+      iFrame.
+      iApply (struct_fields_combine (V:=v1.ReplicaSetSpec.t)). iFrame.
+    + iApply "HΦ". iFrame. iPureIntro. split.
+      * rewrite Hdom_eq'. done.
+      * rewrite Hpod_number'. word.
+  - wp_if_destruct.
+    2: { iApply "HΦ". iFrame. iPureIntro. split.
+      * rewrite Hdom_eq. done.
+      * word. }
+    iDestruct (own_slice_len with "Hpod_l_sl") as %Hpod_l_sl_len.
+    iDestruct (own_slice_wf with "Hpod_l_sl") as %Hpod_l_sl_cap.
+    wp_bind.
+    wp_apply wp_slice_slice_pure; [iPureIntro;word|].
+    iDestruct (own_slice_f 0 (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))) with "Hpod_l_sl")
+      as "(Hbefore_slice & Hslice & Hafter_slice )"; [word|].
+    iDestruct (own_slice_len with "Hslice") as %(Hslice_len1 & Hslice_len2).
+    iDestruct (big_sepL2_length with "Hptrs") as %Hlen.
+    set I := (∃ (i: w64) (pod: loc) (pure_pod_map': gmap KKey.t PurePod.t) (grand_child_keys': gmap KKey.t (gset KKey.t)),
+      "Hi_ptr" ∷ i_ptr ↦ i ∗
+      "Hpod_ptr" ∷ pod_ptr ↦ pod ∗
+      "Hghostown_pods" ∷ ([∗ map] key ↦ pod ∈ pure_pod_map', key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
+      "Hghostown_children" ∷ rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map' ∗
+      "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_keys', key [[ γ.(γ_children) ]]↦ s) ∗
+      "%Hdom_eq'" ∷ ⌜ dom pure_pod_map' = dom grand_child_keys' ⌝ ∗
+      "%Hpod_number'" ∷ ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = Z.to_nat ((sint.Z (slice.len_f pod_l_sl)) + sint.Z i) ⌝ ∗
+      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f (slice.slice_f pod_l_sl ptrT (W64 0) (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n)))))⌝
+    )%I.
+    iAssert (I) with "[i pod Hghostown_pods Hghostown_children Hghostown_grandchildren]" as "Hloop_inv". {
+    iExists (W64 0), (default_val loc), pure_pod_map, grand_child_keys.
+    iFrame. iPureIntro. split_and!; [done|word|word|word]. }
+    wp_for "Hloop_inv". wp_if_destruct.
+    + wp_pure; [rewrite /slice.slice_f /=;word|].
+      set sliced_ptrs := (subslice (sint.nat (W64 0)) (sint.nat (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n)))) ptrs).
+      list_elem sliced_ptrs (sint.Z i) as this_ptr.
+      { rewrite Hslice_len1 /slice.slice_f /=. word. }
+      wp_apply (wp_load_slice_elem with "[$Hslice]"); [word|eauto|].
+      iIntros "Hslice". wp_auto.
+      wp_bind.
+      assert (ptrs !! sint.nat i = Some this_ptr) as Hlookup_ptrs.
+      { eapply lookup_take_Some in Hthis_ptr_lookup. intuition. }
+      assert (∃ active_pod, active_pods !! sint.nat i = Some active_pod) as [active_pod Hlookup_active_pods].
+      { admit. }
+      iDestruct (big_sepL2_lookup with "Hptrs") as "Hthis_ptr".
+      { apply Hlookup_ptrs. }
+      { apply Hlookup_active_pods. }
+      iDestruct (struct_fields_split with "Hthis_ptr") as "Hthis_ptr". iNamedPrefix "Hthis_ptr" "Hpod_". wp_auto.
+      wp_apply wp_globals_get.
+      (* wp_apply (wp_State__PodDelete with "[$Hdeepown_l_this_pod $Hghostown_rs $Hghostown_children]").
+      { iFrame "#". iPureIntro. unfold PureObjectMeta.well_formed in Hpure_rs_meta_well_formed.
+        rewrite Hrs_key_kind_eq. rewrite <-Hrs_key_name_eq. split_and!. all: intuition. } *)
+Admitted.
 
 Lemma wp_FilterActivePods l ptrs (pods: list v1.Pod.t) dq:
   {{{ is_pkg_init simplereplicaset ∗

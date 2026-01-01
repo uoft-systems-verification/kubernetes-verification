@@ -37,8 +37,7 @@ Proof.
   wp_start as "Hp".
   wp_alloc p' as "Hp'".
   unfold v1.PodSucceeded, v1.PodFailed. wp_auto.
-  iDestruct (struct_fields_split with "Hp") as "Hp". iNamed "Hp".
-  wp_auto.
+  iDestruct (struct_fields_split with "Hp") as "Hp". iNamed "Hp". wp_auto.
   destruct (bool_decide ("Succeeded"%go = pod.(v1.Pod.Status').(v1.PodStatus.Phase'))) eqn:HPhase1. all: rewrite HPhase1; wp_auto.
   - assert (bool_decide (is_pod_active pod) = false) as ->.
     { apply bool_decide_eq_false_2. unfold is_pod_active.
@@ -67,25 +66,27 @@ Proof.
 Qed.
 
 Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
-  dq template pure_template rs_l rs pure_meta controller_ref pure_controller_ref:
+  dq template pure_template rs_l meta pure_meta controller_ref pure_controller_ref:
   {{{ is_pkg_init controller ∗
-      PurePodTemplateSpec.deepown_l template_l template pure_template dq ∗
+      template_l ↦{dq} template ∗
+      PurePodTemplateSpec.deepown template pure_template dq ∗
       ⌜ PurePodTemplateSpec.well_formed pure_template ⌝ ∗
       ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
-      rs_l ↦{dq} rs ∗
-      PureObjectMeta.deepown rs.(v1.ReplicaSet.ObjectMeta') pure_meta dq ∗
+      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
+      PureObjectMeta.deepown meta pure_meta dq ∗
       ⌜ PureObjectMeta.well_formed pure_meta ⌝ ∗
       ⌜ length pure_meta.(PureObjectMeta.Name') < 58 ⌝ ∗
-      PureOwnerReference.deepown_l controller_ref_l controller_ref pure_controller_ref dq
+      PureOwnerReference.deepown_l controller_ref_l controller_ref pure_controller_ref 1
   }}}
   @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
   {{{ pod_l pod pure_pod, RET (#pod_l, #interface.nil);
       PurePod.deepown_l pod_l pod pure_pod 1 ∗
       ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) "ReplicaSet"%go pure_meta.(PureObjectMeta.Name') pure_meta.(PureObjectMeta.UID') ⌝ ∗
       ⌜ PurePod.well_formed_for_create_without_name pure_pod ⌝ ∗
-      PurePodTemplateSpec.deepown_l template_l template pure_template dq ∗
-      rs_l ↦{dq} rs ∗
-      PureObjectMeta.deepown rs.(v1.ReplicaSet.ObjectMeta') pure_meta dq
+      template_l ↦{dq} template ∗
+      PurePodTemplateSpec.deepown template pure_template dq ∗
+      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
+      PureObjectMeta.deepown meta pure_meta dq
   }}}.
 Proof. Admitted.
 

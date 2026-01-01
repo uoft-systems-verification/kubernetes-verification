@@ -261,7 +261,8 @@ Record t := mk {
 }.
 
 Definition well_formed (v: t) : Prop :=
-  ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+  (∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i) ∧
+  PurePodTemplateSpec.well_formed v.(Template').
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗

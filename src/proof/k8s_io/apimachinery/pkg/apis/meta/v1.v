@@ -128,17 +128,19 @@ Definition new_controller_ref_well_formed controller_ref kind meta: Prop :=
   controller_ref.(PureOwnerReference.BlockOwnerDeletion') = Some true ∧
   controller_ref.(PureOwnerReference.Controller') = Some true.
 
-Lemma wp_NewControllerRef_replicaset owner gvk rs_l rs pure_rs dq:
+Lemma wp_NewControllerRef_replicaset owner gvk rs_l meta pure_meta dq:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
       ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
-      PureReplicaSet.deepown_l rs_l rs pure_rs dq
+      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
+      PureObjectMeta.deepown meta pure_meta dq
   }}}
     @! v1.NewControllerRef #owner #gvk
   {{{ l controller_ref pure_controller_ref, RET #l;
       PureOwnerReference.deepown_l l controller_ref pure_controller_ref 1 ∗
-      ⌜ new_controller_ref_well_formed pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_rs.(PureReplicaSet.ObjectMeta') ⌝ ∗
-      PureReplicaSet.deepown_l rs_l rs pure_rs dq
+      ⌜ new_controller_ref_well_formed pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_meta ⌝ ∗
+      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
+      PureObjectMeta.deepown meta pure_meta dq
   }}}.
-Proof. Admitted.
+Proof. wp_start as "H". Admitted.
 
 End proof.

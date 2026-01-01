@@ -95,9 +95,9 @@ Proof.
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_phys. set_solver. }
   assert (children !! new_key = None) as Hnew_key_not_in_children.
   { destruct Hinv_Hghost_well_formed. apply not_elem_of_dom. apply not_elem_of_dom in Hnew_key_not_in_abs. set_solver. }
-  iAssert (⌜ abs_state !! parent_key = Some (owned_parent) ⌝%I) with "[Hown_parent Hinv_Hown_abs]" as "%Hparent_key_in_abs".
+  iAssert (⌜ abs_state !! parent_key = Some (owned_parent) ⌝%I) as "%Hparent_key_in_abs".
   { iDestruct (map_valid with "Hinv_Hown_abs Hown_parent") as %Hlookup. iPureIntro; exact Hlookup. }
-  iAssert (⌜ children !! parent_key = Some (owned_child_keys) ⌝%I) with "[Hown_child_keys Hinv_Hown_children]" as "%Hparent_key_in_children".
+  iAssert (⌜ children !! parent_key = Some (owned_child_keys) ⌝%I) as "%Hparent_key_in_children".
   { iDestruct (map_valid with "Hinv_Hown_children Hown_child_keys") as %Hlookup. iPureIntro; exact Hlookup. }
   assert (new_key ≠ parent_key) as Hnew_key_neq_parent_key.
   { intros Heq. congruence. }
