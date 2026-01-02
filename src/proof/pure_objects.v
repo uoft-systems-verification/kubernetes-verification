@@ -203,6 +203,16 @@ Record t := mk {
   Status' : PurePodStatus.t;
 }.
 
+Definition kind : go_string :=
+  "Pod"%go.
+
+Definition key (v: t) : KKey.t :=
+  {|
+    KKey.Kind' := kind;
+    KKey.Namespace' := v.(ObjectMeta').(PureObjectMeta.Namespace');
+    KKey.Name' := v.(ObjectMeta').(PureObjectMeta.Name')
+  |}.
+
 Definition well_formed (pod: t) : Prop :=
   PureObjectMeta.well_formed pod.(ObjectMeta') ∧
   PurePodSpec.well_formed pod.(Spec') ∧
@@ -298,6 +308,16 @@ Record t := mk {
   Status' : PureReplicaSetStatus.t;
 }.
 
+Definition kind : go_string :=
+   "ReplicaSet"%go.
+
+Definition key (v: t) : KKey.t :=
+  {|
+    KKey.Kind' := kind;
+    KKey.Namespace' := v.(ObjectMeta').(PureObjectMeta.Namespace');
+    KKey.Name' := v.(ObjectMeta').(PureObjectMeta.Name')
+  |}.
+
 Definition well_formed (rs: t) : Prop :=
   PureObjectMeta.well_formed rs.(ObjectMeta') ∧
   PureReplicaSetSpec.well_formed rs.(Spec') ∧
@@ -351,14 +371,20 @@ Definition metadata kobj : PureObjectMeta.t :=
 
 Definition kind kobj : go_string :=
   match kobj with
-  | Pod _ => "Pod"%go
-  | ReplicaSet _ => "ReplicaSet"%go
+  | Pod _ => PurePod.kind
+  | ReplicaSet _ => PureReplicaSet.kind
   end.
 
-Definition agree_with_key key kobj : Prop :=
+Definition key kobj : KKey.t :=
+  match kobj with
+  | Pod p => PurePod.key p
+  | ReplicaSet rs => PureReplicaSet.key rs
+  end.
+
+(* Definition agree_with_key key kobj : Prop :=
   key.(KKey.Kind') = kind kobj ∧
   key.(KKey.Namespace') = (metadata kobj).(PureObjectMeta.Namespace') ∧
-  key.(KKey.Name') = (metadata kobj).(PureObjectMeta.Name').
+  key.(KKey.Name') = (metadata kobj).(PureObjectMeta.Name'). *)
 
 End PureKObject.
 

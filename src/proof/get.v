@@ -44,15 +44,15 @@ Proof.
   iIntros (copied_ptr copied_rs) "(Hdeepown_l_copied_rs & Hdeepown_l_rs)". wp_auto.
   iAssert (state_rep phys_state abs_state) with "[Hdeepown_l_rs Hother_rep]" as "Hinv_Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr, rs, pure_rs. iFrame. done. }
-  assert (PureKObject.agree_with_key key (PureKObject.ReplicaSet pure_rs) ∧ PureKObject.well_formed (PureKObject.ReplicaSet pure_rs))
-    as [Hagree Hwell_formed].
+  assert (key = PureKObject.key (PureKObject.ReplicaSet pure_rs) ∧ PureKObject.well_formed (PureKObject.ReplicaSet pure_rs))
+    as [Hkey_eq Hwell_formed].
   { destruct Hinv_Hghost_well_formed. apply Habs_state_well_formed. exact Hkey_in_abs. }
-  destruct Hagree as [Hkind [Hnamespace Hname]].
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
   with "[$Hown_Mutex H]").
   { iNamed "H". iFrame. iFrame "#". done. }
-  iApply "HΦ". iFrame. done.
+  iApply "HΦ". iFrame. iPureIntro. split; [done|].
+  unfold PureKObject.key in Hkey_eq. unfold PureReplicaSet.key in Hkey_eq. rewrite Hkey_eq. done.
 Qed.
 
 Lemma wp_State__ReplicaSetMutGet γ l namespace name pure_rs:

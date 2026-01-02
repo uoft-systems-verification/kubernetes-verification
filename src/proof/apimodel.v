@@ -17,9 +17,6 @@ Context `{!auth_setG Σ KKey.t}.
 Definition mk_pod_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
-Definition extract_pod_key pod : KKey.t :=
-  mk_pod_key pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Namespace') pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.Name').
-
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
@@ -67,7 +64,7 @@ Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey
 
 Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk_ghost_well_formed {
-  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → PureKObject.agree_with_key k obj ∧ PureKObject.well_formed obj);
+  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → k = PureKObject.key obj ∧ PureKObject.well_formed obj);
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
   Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));

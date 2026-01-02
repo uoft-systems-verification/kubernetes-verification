@@ -20,13 +20,13 @@ Lemma wp_State__objDelete_pod γ l key
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objDelete" #key
   {{{ updated_pure_pod, RET #interface.nil;
-      "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
-        "%deletiontimestamp_notnull" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
+      "Hpod_updated_or_deleted" ∷ ((
+        "%Hts" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
         "Hown_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod updated_pure_pod) ∗
         "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
         "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
       ) ∨
-      "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[key]}))
+      parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[key]}))
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk". wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
@@ -43,7 +43,7 @@ Proof.
     iPureIntro. exists obj. done.
   }
   destruct Hkey_in_phys as [obj Hkey_in_phys].
-  iDestruct (big_sepM2_split_singleton _ key _ _ phys_state abs_state Hkey_in_phys Hkey_in_abs
+  iDestruct (big_sepM2_delete _ phys_state abs_state key _ _ Hkey_in_phys Hkey_in_abs
     with "Hinv_Hphys_abs_rep") as "[Hk_rep Hother_rep]".
   destruct decide_kind_is_pod with (KKey.Kind' key) as [kind_is_pod kind_is_not_replicaset]; [done|].
   iAssert (∃ ptr pod pure_pod', pod_rep obj (PureKObject.Pod pure_pod) ptr pod pure_pod')%I
@@ -81,7 +81,7 @@ Proof.
       with "[Hpod_ptr Hdeepown_pod Hother_rep Hdeepown_time now]" as "Hinv_Hphys_abs_rep".
       { assert (delete key abs_state = delete key (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)) as ->.
         { rewrite delete_insert_eq. reflexivity. }
-        iApply (big_sepM2_split_singleton _ key _ (PureKObject.Pod updated_pure_pod) phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state)
+        iApply (big_sepM2_delete _ phys_state (<[key:=PureKObject.Pod updated_pure_pod]> abs_state) key _ (PureKObject.Pod updated_pure_pod)
           Hkey_in_phys with "[$Hother_rep Hpod_ptr Hdeepown_pod Hdeepown_time now]").
         { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [done|done]. }
         unfold obj_rep. rewrite kind_is_pod. iExists ptr, updated_pod, updated_pure_pod. unfold pod_rep.
@@ -108,9 +108,9 @@ Proof.
         assert ((PureKObject.metadata (PureKObject.Pod updated_pure_pod)).(PureObjectMeta.UID') = (PureKObject.metadata (PureKObject.Pod pure_pod)).(PureObjectMeta.UID'))
         as updated_pure_pod_uid_eq.
         { simpl. subst updated_pure_pod. simpl. reflexivity. }
-        assert (PureKObject.agree_with_key key (PureKObject.Pod updated_pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod updated_pure_pod))
+        assert (key = PureKObject.key (PureKObject.Pod updated_pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod updated_pure_pod))
           as [Hagree Hwell_formed].
-        { assert (PureKObject.agree_with_key key (PureKObject.Pod pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
+        { assert (key = PureKObject.key (PureKObject.Pod pure_pod) ∧ PureKObject.well_formed (PureKObject.Pod pure_pod))
           as [Hagree Hwell_formed].
           { apply Habs_state_well_formed. done. } done. }
         apply mk_ghost_well_formed.
@@ -177,7 +177,7 @@ Proof.
       iAssert (⌜ pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝%I) as "%Hdeletiontimestamp_not_none". {
         iNamed "Hdeepown_pod". iNamed "Hdeepown_objectmeta". iPureIntro. intros H. apply (proj2 Hdeepown_deletiontimestamp_none) in H. done. }
       iAssert (state_rep phys_state abs_state %I) with "[Hpod_ptr Hother_rep Hdeepown_pod]" as "Hinv_Hphys_abs_rep". {
-        iApply big_sepM2_split_singleton; [done | done|]. iFrame. unfold obj_rep. rewrite kind_is_pod.
+        iApply big_sepM2_delete; [done | done|]. iFrame. unfold obj_rep. rewrite kind_is_pod.
         iExists ptr, pod, pure_pod. iFrame. iFrame "#". done. }
       iCombineNamed "Hinv_*" as "H".
       wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
@@ -290,26 +290,27 @@ Proof.
 Qed.
 
 Lemma wp_State__PodDelete γ l namespace name
-  pure_pod parent_key owned_child_keys owned_grandchild_keys:
+  key pure_pod parent_key owned_child_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes γ l ∗
-      "Hown_pod" ∷ (mk_pod_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod) ∗
+      "%Hkey_eq" ∷ ⌜ key = mk_pod_key namespace name ⌝ ∗
+      "Hown_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-      "Hown_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ.(γ_children) ]]↦ owned_grandchild_keys ∗
-      "%Hpod_is_child" ∷ ⌜ (mk_pod_key namespace name) ∈ owned_child_keys ⌝
+      "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys ∗
+      "%Hpod_is_child" ∷ ⌜ key ∈ owned_child_keys ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "PodDelete" #namespace #name
   {{{ updated_pure_pod, RET #interface.nil;
-      "pod_updated_or_deleted" ∷ ("pod_updated" ∷ (
-        "%deletiontimestamp_notnull" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
-        "Hown_pod" ∷ (mk_pod_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.Pod updated_pure_pod) ∗
+      "Hpod_updated_or_deleted" ∷ ((
+        "%Hts" ∷ ⌜ updated_pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
+        "Hown_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod updated_pure_pod) ∗
         "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-        "Hown_grandchild_keys" ∷ (mk_pod_key namespace name) [[ γ.(γ_children) ]]↦ owned_grandchild_keys
+        "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
       ) ∨
-      "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[mk_pod_key namespace name]}))
+      parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[key]}))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". subst key. wp_auto.
   wp_apply (wp_State__objDelete_pod with "[$Hown_pod $Hown_child_keys $Hown_grandchild_keys]").
   { iFrame "#". done. }
   iIntros (updated_pure_pod) "H". iNamed "H". wp_auto. iApply "HΦ". iFrame.
