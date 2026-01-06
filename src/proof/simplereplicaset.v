@@ -1,38 +1,15 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export index create delete.
+From New.proof Require Export get index create delete util.
 From New.proof.kubernetes_model Require Export simplereplicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
 Context `{!mapG Σ KKey.t PureKObject.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-
-Lemma wp_syncReplicaSet γ l namespace name
-  rs_key pure_rs child_pure_pods grand_child_keys (n: w32):
-  {{{ is_pkg_init simplereplicaset ∗
-      is_kubernetes γ l ∗
-      (global_addr simplereplicaset.state)↦□l ∗
-      ⌜ rs_key = mk_replicaset_key namespace name ⌝ ∗
-      rs_key [[ γ.(γ_state) ]]↦ PureKObject.ReplicaSet pure_rs ∗
-      ([∗ map] key ↦ v ∈ child_pure_pods, key [[ γ.(γ_state) ]]↦ PureKObject.Pod v) ∗
-      rs_key [[ γ.(γ_children) ]]↦ dom child_pure_pods ∗
-      ([∗ map] key ↦ s ∈ grand_child_keys, key [[ γ.(γ_children) ]]↦ s) ∗
-      ⌜ dom child_pure_pods = dom grand_child_keys ⌝ ∗
-      ⌜ pure_rs.(PureReplicaSet.Spec').(PureReplicaSetSpec.Replicas') = Some n ⌝
-  }}}
-  @! simplereplicaset.syncReplicaSet #namespace #name
-  {{{ (child_pure_pods': gmap KKey.t PurePod.t) grand_child_keys', RET #interface.nil;
-      rs_key [[ γ.(γ_state) ]]↦ PureKObject.ReplicaSet pure_rs ∗
-      ([∗ map] key ↦ v ∈ child_pure_pods', key [[ γ.(γ_state) ]]↦ PureKObject.Pod v) ∗
-      rs_key [[ γ.(γ_children) ]]↦ dom child_pure_pods' ∗
-      ([∗ map] key ↦ s ∈ grand_child_keys', key [[ γ.(γ_children) ]]↦ s) ∗
-      ⌜ dom child_pure_pods' = dom grand_child_keys' ⌝ ∗
-      ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) child_pure_pods') = sint.nat n ⌝
-  }}}.
-Proof. Admitted.
 
 Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
   (ptrs: list loc) active_pods active_pure_pods rs pure_rs rs_key pure_pod_map active_pure_pod_map grand_child_keys dq1 dq2 (n: w32):
@@ -43,7 +20,8 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
       "Hpod_l_sl" ∷ pod_l_sl ↦* ptrs ∗
       "Hptrs" ∷ ([∗ list] ptr;pod ∈ ptrs;active_pods, ptr ↦{dq1} pod) ∗
       "Hdeepown_pods" ∷ ([∗ list] pod;pure_pod ∈ active_pods;active_pure_pods, PurePod.deepown pod pure_pod dq1) ∗
-      "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l rs_l rs pure_rs dq2 ∗
+      "Hrs_l" ∷ rs_l ↦{dq2} rs ∗
+      "Hdeepown_rs" ∷ PureReplicaSet.deepown rs pure_rs dq2 ∗
       "%Hpure_rs_well_formed" ∷ ⌜ PureReplicaSet.well_formed pure_rs ⌝ ∗
       "%Hpure_rs_name_short" ∷ ⌜ length pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') < 58 ⌝ ∗
       "%Hrs_key_namespace_eq" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Namespace') = rs_key.(KKey.Namespace') ⌝ ∗
@@ -57,9 +35,9 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
       "%Hpods_keys_eq" ∷ ⌜ ∀ key pod, pure_pod_map !! key = Some pod → key = PurePod.key pod ⌝ ∗
       "%Hpods_ns_eq" ∷ ⌜ ∀ key, key ∈ dom pure_pod_map → key.(KKey.Namespace') = rs_key.(KKey.Namespace') ⌝ ∗
       "%Hactive_map_eq" ∷ ⌜ active_pure_pod_map = filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map ⌝ ∗
-      "%Hlen_size" ∷ ⌜ size active_pure_pod_map = sint.nat (slice.len_f pod_l_sl) ⌝ ∗
+      "%Hlen_size_eq" ∷ ⌜ length active_pure_pods = size active_pure_pod_map ⌝ ∗
       "%Hin" ∷ ⌜ ∀ pure_pod, pure_pod ∈ active_pure_pods → active_pure_pod_map !! (PurePod.key pure_pod) = Some pure_pod ⌝ ∗
-      "%Hunique" ∷ ⌜ ∀ i j p1 p2, active_pure_pods !! i = Some p1 → active_pure_pods !! j = Some p2 → (PurePod.key p1) = (PurePod.key p2) → i = j ⌝ ∗
+      "%Hno_dup" ∷ ⌜ ∀ i j p1 p2, i ≠ j → active_pure_pods !! i = Some p1 → active_pure_pods !! j = Some p2 → (PurePod.key p1) ≠ (PurePod.key p2) ⌝ ∗
       "%Hreplicas_eq" ∷ ⌜ pure_rs.(PureReplicaSet.Spec').(PureReplicaSetSpec.Replicas') = Some n ⌝
   }}}
   @! simplereplicaset.manageReplicas #pod_l_sl #rs_l
@@ -72,24 +50,12 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
       ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = sint.nat n ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". iDestruct "Hdeepown_l_rs" as "(Hrs_l & Hdeepown_rs)".
+  wp_start as "H". iNamed "H".
   iDestruct (own_slice_len with "Hpod_l_sl") as %(Hpod_l_sl_len1 & Hpod_l_sl_len2).
   iDestruct (own_slice_wf with "Hpod_l_sl") as %Hpod_l_sl_cap.
   iDestruct (big_sepL2_length with "Hptrs") as %Hlen1.
   iDestruct (big_sepL2_length with "Hdeepown_pods") as %Hlen2.
-  assert (length active_pure_pods = size (filter (λ kv : KKey.t * PurePod.t, is_pure_pod_active kv.2) pure_pod_map)) as Hlen_size_eq.
-  { congruence. }
-  assert (∀ i j p1 p2, i ≠ j → active_pure_pods !! i = Some p1 → active_pure_pods !! j = Some p2 → (PurePod.key p1) ≠ (PurePod.key p2)) as Hno_dup.
-  { intros i0 j p1 p2 Hneq Hlookup_i Hlookup_j Heq_key.
-    assert (p1 ∈ active_pure_pods) as Hin_p1 by (eapply list_elem_of_lookup_2; apply Hlookup_i).
-    assert (p2 ∈ active_pure_pods) as Hin_p2 by (eapply list_elem_of_lookup_2; apply Hlookup_j).
-    apply Hin in Hin_p1.
-    apply Hin in Hin_p2.
-    rewrite Heq_key in Hin_p1.
-    rewrite Hin_p1 in Hin_p2.
-    injection Hin_p2 as Heq_pods.
-    exfalso. apply Hneq.
-    eapply Hunique; eauto. }
+  assert (size active_pure_pod_map = sint.nat (slice.len_f pod_l_sl)) as Hslice_len by congruence.
   iDestruct (struct_fields_split with "Hrs_l") as "Hrs_l". iNamed "Hrs_l". wp_auto.
   iNamedPrefix "Hdeepown_rs" "Hrs_". iNamedPrefix "Hrs_Hdeepown_spec" "Hrs_".
   iAssert ((rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas')↦{dq2}n)%I) with "[Hrs_Hdeepown_replicas_some]" as "Hreplicas".
@@ -367,15 +333,19 @@ Proof.
       rewrite Hpod_number'. rewrite /slice.slice_f /= in Hi. word.
 Admitted.
 
-Lemma wp_FilterActivePods l ptrs (pods: list v1.Pod.t) dq:
+Lemma wp_FilterActivePods l ptrs pods pure_pods dq:
   {{{ is_pkg_init simplereplicaset ∗
       "Hl" ∷ l ↦* ptrs ∗
-      "Hptrs_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, ptr ↦{dq} pod)
+      "Hptrs" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, ptr ↦{dq} pod) ∗
+      "Hpods" ∷ ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod dq)
   }}}
   @! simplereplicaset.FilterActivePods #l
-  {{{ l' ptrs', RET #l';
+  {{{ l' ptrs' pods' pure_pods', RET #l';
       l' ↦* ptrs' ∗
-      ([∗ list] ptr;pod ∈ ptrs';(filter (λ v, controller.is_pod_active v) pods), ptr ↦{dq} pod)
+      ([∗ list] ptr;pod ∈ ptrs';pods', ptr ↦{dq} pod) ∗
+      ([∗ list] pod;pure_pod ∈ pods';pure_pods', PurePod.deepown pod pure_pod dq) ∗
+      ⌜ pods' = filter (λ v, controller.is_pod_active v) pods ⌝ ∗
+      ⌜ pure_pods' = filter (λ v, controller.is_pure_pod_active v) pure_pods ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -383,65 +353,90 @@ Proof.
   iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
   iDestruct (own_slice_len with "Hl") as %(Hl_len1 & Hl_len2).
   iDestruct (own_slice_wf with "Hl") as %Hl_cap.
-  iDestruct (big_sepL2_length with "Hptrs_pods") as %Hlen.
-  iAssert ((∃ (i: w64) (p: loc) (result: slice.t) (ptrs': list loc),
+  iDestruct (big_sepL2_length with "Hptrs") as %Hlen.
+  iDestruct (big_sepL2_length with "Hpods") as %Hlen'.
+  iAssert ((∃ (i: w64) (p: loc) (result: slice.t) (ptrs': list loc) pods' pure_pods',
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hp_ptr" ∷ p_ptr ↦ p ∗
       "Hresult_ptr" :: result_ptr ↦ result ∗
       "Hresult" ∷ result ↦* ptrs' ∗
-      "Hbefore" ∷ ([∗ list] ptr;pod ∈ ptrs';(filter (λ v, controller.is_pod_active v) (take (sint.nat i) pods)), ptr ↦{dq} pod) ∗
-      "Hafter" ∷ ([∗ list] ptr;pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pods), ptr ↦{dq} pod) ∗
+      "Hptrs_before_i" ∷ ([∗ list] ptr;pod ∈ ptrs';pods', ptr ↦{dq} pod) ∗
+      "Hptrs_after_i" ∷ ([∗ list] ptr;pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pods), ptr ↦{dq} pod) ∗
+      "Hpods_before_i" ∷ ([∗ list] pod;pure_pod ∈ pods';pure_pods', PurePod.deepown pod pure_pod dq) ∗
+      "Hpods_after_i" ∷ ([∗ list] pod;pure_pod ∈ (drop (sint.nat i) pods);(drop (sint.nat i) pure_pods), PurePod.deepown pod pure_pod dq) ∗
       "Hown_result_cap" :: own_slice_cap loc result (DfracOwn 1) ∗
-      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f l)⌝
-  )%I) with "[i result p Hptrs_pods]" as "Hloop_inv". {
-    iExists (W64 0), (default_val loc), slice.nil, [].
-    iFrame. iFrame "#". iSplitL.
-    - rewrite take_0. rewrite filter_nil. rewrite big_sepL2_nil. done.
-    - iPureIntro. word. }
+      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f l)⌝ ∗
+      "%Hpods'_eq" ∷ ⌜ pods' = filter (λ v, controller.is_pod_active v) (take (sint.nat i) pods) ⌝ ∗
+      "%Hpure_pods'_eq" ∷ ⌜ pure_pods' = filter (λ v, controller.is_pure_pod_active v) (take (sint.nat i) pure_pods) ⌝
+  )%I) with "[i result p Hptrs Hpods]" as "Hloop_inv". {
+    iExists (W64 0), (default_val loc), slice.nil, [], [], [].
+    iFrame. iFrame "#".
+    rewrite !take_0 !filter_nil !big_sepL2_nil. done. }
   wp_for "Hloop_inv".
   wp_if_destruct.
   - wp_pure; first word.
     list_elem ptrs (sint.Z i) as this_ptr.
-    wp_apply (wp_load_slice_elem with "[$Hl]"); [word|eauto| ].
-    iIntros "Hl". wp_auto.
+    wp_apply (wp_load_slice_elem with "[$Hl]"); [word|eauto| ]. iIntros "Hl". wp_auto.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hlen Hl_len1. word. }
-    iPoseProof (big_sepL2_destruct_cons _ _ _ this_ptr this_pod with "Hafter") as "[Hthis Hother]".
+    assert (∃ this_pure_pod, pure_pods !! sint.nat i = Some this_pure_pod) as [this_pure_pod Hthis_pure_pod_lookup].
+    { apply lookup_lt_is_Some_2. rewrite -Hlen' -Hlen Hl_len1. word. }
+    iPoseProof (big_sepL2_destruct_cons _ _ _ this_ptr this_pod with "Hptrs_after_i") as "[Hthis Hother]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
+    iPoseProof (big_sepL2_destruct_cons _ _ _ this_pod this_pure_pod with "Hpods_after_i") as "[Hthis_pod Hother_pods]".
+    { split. all: rewrite lookup_drop Nat.add_0_r; done. }
+    iDestruct (controller.deepown_preserves_activeness with "Hthis_pod") as %Hactive.
     wp_apply (controller.wp_IsPodActive with "[$Hthis]").
     iIntros "Hthis".
-    destruct (bool_decide (is_pod_active this_pod)) eqn:Hactive; [wp_auto|wp_auto].
-    + wp_apply wp_slice_literal. iIntros (sl) "Hsl". wp_auto.
+    destruct (bool_decide (is_pod_active this_pod)) eqn:Hpod_active_decide. all: wp_auto.
+    + assert (is_pod_active this_pod) as Hpod_active.
+      { rewrite bool_decide_eq_true in Hpod_active_decide. done. }
+      assert (is_pure_pod_active this_pure_pod) as Hpure_active.
+      { apply Hactive. done. }
+      wp_apply wp_slice_literal. iIntros (sl) "Hsl". wp_auto.
       wp_apply (wp_slice_append with "[$Hresult $Hown_result_cap $Hsl]"). iIntros (result') "(Hresult & Hown_result_cap & Hsl)". wp_auto.
       iApply wp_for_post_do. wp_auto.
-      iFrame "Hl HΦ pods". iExists (word.add i (W64 1)), this_ptr, result', (ptrs' ++ [this_ptr]).
+      iFrame "Hl HΦ pods".
+      iExists (word.add i (W64 1)), this_ptr, result', (ptrs' ++ [this_ptr]),
+        ((filter (λ v, controller.is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods))),
+        ((filter (λ v, controller.is_pure_pod_active v) (take (sint.nat (word.add i (W64 1))) pure_pods))).
+      assert (filter (λ v, is_pod_active v) (take (sint.nat i) pods) ++ [this_pod] =
+              filter (λ v, is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pod); [done|].
+        rewrite list.filter_app filter_singleton_True; [done|done|done]. }
+      assert (filter (λ v, is_pure_pod_active v) (take (sint.nat i) pure_pods) ++ [this_pure_pod] =
+              filter (λ v, is_pure_pod_active v) (take (sint.nat (word.add i (W64 1))) pure_pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pure_pod); [done|].
+        rewrite list.filter_app filter_singleton_True; [done|done|done]. }
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word. rewrite !drop_drop Nat.add_1_r.
       iFrame.
-      iSplitL "Hbefore Hthis".
-      * assert (filter (λ v : v1.Pod.t, is_pod_active v) (take (sint.nat i) pods) ++ [this_pod] =
-                filter (λ v : v1.Pod.t, is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods)) as <-.
-        { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-          rewrite (take_S_r _ _ this_pod); [done|].
-          rewrite list.filter_app filter_singleton_True; [done|rewrite bool_decide_eq_true in Hactive;done|done]. }
-        iApply (big_sepL2_app with "[$Hbefore]").
-        iApply (big_sepL2_singleton). iFrame.
-      * iSplitL; [|iPureIntro;word].
-        assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-        rewrite !drop_drop Nat.add_1_r. iFrame.
-    + iApply wp_for_post_do. wp_auto. iFrame "Hl HΦ pods". iExists (word.add i (W64 1)), this_ptr, result, ptrs'.
-      iFrame.
-      iSplitL "Hbefore".
-      * assert (filter (λ v : v1.Pod.t, is_pod_active v) (take (sint.nat i) pods) =
-                filter (λ v : v1.Pod.t, is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods)) as <-.
-        { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-          rewrite (take_S_r _ _ this_pod); [done|].
-          rewrite list.filter_app filter_singleton_False; [done|rewrite bool_decide_eq_false in Hactive; done|rewrite app_nil_r; done]. }
-        iFrame.
-      * iSplitL; [|iPureIntro;word].
-        assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-        rewrite !drop_drop Nat.add_1_r. iFrame.
-  - iApply "HΦ". iFrame.
-    assert (sint.nat i = length pods) as -> by word.
-    rewrite take_ge; [lia|]. iFrame.
+      iSplitR; [done|]. iSplitR; [done|]. iPureIntro. split; [word|done].
+    + assert (¬ is_pod_active this_pod) as Hpod_active.
+      { rewrite bool_decide_eq_false in Hpod_active_decide. done. }
+      assert (¬ is_pure_pod_active this_pure_pod) as Hpure_active.
+      { intros H. apply Hactive in H. done. }
+      iApply wp_for_post_do. wp_auto. iFrame "Hl HΦ pods".
+      iExists (word.add i (W64 1)), this_ptr, result, ptrs',
+        ((filter (λ v, controller.is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods))),
+        ((filter (λ v, controller.is_pure_pod_active v) (take (sint.nat (word.add i (W64 1))) pure_pods))).
+      assert (filter (λ v, is_pod_active v) (take (sint.nat i) pods) =
+              filter (λ v, is_pod_active v) (take (sint.nat (word.add i (W64 1))) pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pod); [done|].
+        rewrite list.filter_app filter_singleton_False; [done|done|rewrite app_nil_r; done]. }
+      assert (filter (λ v, is_pure_pod_active v) (take (sint.nat i) pure_pods) =
+              filter (λ v, is_pure_pod_active v) (take (sint.nat (word.add i (W64 1))) pure_pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pure_pod); [done|].
+        rewrite list.filter_app filter_singleton_False; [done|done|rewrite app_nil_r; done]. }
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word. rewrite !drop_drop Nat.add_1_r.
+      iFrame. iPureIntro. split; [word|done].
+  - iApply "HΦ". iFrame "Hresult Hptrs_before_i Hpods_before_i".
+    iPureIntro. split.
+    + assert (sint.nat i = length pods) as -> by word. rewrite take_ge; [lia|]. done.
+    + assert (sint.nat i = length pure_pods) as -> by word. rewrite take_ge; [lia|]. done.
 Qed.
 
 Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
@@ -449,7 +444,8 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
   {{{ is_pkg_init simplereplicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal" ∷ (global_addr simplereplicaset.state)↦□l ∗
-      "Hdeepown_l_meta" ∷ PureObjectMeta.deepown_l owner metadata pure_metadata dq ∗
+      "Howner" ∷ owner ↦{dq} metadata ∗
+      "Hdeepown_meta" ∷ PureObjectMeta.deepown metadata pure_metadata dq ∗
       "%Howner_kind_eq" ∷ ⌜ owner_kind = parent_key.(KKey.Kind') ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ pure_metadata.(PureObjectMeta.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ pure_metadata.(PureObjectMeta.Name') = parent_key.(KKey.Name') ⌝ ∗
@@ -468,16 +464,19 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       ([∗ list] pod;pure_pod ∈ pods;pure_pods, PurePod.deepown pod pure_pod dq') ∗
       ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PurePod.well_formed pure_pod ⌝ ∗
       ⌜ length pure_pods = size owned_pod_map ⌝ ∗
-      ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → ∃ k, owned_pod_map !! k = Some pure_pod ⌝ ∗
-      PureObjectMeta.deepown_l owner metadata pure_metadata dq ∗
+      ⌜ ∀ p, p ∈ pure_pods → owned_pod_map !! (PurePod.key p) = Some p ⌝ ∗
+      ⌜ ∀ k p, owned_pod_map !! k = Some p → p ∈ pure_pods ⌝ ∗
+      ⌜ ∀ key p, owned_pod_map !! key = Some p → key = PurePod.key p ⌝ ∗
+      ⌜ ∀ key, key ∈ dom owned_pod_map → key.(KKey.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
+      ⌜ ∀ i j p1 p2, i ≠ j → pure_pods !! i = Some p1 → pure_pods !! j = Some p2 → (PurePod.key p1) ≠ (PurePod.key p2) ⌝ ∗
+      owner ↦{dq} metadata ∗
+      PureObjectMeta.deepown metadata pure_metadata dq ∗
       parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
-      parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-      ⌜ ∀ key pod, owned_pod_map !! key = Some pod → key = PurePod.key pod ⌝ ∗
-      ⌜ ∀ key, key ∈ dom owned_pod_map → key.(KKey.Namespace') = parent_key.(KKey.Namespace') ⌝
+      parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". iDestruct "Hdeepown_l_meta" as "[Howner Hdeepown_meta]". subst. wp_auto.
+  wp_start as "H". iNamed "H". subst. wp_auto.
   wp_alloc owner_reference as "Howner_reference". wp_auto.
   wp_apply (controller.wp_PodControllerIndexKey with "[$Howner_reference]").
   iIntros (index_key) "%Hindex_key_eq". wp_auto.
@@ -536,7 +535,7 @@ Proof.
     wp_apply (wp_slice_append with "[$Hresult $Hown_result_cap $Hsl]").
     iIntros (result') "(Hresult & Hown_result_cap & Hsl)". wp_auto.
     iApply wp_for_post_do. wp_auto.
-    iFrame "Howner HΦ err pods ownerKind owner key Hdeepown_meta Hobjs_l Hptrs_pods Hpods_purepods Hown_pods Hown_child_keys Hown_parent".
+    iFrame "Howner HΦ err pods ownerKind owner key Hdeepown_meta Hobjs_l Hptrs_pods Hpods_purepods Hown_pod_list Hown_child_keys Hown_parent".
     iExists (word.add i (W64 1)), result', (interface.mk (ptrT.id v1.Pod.id) (# this_ptr)).
     iFrame.
     iSplitL;[|iPureIntro;word].
@@ -551,6 +550,79 @@ Proof.
       { subst objs. apply map_length. }
       apply take_ge. lia. }
     iFrame. iPureIntro. done.
+Qed.
+
+Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name
+  rs_key pure_rs pure_pod_map grand_child_key_map (n: w32):
+  {{{ is_pkg_init simplereplicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr simplereplicaset.state)↦□l ∗
+      "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
+      "%rs_key_eq" ∷ ⌜ rs_key = mk_replicaset_key namespace name ⌝ ∗
+      "Hghostown_rs" ∷ rs_key [[ γ.(γ_state) ]]↦ PureKObject.ReplicaSet pure_rs ∗
+      "Hghostown_pods" ∷ ([∗ map] key ↦ v ∈ pure_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod v) ∗
+      "Hghostown_children" ∷ rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map ∗
+      "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_key_map, key [[ γ.(γ_children) ]]↦ s) ∗
+      "%Hpure_rs_name_short" ∷ ⌜ length pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.Name') < 58 ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ dom pure_pod_map = dom grand_child_key_map ⌝ ∗
+      "%Hts_non" ∷ ⌜ pure_rs.(PureReplicaSet.ObjectMeta').(PureObjectMeta.DeletionTimestamp') = None ⌝ ∗
+      "%Hreplicas_eq" ∷ ⌜ pure_rs.(PureReplicaSet.Spec').(PureReplicaSetSpec.Replicas') = Some n ⌝
+  }}}
+  @! simplereplicaset.syncReplicaSet #namespace #name
+  {{{ (pure_pod_map': gmap KKey.t PurePod.t) grand_child_key_map', RET #interface.nil;
+      rs_key [[ γ.(γ_state) ]]↦ PureKObject.ReplicaSet pure_rs ∗
+      ([∗ map] key ↦ v ∈ pure_pod_map', key [[ γ.(γ_state) ]]↦ PureKObject.Pod v) ∗
+      rs_key [[ γ.(γ_children) ]]↦ dom pure_pod_map' ∗
+      ([∗ map] key ↦ s ∈ grand_child_key_map', key [[ γ.(γ_children) ]]↦ s) ∗
+      ⌜ dom pure_pod_map' = dom grand_child_key_map' ⌝ ∗
+      ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = sint.nat n ⌝
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto. subst rs_key. wp_apply wp_globals_get.
+  wp_apply (wp_State__ReplicaSetGet with "[$Hghostown_rs]"); [iFrame "#"; done|].
+  iIntros (ptr rs dq) "(Hdeepown_l_rs & %Hwell_formed_rs & %Hnamespace_eq & %Hname_eq & Hghostown_rs)". wp_auto.
+  wp_apply errors.wp_IsNotFound_nil; [done|]. rewrite bool_decide_true //. wp_auto.
+  iDestruct "Hdeepown_l_rs" as "[Hptr Hdeepown_rs]". iNamed "Hdeepown_rs".
+  iDestruct (struct_fields_split with "Hptr") as "Hptr". iNamed "Hptr".
+  wp_apply (wp_FilterPodsByOwner with "[$Hghostown_rs $Hghostown_pods $Hghostown_children $HObjectMeta $Hdeepown_objectmeta]").
+  { iFrame "#". iPureIntro. split_and!. all: try done. destruct Hwell_formed_rs as (H & _). done. }
+  iIntros (ptr_slice ptrs pods pure_pods dq') "(Hptr_slice & Hptrs & Hpods & %Hwell_formed_pods & %Hlen_size_eq &
+    %Hlist_in_map & %Hmap_in_list & %Hkey_eq & %Hns_eq & %Hno_dup & HObjectMeta & Hdeepown_objectmeta & Hghostown_rs &
+    Hghostown_pods & Hghostown_children)". wp_auto.
+  rewrite bool_decide_true //. wp_auto.
+  wp_apply (wp_FilterActivePods with "[$Hptr_slice $Hptrs $Hpods]").
+  iIntros (acitve_ptr_slice active_ptrs active_pods active_pure_pods) "(Hptr_slice & Hactive_ptrs & Hactive_pods &
+    %Hactive_pods_eq & %Hactive_pure_pods_eq)". wp_auto.
+  iAssert(⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null ⌝%I) as "->".
+  { iNamed "Hdeepown_objectmeta". iPureIntro. apply Hdeepown_deletiontimestamp_none. done. }
+  rewrite bool_decide_true //. wp_auto.
+  iAssert ((ptr ↦{dq} rs)%I) with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hptr".
+  { iApply (struct_fields_combine (V:=v1.ReplicaSet.t)). iFrame. }
+  iAssert (PureReplicaSet.deepown rs pure_rs dq %I) with "[Hdeepown_objectmeta Hdeepown_spec Hdeepown_status]"
+    as "Hdeepown_rs".
+  { iFrame. iPureIntro. done. }
+  iAssert (⌜ length active_pure_pods = sint.nat (slice.len_f acitve_ptr_slice) ⌝%I) as "%Hlen_acitve_ptr_slice".
+  { iDestruct (own_slice_len with "Hptr_slice") as %(Hl_len1 & Hl_len2).
+    iDestruct (big_sepL2_length with "Hactive_ptrs") as %Hlen3.
+    iDestruct (big_sepL2_length with "Hactive_pods") as %Hlen4.
+    iPureIntro. congruence. }
+  wp_apply (wp_manageReplicas with "[$Hptr_slice $Hactive_ptrs $Hactive_pods $Hptr $Hdeepown_rs $Hghostown_rs
+    $Hghostown_pods $Hghostown_children $Hghostown_grandchildren]").
+  { iFrame "#". iPureIntro. split_and!. all: try done.
+    - rewrite Hactive_pure_pods_eq.
+      pose proof (filter_list_map_size_eq PurePod.key (λ v, is_pure_pod_active v) pure_pods pure_pod_map).
+      apply H. all: try done.
+    - intros pure_pod Hpure_pod_in.
+      rewrite Hactive_pure_pods_eq in Hpure_pod_in.
+      apply list_elem_of_filter in Hpure_pod_in as [Hactive Hpure_pod_in_pure_pods].
+      apply Hlist_in_map in Hpure_pod_in_pure_pods as Hk_lookup.
+      apply map_lookup_filter_Some_2; [done|]. done.
+    - rewrite Hactive_pure_pods_eq.
+      apply (filter_preserves_key_uniqueness PurePod.key (λ v, is_pure_pod_active v)).
+      done. }
+  iIntros (pure_pod_map' grand_child_key_map') "(Hghostown_rs & Hghostown_pods & Hghostown_children &
+    Hghostown_grandchildren & %Hdom_eq' & %Hdesired)". wp_auto.
+  iApply "HΦ". iFrame. done.
 Qed.
 
 End proof.

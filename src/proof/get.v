@@ -55,10 +55,11 @@ Proof.
   unfold PureKObject.key in Hkey_eq. unfold PureReplicaSet.key in Hkey_eq. rewrite Hkey_eq. done.
 Qed.
 
-Lemma wp_State__ReplicaSetMutGet γ l namespace name pure_rs:
+Lemma wp_State__ReplicaSetMutGet γ l key namespace name pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "%Hkey_eq" ∷ ⌜ key = (mk_replicaset_key namespace name) ⌝ ∗
+      "Hown_rs" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ReplicaSetMutGet" #namespace #name
   {{{ ptr rs, RET (#ptr, #interface.nil);
@@ -69,8 +70,8 @@ Lemma wp_State__ReplicaSetMutGet γ l namespace name pure_rs:
       (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_State__objGet_replicaset with "[$Hown_rs]"); [iFrame "#"; done|].
+  wp_start as "H". iNamed "H". wp_auto. subst key. unfold mk_replicaset_key.
+  wp_apply (wp_State__objGet_replicaset with "[$Hown_rs]"); [iFrame "#";done|].
   iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & <- & <- & Hown_pure_rs)". wp_auto.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists ptr. done. }
@@ -83,10 +84,11 @@ Proof.
   iApply "HΦ". iFrame. done.
 Qed.
 
-Lemma wp_State__ReplicaSetGet γ l namespace name pure_rs:
+Lemma wp_State__ReplicaSetGet γ l key namespace name pure_rs:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "Hown_rs" ∷ (mk_replicaset_key namespace name) [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
+      "%Hkey_eq" ∷ ⌜ key = (mk_replicaset_key namespace name) ⌝ ∗
+      "Hown_rs" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.ReplicaSet pure_rs)
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ReplicaSetGet" #namespace #name
   {{{ ptr rs dq, RET (#ptr, #interface.nil);
@@ -98,7 +100,7 @@ Lemma wp_State__ReplicaSetGet γ l namespace name pure_rs:
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_State__ReplicaSetMutGet with "[$Hown_rs]"); [done|].
+  wp_apply (wp_State__ReplicaSetMutGet with "[$Hown_rs]"); [iFrame "#";done|].
   iIntros (ptr rs) "(Hdeepown_l_rs & %Hwell_formed_pure_rs & <- & <- & Hown_rs)". wp_auto.
   iApply "HΦ". iFrame. done.
 Qed.

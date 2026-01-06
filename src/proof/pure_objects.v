@@ -188,7 +188,8 @@ Record t := mk {
 Axiom well_formed: t → Prop.
 
 Definition deepown (c: v1.PodStatus.t) (v: t): iProp Σ :=
-  "Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝.
+  "%Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝ ∗
+  "%true" ∷ True.
 
 End def.
 End PurePodStatus.

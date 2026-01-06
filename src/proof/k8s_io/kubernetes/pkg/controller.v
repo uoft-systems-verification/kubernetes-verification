@@ -95,4 +95,13 @@ Definition is_pure_pod_active (pure_pod: PurePod.t): Prop :=
   "Failed"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
 	pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') = None.
 
+Lemma deepown_preserves_activeness pod pure_pod dq:
+  PurePod.deepown pod pure_pod dq -∗
+    ⌜ is_pod_active pod ↔ is_pure_pod_active pure_pod ⌝.
+Proof.
+  iIntros "H". iNamed "H". iNamed "Hdeepown_objectmeta". iNamed "Hdeepown_podstatus".
+  iPureIntro. unfold is_pod_active. unfold is_pure_pod_active. split.
+  all: rewrite Hdeepown_deletiontimestamp_none; rewrite Hdeepown_phase; done.
+Qed.
+
 End proof.
