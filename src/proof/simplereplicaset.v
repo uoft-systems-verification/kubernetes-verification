@@ -76,11 +76,11 @@ Proof.
       "Hghostown_grandchildren" ∷ ([∗ map] key ↦ s ∈ grand_child_keys', key [[ γ.(γ_children) ]]↦ s) ∗
       "%Hdom_eq'" ∷ ⌜ dom pure_pod_map' = dom grand_child_keys' ⌝ ∗
       "%Hpod_number'" ∷ ⌜ size (filter (λ kv, controller.is_pure_pod_active (snd kv)) pure_pod_map') = Z.to_nat ((sint.Z (slice.len_f pod_l_sl)) + sint.Z i) ⌝ ∗
-      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (word.mul (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))) (W64 (-1)))⌝
+      "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (word.mul (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))) (W64 (-1))) ⌝
     )%I.
     iAssert (I) with "[i Hghostown_pods Hghostown_children Hghostown_grandchildren]" as "Hloop_inv". {
-    iExists (W64 0), pure_pod_map, grand_child_keys.
-    iFrame. iPureIntro. split_and!; [done|word|word|word]. }
+      iExists (W64 0), pure_pod_map, grand_child_keys.
+      iFrame. iPureIntro. split_and!; [done|word|word|word]. }
     wp_for "Hloop_inv". wp_if_destruct.
     + wp_apply wp_globals_get. wp_apply schema.wp_GroupVersion__WithKind.
       { (* TODO: why so cumbersome? *) iAssert (is_pkg_init code.k8s_io.api.apps.v1.v1) as "H". all: iPkgInit. }
@@ -133,7 +133,6 @@ Proof.
     2: { iApply "HΦ". iFrame. iPureIntro. split.
       * rewrite Hdom_eq. done.
       * word. }
-    wp_bind.
     wp_apply wp_slice_slice_pure; [iPureIntro;word|].
     iDestruct (own_slice_f 0 (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))) with "Hpod_l_sl")
       as "(Hbefore_slice & Hslice & Hafter_slice )"; [word|].
@@ -152,7 +151,7 @@ Proof.
       "%Hmap_sub" ∷ ⌜ ∀ pure_pod, pure_pod ∈ (drop (sint.nat i) active_pure_pods) →
                                     pure_pod_map' !! (PurePod.key pure_pod) = Some pure_pod →
                                       pure_pod_map !! (PurePod.key pure_pod) = Some pure_pod ⌝ ∗
-      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f (slice.slice_f pod_l_sl ptrT (W64 0) (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n)))))⌝
+      "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f (slice.slice_f pod_l_sl ptrT (W64 0) (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n))))) ⌝
     )%I.
     iAssert (I) with "[i pod Hghostown_pods Hghostown_children Hghostown_grandchildren]" as "Hloop_inv". {
     iExists (W64 0), (default_val loc), pure_pod_map, (filter (λ kv : KKey.t * PurePod.t, is_pure_pod_active kv.2) pure_pod_map), grand_child_keys.
@@ -355,20 +354,21 @@ Proof.
   iDestruct (own_slice_wf with "Hl") as %Hl_cap.
   iDestruct (big_sepL2_length with "Hptrs") as %Hlen.
   iDestruct (big_sepL2_length with "Hpods") as %Hlen'.
-  iAssert ((∃ (i: w64) (p: loc) (result: slice.t) (ptrs': list loc) pods' pure_pods',
+  set I := (∃ (i: w64) (p: loc) (result: slice.t) (ptrs': list loc) pods' pure_pods',
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hp_ptr" ∷ p_ptr ↦ p ∗
-      "Hresult_ptr" :: result_ptr ↦ result ∗
+      "Hresult_ptr" ∷ result_ptr ↦ result ∗
       "Hresult" ∷ result ↦* ptrs' ∗
       "Hptrs_before_i" ∷ ([∗ list] ptr;pod ∈ ptrs';pods', ptr ↦{dq} pod) ∗
       "Hptrs_after_i" ∷ ([∗ list] ptr;pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pods), ptr ↦{dq} pod) ∗
       "Hpods_before_i" ∷ ([∗ list] pod;pure_pod ∈ pods';pure_pods', PurePod.deepown pod pure_pod dq) ∗
       "Hpods_after_i" ∷ ([∗ list] pod;pure_pod ∈ (drop (sint.nat i) pods);(drop (sint.nat i) pure_pods), PurePod.deepown pod pure_pod dq) ∗
-      "Hown_result_cap" :: own_slice_cap loc result (DfracOwn 1) ∗
-      "%Hi" :: ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f l)⌝ ∗
+      "Hown_result_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
+      "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f l) ⌝ ∗
       "%Hpods'_eq" ∷ ⌜ pods' = filter (λ v, controller.is_pod_active v) (take (sint.nat i) pods) ⌝ ∗
       "%Hpure_pods'_eq" ∷ ⌜ pure_pods' = filter (λ v, controller.is_pure_pod_active v) (take (sint.nat i) pure_pods) ⌝
-  )%I) with "[i result p Hptrs Hpods]" as "Hloop_inv". {
+  )%I.
+  iAssert (I) with "[i result p Hptrs Hpods]" as "Hloop_inv". {
     iExists (W64 0), (default_val loc), slice.nil, [], [], [].
     iFrame. iFrame "#".
     rewrite !take_0 !filter_nil !big_sepL2_nil. done. }
@@ -496,14 +496,15 @@ Proof.
   iDestruct (own_slice_len with "Hobjs_l") as %(Hobjs_l_len1 & Hobjs_l_len2).
   iDestruct (own_slice_wf with "Hobjs_l") as %Hobjs_l_cap.
   iDestruct (big_sepL2_length with "Hptrs_pods") as %Hlen.
-  iAssert ((∃ (i: w64) (result: slice.t) (v: interface.t),
+  set I := (∃ (i: w64) (result: slice.t) (v: interface.t),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hresult_ptr" ∷ result_ptr ↦ result ∗
       "Hresult" ∷ result ↦* take (sint.nat i) ptrs ∗
       "Hobj" ∷ obj_ptr ↦ v ∗
       "Hown_result_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
-      "%Hi" ∷ ⌜0 ≤ sint.Z i ≤ sint.Z (slice.len_f objs_l)⌝
-  )%I) with "[i result obj]" as "Hloop_inv". {
+      "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f objs_l) ⌝
+  )%I.
+  iAssert (I) with "[i result obj]" as "Hloop_inv". {
     iExists (W64 0), slice.nil, (default_val interface.t).
     iFrame. iFrame "#". iPureIntro. word. }
   wp_for "Hloop_inv".
@@ -535,13 +536,12 @@ Proof.
     wp_apply (wp_slice_append with "[$Hresult $Hown_result_cap $Hsl]").
     iIntros (result') "(Hresult & Hown_result_cap & Hsl)". wp_auto.
     iApply wp_for_post_do. wp_auto.
-    iFrame "Howner HΦ err pods ownerKind owner key Hdeepown_meta Hobjs_l Hptrs_pods Hpods_purepods Hown_pod_list Hown_child_keys Hown_parent".
-    iExists (word.add i (W64 1)), result', (interface.mk (ptrT.id v1.Pod.id) (# this_ptr)).
-    iFrame.
-    iSplitL;[|iPureIntro;word].
-    assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-    assert (take (S (sint.nat i)) ptrs = take (sint.nat i) ptrs ++ [this_ptr]) as ->.
-    { apply take_S_r. done. }
+    iAssert (I) with "[Hi_ptr Hresult Hresult_ptr Hobj Hown_result_cap]" as "Hloop_inv".
+    { iExists (word.add i (W64 1)), result', (interface.mk (ptrT.id v1.Pod.id) (# this_ptr)). iFrame.
+      iSplitL;[|iPureIntro;word].
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      assert (take (S (sint.nat i)) ptrs = take (sint.nat i) ptrs ++ [this_ptr]) as ->.
+      { apply take_S_r. done. } done. }
     iFrame.
   - iApply "HΦ". iFrame.
     assert (take (sint.nat i) ptrs = ptrs) as ->.
