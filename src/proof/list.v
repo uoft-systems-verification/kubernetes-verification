@@ -19,10 +19,9 @@ Lemma wp_State__objListLocked_pod γ l phys_state_l phys_state abs_state kind na
       "%Habs_state_well_formed" ∷ ⌜ ∀ k obj, abs_state !! k = Some obj → k = PureKObject.key obj ∧ PureKObject.well_formed obj ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objListLocked" #kind #namespace
-  {{{ sl ptr_list pod_list pure_pod_list, RET #sl;
+  {{{ sl ptr_list pure_pod_list, RET #sl;
       sl ↦* map (λ ptr, interface.mk (ptrT.id v1.Pod.id) #ptr) ptr_list ∗
-      ([∗ list] ptr;pod ∈ ptr_list;pod_list, ptr ↦ pod) ∗
-      ([∗ list] pod;pure_pod ∈ pod_list;pure_pod_list, PurePod.deepown pod pure_pod 1) ∗
+      ([∗ list] ptr;pure_pod ∈ ptr_list;pure_pod_list, ∃ pod, PurePod.deepown_l ptr pod pure_pod 1) ∗
       ⌜ ∀ p, p ∈ pure_pod_list → PurePod.well_formed p ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pod_list → abs_state !! PurePod.key p = Some (PureKObject.Pod p) ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pod_list → v1.namespace_matches namespace p.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') ⌝ ∗
