@@ -39,6 +39,11 @@ translate = [
     "ObjectMeta.GetManagedFields",
     "ObjectMeta.SetManagedFields",
     "NewControllerRef",
+    "NamespaceDefault",
+    "NamespaceAll",
+    "NamespaceNone",
+    "NamespaceSystem",
+    "NamespacePublic",
 ]
 
 imports = [

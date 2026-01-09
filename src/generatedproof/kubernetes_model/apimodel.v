@@ -339,6 +339,10 @@ Global Instance wp_method_call_State'ptr_objListBySelector :
   WpMethodCall (ptrT.id apimodel.State.id) "objListBySelector" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_objListLocked :
+  WpMethodCall (ptrT.id apimodel.State.id) "objListLocked" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_objUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "objUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).

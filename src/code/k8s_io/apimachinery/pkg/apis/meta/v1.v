@@ -716,15 +716,15 @@ Axiom FinalizerOrphanDependents : go_string.
 
 Axiom FinalizerDeleteDependents : go_string.
 
-Axiom NamespaceDefault : go_string.
+Definition NamespaceDefault : go_string := "default"%go.
 
-Axiom NamespaceAll : go_string.
+Definition NamespaceAll : go_string := ""%go.
 
-Axiom NamespaceNone : go_string.
+Definition NamespaceNone : go_string := ""%go.
 
-Axiom NamespaceSystem : go_string.
+Definition NamespaceSystem : go_string := "kube-system"%go.
 
-Axiom NamespacePublic : go_string.
+Definition NamespacePublic : go_string := "kube-public"%go.
 
 Axiom ListOptions : go_type.
 

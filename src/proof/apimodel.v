@@ -199,4 +199,25 @@ Proof.
   apply wp_struct_make; cbn; auto.
 Qed.
 
+Lemma split_children_point_to_parent (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)):
+  (∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID'))) →
+  ((∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
+  ((∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID'))).
+Proof.
+  intros H.
+  split.
+  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hparent.
+    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
+    apply H. apply Hparent.
+  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hin.
+    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
+    apply H. apply Hin.
+Qed.
+
 End proof.

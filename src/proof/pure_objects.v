@@ -392,16 +392,42 @@ End PureKObject.
 Global Existing Instance KKey.eq_dec.
 Global Existing Instance KKey.countable.
 
+Definition is_controller_parent_of (o: PureOwnerReference.t) kind name uid : Prop :=
+  o.(PureOwnerReference.Controller') = Some true ∧
+  o.(PureOwnerReference.Kind') = kind ∧
+  o.(PureOwnerReference.Name') = name ∧
+  o.(PureOwnerReference.UID') = uid.
+
+Global Instance is_controller_parent_of_dec o kind name uid :
+  Decision (is_controller_parent_of o kind name uid).
+Proof.
+  unfold is_controller_parent_of.
+  repeat apply and_dec; apply _.
+Qed.
+
 Definition os_has_controller_parent_of (os: list PureOwnerReference.t) kind name uid : Prop :=
-  ∃ i o, os !! i = Some o ∧
-    o.(PureOwnerReference.Controller') = Some true ∧
-    o.(PureOwnerReference.Kind') = kind ∧
-    o.(PureOwnerReference.Name') = name ∧
-    o.(PureOwnerReference.UID') = uid.
+  ∃ o, o ∈ os ∧ is_controller_parent_of o kind name uid.
+
+Global Instance os_has_controller_parent_of_dec os kind name uid :
+  Decision (os_has_controller_parent_of os kind name uid).
+Proof.
+  unfold os_has_controller_parent_of.
+  apply list_exist_dec. intros o.
+  apply and_dec; apply _.
+Qed.
 
 Definition obj_has_controller_parent_of child kind name uid: Prop :=
-  ∃ os, (PureKObject.metadata child).(PureObjectMeta.OwnerReferences') = Some os ∧
-    os_has_controller_parent_of os kind name uid.
+  match (PureKObject.metadata child).(PureObjectMeta.OwnerReferences') with
+  | Some os => os_has_controller_parent_of os kind name uid
+  | None => False
+  end.
+
+Global Instance obj_has_controller_parent_of_dec child kind name uid :
+  Decision (obj_has_controller_parent_of child kind name uid).
+Proof.
+  unfold obj_has_controller_parent_of.
+  destruct ((PureKObject.metadata child).(PureObjectMeta.OwnerReferences')); apply _.
+Qed.
 
 Lemma well_formed_owner_references_has_at_most_one_controller_parent os:
   PureOwnerReference.list_well_formed os →
@@ -412,8 +438,13 @@ Lemma well_formed_owner_references_has_at_most_one_controller_parent os:
 Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold os_has_controller_parent_of in H1, H2.
-  destruct H1 as (i1 & o1 & Hlookup1 & Hctrl1 & Hkind1 & Hname1 & Huid1).
-  destruct H2 as (i2 & o2 & Hlookup2 & Hctrl2 & Hkind2 & Hname2 & Huid2).
+  destruct H1 as (o1 & Hin1 & Hctrl1).
+  destruct H2 as (o2 & Hin2 & Hctrl2).
+  unfold is_controller_parent_of in Hctrl1, Hctrl2.
+  destruct Hctrl1 as (Hctrl1_c & Hkind1 & Hname1 & Huid1).
+  destruct Hctrl2 as (Hctrl2_c & Hkind2 & Hname2 & Huid2).
+  apply list_elem_of_lookup_1 in Hin1 as [i1 Hlookup1].
+  apply list_elem_of_lookup_1 in Hin2 as [i2 Hlookup2].
   unfold PureOwnerReference.list_well_formed in Hwf.
   assert (i1 = i2) as Heq.
   { apply (Hwf i1 o1 i2 o2).
@@ -437,11 +468,6 @@ Lemma well_formed_obj_has_at_most_one_controller_parent obj:
 Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold obj_has_controller_parent_of in H1, H2.
-  destruct H1 as (os1 & Hownerref1 & Hhas_ctrl1).
-  destruct H2 as (os2 & Hownerref2 & Hhas_ctrl2).
-  rewrite Hownerref1 in Hownerref2.
-  injection Hownerref2 as Hos_eq.
-  subst os2.
   destruct obj as [pod | rs].
   - (* Pod case *)
     unfold PureKObject.well_formed in Hwf.
@@ -449,9 +475,8 @@ Proof.
     destruct Hwf as (Hwf_meta & _).
     unfold PureObjectMeta.well_formed in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
-    simpl in Hownerref1.
-    destruct (PureObjectMeta.OwnerReferences' (PurePod.ObjectMeta' pod)) as [os|]; [|discriminate].
-    injection Hownerref1 as <-.
+    simpl in H1, H2.
+    destruct (PureObjectMeta.OwnerReferences' (PurePod.ObjectMeta' pod)) as [os|]; [|contradiction].
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
   - (* ReplicaSet case *)
     unfold PureKObject.well_formed in Hwf.
@@ -459,8 +484,7 @@ Proof.
     destruct Hwf as (Hwf_meta & _).
     unfold PureObjectMeta.well_formed in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
-    simpl in Hownerref1.
-    destruct (PureObjectMeta.OwnerReferences' (PureReplicaSet.ObjectMeta' rs)) as [os|]; [|discriminate].
-    injection Hownerref1 as <-.
+    simpl in H1, H2.
+    destruct (PureObjectMeta.OwnerReferences' (PureReplicaSet.ObjectMeta' rs)) as [os|]; [|contradiction].
     apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
 Qed.

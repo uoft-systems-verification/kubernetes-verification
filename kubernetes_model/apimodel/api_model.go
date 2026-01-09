@@ -73,10 +73,7 @@ func (s *State) objGet(key KKey) (interface{}, bool) {
 	}
 }
 
-func (s *State) objList(kind, namespace string) (items []interface{}) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+func (s *State) objListLocked(kind, namespace string) (items []interface{}) {
 	for key, val := range s.m {
 		if kind == key.Kind {
 			if namespace == metav1.NamespaceAll || namespace == key.Namespace {
@@ -85,6 +82,13 @@ func (s *State) objList(kind, namespace string) (items []interface{}) {
 		}
 	}
 	return items
+}
+
+func (s *State) objList(kind, namespace string) (items []interface{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.objListLocked(kind, namespace)
 }
 
 func filterByLabelSelector(items []interface{}, selector labels.Selector) ([]interface{}, error) {
@@ -277,6 +281,9 @@ func index_of(indexName string, obj interface{}) ([]string, error) {
 
 // Returned value must be treated as read-only.
 func (s *State) Index(kind, indexName string, obj interface{}) ([]interface{}, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	indexedValues, err := index_of(indexName, obj)
 	if err != nil {
 		return nil, err
@@ -292,7 +299,7 @@ func (s *State) Index(kind, indexName string, obj interface{}) ([]interface{}, e
 	}
 
 	var items []interface{}
-	for _, val := range s.objList(kind, metav1.NamespaceAll) {
+	for _, val := range s.objListLocked(kind, metav1.NamespaceAll) {
 		values, err := index_of(indexName, val)
 		if err != nil {
 			return nil, err
@@ -309,8 +316,11 @@ func (s *State) Index(kind, indexName string, obj interface{}) ([]interface{}, e
 
 // Returned value must be treated as read-only.
 func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var items []interface{}
-	listed := s.objList(kind, metav1.NamespaceAll)
+	listed := s.objListLocked(kind, metav1.NamespaceAll)
 	for _, val := range listed {
 		values, err := index_of(indexName, val)
 		if err != nil {

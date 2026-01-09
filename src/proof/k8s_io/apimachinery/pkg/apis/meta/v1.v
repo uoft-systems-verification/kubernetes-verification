@@ -143,4 +143,7 @@ Lemma wp_NewControllerRef_replicaset owner gvk rs_l meta pure_meta dq:
   }}}.
 Proof. wp_start as "H". Admitted.
 
+Definition namespace_matches ns_query ns: Prop :=
+  ns_query = v1.NamespaceAll ∨ ns_query = ns.
+
 End proof.
