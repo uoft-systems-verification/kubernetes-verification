@@ -426,12 +426,11 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       ptr_slice ↦* ptrs ∗
       ([∗ list] ptr;pure_pod ∈ ptrs;pure_pods, ∃ pod, PurePod.deepown_l ptr pod pure_pod dq') ∗
       ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PurePod.well_formed pure_pod ⌝ ∗
-      ⌜ length pure_pods = size owned_pod_map ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pods → owned_pod_map !! (PurePod.key p) = Some p ⌝ ∗
       ⌜ ∀ k p, owned_pod_map !! k = Some p → p ∈ pure_pods ⌝ ∗
       ⌜ ∀ key p, owned_pod_map !! key = Some p → key = PurePod.key p ⌝ ∗
-      ⌜ ∀ key, key ∈ dom owned_pod_map → key.(KKey.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
       ⌜ ∀ i j p1 p2, i ≠ j → pure_pods !! i = Some p1 → pure_pods !! j = Some p2 → (PurePod.key p1) ≠ (PurePod.key p2) ⌝ ∗
+      ⌜ ∀ key, key ∈ dom owned_pod_map → key.(KKey.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
       owner ↦{dq} metadata ∗
       PureObjectMeta.deepown metadata pure_metadata dq ∗
       parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
@@ -549,9 +548,9 @@ Proof.
   iDestruct (struct_fields_split with "Hptr") as "Hptr". iNamed "Hptr".
   wp_apply (wp_FilterPodsByOwner with "[$Hghostown_rs $Hghostown_pods $Hghostown_children $HObjectMeta $Hdeepown_objectmeta]").
   { iFrame "#". iPureIntro. split_and!. all: try done. destruct Hwell_formed_rs as (H & _). done. }
-  iIntros (ptr_slice ptrs pure_pods dq') "(Hptr_slice & Hlist & %Hwell_formed_pods & %Hlen_size_eq &
-    %Hlist_in_map & %Hmap_in_list & %Hkey_eq & %Hns_eq & %Hno_dup & HObjectMeta & Hdeepown_objectmeta & Hghostown_rs &
-    Hghostown_pods & Hghostown_children)". wp_auto.
+  iIntros (ptr_slice ptrs pure_pods dq') "(Hptr_slice & Hlist & %Hwell_formed_pods & %Hlist_in_map & %Hmap_in_list
+    & %Hkey_eq & %Hno_dup & %Hns_eq & HObjectMeta & Hdeepown_objectmeta & Hghostown_rs & Hghostown_pods &
+    Hghostown_children)". wp_auto.
   rewrite bool_decide_true //. wp_auto.
   wp_apply (wp_FilterActivePods with "[$Hptr_slice $Hlist]").
   iIntros (acitve_ptr_slice active_ptrs active_pure_pods) "(Hptr_slice & Hactive_list & %Hactive_pure_pods_eq)". wp_auto.

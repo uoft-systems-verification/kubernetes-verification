@@ -12,6 +12,10 @@ Axiom valid_name: go_string → Prop.
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
 Axiom valid_namespace: go_string → Prop.
 
+Lemma valid_namespace_slash_free ns:
+  valid_namespace ns → slash_free ns.
+Proof. Admitted.
+
 Module PureTime.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -382,11 +386,6 @@ Definition key kobj : KKey.t :=
   | ReplicaSet rs => PureReplicaSet.key rs
   end.
 
-(* Definition agree_with_key key kobj : Prop :=
-  key.(KKey.Kind') = kind kobj ∧
-  key.(KKey.Namespace') = (metadata kobj).(PureObjectMeta.Namespace') ∧
-  key.(KKey.Name') = (metadata kobj).(PureObjectMeta.Name'). *)
-
 End PureKObject.
 
 Global Existing Instance KKey.eq_dec.
@@ -427,6 +426,25 @@ Global Instance obj_has_controller_parent_of_dec child kind name uid :
 Proof.
   unfold obj_has_controller_parent_of.
   destruct ((PureKObject.metadata child).(PureObjectMeta.OwnerReferences')); apply _.
+Qed.
+
+Lemma well_formed_object_has_well_formed_metadata obj:
+  PureKObject.well_formed obj → PureObjectMeta.well_formed (PureKObject.metadata obj).
+Proof. destruct obj; simpl; intros [H _]; done. Qed.
+
+Lemma well_formed_object_has_well_formed_key key obj:
+  key = PureKObject.key obj →
+  PureKObject.well_formed obj →
+    key.(KKey.Name') ≠ ""%go ∧
+    valid_name key.(KKey.Name') ∧
+    key.(KKey.Namespace') ≠ ""%go ∧
+    valid_namespace key.(KKey.Namespace').
+Proof.
+  intros Hkey Hwf.
+  apply well_formed_object_has_well_formed_metadata in Hwf.
+  destruct obj; simpl in *; subst key; simpl;
+  destruct Hwf as [_ [Hname_ne [Hname_valid [Hns_ne Hns_valid]]]];
+  repeat split; intuition.
 Qed.
 
 Lemma well_formed_owner_references_has_at_most_one_controller_parent os:

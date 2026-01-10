@@ -24,6 +24,7 @@ Lemma wp_State__objListLocked_pod γ l phys_state_l phys_state abs_state kind na
       ([∗ list] ptr;pure_pod ∈ ptr_list;pure_pod_list, ∃ pod, PurePod.deepown_l ptr pod pure_pod 1) ∗
       ⌜ ∀ p, p ∈ pure_pod_list → PurePod.well_formed p ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pod_list → abs_state !! PurePod.key p = Some (PureKObject.Pod p) ⌝ ∗
+      ⌜ ∀ i j p1 p2, i ≠ j → pure_pod_list !! i = Some p1 → pure_pod_list !! j = Some p2 → PurePod.key p1 ≠ PurePod.key p2 ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pod_list → v1.namespace_matches namespace p.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') ⌝ ∗
       ⌜ ∀ k p, pure_pod_map !! k = Some p →
         v1.namespace_matches namespace p.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') →

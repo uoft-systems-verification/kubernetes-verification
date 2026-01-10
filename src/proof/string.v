@@ -118,22 +118,22 @@ Definition byte_slash : w8 := W8 47.  (* ASCII '/' *)
 
 Axiom reserved_name : go_string → Prop.
 
-Definition no_dash (s: go_string) : Prop :=
+Definition dash_free (s: go_string) : Prop :=
   Forall (λ b, b ≠ byte_dash) s.
 
-Definition no_slash (s: go_string) : Prop :=
+Definition slash_free (s: go_string) : Prop :=
   Forall (λ b, b ≠ byte_slash) s.
 
 Definition reserved_derived_name (derived_name: go_string) : Prop :=
   ∃ prefix suffix,
     reserved_name prefix ∧
-    no_dash suffix ∧
+    dash_free suffix ∧
     derived_name = prefix ++ "-"%go ++ suffix.
 
 Definition unreserved_generated_name (generated_name: go_string) : Prop :=
     ∃ prefix suffix,
       ¬ reserved_name prefix ∧
-      no_dash suffix ∧
+      dash_free suffix ∧
       length suffix = 5%nat ∧
       generated_name = prefix ++ "-"%go ++ suffix.
 
@@ -143,8 +143,8 @@ Lemma derived_name_and_generated_name_neq name1 name2 :
       name1 ≠ name2.
 Proof.
   intros Hname1 Hname2 Hcontra.
-  destruct Hname1 as (prefix1 & suffix1 & Hreserved1 & Hno_dash1 & ->).
-  destruct Hname2 as (prefix2 & suffix2 & Hnotreserved2 & Hno_dash2 & Hlen2 & ->).
+  destruct Hname1 as (prefix1 & suffix1 & Hreserved1 & Hdash_free1 & ->).
+  destruct Hname2 as (prefix2 & suffix2 & Hnotreserved2 & Hdash_free2 & Hlen2 & ->).
   assert ("-"%go = [byte_dash]) as Hdash_eq by done.
   rewrite Hdash_eq in Hcontra.
   apply app_sep_suffix_inj in Hcontra; [|done|done].
@@ -153,14 +153,14 @@ Proof.
 Qed.
 
 Lemma pod_controller_index_key_inj namespace1 kind1 name1 uid1 namespace2 kind2 name2 uid2 :
-  no_slash namespace1 ∧ no_slash kind1 ∧ no_slash name1 ∧ no_slash uid1 ∧
-  no_slash namespace2 ∧ no_slash kind2 ∧ no_slash name2 ∧ no_slash uid2 →
+  slash_free namespace1 ∧ slash_free kind1 ∧ slash_free name1 ∧ slash_free uid1 ∧
+  slash_free namespace2 ∧ slash_free kind2 ∧ slash_free name2 ∧ slash_free uid2 →
     namespace1 ++ "/"%go ++ kind1 ++ "/"%go ++ name1 ++ "/"%go ++ uid1 =
     namespace2 ++ "/"%go ++ kind2 ++ "/"%go ++ name2 ++ "/"%go ++ uid2 →
       namespace1 = namespace2 ∧ kind1 = kind2 ∧ name1 = name2 ∧ uid1 = uid2.
 Proof.
-  intros (Hno_slash_ns1 & Hno_slash_k1 & Hno_slash_n1 & Hno_slash_u1 &
-    Hno_slash_ns2 & Hno_slash_k2 & Hno_slash_n2 & Hno_slash_u2) Heq.
+  intros (Hslash_free_ns1 & Hslash_free_k1 & Hslash_free_n1 & Hslash_free_u1 &
+    Hslash_free_ns2 & Hslash_free_k2 & Hslash_free_n2 & Hslash_free_u2) Heq.
   assert ("/"%go = [byte_slash]) as Hslash_eq by done.
   rewrite !Hslash_eq in Heq.
   apply app_prefix_sep_inj in Heq; [|done|done].
@@ -171,5 +171,33 @@ Proof.
   destruct Heq as [Hn_eq Hu_eq].
   done.
 Qed.
+
+Lemma pod_controller_index_key_inequality1 ns1 ns2 suffix :
+  slash_free ns1 → slash_free ns2 →
+  ns1 ≠ ns2 ++ "/"%go ++ suffix.
+Proof.
+  intros Hns1_slash_free Hns2_slash_free Heq.
+  assert ("/"%go = [byte_slash]) as Hslash_eq by done.
+  rewrite Hslash_eq in Heq.
+  unfold slash_free in Hns1_slash_free.
+  rewrite Heq in Hns1_slash_free.
+  rewrite !Forall_app in Hns1_slash_free.
+  destruct Hns1_slash_free as [_ [Hcontra _]].
+  apply Forall_cons_1 in Hcontra.
+  apply Hcontra. reflexivity.
+Qed.
+
+Lemma pod_controller_index_key_inequality2 ns1 ns2 suffix1 suffix2 :
+  slash_free ns1 → slash_free ns2 → ns1 ≠ ns2 →
+  ns1 ++ "/"%go ++ suffix1 ≠ ns2 ++ "/"%go ++ suffix2.
+Proof.
+  intros Hns1_slash_free Hns2_slash_free Hns_neq Hcontra.
+  assert ("/"%go = [byte_slash]) as Hslash_eq by done.
+  rewrite Hslash_eq in Hcontra.
+  apply app_prefix_sep_inj in Hcontra; [|done|done].
+  destruct Hcontra as [Hns_eq _].
+  done.
+Qed.
+
 
 End proof.
