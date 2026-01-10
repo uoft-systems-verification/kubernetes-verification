@@ -107,7 +107,7 @@ Proof.
     { apply lookup_lt_is_Some_2. word. }
     assert (∃ this_pure_pod, pure_pod_list !! sint.nat i = Some this_pure_pod) as [this_pure_pod Hthis_pure_pod_lookup].
     { apply lookup_lt_is_Some_2. word. }
-    iPoseProof (big_sepL2_destruct_cons _ _ _ this_ptr this_pure_pod with "Hlist_post") as "[Hthis_ptr_pure_pod Hother_ptr_pure_pod]".
+    iPoseProof (big_sepL2_head_tail _ _ _ this_ptr this_pure_pod with "Hlist_post") as "[Hthis_ptr_pure_pod Hother_ptr_pure_pod]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
     iDestruct "Hthis_ptr_pure_pod" as (this_pod) "[Hthis_ptr Hdeepown_this_pod]".
     wp_apply (wp_index_of_podController with "[$Hthis_ptr $Hdeepown_this_pod]").

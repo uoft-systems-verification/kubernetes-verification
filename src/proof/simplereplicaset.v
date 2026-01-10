@@ -360,7 +360,7 @@ Proof.
     wp_apply (wp_load_slice_elem with "[$Hl]"); [word|eauto| ]. iIntros "Hl". wp_auto.
     assert (∃ this_pure_pod, pure_pods !! sint.nat i = Some this_pure_pod) as [this_pure_pod Hthis_pure_pod_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hlen Hl_len1. word. }
-    iPoseProof (big_sepL2_destruct_cons _ _ _ this_ptr this_pure_pod with "Hlist_post") as "[Hthis Hother]".
+    iPoseProof (big_sepL2_head_tail _ _ _ this_ptr this_pure_pod with "Hlist_post") as "[Hthis Hother]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
     iDestruct "Hthis" as (this_pod) "[Hthis_ptr Hthis_pure_pod]".
     iDestruct (controller.deepown_preserves_activeness with "Hthis_pure_pod") as %Hactive.

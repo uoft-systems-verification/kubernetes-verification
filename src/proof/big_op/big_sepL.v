@@ -7,7 +7,7 @@ Section list.
   Context {PROP : bi}.
   Implicit Types (A : Type).
 
-  Lemma big_sepL_destruct_cons {A} (Φ: nat → A → PROP) (l : list A) (v : A) :
+  Lemma big_sepL_head_tail {A} (Φ: nat → A → PROP) (l : list A) (v : A) :
     l !! 0 = Some v →
       ⊢ ([∗ list] k ↦ x ∈ l, Φ k x) -∗
         Φ 0 v ∗ ([∗ list] k ↦ x ∈ drop 1 l, Φ (S k) x).
@@ -23,7 +23,7 @@ Section list2.
   Implicit Types Φ Ψ : nat → A → B → PROP.
 
 
-  Lemma big_sepL2_destruct_cons Φ (l1 : list A) (l2 : list B) (v1 : A) (v2 : B) :
+  Lemma big_sepL2_head_tail Φ (l1 : list A) (l2 : list B) (v1 : A) (v2 : B) :
     l1 !! 0 = Some v1 ∧ l2 !! 0 = Some v2 →
       ⊢ ([∗ list] k ↦ x ; y ∈ l1; l2, Φ k x y) -∗
         Φ 0 v1 v2 ∗ ([∗ list] k ↦ x ; y ∈ drop 1 l1; drop 1 l2, Φ (S k) x y).
