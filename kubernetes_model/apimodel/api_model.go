@@ -1,6 +1,7 @@
 package apimodel
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -12,21 +13,49 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	"k8s.io/kubernetes/pkg/apis/apps"
+	appsv1defaults "k8s.io/kubernetes/pkg/apis/apps/v1"
+	"k8s.io/kubernetes/pkg/apis/core"
+	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
 	"k8s.io/kubernetes/pkg/controller"
+	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
+	podstrategy "k8s.io/kubernetes/pkg/registry/core/pod"
 )
 
 // What's missing in this model:
-// (1) state validation and transition validation
-// (2) update-then-delete: if a to-be-delete object is updated to remove all its finalizers, then it will be deleted
-// (3) API options, e.g., CreateOption, DeleteOption.
-// (4) object initialization when created
-// (5) Patch
-// (6) UpdateStatus
+//
+// (1) UpdateStatus
+//
+// (2) Patch (JSON Patch, Merge Patch, Strategic Merge Patch)
+//
+// (3) Transition validation during Update: validate that state transitions are valid (e.g., Phase changes)
+//
+// (4) ShouldDeleteDuringUpdate: if a to-be-delete object is updated to remove all its finalizers, then it will be deleted
+//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L773-L777
+//
+// (5) API options, e.g., CreateOption
+//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/types.go#L579
+//
+// (6) Admission webhooks and admission plugins
+//     - Validating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/validating/plugin.go
+//     - Mutating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/mutating/plugin.go
+//     - Built-in plugins: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/kubeapiserver/admission/exclusion/resources.go
+//
+// (7) Warnings collection - Collects warnings during create/update (non-fatal issues)
+//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L133 (WarningsOnCreate)
+//
+// (8) BeginCreate/FinishCreate/AfterCreate hooks
+//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L490-L499
+//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L551-L553
 
 type State struct {
 	m                      map[KKey]interface{}
@@ -144,6 +173,197 @@ func (s *State) generateNewUIDAndUpdate() string {
 	}
 }
 
+func (s *State) setResourceVersion(metadata metav1.Object) {
+	s.resourceVersionCounter++
+	metadata.SetResourceVersion(strconv.FormatInt(s.resourceVersionCounter, 10))
+}
+
+// applySchemaDefaults applies schema-based defaults to the object.
+// This matches the API server's defaulting behavior that happens during decoding.
+// These defaults are applied BEFORE PrepareForCreate and validation.
+func applySchemaDefaults(kind string, objCopy interface{}) error {
+	switch kind {
+	case "Pod":
+		pod, ok := objCopy.(*corev1.Pod)
+		if !ok {
+			return fmt.Errorf("expected *corev1.Pod for kind Pod, got %T", objCopy)
+		}
+		// SetObjectDefaults_Pod recursively applies all defaults:
+		// - PodSpec defaults (DNSPolicy, RestartPolicy, TerminationGracePeriodSeconds, etc.)
+		// - Container defaults (ImagePullPolicy, TerminationMessagePolicy, etc.)
+		// - Volume defaults, Probe defaults, etc.
+		corev1defaults.SetObjectDefaults_Pod(pod)
+
+	case "ReplicaSet":
+		rs, ok := objCopy.(*appsv1.ReplicaSet)
+		if !ok {
+			return fmt.Errorf("expected *appsv1.ReplicaSet for kind ReplicaSet, got %T", objCopy)
+		}
+		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
+		// - ReplicaSet.Spec.Replicas defaults to 1
+		// - Pod template defaults (same as Pod)
+		appsv1defaults.SetObjectDefaults_ReplicaSet(rs)
+
+	default:
+		return fmt.Errorf("unsupported kind for schema defaults: %s", kind)
+	}
+
+	return nil
+}
+
+// validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
+// This matches the API server's generic metadata validation that happens in BeforeCreate.
+func validateObjectMeta(metadata metav1.Object, kind string) error {
+	// For now, we assume all resources are namespaced (Pod, ReplicaSet, etc.)
+	// Cluster-scoped resources like Node, Namespace would set requiresNamespace = false
+	requiresNamespace := true
+
+	// Validate using the generic Kubernetes metadata validator
+	// This validates: Name, Namespace, Labels, Annotations, OwnerReferences, Finalizers, etc.
+	if errs := apivalidation.ValidateObjectMetaAccessor(
+		metadata,
+		requiresNamespace,
+		apivalidation.NameIsDNSSubdomain, // Name must be a valid DNS subdomain
+		field.NewPath("metadata"),
+	); len(errs) > 0 {
+		return errors.NewInvalid(
+			schema.GroupKind{Kind: kind},
+			metadata.GetName(),
+			errs,
+		)
+	}
+
+	return nil
+}
+
+// applyStrategyAndValidate applies resource-specific strategy (PrepareForCreate, Validate, Canonicalize).
+// This matches the API server's BeforeCreate behavior of calling strategy hooks and validation functions.
+// Returns an error if conversion fails or validation fails (converted from field.ErrorList to error).
+func applyStrategyAndValidate(kind string, objCopy interface{}, name string) error {
+	ctx := context.Background()
+
+	switch kind {
+	case "Pod":
+		pod, ok := objCopy.(*corev1.Pod)
+		if !ok {
+			return fmt.Errorf("expected *corev1.Pod for kind Pod, got %T", objCopy)
+		}
+
+		internalPod := &core.Pod{}
+
+		if err := legacyscheme.Scheme.Convert(pod, internalPod, nil); err != nil {
+			return fmt.Errorf("failed to convert v1.Pod to internal Pod: %w", err)
+		}
+
+		podstrategy.Strategy.PrepareForCreate(ctx, internalPod)
+		if errs := podstrategy.Strategy.Validate(ctx, internalPod); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: kind}, name, errs)
+		}
+		podstrategy.Strategy.Canonicalize(internalPod)
+
+		if err := legacyscheme.Scheme.Convert(internalPod, pod, nil); err != nil {
+			return fmt.Errorf("failed to convert internal Pod back to v1.Pod: %w", err)
+		}
+
+	case "ReplicaSet":
+		rs, ok := objCopy.(*appsv1.ReplicaSet)
+		if !ok {
+			return fmt.Errorf("expected *appsv1.ReplicaSet for kind ReplicaSet, got %T", objCopy)
+		}
+
+		internalRS := &apps.ReplicaSet{}
+		if err := legacyscheme.Scheme.Convert(rs, internalRS, nil); err != nil {
+			return fmt.Errorf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %w", err)
+		}
+
+		rsstrategy.Strategy.PrepareForCreate(ctx, internalRS)
+
+		if errs := rsstrategy.Strategy.Validate(ctx, internalRS); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: kind}, name, errs)
+		}
+		rsstrategy.Strategy.Canonicalize(internalRS)
+
+		if err := legacyscheme.Scheme.Convert(internalRS, rs, nil); err != nil {
+			return fmt.Errorf("failed to convert internal ReplicaSet back to appsv1.ReplicaSet: %w", err)
+		}
+
+	default:
+		return fmt.Errorf("unsupported kind: %s", kind)
+	}
+
+	return nil
+}
+
+func (s *State) objCreate2(kind, namespace string, obj interface{}) (interface{}, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	objCopy := deepCopy(obj)
+
+	metadata, err := meta.Accessor(objCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access object metadata: %w", err)
+	}
+
+	// This applies OpenAPI schema defaults like DNSPolicy=ClusterFirst, RestartPolicy=Always, etc.
+	// In real k8s, this happens in the decoder before the handler even sees the object.
+	// We do it here because we don't have a full decode pipeline.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L127
+	if err := applySchemaDefaults(kind, objCopy); err != nil {
+		return nil, err
+	}
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L171
+	rest.WipeObjectMetaSystemFields(metadata)
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L175
+	if err := rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+		return nil, err
+	}
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L484
+	rest.FillObjectMetaSystemFields(metadata)
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L485-L487
+	name := metadata.GetName()
+	generateName := metadata.GetGenerateName()
+	if name == "" {
+		if generateName == "" {
+			return nil, fmt.Errorf("object of kind %q must specify a name or generateName", kind)
+		}
+		name = s.generateNewName(kind, namespace, generateName)
+		metadata.SetName(name)
+	}
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L120-L137
+	if err := applyStrategyAndValidate(kind, objCopy, name); err != nil {
+		return nil, err
+	}
+
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L129-L131
+	if err := validateObjectMeta(metadata, kind); err != nil {
+		return nil, err
+	}
+
+	// The storage layer returns AlreadyExists error if the key already exists in etcd
+	key := KKey{
+		Kind:      kind,
+		Name:      name,
+		Namespace: namespace,
+	}
+	if _, exists := s.m[key]; exists {
+		return nil, errors.NewAlreadyExists(schema.GroupResource{Resource: kind}, name)
+	}
+
+	s.setResourceVersion(metadata)
+
+	s.m[key] = objCopy
+
+	return deepCopy(objCopy), nil
+}
+
+// objCreate is the simple implementation that doesn't perform validation
+// or resource-specific initialization.
 func (s *State) objCreate(kind, namespace string, obj interface{}) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -450,21 +670,3 @@ func (s *State) ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, er
 
 	return rs, nil
 }
-
-// func ReplicaSetByIndex(indexName, indexedValue string) ([]*appsv1.ReplicaSet, error) {
-// 	objs, err := ByIndex("ReplicaSet", indexName, indexedValue)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	rss := make([]*appsv1.ReplicaSet, 0, len(objs))
-// 	for _, obj := range objs {
-// 		rs, ok := obj.(*appsv1.ReplicaSet)
-// 		if !ok {
-// 			return nil, fmt.Errorf("state entry is not a *v1.ReplicaSet")
-// 		}
-// 		rss = append(rss, rs)
-// 	}
-
-// 	return rss, nil
-// }
