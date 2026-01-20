@@ -31,6 +31,7 @@ scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/runtime
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/runtime/schema
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/types
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/util/runtime
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/watch
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/util/uuid
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apimachinery/pkg/util/validation/field
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/apiserver/pkg/registry/rest
@@ -39,7 +40,10 @@ scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/kubernetes
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/kubernetes/typed/apps/v1
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/listers/apps/v1
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/listers/core/v1
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/rest
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/tools/cache
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/gentype
+scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/util/apply
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/client-go/util/workqueue
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/component-base/featuregate
 scripts/goose.sh -dir kubernetes ./staging/src/k8s.io/component-base/metrics
