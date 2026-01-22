@@ -1,19 +1,19 @@
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof Require Import prelude empty_ffi.
+From New.proof Require Export pure_objects.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
-(* FIXME: this spec is wrong because o's value should be a Pod pointer. will fix it after Goose has better support for
-  interface method dispatch *)
-Lemma wp_Accessor_pod i ptr:
+(* FIXME: Accessor should return the same pointer *)
+Lemma wp_Accessor i l o:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.meta ∗
-      ⌜i = interface.mk (ptrT.id v1.Pod.id) (# ptr)⌝
+      ⌜ PureKObject.interface_agree i l o ⌝
   }}}
     @! meta.Accessor #i
-  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(struct.field_ref_f v1.Pod "ObjectMeta" ptr)), #interface.nil);
-    True%I
+  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(PureKObject.objectmeta_ptr l o)), #interface.nil);
+    True
   }}}.
 Proof.
   (* wp_start as "H". iNamed "H". wp_auto. subst.

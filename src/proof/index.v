@@ -40,7 +40,7 @@ Lemma wp_State__ByIndex_pod γ l kind index_name indexed_value
       "%Hindexed_value" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
                                             parent_key.(KKey.Kind') ++ "/"%go ++
                                             parent_key.(KKey.Name') ++ "/"%go ++
-                                            (PureKObject.metadata owned_parent).(PureObjectMeta.UID') ⌝ ∗
+                                            (PureKObject.objectmeta owned_parent).(PureObjectMeta.UID') ⌝ ∗
       "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
       "Hown_pod_list" ∷ ([∗ map] key ↦ pod ∈ pure_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
       "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
@@ -84,7 +84,7 @@ Proof.
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
   iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
   iDestruct (big_sepL2_length with "Hlist") as %Hlen_ptr_pure_pod.
-  set P := (λ p, obj_has_controller_parent_of (PureKObject.Pod p) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID')).
+  set P := (λ p, obj_has_controller_parent_of (PureKObject.Pod p) parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.objectmeta owned_parent).(PureObjectMeta.UID')).
   set I := (∃ (i: w64) (val: interface.t) (sl': slice.t) (ptr_list': list loc) (pure_pod_list': list PurePod.t),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
     "Hval_ptr" ∷ val_ptr ↦ val ∗
@@ -117,7 +117,7 @@ Proof.
         injection Hthis_obj_lookup. done.
       - apply Hwell_formed. apply (list_elem_of_lookup_2 _ (sint.nat i)). done. }
     iIntros (sl0 idx_val_list idx_val) "(Hsl0 & -> & %Hidx_val & %Hidx_val_prefix & Hthis_ptr & Hdeepown_this_pod)". wp_auto.
-    specialize Hidx_val with parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.metadata owned_parent).(PureObjectMeta.UID').
+    specialize Hidx_val with parent_key.(KKey.Kind') parent_key.(KKey.Name') (PureKObject.objectmeta owned_parent).(PureObjectMeta.UID').
     rewrite bool_decide_true //. wp_auto.
     wp_alloc j_ptr as "Hj_ptr". wp_auto.
     iDestruct (own_slice_len with "Hsl0") as %(Hsl0_len1 & _). simpl in Hsl0_len1.
@@ -141,7 +141,7 @@ Proof.
       assert (P this_pure_pod ↔ idx_val = PureObjectMeta.Namespace' (PurePod.ObjectMeta' this_pure_pod) ++ "/"%go ++
                                           parent_key.(KKey.Kind') ++ "/"%go ++
                                           parent_key.(KKey.Name') ++ "/"%go ++
-                                          (PureKObject.metadata owned_parent).(PureObjectMeta.UID')) as Hidx_val'.
+                                          (PureKObject.objectmeta owned_parent).(PureObjectMeta.UID')) as Hidx_val'.
       { unfold P. apply Hidx_val. }
       simpl in Hidx_val'.
       destruct (bool_decide(P this_pure_pod)) eqn:HP.

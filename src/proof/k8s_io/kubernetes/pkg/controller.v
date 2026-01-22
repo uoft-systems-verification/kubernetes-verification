@@ -82,7 +82,7 @@ Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
   {{{ pod_l pod pure_pod, RET (#pod_l, #interface.nil);
       PurePod.deepown_l pod_l pod pure_pod 1 ∗
       ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) "ReplicaSet"%go pure_meta.(PureObjectMeta.Name') pure_meta.(PureObjectMeta.UID') ⌝ ∗
-      ⌜ PurePod.well_formed_for_create_without_name pure_pod ⌝ ∗
+      ⌜ PurePod.well_formed_for_nameless_create pure_pod ⌝ ∗
       template_l ↦{dq} template ∗
       PurePodTemplateSpec.deepown template pure_template dq ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗

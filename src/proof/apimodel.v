@@ -42,25 +42,17 @@ Proof.
   - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
 Qed.
 
-Definition pod_rep v1 v2 ptr pod pure_pod : iProp Σ :=
-  "%Hinterface_is_pod_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-  "%Habs_v_is_pod" ∷ ⌜ v2 = PureKObject.Pod pure_pod ⌝ ∗
+Definition pod_rep interface_obj ptr pod pure_pod : iProp Σ :=
+  "%Hinterface_is_pod_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1.
 
-Definition replicaset_rep v1 v2 ptr rs pure_rs : iProp Σ :=
-  "%Hinterface_is_rs_ptr" ∷ ⌜ v1 = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-  "%Habs_v_is_rs" ∷ ⌜ v2 = PureKObject.ReplicaSet pure_rs ⌝ ∗
+Definition replicaset_rep interface_obj ptr rs pure_rs : iProp Σ :=
+  "%Hinterface_is_rs_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
   "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs 1.
 
-Definition obj_rep k v1 v2 : iProp Σ :=
-  (if bool_decide (KKey.Kind' k = "Pod"%go) then
-    ∃ (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t), pod_rep v1 v2 ptr pod pure_pod
-  else if bool_decide (KKey.Kind' k = "ReplicaSet"%go) then
-    ∃ (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t), replicaset_rep v1 v2 ptr rs pure_rs
-  else False)%I.
-
 Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t PureKObject.t) : iProp Σ :=
-  [∗ map] k ↦ v1; v2 ∈ phys_state; abs_state, obj_rep k v1 v2.
+  [∗ map] interface_obj; pure_obj ∈ phys_state; abs_state, ∃ ptr obj,
+    ⌜ PureKObject.interface_agree interface_obj ptr pure_obj ⌝ ∗ PureKObject.deepown_l ptr obj pure_obj 1.
 
 Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk_ghost_well_formed {
@@ -73,11 +65,11 @@ mk_ghost_well_formed {
   Hfresh_keys_absent: (fresh_keys ## dom abs_state);
   Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_derived_name k.(KKey.Name'));
   Hno_duplicate_uid: (∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
-    (PureKObject.metadata obj1).(PureObjectMeta.UID') = (PureKObject.metadata obj2).(PureObjectMeta.UID') → k1 = k2);
-  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (PureKObject.metadata obj).(PureObjectMeta.UID') ∈ used_uid);
+    (PureKObject.objectmeta obj1).(PureObjectMeta.UID') = (PureKObject.objectmeta obj2).(PureObjectMeta.UID') → k1 = k2);
+  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (PureKObject.objectmeta obj).(PureObjectMeta.UID') ∈ used_uid);
   Hchildren_point_to_parent: (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID')));
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID')));
   Hparent_uid_is_used: (∀ k obj kind name uid, abs_state !! k = Some obj →
     obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
 }.
@@ -108,28 +100,16 @@ Definition is_kubernetes γ l : iProp Σ :=
     "Hmu" ∷ l ↦s[apimodel.State :: "mu"]□ mu_l ∗
     "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ l).
 
-Lemma wp_deepCopy_pod (obj: interface.t) (ptr: loc) (pod: v1.Pod.t) (pure_pod: PurePod.t):
+Lemma wp_deepCopy interface_obj ptr obj pure_obj:
   {{{ is_pkg_init apimodel ∗
-      ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-      PurePod.deepown_l ptr pod pure_pod 1
+      ⌜ PureKObject.interface_agree interface_obj ptr pure_obj ⌝ ∗
+      PureKObject.deepown_l ptr obj pure_obj 1
   }}}
-    @! apimodel.deepCopy #obj
-  {{{ (ptr': loc) (pod': v1.Pod.t), RET #(interface.mk (ptrT.id v1.Pod.id) #ptr');
-      PurePod.deepown_l ptr' pod' pure_pod 1 ∗
-      PurePod.deepown_l ptr pod pure_pod 1
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_deepCopy_replicaset (obj: interface.t) (ptr: loc) (rs: v1.ReplicaSet.t) (pure_rs: PureReplicaSet.t):
-  {{{ is_pkg_init apimodel ∗
-      ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-      PureReplicaSet.deepown_l ptr rs pure_rs 1
-  }}}
-    @! apimodel.deepCopy #obj
-  {{{ (ptr': loc) (rs': v1.ReplicaSet.t), RET #(interface.mk (ptrT.id v1.ReplicaSet.id) #ptr');
-      PureReplicaSet.deepown_l ptr' rs' pure_rs 1 ∗
-      PureReplicaSet.deepown_l ptr rs pure_rs 1
+    @! apimodel.deepCopy #interface_obj
+  {{{ interface_obj' ptr' obj', RET #interface_obj';
+      ⌜ PureKObject.interface_agree interface_obj' ptr' pure_obj ⌝ ∗
+      PureKObject.deepown_l ptr' obj' pure_obj 1 ∗
+      PureKObject.deepown_l ptr obj pure_obj 1
   }}}.
 Proof.
 Admitted.
@@ -202,13 +182,13 @@ Qed.
 Lemma split_children_point_to_parent (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)):
   (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID'))) →
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))) →
   ((∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
+      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
   ((∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.metadata obj_p).(PureObjectMeta.UID'))).
+      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))).
 Proof.
   intros H.
   split.

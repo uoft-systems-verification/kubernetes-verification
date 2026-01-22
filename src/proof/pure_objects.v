@@ -97,7 +97,7 @@ Definition well_formed (m: t) : Prop :=
   | Some os => PureOwnerReference.list_well_formed os
   end.
 
-Definition well_formed_for_create_without_name (m: t) : Prop :=
+Definition well_formed_for_nameless_create (m: t) : Prop :=
   (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
   (* The max len of generate_name of the pod must be 58 so that the suffix can fit int:
     https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
@@ -223,9 +223,17 @@ Definition well_formed (pod: t) : Prop :=
   PurePodSpec.well_formed pod.(Spec') ∧
   PurePodStatus.well_formed pod.(Status').
 
-Definition well_formed_for_create_without_name (pod: t) : Prop :=
-  PureObjectMeta.well_formed_for_create_without_name pod.(ObjectMeta') ∧
-  (* TODO: should we have well_formed_for_create_without_name for pod spec and pod status? *)
+Definition well_formed_without_meta (pod: t) : Prop :=
+  PurePodSpec.well_formed pod.(Spec') ∧
+  PurePodStatus.well_formed pod.(Status').
+
+Definition well_formed_for_nameless_create (pod: t) : Prop :=
+  PureObjectMeta.well_formed_for_nameless_create pod.(ObjectMeta') ∧
+  (* TODO: should we have well_formed_for_nameless_create for pod spec and pod status? *)
+  PurePodSpec.well_formed pod.(Spec') ∧
+  PurePodStatus.well_formed pod.(Status').
+
+Definition well_formed_for_nameless_create_without_meta (pod: t) : Prop :=
   PurePodSpec.well_formed pod.(Spec') ∧
   PurePodStatus.well_formed pod.(Status').
 
@@ -237,6 +245,15 @@ Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l c v dq: iProp Σ :=
   l ↦{dq} c ∗ deepown c v dq.
+
+Definition deepown_without_meta (c: v1.Pod.t) (v: t): iProp Σ :=
+  "Hdeepown_spec" ∷ PurePodSpec.deepown c.(v1.Pod.Spec') v.(Spec') ∗
+  "Hdeepown_status" ∷ PurePodStatus.deepown c.(v1.Pod.Status') v.(Status').
+
+Definition deepown_l_without_meta l c v (dq: dfrac): iProp Σ :=
+  l ↦s[ v1.Pod :: "Spec" ]{dq} c.(v1.Pod.Spec') ∗
+  l ↦s[ v1.Pod :: "Status" ]{dq} c.(v1.Pod.Status') ∗
+  deepown_without_meta c v.
 
 End def.
 End PurePod.
@@ -328,6 +345,20 @@ Definition well_formed (rs: t) : Prop :=
   PureReplicaSetSpec.well_formed rs.(Spec') ∧
   PureReplicaSetStatus.well_formed rs.(Status').
 
+Definition well_formed_without_meta (rs: t) : Prop :=
+  PureReplicaSetSpec.well_formed rs.(Spec') ∧
+  PureReplicaSetStatus.well_formed rs.(Status').
+
+Definition well_formed_for_nameless_create (rs: t) : Prop :=
+  PureObjectMeta.well_formed_for_nameless_create rs.(ObjectMeta') ∧
+  (* TODO: should we have well_formed_for_nameless_create for rs spec and rs status? *)
+  PureReplicaSetSpec.well_formed rs.(Spec') ∧
+  PureReplicaSetStatus.well_formed rs.(Status').
+
+Definition well_formed_for_nameless_create_without_meta (rs: t) : Prop :=
+  PureReplicaSetSpec.well_formed rs.(Spec') ∧
+  PureReplicaSetStatus.well_formed rs.(Status').
+
 Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
   "Hdeepown_objectmeta" ∷ PureObjectMeta.deepown c.(v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') dq ∗
@@ -336,6 +367,15 @@ Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l c v dq: iProp Σ :=
   l ↦{dq} c ∗ deepown c v dq.
+
+Definition deepown_without_meta (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_spec" ∷ PureReplicaSetSpec.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ PureReplicaSetStatus.deepown c.(v1.ReplicaSet.Status') v.(Status').
+
+Definition deepown_l_without_meta l c v (dq: dfrac): iProp Σ :=
+  l ↦s[ v1.ReplicaSet :: "Spec" ]{dq} c.(v1.ReplicaSet.Spec') ∗
+  l ↦s[ v1.ReplicaSet :: "Status" ]{dq} c.(v1.ReplicaSet.Status') ∗
+  deepown_without_meta c v dq.
 
 End def.
 End PureReplicaSet.
@@ -357,35 +397,267 @@ Proof.
 Qed.
 End KKey.
 
+Module KObject.
+Section def.
+Inductive t :=
+| Pod (p : v1.Pod.t)
+| ReplicaSet (rs : v1.ReplicaSet.t).
+
+Definition typemeta o : v1.TypeMeta.t :=
+  match o with
+  | Pod p => p.(v1.Pod.TypeMeta')
+  | ReplicaSet rs => rs.(v1.ReplicaSet.TypeMeta')
+  end.
+
+Definition objectmeta o : v1.ObjectMeta.t :=
+  match o with
+  | Pod p => p.(v1.Pod.ObjectMeta')
+  | ReplicaSet rs => rs.(v1.ReplicaSet.ObjectMeta')
+  end.
+
+Definition update_objectmeta o m: t :=
+  match o with
+  | Pod pod => Pod (pod <| v1.Pod.ObjectMeta' := m |>)
+  | ReplicaSet rs => ReplicaSet (rs <| v1.ReplicaSet.ObjectMeta' := m |>)
+  end.
+
+End def.
+End KObject.
+
 Module PureKObject.
+Section def.
+Context `{hG: !heapGS Σ}.
 Inductive t :=
 | Pod (p : PurePod.t)
 | ReplicaSet (rs : PureReplicaSet.t).
 
-Definition well_formed kobj : Prop :=
-  match kobj with
-  | Pod p => PurePod.well_formed p
-  | ReplicaSet rs => PureReplicaSet.well_formed rs
+Definition typemeta o : v1.TypeMeta.t :=
+  match o with
+  | Pod p => p.(PurePod.TypeMeta')
+  | ReplicaSet rs => rs.(PureReplicaSet.TypeMeta')
   end.
 
-Definition metadata kobj : PureObjectMeta.t :=
-  match kobj with
+Definition objectmeta o : PureObjectMeta.t :=
+  match o with
   | Pod p => p.(PurePod.ObjectMeta')
   | ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
   end.
 
-Definition kind kobj : go_string :=
-  match kobj with
+Definition update_objectmeta o m: t :=
+  match o with
+  | Pod pod => Pod (pod <| PurePod.ObjectMeta' := m |>)
+  | ReplicaSet rs => ReplicaSet (rs <| PureReplicaSet.ObjectMeta' := m |>)
+  end.
+
+Definition kind o : go_string :=
+  match o with
   | Pod _ => PurePod.kind
   | ReplicaSet _ => PureReplicaSet.kind
   end.
 
-Definition key kobj : KKey.t :=
-  match kobj with
-  | Pod p => PurePod.key p
-  | ReplicaSet rs => PureReplicaSet.key rs
+Definition key o : KKey.t :=
+  {|
+    KKey.Kind' := (kind o);
+    KKey.Namespace' := (objectmeta o).(PureObjectMeta.Namespace');
+    KKey.Name' := (objectmeta o).(PureObjectMeta.Name')
+  |}.
+
+Definition well_formed o : Prop :=
+  match o with
+  | Pod p => PurePod.well_formed p
+  | ReplicaSet rs => PureReplicaSet.well_formed rs
   end.
 
+Definition well_formed_without_meta o : Prop :=
+  match o with
+  | Pod p => PurePod.well_formed_without_meta p
+  | ReplicaSet rs => PureReplicaSet.well_formed_without_meta rs
+  end.
+
+Definition well_formed_for_nameless_create o : Prop :=
+  match o with
+  | Pod p => PurePod.well_formed_for_nameless_create p
+  | ReplicaSet rs => PureReplicaSet.well_formed_for_nameless_create rs
+  end.
+
+Definition well_formed_for_nameless_create_without_meta o : Prop :=
+  match o with
+  | Pod p => PurePod.well_formed_for_nameless_create_without_meta p
+  | ReplicaSet rs => PureReplicaSet.well_formed_for_nameless_create_without_meta rs
+  end.
+
+Lemma well_formed_for_nameless_create_split o:
+  well_formed_for_nameless_create o →
+    PureObjectMeta.well_formed_for_nameless_create (objectmeta o) ∧ well_formed_for_nameless_create_without_meta o.
+Proof.
+  destruct o as [p|rs]; simpl.
+  - unfold PurePod.well_formed_for_nameless_create, PurePod.well_formed_for_nameless_create_without_meta.
+    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
+  - unfold PureReplicaSet.well_formed_for_nameless_create, PureReplicaSet.well_formed_for_nameless_create_without_meta.
+    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
+Qed.
+
+Lemma well_formed_merge o m:
+  PureObjectMeta.well_formed m ∧ well_formed_without_meta o →
+    well_formed (update_objectmeta o m).
+Proof. destruct o; done. Qed.
+
+(* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
+Lemma well_formed_implies o: 
+  well_formed_for_nameless_create_without_meta o →
+    well_formed_without_meta o.
+Proof. destruct o; done. Qed.
+
+Definition same_constructor (o1 o2 : t) : Prop :=
+  match o1, o2 with
+  | Pod _, Pod _ => True
+  | ReplicaSet _, ReplicaSet _ => True
+  | _, _ => False
+  end.
+
+Definition deepown_l l c v dq: iProp Σ :=
+  match (c, v) with
+  | (KObject.Pod c, Pod v) => PurePod.deepown_l l c v dq
+  | (KObject.ReplicaSet c, ReplicaSet v) => PureReplicaSet.deepown_l l c v dq
+  | (_, _) => False
+  end.
+
+Lemma pod_deepown_l l obj pure_pod dq:
+  deepown_l l obj (Pod pure_pod) dq ⊢
+    ∃ pod, ⌜ obj = KObject.Pod pod ⌝ ∗ PurePod.deepown_l l pod pure_pod dq.
+Proof.
+  destruct obj; simpl.
+  - iIntros "H". iExists _. iFrame. done.
+  - iIntros "Hfalse". done.
+Qed.
+
+Lemma replicaset_deepown_l l obj pure_rs dq:
+  deepown_l l obj (ReplicaSet pure_rs) dq ⊢
+    ∃ rs, ⌜ obj = KObject.ReplicaSet rs ⌝ ∗ PureReplicaSet.deepown_l l rs pure_rs dq.
+Proof.
+  destruct obj; simpl.
+  - iIntros "Hfalse". done.
+  - iIntros "H". iExists _. iFrame. done.
+Qed.
+
+Definition deepown_l_without_meta l c v dq: iProp Σ :=
+  match (c, v) with
+  | (KObject.Pod c, Pod v) => PurePod.deepown_l_without_meta l c v dq
+  | (KObject.ReplicaSet c, ReplicaSet v) => PureReplicaSet.deepown_l_without_meta l c v dq
+  | (_, _) => False
+  end.
+
+Definition typemeta_ptr l v: loc :=
+  match v with
+  | Pod _ => struct.field_ref_f v1.Pod "TypeMeta" l
+  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "TypeMeta" l
+  end.
+
+Definition objectmeta_ptr l v: loc :=
+  match v with
+  | Pod _ => struct.field_ref_f v1.Pod "ObjectMeta" l
+  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "ObjectMeta" l
+  end.
+
+Lemma deepown_l_type_match l c v dq:
+  deepown_l l c v dq ⊢
+  ⌜ match v with
+    | Pod _ => ∃ pod, c = KObject.Pod pod
+    | ReplicaSet _ => ∃ rs, c = KObject.ReplicaSet rs
+    end ⌝.
+Proof. destruct c, v; iIntros "H"; eauto. Qed.
+
+Lemma deepown_l_without_meta_type_match l c v dq:
+  deepown_l_without_meta l c v dq ⊢
+  ⌜ match v with
+    | Pod _ => ∃ pod, c = KObject.Pod pod
+    | ReplicaSet _ => ∃ rs, c = KObject.ReplicaSet rs
+    end ⌝.
+Proof. destruct c, v; iIntros "H"; eauto. Qed.
+
+Lemma deepown_l_split l c v dq:
+  deepown_l l c v dq ⊢
+    (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
+    PureObjectMeta.deepown_l (objectmeta_ptr l v) (KObject.objectmeta c) (objectmeta v) dq ∗
+    deepown_l_without_meta l c v dq.
+Proof.
+  iIntros "H".
+  iDestruct (deepown_l_type_match with "H") as %Hagree.
+  destruct c as [p|rs].
+  - destruct v as [p0|rs0]; simpl in Hagree; try done.
+    simpl.
+    unfold PurePod.deepown_l, PurePod.deepown.
+    iDestruct "H" as "[Hl Hdeepown]".
+    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
+    iDestruct (struct_fields_split with "Hl") as "Hfields".
+    iNamed "Hfields".
+    iFrame "HTypeMeta".
+    iSplitR; first (iPureIntro; done).
+    iSplitL "HObjectMeta Hobjectmeta".
+    { unfold PureObjectMeta.deepown_l. iFrame. }
+    unfold PurePod.deepown_l_without_meta, PurePod.deepown_without_meta.
+    iFrame.
+  - destruct v as [p0|rs0]; simpl in Hagree; try done.
+    simpl.
+    unfold PureReplicaSet.deepown_l, PureReplicaSet.deepown.
+    iDestruct "H" as "[Hl Hdeepown]".
+    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
+    iDestruct (struct_fields_split with "Hl") as "Hfields".
+    iNamed "Hfields".
+    iFrame "HTypeMeta".
+    iSplitR; first (iPureIntro; done).
+    iSplitL "HObjectMeta Hobjectmeta".
+    { unfold PureObjectMeta.deepown_l. iFrame. }
+    unfold PureReplicaSet.deepown_l_without_meta, PureReplicaSet.deepown_without_meta.
+    iFrame.
+Qed.
+
+(* TODO: deepown_l_merge is only used for merging updated objectmeta; generalize it later *)
+Lemma deepown_l_merge l c v cm vm dq:
+  (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
+  PureObjectMeta.deepown_l (objectmeta_ptr l v) cm vm dq ∗
+  deepown_l_without_meta l c v dq ⊢
+    deepown_l l (KObject.update_objectmeta c cm) (update_objectmeta v vm) dq.
+Proof.
+  iIntros "(HTypeMeta & %Htypemeta & Hobjectmeta & Hwithout_meta)".
+  iDestruct (deepown_l_without_meta_type_match with "Hwithout_meta") as %Hagree.
+  destruct c as [p|rs].
+  - destruct v as [p0|rs0]; try done.
+    iDestruct "Hobjectmeta" as "[HObjectMeta Hdeepown_objectmeta]".
+    iDestruct "Hwithout_meta" as "(HSpec & HStatus & Hspec & Hstatus)".
+    set (updated_pod := p <| v1.Pod.ObjectMeta' := cm |>).
+    iDestruct (struct_fields_combine (v:=updated_pod) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
+    iFrame. iPureIntro. done.
+  - destruct v as [p0|rs0]; try done.
+    iDestruct "Hobjectmeta" as "[HObjectMeta Hdeepown_objectmeta]".
+    iDestruct "Hwithout_meta" as "(HSpec & HStatus & Hspec & Hstatus)".
+    set (updated_rs := rs <| v1.ReplicaSet.ObjectMeta' := cm |>).
+    iDestruct (struct_fields_combine (v:=updated_rs) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
+    iFrame. iPureIntro. done.
+Qed.
+
+Lemma deepown_l_restore l c v dq:
+  (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
+  PureObjectMeta.deepown_l (objectmeta_ptr l v) (KObject.objectmeta c) (objectmeta v) dq ∗
+  deepown_l_without_meta l c v dq ⊢
+    deepown_l l c v dq.
+Proof.
+  iIntros "H".
+  iPoseProof (deepown_l_merge with "H") as "H".
+  assert (KObject.update_objectmeta c (KObject.objectmeta c) = c) as ->.
+  { destruct c as [p|rs]; [destruct p | destruct rs]; done. }
+  assert (update_objectmeta v (objectmeta v) = v) as ->.
+  { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
+  iFrame.
+Qed.
+
+Definition interface_agree i (ptr: loc) o: Prop :=
+  match o with
+  | Pod _ => i = interface.mk (ptrT.id v1.Pod.id) #ptr
+  | ReplicaSet _ => i = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr
+  end.
+
+End def.
 End PureKObject.
 
 Global Existing Instance KKey.eq_dec.
@@ -416,7 +688,7 @@ Proof.
 Qed.
 
 Definition obj_has_controller_parent_of child kind name uid: Prop :=
-  match (PureKObject.metadata child).(PureObjectMeta.OwnerReferences') with
+  match (PureKObject.objectmeta child).(PureObjectMeta.OwnerReferences') with
   | Some os => os_has_controller_parent_of os kind name uid
   | None => False
   end.
@@ -425,11 +697,11 @@ Global Instance obj_has_controller_parent_of_dec child kind name uid :
   Decision (obj_has_controller_parent_of child kind name uid).
 Proof.
   unfold obj_has_controller_parent_of.
-  destruct ((PureKObject.metadata child).(PureObjectMeta.OwnerReferences')); apply _.
+  destruct ((PureKObject.objectmeta child).(PureObjectMeta.OwnerReferences')); apply _.
 Qed.
 
-Lemma well_formed_object_has_well_formed_metadata obj:
-  PureKObject.well_formed obj → PureObjectMeta.well_formed (PureKObject.metadata obj).
+Lemma well_formed_object_has_well_formed_objectmeta obj:
+  PureKObject.well_formed obj → PureObjectMeta.well_formed (PureKObject.objectmeta obj).
 Proof. destruct obj; simpl; intros [H _]; done. Qed.
 
 Lemma well_formed_object_has_well_formed_key key obj:
@@ -441,7 +713,7 @@ Lemma well_formed_object_has_well_formed_key key obj:
     valid_namespace key.(KKey.Namespace').
 Proof.
   intros Hkey Hwf.
-  apply well_formed_object_has_well_formed_metadata in Hwf.
+  apply well_formed_object_has_well_formed_objectmeta in Hwf.
   destruct obj; simpl in *; subst key; simpl;
   destruct Hwf as [_ [Hname_ne [Hname_valid [Hns_ne Hns_valid]]]];
   repeat split; intuition.
