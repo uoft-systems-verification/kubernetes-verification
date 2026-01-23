@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export apimodel.
+From New.proof Require Export apimodel external_wp.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
@@ -9,34 +9,34 @@ Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
 Lemma wp_State__objDelete γ l key
-  pure_kobj parent_key owned_child_keys owned_grandchild_keys:
+  pure_kobj parent_key children_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkind_eq" ∷ ⌜ KKey.Kind' key = PureKObject.kind pure_kobj ⌝ ∗
-      "%His_child" ∷ ⌜ key ∈ owned_child_keys ⌝ ∗
+      "%His_child" ∷ ⌜ key ∈ children_keys ⌝ ∗
       "Hghost_pure_kobj" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj ∗
-      "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-      "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
+      "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
+      "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objDelete" #key
   {{{ (pure_kobj': PureKObject.t), RET #interface.nil;
       (("%Hsame_cons" ∷ ⌜ PureKObject.same_constructor pure_kobj pure_kobj' ⌝ ∗
         "%Hts" ∷ ⌜ (PureKObject.objectmeta pure_kobj').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
         "Hghost_pure_kobj" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj' ∗
-        "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-        "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
+        "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
+        "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
       ) ∨
-      parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[key]}))
+      parent_key [[ γ.(γ_children) ]]↦ (children_keys ∖ {[key]}))
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk". wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   iAssert (⌜ abs_state !! key = Some pure_kobj ⌝%I) as "%Hkey_in_abs".
   { iDestruct (map_valid with "Hinv_Hown_abs Hghost_pure_kobj") as %Hlookup. iPureIntro; done. }
-  iAssert (⌜ children !! parent_key = Some owned_child_keys ⌝%I) as "%Hparent_key_in_children".
-  { iDestruct (map_valid with "Hinv_Hown_children Hown_child_keys") as %Hlookup. iPureIntro; done. }
+  iAssert (⌜ children !! parent_key = Some children_keys ⌝%I) as "%Hparent_key_in_children".
+  { iDestruct (map_valid with "Hinv_Hown_children Hghost_children_keys") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ children !! key = Some owned_grandchild_keys ⌝%I) as "%Hkey_in_children".
-  { iDestruct (map_valid with "Hinv_Hown_children Hown_grandchild_keys") as %Hlookup. iPureIntro; done. }
+  { iDestruct (map_valid with "Hinv_Hown_children Hghost_grandchildren_keys") as %Hlookup. iPureIntro; done. }
   iAssert (⌜ ∃ obj, phys_state !! key = Some obj ⌝%I) as "%Hkey_in_phys". {
     iDestruct (big_sepM2_lookup_r with "Hinv_Hphys_abs_rep") as (obj Hkey_in_phys) "_"; [done|].
     iPureIntro. exists obj. done. }
@@ -89,7 +89,7 @@ Proof.
       {
         destruct Hinv_Hghost_well_formed.
         assert (parent_key ≠ key) as parent_neq_key.
-        { specialize (Hno_self_parenting parent_key owned_child_keys key Hparent_key_in_children His_child). done. }
+        { specialize (Hno_self_parenting parent_key children_keys key Hparent_key_in_children His_child). done. }
         assert (dom (<[key:=updated_pure_kobj]> abs_state) = dom abs_state) as abs_dom_simpl.
         { rewrite dom_insert_L.
           assert ({[key]} ∪ dom abs_state = dom abs_state) as ->.
@@ -102,8 +102,8 @@ Proof.
         as updated_pure_kobj_uid_eq.
         { destruct pure_kobj; done. }
         assert (key = PureKObject.key updated_pure_kobj ∧ PureKObject.well_formed updated_pure_kobj)
-          as [Hagree Hwell_formed].
-        { assert (key = PureKObject.key pure_kobj ∧ PureKObject.well_formed pure_kobj) as [Hagree Hwell_formed].
+          as [Hagree Hwf].
+        { assert (key = PureKObject.key pure_kobj ∧ PureKObject.well_formed pure_kobj) as [Hagree Hwf].
           { apply Habs_state_well_formed. done. } destruct pure_kobj; done. }
         apply mk_ghost_well_formed.
         - intros k o Hlookup.
@@ -182,21 +182,21 @@ Proof.
       iApply "HΦ". iLeft. iFrame. destruct pure_kobj; done.
   - wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
     iMod (auth_map.map_delete with "Hghost_pure_kobj Hinv_Hown_abs") as "Hinv_Hown_abs".
-    iMod (auth_map.map_update _ _ (owned_child_keys ∖ {[key]}) with "Hinv_Hown_children Hown_child_keys")
-      as "[Hinv_Hown_children Hown_child_keys]".
-    iMod (auth_map.map_delete with "Hown_grandchild_keys Hinv_Hown_children") as "Hinv_Hown_children".
+    iMod (auth_map.map_update _ _ (children_keys ∖ {[key]}) with "Hinv_Hown_children Hghost_children_keys")
+      as "[Hinv_Hown_children Hghost_children_keys]".
+    iMod (auth_map.map_delete with "Hghost_grandchildren_keys Hinv_Hown_children") as "Hinv_Hown_children".
     iAssert (state_rep (delete key phys_state) (delete key abs_state) %I) with "[Hother_rep]" as "Hinv_Hphys_abs_rep"; [done|].
-    assert (ghost_well_formed (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=owned_child_keys ∖ {[key]}]> children)) fresh_keys) as Hinv_Hghost_well_formed'.
+    assert (ghost_well_formed (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=children_keys ∖ {[key]}]> children)) fresh_keys) as Hinv_Hghost_well_formed'.
     {
       destruct Hinv_Hghost_well_formed.
       assert (parent_key ≠ key) as parent_neq_key.
-      { specialize (Hno_self_parenting parent_key owned_child_keys key Hparent_key_in_children His_child). done. }
-      assert (dom (delete key (<[parent_key:=owned_child_keys ∖ {[key]}]> children)) = dom (delete key children) )
+      { specialize (Hno_self_parenting parent_key children_keys key Hparent_key_in_children His_child). done. }
+      assert (dom (delete key (<[parent_key:=children_keys ∖ {[key]}]> children)) = dom (delete key children) )
       as Hdom_children_eq. {
         assert (key ≠ parent_key) as key_neq_parent by (symmetry; exact parent_neq_key).
         rewrite !dom_delete_L dom_insert_L.
         assert (parent_key ∈ dom children) as parent_in_children_dom.
-        { apply elem_of_dom. exists owned_child_keys. exact Hparent_key_in_children. }
+        { apply elem_of_dom. exists children_keys. exact Hparent_key_in_children. }
         assert ({[parent_key]} ∪ dom children = dom children) as ->.
         { set_solver. }
         reflexivity. }
@@ -208,15 +208,15 @@ Proof.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
         destruct Hlookup as (Hk_neq_key & [(<- & <-) | (Hk_neq_parent & Hlookup)]).
         + rewrite dom_delete_L.
-          assert (owned_child_keys ⊆ dom abs_state) as owned_children_in_abs.
+          assert (children_keys ⊆ dom abs_state) as owned_children_in_abs.
           { apply Hchildren_exist with (k := parent_key). exact Hparent_key_in_children. }
           set_solver.
         + rewrite dom_delete_L.
           assert (s ⊆ dom abs_state) as s_in_abs by (apply Hchildren_exist with (k := k); exact Hlookup).
-          assert (s ## owned_child_keys) as s_disj_owned.
+          assert (s ## children_keys) as s_disj_owned.
           { destruct (decide (k = parent_key)); [congruence|]. eapply Hchildren_disjoint; done. }
           assert (key ∉ s) as key_not_in_s.
-          { intros Hcontra. assert (key ∈ owned_child_keys) by exact His_child. set_solver. }
+          { intros Hcontra. assert (key ∈ children_keys) by exact His_child. set_solver. }
           set_solver.
       - intros k s child_key Hlookup Hchild_in_s.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.
@@ -235,11 +235,11 @@ Proof.
         [destruct Hlookup2 as (Hk2_neq_key & [(<- & <-) | (Hk2_neq_parent & Hlookup2)]) |
          destruct Hlookup2 as (Hk2_neq_key & [(<- & <-) | (Hk2_neq_parent & Hlookup2)])].
         + contradiction.
-        + assert (owned_child_keys ## s2) as disj_orig.
+        + assert (children_keys ## s2) as disj_orig.
           { apply Hchildren_disjoint with (k1 := parent_key) (k2 := k2); [|assumption|assumption].
             intros Heq. subst. contradiction. }
           set_solver.
-        + assert (s1 ## owned_child_keys) as disj_orig.
+        + assert (s1 ## children_keys) as disj_orig.
           { apply Hchildren_disjoint with (k1 := k1) (k2 := parent_key); [|assumption|assumption].
             intros Heq. subst. contradiction. }
           set_solver.
@@ -285,27 +285,27 @@ Proof.
 Qed.
 
 Lemma wp_State__PodDelete γ l namespace name
-  key pure_pod parent_key owned_child_keys owned_grandchild_keys:
+  key pure_pod parent_key children_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes γ l ∗
       "%Hkey_eq" ∷ ⌜ key = mk_pod_key namespace name ⌝ ∗
       "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod) ∗
-      "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-      "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys ∗
-      "%His_child" ∷ ⌜ key ∈ owned_child_keys ⌝
+      "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
+      "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys ∗
+      "%His_child" ∷ ⌜ key ∈ children_keys ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "PodDelete" #namespace #name
   {{{ pure_pod', RET #interface.nil;
       (("%Hts" ∷ ⌜ pure_pod'.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
         "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod') ∗
-        "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-        "Hown_grandchild_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
+        "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
+        "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
       ) ∨
-      parent_key [[ γ.(γ_children) ]]↦ (owned_child_keys ∖ {[key]}))
+      parent_key [[ γ.(γ_children) ]]↦ (children_keys ∖ {[key]}))
   }}}.
 Proof.
   wp_start as "H". iNamed "H". subst key. wp_auto.
-  wp_apply (wp_State__objDelete with "[$Hghost_pure_pod $Hown_child_keys $Hown_grandchild_keys]").
+  wp_apply (wp_State__objDelete with "[$Hghost_pure_pod $Hghost_children_keys $Hghost_grandchildren_keys]").
   { iFrame "#". done. }
   iIntros (pure_kobj') "H". wp_auto. iDestruct "H" as "[H|H]".
   - iNamed "H".

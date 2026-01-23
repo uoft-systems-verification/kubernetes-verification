@@ -20,28 +20,6 @@ Definition mk_pod_key (namespace name: go_string) : KKey.t :=
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
-Lemma decide_kind_is_pod kind:
-  kind = "Pod"%go →
-    bool_decide (kind = "Pod"%go) = true ∧
-    bool_decide (kind = "ReplicaSet"%go) = false.
-Proof.
-  intros Hkind.
-  split.
-  - apply bool_decide_true; exact Hkind.
-  - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
-Qed.
-
-Lemma decide_kind_is_replicaset kind:
-  kind = "ReplicaSet"%go →
-    bool_decide (kind = "ReplicaSet"%go) = true ∧
-    bool_decide (kind = "Pod"%go) = false.
-Proof.
-  intros Hkind.
-  split.
-  - apply bool_decide_true; exact Hkind.
-  - apply bool_decide_false. intros Hcontra. rewrite Hcontra in Hkind. done.
-Qed.
-
 Definition pod_rep interface_obj ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
   "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1.
@@ -100,6 +78,28 @@ Definition is_kubernetes γ l : iProp Σ :=
     "Hmu" ∷ l ↦s[apimodel.State :: "mu"]□ mu_l ∗
     "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ l).
 
+(* The lemma turns the bi-implication form of Hchildren_point_to_parent to implications that are easier to apply. *)
+Lemma split_children_point_to_parent (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)):
+  (∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))) →
+  ((∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
+  ((∀ key_p obj_p key_c obj_c s,
+    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
+      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))).
+Proof.
+  intros H.
+  split.
+  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hparent.
+    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
+    apply H. apply Hparent.
+  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hin.
+    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
+    apply H. apply Hin.
+Qed.
+
 Lemma wp_deepCopy interface_obj ptr obj pure_obj:
   {{{ is_pkg_init apimodel ∗
       ⌜ PureKObject.interface_agree interface_obj ptr pure_obj ⌝ ∗
@@ -145,59 +145,10 @@ Lemma wp_State__generateNewUIDAndUpdate (l : loc) (used_uid_ptr : loc) (used_uid
 Proof.
 Admitted.
 
-Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
-  {{{ is_pkg_init fmt ∗
-      string_slice ↦* string_list
-  }}}
-    @! fmt.Sprintf #format #string_slice
-  {{{ (v: go_string), RET #v;
-      True
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_strconv_FormatInt (i: w64) (base: w64):
-  {{{ is_pkg_init apimodel }}}
-    @! strconv.FormatInt #i #base
-  {{{ (v: go_string), RET #v; True }}}.
-Proof.
-Admitted.
-
 (* If pod has a huge body, this lemma can be used to name the pod body *)
 Lemma rename_pod ptr (pod: v1.Pod.t):
   ptr ↦ pod -∗ ∃ pod', ptr ↦ pod' ∗ ⌜ pod' = pod ⌝.
-Proof.
-  iIntros. iExists pod. iFrame. done.
-Qed.
+Proof. iIntros. iExists pod. iFrame. done. Qed.
 
-Global Instance wp_struct_make_unit:
-  PureWp True
-    (struct.make #(structT []) (alist_val []))%struct
-    #().
-Proof.
-  erewrite <- struct_val_aux_nil.
-  apply wp_struct_make; cbn; auto.
-Qed.
-
-Lemma split_children_point_to_parent (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)):
-  (∀ key_p obj_p key_c obj_c s,
-    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))) →
-  ((∀ key_p obj_p key_c obj_c s,
-    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
-  ((∀ key_p obj_p key_c obj_c s,
-    abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))).
-Proof.
-  intros H.
-  split.
-  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hparent.
-    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
-    apply H. apply Hparent.
-  - intros key_p obj_p key_c obj_c s Hp Hc Hs Hin.
-    specialize (H key_p obj_p key_c obj_c s Hp Hc Hs).
-    apply H. apply Hin.
-Qed.
 
 End proof.

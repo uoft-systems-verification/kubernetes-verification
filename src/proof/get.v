@@ -44,7 +44,7 @@ Proof.
   iIntros (obj' ptr' kobj') "(%Hinterface_agree' & Hdeepown_l' & Hdeepown_l)". wp_auto.
   iAssert (state_rep phys_state abs_state) with "[Hdeepown_l Hother_rep]" as "Hinv_Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr, kobj. iFrame. done. }
-  assert (key = PureKObject.key pure_kobj ∧ PureKObject.well_formed pure_kobj) as [-> Hwell_formed].
+  assert (key = PureKObject.key pure_kobj ∧ PureKObject.well_formed pure_kobj) as [-> Hwf].
   { destruct Hinv_Hghost_well_formed. apply Habs_state_well_formed. exact Hkey_in_abs. }
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").

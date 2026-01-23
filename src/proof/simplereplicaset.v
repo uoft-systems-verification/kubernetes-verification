@@ -102,16 +102,16 @@ Proof.
       iApply wp_for_post_do. wp_auto.
       assert (is_pure_pod_active created_pure_pod) as Hactive.
       { (* TODO: find the right spec to prove this assert *) admit. }
-      iAssert (I) with "[Hi_ptr Hghostown_pods Hghostown_grandchildren Hfrom_create_Hown_pure_pod'
-        Hfrom_create_Hown_child_keys Hfrom_create_Hown_grandchild_keys]" as "loop_inv".
+      iAssert (I) with "[Hi_ptr Hghostown_pods Hghostown_grandchildren Hfrom_create_Hghost_pure_pod
+        Hfrom_create_Hghost_children_keys Hfrom_create_Hghost_grandchildren_keys]" as "loop_inv".
       { unfold I. iExists (word.add i (W64 1)), (<[new_key := created_pure_pod]> pure_pod_map'), (<[new_key := ∅]> grand_child_keys').
         iFrame.
         assert (pure_pod_map' !! new_key = None) as Hnot_in1.
         { apply not_elem_of_dom. done. }
         assert (grand_child_keys' !! new_key = None) as Hnot_in2.
         { apply not_elem_of_dom. rewrite <-Hdom_eq'. done. }
-        iDestruct (big_sepM_insert _ pure_pod_map' new_key created_pure_pod Hnot_in1 with "[$Hghostown_pods $Hfrom_create_Hown_pure_pod']") as "Hghostown_pods".
-        iDestruct (big_sepM_insert _ grand_child_keys' new_key ∅ Hnot_in2 with "[$Hghostown_grandchildren $Hfrom_create_Hown_grandchild_keys]") as "Hghostown_grandchildren".
+        iDestruct (big_sepM_insert _ pure_pod_map' new_key created_pure_pod Hnot_in1 with "[$Hghostown_pods $Hfrom_create_Hghost_pure_pod]") as "Hghostown_pods".
+        iDestruct (big_sepM_insert _ grand_child_keys' new_key ∅ Hnot_in2 with "[$Hghostown_grandchildren $Hfrom_create_Hghost_grandchildren_keys]") as "Hghostown_grandchildren".
         assert (dom pure_pod_map' ∪ {[new_key]} = dom (<[new_key:=created_pure_pod]> pure_pod_map')) as ->.
         { rewrite dom_insert_L. rewrite union_comm_L. done. }
         iFrame.
@@ -203,13 +203,13 @@ Proof.
       rewrite bool_decide_true //. wp_auto.
       iApply wp_for_post_do. wp_auto.
       iAssert (I) with "[Hi_ptr Hpod_ptr Hghostown_other_pods Hghostown_other_grandchildren H]" as "loop_inv".
-      { iDestruct "H" as "[Hpod_updated | Hown_child_keys]".
+      { iDestruct "H" as "[Hpod_updated | Hghost_children_keys]".
         - iNamed "Hpod_updated".
           iExists (word.add i (W64 1)), this_ptr, (<[k := updated_pure_pod]> pure_pod_map'), (filter (λ kv : KKey.t * PurePod.t, is_pure_pod_active kv.2) (<[k := updated_pure_pod]> pure_pod_map')), grand_child_keys'.
           iFrame.
           iDestruct (big_sepM_insert _ (delete k pure_pod_map') k updated_pure_pod with "[$Hghostown_other_pods $Hghost_pure_pod]") as "Hghostown_pods".
           { apply lookup_delete_eq. }
-          iDestruct (big_sepM_insert _ (delete k grand_child_keys') k s with "[$Hghostown_other_grandchildren $Hown_grandchild_keys]") as "Hghostown_grand_children".
+          iDestruct (big_sepM_insert _ (delete k grand_child_keys') k s with "[$Hghostown_other_grandchildren $Hghost_grandchildren_keys]") as "Hghostown_grand_children".
           { apply lookup_delete_eq. }
           assert (<[k:=updated_pure_pod]> (delete k pure_pod_map') = <[k:=updated_pure_pod]> pure_pod_map') as ->.
           { apply insert_delete_eq. }
@@ -405,7 +405,7 @@ Proof.
 Qed.
 
 Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
-  parent_key owned_parent owned_pod_map owned_child_keys:
+  parent_key parent owned_pod_map children_keys:
   {{{ is_pkg_init simplereplicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal" ∷ (global_addr simplereplicaset.state)↦□l ∗
@@ -415,11 +415,11 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       "%Hnamespace_eq" ∷ ⌜ pure_metadata.(PureObjectMeta.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ pure_metadata.(PureObjectMeta.Name') = parent_key.(KKey.Name') ⌝ ∗
       "%Howner_kind_nonempty" ∷ ⌜ owner_kind ≠ ""%go ⌝ ∗
-      "Hown_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
+      "Hghost_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ parent ∗
       "Hown_pods" ∷ ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
-      "Hown_child_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ owned_child_keys ∗
-      "%Howned_child_keys_equal_dom_owned_pods" ∷ ⌜ owned_child_keys = dom owned_pod_map ⌝ ∗
-      "%Hindexed_value" ∷ ⌜ pure_metadata = (PureKObject.objectmeta owned_parent) ⌝ ∗
+      "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
+      "%Hchildren_keys_equal_dom_owned_pods" ∷ ⌜ children_keys = dom owned_pod_map ⌝ ∗
+      "%Hindexed_value" ∷ ⌜ pure_metadata = (PureKObject.objectmeta parent) ⌝ ∗
       "%Hmeta_wellformed" ∷ ⌜ PureObjectMeta.well_formed pure_metadata ⌝
   }}}
   @! simplereplicaset.FilterPodsByOwner #owner #owner_kind
@@ -434,9 +434,9 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       ⌜ ∀ key, key ∈ dom owned_pod_map → key.(KKey.Namespace') = parent_key.(KKey.Namespace') ⌝ ∗
       owner ↦{dq} metadata ∗
       PureObjectMeta.deepown metadata pure_metadata dq ∗
-      parent_key [[ γ.(γ_state) ]]↦ owned_parent ∗
+      parent_key [[ γ.(γ_state) ]]↦ parent ∗
       ([∗ map] key ↦ pod ∈ owned_pod_map, key [[ γ.(γ_state) ]]↦ PureKObject.Pod pod) ∗
-      parent_key [[ γ.(γ_children) ]]↦ owned_child_keys
+      parent_key [[ γ.(γ_children) ]]↦ children_keys
   }}}.
 Proof.
   wp_start as "H". iNamed "H". subst. wp_auto.
@@ -445,11 +445,11 @@ Proof.
   iIntros (index_key) "%Hindex_key_eq". wp_auto.
   wp_apply wp_globals_get.
   iNamedPrefix "Hdeepown_meta" "Htemp_".
-  wp_apply (wp_State__ByIndex_pod with "[$Hown_parent $Hown_pods $Hown_child_keys]").
+  wp_apply (wp_State__ByIndex_pod with "[$Hghost_parent $Hown_pods $Hghost_children_keys]").
   { iFrame "#". iPureIntro. unfold controller.PodControllerIndex. rewrite <-Hnamespace_eq. rewrite <-Hname_eq.
     rewrite Hindex_key_eq. rewrite Htemp_Hdeepown_namespace. rewrite Htemp_Hdeepown_name. rewrite Htemp_Hdeepown_uid. done. }
   iCombineNamed "Htemp_*" as "H".
-  iAssert (PureObjectMeta.deepown metadata (PureKObject.objectmeta owned_parent) dq) with "[H]" as "Hdeepown_meta".
+  iAssert (PureObjectMeta.deepown metadata (PureKObject.objectmeta parent) dq) with "[H]" as "Hdeepown_meta".
   { iNamed "H". iFrame. done. }
   iIntros (objs_l ptrs pure_pods dq') "H".
   set objs := map (λ ptr : loc, interface.mk (ptrT.id v1.Pod.id) (# ptr)) ptrs.
@@ -543,13 +543,13 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name
 Proof.
   wp_start as "H". iNamed "H". wp_auto. subst rs_key. wp_apply wp_globals_get.
   wp_apply (wp_State__ReplicaSetGet with "[$Hghostown_rs]"); [iFrame "#"; done|].
-  iIntros (ptr rs dq) "(Hdeepown_l_rs & %Hwell_formed_rs & %Hnamespace_eq & %Hname_eq & Hghostown_rs)". wp_auto.
+  iIntros (ptr rs dq) "(Hdeepown_l_rs & %Hwf_rs & %Hnamespace_eq & %Hname_eq & Hghostown_rs)". wp_auto.
   wp_apply errors.wp_IsNotFound_nil; [done|]. rewrite bool_decide_true //. wp_auto.
   iDestruct "Hdeepown_l_rs" as "[Hptr Hdeepown_rs]". iNamed "Hdeepown_rs".
   iDestruct (struct_fields_split with "Hptr") as "Hptr". iNamed "Hptr".
   wp_apply (wp_FilterPodsByOwner with "[$Hghostown_rs $Hghostown_pods $Hghostown_children $HObjectMeta $Hdeepown_objectmeta]").
-  { iFrame "#". iPureIntro. split_and!. all: try done. destruct Hwell_formed_rs as (H & _). done. }
-  iIntros (ptr_slice ptrs pure_pods dq') "(Hptr_slice & Hlist & %Hwell_formed_pods & %Hlist_in_map & %Hmap_in_list
+  { iFrame "#". iPureIntro. split_and!. all: try done. destruct Hwf_rs as (H & _). done. }
+  iIntros (ptr_slice ptrs pure_pods dq') "(Hptr_slice & Hlist & %Hwf_pods & %Hlist_in_map & %Hmap_in_list
     & %Hkey_eq & %Hno_dup & %Hns_eq & HObjectMeta & Hdeepown_objectmeta & Hghostown_rs & Hghostown_pods &
     Hghostown_children)". wp_auto.
   rewrite bool_decide_true //. wp_auto.
