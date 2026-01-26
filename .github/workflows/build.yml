@@ -32,3 +32,23 @@ jobs:
         run: opam install --assume-built .
       - name: opam uninstall
         run: opam uninstall .
+
+  pbt-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "kubernetes_model/go.mod"
+      - name: Install setup-envtest
+        run: |
+          go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+      - name: Setup envtest binaries
+        run: |
+          echo "KUBEBUILDER_ASSETS=$(setup-envtest use 1.34.0 -p path)" >> $GITHUB_ENV
+      - name: Run property-based tests
+        working-directory: kubernetes_model
+        run: |
+          go test -v ./apimodel -run TestPBTCreate -rapid.checks=1000 -timeout=10m

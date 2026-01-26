@@ -23,6 +23,11 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/apis/apps"
+
+	// This blank import runs init() which registers conversion functions between
+	// external types (appsv1.ReplicaSet) and internal types (apps.ReplicaSet) in legacyscheme.
+	// Without this, legacyscheme.Scheme.Convert() fails with "unknown conversion" for ReplicaSets.
+	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	appsv1defaults "k8s.io/kubernetes/pkg/apis/apps/v1"
 	"k8s.io/kubernetes/pkg/apis/core"
 	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
@@ -252,7 +257,7 @@ func applyStrategyAndValidate(kind string, objCopy interface{}, name string) err
 		internalPod := &core.Pod{}
 
 		if err := legacyscheme.Scheme.Convert(pod, internalPod, nil); err != nil {
-			return fmt.Errorf("failed to convert v1.Pod to internal Pod: %w", err)
+			return errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Pod to internal Pod: %v", err))
 		}
 
 		podstrategy.Strategy.PrepareForCreate(ctx, internalPod)
@@ -262,7 +267,7 @@ func applyStrategyAndValidate(kind string, objCopy interface{}, name string) err
 		podstrategy.Strategy.Canonicalize(internalPod)
 
 		if err := legacyscheme.Scheme.Convert(internalPod, pod, nil); err != nil {
-			return fmt.Errorf("failed to convert internal Pod back to v1.Pod: %w", err)
+			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal Pod back to v1.Pod: %v", err))
 		}
 
 	case "ReplicaSet":
@@ -273,7 +278,7 @@ func applyStrategyAndValidate(kind string, objCopy interface{}, name string) err
 
 		internalRS := &apps.ReplicaSet{}
 		if err := legacyscheme.Scheme.Convert(rs, internalRS, nil); err != nil {
-			return fmt.Errorf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %w", err)
+			return errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v", err))
 		}
 
 		rsstrategy.Strategy.PrepareForCreate(ctx, internalRS)
@@ -284,7 +289,7 @@ func applyStrategyAndValidate(kind string, objCopy interface{}, name string) err
 		rsstrategy.Strategy.Canonicalize(internalRS)
 
 		if err := legacyscheme.Scheme.Convert(internalRS, rs, nil); err != nil {
-			return fmt.Errorf("failed to convert internal ReplicaSet back to appsv1.ReplicaSet: %w", err)
+			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal ReplicaSet back to appsv1.ReplicaSet: %v", err))
 		}
 
 	default:
