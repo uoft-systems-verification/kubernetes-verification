@@ -15,6 +15,7 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest_init.
 From New.proof.k8s_io.kubernetes.pkg.api Require Export legacyscheme_init.
 From New.proof.k8s_io.kubernetes.pkg.apis Require Export apps_init.
 From New.proof.k8s_io.kubernetes.pkg.apis Require Export core_init.
+From New.proof.k8s_io.kubernetes.pkg.apis.apps Require Export install_init.
 From New.proof.k8s_io.kubernetes.pkg.apis.apps Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg.apis.core Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.

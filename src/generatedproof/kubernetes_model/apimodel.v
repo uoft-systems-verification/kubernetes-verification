@@ -20,6 +20,7 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.validation.field.
 Require Export New.generatedproof.k8s_io.apiserver.pkg.registry.rest.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.legacyscheme.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.apps.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.apps.install.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.apps.v1.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.core.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.core.v1.
@@ -237,6 +238,7 @@ Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
       is_pkg_defined_pure code.k8s_io.apiserver.pkg.registry.rest.rest ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.apps.apps ∧
+      is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.apps.install.install ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.apps.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.core.core ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.core.v1.v1 ∧
@@ -270,6 +272,7 @@ Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
        is_pkg_defined code.k8s_io.apiserver.pkg.registry.rest.rest ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.apis.apps.apps ∗
+       is_pkg_defined code.k8s_io.kubernetes.pkg.apis.apps.install.install ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.apis.apps.v1.v1 ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.apis.core.core ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.apis.core.v1.v1 ∗
