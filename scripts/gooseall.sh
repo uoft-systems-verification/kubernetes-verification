@@ -8,6 +8,7 @@ cd "$DIR/.."
 scripts/goose.sh -dir kubernetes ./pkg/api/legacyscheme
 scripts/goose.sh -dir kubernetes ./pkg/api/v1/pod
 scripts/goose.sh -dir kubernetes ./pkg/apis/apps
+scripts/goose.sh -dir kubernetes ./pkg/apis/apps/install
 scripts/goose.sh -dir kubernetes ./pkg/apis/apps/v1
 scripts/goose.sh -dir kubernetes ./pkg/apis/apps/validation
 scripts/goose.sh -dir kubernetes ./pkg/apis/core
