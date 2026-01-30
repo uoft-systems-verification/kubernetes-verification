@@ -51,4 +51,4 @@ jobs:
       - name: Run property-based tests
         working-directory: kubernetes_model
         run: |
-          go test -v ./apimodel -run TestPBTCreateDelete -rapid.checks=1000 -timeout=10m
+          go test -v ./apimodel -run TestPBTCreateDelete -rapid.checks=1 -timeout=10m

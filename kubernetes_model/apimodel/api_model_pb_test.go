@@ -18,17 +18,10 @@ import (
 	"kubernetes_model/pbtesting/testserver"
 )
 
-// Global test server (initialized once per test run)
-var globalTestServer *testserver.TestServer
-
 // setupTestServer initializes the test server.
 // By default, uses envtest (API server + etcd only, no controllers).
 // Set USE_EXTERNAL_CLUSTER=1 to use an existing cluster via KUBECONFIG.
 func setupTestServer(t *testing.T) *testserver.TestServer {
-	if globalTestServer != nil {
-		return globalTestServer
-	}
-
 	useExternal := os.Getenv("USE_EXTERNAL_CLUSTER") == "1"
 
 	server, err := testserver.NewTestServer(testserver.Config{
@@ -39,16 +32,12 @@ func setupTestServer(t *testing.T) *testserver.TestServer {
 		t.Fatalf("Failed to create test server: %v", err)
 	}
 
-	// Register cleanup to stop the server when tests finish
-	t.Cleanup(func() {
-		if globalTestServer != nil {
-			_ = globalTestServer.Stop()
-			globalTestServer = nil
-		}
-	})
-
-	globalTestServer = server
 	return server
+}
+
+// teardownServer stops the test server
+func teardownServer(t *testing.T, server *testserver.TestServer) {
+	server.Stop()
 }
 
 // TestPBTCreateDelete tests whether the model's Create and Delete operations conform
@@ -59,112 +48,117 @@ func setupTestServer(t *testing.T) *testserver.TestServer {
 //	export KUBEBUILDER_ASSETS="$(setup-envtest use 1.34.0 -p path)"
 //	go test -v ./apimodel -run TestPBTCreateDelete -rapid.checks=10000
 func TestPBTCreateDelete(t *testing.T) {
-	server := setupTestServer(t)
-	ctx := context.Background()
-
-	// Clean up before test to start with empty state
-	if err := server.Cleanup(ctx); err != nil {
-		t.Logf("Warning: cleanup failed: %v", err)
-	}
-
-	state := NewState()
-	namespace := "pbt"
-
-	// Track existing objects (should match between model and real API)
-	existingObjects := make(map[KKey]bool)
-
 	rapid.Check(t, func(rt *rapid.T) {
-		// Weighted operation selection: favor Create early to build up state
-		createWeight := 0.5
-		if len(existingObjects) < 5 {
-			createWeight = 0.8
+		server := setupTestServer(t)
+		ctx := context.Background()
+
+		// Clean up before test to start with empty state
+		if err := server.Cleanup(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
 		}
-		shouldCreate := rapid.Float64Range(0, 1).Draw(rt, "shouldCreate") < createWeight
 
-		if shouldCreate {
-			kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+		state := NewState()
+		namespace := "pbt"
 
-			switch kind {
-			case "Pod":
-				genType := rapid.IntRange(0, 2).Draw(rt, "podGenType")
-				var podGen *rapid.Generator[*corev1.Pod]
-				switch genType {
-				case 0:
-					podGen = generators.MinimalPodGen()
-				case 1:
-					podGen = generators.ComprehensivePodGen()
-				case 2:
-					podGen = generators.InvalidPodGen()
-				}
+		// Track existing objects (should match between model and real API)
+		existingObjects := make(map[KKey]bool)
 
-				testCreate(rt, ctx, state, server, namespace, existingObjects,
-					podGen,
-					"Pod",
-					func(p *corev1.Pod) *corev1.Pod { return p.DeepCopy() },
-					func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodCreate2(ns, obj) },
-					func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) { return server.CreatePod(ctx, obj) },
-					func(ns, name string) (interface{}, error) { return state.PodGet(ns, name) },
-					func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
-				)
-
-			case "ReplicaSet":
-				genType := rapid.IntRange(0, 2).Draw(rt, "rsGenType")
-				var rsGen *rapid.Generator[*appsv1.ReplicaSet]
-				switch genType {
-				case 0:
-					rsGen = generators.MinimalReplicaSetGen()
-				case 1:
-					rsGen = generators.ComprehensiveReplicaSetGen()
-				case 2:
-					rsGen = generators.InvalidReplicaSetGen()
-				}
-
-				testCreate(rt, ctx, state, server, namespace, existingObjects,
-					rsGen,
-					"ReplicaSet",
-					func(rs *appsv1.ReplicaSet) *appsv1.ReplicaSet { return rs.DeepCopy() },
-					func(ns string, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
-						return state.ReplicaSetCreate2(ns, obj)
-					},
-					func(ctx context.Context, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
-						return server.CreateReplicaSet(ctx, obj)
-					},
-					func(ns, name string) (interface{}, error) { return state.ReplicaSetGet(ns, name) },
-					func(ctx context.Context, name string) (*appsv1.ReplicaSet, error) {
-						return server.GetReplicaSet(ctx, name)
-					},
-				)
+		for range 1000 {
+			// Weighted operation selection: favor Create early to build up state
+			createWeight := 0.5
+			if len(existingObjects) < 5 {
+				createWeight = 0.8
 			}
-		} else {
-			kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+			shouldCreate := rapid.Float64Range(0, 1).Draw(rt, "shouldCreate") < createWeight
 
-			switch kind {
-			case "Pod":
-				testDelete(
-					rt, ctx, state, server, namespace, existingObjects,
-					"Pod",
-					state.PodGet,
-					server.GetPod,
-					state.PodDelete2,
-					server.DeletePod,
-				)
+			if shouldCreate {
+				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
 
-			case "ReplicaSet":
-				testDelete(
-					rt, ctx, state, server, namespace, existingObjects,
-					"ReplicaSet",
-					state.ReplicaSetGet,
-					server.GetReplicaSet,
-					state.ReplicaSetDelete2,
-					server.DeleteReplicaSet,
-				)
+				switch kind {
+				case "Pod":
+					genType := rapid.IntRange(0, 2).Draw(rt, "podGenType")
+					var podGen *rapid.Generator[*corev1.Pod]
+					switch genType {
+					case 0:
+						podGen = generators.MinimalPodGen()
+					case 1:
+						podGen = generators.ComprehensivePodGen()
+					case 2:
+						podGen = generators.InvalidPodGen()
+					}
+
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						podGen,
+						"Pod",
+						func(p *corev1.Pod) *corev1.Pod { return p.DeepCopy() },
+						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodCreate2(ns, obj) },
+						func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) { return server.CreatePod(ctx, obj) },
+						func(ns, name string) (interface{}, error) { return state.PodGet(ns, name) },
+						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
+					)
+
+				case "ReplicaSet":
+					genType := rapid.IntRange(0, 2).Draw(rt, "rsGenType")
+					var rsGen *rapid.Generator[*appsv1.ReplicaSet]
+					switch genType {
+					case 0:
+						rsGen = generators.MinimalReplicaSetGen()
+					case 1:
+						rsGen = generators.ComprehensiveReplicaSetGen()
+					case 2:
+						rsGen = generators.InvalidReplicaSetGen()
+					}
+
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						rsGen,
+						"ReplicaSet",
+						func(rs *appsv1.ReplicaSet) *appsv1.ReplicaSet { return rs.DeepCopy() },
+						func(ns string, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+							return state.ReplicaSetCreate2(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+							return server.CreateReplicaSet(ctx, obj)
+						},
+						func(ns, name string) (interface{}, error) { return state.ReplicaSetGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.ReplicaSet, error) {
+							return server.GetReplicaSet(ctx, name)
+						},
+					)
+				}
+			} else {
+				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+
+				switch kind {
+				case "Pod":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects,
+						"Pod",
+						state.PodGet,
+						server.GetPod,
+						state.PodDelete2,
+						server.DeletePod,
+					)
+
+				case "ReplicaSet":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects,
+						"ReplicaSet",
+						state.ReplicaSetGet,
+						server.GetReplicaSet,
+						state.ReplicaSetDelete2,
+						server.DeleteReplicaSet,
+					)
+				}
 			}
 		}
+
+		if err := server.Cleanup(ctx); err != nil {
+			t.Logf("Warning: final cleanup failed: %v", err)
+		}
+
+		teardownServer(t, server)
 	})
 
-	if err := server.Cleanup(ctx); err != nil {
-		t.Logf("Warning: final cleanup failed: %v", err)
-	}
 }
 
 func testCreate[T metav1.Object](
