@@ -170,14 +170,14 @@ func (s *TestServer) GetReplicaSet(ctx context.Context, name string) (*appsv1.Re
 	return s.client.AppsV1().ReplicaSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-// DeletePod deletes a Pod from the test server.
-func (s *TestServer) DeletePod(ctx context.Context, name string) error {
-	return s.client.CoreV1().Pods(s.namespace).Delete(ctx, name, metav1.DeleteOptions{})
+// DeletePod deletes a Pod from the test server with optional DeleteOptions.
+func (s *TestServer) DeletePod(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.CoreV1().Pods(s.namespace).Delete(ctx, name, options)
 }
 
-// DeleteReplicaSet deletes a ReplicaSet from the test server.
-func (s *TestServer) DeleteReplicaSet(ctx context.Context, name string) error {
-	return s.client.AppsV1().ReplicaSets(s.namespace).Delete(ctx, name, metav1.DeleteOptions{})
+// DeleteReplicaSet deletes a ReplicaSet from the test server with optional DeleteOptions.
+func (s *TestServer) DeleteReplicaSet(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.AppsV1().ReplicaSets(s.namespace).Delete(ctx, name, options)
 }
 
 // Cleanup cleans up all resources created by the test server.
