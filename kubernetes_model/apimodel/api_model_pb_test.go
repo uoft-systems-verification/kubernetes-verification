@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"pgregory.net/rapid"
 
-	"kubernetes_model/pbtesting/comparators"
-	"kubernetes_model/pbtesting/generators"
-	"kubernetes_model/pbtesting/testserver"
+	"kubernetes_model/apimodel/pbtesting/comparators"
+	"kubernetes_model/apimodel/pbtesting/generators"
+	"kubernetes_model/apimodel/pbtesting/testserver"
 )
 
 // setupTestServer initializes the test server.
