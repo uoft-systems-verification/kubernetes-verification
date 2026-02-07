@@ -11,7 +11,6 @@ Context `{!auth_setG Σ KKey.t}.
 Lemma wp_State__objGet γ l key pure_kobj:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkind_eq" ∷ ⌜ KKey.Kind' key = PureKObject.kind pure_kobj ⌝ ∗
       "Hghost" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objGet" #key

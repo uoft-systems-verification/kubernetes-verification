@@ -109,6 +109,12 @@ Definition well_formed_for_nameless_create (m: t) : Prop :=
   | Some os => PureOwnerReference.list_well_formed os
   end.
 
+Axiom created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
+
+Axiom nameless_created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
+
+Axiom updated: t → t → t → Prop. (* old meta → input meta → output meta (new meta) *)
+
 Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_name" ∷ ⌜ c.(v1.ObjectMeta.Name') = v.(Name') ⌝ ∗
   "%Hdeepown_generatename" ∷ ⌜ c.(v1.ObjectMeta.GenerateName') = v.(GenerateName') ⌝ ∗
@@ -424,6 +430,26 @@ Definition update_objectmeta o m: t :=
 End def.
 End KObject.
 
+Module PureObjectSpec.
+Section def.
+Inductive t :=
+| PodSpec (p : PurePodSpec.t)
+| ReplicaSetSpec (rs : PureReplicaSetSpec.t).
+Axiom created: t → t → Prop. (* input spec → output spec *)
+Axiom updated: t → t → t → Prop. (* old spec → input spec → output spec *)
+End def.
+End PureObjectSpec.
+
+Module PureObjectStatus.
+Section def.
+Inductive t :=
+| PodStatus (p : PurePodStatus.t)
+| ReplicaSetStatus (rs : PureReplicaSetStatus.t).
+Axiom created: t → t → Prop. (* input status → output status *)
+Axiom updated: t → t → t → Prop. (* old status → input status → output status *)
+End def.
+End PureObjectStatus.
+
 Module PureKObject.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -442,6 +468,10 @@ Definition objectmeta o : PureObjectMeta.t :=
   | Pod p => p.(PurePod.ObjectMeta')
   | ReplicaSet rs => rs.(PureReplicaSet.ObjectMeta')
   end.
+
+Axiom spec: t → PureObjectSpec.t.
+
+Axiom status: t → PureObjectStatus.t.
 
 Definition update_objectmeta o m: t :=
   match o with
@@ -521,6 +551,15 @@ Definition deepown_l l c v dq: iProp Σ :=
   | (KObject.ReplicaSet c, ReplicaSet v) => PureReplicaSet.deepown_l l c v dq
   | (_, _) => False
   end.
+
+Definition interface_agree i (l: loc) v: Prop :=
+  match v with
+  | Pod _ => i = interface.mk (ptrT.id v1.Pod.id) #l
+  | ReplicaSet _ => i = interface.mk (ptrT.id v1.ReplicaSet.id) #l
+  end.
+
+Definition deepown_i i v dq: iProp Σ :=
+  ∃ l c, ⌜ interface_agree i l v ⌝ ∗ deepown_l l c v dq.
 
 Lemma pod_deepown_l l obj pure_pod dq:
   deepown_l l obj (Pod pure_pod) dq ⊢
@@ -650,12 +689,6 @@ Proof.
   { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
   iFrame.
 Qed.
-
-Definition interface_agree i (ptr: loc) o: Prop :=
-  match o with
-  | Pod _ => i = interface.mk (ptrT.id v1.Pod.id) #ptr
-  | ReplicaSet _ => i = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr
-  end.
 
 End def.
 End PureKObject.
