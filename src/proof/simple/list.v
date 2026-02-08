@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export apimodel.
+From New.proof.simple Require Export apimodel.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.

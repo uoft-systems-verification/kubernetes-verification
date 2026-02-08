@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export apimodel external_wp.
+From New.proof.simple Require Export apimodel.
+From New.proof Require Export external_wp.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.

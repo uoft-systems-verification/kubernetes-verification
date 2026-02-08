@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export get index create delete util.
+From New.proof.simple Require Export get index create delete.
+From New.proof Require Export util.
 From New.proof.kubernetes_model Require Export simplereplicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
