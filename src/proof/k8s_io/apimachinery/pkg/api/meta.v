@@ -9,10 +9,10 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 (* FIXME: Accessor should return the same pointer *)
 Lemma wp_Accessor i l o:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.meta ∗
-      ⌜ PureKObject.interface_agree i l o ⌝
+      ⌜ KObjectV.interface_agree i l o ⌝
   }}}
     @! meta.Accessor #i
-  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(PureKObject.objectmeta_ptr l o)), #interface.nil);
+  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(KObjectV.objectmeta_ptr l o)), #interface.nil);
     True
   }}}.
 Proof.

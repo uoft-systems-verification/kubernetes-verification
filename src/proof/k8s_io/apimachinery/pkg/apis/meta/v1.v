@@ -8,7 +8,7 @@ Lemma wp_Now:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 }}}
     @! v1.Now #()
   {{{ (c: v1.Time.t) v, RET #c;
-    PureTime.deepown c v
+    TimeV.deepown c v
   }}}.
 Proof.
 Admitted.
@@ -122,24 +122,24 @@ Proof.
 Qed.
 
 Definition new_controller_ref_well_formed controller_ref kind meta: Prop :=
-  controller_ref.(PureOwnerReference.Kind') = kind ∧
-  controller_ref.(PureOwnerReference.Name') = meta.(PureObjectMeta.Name') ∧
-  controller_ref.(PureOwnerReference.UID') = meta.(PureObjectMeta.UID') ∧
-  controller_ref.(PureOwnerReference.BlockOwnerDeletion') = Some true ∧
-  controller_ref.(PureOwnerReference.Controller') = Some true.
+  controller_ref.(OwnerReferenceV.Kind') = kind ∧
+  controller_ref.(OwnerReferenceV.Name') = meta.(ObjectMetaV.Name') ∧
+  controller_ref.(OwnerReferenceV.UID') = meta.(ObjectMetaV.UID') ∧
+  controller_ref.(OwnerReferenceV.BlockOwnerDeletion') = Some true ∧
+  controller_ref.(OwnerReferenceV.Controller') = Some true.
 
 Lemma wp_NewControllerRef_replicaset owner gvk rs_l meta pure_meta dq:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
       ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      PureObjectMeta.deepown meta pure_meta dq
+      ObjectMetaV.deepown meta pure_meta dq
   }}}
     @! v1.NewControllerRef #owner #gvk
   {{{ l controller_ref pure_controller_ref, RET #l;
-      PureOwnerReference.deepown_l l controller_ref pure_controller_ref 1 ∗
+      OwnerReferenceV.deepown_l l controller_ref pure_controller_ref 1 ∗
       ⌜ new_controller_ref_well_formed pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_meta ⌝ ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      PureObjectMeta.deepown meta pure_meta dq
+      ObjectMetaV.deepown meta pure_meta dq
   }}}.
 Proof. wp_start as "H". Admitted.
 

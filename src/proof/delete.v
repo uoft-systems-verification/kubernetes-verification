@@ -4,7 +4,7 @@ From New.proof Require Export apimodel external_wp.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t PureKObject.t}.
+Context `{!mapG Σ KKey.t KObjectV.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -12,16 +12,16 @@ Lemma wp_State__objDelete γ l key
   pure_kobj parent_key children_keys owned_grandchild_keys:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkind_eq" ∷ ⌜ KKey.Kind' key = PureKObject.kind pure_kobj ⌝ ∗
+      "%Hkind_eq" ∷ ⌜ KKey.Kind' key = KObjectV.kind pure_kobj ⌝ ∗
       "%His_child" ∷ ⌜ key ∈ children_keys ⌝ ∗
       "Hghost_pure_kobj" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj ∗
       "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
       "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objDelete" #key
-  {{{ (pure_kobj': PureKObject.t), RET #interface.nil;
-      (("%Hsame_cons" ∷ ⌜ PureKObject.same_constructor pure_kobj pure_kobj' ⌝ ∗
-        "%Hts" ∷ ⌜ (PureKObject.objectmeta pure_kobj').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
+  {{{ (pure_kobj': KObjectV.t), RET #interface.nil;
+      (("%Hsame_cons" ∷ ⌜ KObjectV.same_constructor pure_kobj pure_kobj' ⌝ ∗
+        "%Hts" ∷ ⌜ (KObjectV.objectmeta pure_kobj').(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
         "Hghost_pure_kobj" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj' ∗
         "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
         "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
@@ -47,7 +47,7 @@ Proof.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys bool_decide_true //; [exists obj; done|]. wp_auto.
   wp_apply wp_Accessor; [done|]. rewrite bool_decide_true //. wp_auto.
-  iPoseProof (PureKObject.deepown_l_split _ _ _ _ with "Hdeepown_l")
+  iPoseProof (KObjectV.deepown_l_split _ _ _ _ with "Hdeepown_l")
     as "(Htypemeta_ptr & %Htypemeta_eq & Hdeepown_l_objectmeta & Hdeepown_l_other)".
   iDestruct "Hdeepown_l_objectmeta" as "[Hobjectmeta_ptr Hdeepown_objectmeta]".
   wp_apply (wp_GetFinalizers with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
@@ -58,22 +58,22 @@ Proof.
       wp_apply (wp_SetDeletionTimestamp with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
       wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
       wp_apply (wp_SetResourceVersion with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
-      set new_pure_objectmeta := PureKObject.objectmeta pure_kobj
-        <| PureObjectMeta.DeletionTimestamp' := Some pure_time |>
-        <| PureObjectMeta.ResourceVersion' := rv_str |>.
+      set new_pure_objectmeta := KObjectV.objectmeta pure_kobj
+        <| ObjectMetaV.DeletionTimestamp' := Some pure_time |>
+        <| ObjectMetaV.ResourceVersion' := rv_str |>.
       set new_objectmeta := KObject.objectmeta kobj
         <| v1.ObjectMeta.DeletionTimestamp' := now_ptr |>
         <| v1.ObjectMeta.ResourceVersion' := rv_str |>.
-      iAssert (PureObjectMeta.deepown_l (PureKObject.objectmeta_ptr ptr pure_kobj) new_objectmeta new_pure_objectmeta 1)
+      iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr ptr pure_kobj) new_objectmeta new_pure_objectmeta 1)
         with "[Hobjectmeta_ptr Hdeepown_objectmeta now Hdeepown_time]" as "Hdeepown_l_objectmeta".
       { iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".
         { by iDestruct (typed_pointsto_not_null with "now") as %?. }
         iNamed "Hdeepown_objectmeta". iFrame. iPureIntro. split_and!; done. }
-      iPoseProof (PureKObject.deepown_l_merge _ _ _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
+      iPoseProof (KObjectV.deepown_l_merge _ _ _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
         as "Hdeepown_l".
       { iFrame. done. }
       set updated_kobj := (KObject.update_objectmeta kobj new_objectmeta).
-      set updated_pure_kobj := (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta).
+      set updated_pure_kobj := (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta).
       iMod (auth_map.map_update _ _ updated_pure_kobj with "Hinv_Hown_abs Hghost_pure_kobj")
         as "[Hinv_Hown_abs Hghost_pure_kobj]".
       iAssert (state_rep phys_state (<[key:=updated_pure_kobj]> abs_state) %I)
@@ -95,15 +95,15 @@ Proof.
           assert ({[key]} ∪ dom abs_state = dom abs_state) as ->.
           { set_solver. }
           reflexivity. }
-        assert ((PureKObject.objectmeta updated_pure_kobj).(PureObjectMeta.OwnerReferences') = (PureKObject.objectmeta pure_kobj).(PureObjectMeta.OwnerReferences'))
+        assert ((KObjectV.objectmeta updated_pure_kobj).(ObjectMetaV.OwnerReferences') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.OwnerReferences'))
         as updated_pure_kobj_owner_references_eq.
         { destruct pure_kobj; done. }
-        assert ((PureKObject.objectmeta updated_pure_kobj).(PureObjectMeta.UID') = (PureKObject.objectmeta pure_kobj).(PureObjectMeta.UID'))
+        assert ((KObjectV.objectmeta updated_pure_kobj).(ObjectMetaV.UID') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.UID'))
         as updated_pure_kobj_uid_eq.
         { destruct pure_kobj; done. }
-        assert (key = PureKObject.key updated_pure_kobj ∧ PureKObject.well_formed updated_pure_kobj)
+        assert (key = KObjectV.key updated_pure_kobj ∧ KObjectV.well_formed updated_pure_kobj)
           as [Hagree Hwf].
-        { assert (key = PureKObject.key pure_kobj ∧ PureKObject.well_formed pure_kobj) as [Hagree Hwf].
+        { assert (key = KObjectV.key pure_kobj ∧ KObjectV.well_formed pure_kobj) as [Hagree Hwf].
           { apply Habs_state_well_formed. done. } destruct pure_kobj; done. }
         apply mk_ghost_well_formed.
         - intros k o Hlookup.
@@ -146,7 +146,7 @@ Proof.
             eapply Hchildren_point_to_parent; [done|done|done|done].
           + eapply Hchildren_point_to_parent; [done|done|done|done].
           + assert (obj_has_controller_parent_of pure_kobj (KKey.Kind' key) (KKey.Name' key)
-              (PureObjectMeta.UID' (PureKObject.objectmeta pure_kobj))) as H.
+              (ObjectMetaV.UID' (KObjectV.objectmeta pure_kobj))) as H.
             { rewrite updated_pure_kobj_uid_eq in Hobj_has_controller_parent_of. destruct pure_kobj; done. }
             pose proof ((proj2 (Hchildren_point_to_parent _ _ _ _ _ Hkey_in_abs Hkey_in_abs Hlookup_children) H)). done.
           + rewrite updated_pure_kobj_uid_eq in Hobj_has_controller_parent_of.
@@ -167,12 +167,12 @@ Proof.
       wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
       { iNamed "H". iFrame. iFrame "#". done. }
       iApply "HΦ". iLeft. iFrame. iPureIntro. destruct pure_kobj; done.
-    + iAssert (⌜ (PureKObject.objectmeta pure_kobj).(PureObjectMeta.DeletionTimestamp') ≠ None ⌝%I) as "%Hdt".
+    + iAssert (⌜ (KObjectV.objectmeta pure_kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝%I) as "%Hdt".
       { iNamed "Hdeepown_objectmeta". iPureIntro. intros H. apply (proj2 Hdeepown_deletiontimestamp_none) in H. done. }
-      iPoseProof (PureKObject.deepown_l_restore _ _ _ _
+      iPoseProof (KObjectV.deepown_l_restore _ _ _ _
         with "[Htypemeta_ptr Hobjectmeta_ptr Hdeepown_objectmeta Hdeepown_l_other]") as "Hdeepown_l".
       { iFrame. done. }
-      iAssert (PureKObject.deepown_l ptr kobj pure_kobj 1) with "[Hdeepown_l]" as "Hdeepown_l".
+      iAssert (KObjectV.deepown_l ptr kobj pure_kobj 1) with "[Hdeepown_l]" as "Hdeepown_l".
       { destruct pure_kobj; iFrame. }
       iAssert (state_rep phys_state abs_state %I) with "[Hdeepown_l Hother_rep]" as "Hinv_Hphys_abs_rep".
       { iApply big_sepM2_delete; [done | done|]. iFrame. iPureIntro. destruct pure_kobj; done. }
@@ -289,15 +289,15 @@ Lemma wp_State__PodDelete γ l namespace name
   {{{ is_pkg_init apimodel ∗
       "#inv" ∷ is_kubernetes γ l ∗
       "%Hkey_eq" ∷ ⌜ key = mk_pod_key namespace name ⌝ ∗
-      "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod) ∗
+      "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (KObjectV.Pod pure_pod) ∗
       "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
       "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys ∗
       "%His_child" ∷ ⌜ key ∈ children_keys ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "PodDelete" #namespace #name
   {{{ pure_pod', RET #interface.nil;
-      (("%Hts" ∷ ⌜ pure_pod'.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') ≠ None ⌝ ∗
-        "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod') ∗
+      (("%Hts" ∷ ⌜ pure_pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+        "Hghost_pure_pod" ∷ key [[ γ.(γ_state) ]]↦ (KObjectV.Pod pure_pod') ∗
         "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
         "Hghost_grandchildren_keys" ∷ key [[ γ.(γ_children) ]]↦ owned_grandchild_keys
       ) ∨
@@ -309,7 +309,7 @@ Proof.
   { iFrame "#". done. }
   iIntros (pure_kobj') "H". wp_auto. iDestruct "H" as "[H|H]".
   - iNamed "H".
-    assert (∃ pure_pod', pure_kobj' = PureKObject.Pod pure_pod') as [pure_pod' ->].
+    assert (∃ pure_pod', pure_kobj' = KObjectV.Pod pure_pod') as [pure_pod' ->].
     { destruct pure_kobj'; try done. exists p. done. }
     iApply "HΦ". iLeft. iFrame. done.
   - iApply "HΦ". iRight. iFrame. 

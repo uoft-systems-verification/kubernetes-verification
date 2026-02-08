@@ -10,7 +10,7 @@ From New.proof.big_op Require Export big_sepL big_sepM.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t PureKObject.t}.
+Context `{!mapG Σ KKey.t KObjectV.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -22,19 +22,19 @@ Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
 
 Definition pod_rep interface_obj ptr pod pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-  "Hdeepown_l_pod" ∷ PurePod.deepown_l ptr pod pure_pod 1.
+  "Hdeepown_l_pod" ∷ PodV.deepown_l ptr pod pure_pod 1.
 
 Definition replicaset_rep interface_obj ptr rs pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-  "Hdeepown_l_rs" ∷ PureReplicaSet.deepown_l ptr rs pure_rs 1.
+  "Hdeepown_l_rs" ∷ ReplicaSetV.deepown_l ptr rs pure_rs 1.
 
-Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t PureKObject.t) : iProp Σ :=
+Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObjectV.t) : iProp Σ :=
   [∗ map] interface_obj; pure_obj ∈ phys_state; abs_state, ∃ ptr obj,
-    ⌜ PureKObject.interface_agree interface_obj ptr pure_obj ⌝ ∗ PureKObject.deepown_l ptr obj pure_obj 1.
+    ⌜ KObjectV.interface_agree interface_obj ptr pure_obj ⌝ ∗ KObjectV.deepown_l ptr obj pure_obj 1.
 
-Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
+Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk_ghost_well_formed {
-  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → k = PureKObject.key obj ∧ PureKObject.well_formed obj);
+  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.well_formed obj);
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
   Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));
@@ -43,11 +43,11 @@ mk_ghost_well_formed {
   Hfresh_keys_absent: (fresh_keys ## dom abs_state);
   Hfresh_keys_reserved: (∀ k, k ∈ fresh_keys → reserved_derived_name k.(KKey.Name'));
   Hno_duplicate_uid: (∀ k1 k2 obj1 obj2, abs_state !! k1 = Some obj1 → abs_state !! k2 = Some obj2 →
-    (PureKObject.objectmeta obj1).(PureObjectMeta.UID') = (PureKObject.objectmeta obj2).(PureObjectMeta.UID') → k1 = k2);
-  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (PureKObject.objectmeta obj).(PureObjectMeta.UID') ∈ used_uid);
+    (KObjectV.objectmeta obj1).(ObjectMetaV.UID') = (KObjectV.objectmeta obj2).(ObjectMetaV.UID') → k1 = k2);
+  Hexisting_uid_is_used: (∀ k obj, abs_state !! k = Some obj → (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ used_uid);
   Hchildren_point_to_parent: (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID')));
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (KObjectV.objectmeta obj_p).(ObjectMetaV.UID')));
   Hparent_uid_is_used: (∀ k obj kind name uid, abs_state !! k = Some obj →
     obj_has_controller_parent_of obj kind name uid → uid ∈ used_uid);
 }.
@@ -61,7 +61,7 @@ Record KubernetesGname := mk_γk {
 Definition kubernetes_inv γ l: iProp Σ :=
   ∃ (phys_state_l: loc) (used_uid_l: loc) (rvc: w64)
     (phys_state: gmap KKey.t interface.t) (used_uid: gmap go_string unit)
-    (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
+    (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t),
     "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
     "Hstate_used_uid_addr" ∷ l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
     "Hstate_rvc_addr" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"] rvc ∗
@@ -79,16 +79,16 @@ Definition is_kubernetes γ l : iProp Σ :=
     "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ l).
 
 (* The lemma turns the bi-implication form of Hchildren_point_to_parent to implications that are easier to apply. *)
-Lemma split_children_point_to_parent (abs_state: gmap KKey.t PureKObject.t) (children: gmap KKey.t (gset KKey.t)):
+Lemma split_children_point_to_parent (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)):
   (∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))) →
+      (key_c ∈ s ↔ obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (KObjectV.objectmeta obj_p).(ObjectMetaV.UID'))) →
   ((∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID') → key_c ∈ s)) ∧
+      obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (KObjectV.objectmeta obj_p).(ObjectMetaV.UID') → key_c ∈ s)) ∧
   ((∀ key_p obj_p key_c obj_c s,
     abs_state !! key_p = Some obj_p → abs_state !! key_c = Some obj_c → children !! key_p = Some s →
-      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (PureKObject.objectmeta obj_p).(PureObjectMeta.UID'))).
+      key_c ∈ s → obj_has_controller_parent_of obj_c key_p.(KKey.Kind') key_p.(KKey.Name') (KObjectV.objectmeta obj_p).(ObjectMetaV.UID'))).
 Proof.
   intros H.
   split.
@@ -102,14 +102,14 @@ Qed.
 
 Lemma wp_deepCopy interface_obj ptr obj pure_obj:
   {{{ is_pkg_init apimodel ∗
-      ⌜ PureKObject.interface_agree interface_obj ptr pure_obj ⌝ ∗
-      PureKObject.deepown_l ptr obj pure_obj 1
+      ⌜ KObjectV.interface_agree interface_obj ptr pure_obj ⌝ ∗
+      KObjectV.deepown_l ptr obj pure_obj 1
   }}}
     @! apimodel.deepCopy #interface_obj
   {{{ interface_obj' ptr' obj', RET #interface_obj';
-      ⌜ PureKObject.interface_agree interface_obj' ptr' pure_obj ⌝ ∗
-      PureKObject.deepown_l ptr' obj' pure_obj 1 ∗
-      PureKObject.deepown_l ptr obj pure_obj 1
+      ⌜ KObjectV.interface_agree interface_obj' ptr' pure_obj ⌝ ∗
+      KObjectV.deepown_l ptr' obj' pure_obj 1 ∗
+      KObjectV.deepown_l ptr obj pure_obj 1
   }}}.
 Proof.
 Admitted.

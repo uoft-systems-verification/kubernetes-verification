@@ -4,7 +4,7 @@ From New.proof Require Export apimodel external_wp.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!mapG Σ KKey.t interface.t}.
-Context `{!mapG Σ KKey.t PureKObject.t}.
+Context `{!mapG Σ KKey.t KObjectV.t}.
 Context `{!mapG Σ KKey.t (gset KKey.t)}.
 Context `{!auth_setG Σ KKey.t}.
 
@@ -12,35 +12,35 @@ Lemma wp_State__objCreate_without_name γ l kind namespace obj
   ptr kobj pure_kobj parent_key parent children_keys:
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkind_eq" ∷ ⌜ kind = PureKObject.kind pure_kobj ⌝ ∗
+      "%Hkind_eq" ∷ ⌜ kind = KObjectV.kind pure_kobj ⌝ ∗
       "%Hnamespace_is_parent_namespace" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
-      "%Hinterface_agree" ∷ ⌜ PureKObject.interface_agree obj ptr pure_kobj ⌝ ∗
-      "Hdeepown_l" ∷ PureKObject.deepown_l ptr kobj pure_kobj 1 ∗
+      "%Hinterface_agree" ∷ ⌜ KObjectV.interface_agree obj ptr pure_kobj ⌝ ∗
+      "Hdeepown_l" ∷ KObjectV.deepown_l ptr kobj pure_kobj 1 ∗
       "%Hpure_kobj_is_child" ∷ ⌜ obj_has_controller_parent_of pure_kobj parent_key.(KKey.Kind')
-        parent_key.(KKey.Name') (PureKObject.objectmeta parent).(PureObjectMeta.UID') ⌝ ∗
-      "%Hwf" ∷ ⌜ PureKObject.well_formed_for_nameless_create pure_kobj ⌝ ∗
+        parent_key.(KKey.Name') (KObjectV.objectmeta parent).(ObjectMetaV.UID') ⌝ ∗
+      "%Hwf" ∷ ⌜ KObjectV.well_formed_for_nameless_create pure_kobj ⌝ ∗
       "Hghost_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ parent ∗
       "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objCreate" #kind #namespace #obj
   {{{ obj' ptr' kobj' pure_kobj', RET (#obj', #interface.nil);
-      "%Hinterface_agree'" ∷ ⌜ PureKObject.interface_agree obj' ptr' pure_kobj' ⌝ ∗
-      "%Hsame_cons" ∷ ⌜ PureKObject.same_constructor pure_kobj pure_kobj' ⌝ ∗
-      "Hdeepown_l'" ∷ PureKObject.deepown_l ptr' kobj' pure_kobj' 1 ∗
-      "%Hwf" ∷ ⌜ PureKObject.well_formed pure_kobj' ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ (PureKObject.objectmeta pure_kobj').(PureObjectMeta.Namespace') = namespace ⌝ ∗
-      "%Hnew_key_notin" ∷ ⌜ (PureKObject.key pure_kobj') ∉ children_keys ⌝ ∗
-      "Hghost_pure_kobj'" ∷ (PureKObject.key pure_kobj') [[ γ.(γ_state) ]]↦ pure_kobj' ∗
+      "%Hinterface_agree'" ∷ ⌜ KObjectV.interface_agree obj' ptr' pure_kobj' ⌝ ∗
+      "%Hsame_cons" ∷ ⌜ KObjectV.same_constructor pure_kobj pure_kobj' ⌝ ∗
+      "Hdeepown_l'" ∷ KObjectV.deepown_l ptr' kobj' pure_kobj' 1 ∗
+      "%Hwf" ∷ ⌜ KObjectV.well_formed pure_kobj' ⌝ ∗
+      "%Hnamespace_eq" ∷ ⌜ (KObjectV.objectmeta pure_kobj').(ObjectMetaV.Namespace') = namespace ⌝ ∗
+      "%Hnew_key_notin" ∷ ⌜ (KObjectV.key pure_kobj') ∉ children_keys ⌝ ∗
+      "Hghost_pure_kobj'" ∷ (KObjectV.key pure_kobj') [[ γ.(γ_state) ]]↦ pure_kobj' ∗
       "Hghost_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ parent ∗
-      "Hghost_children_keys" ∷  parent_key [[ γ.(γ_children) ]]↦ (children_keys ∪ {[PureKObject.key pure_kobj']}) ∗
-      "Hghost_grandchildren_keys" ∷ (PureKObject.key pure_kobj') [[ γ.(γ_children) ]]↦ ∅
+      "Hghost_children_keys" ∷  parent_key [[ γ.(γ_children) ]]↦ (children_keys ∪ {[KObjectV.key pure_kobj']}) ∗
+      "Hghost_grandchildren_keys" ∷ (KObjectV.key pure_kobj') [[ γ.(γ_children) ]]↦ ∅
       (* TODO: specify that pure_kobj' shares some content with pure_kobj *)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk".
-  pose proof PureKObject.well_formed_for_nameless_create_split _ Hwf as [Hwf_meta Hwf_other].
-  unfold PureObjectMeta.well_formed_for_nameless_create in Hwf_meta.
+  pose proof KObjectV.well_formed_for_nameless_create_split _ Hwf as [Hwf_meta Hwf_other].
+  unfold ObjectMetaV.well_formed_for_nameless_create in Hwf_meta.
   destruct Hwf_meta as (Hgenerate_name & Hgenerate_name_len & Hname & Hnamespace & Howner_ref).
   destruct Hgenerate_name as (prefix & Hprefx & Hprefix_not_empty & Hvalid_prefix & Hnot_reserved_prefix).
   wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
@@ -48,7 +48,7 @@ Proof.
   wp_apply (wp_deepCopy with "[$Hdeepown_l]"); [done|].
   iIntros (copied_i copied_ptr copied_kobj) "(%Hinterface_agree_copied & Hdeepown_l_copied & Hdeepown_l)". wp_auto.
   wp_apply wp_Accessor; [done|]. rewrite bool_decide_true //. wp_auto.
-  iPoseProof (PureKObject.deepown_l_split _ _ _ _ with "Hdeepown_l_copied")
+  iPoseProof (KObjectV.deepown_l_split _ _ _ _ with "Hdeepown_l_copied")
     as "(Htypemeta_ptr & %Htypemeta_eq & Hdeepown_l_objectmeta & Hdeepown_l_other)".
   iDestruct "Hdeepown_l_objectmeta" as "[Hobjectmeta_ptr Hdeepown_objectmeta]".
   wp_apply (wp_SetNamespace with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
@@ -79,28 +79,28 @@ Proof.
     <| v1.ObjectMeta.Name' := new_name |>
     <| v1.ObjectMeta.UID' := generated_uid |>
     <| v1.ObjectMeta.ResourceVersion' := rv_str |>.
-  set new_pure_objectmeta := PureKObject.objectmeta pure_kobj
-    <| PureObjectMeta.Namespace' := KKey.Namespace' parent_key |>
-    <| PureObjectMeta.Name' := new_name |>
-    <| PureObjectMeta.UID' := generated_uid |>
-    <| PureObjectMeta.ResourceVersion' := rv_str |>.
+  set new_pure_objectmeta := KObjectV.objectmeta pure_kobj
+    <| ObjectMetaV.Namespace' := KKey.Namespace' parent_key |>
+    <| ObjectMetaV.Name' := new_name |>
+    <| ObjectMetaV.UID' := generated_uid |>
+    <| ObjectMetaV.ResourceVersion' := rv_str |>.
   iCombineNamed "Hcopied_kobj_*" as "H".
-  iAssert (PureObjectMeta.deepown_l (PureKObject.objectmeta_ptr copied_ptr pure_kobj) new_objectmeta new_pure_objectmeta 1)
+  iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr copied_ptr pure_kobj) new_objectmeta new_pure_objectmeta 1)
     with "[Hobjectmeta_ptr H]" as "Hdeepown_l_objectmeta".
   { iNamed "H". iFrame. iPureIntro. done. }
-  iPoseProof (PureKObject.deepown_l_merge _ _ _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
+  iPoseProof (KObjectV.deepown_l_merge _ _ _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
     as "Hdeepown_l_copied".
   { iFrame. done. }
   wp_apply (wp_deepCopy with "[Hdeepown_l_copied]").
   { iFrame. iPureIntro. destruct pure_kobj; exact Hinterface_agree_copied. }
   iIntros (interface_obj' ptr' obj') "(%Hinterface_agree' & Hdeepown_l' & Hdeepown_l_copied)". wp_auto.
   set new_key := {|
-    KKey.Kind' := PureKObject.kind pure_kobj;
+    KKey.Kind' := KObjectV.kind pure_kobj;
     KKey.Name' := new_name;
     KKey.Namespace' := KKey.Namespace' parent_key
   |}.
   fold new_key in Hnew_key_not_in_phys.
-  assert (new_key = PureKObject.key (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta)) as Hnew_key_eq.
+  assert (new_key = KObjectV.key (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)) as Hnew_key_eq.
   { unfold new_key. destruct pure_kobj; done. }
   iAssert (⌜ abs_state !! new_key = None ⌝%I) as "%Hnew_key_not_in_abs".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. apply not_elem_of_dom.
@@ -121,14 +121,14 @@ Proof.
     { apply Hchildren_exist with (k := parent_key). exact Hparent_key_in_children. }
     apply not_elem_of_dom in Hnew_key_not_in_abs.
     set_solver. }
-  iMod (map_alloc new_key (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta) with "[$Hinv_Hown_abs]")
+  iMod (map_alloc new_key (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta) with "[$Hinv_Hown_abs]")
     as "[Hinv_Hown_abs Hown_pod]"; [eauto|].
   iMod (auth_map.map_update _ _ (children_keys ∪ {[new_key]}) with "Hinv_Hown_children Hghost_children_keys")
     as "[Hinv_Hown_children Hghost_children_keys]".
   iMod (map_alloc new_key ∅ with "[$Hinv_Hown_children]") as "[Hinv_Hown_children Hghost_grandchildren_keys]"; [eauto|].
   set phys_state' := <[new_key:=copied_i]> phys_state.
   set used_uid' := <[generated_uid:=()]> used_uid.
-  set abs_state' := <[new_key:=PureKObject.update_objectmeta pure_kobj new_pure_objectmeta]> abs_state.
+  set abs_state' := <[new_key:=KObjectV.update_objectmeta pure_kobj new_pure_objectmeta]> abs_state.
   set children' := (<[new_key:=∅]> (<[parent_key:=children_keys ∪ {[new_key]}]> children)).
   iAssert (state_rep phys_state' abs_state' %I) with "[Hdeepown_l_copied Hinv_Hphys_abs_rep]" as "Hinv_Hphys_abs_rep".
   { unfold state_rep. unfold phys_state'. unfold abs_state'.
@@ -137,13 +137,13 @@ Proof.
     - iExists copied_ptr, (KObject.update_objectmeta copied_kobj new_objectmeta). iFrame. iPureIntro.
       destruct pure_kobj; exact Hinterface_agree_copied.
     - done. }
-  assert (PureKObject.well_formed (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta)) as Hwf'.
-  { assert (PureObjectMeta.well_formed new_pure_objectmeta) as Hwf_meta'.
-    { unfold PureObjectMeta.well_formed. 
+  assert (KObjectV.well_formed (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)) as Hwf'.
+  { assert (ObjectMetaV.well_formed new_pure_objectmeta) as Hwf_meta'.
+    { unfold ObjectMetaV.well_formed. 
       split_and!.
       1: intros; left; exists prefix; done. all: intuition. }
-    pose proof PureKObject.well_formed_implies _ Hwf_other as Hwf_other'.
-    apply PureKObject.well_formed_merge. split; [done|done]. }
+    pose proof KObjectV.well_formed_implies _ Hwf_other as Hwf_other'.
+    apply KObjectV.well_formed_merge. split; [done|done]. }
   assert (ghost_well_formed (dom used_uid') abs_state' children' fresh_keys ) as Hinv_Hghost_well_formed'.
   {
     assert (dom children' = dom children ∪ {[new_key]}) as Hdom_children_eq. {
@@ -154,13 +154,13 @@ Proof.
       assert ({[parent_key]} ∪ dom children = dom children) as ->.
       { set_solver. }
       set_solver. }
-    assert (PureObjectMeta.UID' (PureKObject.objectmeta (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta)) = generated_uid)
+    assert (ObjectMetaV.UID' (KObjectV.objectmeta (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)) = generated_uid)
       as Hpure_pod'_uiq_eq.
     { destruct pure_kobj; done. }
     assert (generated_uid ∉ dom used_uid) as Hgenerated_not_in_used.
     { apply not_elem_of_dom. exact Hgenerated_uid_is_not_used. }
-    assert (obj_has_controller_parent_of (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta) (KKey.Kind' parent_key)
-      (KKey.Name' parent_key) (PureObjectMeta.UID' (PureKObject.objectmeta parent)))
+    assert (obj_has_controller_parent_of (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta) (KKey.Kind' parent_key)
+      (KKey.Name' parent_key) (ObjectMetaV.UID' (KObjectV.objectmeta parent)))
       as Hpure_pod'_has_controller_parent_of_parent.
     { destruct pure_kobj; done. }
     destruct Hinv_Hghost_well_formed.
@@ -245,10 +245,10 @@ Proof.
       destruct Hlookup1 as [(<- & <-) | (Hk1_neq & Hlookup1)];
       destruct Hlookup2 as [(<- & <-) | (Hk2_neq & Hlookup2)].
       + done.
-      + assert ((PureKObject.objectmeta obj2).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj2_uid_in_used.
+      + assert ((KObjectV.objectmeta obj2).(ObjectMetaV.UID') ∈ dom used_uid) as Hobj2_uid_in_used.
         { apply Hexisting_uid_is_used with (k := k2). done. }
         rewrite <-Huid_eq, Hpure_pod'_uiq_eq in Hobj2_uid_in_used. done.
-      + assert ((PureKObject.objectmeta obj1).(PureObjectMeta.UID') ∈ dom used_uid) as Hobj1_uid_in_used.
+      + assert ((KObjectV.objectmeta obj1).(ObjectMetaV.UID') ∈ dom used_uid) as Hobj1_uid_in_used.
         { apply Hexisting_uid_is_used with (k := k1). done. }
         rewrite Huid_eq Hpure_pod'_uiq_eq in Hobj1_uid_in_used. done.
       + apply Hno_duplicate_uid with (obj1 := obj1) (obj2 := obj2); done.
@@ -277,7 +277,7 @@ Proof.
       + intros Hobj_has_controller_parent_of.
         destruct Hlookup_c as [(<- & <-) | (Hkey_c_neq & Hlookup_c)].
         * pose proof (well_formed_obj_has_at_most_one_controller_parent
-            (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta) Hwf' _ _ _ _ _ _
+            (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta) Hwf' _ _ _ _ _ _
             Hobj_has_controller_parent_of Hpure_pod'_has_controller_parent_of_parent)
             as (Hkind_eq & Hname_eq & Huid_eq).
           destruct Hlookup_p as [(<- & <-) | (Hkey_p_neq & Hlookup_p)].
@@ -307,7 +307,7 @@ Proof.
       rewrite lookup_insert_Some in Hlookup_abs.
       destruct Hlookup_abs as [(<- & <-) | (Hk_neq & Hlookup_abs)].
       + pose proof (well_formed_obj_has_at_most_one_controller_parent
-          (PureKObject.update_objectmeta pure_kobj new_pure_objectmeta) Hwf' _ _ _ _ _ _ Hhas_parent
+          (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta) Hwf' _ _ _ _ _ _ Hhas_parent
           Hpure_pod'_has_controller_parent_of_parent) as (Hkind_eq & Hname_eq & ->).
         pose proof (Hexisting_uid_is_used parent_key parent Hparent_key_in_abs).
         unfold used_uid'. set_solver.
@@ -327,36 +327,36 @@ Lemma wp_State__PodCreate_without_name γ l namespace ptr
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hnamespace_is_parent_namespace" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ namespace ≠ ""%go ∧ valid_namespace namespace ⌝ ∗
-      "Hdeepown_l" ∷ PurePod.deepown_l ptr pod pure_pod 1 ∗
-      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) parent_key.(KKey.Kind')
-        parent_key.(KKey.Name') (PureKObject.objectmeta parent).(PureObjectMeta.UID') ⌝ ∗
-      "#Hwf" ∷ ⌜ PurePod.well_formed_for_nameless_create pure_pod ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l ptr pod pure_pod 1 ∗
+      "%Hpure_pod_is_child" ∷ ⌜ obj_has_controller_parent_of (KObjectV.Pod pure_pod) parent_key.(KKey.Kind')
+        parent_key.(KKey.Name') (KObjectV.objectmeta parent).(ObjectMetaV.UID') ⌝ ∗
+      "#Hwf" ∷ ⌜ PodV.well_formed_for_nameless_create pure_pod ⌝ ∗
       "Hghost_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ parent ∗
       "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys
   }}}
     l @ (ptrT.id apimodel.State.id) @ "PodCreate" #namespace #ptr
   {{{ ptr' pod' pure_pod', RET (#ptr', #interface.nil);
-      "Hdeepown_l'" ∷ PurePod.deepown_l ptr' pod' pure_pod' 1 ∗
-      "%Hwf" ∷ ⌜ PurePod.well_formed pure_pod' ⌝ ∗
-      "%Hnamespace_matches" ∷ ⌜ pure_pod'.(PurePod.ObjectMeta').(PureObjectMeta.Namespace') = namespace ⌝ ∗
-      "%Hnew_key_notin" ∷ ⌜ (PurePod.key pure_pod') ∉ children_keys ⌝ ∗
-      "Hghost_pure_pod" ∷ (PurePod.key pure_pod') [[ γ.(γ_state) ]]↦ (PureKObject.Pod pure_pod') ∗
+      "Hdeepown_l'" ∷ PodV.deepown_l ptr' pod' pure_pod' 1 ∗
+      "%Hwf" ∷ ⌜ PodV.well_formed pure_pod' ⌝ ∗
+      "%Hnamespace_matches" ∷ ⌜ pure_pod'.(PodV.ObjectMeta').(ObjectMetaV.Namespace') = namespace ⌝ ∗
+      "%Hnew_key_notin" ∷ ⌜ (PodV.key pure_pod') ∉ children_keys ⌝ ∗
+      "Hghost_pure_pod" ∷ (PodV.key pure_pod') [[ γ.(γ_state) ]]↦ (KObjectV.Pod pure_pod') ∗
       "Hghost_parent" ∷ parent_key [[ γ.(γ_state) ]]↦ parent ∗
-      "Hghost_children_keys" ∷  parent_key [[ γ.(γ_children) ]]↦ (children_keys ∪ {[PurePod.key pure_pod']}) ∗
-      "Hghost_grandchildren_keys" ∷ (PurePod.key pure_pod') [[ γ.(γ_children) ]]↦ ∅
+      "Hghost_children_keys" ∷  parent_key [[ γ.(γ_children) ]]↦ (children_keys ∪ {[PodV.key pure_pod']}) ∗
+      "Hghost_grandchildren_keys" ∷ (PodV.key pure_pod') [[ γ.(γ_children) ]]↦ ∅
       (* TODO: specify that pod' shares some contents with pod *)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk". wp_auto.
-  wp_apply (wp_State__objCreate_without_name _ _ _ _ _ _ (KObject.Pod pod) (PureKObject.Pod pure_pod)
+  wp_apply (wp_State__objCreate_without_name _ _ _ _ _ _ (KObject.Pod pod) (KObjectV.Pod pure_pod)
   with "[$Hdeepown_l $Hghost_children_keys $Hghost_parent]").
   { iFrame "#". done. }
   iIntros (obj' ptr' kobj' pure_kobj') "H". iNamed "H". wp_auto.
-  assert (∃ pure_pod', pure_kobj' = PureKObject.Pod pure_pod') as [pure_pod' ->].
+  assert (∃ pure_pod', pure_kobj' = KObjectV.Pod pure_pod') as [pure_pod' ->].
   { destruct pure_kobj'; try done. exists p. done. }
-  iPoseProof (PureKObject.pod_deepown_l with "Hdeepown_l'") as "(%pod' & -> & Hdeepown_l')".
+  iPoseProof (KObjectV.pod_deepown_l with "Hdeepown_l'") as "(%pod' & -> & Hdeepown_l')".
   rewrite bool_decide_true //. wp_auto.
-  unfold PureKObject.interface_agree in Hinterface_agree'. rewrite Hinterface_agree'.
+  unfold KObjectV.interface_agree in Hinterface_agree'. rewrite Hinterface_agree'.
   unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
   { iPureIntro. intros ptr_id. exists ptr'. done. }
   iIntros (y ok) "%if_ok".

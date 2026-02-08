@@ -69,34 +69,34 @@ Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
   dq template pure_template rs_l meta pure_meta controller_ref pure_controller_ref:
   {{{ is_pkg_init controller ∗
       template_l ↦{dq} template ∗
-      PurePodTemplateSpec.deepown template pure_template dq ∗
-      ⌜ PurePodTemplateSpec.well_formed pure_template ⌝ ∗
+      PodTemplateSpecV.deepown template pure_template dq ∗
+      ⌜ PodTemplateSpecV.well_formed pure_template ⌝ ∗
       ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      PureObjectMeta.deepown meta pure_meta dq ∗
-      ⌜ PureObjectMeta.well_formed pure_meta ⌝ ∗
-      ⌜ length pure_meta.(PureObjectMeta.Name') < 58 ⌝ ∗
-      PureOwnerReference.deepown_l controller_ref_l controller_ref pure_controller_ref 1
+      ObjectMetaV.deepown meta pure_meta dq ∗
+      ⌜ ObjectMetaV.well_formed pure_meta ⌝ ∗
+      ⌜ length pure_meta.(ObjectMetaV.Name') < 58 ⌝ ∗
+      OwnerReferenceV.deepown_l controller_ref_l controller_ref pure_controller_ref 1
   }}}
   @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
   {{{ pod_l pod pure_pod, RET (#pod_l, #interface.nil);
-      PurePod.deepown_l pod_l pod pure_pod 1 ∗
-      ⌜ obj_has_controller_parent_of (PureKObject.Pod pure_pod) "ReplicaSet"%go pure_meta.(PureObjectMeta.Name') pure_meta.(PureObjectMeta.UID') ⌝ ∗
-      ⌜ PurePod.well_formed_for_nameless_create pure_pod ⌝ ∗
+      PodV.deepown_l pod_l pod pure_pod 1 ∗
+      ⌜ obj_has_controller_parent_of (KObjectV.Pod pure_pod) "ReplicaSet"%go pure_meta.(ObjectMetaV.Name') pure_meta.(ObjectMetaV.UID') ⌝ ∗
+      ⌜ PodV.well_formed_for_nameless_create pure_pod ⌝ ∗
       template_l ↦{dq} template ∗
-      PurePodTemplateSpec.deepown template pure_template dq ∗
+      PodTemplateSpecV.deepown template pure_template dq ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      PureObjectMeta.deepown meta pure_meta dq
+      ObjectMetaV.deepown meta pure_meta dq
   }}}.
 Proof. Admitted.
 
-Definition is_pure_pod_active (pure_pod: PurePod.t): Prop :=
-  "Succeeded"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
-  "Failed"%go ≠ pure_pod.(PurePod.Status').(PurePodStatus.Phase') ∧
-	pure_pod.(PurePod.ObjectMeta').(PureObjectMeta.DeletionTimestamp') = None.
+Definition is_pure_pod_active (pure_pod: PodV.t): Prop :=
+  "Succeeded"%go ≠ pure_pod.(PodV.Status').(PodStatusV.Phase') ∧
+  "Failed"%go ≠ pure_pod.(PodV.Status').(PodStatusV.Phase') ∧
+	pure_pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
 
 Lemma deepown_preserves_activeness pod pure_pod dq:
-  PurePod.deepown pod pure_pod dq -∗
+  PodV.deepown pod pure_pod dq -∗
     ⌜ is_pod_active pod ↔ is_pure_pod_active pure_pod ⌝.
 Proof.
   iIntros "H". iNamed "H". iNamed "Hdeepown_objectmeta". iNamed "Hdeepown_podstatus".
