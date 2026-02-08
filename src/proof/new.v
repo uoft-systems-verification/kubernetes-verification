@@ -12,13 +12,17 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Axiom own_meta_frag: gname → KKey.t → types.UID.t → ObjectMetaV.t → iProp Σ.
 
-Axiom own_weak_spec_frag: gname → KKey.t → types.UID.t → ObjectSpecV.t → iProp Σ.
+Axiom own_spec_frag: gname → KKey.t → types.UID.t → ObjectSpecV.t → iProp Σ.
 
-Axiom own_weak_status_frag: gname → KKey.t → types.UID.t → ObjectStatusV.t → iProp Σ.
+Axiom own_status_frag: gname → KKey.t → types.UID.t → ObjectStatusV.t → iProp Σ.
 
-Axiom own_weak_children_frag: gname → KKey.t → types.UID.t → gset KKey.t → iProp Σ.
+Axiom own_children_frag: gname → KKey.t → types.UID.t → gset KKey.t → iProp Σ.
 
-Axiom own_fresh_key_frag: gname → KKey.t → iProp Σ.
+Inductive KeyLifecycle :=
+| Idle
+| Used.
+
+Axiom own_reserved_key_frag: gname → KKey.t → KeyLifecycle → iProp Σ.
 
 (* A tombstone of the object and its uid. It's persistent. *)
 Axiom own_tombstone_p_frag: gname → KKey.t → types.UID.t → iProp Σ.
@@ -71,195 +75,164 @@ Lemma wp_State__get_none γ l key uid:
   }}}.
 Proof. Admitted.
 
-Lemma wp_State__get_some γ l key uid kmeta kspec_o kstatus_o:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Huid" ∷ ⌜ uid = kmeta.(ObjectMetaV.UID') ⌝ ∗
-      "Hmeta" ∷ own_meta_frag γ key uid kmeta ∗
-      "Hspec" ∷ (match kspec_o with
-                  | Some kspec => own_weak_spec_frag γ key uid kspec
-                  | None => True
-                  end) ∗
-      "Hstatus" ∷ (match kstatus_o with
-                  | Some kstatus => own_weak_status_frag γ key uid kstatus
-                  | None => True
-                  end)
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "get" #key
-  {{{ i kobj, RET (#i, #interface.nil);
-      ⌜ KObjectV.valid kobj ⌝ ∗
-      ⌜ key = KObjectV.key kobj ⌝ ∗
-      ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
-      KObjectV.deepown_i i kobj 1 ∗
+Lemma wp_State__get_some_au γ l key:
+  ∀ Φ,
+  ( is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    |={⊤,∅}=> ∃ uid kmeta kspec_o kstatus_o i kobj,
+      ⌜ uid = kmeta.(ObjectMetaV.UID') ⌝ ∗
       own_meta_frag γ key uid kmeta ∗
-      (match kspec_o with
-      | Some kspec => own_weak_spec_frag γ key uid kspec ∗ ⌜ kspec = KObjectV.spec kobj ⌝
+      match kspec_o with
+      | Some kspec => own_spec_frag γ key uid kspec
       | None => True
-      end) ∗
-      (match kstatus_o with
-      | Some kstatus => own_weak_status_frag γ key uid kstatus ∗ ⌜ kstatus = KObjectV.status kobj ⌝
+      end ∗
+      match kstatus_o with
+      | Some kstatus => own_status_frag γ key uid kstatus
       | None => True
-      end) ∗
-      own_snapshot_p_frag_of γ kobj
-  }}}.
-Proof. Admitted.
-
-Lemma wp_State__create γ l kind namespace i kobj key parent_key parent_uid parent_meta children:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkind_eq" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
-      "%Hwf" ∷ ⌜ KObjectV.valid_create namespace kobj ⌝ ∗
-      "%Hparent_of" ∷ ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
-      "%Hkey_eq" ∷ ⌜ key = (KObjectV.key kobj) ⌝ ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hfresh_key" ∷ own_fresh_key_frag γ key ∗
-      "Hparent_meta" ∷ own_meta_frag γ parent_key parent_uid parent_meta ∗
-      "Hchildren" ∷ own_weak_children_frag γ parent_key parent_uid children
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i
-  {{{ i' kobj' uid, RET (#i', #interface.nil);
-      ⌜ ObjectMetaV.created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-      ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
-      ⌜ KObjectV.valid kobj' ⌝ ∗
-      ⌜ key = (KObjectV.key kobj') ⌝ ∗
-      ⌜ key ∉ children ⌝ ∗
-      ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
-      KObjectV.deepown_i i' kobj' 1 ∗
-      own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
-      own_weak_spec_frag γ key uid (KObjectV.spec kobj') ∗
-      own_weak_status_frag γ key uid (KObjectV.status kobj') ∗
-      own_meta_frag γ parent_key parent_uid parent_meta ∗
-      own_weak_children_frag γ parent_key parent_uid (children ∪ {[key]}) ∗
-      own_weak_children_frag γ key uid ∅ ∗
-      own_snapshot_p_frag_of γ kobj'
-  }}}.
-Proof. Admitted.
-
-Lemma wp_State__nameless_create γ l kind namespace i kobj parent_key parent_uid parent_meta children:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkind_eq" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
-      "%Hparent_of" ∷ ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
-      "%Hwf" ∷ ⌜ KObjectV.valid_nameless_create namespace kobj ⌝ ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hparent_meta" ∷ own_meta_frag γ parent_key parent_uid parent_meta ∗
-      "Hchildren" ∷ own_weak_children_frag γ parent_key parent_uid children
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i
-  {{{ i' kobj' key uid, RET (#i', #interface.nil);
-      ⌜ KObjectV.valid kobj' ⌝ ∗
-      ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-      ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
-      ⌜ key = (KObjectV.key kobj') ⌝ ∗
-      ⌜ key ∉ children ⌝ ∗
-      ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
-      KObjectV.deepown_i i' kobj' 1 ∗
-      own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
-      own_weak_spec_frag γ key uid (KObjectV.spec kobj') ∗
-      own_weak_status_frag γ key uid (KObjectV.status kobj') ∗
-      own_meta_frag γ parent_key parent_uid parent_meta ∗
-      own_weak_children_frag γ parent_key parent_uid (children ∪ {[key]}) ∗
-      own_weak_children_frag γ key uid ∅ ∗
-      own_snapshot_p_frag_of γ kobj'
-  }}}.
-Proof. Admitted.
-
-Lemma wp_State__delete γ l key uid kmeta parent_key parent_uid children:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%His_child" ∷ ⌜ key ∈ children ⌝ ∗
-      "Hmeta" ∷ own_meta_frag γ key uid kmeta ∗
-      "Hchildren" ∷ own_weak_children_frag γ parent_key parent_uid children
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "delete" #key #null #null
-  {{{ (kmeta': ObjectMetaV.t), RET #interface.nil;
-      (( ⌜ ObjectMetaV.deleting kmeta kmeta' ⌝ ∗
-          own_meta_frag γ key uid kmeta' ∗
-          own_weak_children_frag γ parent_key parent_uid children
-        ) ∨ (
-          own_tombstone_p_frag γ key uid ∗
-          own_weak_children_frag γ parent_key parent_uid (children ∖ {[key]})
-        )
+      end ∗
+      ( ⌜ KObjectV.valid kobj ⌝ ∗
+        ⌜ key = KObjectV.key kobj ⌝ ∗
+        ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
+        KObjectV.deepown_i i kobj 1 ∗
+        own_meta_frag γ key uid kmeta ∗
+        match kspec_o with
+        | Some kspec => own_spec_frag γ key uid kspec ∗ ⌜ kspec = KObjectV.spec kobj ⌝
+        | None => True
+        end ∗
+        match kstatus_o with
+        | Some kstatus => own_status_frag γ key uid kstatus ∗ ⌜ kstatus = KObjectV.status kobj ⌝
+        | None => True
+        end ∗
+        own_snapshot_p_frag_of γ kobj
+          ={∅,⊤}=∗ Φ (#i, #interface.nil)%V
       )
-  }}}.
+  ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "get" #key {{ Φ }}.
 Proof. Admitted.
 
-Lemma wp_State__delete_uid γ l key uid_ptr uid current_uid kmeta parent_key parent_uid children:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%His_child" ∷ ⌜ key ∈ children ⌝ ∗
-      "Huid_ptr" ∷ uid_ptr ↦ uid ∗
-      "Hmeta" ∷ own_meta_frag γ key current_uid kmeta ∗
-      "Hchildren" ∷ own_weak_children_frag γ parent_key parent_uid children
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "delete" #key #uid_ptr #null
-  {{{ (err: error.t) (kmeta': ObjectMetaV.t), RET #err;
-      ( ⌜ uid = current_uid ⌝ ∗
-        ⌜ err = interface.nil ⌝ ∗
-        ((⌜ ObjectMetaV.deleting kmeta kmeta' ⌝ ∗
-            own_meta_frag γ key current_uid kmeta' ∗
-            own_weak_children_frag γ parent_key parent_uid children
-          ) ∨ (
-            own_tombstone_p_frag γ key uid ∗
-            own_weak_children_frag γ parent_key parent_uid (children ∖ {[key]})
-          )
-        )
-      ) ∨
-      ( ⌜ uid ≠ current_uid ⌝ ∗
-        ⌜ err ≠ interface.nil ⌝
+Lemma wp_State__create_au γ l kind namespace i kobj key parent_key parent_uid:
+  ∀ Φ,
+  ( is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    ⌜ KObjectV.valid_create kind namespace kobj ⌝ ∗
+    ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+    ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
+    ⌜ key = (KObjectV.key kobj) ⌝ ∗
+    KObjectV.deepown_i i kobj 1 ∗
+    |={⊤,∅}=> ∃ children i' kobj' uid,
+      own_reserved_key_frag γ key Idle ∗
+      own_children_frag γ parent_key parent_uid children ∗
+      (⌜ ObjectMetaV.created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+        ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ key = (KObjectV.key kobj') ⌝ ∗
+        ⌜ key ∉ children ⌝ ∗
+        ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
+        KObjectV.deepown_i i' kobj' 1 ∗
+        own_reserved_key_frag γ key Used ∗
+        own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
+        own_spec_frag γ key uid (KObjectV.spec kobj') ∗
+        own_status_frag γ key uid (KObjectV.status kobj') ∗
+        own_children_frag γ parent_key parent_uid (children ∪ {[key]}) ∗
+        own_children_frag γ key uid ∅ ∗
+        own_snapshot_p_frag_of γ kobj'
+          ={∅,⊤}=∗ Φ (#i', #interface.nil)%V
       )
-  }}}.
+  ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i {{ Φ }}.
 Proof. Admitted.
 
-Lemma wp_State__delete_rv γ l key uid_ptr uid rv_ptr rv prev_kobj current_uid kmeta parent_key parent_uid children:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hsnapshot" ∷ own_snapshot_p_frag γ key uid rv prev_kobj ∗
-      "%His_child" ∷ ⌜ key ∈ children ⌝ ∗
-      "Huid_ptr" ∷ uid_ptr ↦ uid ∗
-      "Hrv_ptr" ∷ rv_ptr ↦ rv ∗
-      "Hmeta" ∷ own_meta_frag γ key current_uid kmeta ∗
-      "Hchildren" ∷ own_weak_children_frag γ parent_key parent_uid children
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "delete" #key #uid_ptr #rv_ptr
-  {{{ (err: error.t) (kmeta': ObjectMetaV.t), RET #err;
-      ( ⌜ uid = current_uid ⌝ ∗
-        ⌜ rv = kmeta.(ObjectMetaV.ResourceVersion') ⌝ ∗
-        ⌜ err = interface.nil ⌝ ∗
-        ((⌜ ObjectMetaV.deleting kmeta kmeta' ⌝ ∗
-            own_meta_frag γ key current_uid kmeta' ∗
-            own_weak_children_frag γ parent_key parent_uid children
-          ) ∨ (
-            own_tombstone_p_frag γ key uid ∗
-            own_weak_children_frag γ parent_key parent_uid (children ∖ {[key]})
-          )
-        )
-      ) ∨
-      ( (⌜ uid ≠ current_uid ⌝ ∨ ⌜ rv ≠ kmeta.(ObjectMetaV.ResourceVersion') ⌝) ∗
-        ⌜ err ≠ interface.nil ⌝
+Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid:
+  ∀ Φ,
+  ( is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+    ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+    ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
+    KObjectV.deepown_i i kobj 1 ∗
+    |={⊤,∅}=> ∃ children i' kobj' key uid,
+      own_children_frag γ parent_key parent_uid children ∗
+      ( ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+        ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        ⌜ key = (KObjectV.key kobj') ⌝ ∗
+        ⌜ key ∉ children ⌝ ∗
+        ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
+        KObjectV.deepown_i i' kobj' 1 ∗
+        own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
+        own_spec_frag γ key uid (KObjectV.spec kobj') ∗
+        own_status_frag γ key uid (KObjectV.status kobj') ∗
+        own_children_frag γ parent_key parent_uid (children ∪ {[key]}) ∗
+        own_children_frag γ key uid ∅ ∗
+        own_snapshot_p_frag_of γ kobj'
+          ={∅,⊤}=∗ Φ (#i', #interface.nil)%V
       )
-  }}}.
+  ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i {{ Φ }}.
 Proof. Admitted.
 
-Lemma wp_State__update γ l kind namespace i key uid rv prev_kobj kobj kmeta kspec:
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hsnapshot" ∷ own_snapshot_p_frag γ key uid rv prev_kobj ∗
-      "%Hkind_eq" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
-      "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
-      "%Hv" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
-      "%Hvu" ∷ ⌜ KObjectV.valid_update namespace prev_kobj kobj ⌝ ∗
-      "%Hsu" ∷ ⌜ ObjectMetaV.simple_update (KObjectV.objectmeta prev_kobj) (KObjectV.objectmeta kobj) ⌝ ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hmeta" ∷ own_meta_frag γ key uid kmeta ∗
-      "Hspec" ∷ own_weak_spec_frag γ key uid kspec
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "update" #kind #namespace #i
-  {{{ i' (err: error.t) kobj', RET (#i', #err);
+Lemma wp_State__delete_au γ l key uid_ptr uid_o rv_ptr rv_o (reserved: bool):
+  ∀ Φ,
+    is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    match uid_o with
+    | Some uid => uid_ptr ↦ uid
+    | None => ⌜ uid_ptr = null ⌝
+    end ∗
+    match rv_o with
+    | Some rv => rv_ptr ↦ rv
+    | None => ⌜ rv_ptr = null ⌝
+    end ∗
+    ( |={⊤,∅}=> ∃ child_uid kmeta parent_key parent_uid children err kmeta',
+      ⌜key ∈ children⌝ ∗
+      own_meta_frag γ key child_uid kmeta ∗
+      own_children_frag γ parent_key parent_uid children ∗
+      (if reserved then own_reserved_key_frag γ key Used else True) ∗
+      ( (* delete succeeds as uid and rv matches *)
+        ⌜match uid_o with
+        | Some uid => uid = child_uid
+        | None => True
+        end⌝ ∗
+        ⌜match rv_o with
+        | Some rv => rv = ObjectMetaV.ResourceVersion' kmeta
+        | None => True
+        end⌝ ∗ ⌜err = interface.nil⌝ ∗
+        ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
+          ⌜ObjectMetaV.deleting kmeta kmeta'⌝ ∗
+          own_meta_frag γ key child_uid kmeta' ∗
+          own_children_frag γ parent_key parent_uid children ∗
+          (if reserved then own_reserved_key_frag γ key Used else True)
+          ∨
+          (* the object is deleted *)
+          own_tombstone_p_frag γ key child_uid ∗
+          own_children_frag γ parent_key parent_uid (children ∖ {[key]}) ∗
+          (if reserved then own_reserved_key_frag γ key Idle else True)
+        )
+        ∨
+        (* delete fails as uid or rv doesn't match *)
+        (⌜∃ uid, uid_o = Some uid ∧ uid ≠ child_uid⌝ ∨ ⌜∃ rv, rv_o = Some rv ∧ rv ≠ ObjectMetaV.ResourceVersion' kmeta⌝) ∗
+        ⌜err ≠ interface.nil⌝ ∗
+        own_meta_frag γ key child_uid kmeta ∗
+        own_children_frag γ parent_key parent_uid children ∗
+        (if reserved then own_reserved_key_frag γ key Used else True)
+          ={∅,⊤}=∗ Φ (# err)
+      )
+    ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "delete" #key #uid_ptr #rv_ptr {{ Φ }}.
+Proof. Admitted.
+
+Lemma wp_State__update_au γ l kind namespace i key uid rv prev_kobj kobj:
+  ∀ Φ,
+    is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    own_snapshot_p_frag γ key uid rv prev_kobj ∗
+    ⌜ key = KObjectV.key kobj ⌝ ∗
+    (* valid_update implies that kobj's rv is equal to prev_kobj's rv *)
+    ⌜ KObjectV.valid_update kind namespace prev_kobj kobj ⌝ ∗
+    (* simple update doesn't adopt, release, or delete any object *)
+    ⌜ ObjectMetaV.simple_update (KObjectV.objectmeta prev_kobj) (KObjectV.objectmeta kobj) ⌝ ∗
+    KObjectV.deepown_i i kobj 1 ∗
+    ( |={⊤,∅}=> ∃ kmeta kspec i' err kobj',
+      own_meta_frag γ key uid kmeta ∗
+      own_spec_frag γ key uid kspec ∗
       ( ⌜ kmeta.(ObjectMetaV.ResourceVersion') = rv ⌝ ∗
         ⌜ err = interface.nil ⌝ ∗
         ⌜ KObjectV.valid kobj' ⌝ ∗
@@ -267,15 +240,50 @@ Lemma wp_State__update γ l kind namespace i key uid rv prev_kobj kobj kmeta ksp
         ⌜ ObjectSpecV.updated kspec (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
         KObjectV.deepown_i i' kobj' 1 ∗
         own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
-        own_weak_spec_frag γ key uid (KObjectV.spec kobj') ∗
+        own_spec_frag γ key uid (KObjectV.spec kobj') ∗
         own_snapshot_p_frag_of γ kobj'
-      ) ∨ (
+        ∨
         ⌜ kmeta.(ObjectMetaV.ResourceVersion') ≠ rv ⌝ ∗
         ⌜ err ≠ interface.nil ⌝ ∗
         own_meta_frag γ key uid kmeta ∗
-        own_weak_spec_frag γ key uid kspec
+        own_spec_frag γ key uid kspec
+          ={∅,⊤}=∗ Φ (#i', #interface.nil)%V
       )
-  }}}.
+    ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "update" #kind #namespace #i {{ Φ }}.
+Proof. Admitted.
+
+Lemma wp_State__update_status_au γ l kind namespace i key uid rv prev_kobj kobj:
+  ∀ Φ,
+    is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    own_snapshot_p_frag γ key uid rv prev_kobj ∗
+    ⌜ key = KObjectV.key kobj ⌝ ∗
+    (* valid_update_status implies that kobj's rv is equal to prev_kobj's rv *)
+    ⌜ KObjectV.valid_update_status kind namespace prev_kobj kobj ⌝ ∗
+    (* simple update_status doesn't modify anything in objectmeta *)
+    ⌜ ObjectMetaV.simple_update_status (KObjectV.objectmeta prev_kobj) (KObjectV.objectmeta kobj) ⌝ ∗
+    KObjectV.deepown_i i kobj 1 ∗
+    ( |={⊤,∅}=> ∃ kmeta kstatus i' err kobj',
+      own_meta_frag γ key uid kmeta ∗
+      own_status_frag γ key uid kstatus ∗
+      ( ⌜ kmeta.(ObjectMetaV.ResourceVersion') = rv ⌝ ∗
+        ⌜ err = interface.nil ⌝ ∗
+        ⌜ KObjectV.valid kobj' ⌝ ∗
+        (* After simple update_status only the resource version should change in objectmeta *)
+        ⌜ ObjectMetaV.rv_updated kmeta (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectStatusV.updated kstatus (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        KObjectV.deepown_i i' kobj' 1 ∗
+        own_meta_frag γ key uid (KObjectV.objectmeta kobj') ∗
+        own_status_frag γ key uid (KObjectV.status kobj') ∗
+        own_snapshot_p_frag_of γ kobj'
+        ∨
+        ⌜ kmeta.(ObjectMetaV.ResourceVersion') ≠ rv ⌝ ∗
+        ⌜ err ≠ interface.nil ⌝ ∗
+        own_meta_frag γ key uid kmeta ∗
+        own_status_frag γ key uid kstatus
+          ={∅,⊤}=∗ Φ (#i', #interface.nil)%V
+      )
+    ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "updateStatus" #kind #namespace #i {{ Φ }}.
 Proof. Admitted.
 
 End spec.

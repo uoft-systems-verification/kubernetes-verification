@@ -115,9 +115,13 @@ Axiom nameless_created: go_string → t → t → Prop. (* namespace → input m
 
 Axiom updated: t → t → t → Prop. (* old meta → input meta → output meta (new meta) *)
 
+Axiom rv_updated: t → t → Prop. (* old meta → output meta (new meta) *)
+
 Axiom deleting: t → t → Prop.
 
 Axiom simple_update: t → t → Prop.
+
+Axiom simple_update_status: t → t → Prop.
 
 Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_name" ∷ ⌜ c.(v1.ObjectMeta.Name') = v.(Name') ⌝ ∗
@@ -499,11 +503,13 @@ Definition key o : KKey.t :=
 (* TODO: replace well_formed *)
 Axiom valid: t → Prop.
 
-Axiom valid_create: go_string → t → Prop.
+Axiom valid_create: go_string → go_string → t → Prop.
 
-Axiom valid_nameless_create: go_string → t → Prop.
+Axiom valid_nameless_create: go_string → go_string → t → Prop.
 
-Axiom valid_update: go_string → t → t → Prop.
+Axiom valid_update: go_string → go_string → t → t → Prop.
+
+Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
 Definition well_formed o : Prop :=
   match o with
