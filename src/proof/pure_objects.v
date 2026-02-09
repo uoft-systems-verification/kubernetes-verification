@@ -394,23 +394,6 @@ Definition deepown_l_without_meta l c v (dq: dfrac): iProp Σ :=
 End def.
 End ReplicaSetV.
 
-Module KKey.
-Global Instance eq_dec : EqDecision KKey.t.
-Proof. solve_decision. Qed.
-
-Global Instance countable : Countable KKey.t.
-Proof.
-  refine (inj_countable'
-            (λ k, (KKey.Kind' k,
-                   KKey.Name' k,
-                   KKey.Namespace' k))
-            (λ '(kind, name, namespace),
-              KKey.mk kind name namespace)
-            _).
-  intros []; reflexivity.
-Qed.
-End KKey.
-
 Module KObject.
 Section def.
 Inductive t :=
@@ -535,28 +518,6 @@ Definition well_formed_for_nameless_create_without_meta o : Prop :=
   | ReplicaSet rs => ReplicaSetV.well_formed_for_nameless_create_without_meta rs
   end.
 
-Lemma well_formed_for_nameless_create_split o:
-  well_formed_for_nameless_create o →
-    ObjectMetaV.well_formed_for_nameless_create (objectmeta o) ∧ well_formed_for_nameless_create_without_meta o.
-Proof.
-  destruct o as [p|rs]; simpl.
-  - unfold PodV.well_formed_for_nameless_create, PodV.well_formed_for_nameless_create_without_meta.
-    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
-  - unfold ReplicaSetV.well_formed_for_nameless_create, ReplicaSetV.well_formed_for_nameless_create_without_meta.
-    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
-Qed.
-
-Lemma well_formed_merge o m:
-  ObjectMetaV.well_formed m ∧ well_formed_without_meta o →
-    well_formed (update_objectmeta o m).
-Proof. destruct o; done. Qed.
-
-(* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
-Lemma well_formed_implies o: 
-  well_formed_for_nameless_create_without_meta o →
-    well_formed_without_meta o.
-Proof. destruct o; done. Qed.
-
 Definition same_constructor (o1 o2 : t) : Prop :=
   match o1, o2 with
   | Pod _, Pod _ => True
@@ -580,24 +541,6 @@ Definition interface_agree i (l: loc) v: Prop :=
 Definition deepown_i i v dq: iProp Σ :=
   ∃ l c, ⌜ interface_agree i l v ⌝ ∗ deepown_l l c v dq.
 
-Lemma pod_deepown_l l obj pure_pod dq:
-  deepown_l l obj (Pod pure_pod) dq ⊢
-    ∃ pod, ⌜ obj = KObject.Pod pod ⌝ ∗ PodV.deepown_l l pod pure_pod dq.
-Proof.
-  destruct obj; simpl.
-  - iIntros "H". iExists _. iFrame. done.
-  - iIntros "Hfalse". done.
-Qed.
-
-Lemma replicaset_deepown_l l obj pure_rs dq:
-  deepown_l l obj (ReplicaSet pure_rs) dq ⊢
-    ∃ rs, ⌜ obj = KObject.ReplicaSet rs ⌝ ∗ ReplicaSetV.deepown_l l rs pure_rs dq.
-Proof.
-  destruct obj; simpl.
-  - iIntros "Hfalse". done.
-  - iIntros "H". iExists _. iFrame. done.
-Qed.
-
 Definition deepown_l_without_meta l c v dq: iProp Σ :=
   match (c, v) with
   | (KObject.Pod c, Pod v) => PodV.deepown_l_without_meta l c v dq
@@ -616,6 +559,51 @@ Definition objectmeta_ptr l v: loc :=
   | Pod _ => struct.field_ref_f v1.Pod "ObjectMeta" l
   | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "ObjectMeta" l
   end.
+
+End def.
+
+Section proof.
+Context `{hG: !heapGS Σ}.
+
+Lemma well_formed_for_nameless_create_split o:
+  well_formed_for_nameless_create o →
+    ObjectMetaV.well_formed_for_nameless_create (objectmeta o) ∧ well_formed_for_nameless_create_without_meta o.
+Proof.
+  destruct o as [p|rs]; simpl.
+  - unfold PodV.well_formed_for_nameless_create, PodV.well_formed_for_nameless_create_without_meta.
+    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
+  - unfold ReplicaSetV.well_formed_for_nameless_create, ReplicaSetV.well_formed_for_nameless_create_without_meta.
+    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
+Qed.
+
+Lemma well_formed_merge o m:
+  ObjectMetaV.well_formed m ∧ well_formed_without_meta o →
+    well_formed (update_objectmeta o m).
+Proof. destruct o; done. Qed.
+
+(* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
+Lemma well_formed_implies o:
+  well_formed_for_nameless_create_without_meta o →
+    well_formed_without_meta o.
+Proof. destruct o; done. Qed.
+
+Lemma pod_deepown_l l obj pure_pod dq:
+  deepown_l l obj (Pod pure_pod) dq ⊢
+    ∃ pod, ⌜ obj = KObject.Pod pod ⌝ ∗ PodV.deepown_l l pod pure_pod dq.
+Proof.
+  destruct obj; simpl.
+  - iIntros "H". iExists _. iFrame. done.
+  - iIntros "Hfalse". done.
+Qed.
+
+Lemma replicaset_deepown_l l obj pure_rs dq:
+  deepown_l l obj (ReplicaSet pure_rs) dq ⊢
+    ∃ rs, ⌜ obj = KObject.ReplicaSet rs ⌝ ∗ ReplicaSetV.deepown_l l rs pure_rs dq.
+Proof.
+  destruct obj; simpl.
+  - iIntros "Hfalse". done.
+  - iIntros "H". iExists _. iFrame. done.
+Qed.
 
 Lemma deepown_l_type_match l c v dq:
   deepown_l l c v dq ⊢
@@ -709,11 +697,39 @@ Proof.
   iFrame.
 Qed.
 
-End def.
+End proof.
 End KObjectV.
 
-Global Existing Instance KKey.eq_dec.
-Global Existing Instance KKey.countable.
+Global Instance key_eq_dec : EqDecision KKey.t.
+Proof. solve_decision. Qed.
+  
+Global Instance key_countable : Countable KKey.t.
+Proof.
+  refine (inj_countable'
+            (λ k, (KKey.Kind' k,
+                   KKey.Name' k,
+                   KKey.Namespace' k))
+            (λ '(kind, name, namespace),
+              KKey.mk kind name namespace)
+            _).
+  intros []; reflexivity.
+Qed.
+
+Global Instance key_uid_eq_dec : EqDecision (KKey.t * types.UID.t).
+Proof. solve_decision. Qed.
+
+Global Instance key_uid_countable : Countable (KKey.t * types.UID.t).
+Proof.
+  refine (inj_countable'
+            (λ '(k, uid), (KKey.Kind' k,
+                           KKey.Name' k,
+                           KKey.Namespace' k,
+                           uid))
+            (λ '(kind, name, namespace, uid),
+              (KKey.mk kind name namespace, uid))
+            _).
+  intros [[] ?]; reflexivity.
+Qed.
 
 Definition is_controller_parent_of (o: OwnerReferenceV.t) kind name uid : Prop :=
   o.(OwnerReferenceV.Controller') = Some true ∧
