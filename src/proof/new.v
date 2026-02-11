@@ -10,6 +10,13 @@ From New.proof.big_op Require Export big_sepL big_sepM.
 Section spec.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
+(* First, find a new, clean, unified way to define the ownerships *)
+(* Second, write weaker spec (e.g., for get) and use the AU spec to prove the weaker spec *)
+  (* See chanlib specs *)
+(* Third, unify the safety and liveness specs using (inv or stable_tok) *)
+
+Axiom own_auth: gname → KKey.t → types.UID.t → KObjectV.t → gset KKey.t → iProp Σ.
+
 Axiom own_meta_frag: gname → KKey.t → types.UID.t → ObjectMetaV.t → iProp Σ.
 
 Axiom own_spec_frag: gname → KKey.t → types.UID.t → ObjectSpecV.t → iProp Σ.
@@ -45,12 +52,12 @@ Lemma wp_State__get γ l key:
   }}}
     l @ (ptrT.id apimodel.State.id) @ "get" #key
   {{{ i (err: error.t) kobj, RET (#i, #err);
-      ( ⌜ err = interface.nil ⌝ ∗
-        ⌜ KObjectV.valid kobj ⌝ ∗
-        ⌜ key = KObjectV.key kobj ⌝ ∗
-        KObjectV.deepown_i i kobj 1 ∗
-        own_snapshot_p_frag_of γ kobj
-      ) ∨
+      ⌜ err = interface.nil ⌝ ∗
+      ⌜ KObjectV.valid kobj ⌝ ∗
+      ⌜ key = KObjectV.key kobj ⌝ ∗
+      KObjectV.deepown_i i kobj 1 ∗
+      own_snapshot_p_frag_of γ kobj
+      ∨
       ⌜ err ≠ interface.nil ⌝
   }}}.
 Proof. Admitted.
@@ -62,16 +69,14 @@ Lemma wp_State__get_none γ l key uid:
   }}}
     l @ (ptrT.id apimodel.State.id) @ "get" #key
   {{{ i (err: error.t) kobj, RET (#i, #err);
-      (( ⌜ err = interface.nil ⌝ ∗
-          ⌜ KObjectV.valid kobj ⌝ ∗
-          ⌜ key = KObjectV.key kobj ⌝ ∗
-          ⌜ uid ≠ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-          KObjectV.deepown_i i kobj 1 ∗
-          own_snapshot_p_frag_of γ kobj
-        ) ∨
-        ⌜ err ≠ interface.nil ⌝
-      )
-      ∗ own_tombstone_p_frag γ key uid 
+      ⌜ err = interface.nil ⌝ ∗
+      ⌜ KObjectV.valid kobj ⌝ ∗
+      ⌜ key = KObjectV.key kobj ⌝ ∗
+      ⌜ uid ≠ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
+      KObjectV.deepown_i i kobj 1 ∗
+      own_snapshot_p_frag_of γ kobj
+      ∨
+      ⌜ err ≠ interface.nil ⌝
   }}}.
 Proof. Admitted.
 
@@ -121,12 +126,12 @@ Lemma wp_State__create_au γ l kind namespace i kobj key parent_key parent_uid:
     |={⊤,∅}=> ∃ children i' kobj' uid,
       own_reserved_key_frag γ key Idle ∗
       own_children_frag γ parent_key parent_uid children ∗
-      (⌜ ObjectMetaV.created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      ( ⌜ ObjectMetaV.created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
         ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
         ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
         ⌜ KObjectV.valid kobj' ⌝ ∗
         ⌜ key = (KObjectV.key kobj') ⌝ ∗
-        ⌜ key ∉ children ⌝ ∗
+        ⌜ key ∉ children ⌝ ∗ (* This should be precondition? *)
         ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
         KObjectV.deepown_i i' kobj' 1 ∗
         own_reserved_key_frag γ key Used ∗
@@ -195,7 +200,8 @@ Lemma wp_State__delete_au γ l key uid_ptr uid_o rv_ptr rv_o (reserved: bool):
         ⌜match rv_o with
         | Some rv => rv = ObjectMetaV.ResourceVersion' kmeta
         | None => True
-        end⌝ ∗ ⌜err = interface.nil⌝ ∗
+        end⌝ ∗ 
+        ⌜err = interface.nil⌝ ∗
         ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
           ⌜ObjectMetaV.deleting kmeta kmeta'⌝ ∗
           own_meta_frag γ key child_uid kmeta' ∗
