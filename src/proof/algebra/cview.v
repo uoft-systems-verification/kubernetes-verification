@@ -86,7 +86,9 @@ Proof. Admitted.
 Lemma create_child a k v r ks cks:
 a !! k = None →
 f v = Some r →
-dom (filter (λ '(_, v'), f v' = Some (g k v)) (<[k := v]> a)) = cks →
+(* No self-parenting *)
+g k v ≠ r →
+dom (filter (λ '(_, v'), f v' = Some (g k v)) a) = cks →
 (●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
   (●C (<[k := v]> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅ ◯C (mk_frag (g k v) 1 cks)).
 Proof. Admitted.
@@ -180,6 +182,8 @@ Proof. apply _. Qed.
 Lemma create_child_vs {γ state r ks} k v cks:
 state !! k = None →
 f v = Some r →
+(* No self-parenting *)
+g k v ≠ r →
 dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
 own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v]> state) ∗
