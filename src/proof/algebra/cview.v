@@ -93,17 +93,6 @@ dom (filter (λ '(_, v'), f v' = Some (g k v)) a) = cks →
   (●C (<[k := v]> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅ ◯C (mk_frag (g k v) 1 cks)).
 Proof. Admitted.
 
-Lemma create_childfree_child a k v r ks:
-a !! k = None →
-f v = Some r →
-(* No self-parenting *)
-g k v ≠ r →
-(* Existing v' cannot speculatively reference to (k, v) that doesn't exist yet *)
-dom (filter (λ '(_, v'), f v' = Some (g k v)) a) = ∅ →
-(●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
-  (●C (<[k := v]> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅ ◯C (mk_frag (g k v) 1 ∅)).
-Proof. Admitted.
-
 Lemma adopt_orphan a k v r ks v':
 a !! k = Some v →
 f v = None →
@@ -189,19 +178,6 @@ own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v]> state) ∗
   own_frag γ r 1 (ks ∪ {[k]}) ∗
   own_frag γ (g k v) 1 cks.
-Proof. Admitted.
-
-Lemma create_childfree_child_vs {γ state r ks} k v:
-state !! k = None →
-f v = Some r →
-(* No self-parenting *)
-g k v ≠ r →
-(* Existing v' cannot speculatively reference to (k, v) that doesn't exist yet *)
-dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = ∅ →
-own_auth γ state -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v]> state) ∗
-  own_frag γ r 1 (ks ∪ {[k]}) ∗
-  own_frag γ (g k v) 1 ∅.
 Proof. Admitted.
 
 Lemma adopt_orphan_vs {γ state r ks} k v v':
