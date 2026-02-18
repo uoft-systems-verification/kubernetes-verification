@@ -11,6 +11,8 @@ From iris.algebra Require Import cmra gset.
   The frag is a map from reference to set of keys. For each reference, the set of
   keys give us exactly the set of values in the auth that shares this reference.
   The frag gives us the reversed reference: from the parent to all its children.
+  Note that entry (r, s) in the frag doesn't imply that the parent referred to as r
+  currently exists in the auth.
 
   Function f abstracts how to retrieve the reference from the value. Function g
   abstracts how to convert the key and value into a reference that other values
@@ -47,10 +49,7 @@ Local Definition view_rel_raw n a b :=
   (* different (k, v) have different r *)
   (map_Forall (λ k1 v1, map_Forall (λ k2 v2, k1 ≠ k2 → g k1 v1 ≠ g k2 v2) a) a) ∧
   (* each r in a has an entry in b *)
-  (map_Forall (λ k v, ∃ da, b !! (g k v) = Some da) a) ∧
-  (* no self-parenting *)
-  (map_Forall (λ r '(_, agree_ks),
-    ∃ ks, agree_ks = to_agree ks ∧ set_Forall (λ k, ∀ v, a !! k = Some v → g k v ≠ r) ks) b).
+  (map_Forall (λ k v, ∃ da, b !! (g k v) = Some da) a).
 
 Local Axiom view_rel_raw_mono :
   ∀ n1 n2 a1 a2 b1 b2,
@@ -80,14 +79,25 @@ Notation "◯C b" := (cview_frag b) (at level 20).
 
 Lemma auth_frag_valid a r dq ks:
 ✓ (●C a ⋅ ◯C (mk_frag r dq ks)) →
-ks = dom (filter (λ kv, f kv.2 = Some r) a) ∧
+ks = dom (filter (λ '(_, v), f v = Some r) a) ∧
 ∀ k v, k ∈ ks → a !! k = Some v → g k v ≠ r.
 Proof. Admitted.
 
-Lemma create_child a k v r ks:
+Lemma create_child a k v r ks cks:
 a !! k = None →
 f v = Some r →
+dom (filter (λ '(_, v'), f v' = Some (g k v)) (<[k := v]> a)) = cks →
+(●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
+  (●C (<[k := v]> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅ ◯C (mk_frag (g k v) 1 cks)).
+Proof. Admitted.
+
+Lemma create_childfree_child a k v r ks:
+a !! k = None →
+f v = Some r →
+(* No self-parenting *)
 g k v ≠ r →
+(* Existing v' cannot speculatively reference to (k, v) that doesn't exist yet *)
+dom (filter (λ '(_, v'), f v' = Some (g k v)) a) = ∅ →
 (●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
   (●C (<[k := v]> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅ ◯C (mk_frag (g k v) 1 ∅)).
 Proof. Admitted.
@@ -96,7 +106,6 @@ Lemma adopt_orphan a k v r ks v':
 a !! k = Some v →
 f v = None →
 f v' = Some r →
-g k v' ≠ r →
 (●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
   (●C (<[k := v']> a) ⋅ ◯C (mk_frag r 1 (ks ∪ {[k]}))).
 Proof. Admitted.
@@ -105,12 +114,18 @@ Lemma release_child a k v r ks v':
 a !! k = Some v →
 f v = Some r →
 f v' = None →
-k ∈ ks →
 (●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
   (●C (<[k := v']> a) ⋅ ◯C (mk_frag r 1 (ks ∖ {[k]}))).
 Proof. Admitted.
 
-Lemma delete_child a k r ks:
+Lemma delete_child a k v r ks:
+a !! k = Some v →
+f v = Some r →
+(●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
+  (●C (delete k a) ⋅ ◯C (mk_frag r 1 (ks ∖ {[k]}))).
+Proof. Admitted.
+
+Lemma delete_child2 a k r ks:
 k ∈ ks →
 (●C a ⋅ ◯C (mk_frag r 1 ks)) ~~>
   (●C (delete k a) ⋅ ◯C (mk_frag r 1 (ks ∖ {[k]}))).
@@ -162,11 +177,24 @@ Proof. apply _. Qed.
 Global Instance own_frag_discretizable γ r dq ks : Discretizable (own_frag γ r dq ks).
 Proof. apply _. Qed.
 
-Lemma create_child_vs {γ state r ks} k v:
+Lemma create_child_vs {γ state r ks} k v cks:
 state !! k = None →
 f v = Some r →
+dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (<[k := v]> state) ∗
+  own_frag γ r 1 (ks ∪ {[k]}) ∗
+  own_frag γ (g k v) 1 cks.
+Proof. Admitted.
+
+Lemma create_childfree_child_vs {γ state r ks} k v:
+state !! k = None →
+f v = Some r →
+(* No self-parenting *)
 g k v ≠ r →
-own_auth γ state ∗ own_frag γ r 1 ks ==∗
+(* Existing v' cannot speculatively reference to (k, v) that doesn't exist yet *)
+dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = ∅ →
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v]> state) ∗
   own_frag γ r 1 (ks ∪ {[k]}) ∗
   own_frag γ (g k v) 1 ∅.
@@ -176,8 +204,7 @@ Lemma adopt_orphan_vs {γ state r ks} k v v':
 state !! k = Some v →
 f v = None →
 f v' = Some r →
-g k v' ≠ r →
-own_auth γ state ∗ own_frag γ r 1 ks ==∗
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v']> state) ∗ own_frag γ r 1 (ks ∪ {[k]}).
 Proof. Admitted.
 
@@ -185,14 +212,20 @@ Lemma release_child_vs {γ state r ks} k v v':
 state !! k = Some v →
 f v = Some r →
 f v' = None →
-k ∈ ks →
-own_auth γ state ∗ own_frag γ r 1 ks ==∗
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v']> state) ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof. Admitted.
 
-Lemma delete_child_vs {γ state r ks} k:
+Lemma delete_child_vs {γ state r ks} k v:
+state !! k = Some v →
+f v = Some r →
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (delete k state) ∗ own_frag γ r 1 (ks ∖ {[k]}).
+Proof. Admitted.
+
+Lemma delete_child_vs2 {γ state r ks} k:
 k ∈ ks →
-own_auth γ state ∗ own_frag γ r 1 ks ==∗
+own_auth γ state -∗ own_frag γ r 1 ks ==∗
   own_auth γ (delete k state) ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof. Admitted.
 
@@ -215,12 +248,3 @@ own_auth γ state ==∗ own_auth γ (delete k state).
 Proof. Admitted.
 
 End cview.
-
-(* Definition meta_is_child_of meta key uid: Prop :=
-  meta.(ObjectMetaV.Namespace') = key.(KKey.Namespace') ∧
-  match meta.(ObjectMetaV.OwnerReferences') with
-  | Some os => os_has_controller_parent_of os key.(KKey.Kind') key.(KKey.Name') uid
-  | None => False
-  end. *)
-
-(* Definition meta_is_orphan meta: Prop := ∀ k uid, ¬ meta_is_child_of meta k uid. *)

@@ -22,11 +22,24 @@ Local Definition proj_meta b : metaUR := fst b.
 Local Definition proj_spec b : specUR := fst (snd b).
 Local Definition proj_status b : statusUR := snd (snd b).
 
+Definition meta_is_child_of meta key uid: Prop :=
+  meta.(ObjectMetaV.Namespace') = key.(KKey.Namespace') ∧
+  match meta.(ObjectMetaV.OwnerReferences') with
+  | Some os => os_has_controller_parent_of os key.(KKey.Kind') key.(KKey.Name') uid
+  | None => False
+  end.
+
+Definition no_speculative_parent_reference meta (used_uids: gset types.UID.t): Prop :=
+  ∀ parent_key uid, meta_is_child_of meta parent_key uid → uid ∈ used_uids.
+
 Local Definition valid_kauth a : Prop :=
-  ∀ k obj, proj_state a !! k = Some obj →
+  map_Forall(λ k obj,
     k = KObjectV.key obj ∧
     KObjectV.well_formed obj ∧
-    (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uids a.
+    (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uids a ∧
+    (* No object's parent reference can speculatively point to uid that has never existed *)
+    no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a)
+  ) (proj_state a).
 
 Local Definition compatible_kfrag b a : Prop :=
   map_Forall (λ '(k, uid) '(dq, agree_meta),
@@ -101,7 +114,9 @@ Proof. Admitted.
 
 Lemma auth_meta_valid a k uid dq meta:
 ✓ (●K a ⋅ ◯K (mk_meta_frag k uid dq meta)) →
-∃ obj, (proj_state a) !! k = Some obj ∧ (KObjectV.objectmeta obj) = meta.
+∃ obj, (proj_state a) !! k = Some obj ∧
+  (KObjectV.objectmeta obj) = meta ∧
+  meta.(ObjectMetaV.UID') ∈ proj_used_uids a.
 Proof. Admitted.
 
 Lemma meta_meta_valid k uid dq1 meta1 dq2 meta2:
@@ -114,7 +129,7 @@ Lemma auth_spec_valid a k uid dq spec:
 ✓ (●K a ⋅ ◯K (mk_spec_frag k uid dq spec)) →
 ∀ obj, (proj_state a) !! k = Some obj →
   (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
-    (KObjectV.spec obj) = spec.
+  (KObjectV.spec obj) = spec.
 Proof. Admitted.
 
 Definition valid_k_uid_obj k uid obj: Prop :=
@@ -126,6 +141,7 @@ Lemma create_kobj a k uid obj:
 (proj_state a) !! k = None →
 uid ∉ (proj_used_uids a) →
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
 ●K a ~~>
   (●K ((<[k := obj]> (proj_state a)), ((proj_used_uids a) ∪ {[uid]})) ⋅
       ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj)) ⋅
@@ -140,6 +156,7 @@ Proof. Admitted.
 
 Lemma update_kobj a k uid meta spec prev_obj obj:
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
 (proj_state a) !! k = Some prev_obj →
 (KObjectV.status prev_obj) = (KObjectV.status obj) →
 (●K a ⋅
@@ -152,6 +169,7 @@ Proof. Admitted.
 
 Lemma update_status_kobj a k uid meta status prev_obj obj:
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
 (proj_state a) !! k = Some prev_obj →
 (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
 (●K a ⋅
@@ -194,6 +212,7 @@ Lemma create_kobj_vs {γ state used_uids} k uid obj:
 state !! k = None →
 uid ∉ used_uids →
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
 own_auth γ state used_uids ==∗
   own_auth γ ((<[k := obj]> state)) (used_uids ∪ {[uid]}) ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
@@ -208,10 +227,11 @@ Proof. Admitted.
 
 Lemma update_kobj_vs {γ state used_uids k uid meta spec} prev_obj obj:
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
 state !! k = Some prev_obj →
 (KObjectV.status prev_obj) = (KObjectV.status obj) →
-own_auth γ state used_uids ∗
-own_meta_frag γ k uid 1 meta ∗
+own_auth γ state used_uids -∗
+own_meta_frag γ k uid 1 meta -∗
 own_spec_frag γ k uid 1 spec ==∗
   own_auth γ (<[k := obj]> state) used_uids ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
@@ -220,10 +240,11 @@ Proof. Admitted.
 
 Lemma update_status_kobj_vs {γ state used_uids k uid meta status} prev_obj obj:
 valid_k_uid_obj k uid obj →
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
 state !! k = Some prev_obj →
 (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
-own_auth γ state used_uids ∗
-own_meta_frag γ k uid 1 meta ∗
+own_auth γ state used_uids -∗
+own_meta_frag γ k uid 1 meta -∗
 own_status_frag γ k uid 1 status ==∗
   own_auth γ (<[k := obj]> state) used_uids ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
