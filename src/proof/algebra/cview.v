@@ -27,6 +27,9 @@ From iris.algebra Require Import cmra gset.
   owner if it exists, and g returns the product of key and uid.
 *)
 
+(* TODO: prove some simple frame preserving updates *)
+(* TODO: check out gset bijective *)
+
 Section cview.
 Context (K : Type) `{Countable K} (R : Type) `{Countable R} (V : Type).
 Context (f : V → option R) (g : K → V → R).
@@ -47,6 +50,7 @@ Local Definition view_rel_raw n a b :=
   (map_Forall (λ r '(_, agree_ks),
     ∃ ks, agree_ks = to_agree ks ∧ ks = dom (filter (λ '(_, v), f v = Some r) a)) b) ∧
   (* different (k, v) have different r *)
+  (* TODO: do we really need this condition? *)
   (map_Forall (λ k1 v1, map_Forall (λ k2 v2, k1 ≠ k2 → g k1 v1 ≠ g k2 v2) a) a) ∧
   (* each r in a has an entry in b *)
   (map_Forall (λ k v, ∃ da, b !! (g k v) = Some da) a).
