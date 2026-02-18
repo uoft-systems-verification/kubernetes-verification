@@ -190,7 +190,7 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
 
-Lemma create_kobj_fupd {γ state used_uids} k uid obj:
+Lemma create_kobj_vs {γ state used_uids} k uid obj:
 state !! k = None →
 uid ∉ used_uids →
 valid_k_uid_obj k uid obj →
@@ -201,12 +201,12 @@ own_auth γ state used_uids ==∗
   own_status_frag γ k uid 1 (KObjectV.status obj).
 Proof. Admitted.
 
-Lemma delete_kobj_fupd {γ state used_uids k uid meta}:
+Lemma delete_kobj_vs {γ state used_uids k uid meta}:
 own_auth γ state used_uids ∗ own_meta_frag γ k uid 1 meta ==∗
   own_auth γ (delete k state) used_uids.
 Proof. Admitted.
 
-Lemma update_kobj_fupd {γ state used_uids k uid meta spec} prev_obj obj:
+Lemma update_kobj_vs {γ state used_uids k uid meta spec} prev_obj obj:
 valid_k_uid_obj k uid obj →
 state !! k = Some prev_obj →
 (KObjectV.status prev_obj) = (KObjectV.status obj) →
@@ -218,7 +218,7 @@ own_spec_frag γ k uid 1 spec ==∗
   own_spec_frag γ k uid 1 (KObjectV.spec obj).
 Proof. Admitted.
 
-Lemma update_status_kobj_fupd {γ state used_uids k uid meta status} prev_obj obj:
+Lemma update_status_kobj_vs {γ state used_uids k uid meta status} prev_obj obj:
 valid_k_uid_obj k uid obj →
 state !! k = Some prev_obj →
 (KObjectV.spec prev_obj) = (KObjectV.spec obj) →

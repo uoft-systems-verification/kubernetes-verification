@@ -162,7 +162,7 @@ Proof. apply _. Qed.
 Global Instance own_frag_discretizable γ r dq ks : Discretizable (own_frag γ r dq ks).
 Proof. apply _. Qed.
 
-Lemma create_child_fupd {γ state r ks} k v:
+Lemma create_child_vs {γ state r ks} k v:
 state !! k = None →
 f v = Some r →
 g k v ≠ r →
@@ -172,7 +172,7 @@ own_auth γ state ∗ own_frag γ r 1 ks ==∗
   own_frag γ (g k v) 1 ∅.
 Proof. Admitted.
 
-Lemma adopt_orphan_fupd {γ state r ks} k v v':
+Lemma adopt_orphan_vs {γ state r ks} k v v':
 state !! k = Some v →
 f v = None →
 f v' = Some r →
@@ -181,7 +181,7 @@ own_auth γ state ∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v']> state) ∗ own_frag γ r 1 (ks ∪ {[k]}).
 Proof. Admitted.
 
-Lemma release_child_fupd {γ state r ks} k v v':
+Lemma release_child_vs {γ state r ks} k v v':
 state !! k = Some v →
 f v = Some r →
 f v' = None →
@@ -190,25 +190,25 @@ own_auth γ state ∗ own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v']> state) ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof. Admitted.
 
-Lemma delete_child_fupd {γ state r ks} k:
+Lemma delete_child_vs {γ state r ks} k:
 k ∈ ks →
 own_auth γ state ∗ own_frag γ r 1 ks ==∗
   own_auth γ (delete k state) ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof. Admitted.
 
-Lemma simple_update_fupd {γ state} k v v':
+Lemma simple_update_vs {γ state} k v v':
 state !! k = Some v →
 f v = f v' →
 own_auth γ state ==∗ own_auth γ (<[k := v']> state).
 Proof. Admitted.
 
-Lemma create_orphan_fupd {γ state} k v:
+Lemma create_orphan_vs {γ state} k v:
 state !! k = None →
 f v = None →
 own_auth γ state ==∗ own_auth γ (<[k := v]> state).
 Proof. Admitted.
 
-Lemma delete_orphan_fupd {γ state} k v:
+Lemma delete_orphan_vs {γ state} k v:
 state !! k = Some v →
 f v = None →
 own_auth γ state ==∗ own_auth γ (delete k state).
