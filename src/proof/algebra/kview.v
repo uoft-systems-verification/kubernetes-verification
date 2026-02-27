@@ -306,6 +306,24 @@ Definition mk_spec_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectSpe
 Definition mk_status_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectStatusV.t) : fragUR :=
   (∅, (∅, {[(k, uid) := (dq, to_agree s)]})).
 
+Lemma auth_valid a k obj:
+✓ (●K a) →
+(proj_state a) !! k = Some obj →
+k = KObjectV.key obj ∧
+KObjectV.well_formed obj.
+Proof.
+  intros Hvalid Hlookup.
+  rewrite /kview_auth in Hvalid.
+  pose proof (proj1 (view_auth_dfrac_valid view_rel 1 a) Hvalid) as [_ Hrel].
+  specialize (Hrel 0%nat).
+  change (view_rel_raw 0%nat a ε) in Hrel.
+  destruct Hrel as [Hvalid_a _].
+  rewrite /valid_kauth in Hvalid_a.
+  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup) as Hobj_valid.
+  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _).
+  split; [done|done].
+Qed.
+
 Lemma auth_frag_valid (n: nat) a b:
 ✓ (●K a ⋅ ◯K b) →
 ∀ n, view_rel_raw n a b.
@@ -1442,6 +1460,138 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
+
+Lemma own_auth_valid {γ state used_uids} k obj:
+own_auth γ state used_uids -∗
+⌜ state !! k = Some obj →
+k = KObjectV.key obj ∧
+KObjectV.well_formed obj ⌝.
+Proof.
+  iIntros "Hauth".
+  iDestruct (own_valid with "Hauth") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  intros Hlookup.
+  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1 (state, used_uids)) Hvalid0)
+    as [_ Hrel0].
+  assert (Hvalid : ✓ (●K (state, used_uids))).
+  { rewrite /kview_auth.
+    apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uids))).
+    split; [done|].
+    intros n.
+    change (view_rel_raw n (state, used_uids) ε).
+    exact Hrel0.
+  }
+  eapply (auth_valid (state, used_uids) k obj).
+  - exact Hvalid.
+  - simpl. exact Hlookup.
+Qed.
+
+Lemma own_meta_valid {γ} k uid dq meta:
+own_meta_frag γ k uid dq meta -∗
+  ⌜ k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
+  k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
+  uid = meta.(ObjectMetaV.UID') ∧
+  ObjectMetaV.well_formed meta ⌝.
+Proof.
+  iIntros "Hmeta".
+  iDestruct (own_valid with "Hmeta") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  rewrite /kview_frag in Hvalid0.
+  destruct (proj1 (view_frag_validN view_rel 0%nat (mk_meta_frag k uid dq meta)) Hvalid0)
+    as [a Hrel0].
+  assert (Hvalid : ✓ (◯K (mk_meta_frag k uid dq meta))).
+  { rewrite /kview_frag.
+    apply (proj2 (view_frag_valid view_rel (mk_meta_frag k uid dq meta))).
+    intros n. exists a. exact Hrel0.
+  }
+  eapply meta_valid.
+  done.
+Qed.
+
+Lemma own_meta_exists {γ state used_uids} k uid dq meta:
+own_auth γ state used_uids -∗
+own_meta_frag γ k uid dq meta -∗
+  ⌜ ∃ obj, state !! k = Some obj ∧
+  (KObjectV.objectmeta obj) = meta ∧
+  meta.(ObjectMetaV.UID') ∈ used_uids ⌝.
+Proof.
+  iIntros "Hauth Hmeta".
+  iDestruct (own_valid_2 with "Hauth Hmeta") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  rewrite /kview_auth /kview_frag in Hvalid0.
+  pose proof (proj1 (view_both_validN view_rel 0%nat
+    (state, used_uids) (mk_meta_frag k uid dq meta)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_meta_frag k uid dq meta))).
+  { rewrite /kview_auth /kview_frag.
+    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_meta_frag k uid dq meta))).
+    intros n. exact Hrel0.
+  }
+  pose proof (auth_meta_valid (state, used_uids) k uid dq meta Hvalid) as Hexists.
+  exact Hexists.
+Qed.
+
+Lemma own_spec_exists {γ state used_uids} k uid dq spec:
+own_auth γ state used_uids -∗
+own_spec_frag γ k uid dq spec -∗
+  ⌜ ∀ obj, state !! k = Some obj →
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
+  (KObjectV.spec obj) = spec ⌝.
+Proof.
+  iIntros "Hauth Hspec".
+  iDestruct (own_valid_2 with "Hauth Hspec") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  rewrite /kview_auth /kview_frag in Hvalid0.
+  pose proof (proj1 (view_both_validN view_rel 0%nat
+    (state, used_uids) (mk_spec_frag k uid dq spec)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_spec_frag k uid dq spec))).
+  { rewrite /kview_auth /kview_frag.
+    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_spec_frag k uid dq spec))).
+    intros n. exact Hrel0.
+  }
+  intros obj Hlookup_obj Huid_obj.
+  eapply (auth_spec_valid (state, used_uids) k uid dq spec Hvalid obj); simpl; eauto.
+Qed.
+
+Lemma own_status_exists {γ state used_uids} k uid dq status:
+own_auth γ state used_uids -∗
+own_status_frag γ k uid dq status -∗
+  ⌜ ∀ obj, state !! k = Some obj →
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
+  (KObjectV.status obj) = status ⌝.
+Proof.
+  iIntros "Hauth Hstatus_frag".
+  iDestruct (own_valid_2 with "Hauth Hstatus_frag") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  rewrite /kview_auth /kview_frag in Hvalid0.
+  pose proof (proj1 (view_both_validN view_rel 0%nat
+    (state, used_uids) (mk_status_frag k uid dq status)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_status_frag k uid dq status))).
+  { rewrite /kview_auth /kview_frag.
+    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_status_frag k uid dq status))).
+    intros n. exact Hrel0.
+  }
+  intros obj Hlookup_obj Huid_obj.
+  pose proof (auth_frag_valid 0%nat (state, used_uids) (mk_status_frag k uid dq status) Hvalid 0%nat)
+    as Hrel.
+  destruct Hrel as [_ [_ [_ Hstatus]]].
+  assert (Hlookup :
+    proj_status (mk_status_frag k uid dq status) !! (k, uid) =
+    Some (dq, to_agree (A := leibnizO ObjectStatusV.t) status)).
+  { rewrite /proj_status /mk_status_frag /= lookup_singleton_eq //. }
+  destruct (Hstatus _ _ Hlookup) as (status0 & Hagree & _ & _ & Hstatus_obj).
+  assert (Hstatus_eqv : (status : leibnizO ObjectStatusV.t) ≡ status0).
+  { apply (inj (to_agree : leibnizO ObjectStatusV.t → agree (leibnizO ObjectStatusV.t))).
+    exact Hagree.
+  }
+  apply leibniz_equiv in Hstatus_eqv.
+  subst status0.
+  eapply Hstatus_obj; eauto.
+Qed.
 
 Lemma create_kobj_vs {γ state used_uids} k uid obj:
 state !! k = None →

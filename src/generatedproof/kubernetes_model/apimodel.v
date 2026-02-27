@@ -307,8 +307,32 @@ Global Instance wp_func_call_validateObjectMeta :
   WpFuncCall apimodel.validateObjectMeta _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_applyDefaultTolerationSeconds :
+  WpFuncCall apimodel.applyDefaultTolerationSeconds _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyPriorityAdmission :
+  WpFuncCall apimodel.applyPriorityAdmission _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_applyStrategyAndValidate :
   WpFuncCall apimodel.applyStrategyAndValidate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_shouldOrphanDependents :
+  WpFuncCall apimodel.shouldOrphanDependents _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_shouldDeleteDependents :
+  WpFuncCall apimodel.shouldDeleteDependents _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_validateDeletePreconditions :
+  WpFuncCall apimodel.validateDeletePreconditions _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_checkGracefulDelete :
+  WpFuncCall apimodel.checkGracefulDelete _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_index_of :
@@ -327,8 +351,16 @@ Global Instance wp_method_call_State'ptr_PodCreate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodCreate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_PodCreate2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodCreate2" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_PodDelete :
   WpMethodCall (ptrT.id apimodel.State.id) "PodDelete" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_PodDelete2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodDelete2" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_PodGet :
@@ -351,6 +383,14 @@ Global Instance wp_method_call_State'ptr_PodUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_ReplicaSetCreate2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetCreate2" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_ReplicaSetDelete2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetDelete2" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_ReplicaSetGet :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetGet" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
@@ -359,12 +399,20 @@ Global Instance wp_method_call_State'ptr_ReplicaSetMutGet :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetMutGet" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_deletionFinalizersForGarbageCollection :
+  WpMethodCall (ptrT.id apimodel.State.id) "deletionFinalizersForGarbageCollection" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_generateNewName :
   WpMethodCall (ptrT.id apimodel.State.id) "generateNewName" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_generateNewUIDAndUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "generateNewUIDAndUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_get :
+  WpMethodCall (ptrT.id apimodel.State.id) "get" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_objCreate :
@@ -377,6 +425,10 @@ Global Instance wp_method_call_State'ptr_objCreate2 :
 
 Global Instance wp_method_call_State'ptr_objDelete :
   WpMethodCall (ptrT.id apimodel.State.id) "objDelete" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_objDelete2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "objDelete2" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_objGet :
@@ -401,6 +453,10 @@ Global Instance wp_method_call_State'ptr_objUpdate :
 
 Global Instance wp_method_call_State'ptr_setResourceVersion :
   WpMethodCall (ptrT.id apimodel.State.id) "setResourceVersion" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_updateForGracefulDeletionAndFinalizers :
+  WpMethodCall (ptrT.id apimodel.State.id) "updateForGracefulDeletionAndFinalizers" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 End names.
