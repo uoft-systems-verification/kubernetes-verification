@@ -20,21 +20,21 @@ Definition mk_pod_key (namespace name: go_string) : KKey.t :=
 Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
   {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
 
-Definition pod_rep interface_obj ptr pod pure_pod : iProp Σ :=
+Definition pod_rep interface_obj ptr (pod: v1.Pod.t) pure_pod : iProp Σ :=
   "%Hinterface_is_pod_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
-  "Hdeepown_l_pod" ∷ PodV.deepown_l ptr pod pure_pod 1.
+  "Hdeepown_l_pod" ∷ PodV.deepown_l ptr pure_pod 1.
 
-Definition replicaset_rep interface_obj ptr rs pure_rs : iProp Σ :=
+Definition replicaset_rep interface_obj ptr (rs: v1.ReplicaSet.t) pure_rs : iProp Σ :=
   "%Hinterface_is_rs_ptr" ∷ ⌜ interface_obj = interface.mk (ptrT.id v1.ReplicaSet.id) #ptr ⌝ ∗
-  "Hdeepown_l_rs" ∷ ReplicaSetV.deepown_l ptr rs pure_rs 1.
+  "Hdeepown_l_rs" ∷ ReplicaSetV.deepown_l ptr pure_rs 1.
 
 Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey.t KObjectV.t) : iProp Σ :=
-  [∗ map] interface_obj; pure_obj ∈ phys_state; abs_state, ∃ ptr obj,
-    ⌜ KObjectV.interface_agree interface_obj ptr pure_obj ⌝ ∗ KObjectV.deepown_l ptr obj pure_obj 1.
+  [∗ map] interface_obj; pure_obj ∈ phys_state; abs_state, ∃ ptr (obj: KObject.t),
+    ⌜ KObjectV.valid_interface interface_obj ptr pure_obj ⌝ ∗ KObjectV.deepown_l ptr pure_obj 1.
 
-Record ghost_well_formed (used_uid: gset go_string) (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
-mk_ghost_well_formed {
-  Habs_state_well_formed: (∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.well_formed obj);
+Record ghost_valid (used_uid: gset go_string) (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
+mk_ghost_valid {
+  Habs_state_valid: (∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.valid obj);
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
   Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));
@@ -71,7 +71,7 @@ Definition kubernetes_inv γ l: iProp Σ :=
     "Hown_children" ∷ map_ctx γ.(γ_children) 1 children ∗
     "Hown_fresh_keys" ∷ auth_set_auth γ.(γ_fresh_keys) fresh_keys ∗
     "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
-    "%Hghost_well_formed" ∷ ⌜ ghost_well_formed (dom used_uid) abs_state children fresh_keys ⌝.
+    "%Hghost_valid" ∷ ⌜ ghost_valid (dom used_uid) abs_state children fresh_keys ⌝.
 
 Definition is_kubernetes γ l : iProp Σ :=
   ∃ (mu_l: loc),
@@ -100,16 +100,14 @@ Proof.
     apply H. apply Hin.
 Qed.
 
-Lemma wp_deepCopy interface_obj ptr obj pure_obj:
+Lemma wp_deepCopy i pure_obj:
   {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.interface_agree interface_obj ptr pure_obj ⌝ ∗
-      KObjectV.deepown_l ptr obj pure_obj 1
+      KObjectV.deepown_i i pure_obj 1
   }}}
-    @! apimodel.deepCopy #interface_obj
-  {{{ interface_obj' ptr' obj', RET #interface_obj';
-      ⌜ KObjectV.interface_agree interface_obj' ptr' pure_obj ⌝ ∗
-      KObjectV.deepown_l ptr' obj' pure_obj 1 ∗
-      KObjectV.deepown_l ptr obj pure_obj 1
+    @! apimodel.deepCopy #i
+  {{{ i', RET #i';
+      KObjectV.deepown_i i' pure_obj 1 ∗
+      KObjectV.deepown_i i pure_obj 1
   }}}.
 Proof.
 Admitted.

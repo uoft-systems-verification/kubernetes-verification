@@ -52,10 +52,10 @@ Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
   | None => True%I
   end).
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
-Definition list_well_formed (os: list t) : Prop :=
+Definition list_valid (os: list t) : Prop :=
   (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
   ∀ i1 o1 i2 o2,
     os !! i1 = Some o1 ∧ o1.(Controller') = Some true ∧
@@ -86,7 +86,7 @@ Record t := mk {
 }.
 
 (* TODO: translate https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go to spec *)
-Definition well_formed (m: t) : Prop :=
+Definition valid (m: t) : Prop :=
   (m.(GenerateName') ≠ ""%go → (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ valid_name prefix) ∨ valid_name m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
   valid_name m.(Name') ∧
@@ -94,10 +94,10 @@ Definition well_formed (m: t) : Prop :=
   valid_namespace m.(Namespace') ∧
   match m.(OwnerReferences') with
   | None => True
-  | Some os => OwnerReferenceV.list_well_formed os
+  | Some os => OwnerReferenceV.list_valid os
   end.
 
-Definition well_formed_for_nameless_create (m: t) : Prop :=
+Definition valid_for_nameless_create (m: t) : Prop :=
   (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
   (* The max len of generate_name of the pod must be 58 so that the suffix can fit int:
     https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
@@ -106,7 +106,7 @@ Definition well_formed_for_nameless_create (m: t) : Prop :=
   (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace')) ∧
   match m.(OwnerReferences') with
   | None => True
-  | Some os => OwnerReferenceV.list_well_formed os
+  | Some os => OwnerReferenceV.list_valid os
   end.
 
 Axiom created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
@@ -163,8 +163,8 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   | None => True%I
   end).
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End ObjectMetaV.
@@ -173,7 +173,7 @@ Module PodSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
-Axiom well_formed: t → Prop.
+Axiom valid: t → Prop.
 Axiom deepown : v1.PodSpec.t → t → iProp Σ.
 End def.
 End PodSpecV.
@@ -203,7 +203,7 @@ Record t := mk {
   ExtendedResourceClaimStatus' : loc; *)
 }.
 
-Axiom well_formed: t → Prop.
+Axiom valid: t → Prop.
 
 Definition deepown (c: v1.PodStatus.t) (v: t): iProp Σ :=
   "%Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝ ∗
@@ -232,24 +232,24 @@ Definition key (v: t) : KKey.t :=
     KKey.Name' := v.(ObjectMeta').(ObjectMetaV.Name')
   |}.
 
-Definition well_formed (pod: t) : Prop :=
-  ObjectMetaV.well_formed pod.(ObjectMeta') ∧
-  PodSpecV.well_formed pod.(Spec') ∧
-  PodStatusV.well_formed pod.(Status').
+Definition valid (pod: t) : Prop :=
+  ObjectMetaV.valid pod.(ObjectMeta') ∧
+  PodSpecV.valid pod.(Spec') ∧
+  PodStatusV.valid pod.(Status').
 
-Definition well_formed_without_meta (pod: t) : Prop :=
-  PodSpecV.well_formed pod.(Spec') ∧
-  PodStatusV.well_formed pod.(Status').
+Definition valid_without_meta (pod: t) : Prop :=
+  PodSpecV.valid pod.(Spec') ∧
+  PodStatusV.valid pod.(Status').
 
-Definition well_formed_for_nameless_create (pod: t) : Prop :=
-  ObjectMetaV.well_formed_for_nameless_create pod.(ObjectMeta') ∧
-  (* TODO: should we have well_formed_for_nameless_create for pod spec and pod status? *)
-  PodSpecV.well_formed pod.(Spec') ∧
-  PodStatusV.well_formed pod.(Status').
+Definition valid_for_nameless_create (pod: t) : Prop :=
+  ObjectMetaV.valid_for_nameless_create pod.(ObjectMeta') ∧
+  (* TODO: should we have valid_for_nameless_create for pod spec and pod status? *)
+  PodSpecV.valid pod.(Spec') ∧
+  PodStatusV.valid pod.(Status').
 
-Definition well_formed_for_nameless_create_without_meta (pod: t) : Prop :=
-  PodSpecV.well_formed pod.(Spec') ∧
-  PodStatusV.well_formed pod.(Status').
+Definition valid_for_nameless_create_without_meta (pod: t) : Prop :=
+  PodSpecV.valid pod.(Spec') ∧
+  PodStatusV.valid pod.(Status').
 
 Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -257,14 +257,15 @@ Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') ∗
   "Hdeepown_podstatus" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status').
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition deepown_without_meta (c: v1.Pod.t) (v: t): iProp Σ :=
   "Hdeepown_spec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') ∗
   "Hdeepown_status" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status').
 
-Definition deepown_l_without_meta l c v (dq: dfrac): iProp Σ :=
+Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
+  ∃ c,
   l ↦s[ v1.Pod :: "Spec" ]{dq} c.(v1.Pod.Spec') ∗
   l ↦s[ v1.Pod :: "Status" ]{dq} c.(v1.Pod.Status') ∗
   deepown_without_meta c v.
@@ -280,18 +281,18 @@ Record t := mk {
   Spec' : PodSpecV.t;
 }.
 
-Axiom meta_well_formed: ObjectMetaV.t → Prop.
+Axiom meta_valid: ObjectMetaV.t → Prop.
 
-Definition well_formed (v: t) : Prop :=
-  meta_well_formed v.(ObjectMeta') ∧
-  PodSpecV.well_formed v.(Spec').
+Definition valid (v: t) : Prop :=
+  meta_valid v.(ObjectMeta') ∧
+  PodSpecV.valid v.(Spec').
 
 Definition deepown (c: v1.PodTemplateSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec').
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PodTemplateSpecV.
@@ -306,9 +307,9 @@ Record t := mk {
   Template' : PodTemplateSpecV.t;
 }.
 
-Definition well_formed (v: t) : Prop :=
+Definition valid (v: t) : Prop :=
   (∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i) ∧
-  PodTemplateSpecV.well_formed v.(Template').
+  PodTemplateSpecV.valid v.(Template').
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -319,8 +320,8 @@ Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
   "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.ReplicaSetSpec.Template') v.(Template') dq.
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End ReplicaSetSpecV.
@@ -329,7 +330,7 @@ Module ReplicaSetStatusV.
 Section def.
 Context `{hG: !heapGS Σ}.
 Record t := mk {}.
-Axiom well_formed : t → Prop.
+Axiom valid : t → Prop.
 Axiom deepown : v1.ReplicaSetStatus.t → t → iProp Σ.
 End def.
 End ReplicaSetStatusV.
@@ -354,24 +355,24 @@ Definition key (v: t) : KKey.t :=
     KKey.Name' := v.(ObjectMeta').(ObjectMetaV.Name')
   |}.
 
-Definition well_formed (rs: t) : Prop :=
-  ObjectMetaV.well_formed rs.(ObjectMeta') ∧
-  ReplicaSetSpecV.well_formed rs.(Spec') ∧
-  ReplicaSetStatusV.well_formed rs.(Status').
+Definition valid (rs: t) : Prop :=
+  ObjectMetaV.valid rs.(ObjectMeta') ∧
+  ReplicaSetSpecV.valid rs.(Spec') ∧
+  ReplicaSetStatusV.valid rs.(Status').
 
-Definition well_formed_without_meta (rs: t) : Prop :=
-  ReplicaSetSpecV.well_formed rs.(Spec') ∧
-  ReplicaSetStatusV.well_formed rs.(Status').
+Definition valid_without_meta (rs: t) : Prop :=
+  ReplicaSetSpecV.valid rs.(Spec') ∧
+  ReplicaSetStatusV.valid rs.(Status').
 
-Definition well_formed_for_nameless_create (rs: t) : Prop :=
-  ObjectMetaV.well_formed_for_nameless_create rs.(ObjectMeta') ∧
-  (* TODO: should we have well_formed_for_nameless_create for rs spec and rs status? *)
-  ReplicaSetSpecV.well_formed rs.(Spec') ∧
-  ReplicaSetStatusV.well_formed rs.(Status').
+Definition valid_for_nameless_create (rs: t) : Prop :=
+  ObjectMetaV.valid_for_nameless_create rs.(ObjectMeta') ∧
+  (* TODO: should we have valid_for_nameless_create for rs spec and rs status? *)
+  ReplicaSetSpecV.valid rs.(Spec') ∧
+  ReplicaSetStatusV.valid rs.(Status').
 
-Definition well_formed_for_nameless_create_without_meta (rs: t) : Prop :=
-  ReplicaSetSpecV.well_formed rs.(Spec') ∧
-  ReplicaSetStatusV.well_formed rs.(Status').
+Definition valid_for_nameless_create_without_meta (rs: t) : Prop :=
+  ReplicaSetSpecV.valid rs.(Spec') ∧
+  ReplicaSetStatusV.valid rs.(Status').
 
 Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -379,14 +380,15 @@ Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "Hdeepown_spec" ∷ ReplicaSetSpecV.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status').
 
-Definition deepown_l l c v dq: iProp Σ :=
-  l ↦{dq} c ∗ deepown c v dq.
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition deepown_without_meta (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "Hdeepown_spec" ∷ ReplicaSetSpecV.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status').
 
-Definition deepown_l_without_meta l c v (dq: dfrac): iProp Σ :=
+Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
+  ∃ c,
   l ↦s[ v1.ReplicaSet :: "Spec" ]{dq} c.(v1.ReplicaSet.Spec') ∗
   l ↦s[ v1.ReplicaSet :: "Status" ]{dq} c.(v1.ReplicaSet.Status') ∗
   deepown_without_meta c v dq.
@@ -483,9 +485,6 @@ Definition key o : KKey.t :=
     KKey.Name' := (objectmeta o).(ObjectMetaV.Name')
   |}.
 
-(* TODO: replace well_formed *)
-Axiom valid: t → Prop.
-
 Axiom valid_create: go_string → go_string → t → Prop.
 
 Axiom valid_nameless_create: go_string → go_string → t → Prop.
@@ -494,28 +493,28 @@ Axiom valid_update: go_string → go_string → t → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
-Definition well_formed o : Prop :=
+Definition valid o : Prop :=
   match o with
-  | Pod p => PodV.well_formed p
-  | ReplicaSet rs => ReplicaSetV.well_formed rs
+  | Pod p => PodV.valid p
+  | ReplicaSet rs => ReplicaSetV.valid rs
   end.
 
-Definition well_formed_without_meta o : Prop :=
+Definition valid_without_meta o : Prop :=
   match o with
-  | Pod p => PodV.well_formed_without_meta p
-  | ReplicaSet rs => ReplicaSetV.well_formed_without_meta rs
+  | Pod p => PodV.valid_without_meta p
+  | ReplicaSet rs => ReplicaSetV.valid_without_meta rs
   end.
 
-Definition well_formed_for_nameless_create o : Prop :=
+Definition valid_for_nameless_create o : Prop :=
   match o with
-  | Pod p => PodV.well_formed_for_nameless_create p
-  | ReplicaSet rs => ReplicaSetV.well_formed_for_nameless_create rs
+  | Pod p => PodV.valid_for_nameless_create p
+  | ReplicaSet rs => ReplicaSetV.valid_for_nameless_create rs
   end.
 
-Definition well_formed_for_nameless_create_without_meta o : Prop :=
+Definition valid_for_nameless_create_without_meta o : Prop :=
   match o with
-  | Pod p => PodV.well_formed_for_nameless_create_without_meta p
-  | ReplicaSet rs => ReplicaSetV.well_formed_for_nameless_create_without_meta rs
+  | Pod p => PodV.valid_for_nameless_create_without_meta p
+  | ReplicaSet rs => ReplicaSetV.valid_for_nameless_create_without_meta rs
   end.
 
 Definition same_constructor (o1 o2 : t) : Prop :=
@@ -525,28 +524,26 @@ Definition same_constructor (o1 o2 : t) : Prop :=
   | _, _ => False
   end.
 
-Definition deepown_l l c v dq: iProp Σ :=
-  match (c, v) with
-  | (KObject.Pod c, Pod v) => PodV.deepown_l l c v dq
-  | (KObject.ReplicaSet c, ReplicaSet v) => ReplicaSetV.deepown_l l c v dq
-  | (_, _) => False
+Definition deepown_l l v dq: iProp Σ :=
+  match v with
+  | Pod v => PodV.deepown_l l v dq
+  | ReplicaSet v => ReplicaSetV.deepown_l l v dq
   end.
 
-Definition interface_agree i (l: loc) v: Prop :=
+Definition deepown_l_without_meta l v dq: iProp Σ :=
+  match v with
+  | Pod v => PodV.deepown_l_without_meta l v dq
+  | ReplicaSet v => ReplicaSetV.deepown_l_without_meta l v dq
+  end.
+
+Definition valid_interface i (l: loc) v: Prop :=
   match v with
   | Pod _ => i = interface.mk (ptrT.id v1.Pod.id) #l
   | ReplicaSet _ => i = interface.mk (ptrT.id v1.ReplicaSet.id) #l
   end.
 
 Definition deepown_i i v dq: iProp Σ :=
-  ∃ l c, ⌜ interface_agree i l v ⌝ ∗ deepown_l l c v dq.
-
-Definition deepown_l_without_meta l c v dq: iProp Σ :=
-  match (c, v) with
-  | (KObject.Pod c, Pod v) => PodV.deepown_l_without_meta l c v dq
-  | (KObject.ReplicaSet c, ReplicaSet v) => ReplicaSetV.deepown_l_without_meta l c v dq
-  | (_, _) => False
-  end.
+  ∃ l, ⌜ valid_interface i l v ⌝ ∗ deepown_l l v dq.
 
 Definition typemeta_ptr l v: loc :=
   match v with
@@ -565,133 +562,102 @@ End def.
 Section proof.
 Context `{hG: !heapGS Σ}.
 
-Lemma well_formed_for_nameless_create_split o:
-  well_formed_for_nameless_create o →
-    ObjectMetaV.well_formed_for_nameless_create (objectmeta o) ∧ well_formed_for_nameless_create_without_meta o.
+Lemma valid_for_nameless_create_split o:
+  valid_for_nameless_create o →
+    ObjectMetaV.valid_for_nameless_create (objectmeta o) ∧ valid_for_nameless_create_without_meta o.
 Proof.
   destruct o as [p|rs]; simpl.
-  - unfold PodV.well_formed_for_nameless_create, PodV.well_formed_for_nameless_create_without_meta.
+  - unfold PodV.valid_for_nameless_create, PodV.valid_for_nameless_create_without_meta.
     intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
-  - unfold ReplicaSetV.well_formed_for_nameless_create, ReplicaSetV.well_formed_for_nameless_create_without_meta.
+  - unfold ReplicaSetV.valid_for_nameless_create, ReplicaSetV.valid_for_nameless_create_without_meta.
     intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
 Qed.
 
-Lemma well_formed_merge o m:
-  ObjectMetaV.well_formed m ∧ well_formed_without_meta o →
-    well_formed (update_objectmeta o m).
+Lemma valid_merge o m:
+  ObjectMetaV.valid m ∧ valid_without_meta o →
+    valid (update_objectmeta o m).
 Proof. destruct o; done. Qed.
 
 (* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
-Lemma well_formed_implies o:
-  well_formed_for_nameless_create_without_meta o →
-    well_formed_without_meta o.
+Lemma valid_implies o:
+  valid_for_nameless_create_without_meta o →
+    valid_without_meta o.
 Proof. destruct o; done. Qed.
 
-Lemma pod_deepown_l l obj pure_pod dq:
-  deepown_l l obj (Pod pure_pod) dq ⊢
-    ∃ pod, ⌜ obj = KObject.Pod pod ⌝ ∗ PodV.deepown_l l pod pure_pod dq.
+Lemma pod_deepown_l l pure_pod dq:
+  deepown_l l (Pod pure_pod) dq ⊢
+    PodV.deepown_l l pure_pod dq.
+Proof. done. Qed.
+
+Lemma replicaset_deepown_l l pure_rs dq:
+  deepown_l l (ReplicaSet pure_rs) dq ⊢
+    ReplicaSetV.deepown_l l pure_rs dq.
+Proof. done. Qed.
+
+Lemma deepown_l_split l v dq:
+  deepown_l l v dq ⊢
+    (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
+    ObjectMetaV.deepown_l (objectmeta_ptr l v) (objectmeta v) dq ∗
+    deepown_l_without_meta l v dq.
 Proof.
-  destruct obj; simpl.
-  - iIntros "H". iExists _. iFrame. done.
-  - iIntros "Hfalse". done.
-Qed.
-
-Lemma replicaset_deepown_l l obj pure_rs dq:
-  deepown_l l obj (ReplicaSet pure_rs) dq ⊢
-    ∃ rs, ⌜ obj = KObject.ReplicaSet rs ⌝ ∗ ReplicaSetV.deepown_l l rs pure_rs dq.
-Proof.
-  destruct obj; simpl.
-  - iIntros "Hfalse". done.
-  - iIntros "H". iExists _. iFrame. done.
-Qed.
-
-Lemma deepown_l_type_match l c v dq:
-  deepown_l l c v dq ⊢
-  ⌜ match v with
-    | Pod _ => ∃ pod, c = KObject.Pod pod
-    | ReplicaSet _ => ∃ rs, c = KObject.ReplicaSet rs
-    end ⌝.
-Proof. destruct c, v; iIntros "H"; eauto. Qed.
-
-Lemma deepown_l_without_meta_type_match l c v dq:
-  deepown_l_without_meta l c v dq ⊢
-  ⌜ match v with
-    | Pod _ => ∃ pod, c = KObject.Pod pod
-    | ReplicaSet _ => ∃ rs, c = KObject.ReplicaSet rs
-    end ⌝.
-Proof. destruct c, v; iIntros "H"; eauto. Qed.
-
-Lemma deepown_l_split l c v dq:
-  deepown_l l c v dq ⊢
-    (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
-    ObjectMetaV.deepown_l (objectmeta_ptr l v) (KObject.objectmeta c) (objectmeta v) dq ∗
-    deepown_l_without_meta l c v dq.
-Proof.
-  iIntros "H".
-  iDestruct (deepown_l_type_match with "H") as %Hagree.
-  destruct c as [p|rs].
-  - destruct v as [p0|rs0]; simpl in Hagree; try done.
-    simpl.
-    unfold PodV.deepown_l, PodV.deepown.
-    iDestruct "H" as "[Hl Hdeepown]".
-    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
-    iDestruct (struct_fields_split with "Hl") as "Hfields".
-    iNamed "Hfields".
-    iFrame "HTypeMeta".
-    iSplitR; first (iPureIntro; done).
-    iSplitL "HObjectMeta Hobjectmeta".
-    { unfold ObjectMetaV.deepown_l. iFrame. }
-    unfold PodV.deepown_l_without_meta, PodV.deepown_without_meta.
-    iFrame.
-  - destruct v as [p0|rs0]; simpl in Hagree; try done.
-    simpl.
-    unfold ReplicaSetV.deepown_l, ReplicaSetV.deepown.
-    iDestruct "H" as "[Hl Hdeepown]".
-    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
-    iDestruct (struct_fields_split with "Hl") as "Hfields".
-    iNamed "Hfields".
-    iFrame "HTypeMeta".
-    iSplitR; first (iPureIntro; done).
-    iSplitL "HObjectMeta Hobjectmeta".
-    { unfold ObjectMetaV.deepown_l. iFrame. }
-    unfold ReplicaSetV.deepown_l_without_meta, ReplicaSetV.deepown_without_meta.
+  destruct v as [p|rs]; simpl;
+    [unfold PodV.deepown_l, PodV.deepown, PodV.deepown_l_without_meta, PodV.deepown_without_meta
+    |unfold ReplicaSetV.deepown_l, ReplicaSetV.deepown, ReplicaSetV.deepown_l_without_meta, ReplicaSetV.deepown_without_meta].
+  all: iIntros "H";
+    iDestruct "H" as (c) "[Hl Hdeepown]";
+    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)";
+    first
+      [iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "Hfields"
+      |iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "Hfields"];
+    iNamed "Hfields";
+    rewrite -Htypemeta;
+    iFrame "HTypeMeta";
+    iSplitL "HObjectMeta Hobjectmeta";
+    [unfold ObjectMetaV.deepown_l; iFrame|];
+    iExists c;
     iFrame.
 Qed.
 
 (* TODO: deepown_l_merge is only used for merging updated objectmeta; generalize it later *)
-Lemma deepown_l_merge l c v cm vm dq:
-  (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
-  ObjectMetaV.deepown_l (objectmeta_ptr l v) cm vm dq ∗
-  deepown_l_without_meta l c v dq ⊢
-    deepown_l l (KObject.update_objectmeta c cm) (update_objectmeta v vm) dq.
+Lemma deepown_l_merge l v vm dq:
+  (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l v) vm dq ∗
+  deepown_l_without_meta l v dq ⊢
+    deepown_l l (update_objectmeta v vm) dq.
 Proof.
-  iIntros "(HTypeMeta & %Htypemeta & Hobjectmeta & Hwithout_meta)".
-  iDestruct (deepown_l_without_meta_type_match with "Hwithout_meta") as %Hagree.
-  destruct c as [p|rs].
-  - destruct v as [p0|rs0]; try done.
-    iDestruct "Hobjectmeta" as "[HObjectMeta Hdeepown_objectmeta]".
-    iDestruct "Hwithout_meta" as "(HSpec & HStatus & Hspec & Hstatus)".
-    set (updated_pod := p <| v1.Pod.ObjectMeta' := cm |>).
-    iDestruct (struct_fields_combine (v:=updated_pod) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
-    iFrame. iPureIntro. done.
-  - destruct v as [p0|rs0]; try done.
-    iDestruct "Hobjectmeta" as "[HObjectMeta Hdeepown_objectmeta]".
-    iDestruct "Hwithout_meta" as "(HSpec & HStatus & Hspec & Hstatus)".
-    set (updated_rs := rs <| v1.ReplicaSet.ObjectMeta' := cm |>).
-    iDestruct (struct_fields_combine (v:=updated_rs) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
-    iFrame. iPureIntro. done.
+  destruct v as [p|rs]; simpl;
+    [destruct p as [p_typemeta p_objectmeta p_spec p_status];
+     unfold PodV.deepown_l_without_meta, PodV.deepown_without_meta, PodV.deepown_l, PodV.deepown
+    |destruct rs as [rs_typemeta rs_objectmeta rs_spec rs_status];
+     unfold ReplicaSetV.deepown_l_without_meta, ReplicaSetV.deepown_without_meta, ReplicaSetV.deepown_l, ReplicaSetV.deepown].
+  all: iIntros "(HTypeMeta & Hobjectmeta & Hwithout_meta)".
+  all: iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
+  all: iDestruct "Hwithout_meta" as (c) "(HSpec & HStatus & Hspec & Hstatus)".
+  all: first
+    [destruct c as [c_typemeta c_objectmeta c_spec c_status];
+     iDestruct (struct_fields_combine
+       (v:= v1.Pod.mk p_typemeta cm c_spec c_status)
+       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl";
+     iExists (v1.Pod.mk p_typemeta cm c_spec c_status)
+    |destruct c as [c_typemeta c_objectmeta c_spec c_status];
+     iDestruct (struct_fields_combine
+       (v:= v1.ReplicaSet.mk rs_typemeta cm c_spec c_status)
+       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl";
+     iExists (v1.ReplicaSet.mk rs_typemeta cm c_spec c_status)].
+  all: iSplitL "Hl"; first iExact "Hl".
+  all: iSplitR "Hobjectmeta Hspec Hstatus"; first (iPureIntro; done).
+  all: simpl.
+  all: iFrame.
 Qed.
 
-Lemma deepown_l_restore l c v dq:
-  (typemeta_ptr l v) ↦{dq} (KObject.typemeta c) ∗ ⌜ (KObject.typemeta c) = (typemeta v) ⌝ ∗
-  ObjectMetaV.deepown_l (objectmeta_ptr l v) (KObject.objectmeta c) (objectmeta v) dq ∗
-  deepown_l_without_meta l c v dq ⊢
-    deepown_l l c v dq.
+Lemma deepown_l_restore l v dq:
+  (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l v) (objectmeta v) dq ∗
+  deepown_l_without_meta l v dq ⊢
+    deepown_l l v dq.
 Proof.
   iIntros "H".
   iPoseProof (deepown_l_merge with "H") as "H".
-  assert (KObject.update_objectmeta c (KObject.objectmeta c) = c) as ->.
-  { destruct c as [p|rs]; [destruct p | destruct rs]; done. }
   assert (update_objectmeta v (objectmeta v) = v) as ->.
   { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
   iFrame.
@@ -768,27 +734,27 @@ Proof.
   destruct ((KObjectV.objectmeta child).(ObjectMetaV.OwnerReferences')); apply _.
 Qed.
 
-Lemma well_formed_object_has_well_formed_objectmeta obj:
-  KObjectV.well_formed obj → ObjectMetaV.well_formed (KObjectV.objectmeta obj).
+Lemma valid_object_has_valid_objectmeta obj:
+  KObjectV.valid obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
 Proof. destruct obj; simpl; intros [H _]; done. Qed.
 
-Lemma well_formed_object_has_well_formed_key key obj:
+Lemma valid_object_has_valid_key key obj:
   key = KObjectV.key obj →
-  KObjectV.well_formed obj →
+  KObjectV.valid obj →
     key.(KKey.Name') ≠ ""%go ∧
     valid_name key.(KKey.Name') ∧
     key.(KKey.Namespace') ≠ ""%go ∧
     valid_namespace key.(KKey.Namespace').
 Proof.
   intros Hkey Hwf.
-  apply well_formed_object_has_well_formed_objectmeta in Hwf.
+  apply valid_object_has_valid_objectmeta in Hwf.
   destruct obj; simpl in *; subst key; simpl;
   destruct Hwf as [_ [Hname_ne [Hname_valid [Hns_ne Hns_valid]]]];
   repeat split; intuition.
 Qed.
 
-Lemma well_formed_owner_references_has_at_most_one_controller_parent os:
-  OwnerReferenceV.list_well_formed os →
+Lemma valid_owner_references_has_at_most_one_controller_parent os:
+  OwnerReferenceV.list_valid os →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       os_has_controller_parent_of os kind1 name1 uid1 →
         os_has_controller_parent_of os kind2 name2 uid2 →
@@ -803,7 +769,7 @@ Proof.
   destruct Hctrl2 as (Hctrl2_c & Hkind2 & Hname2 & Huid2).
   apply list_elem_of_lookup_1 in Hin1 as [i1 Hlookup1].
   apply list_elem_of_lookup_1 in Hin2 as [i2 Hlookup2].
-  unfold OwnerReferenceV.list_well_formed in Hwf.
+  unfold OwnerReferenceV.list_valid in Hwf.
   assert (i1 = i2) as Heq.
   { apply (Hwf i1 o1 i2 o2).
     split; [|split; [|split]]; assumption. }
@@ -817,8 +783,8 @@ Proof.
     + rewrite <- Huid1. exact Huid2.
 Qed.
 
-Lemma well_formed_obj_has_at_most_one_controller_parent obj:
-  KObjectV.well_formed obj →
+Lemma valid_obj_has_at_most_one_controller_parent obj:
+  KObjectV.valid obj →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       obj_has_controller_parent_of obj kind1 name1 uid1 →
         obj_has_controller_parent_of obj kind2 name2 uid2 →
@@ -828,21 +794,21 @@ Proof.
   unfold obj_has_controller_parent_of in H1, H2.
   destruct obj as [pod | rs].
   - (* Pod case *)
-    unfold KObjectV.well_formed in Hwf.
-    unfold PodV.well_formed in Hwf.
+    unfold KObjectV.valid in Hwf.
+    unfold PodV.valid in Hwf.
     destruct Hwf as (Hwf_meta & _).
-    unfold ObjectMetaV.well_formed in Hwf_meta.
+    unfold ObjectMetaV.valid in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
     simpl in H1, H2.
     destruct (ObjectMetaV.OwnerReferences' (PodV.ObjectMeta' pod)) as [os|]; [|contradiction].
-    apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+    apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
   - (* ReplicaSet case *)
-    unfold KObjectV.well_formed in Hwf.
-    unfold ReplicaSetV.well_formed in Hwf.
+    unfold KObjectV.valid in Hwf.
+    unfold ReplicaSetV.valid in Hwf.
     destruct Hwf as (Hwf_meta & _).
-    unfold ObjectMetaV.well_formed in Hwf_meta.
+    unfold ObjectMetaV.valid in Hwf_meta.
     destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
     simpl in H1, H2.
     destruct (ObjectMetaV.OwnerReferences' (ReplicaSetV.ObjectMeta' rs)) as [os|]; [|contradiction].
-    apply well_formed_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+    apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
 Qed.
