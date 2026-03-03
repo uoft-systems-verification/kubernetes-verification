@@ -792,23 +792,10 @@ Lemma valid_obj_has_at_most_one_controller_parent obj:
 Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold obj_has_controller_parent_of in H1, H2.
-  destruct obj as [pod | rs].
-  - (* Pod case *)
-    unfold KObjectV.valid in Hwf.
-    unfold PodV.valid in Hwf.
-    destruct Hwf as (Hwf_meta & _).
-    unfold ObjectMetaV.valid in Hwf_meta.
-    destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
-    simpl in H1, H2.
-    destruct (ObjectMetaV.OwnerReferences' (PodV.ObjectMeta' pod)) as [os|]; [|contradiction].
-    apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
-  - (* ReplicaSet case *)
-    unfold KObjectV.valid in Hwf.
-    unfold ReplicaSetV.valid in Hwf.
-    destruct Hwf as (Hwf_meta & _).
-    unfold ObjectMetaV.valid in Hwf_meta.
-    destruct Hwf_meta as (_ & _ & _ & _ & _ & Hwf_ownerref).
-    simpl in H1, H2.
-    destruct (ObjectMetaV.OwnerReferences' (ReplicaSetV.ObjectMeta' rs)) as [os|]; [|contradiction].
-    apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+  apply valid_object_has_valid_objectmeta in Hwf.
+  unfold ObjectMetaV.valid in Hwf.
+  destruct Hwf as (_ & _ & _ & _ & _ & Hwf_ownerref).
+  destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
+  - apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+  - contradiction.
 Qed.
