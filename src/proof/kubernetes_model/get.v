@@ -167,16 +167,13 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o:
       end
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & #Hisk & H) HΦ". iNamed "H".
-  iApply (wp_State__get_some_au γ l key).
-  iFrame "#".
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iApply wp_State__get_some_au.
+  iFrame "#". iFrame.
   iApply fupd_mask_intro; [ set_solver | iIntros "Hmask" ].
-  iExists uid, dq, kmeta, kspec_o, kstatus_o.
-  iFrame.
   iIntros (i kobj) "Hpost".
   iMod "Hmask" as "_".
-  iModIntro.
-  iNext.
+  iModIntro. iNext.
   iApply ("HΦ" $! i kobj with "Hpost").
 Qed.
 
