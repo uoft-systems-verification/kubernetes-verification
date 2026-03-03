@@ -121,7 +121,7 @@ Proof.
   wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame.
 Qed.
 
-Definition new_controller_ref_well_formed controller_ref kind meta: Prop :=
+Definition new_controller_ref_valid controller_ref kind meta: Prop :=
   controller_ref.(OwnerReferenceV.Kind') = kind ∧
   controller_ref.(OwnerReferenceV.Name') = meta.(ObjectMetaV.Name') ∧
   controller_ref.(OwnerReferenceV.UID') = meta.(ObjectMetaV.UID') ∧
@@ -135,9 +135,9 @@ Lemma wp_NewControllerRef_replicaset owner gvk rs_l meta pure_meta dq:
       ObjectMetaV.deepown meta pure_meta dq
   }}}
     @! v1.NewControllerRef #owner #gvk
-  {{{ l controller_ref pure_controller_ref, RET #l;
-      OwnerReferenceV.deepown_l l controller_ref pure_controller_ref 1 ∗
-      ⌜ new_controller_ref_well_formed pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_meta ⌝ ∗
+  {{{ l pure_controller_ref, RET #l;
+      OwnerReferenceV.deepown_l l pure_controller_ref 1 ∗
+      ⌜ new_controller_ref_valid pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_meta ⌝ ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
       ObjectMetaV.deepown meta pure_meta dq
   }}}.

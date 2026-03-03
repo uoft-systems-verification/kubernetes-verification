@@ -35,7 +35,7 @@ Definition no_speculative_parent_reference meta (used_uids: gset types.UID.t): P
 Local Definition valid_kauth a : Prop :=
   map_Forall (λ k obj,
     k = KObjectV.key obj ∧
-    KObjectV.well_formed obj ∧
+    KObjectV.valid obj ∧
     (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uids a ∧
     (* No object's parent reference can speculatively point to uid that has never existed *)
     no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) ∧
@@ -310,7 +310,7 @@ Lemma auth_valid a k obj:
 ✓ (●K a) →
 (proj_state a) !! k = Some obj →
 k = KObjectV.key obj ∧
-KObjectV.well_formed obj.
+KObjectV.valid obj.
 Proof.
   intros Hvalid Hlookup.
   rewrite /kview_auth in Hvalid.
@@ -340,7 +340,7 @@ Lemma meta_valid k uid dq meta:
 k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
 k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
 uid = meta.(ObjectMetaV.UID') ∧
-ObjectMetaV.well_formed meta.
+ObjectMetaV.valid meta.
 Proof.
   intros Hvalid.
   rewrite /kview_frag in Hvalid.
@@ -368,7 +368,7 @@ Proof.
     + subst k. rewrite /KObjectV.key /= Hobj_meta_eq //.
     + split.
       * rewrite Hobj_meta_eq in Huid_obj. symmetry. exact Huid_obj.
-      * apply well_formed_object_has_well_formed_objectmeta in Hwf_obj.
+      * apply valid_object_has_valid_objectmeta in Hwf_obj.
         by rewrite Hobj_meta_eq in Hwf_obj.
 Qed.
 
@@ -456,7 +456,7 @@ Qed.
 Definition valid_k_uid_obj k uid obj: Prop :=
   k = KObjectV.key obj ∧
   uid = (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∧
-  KObjectV.well_formed obj.
+  KObjectV.valid obj.
 
 Lemma create_kobj a k uid obj:
 (proj_state a) !! k = None →
@@ -1465,7 +1465,7 @@ Lemma own_auth_valid {γ state used_uids} k obj:
 own_auth γ state used_uids -∗
 ⌜ state !! k = Some obj →
 k = KObjectV.key obj ∧
-KObjectV.well_formed obj ⌝.
+KObjectV.valid obj ⌝.
 Proof.
   iIntros "Hauth".
   iDestruct (own_valid with "Hauth") as "Hvalid".
@@ -1492,7 +1492,7 @@ own_meta_frag γ k uid dq meta -∗
   ⌜ k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
   k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
   uid = meta.(ObjectMetaV.UID') ∧
-  ObjectMetaV.well_formed meta ⌝.
+  ObjectMetaV.valid meta ⌝.
 Proof.
   iIntros "Hmeta".
   iDestruct (own_valid with "Hmeta") as "Hvalid".

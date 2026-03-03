@@ -44,13 +44,13 @@ Proof.
   destruct Hkey_in_phys as [obj Hkey_in_phys].
   iDestruct (big_sepM2_delete _ phys_state abs_state key _ _ Hkey_in_phys Hkey_in_abs
     with "Hinv_Hphys_abs_rep") as "[Hk_rep Hother_rep]".
-  iDestruct "Hk_rep" as "(%ptr & %kobj & %Hinterface_agree & Hdeepown_l)".
+  iDestruct "Hk_rep" as "(%ptr & %kobj & %Hvalid_interface & Hdeepown_l)".
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hkey_in_phys bool_decide_true //; [exists obj; done|]. wp_auto.
   wp_apply wp_Accessor; [done|]. rewrite bool_decide_true //. wp_auto.
-  iPoseProof (KObjectV.deepown_l_split _ _ _ _ with "Hdeepown_l")
-    as "(Htypemeta_ptr & %Htypemeta_eq & Hdeepown_l_objectmeta & Hdeepown_l_other)".
-  iDestruct "Hdeepown_l_objectmeta" as "[Hobjectmeta_ptr Hdeepown_objectmeta]".
+  iPoseProof (KObjectV.deepown_l_split _ _ _ with "Hdeepown_l")
+    as "(Htypemeta_ptr & Hdeepown_l_objectmeta & Hdeepown_l_other)".
+  iDestruct "Hdeepown_l_objectmeta" as (objmeta) "[Hobjectmeta_ptr Hdeepown_objectmeta]".
   wp_apply (wp_GetFinalizers with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
   wp_if_destruct.
   - wp_apply (wp_GetDeletionTimestamp with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
@@ -62,17 +62,17 @@ Proof.
       set new_pure_objectmeta := KObjectV.objectmeta pure_kobj
         <| ObjectMetaV.DeletionTimestamp' := Some pure_time |>
         <| ObjectMetaV.ResourceVersion' := rv_str |>.
-      set new_objectmeta := KObject.objectmeta kobj
+      set new_objectmeta := objmeta
         <| v1.ObjectMeta.DeletionTimestamp' := now_ptr |>
         <| v1.ObjectMeta.ResourceVersion' := rv_str |>.
-      iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr ptr pure_kobj) new_objectmeta new_pure_objectmeta 1)
+      iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr ptr pure_kobj) new_pure_objectmeta 1)
         with "[Hobjectmeta_ptr Hdeepown_objectmeta now Hdeepown_time]" as "Hdeepown_l_objectmeta".
       { iAssert (⌜ now_ptr ≠ null ⌝%I) as "%now_ptr_not_null".
         { by iDestruct (typed_pointsto_not_null with "now") as %?. }
-        iNamed "Hdeepown_objectmeta". iFrame. iPureIntro. split_and!; done. }
-      iPoseProof (KObjectV.deepown_l_merge _ _ _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
+        iNamed "Hdeepown_objectmeta". iExists new_objectmeta. iFrame. iPureIntro. split_and!; done. }
+      iPoseProof (KObjectV.deepown_l_merge _ _ _ _ with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]")
         as "Hdeepown_l".
-      { iFrame. done. }
+      { iFrame. }
       set updated_kobj := (KObject.update_objectmeta kobj new_objectmeta).
       set updated_pure_kobj := (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta).
       iMod (auth_map.map_update _ _ updated_pure_kobj with "Hinv_Hown_abs Hghost_pure_kobj")
@@ -85,10 +85,10 @@ Proof.
           Hkey_in_phys with "[$Hother_rep Hdeepown_l]").
         { rewrite lookup_insert. destruct (decide (key = key)) as [|Hcontra]; [done|done]. }
         iExists ptr, updated_kobj. iFrame. iPureIntro. destruct pure_kobj; done. }
-      assert (ghost_well_formed (dom used_uid) (<[key:=updated_pure_kobj]> abs_state) children fresh_keys)
-        as Hinv_Hghost_well_formed'.
+      assert (ghost_valid (dom used_uid) (<[key:=updated_pure_kobj]> abs_state) children fresh_keys)
+        as Hinv_Hghost_valid'.
       {
-        destruct Hinv_Hghost_well_formed.
+        destruct Hinv_Hghost_valid.
         assert (parent_key ≠ key) as parent_neq_key.
         { specialize (Hno_self_parenting parent_key children_keys key Hparent_key_in_children His_child). done. }
         assert (dom (<[key:=updated_pure_kobj]> abs_state) = dom abs_state) as abs_dom_simpl.
@@ -102,16 +102,16 @@ Proof.
         assert ((KObjectV.objectmeta updated_pure_kobj).(ObjectMetaV.UID') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.UID'))
         as updated_pure_kobj_uid_eq.
         { destruct pure_kobj; done. }
-        assert (key = KObjectV.key updated_pure_kobj ∧ KObjectV.well_formed updated_pure_kobj)
+        assert (key = KObjectV.key updated_pure_kobj ∧ KObjectV.valid updated_pure_kobj)
           as [Hagree Hwf].
-        { assert (key = KObjectV.key pure_kobj ∧ KObjectV.well_formed pure_kobj) as [Hagree Hwf].
-          { apply Habs_state_well_formed. done. } destruct pure_kobj; done. }
-        apply mk_ghost_well_formed.
+        { assert (key = KObjectV.key pure_kobj ∧ KObjectV.valid pure_kobj) as [Hagree Hwf].
+          { apply Habs_state_valid. done. } destruct pure_kobj; done. }
+        apply mk_ghost_valid.
         - intros k o Hlookup.
           rewrite lookup_insert_Some in Hlookup.
           destruct Hlookup as [(<- & <-) | (Hk_neq & Hlookup)].
           + done.
-          + eapply Habs_state_well_formed. done.
+          + eapply Habs_state_valid. done.
         - set_solver.
         - intros k s Hlookup. specialize (Hchildren_exist k s Hlookup). rewrite dom_insert_L. set_solver.
         - apply Hparents_children_same_namespace.
@@ -170,10 +170,13 @@ Proof.
       iApply "HΦ". iLeft. iFrame. iPureIntro. destruct pure_kobj; done.
     + iAssert (⌜ (KObjectV.objectmeta pure_kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝%I) as "%Hdt".
       { iNamed "Hdeepown_objectmeta". iPureIntro. intros H. apply (proj2 Hdeepown_deletiontimestamp_none) in H. done. }
-      iPoseProof (KObjectV.deepown_l_restore _ _ _ _
-        with "[Htypemeta_ptr Hobjectmeta_ptr Hdeepown_objectmeta Hdeepown_l_other]") as "Hdeepown_l".
-      { iFrame. done. }
-      iAssert (KObjectV.deepown_l ptr kobj pure_kobj 1) with "[Hdeepown_l]" as "Hdeepown_l".
+      iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr ptr pure_kobj) (KObjectV.objectmeta pure_kobj) 1)
+        with "[Hobjectmeta_ptr Hdeepown_objectmeta]" as "Hdeepown_l_objectmeta".
+      { iExists objmeta. iFrame. }
+      iPoseProof (KObjectV.deepown_l_restore _ _ _
+        with "[Htypemeta_ptr Hdeepown_l_objectmeta Hdeepown_l_other]") as "Hdeepown_l".
+      { iFrame. }
+      iAssert (KObjectV.deepown_l ptr pure_kobj 1) with "[Hdeepown_l]" as "Hdeepown_l".
       { destruct pure_kobj; iFrame. }
       iAssert (state_rep phys_state abs_state %I) with "[Hdeepown_l Hother_rep]" as "Hinv_Hphys_abs_rep".
       { iApply big_sepM2_delete; [done | done|]. iFrame. iPureIntro. destruct pure_kobj; done. }
@@ -187,9 +190,9 @@ Proof.
       as "[Hinv_Hown_children Hghost_children_keys]".
     iMod (auth_map.map_delete with "Hghost_grandchildren_keys Hinv_Hown_children") as "Hinv_Hown_children".
     iAssert (state_rep (delete key phys_state) (delete key abs_state) %I) with "[Hother_rep]" as "Hinv_Hphys_abs_rep"; [done|].
-    assert (ghost_well_formed (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=children_keys ∖ {[key]}]> children)) fresh_keys) as Hinv_Hghost_well_formed'.
+    assert (ghost_valid (dom used_uid) (delete key abs_state) (delete key (<[parent_key:=children_keys ∖ {[key]}]> children)) fresh_keys) as Hinv_Hghost_valid'.
     {
-      destruct Hinv_Hghost_well_formed.
+      destruct Hinv_Hghost_valid.
       assert (parent_key ≠ key) as parent_neq_key.
       { specialize (Hno_self_parenting parent_key children_keys key Hparent_key_in_children His_child). done. }
       assert (dom (delete key (<[parent_key:=children_keys ∖ {[key]}]> children)) = dom (delete key children) )
@@ -201,9 +204,9 @@ Proof.
         assert ({[parent_key]} ∪ dom children = dom children) as ->.
         { set_solver. }
         reflexivity. }
-      apply mk_ghost_well_formed.
+      apply mk_ghost_valid.
       - intros k o Hlookup. rewrite lookup_delete_Some in Hlookup.
-        eapply Habs_state_well_formed. intuition.
+        eapply Habs_state_valid. intuition.
       - set_solver.
       - intros k s Hlookup.
         rewrite lookup_delete_Some lookup_insert_Some in Hlookup.

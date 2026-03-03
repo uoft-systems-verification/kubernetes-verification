@@ -15,7 +15,7 @@ Lemma wp_index_of_podController index_name obj ptr pod pure_pod dq:
       "%Hobj" ∷ ⌜ obj = interface.mk (ptrT.id v1.Pod.id) #ptr ⌝ ∗
       "Hptr" ∷ ptr ↦{dq} pod ∗
       "Hdeepown_pod" ∷ PodV.deepown pod pure_pod dq ∗
-      "%Hwf" ∷ ⌜ PodV.well_formed pure_pod ⌝
+      "%Hwf" ∷ ⌜ PodV.valid pure_pod ⌝
   }}}
     @! apimodel.index_of #index_name #obj
   {{{ sl idx_val_list idx_val, RET (#sl, #interface.nil);
@@ -50,7 +50,7 @@ Lemma wp_State__ByIndex_pod γ l kind index_name indexed_value parent_key parent
   {{{ objs_l (ptr_list: list loc) (pure_pod_list: list PodV.t) dq, RET (#objs_l, #interface.nil);
       "Hobjs_l" ∷ objs_l ↦* map (λ ptr, interface.mk (ptrT.id v1.Pod.id) #ptr) ptr_list ∗
       "Hptrs_purepods" ∷ ([∗ list] ptr;pure_pod ∈ ptr_list;pure_pod_list, ∃ pod, ptr ↦{dq} pod ∗ PodV.deepown pod pure_pod dq) ∗
-      "%Hwf_pure_pod_list" ∷ ⌜ ∀ p, p ∈ pure_pod_list → PodV.well_formed p ⌝ ∗
+      "%Hwf_pure_pod_list" ∷ ⌜ ∀ p, p ∈ pure_pod_list → PodV.valid p ⌝ ∗
       "%Hlist_in_map" ∷  ⌜ ∀ p, p ∈ pure_pod_list → pure_pod_map !! (PodV.key p) = Some p ⌝ ∗
       "%Hmap_in_list" ∷ ⌜ ∀ k p, pure_pod_map !! k = Some p → p ∈ pure_pod_list ⌝ ∗
       "%Hown_pod_keys_eq" ∷ ⌜ ∀ key pod, pure_pod_map !! key = Some pod → key = PodV.key pod ⌝ ∗
@@ -70,7 +70,7 @@ Proof.
   { iDestruct (map_valid with "Hinv_Hown_children Hghost_children_keys") as %Hlookup. iPureIntro; exact Hlookup. }
   wp_auto.
   wp_apply (wp_State__objListLocked_pod with "[$Hghost_pure_pod_map $Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs $Hinv_Hphys_abs_rep]").
-  { iPureIntro. split; [done|]. destruct Hinv_Hghost_well_formed. done. }
+  { iPureIntro. split; [done|]. destruct Hinv_Hghost_valid. done. }
   iIntros (sl ptr_list pure_pod_list) "(Hsl & Hlist & %Hwf & %Hlookup_abs & %Hno_dup & %Hns_match & %Hmap_in_list &
     Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep & Hghost_pure_pod_map)". wp_auto.
   assert (∀ (k : KKey.t) (p : PodV.t), pure_pod_map !! k = Some p → p ∈ pure_pod_list) as Hmap_in_list'.
@@ -90,8 +90,8 @@ Proof.
     "Hval_ptr" ∷ val_ptr ↦ val ∗
     "Hitems_ptr" ∷ items_ptr ↦ sl' ∗
     "Hsl'" ∷ sl' ↦* map (λ ptr : loc, interface.mk (ptrT.id v1.Pod.id) (# ptr)) ptr_list' ∗
-    "Hlist_pre" ∷ ([∗ list] ptr;pure_pod ∈ ptr_list';pure_pod_list', ∃ pod, PodV.deepown_l ptr pod pure_pod 1) ∗
-    "Hlist_post" ∷ ([∗ list] ptr;pure_pod ∈ (drop (sint.nat i) ptr_list);(drop (sint.nat i) pure_pod_list), ∃ pod, PodV.deepown_l ptr pod pure_pod 1) ∗
+    "Hlist_pre" ∷ ([∗ list] ptr;pure_pod ∈ ptr_list';pure_pod_list', PodV.deepown_l ptr pure_pod 1) ∗
+    "Hlist_post" ∷ ([∗ list] ptr;pure_pod ∈ (drop (sint.nat i) ptr_list);(drop (sint.nat i) pure_pod_list), PodV.deepown_l ptr pure_pod 1) ∗
     "Hcap_sl'" :: own_slice_cap interface.t sl' (DfracOwn 1) ∗
     "%Hfilter_ptr_list" ∷ ⌜ pure_pod_list' = filter P (take (sint.nat i) pure_pod_list) ⌝ ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f sl) ⌝
@@ -147,7 +147,7 @@ Proof.
       destruct (bool_decide(P this_pure_pod)) eqn:HP.
       * apply bool_decide_eq_true in HP.
         assert (this_pure_pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') = parent_key.(KKey.Namespace')) as Hns_eq.
-        { destruct Hinv_Hghost_well_formed. 
+        { destruct Hinv_Hghost_valid. 
           assert (this_pure_pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') = (PodV.key this_pure_pod).(KKey.Namespace')) as -> by done.
           symmetry.
           apply (Hparents_children_same_namespace _ (dom pure_pod_map) _ Hlookup_children).
@@ -190,14 +190,14 @@ Proof.
           -- apply bool_decide_eq_true in Hns. rewrite <-Hns. intros Heq. apply HP. apply Hidx_val'. done.
           -- assert (slash_free (ObjectMetaV.Namespace' (PodV.ObjectMeta' this_pure_pod))) as Hslash_free1.
             { apply valid_namespace_slash_free.
-              assert (PodV.well_formed this_pure_pod) as Hwf_pod.
+              assert (PodV.valid this_pure_pod) as Hwf_pod.
               { apply Hwf. apply (list_elem_of_lookup_2 _ (sint.nat i)). done. }
-              destruct Hwf_pod as [Hwf_meta _]. unfold ObjectMetaV.well_formed in Hwf_meta. intuition. }
+              destruct Hwf_pod as [Hwf_meta _]. unfold ObjectMetaV.valid in Hwf_meta. intuition. }
             assert (slash_free (KKey.Namespace' parent_key)) as Hslash_free2.
             { apply valid_namespace_slash_free.
-              destruct Hinv_Hghost_well_formed. 
-              pose proof Habs_state_well_formed parent_key parent Hlookup_abs_parent as [Hparent_key Hwf_parent].
-              pose proof well_formed_object_has_well_formed_key parent_key parent Hparent_key Hwf_parent as Hwf_key.
+              destruct Hinv_Hghost_valid. 
+              pose proof Habs_state_valid parent_key parent Hlookup_abs_parent as [Hparent_key Hwf_parent].
+              pose proof valid_object_has_valid_key parent_key parent Hparent_key Hwf_parent as Hwf_key.
               intuition. }
             assert (ObjectMetaV.Namespace' (PodV.ObjectMeta' this_pure_pod) ≠ KKey.Namespace' parent_key) as Hneq.
             { intros H. apply bool_decide_eq_false in Hns. done. }
@@ -241,7 +241,7 @@ Proof.
     assert ((take (sint.nat i) pure_pod_list) = pure_pod_list) as ->.
     { apply take_ge. word. }
     assert (∀ key pod, pure_pod_map !! key = Some pod → P pod) as HmapP.
-    { intros key pod Hlookup. destruct Hinv_Hghost_well_formed.
+    { intros key pod Hlookup. destruct Hinv_Hghost_valid.
       pose proof Hsub_map key pod Hlookup as Hlookup'.
       assert (key ∈ (dom pure_pod_map)) as Hkeyin.
       { apply elem_of_dom. exists pod. done. }
@@ -252,7 +252,7 @@ Proof.
     * intros p Hpin. apply Hwf. apply list_elem_of_filter in Hpin. destruct Hpin as [_ Hpin]. done.
     * intros p Hlookup_list. apply list_elem_of_filter in Hlookup_list as [HPp Hlookup_list].
       pose proof Hlookup_abs p Hlookup_list as Hlookup_abs'.
-      destruct Hinv_Hghost_well_formed.
+      destruct Hinv_Hghost_valid.
       pose proof Hchildren_point_to_parent parent_key parent (PodV.key p) (KObjectV.Pod p)
         (dom pure_pod_map) Hlookup_abs_parent Hlookup_abs' Hlookup_children as Hbi.
       pose proof (proj2 Hbi) HPp as Hkey_in_dom. apply elem_of_dom in Hkey_in_dom as [p' Hlookup_map].
@@ -260,10 +260,10 @@ Proof.
       rewrite Hlookup_abs' in Hlookup_abs''. injection Hlookup_abs''. intros ->. done.
     * intros k p Hlookup. pose proof HmapP k p Hlookup as HPp. apply list_elem_of_filter. split; [done|].
       pose proof Hns_match k p Hlookup. done.
-    * intros k p Hlookup. destruct Hinv_Hghost_well_formed. pose proof Hsub_map k p Hlookup as Hlookup'.
-      pose proof Habs_state_well_formed k (KObjectV.Pod p) Hlookup' as Hwf'. destruct Hwf' as [Hwf' _]. done.
+    * intros k p Hlookup. destruct Hinv_Hghost_valid. pose proof Hsub_map k p Hlookup as Hlookup'.
+      pose proof Habs_state_valid k (KObjectV.Pod p) Hlookup' as Hwf'. destruct Hwf' as [Hwf' _]. done.
     * apply filter_preserves_key_uniqueness. done.
-    * intros k Hkindom. destruct Hinv_Hghost_well_formed. symmetry.
+    * intros k Hkindom. destruct Hinv_Hghost_valid. symmetry.
       apply (Hparents_children_same_namespace _ (dom pure_pod_map)); [done|done].
 Qed.
 

@@ -14,7 +14,7 @@ Lemma wp_State__get γ l key:
     l @ (ptrT.id apimodel.State.id) @ "get" #key
   {{{ i (err: error.t) kobj, RET (#i, #err);
       ⌜ err = interface.nil ⌝ ∗
-      ⌜ KObjectV.well_formed kobj ⌝ ∗
+      ⌜ KObjectV.valid kobj ⌝ ∗
       ⌜ key = KObjectV.key kobj ⌝ ∗
       KObjectV.deepown_i i kobj 1
       ∨
@@ -32,7 +32,7 @@ Lemma wp_State__get_none γ l key uid:
     l @ (ptrT.id apimodel.State.id) @ "get" #key
   {{{ i (err: error.t) kobj, RET (#i, #err);
       ⌜ err = interface.nil ⌝ ∗
-      ⌜ KObjectV.well_formed kobj ⌝ ∗
+      ⌜ KObjectV.valid kobj ⌝ ∗
       ⌜ key = KObjectV.key kobj ⌝ ∗
       ⌜ uid ≠ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
       KObjectV.deepown_i i kobj 1
@@ -56,7 +56,7 @@ Lemma wp_State__get_some_au γ l key:
       | None => True
       end ∗
       "Hclose" ∷ (∀ i kobj,
-        ⌜ KObjectV.well_formed kobj ⌝ ∗
+        ⌜ KObjectV.valid kobj ⌝ ∗
         ⌜ key = KObjectV.key kobj ⌝ ∗
         ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
         KObjectV.deepown_i i kobj 1 ∗
@@ -152,7 +152,7 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o:
   }}}
     l @ (ptrT.id apimodel.State.id) @ "get" #key
   {{{ i kobj, RET (#i, #interface.nil);
-      ⌜ KObjectV.well_formed kobj ⌝ ∗
+      ⌜ KObjectV.valid kobj ⌝ ∗
       ⌜ key = KObjectV.key kobj ⌝ ∗
       ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
       KObjectV.deepown_i i kobj 1 ∗

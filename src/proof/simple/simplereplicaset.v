@@ -19,10 +19,10 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) pod_l_sl rs_l
       "#Hglobal_l" ∷ (global_addr simplereplicaset.state) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
       "Hpod_l_sl" ∷ pod_l_sl ↦* ptrs ∗
-      "Hlist" ∷ ([∗ list] ptr;pure_pod ∈ ptrs;active_pure_pods, ∃ pod, PodV.deepown_l ptr pod pure_pod dq1) ∗
+      "Hlist" ∷ ([∗ list] ptr;pure_pod ∈ ptrs;active_pure_pods, PodV.deepown_l ptr pure_pod dq1) ∗
       "Hrs_l" ∷ rs_l ↦{dq2} rs ∗
       "Hdeepown_rs" ∷ ReplicaSetV.deepown rs pure_rs dq2 ∗
-      "%Hpure_rs_well_formed" ∷ ⌜ ReplicaSetV.well_formed pure_rs ⌝ ∗
+      "%Hpure_rs_valid" ∷ ⌜ ReplicaSetV.valid pure_rs ⌝ ∗
       "%Hpure_rs_name_short" ∷ ⌜ length pure_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
       "%Hrs_key_namespace_eq" ∷ ⌜ pure_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') = rs_key.(KKey.Namespace') ⌝ ∗
       "%Hrs_key_name_eq" ∷ ⌜ pure_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') = rs_key.(KKey.Name') ⌝ ∗
@@ -60,10 +60,10 @@ Proof.
   iAssert ((rs.(v1.ReplicaSet.Spec').(v1.ReplicaSetSpec.Replicas')↦{dq2}n)%I) with "[Hrs_Hdeepown_replicas_some]" as "Hreplicas".
   { rewrite Hreplicas_eq. iDestruct "Hrs_Hdeepown_replicas_some" as "(%replicas & Hreplicas & ->)". done. }
   wp_auto.
-  destruct Hpure_rs_well_formed as (Hpure_rs_meta_well_formed & Hpure_rs_spec_well_formed & _).
-  destruct Hpure_rs_spec_well_formed as (Hpure_rs_spec_replicas_well_formed & Hpure_rs_spec_template_well_formed).
+  destruct Hpure_rs_valid as (Hpure_rs_meta_valid & Hpure_rs_spec_valid & _).
+  destruct Hpure_rs_spec_valid as (Hpure_rs_spec_replicas_valid & Hpure_rs_spec_template_valid).
   assert (0 ≤ sint.Z n) as Hn.
-  { destruct Hpure_rs_spec_replicas_well_formed as (i & Hi_eq & Hi). rewrite Hi_eq in Hreplicas_eq. congruence. }
+  { destruct Hpure_rs_spec_replicas_valid as (i & Hi_eq & Hi). rewrite Hi_eq in Hreplicas_eq. congruence. }
   assert ((sint.Z (word.sub (slice.len_f pod_l_sl) (W64 (sint.Z n)))) = (sint.Z (slice.len_f pod_l_sl)) - (sint.Z n)) as -> by word.
   assert ((sint.Z (W64 0)) = 0) as -> by word.
   wp_if_destruct.
@@ -84,19 +84,22 @@ Proof.
       { (* TODO: why so cumbersome? *) iAssert (is_pkg_init code.k8s_io.api.apps.v1.v1) as "H". all: iPkgInit. }
       iIntros (gvk) "%Hgvk". wp_auto.
       wp_apply (v1.wp_NewControllerRef_replicaset with "[$HObjectMeta $Hrs_Hdeepown_objectmeta]"); [done|].
-      iIntros (controller_ref_l controller_ref pure_controller_ref) "(Hdeepown_controller_ref & %Hcontroller_ref_well_formed & HObjectMeta & Hrs_Hdeepown_objectmeta)". wp_auto.
+      iIntros (controller_ref_l pure_controller_ref)
+        "(Hdeepown_controller_ref & %Hcontroller_ref_valid & HObjectMeta & Hrs_Hdeepown_objectmeta)". wp_auto.
       iDestruct (struct_fields_split with "HSpec") as "HSpec". iNamed "HSpec".
       wp_apply (controller.wp_GetPodFromTemplate with "[$HTemplate $Hrs_Hdeepown_template $HObjectMeta $Hrs_Hdeepown_objectmeta $Hdeepown_controller_ref]"); [done|].
-      iIntros (this_pod_l this_pod this_pure_pod) "(Hdeepown_l_this_pod & %Hobj_has_controller_parent_of & %Hthis_pod_well_formed 
+      iIntros (this_pod_l this_pure_pod)
+        "(Hdeepown_l_this_pod & %Hobj_has_controller_parent_of & %Hthis_pod_valid
         & HTemplate & Hrs_Hdeepown_template & HObjectMeta & Hrs_Hdeepown_objectmeta)". wp_auto.
       rewrite bool_decide_true //. wp_auto.
       wp_apply wp_globals_get.
       iAssert(⌜ rs.(v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Namespace') = pure_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝%I) as "->".
       { iNamed "Hrs_Hdeepown_objectmeta". done. }
-      wp_apply (wp_State__PodCreate_without_name with "[$Hdeepown_l_this_pod $Hghostown_rs $Hghostown_children]").
-      { iFrame "#". iPureIntro. unfold ObjectMetaV.well_formed in Hpure_rs_meta_well_formed.
+      wp_apply (wp_State__PodCreate_without_name _ _ _ _ (default_val v1.Pod.t)
+        with "[$Hdeepown_l_this_pod $Hghostown_rs $Hghostown_children]").
+      { iFrame "#". iPureIntro. unfold ObjectMetaV.valid in Hpure_rs_meta_valid.
         rewrite Hrs_key_kind_eq. rewrite <-Hrs_key_name_eq. split_and!. all: intuition. }
-      iIntros (created_pod_ptr created_pod created_pure_pod) "H".
+      iIntros (created_pod_ptr created_pure_pod) "H".
       set new_key := PodV.key created_pure_pod.
       iNamedPrefix "H" "Hfrom_create_". wp_auto.
       rewrite bool_decide_true //. wp_auto.
@@ -325,12 +328,12 @@ Admitted.
 Lemma wp_FilterActivePods l ptrs pure_pods dq:
   {{{ is_pkg_init simplereplicaset ∗
       "Hl" ∷ l ↦* ptrs ∗
-      "Hlist" ∷ ([∗ list] ptr;pure_pod ∈ ptrs;pure_pods, ∃ pod, PodV.deepown_l ptr pod pure_pod dq)
+      "Hlist" ∷ ([∗ list] ptr;pure_pod ∈ ptrs;pure_pods, PodV.deepown_l ptr pure_pod dq)
   }}}
   @! simplereplicaset.FilterActivePods #l
   {{{ l' ptrs' pure_pods', RET #l';
       l' ↦* ptrs' ∗
-      ([∗ list] ptr;pure_pod ∈ ptrs';pure_pods', ∃ pod, PodV.deepown_l ptr pod pure_pod dq) ∗
+      ([∗ list] ptr;pure_pod ∈ ptrs';pure_pods', PodV.deepown_l ptr pure_pod dq) ∗
       ⌜ pure_pods' = filter (λ v, controller.is_pure_pod_active v) pure_pods ⌝
   }}}.
 Proof.
@@ -345,8 +348,8 @@ Proof.
       "Hp_ptr" ∷ p_ptr ↦ p ∗
       "Hresult_ptr" ∷ result_ptr ↦ result ∗
       "Hresult" ∷ result ↦* ptrs' ∗
-      "Hlist_pre" ∷ ([∗ list] ptr;pure_pod ∈ ptrs';pure_pods', ∃ pod, PodV.deepown_l ptr pod pure_pod dq) ∗
-      "Hlist_post" ∷ ([∗ list] ptr;pure_pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pure_pods), ∃ pod, PodV.deepown_l ptr pod pure_pod dq) ∗
+      "Hlist_pre" ∷ ([∗ list] ptr;pure_pod ∈ ptrs';pure_pods', PodV.deepown_l ptr pure_pod dq) ∗
+      "Hlist_post" ∷ ([∗ list] ptr;pure_pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pure_pods), PodV.deepown_l ptr pure_pod dq) ∗
       "Hown_result_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
       "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f l) ⌝ ∗
       "%Hpure_pods'_eq" ∷ ⌜ pure_pods' = filter (λ v, controller.is_pure_pod_active v) (take (sint.nat i) pure_pods) ⌝
@@ -421,13 +424,13 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind metadata pure_metadata dq
       "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
       "%Hchildren_keys_equal_dom_owned_pods" ∷ ⌜ children_keys = dom owned_pod_map ⌝ ∗
       "%Hindexed_value" ∷ ⌜ pure_metadata = (KObjectV.objectmeta parent) ⌝ ∗
-      "%Hmeta_wellformed" ∷ ⌜ ObjectMetaV.well_formed pure_metadata ⌝
+      "%Hmeta_wellformed" ∷ ⌜ ObjectMetaV.valid pure_metadata ⌝
   }}}
   @! simplereplicaset.FilterPodsByOwner #owner #owner_kind
   {{{ (ptr_slice: slice.t) (ptrs: list loc) (pure_pods: list PodV.t) dq', RET (#ptr_slice, #interface.nil);
       ptr_slice ↦* ptrs ∗
-      ([∗ list] ptr;pure_pod ∈ ptrs;pure_pods, ∃ pod, PodV.deepown_l ptr pod pure_pod dq') ∗
-      ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PodV.well_formed pure_pod ⌝ ∗
+      ([∗ list] ptr;pure_pod ∈ ptrs;pure_pods, PodV.deepown_l ptr pure_pod dq') ∗
+      ⌜ ∀ pure_pod, pure_pod ∈ pure_pods → PodV.valid pure_pod ⌝ ∗
       ⌜ ∀ p, p ∈ pure_pods → owned_pod_map !! (PodV.key p) = Some p ⌝ ∗
       ⌜ ∀ k p, owned_pod_map !! k = Some p → p ∈ pure_pods ⌝ ∗
       ⌜ ∀ key p, owned_pod_map !! key = Some p → key = PodV.key p ⌝ ∗
@@ -544,9 +547,9 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name
 Proof.
   wp_start as "H". iNamed "H". wp_auto. subst rs_key. wp_apply wp_globals_get.
   wp_apply (wp_State__ReplicaSetGet with "[$Hghostown_rs]"); [iFrame "#"; done|].
-  iIntros (ptr rs dq) "(Hdeepown_l_rs & %Hwf_rs & %Hnamespace_eq & %Hname_eq & Hghostown_rs)". wp_auto.
+  iIntros (ptr rs dq) "(Hptr & Hdeepown_rs & %Hwf_rs & %Hnamespace_eq & %Hname_eq & Hghostown_rs)". wp_auto.
   wp_apply errors.wp_IsNotFound_nil; [done|]. rewrite bool_decide_true //. wp_auto.
-  iDestruct "Hdeepown_l_rs" as "[Hptr Hdeepown_rs]". iNamed "Hdeepown_rs".
+  iNamed "Hdeepown_rs".
   iDestruct (struct_fields_split with "Hptr") as "Hptr". iNamed "Hptr".
   wp_apply (wp_FilterPodsByOwner with "[$Hghostown_rs $Hghostown_pods $Hghostown_children $HObjectMeta $Hdeepown_objectmeta]").
   { iFrame "#". iPureIntro. split_and!. all: try done. destruct Hwf_rs as (H & _). done. }

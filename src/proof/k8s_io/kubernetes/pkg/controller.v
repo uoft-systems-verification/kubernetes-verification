@@ -66,23 +66,23 @@ Proof.
 Qed.
 
 Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
-  dq template pure_template rs_l meta pure_meta controller_ref pure_controller_ref:
+  dq template pure_template rs_l meta pure_meta pure_controller_ref:
   {{{ is_pkg_init controller ∗
       template_l ↦{dq} template ∗
       PodTemplateSpecV.deepown template pure_template dq ∗
-      ⌜ PodTemplateSpecV.well_formed pure_template ⌝ ∗
+      ⌜ PodTemplateSpecV.valid pure_template ⌝ ∗
       ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
       ObjectMetaV.deepown meta pure_meta dq ∗
-      ⌜ ObjectMetaV.well_formed pure_meta ⌝ ∗
+      ⌜ ObjectMetaV.valid pure_meta ⌝ ∗
       ⌜ length pure_meta.(ObjectMetaV.Name') < 58 ⌝ ∗
-      OwnerReferenceV.deepown_l controller_ref_l controller_ref pure_controller_ref 1
+      OwnerReferenceV.deepown_l controller_ref_l pure_controller_ref 1
   }}}
   @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
-  {{{ pod_l pod pure_pod, RET (#pod_l, #interface.nil);
-      PodV.deepown_l pod_l pod pure_pod 1 ∗
+  {{{ pod_l pure_pod, RET (#pod_l, #interface.nil);
+      PodV.deepown_l pod_l pure_pod 1 ∗
       ⌜ obj_has_controller_parent_of (KObjectV.Pod pure_pod) "ReplicaSet"%go pure_meta.(ObjectMetaV.Name') pure_meta.(ObjectMetaV.UID') ⌝ ∗
-      ⌜ PodV.well_formed_for_nameless_create pure_pod ⌝ ∗
+      ⌜ PodV.valid_for_nameless_create pure_pod ⌝ ∗
       template_l ↦{dq} template ∗
       PodTemplateSpecV.deepown template pure_template dq ∗
       rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
