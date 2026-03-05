@@ -12,6 +12,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+    ⌜ namespace ≠ ""%go ⌝ ∗
     ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
     ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
     KObjectV.deepown_i i kobj 1 ∗
@@ -40,6 +41,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hpr" ∷ ⌜ obj_has_controller_parent_of kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -64,7 +66,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__create_nameless_au.
-  iFrame "#". iFrame. iSplit; [done|]. iSplit; [done|]. iSplit; [done|].
+  iFrame "#". iFrame. iSplit; [done|]. iSplit; [done|]. iSplit; [done|]. iSplit; [done|].
   iApply fupd_mask_intro; [ set_solver | iIntros "Hmask" ].
   iIntros (i' kobj' key uid) "Hpost".
   iMod "Hmask" as "_".

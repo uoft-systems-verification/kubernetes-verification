@@ -487,8 +487,6 @@ Definition key o : KKey.t :=
 
 Axiom valid_create: go_string → go_string → t → Prop.
 
-Axiom valid_nameless_create: go_string → go_string → t → Prop.
-
 Axiom valid_update: go_string → go_string → t → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
@@ -503,6 +501,15 @@ Definition valid_without_meta o : Prop :=
   match o with
   | Pod p => PodV.valid_without_meta p
   | ReplicaSet rs => ReplicaSetV.valid_without_meta rs
+  end.
+
+Definition valid_nameless_create knd ns o : Prop :=
+  knd = kind o ∧
+  (ns = (objectmeta o).(ObjectMetaV.Namespace') ∨
+    (objectmeta o).(ObjectMetaV.Namespace') = ""%go) ∧
+  match o with
+  | Pod p => PodV.valid_for_nameless_create p
+  | ReplicaSet rs =>  ReplicaSetV.valid_for_nameless_create rs
   end.
 
 Definition valid_for_nameless_create o : Prop :=
