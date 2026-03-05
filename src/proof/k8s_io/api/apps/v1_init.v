@@ -1,9 +1,12 @@
 Require Export New.generatedproof.k8s_io.api.apps.v1.
+From New.proof Require Import proof_prelude.
 From New.proof.k8s_io.api.core Require Export v1_init.
 
 
 Section proof.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : v1.Assumptions}.
+Collection W := sem + package_sem.
 
 (* TODO: carry the globals in IsPkgInit *)
 (* Definition is_initialized : iProp Σ :=
@@ -12,7 +15,7 @@ Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
     "%HSchemeGroupVersion_Group" ∷ ⌜ gv.(schema.GroupVersion.Group') = "apps"%go ⌝ ∗
     "%HSchemeGroupVersion_Version" ∷ ⌜ gv.(schema.GroupVersion.Version') = "v1"%go ⌝. *)
 
-#[global] Instance : IsPkgInit code.k8s_io.api.apps.v1.v1 := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.k8s_io.api.apps.v1.v1 := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit (iProp Σ) v1 := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf (iProp Σ) v1 := build_get_is_pkg_init_wf.
 
 End proof.

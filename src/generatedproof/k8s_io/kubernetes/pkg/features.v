@@ -2,53 +2,29 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.component_base.featuregate.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.kubernetes.pkg.features.
 
 Set Default Proof Using "Type".
 
 Module features.
-
-(* type features.clientAdapter *)
 Module clientAdapter.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : features.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance clientAdapter_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (features.clientAdapter.t). Admitted.
+
+#[global] Instance clientAdapter_into_val_typed
+   :
+  IntoValTypedUnderlying (features.clientAdapter.t) (features.clientAdapterⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End clientAdapter.
 
-Global Instance bounded_size_clientAdapter : BoundedTypeSize features.clientAdapter.
-Admitted.
-
-Global Instance into_val_clientAdapter `{ffi_syntax} : IntoVal clientAdapter.t.
-Admitted.
-
-Global Instance into_val_typed_clientAdapter `{ffi_syntax} : IntoValTyped clientAdapter.t features.clientAdapter.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_features : IsPkgDefinedPure features :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single features ∧
-      is_pkg_defined_pure code.k8s_io.component_base.featuregate.featuregate;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_features : IsPkgDefined features :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single features ∗
-       is_pkg_defined code.k8s_io.component_base.featuregate.featuregate)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-End names.
 End features.

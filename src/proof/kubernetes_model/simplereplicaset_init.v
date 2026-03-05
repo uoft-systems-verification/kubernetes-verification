@@ -9,12 +9,15 @@ From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 Require Export New.generatedproof.kubernetes_model.simplereplicaset.
+From New.proof Require Import proof_prelude.
 
 
 Section proof.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : simplereplicaset.Assumptions}.
+Collection W := sem + package_sem.
 
-#[global] Instance : IsPkgInit code.kubernetes_model.simplereplicaset.simplereplicaset := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.kubernetes_model.simplereplicaset.simplereplicaset := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit (iProp Σ) simplereplicaset := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf (iProp Σ) simplereplicaset := build_get_is_pkg_init_wf.
 
 End proof.

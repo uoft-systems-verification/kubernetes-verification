@@ -2,495 +2,489 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.github_com.go_logr.logr.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.klog.v2.
 
 Set Default Proof Using "Type".
 
 Module klog.
-
-(* type klog.LoggerOption *)
 Module LoggerOption.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LoggerOption_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.LoggerOption.t). Admitted.
+
+#[global] Instance LoggerOption_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.LoggerOption.t) (klog.LoggerOptionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LoggerOption.
 
-Global Instance bounded_size_LoggerOption : BoundedTypeSize klog.LoggerOption.
-Admitted.
-
-Global Instance into_val_LoggerOption `{ffi_syntax} : IntoVal LoggerOption.t.
-Admitted.
-
-Global Instance into_val_typed_LoggerOption `{ffi_syntax} : IntoValTyped LoggerOption.t klog.LoggerOption.
-Admitted.
-
-(* type klog.loggerOptions *)
 Module loggerOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance loggerOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.loggerOptions.t). Admitted.
+
+#[global] Instance loggerOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.loggerOptions.t) (klog.loggerOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End loggerOptions.
 
-Global Instance bounded_size_loggerOptions : BoundedTypeSize klog.loggerOptions.
-Admitted.
-
-Global Instance into_val_loggerOptions `{ffi_syntax} : IntoVal loggerOptions.t.
-Admitted.
-
-Global Instance into_val_typed_loggerOptions `{ffi_syntax} : IntoValTyped loggerOptions.t klog.loggerOptions.
-Admitted.
-
-(* type klog.logWriter *)
 Module logWriter.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance logWriter_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.logWriter.t). Admitted.
+
+#[global] Instance logWriter_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.logWriter.t) (klog.logWriterⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End logWriter.
 
-Global Instance bounded_size_logWriter : BoundedTypeSize klog.logWriter.
-Admitted.
-
-Global Instance into_val_logWriter `{ffi_syntax} : IntoVal logWriter.t.
-Admitted.
-
-Global Instance into_val_typed_logWriter `{ffi_syntax} : IntoValTyped logWriter.t klog.logWriter.
-Admitted.
-
-(* type klog.formatAny *)
 Module formatAny.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance formatAny_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.formatAny.t). Admitted.
+
+#[global] Instance formatAny_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.formatAny.t) (klog.formatAnyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End formatAny.
 
-Global Instance bounded_size_formatAny : BoundedTypeSize klog.formatAny.
-Admitted.
-
-Global Instance into_val_formatAny `{ffi_syntax} : IntoVal formatAny.t.
-Admitted.
-
-Global Instance into_val_typed_formatAny `{ffi_syntax} : IntoValTyped formatAny.t klog.formatAny.
-Admitted.
-
-(* type klog.Logger *)
-Module Logger.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End Logger.
-
-Global Instance bounded_size_Logger : BoundedTypeSize klog.Logger.
-Admitted.
-
-Global Instance into_val_Logger `{ffi_syntax} : IntoVal Logger.t.
-Admitted.
-
-Global Instance into_val_typed_Logger `{ffi_syntax} : IntoValTyped Logger.t klog.Logger.
-Admitted.
-
-(* type klog.LogSink *)
-Module LogSink.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End LogSink.
-
-Global Instance bounded_size_LogSink : BoundedTypeSize klog.LogSink.
-Admitted.
-
-Global Instance into_val_LogSink `{ffi_syntax} : IntoVal LogSink.t.
-Admitted.
-
-Global Instance into_val_typed_LogSink `{ffi_syntax} : IntoValTyped LogSink.t klog.LogSink.
-Admitted.
-
-(* type klog.RuntimeInfo *)
-Module RuntimeInfo.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End RuntimeInfo.
-
-Global Instance bounded_size_RuntimeInfo : BoundedTypeSize klog.RuntimeInfo.
-Admitted.
-
-Global Instance into_val_RuntimeInfo `{ffi_syntax} : IntoVal RuntimeInfo.t.
-Admitted.
-
-Global Instance into_val_typed_RuntimeInfo `{ffi_syntax} : IntoValTyped RuntimeInfo.t klog.RuntimeInfo.
-Admitted.
-
-(* type klog.ObjectRef *)
 Module ObjectRef.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ObjectRef_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.ObjectRef.t). Admitted.
+
+#[global] Instance ObjectRef_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.ObjectRef.t) (klog.ObjectRefⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ObjectRef.
 
-Global Instance bounded_size_ObjectRef : BoundedTypeSize klog.ObjectRef.
-Admitted.
-
-Global Instance into_val_ObjectRef `{ffi_syntax} : IntoVal ObjectRef.t.
-Admitted.
-
-Global Instance into_val_typed_ObjectRef `{ffi_syntax} : IntoValTyped ObjectRef.t klog.ObjectRef.
-Admitted.
-
-(* type klog.KMetadata *)
 Module KMetadata.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance KMetadata_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.KMetadata.t). Admitted.
+
+#[global] Instance KMetadata_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.KMetadata.t) (klog.KMetadataⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End KMetadata.
 
-Global Instance bounded_size_KMetadata : BoundedTypeSize klog.KMetadata.
-Admitted.
-
-Global Instance into_val_KMetadata `{ffi_syntax} : IntoVal KMetadata.t.
-Admitted.
-
-Global Instance into_val_typed_KMetadata `{ffi_syntax} : IntoValTyped KMetadata.t klog.KMetadata.
-Admitted.
-
-(* type klog.kobjSlice *)
 Module kobjSlice.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance kobjSlice_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.kobjSlice.t). Admitted.
+
+#[global] Instance kobjSlice_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.kobjSlice.t) (klog.kobjSliceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End kobjSlice.
 
-Global Instance bounded_size_kobjSlice : BoundedTypeSize klog.kobjSlice.
-Admitted.
-
-Global Instance into_val_kobjSlice `{ffi_syntax} : IntoVal kobjSlice.t.
-Admitted.
-
-Global Instance into_val_typed_kobjSlice `{ffi_syntax} : IntoValTyped kobjSlice.t klog.kobjSlice.
-Admitted.
-
-(* type klog.severityValue *)
 Module severityValue.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance severityValue_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.severityValue.t). Admitted.
+
+#[global] Instance severityValue_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.severityValue.t) (klog.severityValueⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End severityValue.
 
-Global Instance bounded_size_severityValue : BoundedTypeSize klog.severityValue.
-Admitted.
-
-Global Instance into_val_severityValue `{ffi_syntax} : IntoVal severityValue.t.
-Admitted.
-
-Global Instance into_val_typed_severityValue `{ffi_syntax} : IntoValTyped severityValue.t klog.severityValue.
-Admitted.
-
-(* type klog.OutputStats *)
 Module OutputStats.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance OutputStats_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.OutputStats.t). Admitted.
+
+#[global] Instance OutputStats_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.OutputStats.t) (klog.OutputStatsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End OutputStats.
 
-Global Instance bounded_size_OutputStats : BoundedTypeSize klog.OutputStats.
-Admitted.
-
-Global Instance into_val_OutputStats `{ffi_syntax} : IntoVal OutputStats.t.
-Admitted.
-
-Global Instance into_val_typed_OutputStats `{ffi_syntax} : IntoValTyped OutputStats.t klog.OutputStats.
-Admitted.
-
-(* type klog.Level *)
 Module Level.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Level_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.Level.t). Admitted.
+
+#[global] Instance Level_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.Level.t) (klog.Levelⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Level.
 
-Global Instance bounded_size_Level : BoundedTypeSize klog.Level.
-Admitted.
-
-Global Instance into_val_Level `{ffi_syntax} : IntoVal Level.t.
-Admitted.
-
-Global Instance into_val_typed_Level `{ffi_syntax} : IntoValTyped Level.t klog.Level.
-Admitted.
-
-(* type klog.moduleSpec *)
 Module moduleSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance moduleSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.moduleSpec.t). Admitted.
+
+#[global] Instance moduleSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.moduleSpec.t) (klog.moduleSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End moduleSpec.
 
-Global Instance bounded_size_moduleSpec : BoundedTypeSize klog.moduleSpec.
-Admitted.
-
-Global Instance into_val_moduleSpec `{ffi_syntax} : IntoVal moduleSpec.t.
-Admitted.
-
-Global Instance into_val_typed_moduleSpec `{ffi_syntax} : IntoValTyped moduleSpec.t klog.moduleSpec.
-Admitted.
-
-(* type klog.modulePat *)
 Module modulePat.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance modulePat_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.modulePat.t). Admitted.
+
+#[global] Instance modulePat_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.modulePat.t) (klog.modulePatⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End modulePat.
 
-Global Instance bounded_size_modulePat : BoundedTypeSize klog.modulePat.
-Admitted.
-
-Global Instance into_val_modulePat `{ffi_syntax} : IntoVal modulePat.t.
-Admitted.
-
-Global Instance into_val_typed_modulePat `{ffi_syntax} : IntoValTyped modulePat.t klog.modulePat.
-Admitted.
-
-(* type klog.traceLocation *)
 Module traceLocation.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance traceLocation_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.traceLocation.t). Admitted.
+
+#[global] Instance traceLocation_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.traceLocation.t) (klog.traceLocationⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End traceLocation.
 
-Global Instance bounded_size_traceLocation : BoundedTypeSize klog.traceLocation.
-Admitted.
-
-Global Instance into_val_traceLocation `{ffi_syntax} : IntoVal traceLocation.t.
-Admitted.
-
-Global Instance into_val_typed_traceLocation `{ffi_syntax} : IntoValTyped traceLocation.t klog.traceLocation.
-Admitted.
-
-(* type klog.settings *)
 Module settings.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance settings_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.settings.t). Admitted.
+
+#[global] Instance settings_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.settings.t) (klog.settingsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End settings.
 
-Global Instance bounded_size_settings : BoundedTypeSize klog.settings.
-Admitted.
-
-Global Instance into_val_settings `{ffi_syntax} : IntoVal settings.t.
-Admitted.
-
-Global Instance into_val_typed_settings `{ffi_syntax} : IntoValTyped settings.t klog.settings.
-Admitted.
-
-(* type klog.loggingT *)
 Module loggingT.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance loggingT_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.loggingT.t). Admitted.
+
+#[global] Instance loggingT_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.loggingT.t) (klog.loggingTⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End loggingT.
 
-Global Instance bounded_size_loggingT : BoundedTypeSize klog.loggingT.
-Admitted.
-
-Global Instance into_val_loggingT `{ffi_syntax} : IntoVal loggingT.t.
-Admitted.
-
-Global Instance into_val_typed_loggingT `{ffi_syntax} : IntoValTyped loggingT.t klog.loggingT.
-Admitted.
-
-(* type klog.State *)
 Module State.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance State_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.State.t). Admitted.
+
+#[global] Instance State_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.State.t) (klog.Stateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End State.
 
-Global Instance bounded_size_State : BoundedTypeSize klog.State.
-Admitted.
-
-Global Instance into_val_State `{ffi_syntax} : IntoVal State.t.
-Admitted.
-
-Global Instance into_val_typed_State `{ffi_syntax} : IntoValTyped State.t klog.State.
-Admitted.
-
-(* type klog.state *)
 Module state.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance state_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.state.t). Admitted.
+
+#[global] Instance state_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.state.t) (klog.stateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End state.
 
-Global Instance bounded_size_state : BoundedTypeSize klog.state.
-Admitted.
-
-Global Instance into_val_state `{ffi_syntax} : IntoVal state.t.
-Admitted.
-
-Global Instance into_val_typed_state `{ffi_syntax} : IntoValTyped state.t klog.state.
-Admitted.
-
-(* type klog.syncBuffer *)
 Module syncBuffer.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance syncBuffer_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.syncBuffer.t). Admitted.
+
+#[global] Instance syncBuffer_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.syncBuffer.t) (klog.syncBufferⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End syncBuffer.
 
-Global Instance bounded_size_syncBuffer : BoundedTypeSize klog.syncBuffer.
-Admitted.
-
-Global Instance into_val_syncBuffer `{ffi_syntax} : IntoVal syncBuffer.t.
-Admitted.
-
-Global Instance into_val_typed_syncBuffer `{ffi_syntax} : IntoValTyped syncBuffer.t klog.syncBuffer.
-Admitted.
-
-(* type klog.flushDaemon *)
 Module flushDaemon.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance flushDaemon_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.flushDaemon.t). Admitted.
+
+#[global] Instance flushDaemon_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.flushDaemon.t) (klog.flushDaemonⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End flushDaemon.
 
-Global Instance bounded_size_flushDaemon : BoundedTypeSize klog.flushDaemon.
-Admitted.
-
-Global Instance into_val_flushDaemon `{ffi_syntax} : IntoVal flushDaemon.t.
-Admitted.
-
-Global Instance into_val_typed_flushDaemon `{ffi_syntax} : IntoValTyped flushDaemon.t klog.flushDaemon.
-Admitted.
-
-(* type klog.fileArray *)
 Module fileArray.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance fileArray_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.fileArray.t). Admitted.
+
+#[global] Instance fileArray_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.fileArray.t) (klog.fileArrayⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End fileArray.
 
-Global Instance bounded_size_fileArray : BoundedTypeSize klog.fileArray.
-Admitted.
-
-Global Instance into_val_fileArray `{ffi_syntax} : IntoVal fileArray.t.
-Admitted.
-
-Global Instance into_val_typed_fileArray `{ffi_syntax} : IntoValTyped fileArray.t klog.fileArray.
-Admitted.
-
-(* type klog.logBridge *)
 Module logBridge.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance logBridge_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.logBridge.t). Admitted.
+
+#[global] Instance logBridge_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.logBridge.t) (klog.logBridgeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End logBridge.
 
-Global Instance bounded_size_logBridge : BoundedTypeSize klog.logBridge.
-Admitted.
-
-Global Instance into_val_logBridge `{ffi_syntax} : IntoVal logBridge.t.
-Admitted.
-
-Global Instance into_val_typed_logBridge `{ffi_syntax} : IntoValTyped logBridge.t klog.logBridge.
-Admitted.
-
-(* type klog.Verbose *)
 Module Verbose.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Verbose_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.Verbose.t). Admitted.
+
+#[global] Instance Verbose_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.Verbose.t) (klog.Verboseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Verbose.
 
-Global Instance bounded_size_Verbose : BoundedTypeSize klog.Verbose.
-Admitted.
-
-Global Instance into_val_Verbose `{ffi_syntax} : IntoVal Verbose.t.
-Admitted.
-
-Global Instance into_val_typed_Verbose `{ffi_syntax} : IntoValTyped Verbose.t klog.Verbose.
-Admitted.
-
-(* type klog.LogFilter *)
 Module LogFilter.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LogFilter_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.LogFilter.t). Admitted.
+
+#[global] Instance LogFilter_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.LogFilter.t) (klog.LogFilterⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LogFilter.
 
-Global Instance bounded_size_LogFilter : BoundedTypeSize klog.LogFilter.
-Admitted.
-
-Global Instance into_val_LogFilter `{ffi_syntax} : IntoVal LogFilter.t.
-Admitted.
-
-Global Instance into_val_typed_LogFilter `{ffi_syntax} : IntoValTyped LogFilter.t klog.LogFilter.
-Admitted.
-
-(* type klog.klogger *)
 Module klogger.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : klog.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance klogger_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (klog.klogger.t). Admitted.
+
+#[global] Instance klogger_into_val_typed
+   :
+  IntoValTypedUnderlying (klog.klogger.t) (klog.kloggerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End klogger.
 
-Global Instance bounded_size_klogger : BoundedTypeSize klog.klogger.
-Admitted.
-
-Global Instance into_val_klogger `{ffi_syntax} : IntoVal klogger.t.
-Admitted.
-
-Global Instance into_val_typed_klogger `{ffi_syntax} : IntoValTyped klogger.t klog.klogger.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_klog : IsPkgDefinedPure klog :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single klog ∧
-      is_pkg_defined_pure code.github_com.go_logr.logr.logr;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_klog : IsPkgDefined klog :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single klog ∗
-       is_pkg_defined code.github_com.go_logr.logr.logr)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-End names.
 End klog.

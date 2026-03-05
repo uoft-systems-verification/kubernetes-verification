@@ -1,10 +1,13 @@
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
+From New.proof Require Import proof_prelude.
 
 
 Section proof.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : schema.Assumptions}.
+Collection W := sem + package_sem.
 
-#[global] Instance : IsPkgInit code.k8s_io.apimachinery.pkg.runtime.schema.schema := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.k8s_io.apimachinery.pkg.runtime.schema.schema := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit (iProp Σ) schema := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf (iProp Σ) schema := build_get_is_pkg_init_wf.
 
 End proof.

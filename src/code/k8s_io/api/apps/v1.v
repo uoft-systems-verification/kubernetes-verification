@@ -2,2000 +2,522 @@
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.runtime.schema.
-
 From New.golang Require Import defn.
+Module pkg_id.
 Definition v1 : go_string := "k8s.io/api/apps/v1".
 
+End pkg_id.
+Export pkg_id.
 Module v1.
 
-Module StatefulSet. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSet"%go. End StatefulSet.
-Module PodManagementPolicyType. Definition id : go_string := "k8s.io/api/apps/v1.PodManagementPolicyType"%go. End PodManagementPolicyType.
-Module StatefulSetUpdateStrategy. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetUpdateStrategy"%go. End StatefulSetUpdateStrategy.
-Module StatefulSetUpdateStrategyType. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetUpdateStrategyType"%go. End StatefulSetUpdateStrategyType.
-Module RollingUpdateStatefulSetStrategy. Definition id : go_string := "k8s.io/api/apps/v1.RollingUpdateStatefulSetStrategy"%go. End RollingUpdateStatefulSetStrategy.
-Module PersistentVolumeClaimRetentionPolicyType. Definition id : go_string := "k8s.io/api/apps/v1.PersistentVolumeClaimRetentionPolicyType"%go. End PersistentVolumeClaimRetentionPolicyType.
-Module StatefulSetPersistentVolumeClaimRetentionPolicy. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy"%go. End StatefulSetPersistentVolumeClaimRetentionPolicy.
-Module StatefulSetOrdinals. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetOrdinals"%go. End StatefulSetOrdinals.
-Module StatefulSetSpec. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetSpec"%go. End StatefulSetSpec.
-Module StatefulSetStatus. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetStatus"%go. End StatefulSetStatus.
-Module StatefulSetConditionType. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetConditionType"%go. End StatefulSetConditionType.
-Module StatefulSetCondition. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetCondition"%go. End StatefulSetCondition.
-Module StatefulSetList. Definition id : go_string := "k8s.io/api/apps/v1.StatefulSetList"%go. End StatefulSetList.
-Module Deployment. Definition id : go_string := "k8s.io/api/apps/v1.Deployment"%go. End Deployment.
-Module DeploymentSpec. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentSpec"%go. End DeploymentSpec.
-Module DeploymentStrategy. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentStrategy"%go. End DeploymentStrategy.
-Module DeploymentStrategyType. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentStrategyType"%go. End DeploymentStrategyType.
-Module RollingUpdateDeployment. Definition id : go_string := "k8s.io/api/apps/v1.RollingUpdateDeployment"%go. End RollingUpdateDeployment.
-Module DeploymentStatus. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentStatus"%go. End DeploymentStatus.
-Module DeploymentConditionType. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentConditionType"%go. End DeploymentConditionType.
-Module DeploymentCondition. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentCondition"%go. End DeploymentCondition.
-Module DeploymentList. Definition id : go_string := "k8s.io/api/apps/v1.DeploymentList"%go. End DeploymentList.
-Module DaemonSetUpdateStrategy. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetUpdateStrategy"%go. End DaemonSetUpdateStrategy.
-Module DaemonSetUpdateStrategyType. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetUpdateStrategyType"%go. End DaemonSetUpdateStrategyType.
-Module RollingUpdateDaemonSet. Definition id : go_string := "k8s.io/api/apps/v1.RollingUpdateDaemonSet"%go. End RollingUpdateDaemonSet.
-Module DaemonSetSpec. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetSpec"%go. End DaemonSetSpec.
-Module DaemonSetStatus. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetStatus"%go. End DaemonSetStatus.
-Module DaemonSetConditionType. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetConditionType"%go. End DaemonSetConditionType.
-Module DaemonSetCondition. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetCondition"%go. End DaemonSetCondition.
-Module DaemonSet. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSet"%go. End DaemonSet.
-Module DaemonSetList. Definition id : go_string := "k8s.io/api/apps/v1.DaemonSetList"%go. End DaemonSetList.
-Module ReplicaSet. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSet"%go. End ReplicaSet.
-Module ReplicaSetList. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSetList"%go. End ReplicaSetList.
-Module ReplicaSetSpec. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSetSpec"%go. End ReplicaSetSpec.
-Module ReplicaSetStatus. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSetStatus"%go. End ReplicaSetStatus.
-Module ReplicaSetConditionType. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSetConditionType"%go. End ReplicaSetConditionType.
-Module ReplicaSetCondition. Definition id : go_string := "k8s.io/api/apps/v1.ReplicaSetCondition"%go. End ReplicaSetCondition.
-Module ControllerRevision. Definition id : go_string := "k8s.io/api/apps/v1.ControllerRevision"%go. End ControllerRevision.
-Module ControllerRevisionList. Definition id : go_string := "k8s.io/api/apps/v1.ControllerRevisionList"%go. End ControllerRevisionList.
+Definition StatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSet"%go [].
 
-Section code.
-Context `{ffi_syntax}.
+#[global] Opaque StatefulSet.
 
+Definition PodManagementPolicyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.PodManagementPolicyType"%go [].
 
-Definition xxx_messageInfo_ControllerRevision : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ControllerRevision"%go.
+#[global] Opaque PodManagementPolicyType.
 
-Definition xxx_messageInfo_ControllerRevisionList : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ControllerRevisionList"%go.
+Definition StatefulSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetUpdateStrategy"%go [].
 
-Definition xxx_messageInfo_DaemonSet : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSet"%go.
+#[global] Opaque StatefulSetUpdateStrategy.
 
-Definition xxx_messageInfo_DaemonSetCondition : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetCondition"%go.
+Definition StatefulSetUpdateStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetUpdateStrategyType"%go [].
 
-Definition xxx_messageInfo_DaemonSetList : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetList"%go.
+#[global] Opaque StatefulSetUpdateStrategyType.
 
-Definition xxx_messageInfo_DaemonSetSpec : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetSpec"%go.
+Definition RollingUpdateStatefulSetStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.RollingUpdateStatefulSetStrategy"%go [].
 
-Definition xxx_messageInfo_DaemonSetStatus : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetStatus"%go.
+#[global] Opaque RollingUpdateStatefulSetStrategy.
 
-Definition xxx_messageInfo_DaemonSetUpdateStrategy : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetUpdateStrategy"%go.
+Definition PersistentVolumeClaimRetentionPolicyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.PersistentVolumeClaimRetentionPolicyType"%go [].
 
-Definition xxx_messageInfo_Deployment : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_Deployment"%go.
+#[global] Opaque PersistentVolumeClaimRetentionPolicyType.
 
-Definition xxx_messageInfo_DeploymentCondition : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentCondition"%go.
+Definition StatefulSetPersistentVolumeClaimRetentionPolicy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy"%go [].
 
-Definition xxx_messageInfo_DeploymentList : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentList"%go.
+#[global] Opaque StatefulSetPersistentVolumeClaimRetentionPolicy.
 
-Definition xxx_messageInfo_DeploymentSpec : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentSpec"%go.
+Definition StatefulSetOrdinals {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetOrdinals"%go [].
 
-Definition xxx_messageInfo_DeploymentStatus : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentStatus"%go.
+#[global] Opaque StatefulSetOrdinals.
 
-Definition xxx_messageInfo_DeploymentStrategy : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentStrategy"%go.
+Definition StatefulSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetSpec"%go [].
 
-Definition xxx_messageInfo_ReplicaSet : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSet"%go.
+#[global] Opaque StatefulSetSpec.
 
-Definition xxx_messageInfo_ReplicaSetCondition : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetCondition"%go.
+Definition StatefulSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetStatus"%go [].
 
-Definition xxx_messageInfo_ReplicaSetList : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetList"%go.
+#[global] Opaque StatefulSetStatus.
 
-Definition xxx_messageInfo_ReplicaSetSpec : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetSpec"%go.
+Definition StatefulSetConditionType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetConditionType"%go [].
 
-Definition xxx_messageInfo_ReplicaSetStatus : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetStatus"%go.
+#[global] Opaque StatefulSetConditionType.
 
-Definition xxx_messageInfo_RollingUpdateDaemonSet : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateDaemonSet"%go.
+Definition StatefulSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetCondition"%go [].
 
-Definition xxx_messageInfo_RollingUpdateDeployment : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateDeployment"%go.
+#[global] Opaque StatefulSetCondition.
 
-Definition xxx_messageInfo_RollingUpdateStatefulSetStrategy : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateStatefulSetStrategy"%go.
+Definition StatefulSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.StatefulSetList"%go [].
 
-Definition xxx_messageInfo_StatefulSet : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSet"%go.
+#[global] Opaque StatefulSetList.
 
-Definition xxx_messageInfo_StatefulSetCondition : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetCondition"%go.
+Definition Deployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.Deployment"%go [].
 
-Definition xxx_messageInfo_StatefulSetList : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetList"%go.
+#[global] Opaque Deployment.
 
-Definition xxx_messageInfo_StatefulSetOrdinals : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetOrdinals"%go.
+Definition DeploymentSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentSpec"%go [].
 
-Definition xxx_messageInfo_StatefulSetPersistentVolumeClaimRetentionPolicy : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetPersistentVolumeClaimRetentionPolicy"%go.
+#[global] Opaque DeploymentSpec.
 
-Definition xxx_messageInfo_StatefulSetSpec : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetSpec"%go.
+Definition DeploymentStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentStrategy"%go [].
 
-Definition xxx_messageInfo_StatefulSetStatus : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetStatus"%go.
+#[global] Opaque DeploymentStrategy.
 
-Definition xxx_messageInfo_StatefulSetUpdateStrategy : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetUpdateStrategy"%go.
+Definition DeploymentStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentStrategyType"%go [].
 
-Definition init : go_string := "k8s.io/api/apps/v1.init"%go.
+#[global] Opaque DeploymentStrategyType.
 
-Definition fileDescriptor_5b781835628d5338 : go_string := "k8s.io/api/apps/v1.fileDescriptor_5b781835628d5338"%go.
+Definition RollingUpdateDeployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.RollingUpdateDeployment"%go [].
 
-Axiom fileDescriptor_5b781835628d5338'init : val.
+#[global] Opaque RollingUpdateDeployment.
 
-Definition encodeVarintGenerated : go_string := "k8s.io/api/apps/v1.encodeVarintGenerated"%go.
+Definition DeploymentStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentStatus"%go [].
 
-Definition sovGenerated : go_string := "k8s.io/api/apps/v1.sovGenerated"%go.
+#[global] Opaque DeploymentStatus.
 
-Definition sozGenerated : go_string := "k8s.io/api/apps/v1.sozGenerated"%go.
+Definition DeploymentConditionType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentConditionType"%go [].
 
-Definition valueToStringGenerated : go_string := "k8s.io/api/apps/v1.valueToStringGenerated"%go.
+#[global] Opaque DeploymentConditionType.
 
-Definition skipGenerated : go_string := "k8s.io/api/apps/v1.skipGenerated"%go.
+Definition DeploymentCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentCondition"%go [].
 
-Definition ErrInvalidLengthGenerated : go_string := "k8s.io/api/apps/v1.ErrInvalidLengthGenerated"%go.
+#[global] Opaque DeploymentCondition.
 
-Axiom ErrInvalidLengthGenerated'init : val.
+Definition DeploymentList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DeploymentList"%go [].
 
-Definition ErrIntOverflowGenerated : go_string := "k8s.io/api/apps/v1.ErrIntOverflowGenerated"%go.
+#[global] Opaque DeploymentList.
 
-Axiom ErrIntOverflowGenerated'init : val.
+Definition DaemonSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetUpdateStrategy"%go [].
 
-Definition ErrUnexpectedEndOfGroupGenerated : go_string := "k8s.io/api/apps/v1.ErrUnexpectedEndOfGroupGenerated"%go.
+#[global] Opaque DaemonSetUpdateStrategy.
 
-Axiom ErrUnexpectedEndOfGroupGenerated'init : val.
+Definition DaemonSetUpdateStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetUpdateStrategyType"%go [].
 
-Definition GroupName : go_string := "apps"%go.
+#[global] Opaque DaemonSetUpdateStrategyType.
 
-Definition SchemeGroupVersion : go_string := "k8s.io/api/apps/v1.SchemeGroupVersion"%go.
+Definition RollingUpdateDaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.RollingUpdateDaemonSet"%go [].
 
-Definition Resource : go_string := "k8s.io/api/apps/v1.Resource"%go.
+#[global] Opaque RollingUpdateDaemonSet.
 
-Definition SchemeBuilder : go_string := "k8s.io/api/apps/v1.SchemeBuilder"%go.
+Definition DaemonSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetSpec"%go [].
 
-Axiom SchemeBuilder'init : val.
+#[global] Opaque DaemonSetSpec.
 
-Definition localSchemeBuilder : go_string := "k8s.io/api/apps/v1.localSchemeBuilder"%go.
+Definition DaemonSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetStatus"%go [].
 
-Axiom localSchemeBuilder'init : val.
+#[global] Opaque DaemonSetStatus.
 
-Definition AddToScheme : go_string := "k8s.io/api/apps/v1.AddToScheme"%go.
+Definition DaemonSetConditionType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetConditionType"%go [].
 
-Axiom AddToScheme'init : val.
+#[global] Opaque DaemonSetConditionType.
 
-Definition addKnownTypes : go_string := "k8s.io/api/apps/v1.addKnownTypes"%go.
+Definition DaemonSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetCondition"%go [].
 
-Axiom ControllerRevisionHashLabelKey : go_string.
+#[global] Opaque DaemonSetCondition.
 
-Axiom StatefulSetRevisionLabel : go_string.
+Definition DaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSet"%go [].
 
-Axiom DeprecatedRollbackTo : go_string.
+#[global] Opaque DaemonSet.
 
-Axiom DeprecatedTemplateGeneration : go_string.
+Definition DaemonSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.DaemonSetList"%go [].
 
-Axiom StatefulSetPodNameLabel : go_string.
+#[global] Opaque DaemonSetList.
 
-Axiom PodIndexLabel : go_string.
+Definition ReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSet"%go [].
 
-Axiom StatefulSet : go_type.
-
-Axiom PodManagementPolicyType : go_type.
-
-Axiom OrderedReadyPodManagement : val.
-
-Axiom ParallelPodManagement : val.
-
-Axiom StatefulSetUpdateStrategy : go_type.
-
-Axiom StatefulSetUpdateStrategyType : go_type.
-
-Axiom RollingUpdateStatefulSetStrategyType : val.
-
-Axiom OnDeleteStatefulSetStrategyType : val.
-
-Axiom RollingUpdateStatefulSetStrategy : go_type.
-
-Axiom PersistentVolumeClaimRetentionPolicyType : go_type.
-
-Axiom RetainPersistentVolumeClaimRetentionPolicyType : val.
-
-Axiom DeletePersistentVolumeClaimRetentionPolicyType : val.
-
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy : go_type.
-
-Axiom StatefulSetOrdinals : go_type.
-
-Axiom StatefulSetSpec : go_type.
-
-Axiom StatefulSetStatus : go_type.
-
-Axiom StatefulSetConditionType : go_type.
-
-Axiom StatefulSetCondition : go_type.
-
-Axiom StatefulSetList : go_type.
-
-Axiom Deployment : go_type.
-
-Axiom DeploymentSpec : go_type.
-
-Axiom DefaultDeploymentUniqueLabelKey : val.
-
-Axiom DeploymentStrategy : go_type.
-
-Axiom DeploymentStrategyType : go_type.
-
-Axiom RecreateDeploymentStrategyType : val.
-
-Axiom RollingUpdateDeploymentStrategyType : val.
-
-Axiom RollingUpdateDeployment : go_type.
-
-Axiom DeploymentStatus : go_type.
-
-Axiom DeploymentConditionType : go_type.
-
-Axiom DeploymentAvailable : val.
-
-Axiom DeploymentProgressing : val.
-
-Axiom DeploymentReplicaFailure : val.
-
-Axiom DeploymentCondition : go_type.
-
-Axiom DeploymentList : go_type.
-
-Axiom DaemonSetUpdateStrategy : go_type.
-
-Axiom DaemonSetUpdateStrategyType : go_type.
-
-Axiom RollingUpdateDaemonSetStrategyType : val.
-
-Axiom OnDeleteDaemonSetStrategyType : val.
-
-Axiom RollingUpdateDaemonSet : go_type.
-
-Axiom DaemonSetSpec : go_type.
-
-Axiom DaemonSetStatus : go_type.
-
-Axiom DaemonSetConditionType : go_type.
-
-Axiom DaemonSetCondition : go_type.
-
-Axiom DaemonSet : go_type.
-
-Axiom DefaultDaemonSetUniqueLabelKey : go_string.
-
-Axiom DaemonSetList : go_type.
-
-Definition ReplicaSetSpec : go_type := structT [
-  "Replicas" :: ptrT;
-  "MinReadySeconds" :: int32T;
-  "Selector" :: ptrT;
-  "Template" :: v1.PodTemplateSpec
-].
-#[global] Typeclasses Opaque ReplicaSetSpec.
-#[global] Opaque ReplicaSetSpec.
-
-Definition ReplicaSetStatus : go_type := structT [
-  "Replicas" :: int32T;
-  "FullyLabeledReplicas" :: int32T;
-  "ReadyReplicas" :: int32T;
-  "AvailableReplicas" :: int32T;
-  "TerminatingReplicas" :: ptrT;
-  "ObservedGeneration" :: int64T;
-  "Conditions" :: sliceT
-].
-#[global] Typeclasses Opaque ReplicaSetStatus.
-#[global] Opaque ReplicaSetStatus.
-
-Definition ReplicaSet : go_type := structT [
-  "TypeMeta" :: v1.TypeMeta;
-  "ObjectMeta" :: v1.ObjectMeta;
-  "Spec" :: ReplicaSetSpec;
-  "Status" :: ReplicaSetStatus
-].
-#[global] Typeclasses Opaque ReplicaSet.
 #[global] Opaque ReplicaSet.
 
-Axiom ReplicaSetList : go_type.
+Definition ReplicaSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSetList"%go [].
 
-Definition ReplicaSetConditionType : go_type := stringT.
-#[global] Typeclasses Opaque ReplicaSetConditionType.
+#[global] Opaque ReplicaSetList.
+
+Definition ReplicaSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSetSpec"%go [].
+
+#[global] Opaque ReplicaSetSpec.
+
+Definition ReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSetStatus"%go [].
+
+#[global] Opaque ReplicaSetStatus.
+
+Definition ReplicaSetConditionType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSetConditionType"%go [].
+
 #[global] Opaque ReplicaSetConditionType.
 
-Axiom ReplicaSetReplicaFailure : val.
+Definition ReplicaSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ReplicaSetCondition"%go [].
 
-Definition ReplicaSetCondition : go_type := structT [
-  "Type" :: ReplicaSetConditionType;
-  "Status" :: v1.ConditionStatus;
-  "LastTransitionTime" :: v1.Time;
-  "Reason" :: stringT;
-  "Message" :: stringT
-].
-#[global] Typeclasses Opaque ReplicaSetCondition.
 #[global] Opaque ReplicaSetCondition.
 
-Axiom ControllerRevision : go_type.
+Definition ControllerRevision {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ControllerRevision"%go [].
 
-Axiom ControllerRevisionList : go_type.
+#[global] Opaque ControllerRevision.
 
-Definition map_ControllerRevision : go_string := "k8s.io/api/apps/v1.map_ControllerRevision"%go.
+Definition ControllerRevisionList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "k8s.io/api/apps/v1.ControllerRevisionList"%go [].
 
-Axiom map_ControllerRevision'init : val.
+#[global] Opaque ControllerRevisionList.
 
-Definition map_ControllerRevisionList : go_string := "k8s.io/api/apps/v1.map_ControllerRevisionList"%go.
+Axiom StatefulSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_ControllerRevisionList'init : val.
+Axiom PodManagementPolicyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSet : go_string := "k8s.io/api/apps/v1.map_DaemonSet"%go.
+Axiom StatefulSetUpdateStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSet'init : val.
+Axiom StatefulSetUpdateStrategyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSetCondition : go_string := "k8s.io/api/apps/v1.map_DaemonSetCondition"%go.
+Axiom RollingUpdateStatefulSetStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSetCondition'init : val.
+Axiom PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSetList : go_string := "k8s.io/api/apps/v1.map_DaemonSetList"%go.
+Axiom StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSetList'init : val.
+Axiom StatefulSetOrdinalsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSetSpec : go_string := "k8s.io/api/apps/v1.map_DaemonSetSpec"%go.
+Axiom StatefulSetSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSetSpec'init : val.
+Axiom StatefulSetStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSetStatus : go_string := "k8s.io/api/apps/v1.map_DaemonSetStatus"%go.
+Axiom StatefulSetConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSetStatus'init : val.
+Axiom StatefulSetConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DaemonSetUpdateStrategy : go_string := "k8s.io/api/apps/v1.map_DaemonSetUpdateStrategy"%go.
+Axiom StatefulSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DaemonSetUpdateStrategy'init : val.
+Axiom Deploymentⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_Deployment : go_string := "k8s.io/api/apps/v1.map_Deployment"%go.
+Axiom DeploymentSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_Deployment'init : val.
+Axiom DeploymentStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DeploymentCondition : go_string := "k8s.io/api/apps/v1.map_DeploymentCondition"%go.
+Axiom DeploymentStrategyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DeploymentCondition'init : val.
+Axiom RollingUpdateDeploymentⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DeploymentList : go_string := "k8s.io/api/apps/v1.map_DeploymentList"%go.
+Axiom DeploymentStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DeploymentList'init : val.
+Axiom DeploymentConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DeploymentSpec : go_string := "k8s.io/api/apps/v1.map_DeploymentSpec"%go.
+Axiom DeploymentConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DeploymentSpec'init : val.
+Axiom DeploymentListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DeploymentStatus : go_string := "k8s.io/api/apps/v1.map_DeploymentStatus"%go.
+Axiom DaemonSetUpdateStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DeploymentStatus'init : val.
+Axiom DaemonSetUpdateStrategyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_DeploymentStrategy : go_string := "k8s.io/api/apps/v1.map_DeploymentStrategy"%go.
+Axiom RollingUpdateDaemonSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_DeploymentStrategy'init : val.
+Axiom DaemonSetSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_ReplicaSet : go_string := "k8s.io/api/apps/v1.map_ReplicaSet"%go.
+Axiom DaemonSetStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_ReplicaSet'init : val.
+Axiom DaemonSetConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_ReplicaSetCondition : go_string := "k8s.io/api/apps/v1.map_ReplicaSetCondition"%go.
+Axiom DaemonSetConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_ReplicaSetCondition'init : val.
+Axiom DaemonSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_ReplicaSetList : go_string := "k8s.io/api/apps/v1.map_ReplicaSetList"%go.
+Axiom DaemonSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_ReplicaSetList'init : val.
+Axiom ReplicaSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_ReplicaSetSpec : go_string := "k8s.io/api/apps/v1.map_ReplicaSetSpec"%go.
+Axiom ControllerRevisionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom map_ReplicaSetSpec'init : val.
+Axiom ControllerRevisionListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Definition map_ReplicaSetStatus : go_string := "k8s.io/api/apps/v1.map_ReplicaSetStatus"%go.
+Definition GroupName {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"apps"%go.
 
-Axiom map_ReplicaSetStatus'init : val.
+Axiom ControllerRevisionHashLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_RollingUpdateDaemonSet : go_string := "k8s.io/api/apps/v1.map_RollingUpdateDaemonSet"%go.
+Axiom StatefulSetRevisionLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_RollingUpdateDaemonSet'init : val.
+Axiom DeprecatedRollbackTo : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_RollingUpdateDeployment : go_string := "k8s.io/api/apps/v1.map_RollingUpdateDeployment"%go.
+Axiom DeprecatedTemplateGeneration : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_RollingUpdateDeployment'init : val.
+Axiom StatefulSetPodNameLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_RollingUpdateStatefulSetStrategy : go_string := "k8s.io/api/apps/v1.map_RollingUpdateStatefulSetStrategy"%go.
+Axiom PodIndexLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_RollingUpdateStatefulSetStrategy'init : val.
+Axiom OrderedReadyPodManagement : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSet : go_string := "k8s.io/api/apps/v1.map_StatefulSet"%go.
+Axiom ParallelPodManagement : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSet'init : val.
+Axiom RollingUpdateStatefulSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetCondition : go_string := "k8s.io/api/apps/v1.map_StatefulSetCondition"%go.
+Axiom OnDeleteStatefulSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetCondition'init : val.
+Axiom RetainPersistentVolumeClaimRetentionPolicyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetList : go_string := "k8s.io/api/apps/v1.map_StatefulSetList"%go.
+Axiom DeletePersistentVolumeClaimRetentionPolicyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetList'init : val.
+Axiom DefaultDeploymentUniqueLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetOrdinals : go_string := "k8s.io/api/apps/v1.map_StatefulSetOrdinals"%go.
+Axiom RecreateDeploymentStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetOrdinals'init : val.
+Axiom RollingUpdateDeploymentStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetPersistentVolumeClaimRetentionPolicy : go_string := "k8s.io/api/apps/v1.map_StatefulSetPersistentVolumeClaimRetentionPolicy"%go.
+Axiom DeploymentAvailable : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetPersistentVolumeClaimRetentionPolicy'init : val.
+Axiom DeploymentProgressing : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetSpec : go_string := "k8s.io/api/apps/v1.map_StatefulSetSpec"%go.
+Axiom DeploymentReplicaFailure : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetSpec'init : val.
+Axiom RollingUpdateDaemonSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetStatus : go_string := "k8s.io/api/apps/v1.map_StatefulSetStatus"%go.
+Axiom OnDeleteDaemonSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetStatus'init : val.
+Axiom DefaultDaemonSetUniqueLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Definition map_StatefulSetUpdateStrategy : go_string := "k8s.io/api/apps/v1.map_StatefulSetUpdateStrategy"%go.
+Axiom ReplicaSetReplicaFailure : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom map_StatefulSetUpdateStrategy'init : val.
+Definition xxx_messageInfo_ControllerRevision {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ControllerRevision"%go.
 
-Definition vars' : list (go_string * go_type) := [(SchemeGroupVersion, schema.GroupVersion)].
+Definition xxx_messageInfo_ControllerRevisionList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ControllerRevisionList"%go.
 
-Axiom encodeVarintGeneratedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSet"%go.
 
-Axiom sovGeneratedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetCondition"%go.
 
-Axiom sozGeneratedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetList"%go.
 
-Axiom valueToStringGeneratedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetSpec"%go.
 
-Axiom skipGeneratedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetStatus"%go.
 
-Axiom Resourceⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DaemonSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DaemonSetUpdateStrategy"%go.
 
-Axiom addKnownTypesⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_Deployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_Deployment"%go.
 
-Definition functions' : list (go_string * val) := [(encodeVarintGenerated, encodeVarintGeneratedⁱᵐᵖˡ); (sovGenerated, sovGeneratedⁱᵐᵖˡ); (sozGenerated, sozGeneratedⁱᵐᵖˡ); (valueToStringGenerated, valueToStringGeneratedⁱᵐᵖˡ); (skipGenerated, skipGeneratedⁱᵐᵖˡ); (Resource, Resourceⁱᵐᵖˡ); (addKnownTypes, addKnownTypesⁱᵐᵖˡ)].
+Definition xxx_messageInfo_DeploymentCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentCondition"%go.
 
-Axiom StatefulSet__APILifecycleIntroducedⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DeploymentList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentList"%go.
 
-Axiom StatefulSet__DeepCopyⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DeploymentSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentSpec"%go.
 
-Axiom StatefulSet__DeepCopyIntoⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DeploymentStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentStatus"%go.
 
-Axiom StatefulSet__DeepCopyObjectⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_DeploymentStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_DeploymentStrategy"%go.
 
-Axiom StatefulSet__Descriptorⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_ReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSet"%go.
 
-Axiom StatefulSet__GetAnnotationsⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_ReplicaSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetCondition"%go.
 
-Axiom StatefulSet__GetCreationTimestampⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_ReplicaSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetList"%go.
 
-Axiom StatefulSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_ReplicaSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetSpec"%go.
 
-Axiom StatefulSet__GetDeletionTimestampⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_ReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ReplicaSetStatus"%go.
 
-Axiom StatefulSet__GetFinalizersⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_RollingUpdateDaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateDaemonSet"%go.
 
-Axiom StatefulSet__GetGenerateNameⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_RollingUpdateDeployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateDeployment"%go.
 
-Axiom StatefulSet__GetGenerationⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_RollingUpdateStatefulSetStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_RollingUpdateStatefulSetStrategy"%go.
 
-Axiom StatefulSet__GetLabelsⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSet"%go.
 
-Axiom StatefulSet__GetManagedFieldsⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetCondition"%go.
 
-Axiom StatefulSet__GetNameⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetList"%go.
 
-Axiom StatefulSet__GetNamespaceⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetOrdinals {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetOrdinals"%go.
 
-Axiom StatefulSet__GetObjectKindⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetPersistentVolumeClaimRetentionPolicy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetPersistentVolumeClaimRetentionPolicy"%go.
 
-Axiom StatefulSet__GetObjectMetaⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetSpec"%go.
 
-Axiom StatefulSet__GetOwnerReferencesⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetStatus"%go.
 
-Axiom StatefulSet__GetResourceVersionⁱᵐᵖˡ : val.
+Definition xxx_messageInfo_StatefulSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_StatefulSetUpdateStrategy"%go.
 
-Axiom StatefulSet__GetSelfLinkⁱᵐᵖˡ : val.
+Definition fileDescriptor_5b781835628d5338 {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.fileDescriptor_5b781835628d5338"%go.
 
-Axiom StatefulSet__GetUIDⁱᵐᵖˡ : val.
+Axiom fileDescriptor_5b781835628d5338'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__GroupVersionKindⁱᵐᵖˡ : val.
+Definition ErrInvalidLengthGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.ErrInvalidLengthGenerated"%go.
 
-Axiom StatefulSet__Marshalⁱᵐᵖˡ : val.
+Axiom ErrInvalidLengthGenerated'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__MarshalToⁱᵐᵖˡ : val.
+Definition ErrIntOverflowGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.ErrIntOverflowGenerated"%go.
 
-Axiom StatefulSet__MarshalToSizedBufferⁱᵐᵖˡ : val.
+Axiom ErrIntOverflowGenerated'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__ProtoMessageⁱᵐᵖˡ : val.
+Definition ErrUnexpectedEndOfGroupGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.ErrUnexpectedEndOfGroupGenerated"%go.
 
-Axiom StatefulSet__Resetⁱᵐᵖˡ : val.
+Axiom ErrUnexpectedEndOfGroupGenerated'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetAnnotationsⁱᵐᵖˡ : val.
+Definition SchemeGroupVersion {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.SchemeGroupVersion"%go.
 
-Axiom StatefulSet__SetCreationTimestampⁱᵐᵖˡ : val.
+Definition SchemeBuilder {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.SchemeBuilder"%go.
 
-Axiom StatefulSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
+Axiom SchemeBuilder'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetDeletionTimestampⁱᵐᵖˡ : val.
+Definition localSchemeBuilder {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.localSchemeBuilder"%go.
 
-Axiom StatefulSet__SetFinalizersⁱᵐᵖˡ : val.
+Axiom localSchemeBuilder'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetGenerateNameⁱᵐᵖˡ : val.
+Definition AddToScheme {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.AddToScheme"%go.
 
-Axiom StatefulSet__SetGenerationⁱᵐᵖˡ : val.
+Axiom AddToScheme'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetGroupVersionKindⁱᵐᵖˡ : val.
+Definition map_ControllerRevision {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ControllerRevision"%go.
 
-Axiom StatefulSet__SetLabelsⁱᵐᵖˡ : val.
+Axiom map_ControllerRevision'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetManagedFieldsⁱᵐᵖˡ : val.
+Definition map_ControllerRevisionList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ControllerRevisionList"%go.
 
-Axiom StatefulSet__SetNameⁱᵐᵖˡ : val.
+Axiom map_ControllerRevisionList'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetNamespaceⁱᵐᵖˡ : val.
+Definition map_DaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSet"%go.
 
-Axiom StatefulSet__SetOwnerReferencesⁱᵐᵖˡ : val.
+Axiom map_DaemonSet'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetResourceVersionⁱᵐᵖˡ : val.
+Definition map_DaemonSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSetCondition"%go.
 
-Axiom StatefulSet__SetSelfLinkⁱᵐᵖˡ : val.
+Axiom map_DaemonSetCondition'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__SetUIDⁱᵐᵖˡ : val.
+Definition map_DaemonSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSetList"%go.
 
-Axiom StatefulSet__Sizeⁱᵐᵖˡ : val.
+Axiom map_DaemonSetList'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__Stringⁱᵐᵖˡ : val.
+Definition map_DaemonSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSetSpec"%go.
 
-Axiom StatefulSet__SwaggerDocⁱᵐᵖˡ : val.
+Axiom map_DaemonSetSpec'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__Unmarshalⁱᵐᵖˡ : val.
+Definition map_DaemonSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSetStatus"%go.
 
-Axiom StatefulSet__XXX_DiscardUnknownⁱᵐᵖˡ : val.
+Axiom map_DaemonSetStatus'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__XXX_Marshalⁱᵐᵖˡ : val.
+Definition map_DaemonSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DaemonSetUpdateStrategy"%go.
 
-Axiom StatefulSet__XXX_Mergeⁱᵐᵖˡ : val.
+Axiom map_DaemonSetUpdateStrategy'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSet__XXX_Sizeⁱᵐᵖˡ : val.
+Definition map_Deployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_Deployment"%go.
 
-Axiom StatefulSet__XXX_Unmarshalⁱᵐᵖˡ : val.
+Axiom map_Deployment'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__DeepCopyⁱᵐᵖˡ : val.
+Definition map_DeploymentCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DeploymentCondition"%go.
 
-Axiom StatefulSetUpdateStrategy__DeepCopyIntoⁱᵐᵖˡ : val.
+Axiom map_DeploymentCondition'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__Descriptorⁱᵐᵖˡ : val.
+Definition map_DeploymentList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DeploymentList"%go.
 
-Axiom StatefulSetUpdateStrategy__Marshalⁱᵐᵖˡ : val.
+Axiom map_DeploymentList'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__MarshalToⁱᵐᵖˡ : val.
+Definition map_DeploymentSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DeploymentSpec"%go.
 
-Axiom StatefulSetUpdateStrategy__MarshalToSizedBufferⁱᵐᵖˡ : val.
+Axiom map_DeploymentSpec'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__ProtoMessageⁱᵐᵖˡ : val.
+Definition map_DeploymentStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DeploymentStatus"%go.
 
-Axiom StatefulSetUpdateStrategy__Resetⁱᵐᵖˡ : val.
+Axiom map_DeploymentStatus'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__Sizeⁱᵐᵖˡ : val.
+Definition map_DeploymentStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_DeploymentStrategy"%go.
 
-Axiom StatefulSetUpdateStrategy__Stringⁱᵐᵖˡ : val.
+Axiom map_DeploymentStrategy'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ : val.
+Definition map_ReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ReplicaSet"%go.
 
-Axiom StatefulSetUpdateStrategy__Unmarshalⁱᵐᵖˡ : val.
+Axiom map_ReplicaSet'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__XXX_DiscardUnknownⁱᵐᵖˡ : val.
+Definition map_ReplicaSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ReplicaSetCondition"%go.
 
-Axiom StatefulSetUpdateStrategy__XXX_Marshalⁱᵐᵖˡ : val.
+Axiom map_ReplicaSetCondition'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__XXX_Mergeⁱᵐᵖˡ : val.
+Definition map_ReplicaSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ReplicaSetList"%go.
 
-Axiom StatefulSetUpdateStrategy__XXX_Sizeⁱᵐᵖˡ : val.
+Axiom map_ReplicaSetList'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetUpdateStrategy__XXX_Unmarshalⁱᵐᵖˡ : val.
+Definition map_ReplicaSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ReplicaSetSpec"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__DeepCopyⁱᵐᵖˡ : val.
+Axiom map_ReplicaSetSpec'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__DeepCopyIntoⁱᵐᵖˡ : val.
+Definition map_ReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_ReplicaSetStatus"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__Descriptorⁱᵐᵖˡ : val.
+Axiom map_ReplicaSetStatus'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__Marshalⁱᵐᵖˡ : val.
+Definition map_RollingUpdateDaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_RollingUpdateDaemonSet"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__MarshalToⁱᵐᵖˡ : val.
+Axiom map_RollingUpdateDaemonSet'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__MarshalToSizedBufferⁱᵐᵖˡ : val.
+Definition map_RollingUpdateDeployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_RollingUpdateDeployment"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__ProtoMessageⁱᵐᵖˡ : val.
+Axiom map_RollingUpdateDeployment'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__Resetⁱᵐᵖˡ : val.
+Definition map_RollingUpdateStatefulSetStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_RollingUpdateStatefulSetStrategy"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__Sizeⁱᵐᵖˡ : val.
+Axiom map_RollingUpdateStatefulSetStrategy'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__Stringⁱᵐᵖˡ : val.
+Definition map_StatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSet"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__SwaggerDocⁱᵐᵖˡ : val.
+Axiom map_StatefulSet'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__Unmarshalⁱᵐᵖˡ : val.
+Definition map_StatefulSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetCondition"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__XXX_DiscardUnknownⁱᵐᵖˡ : val.
+Axiom map_StatefulSetCondition'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__XXX_Marshalⁱᵐᵖˡ : val.
+Definition map_StatefulSetList {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetList"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__XXX_Mergeⁱᵐᵖˡ : val.
+Axiom map_StatefulSetList'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateStatefulSetStrategy__XXX_Sizeⁱᵐᵖˡ : val.
+Definition map_StatefulSetOrdinals {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetOrdinals"%go.
 
-Axiom RollingUpdateStatefulSetStrategy__XXX_Unmarshalⁱᵐᵖˡ : val.
+Axiom map_StatefulSetOrdinals'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__DeepCopyⁱᵐᵖˡ : val.
+Definition map_StatefulSetPersistentVolumeClaimRetentionPolicy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetPersistentVolumeClaimRetentionPolicy"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__DeepCopyIntoⁱᵐᵖˡ : val.
+Axiom map_StatefulSetPersistentVolumeClaimRetentionPolicy'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Descriptorⁱᵐᵖˡ : val.
+Definition map_StatefulSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetSpec"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Marshalⁱᵐᵖˡ : val.
+Axiom map_StatefulSetSpec'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__MarshalToⁱᵐᵖˡ : val.
+Definition map_StatefulSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetStatus"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__MarshalToSizedBufferⁱᵐᵖˡ : val.
+Axiom map_StatefulSetStatus'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__ProtoMessageⁱᵐᵖˡ : val.
+Definition map_StatefulSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.map_StatefulSetUpdateStrategy"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Resetⁱᵐᵖˡ : val.
+Axiom map_StatefulSetUpdateStrategy'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Sizeⁱᵐᵖˡ : val.
+Definition encodeVarintGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.encodeVarintGenerated"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Stringⁱᵐᵖˡ : val.
+Definition sovGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.sovGenerated"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__SwaggerDocⁱᵐᵖˡ : val.
+Definition sozGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.sozGenerated"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__Unmarshalⁱᵐᵖˡ : val.
+Definition valueToStringGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.valueToStringGenerated"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_DiscardUnknownⁱᵐᵖˡ : val.
+Definition skipGenerated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.skipGenerated"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Marshalⁱᵐᵖˡ : val.
+Definition Resource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.Resource"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Mergeⁱᵐᵖˡ : val.
+Definition addKnownTypes {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.addKnownTypes"%go.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Sizeⁱᵐᵖˡ : val.
+#[global] Instance info' : PkgInfo pkg_id.v1 :=
+{|
+  pkg_imported_pkgs := [code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema]
+|}.
 
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Unmarshalⁱᵐᵖˡ : val.
+Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetOrdinals__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Descriptorⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__MarshalToⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Resetⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Stringⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetOrdinals__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Descriptorⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__MarshalToⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Resetⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Stringⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetSpec__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Descriptorⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__MarshalToⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Resetⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Stringⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetStatus__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Descriptorⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__MarshalToⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Resetⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Stringⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetCondition__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Descriptorⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetContinueⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetListMetaⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__MarshalToⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Resetⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SetContinueⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Stringⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom StatefulSetList__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom Deployment__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom Deployment__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom Deployment__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom Deployment__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom Deployment__Descriptorⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetFinalizersⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetGenerationⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetLabelsⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetNameⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetNamespaceⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetObjectMetaⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom Deployment__GetUIDⁱᵐᵖˡ : val.
-
-Axiom Deployment__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom Deployment__Marshalⁱᵐᵖˡ : val.
-
-Axiom Deployment__MarshalToⁱᵐᵖˡ : val.
-
-Axiom Deployment__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom Deployment__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom Deployment__Resetⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetFinalizersⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetGenerationⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetLabelsⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetNameⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetNamespaceⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom Deployment__SetUIDⁱᵐᵖˡ : val.
-
-Axiom Deployment__Sizeⁱᵐᵖˡ : val.
-
-Axiom Deployment__Stringⁱᵐᵖˡ : val.
-
-Axiom Deployment__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom Deployment__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom Deployment__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom Deployment__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom Deployment__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom Deployment__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom Deployment__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Resetⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Stringⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentSpec__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Resetⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Stringⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStrategy__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Descriptorⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Marshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__MarshalToⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Resetⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Sizeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Stringⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDeployment__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Resetⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Stringⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentStatus__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Resetⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Stringⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentCondition__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetContinueⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetListMetaⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Resetⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SetContinueⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Stringⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DeploymentList__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetUpdateStrategy__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Descriptorⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Marshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__MarshalToⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Resetⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Sizeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Stringⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom RollingUpdateDaemonSet__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetSpec__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetStatus__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetCondition__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetFinalizersⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetGenerationⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetLabelsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetNameⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetNamespaceⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetObjectMetaⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GetUIDⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetFinalizersⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetGenerationⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetLabelsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetNameⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetNamespaceⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SetUIDⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSet__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Descriptorⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetContinueⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetListMetaⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__MarshalToⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Resetⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SetContinueⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Stringⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom DaemonSetList__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetGenerationⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetLabelsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetNameⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetNamespaceⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetObjectMetaⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GetUIDⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Resetⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetGenerationⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetLabelsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetNameⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetNamespaceⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SetUIDⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Stringⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSet__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetContinueⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetListMetaⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Resetⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SetContinueⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Stringⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetList__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Resetⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Stringⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetSpec__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Resetⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Stringⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetStatus__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Resetⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Stringⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ReplicaSetCondition__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetGenerationⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetLabelsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetNameⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetNamespaceⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetObjectMetaⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GetUIDⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Marshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Resetⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetAnnotationsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetCreationTimestampⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetDeletionGracePeriodSecondsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetDeletionTimestampⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetFinalizersⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetGenerateNameⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetGenerationⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetLabelsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetManagedFieldsⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetNameⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetNamespaceⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetOwnerReferencesⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SetUIDⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Sizeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Stringⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevision__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__APILifecycleIntroducedⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__DeepCopyⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__DeepCopyIntoⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__DeepCopyObjectⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Descriptorⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetContinueⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetListMetaⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetObjectKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__GroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Marshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__MarshalToⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__MarshalToSizedBufferⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__ProtoMessageⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Resetⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SetContinueⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SetGroupVersionKindⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SetRemainingItemCountⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SetResourceVersionⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SetSelfLinkⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Sizeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Stringⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__SwaggerDocⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__Unmarshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__XXX_DiscardUnknownⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__XXX_Marshalⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__XXX_Mergeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__XXX_Sizeⁱᵐᵖˡ : val.
-
-Axiom ControllerRevisionList__XXX_Unmarshalⁱᵐᵖˡ : val.
-
-Definition msets' : list (go_string * (list (go_string * val))) := [(StatefulSet.id, [("SwaggerDoc"%go, StatefulSet__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSet.id, [("APILifecycleIntroduced"%go, StatefulSet__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, StatefulSet__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSet__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, StatefulSet__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, StatefulSet__Descriptorⁱᵐᵖˡ); ("GetAnnotations"%go, StatefulSet__GetAnnotationsⁱᵐᵖˡ); ("GetCreationTimestamp"%go, StatefulSet__GetCreationTimestampⁱᵐᵖˡ); ("GetDeletionGracePeriodSeconds"%go, StatefulSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("GetDeletionTimestamp"%go, StatefulSet__GetDeletionTimestampⁱᵐᵖˡ); ("GetFinalizers"%go, StatefulSet__GetFinalizersⁱᵐᵖˡ); ("GetGenerateName"%go, StatefulSet__GetGenerateNameⁱᵐᵖˡ); ("GetGeneration"%go, StatefulSet__GetGenerationⁱᵐᵖˡ); ("GetLabels"%go, StatefulSet__GetLabelsⁱᵐᵖˡ); ("GetManagedFields"%go, StatefulSet__GetManagedFieldsⁱᵐᵖˡ); ("GetName"%go, StatefulSet__GetNameⁱᵐᵖˡ); ("GetNamespace"%go, StatefulSet__GetNamespaceⁱᵐᵖˡ); ("GetObjectKind"%go, StatefulSet__GetObjectKindⁱᵐᵖˡ); ("GetObjectMeta"%go, StatefulSet__GetObjectMetaⁱᵐᵖˡ); ("GetOwnerReferences"%go, StatefulSet__GetOwnerReferencesⁱᵐᵖˡ); ("GetResourceVersion"%go, StatefulSet__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, StatefulSet__GetSelfLinkⁱᵐᵖˡ); ("GetUID"%go, StatefulSet__GetUIDⁱᵐᵖˡ); ("GroupVersionKind"%go, StatefulSet__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, StatefulSet__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSet__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSet__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSet__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSet__Resetⁱᵐᵖˡ); ("SetAnnotations"%go, StatefulSet__SetAnnotationsⁱᵐᵖˡ); ("SetCreationTimestamp"%go, StatefulSet__SetCreationTimestampⁱᵐᵖˡ); ("SetDeletionGracePeriodSeconds"%go, StatefulSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("SetDeletionTimestamp"%go, StatefulSet__SetDeletionTimestampⁱᵐᵖˡ); ("SetFinalizers"%go, StatefulSet__SetFinalizersⁱᵐᵖˡ); ("SetGenerateName"%go, StatefulSet__SetGenerateNameⁱᵐᵖˡ); ("SetGeneration"%go, StatefulSet__SetGenerationⁱᵐᵖˡ); ("SetGroupVersionKind"%go, StatefulSet__SetGroupVersionKindⁱᵐᵖˡ); ("SetLabels"%go, StatefulSet__SetLabelsⁱᵐᵖˡ); ("SetManagedFields"%go, StatefulSet__SetManagedFieldsⁱᵐᵖˡ); ("SetName"%go, StatefulSet__SetNameⁱᵐᵖˡ); ("SetNamespace"%go, StatefulSet__SetNamespaceⁱᵐᵖˡ); ("SetOwnerReferences"%go, StatefulSet__SetOwnerReferencesⁱᵐᵖˡ); ("SetResourceVersion"%go, StatefulSet__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, StatefulSet__SetSelfLinkⁱᵐᵖˡ); ("SetUID"%go, StatefulSet__SetUIDⁱᵐᵖˡ); ("Size"%go, StatefulSet__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSet__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSet__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSet__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSet__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSet__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSet__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSet__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSet__XXX_Unmarshalⁱᵐᵖˡ)]); (PodManagementPolicyType.id, []); (ptrT.id PodManagementPolicyType.id, []); (StatefulSetUpdateStrategy.id, [("SwaggerDoc"%go, StatefulSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetUpdateStrategy.id, [("DeepCopy"%go, StatefulSetUpdateStrategy__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetUpdateStrategy__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetUpdateStrategy__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetUpdateStrategy__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetUpdateStrategy__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetUpdateStrategy__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetUpdateStrategy__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetUpdateStrategy__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetUpdateStrategy__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetUpdateStrategy__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetUpdateStrategy__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetUpdateStrategy__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetUpdateStrategy__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetUpdateStrategy__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetUpdateStrategy__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetUpdateStrategy__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetUpdateStrategyType.id, []); (ptrT.id StatefulSetUpdateStrategyType.id, []); (RollingUpdateStatefulSetStrategy.id, [("SwaggerDoc"%go, RollingUpdateStatefulSetStrategy__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id RollingUpdateStatefulSetStrategy.id, [("DeepCopy"%go, RollingUpdateStatefulSetStrategy__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, RollingUpdateStatefulSetStrategy__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, RollingUpdateStatefulSetStrategy__Descriptorⁱᵐᵖˡ); ("Marshal"%go, RollingUpdateStatefulSetStrategy__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, RollingUpdateStatefulSetStrategy__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, RollingUpdateStatefulSetStrategy__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, RollingUpdateStatefulSetStrategy__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, RollingUpdateStatefulSetStrategy__Resetⁱᵐᵖˡ); ("Size"%go, RollingUpdateStatefulSetStrategy__Sizeⁱᵐᵖˡ); ("String"%go, RollingUpdateStatefulSetStrategy__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, RollingUpdateStatefulSetStrategy__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, RollingUpdateStatefulSetStrategy__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, RollingUpdateStatefulSetStrategy__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, RollingUpdateStatefulSetStrategy__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, RollingUpdateStatefulSetStrategy__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, RollingUpdateStatefulSetStrategy__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, RollingUpdateStatefulSetStrategy__XXX_Unmarshalⁱᵐᵖˡ)]); (PersistentVolumeClaimRetentionPolicyType.id, []); (ptrT.id PersistentVolumeClaimRetentionPolicyType.id, []); (StatefulSetPersistentVolumeClaimRetentionPolicy.id, [("SwaggerDoc"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetPersistentVolumeClaimRetentionPolicy.id, [("DeepCopy"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetPersistentVolumeClaimRetentionPolicy__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetOrdinals.id, [("SwaggerDoc"%go, StatefulSetOrdinals__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetOrdinals.id, [("DeepCopy"%go, StatefulSetOrdinals__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetOrdinals__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetOrdinals__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetOrdinals__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetOrdinals__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetOrdinals__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetOrdinals__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetOrdinals__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetOrdinals__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetOrdinals__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetOrdinals__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetOrdinals__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetOrdinals__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetOrdinals__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetOrdinals__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetOrdinals__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetOrdinals__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetSpec.id, [("SwaggerDoc"%go, StatefulSetSpec__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetSpec.id, [("DeepCopy"%go, StatefulSetSpec__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetSpec__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetSpec__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetSpec__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetSpec__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetSpec__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetSpec__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetSpec__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetSpec__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetSpec__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetSpec__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetSpec__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetSpec__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetSpec__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetSpec__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetSpec__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetStatus.id, [("SwaggerDoc"%go, StatefulSetStatus__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetStatus.id, [("DeepCopy"%go, StatefulSetStatus__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetStatus__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetStatus__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetStatus__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetStatus__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetStatus__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetStatus__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetStatus__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetStatus__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetStatus__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetStatus__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetStatus__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetStatus__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetStatus__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetStatus__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetStatus__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetConditionType.id, []); (ptrT.id StatefulSetConditionType.id, []); (StatefulSetCondition.id, [("SwaggerDoc"%go, StatefulSetCondition__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetCondition.id, [("DeepCopy"%go, StatefulSetCondition__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetCondition__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetCondition__Descriptorⁱᵐᵖˡ); ("Marshal"%go, StatefulSetCondition__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetCondition__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetCondition__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetCondition__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetCondition__Resetⁱᵐᵖˡ); ("Size"%go, StatefulSetCondition__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetCondition__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetCondition__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetCondition__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetCondition__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetCondition__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetCondition__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetCondition__XXX_Unmarshalⁱᵐᵖˡ)]); (StatefulSetList.id, [("SwaggerDoc"%go, StatefulSetList__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id StatefulSetList.id, [("APILifecycleIntroduced"%go, StatefulSetList__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, StatefulSetList__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, StatefulSetList__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, StatefulSetList__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, StatefulSetList__Descriptorⁱᵐᵖˡ); ("GetContinue"%go, StatefulSetList__GetContinueⁱᵐᵖˡ); ("GetListMeta"%go, StatefulSetList__GetListMetaⁱᵐᵖˡ); ("GetObjectKind"%go, StatefulSetList__GetObjectKindⁱᵐᵖˡ); ("GetRemainingItemCount"%go, StatefulSetList__GetRemainingItemCountⁱᵐᵖˡ); ("GetResourceVersion"%go, StatefulSetList__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, StatefulSetList__GetSelfLinkⁱᵐᵖˡ); ("GroupVersionKind"%go, StatefulSetList__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, StatefulSetList__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, StatefulSetList__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, StatefulSetList__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, StatefulSetList__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, StatefulSetList__Resetⁱᵐᵖˡ); ("SetContinue"%go, StatefulSetList__SetContinueⁱᵐᵖˡ); ("SetGroupVersionKind"%go, StatefulSetList__SetGroupVersionKindⁱᵐᵖˡ); ("SetRemainingItemCount"%go, StatefulSetList__SetRemainingItemCountⁱᵐᵖˡ); ("SetResourceVersion"%go, StatefulSetList__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, StatefulSetList__SetSelfLinkⁱᵐᵖˡ); ("Size"%go, StatefulSetList__Sizeⁱᵐᵖˡ); ("String"%go, StatefulSetList__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, StatefulSetList__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, StatefulSetList__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, StatefulSetList__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, StatefulSetList__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, StatefulSetList__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, StatefulSetList__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, StatefulSetList__XXX_Unmarshalⁱᵐᵖˡ)]); (Deployment.id, [("SwaggerDoc"%go, Deployment__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id Deployment.id, [("APILifecycleIntroduced"%go, Deployment__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, Deployment__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, Deployment__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, Deployment__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, Deployment__Descriptorⁱᵐᵖˡ); ("GetAnnotations"%go, Deployment__GetAnnotationsⁱᵐᵖˡ); ("GetCreationTimestamp"%go, Deployment__GetCreationTimestampⁱᵐᵖˡ); ("GetDeletionGracePeriodSeconds"%go, Deployment__GetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("GetDeletionTimestamp"%go, Deployment__GetDeletionTimestampⁱᵐᵖˡ); ("GetFinalizers"%go, Deployment__GetFinalizersⁱᵐᵖˡ); ("GetGenerateName"%go, Deployment__GetGenerateNameⁱᵐᵖˡ); ("GetGeneration"%go, Deployment__GetGenerationⁱᵐᵖˡ); ("GetLabels"%go, Deployment__GetLabelsⁱᵐᵖˡ); ("GetManagedFields"%go, Deployment__GetManagedFieldsⁱᵐᵖˡ); ("GetName"%go, Deployment__GetNameⁱᵐᵖˡ); ("GetNamespace"%go, Deployment__GetNamespaceⁱᵐᵖˡ); ("GetObjectKind"%go, Deployment__GetObjectKindⁱᵐᵖˡ); ("GetObjectMeta"%go, Deployment__GetObjectMetaⁱᵐᵖˡ); ("GetOwnerReferences"%go, Deployment__GetOwnerReferencesⁱᵐᵖˡ); ("GetResourceVersion"%go, Deployment__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, Deployment__GetSelfLinkⁱᵐᵖˡ); ("GetUID"%go, Deployment__GetUIDⁱᵐᵖˡ); ("GroupVersionKind"%go, Deployment__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, Deployment__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, Deployment__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, Deployment__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, Deployment__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, Deployment__Resetⁱᵐᵖˡ); ("SetAnnotations"%go, Deployment__SetAnnotationsⁱᵐᵖˡ); ("SetCreationTimestamp"%go, Deployment__SetCreationTimestampⁱᵐᵖˡ); ("SetDeletionGracePeriodSeconds"%go, Deployment__SetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("SetDeletionTimestamp"%go, Deployment__SetDeletionTimestampⁱᵐᵖˡ); ("SetFinalizers"%go, Deployment__SetFinalizersⁱᵐᵖˡ); ("SetGenerateName"%go, Deployment__SetGenerateNameⁱᵐᵖˡ); ("SetGeneration"%go, Deployment__SetGenerationⁱᵐᵖˡ); ("SetGroupVersionKind"%go, Deployment__SetGroupVersionKindⁱᵐᵖˡ); ("SetLabels"%go, Deployment__SetLabelsⁱᵐᵖˡ); ("SetManagedFields"%go, Deployment__SetManagedFieldsⁱᵐᵖˡ); ("SetName"%go, Deployment__SetNameⁱᵐᵖˡ); ("SetNamespace"%go, Deployment__SetNamespaceⁱᵐᵖˡ); ("SetOwnerReferences"%go, Deployment__SetOwnerReferencesⁱᵐᵖˡ); ("SetResourceVersion"%go, Deployment__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, Deployment__SetSelfLinkⁱᵐᵖˡ); ("SetUID"%go, Deployment__SetUIDⁱᵐᵖˡ); ("Size"%go, Deployment__Sizeⁱᵐᵖˡ); ("String"%go, Deployment__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, Deployment__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, Deployment__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, Deployment__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, Deployment__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, Deployment__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, Deployment__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, Deployment__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentSpec.id, [("SwaggerDoc"%go, DeploymentSpec__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DeploymentSpec.id, [("DeepCopy"%go, DeploymentSpec__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DeploymentSpec__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DeploymentSpec__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DeploymentSpec__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DeploymentSpec__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DeploymentSpec__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DeploymentSpec__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DeploymentSpec__Resetⁱᵐᵖˡ); ("Size"%go, DeploymentSpec__Sizeⁱᵐᵖˡ); ("String"%go, DeploymentSpec__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DeploymentSpec__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DeploymentSpec__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DeploymentSpec__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DeploymentSpec__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DeploymentSpec__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DeploymentSpec__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DeploymentSpec__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentStrategy.id, [("SwaggerDoc"%go, DeploymentStrategy__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DeploymentStrategy.id, [("DeepCopy"%go, DeploymentStrategy__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DeploymentStrategy__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DeploymentStrategy__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DeploymentStrategy__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DeploymentStrategy__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DeploymentStrategy__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DeploymentStrategy__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DeploymentStrategy__Resetⁱᵐᵖˡ); ("Size"%go, DeploymentStrategy__Sizeⁱᵐᵖˡ); ("String"%go, DeploymentStrategy__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DeploymentStrategy__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DeploymentStrategy__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DeploymentStrategy__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DeploymentStrategy__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DeploymentStrategy__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DeploymentStrategy__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DeploymentStrategy__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentStrategyType.id, []); (ptrT.id DeploymentStrategyType.id, []); (RollingUpdateDeployment.id, [("SwaggerDoc"%go, RollingUpdateDeployment__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id RollingUpdateDeployment.id, [("DeepCopy"%go, RollingUpdateDeployment__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, RollingUpdateDeployment__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, RollingUpdateDeployment__Descriptorⁱᵐᵖˡ); ("Marshal"%go, RollingUpdateDeployment__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, RollingUpdateDeployment__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, RollingUpdateDeployment__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, RollingUpdateDeployment__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, RollingUpdateDeployment__Resetⁱᵐᵖˡ); ("Size"%go, RollingUpdateDeployment__Sizeⁱᵐᵖˡ); ("String"%go, RollingUpdateDeployment__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, RollingUpdateDeployment__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, RollingUpdateDeployment__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, RollingUpdateDeployment__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, RollingUpdateDeployment__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, RollingUpdateDeployment__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, RollingUpdateDeployment__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, RollingUpdateDeployment__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentStatus.id, [("SwaggerDoc"%go, DeploymentStatus__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DeploymentStatus.id, [("DeepCopy"%go, DeploymentStatus__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DeploymentStatus__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DeploymentStatus__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DeploymentStatus__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DeploymentStatus__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DeploymentStatus__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DeploymentStatus__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DeploymentStatus__Resetⁱᵐᵖˡ); ("Size"%go, DeploymentStatus__Sizeⁱᵐᵖˡ); ("String"%go, DeploymentStatus__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DeploymentStatus__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DeploymentStatus__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DeploymentStatus__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DeploymentStatus__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DeploymentStatus__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DeploymentStatus__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DeploymentStatus__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentConditionType.id, []); (ptrT.id DeploymentConditionType.id, []); (DeploymentCondition.id, [("SwaggerDoc"%go, DeploymentCondition__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DeploymentCondition.id, [("DeepCopy"%go, DeploymentCondition__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DeploymentCondition__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DeploymentCondition__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DeploymentCondition__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DeploymentCondition__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DeploymentCondition__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DeploymentCondition__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DeploymentCondition__Resetⁱᵐᵖˡ); ("Size"%go, DeploymentCondition__Sizeⁱᵐᵖˡ); ("String"%go, DeploymentCondition__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DeploymentCondition__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DeploymentCondition__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DeploymentCondition__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DeploymentCondition__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DeploymentCondition__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DeploymentCondition__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DeploymentCondition__XXX_Unmarshalⁱᵐᵖˡ)]); (DeploymentList.id, [("SwaggerDoc"%go, DeploymentList__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DeploymentList.id, [("APILifecycleIntroduced"%go, DeploymentList__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, DeploymentList__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DeploymentList__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, DeploymentList__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, DeploymentList__Descriptorⁱᵐᵖˡ); ("GetContinue"%go, DeploymentList__GetContinueⁱᵐᵖˡ); ("GetListMeta"%go, DeploymentList__GetListMetaⁱᵐᵖˡ); ("GetObjectKind"%go, DeploymentList__GetObjectKindⁱᵐᵖˡ); ("GetRemainingItemCount"%go, DeploymentList__GetRemainingItemCountⁱᵐᵖˡ); ("GetResourceVersion"%go, DeploymentList__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, DeploymentList__GetSelfLinkⁱᵐᵖˡ); ("GroupVersionKind"%go, DeploymentList__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, DeploymentList__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DeploymentList__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DeploymentList__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DeploymentList__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DeploymentList__Resetⁱᵐᵖˡ); ("SetContinue"%go, DeploymentList__SetContinueⁱᵐᵖˡ); ("SetGroupVersionKind"%go, DeploymentList__SetGroupVersionKindⁱᵐᵖˡ); ("SetRemainingItemCount"%go, DeploymentList__SetRemainingItemCountⁱᵐᵖˡ); ("SetResourceVersion"%go, DeploymentList__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, DeploymentList__SetSelfLinkⁱᵐᵖˡ); ("Size"%go, DeploymentList__Sizeⁱᵐᵖˡ); ("String"%go, DeploymentList__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DeploymentList__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DeploymentList__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DeploymentList__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DeploymentList__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DeploymentList__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DeploymentList__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DeploymentList__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetUpdateStrategy.id, [("SwaggerDoc"%go, DaemonSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSetUpdateStrategy.id, [("DeepCopy"%go, DaemonSetUpdateStrategy__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSetUpdateStrategy__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DaemonSetUpdateStrategy__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DaemonSetUpdateStrategy__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSetUpdateStrategy__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSetUpdateStrategy__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSetUpdateStrategy__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSetUpdateStrategy__Resetⁱᵐᵖˡ); ("Size"%go, DaemonSetUpdateStrategy__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSetUpdateStrategy__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSetUpdateStrategy__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSetUpdateStrategy__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSetUpdateStrategy__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSetUpdateStrategy__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSetUpdateStrategy__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSetUpdateStrategy__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSetUpdateStrategy__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetUpdateStrategyType.id, []); (ptrT.id DaemonSetUpdateStrategyType.id, []); (RollingUpdateDaemonSet.id, [("SwaggerDoc"%go, RollingUpdateDaemonSet__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id RollingUpdateDaemonSet.id, [("DeepCopy"%go, RollingUpdateDaemonSet__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, RollingUpdateDaemonSet__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, RollingUpdateDaemonSet__Descriptorⁱᵐᵖˡ); ("Marshal"%go, RollingUpdateDaemonSet__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, RollingUpdateDaemonSet__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, RollingUpdateDaemonSet__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, RollingUpdateDaemonSet__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, RollingUpdateDaemonSet__Resetⁱᵐᵖˡ); ("Size"%go, RollingUpdateDaemonSet__Sizeⁱᵐᵖˡ); ("String"%go, RollingUpdateDaemonSet__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, RollingUpdateDaemonSet__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, RollingUpdateDaemonSet__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, RollingUpdateDaemonSet__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, RollingUpdateDaemonSet__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, RollingUpdateDaemonSet__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, RollingUpdateDaemonSet__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, RollingUpdateDaemonSet__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetSpec.id, [("SwaggerDoc"%go, DaemonSetSpec__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSetSpec.id, [("DeepCopy"%go, DaemonSetSpec__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSetSpec__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DaemonSetSpec__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DaemonSetSpec__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSetSpec__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSetSpec__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSetSpec__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSetSpec__Resetⁱᵐᵖˡ); ("Size"%go, DaemonSetSpec__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSetSpec__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSetSpec__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSetSpec__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSetSpec__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSetSpec__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSetSpec__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSetSpec__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetStatus.id, [("SwaggerDoc"%go, DaemonSetStatus__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSetStatus.id, [("DeepCopy"%go, DaemonSetStatus__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSetStatus__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DaemonSetStatus__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DaemonSetStatus__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSetStatus__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSetStatus__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSetStatus__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSetStatus__Resetⁱᵐᵖˡ); ("Size"%go, DaemonSetStatus__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSetStatus__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSetStatus__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSetStatus__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSetStatus__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSetStatus__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSetStatus__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSetStatus__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetConditionType.id, []); (ptrT.id DaemonSetConditionType.id, []); (DaemonSetCondition.id, [("SwaggerDoc"%go, DaemonSetCondition__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSetCondition.id, [("DeepCopy"%go, DaemonSetCondition__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSetCondition__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, DaemonSetCondition__Descriptorⁱᵐᵖˡ); ("Marshal"%go, DaemonSetCondition__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSetCondition__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSetCondition__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSetCondition__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSetCondition__Resetⁱᵐᵖˡ); ("Size"%go, DaemonSetCondition__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSetCondition__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSetCondition__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSetCondition__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSetCondition__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSetCondition__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSetCondition__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSetCondition__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSet.id, [("SwaggerDoc"%go, DaemonSet__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSet.id, [("APILifecycleIntroduced"%go, DaemonSet__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, DaemonSet__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSet__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, DaemonSet__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, DaemonSet__Descriptorⁱᵐᵖˡ); ("GetAnnotations"%go, DaemonSet__GetAnnotationsⁱᵐᵖˡ); ("GetCreationTimestamp"%go, DaemonSet__GetCreationTimestampⁱᵐᵖˡ); ("GetDeletionGracePeriodSeconds"%go, DaemonSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("GetDeletionTimestamp"%go, DaemonSet__GetDeletionTimestampⁱᵐᵖˡ); ("GetFinalizers"%go, DaemonSet__GetFinalizersⁱᵐᵖˡ); ("GetGenerateName"%go, DaemonSet__GetGenerateNameⁱᵐᵖˡ); ("GetGeneration"%go, DaemonSet__GetGenerationⁱᵐᵖˡ); ("GetLabels"%go, DaemonSet__GetLabelsⁱᵐᵖˡ); ("GetManagedFields"%go, DaemonSet__GetManagedFieldsⁱᵐᵖˡ); ("GetName"%go, DaemonSet__GetNameⁱᵐᵖˡ); ("GetNamespace"%go, DaemonSet__GetNamespaceⁱᵐᵖˡ); ("GetObjectKind"%go, DaemonSet__GetObjectKindⁱᵐᵖˡ); ("GetObjectMeta"%go, DaemonSet__GetObjectMetaⁱᵐᵖˡ); ("GetOwnerReferences"%go, DaemonSet__GetOwnerReferencesⁱᵐᵖˡ); ("GetResourceVersion"%go, DaemonSet__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, DaemonSet__GetSelfLinkⁱᵐᵖˡ); ("GetUID"%go, DaemonSet__GetUIDⁱᵐᵖˡ); ("GroupVersionKind"%go, DaemonSet__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, DaemonSet__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSet__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSet__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSet__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSet__Resetⁱᵐᵖˡ); ("SetAnnotations"%go, DaemonSet__SetAnnotationsⁱᵐᵖˡ); ("SetCreationTimestamp"%go, DaemonSet__SetCreationTimestampⁱᵐᵖˡ); ("SetDeletionGracePeriodSeconds"%go, DaemonSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("SetDeletionTimestamp"%go, DaemonSet__SetDeletionTimestampⁱᵐᵖˡ); ("SetFinalizers"%go, DaemonSet__SetFinalizersⁱᵐᵖˡ); ("SetGenerateName"%go, DaemonSet__SetGenerateNameⁱᵐᵖˡ); ("SetGeneration"%go, DaemonSet__SetGenerationⁱᵐᵖˡ); ("SetGroupVersionKind"%go, DaemonSet__SetGroupVersionKindⁱᵐᵖˡ); ("SetLabels"%go, DaemonSet__SetLabelsⁱᵐᵖˡ); ("SetManagedFields"%go, DaemonSet__SetManagedFieldsⁱᵐᵖˡ); ("SetName"%go, DaemonSet__SetNameⁱᵐᵖˡ); ("SetNamespace"%go, DaemonSet__SetNamespaceⁱᵐᵖˡ); ("SetOwnerReferences"%go, DaemonSet__SetOwnerReferencesⁱᵐᵖˡ); ("SetResourceVersion"%go, DaemonSet__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, DaemonSet__SetSelfLinkⁱᵐᵖˡ); ("SetUID"%go, DaemonSet__SetUIDⁱᵐᵖˡ); ("Size"%go, DaemonSet__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSet__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSet__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSet__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSet__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSet__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSet__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSet__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSet__XXX_Unmarshalⁱᵐᵖˡ)]); (DaemonSetList.id, [("SwaggerDoc"%go, DaemonSetList__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id DaemonSetList.id, [("APILifecycleIntroduced"%go, DaemonSetList__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, DaemonSetList__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, DaemonSetList__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, DaemonSetList__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, DaemonSetList__Descriptorⁱᵐᵖˡ); ("GetContinue"%go, DaemonSetList__GetContinueⁱᵐᵖˡ); ("GetListMeta"%go, DaemonSetList__GetListMetaⁱᵐᵖˡ); ("GetObjectKind"%go, DaemonSetList__GetObjectKindⁱᵐᵖˡ); ("GetRemainingItemCount"%go, DaemonSetList__GetRemainingItemCountⁱᵐᵖˡ); ("GetResourceVersion"%go, DaemonSetList__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, DaemonSetList__GetSelfLinkⁱᵐᵖˡ); ("GroupVersionKind"%go, DaemonSetList__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, DaemonSetList__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, DaemonSetList__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, DaemonSetList__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, DaemonSetList__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, DaemonSetList__Resetⁱᵐᵖˡ); ("SetContinue"%go, DaemonSetList__SetContinueⁱᵐᵖˡ); ("SetGroupVersionKind"%go, DaemonSetList__SetGroupVersionKindⁱᵐᵖˡ); ("SetRemainingItemCount"%go, DaemonSetList__SetRemainingItemCountⁱᵐᵖˡ); ("SetResourceVersion"%go, DaemonSetList__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, DaemonSetList__SetSelfLinkⁱᵐᵖˡ); ("Size"%go, DaemonSetList__Sizeⁱᵐᵖˡ); ("String"%go, DaemonSetList__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, DaemonSetList__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, DaemonSetList__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, DaemonSetList__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, DaemonSetList__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, DaemonSetList__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, DaemonSetList__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, DaemonSetList__XXX_Unmarshalⁱᵐᵖˡ)]); (ReplicaSet.id, [("SwaggerDoc"%go, ReplicaSet__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ReplicaSet.id, [("APILifecycleIntroduced"%go, ReplicaSet__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, ReplicaSet__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ReplicaSet__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, ReplicaSet__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, ReplicaSet__Descriptorⁱᵐᵖˡ); ("GetAnnotations"%go, ReplicaSet__GetAnnotationsⁱᵐᵖˡ); ("GetCreationTimestamp"%go, ReplicaSet__GetCreationTimestampⁱᵐᵖˡ); ("GetDeletionGracePeriodSeconds"%go, ReplicaSet__GetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("GetDeletionTimestamp"%go, ReplicaSet__GetDeletionTimestampⁱᵐᵖˡ); ("GetFinalizers"%go, ReplicaSet__GetFinalizersⁱᵐᵖˡ); ("GetGenerateName"%go, ReplicaSet__GetGenerateNameⁱᵐᵖˡ); ("GetGeneration"%go, ReplicaSet__GetGenerationⁱᵐᵖˡ); ("GetLabels"%go, ReplicaSet__GetLabelsⁱᵐᵖˡ); ("GetManagedFields"%go, ReplicaSet__GetManagedFieldsⁱᵐᵖˡ); ("GetName"%go, ReplicaSet__GetNameⁱᵐᵖˡ); ("GetNamespace"%go, ReplicaSet__GetNamespaceⁱᵐᵖˡ); ("GetObjectKind"%go, ReplicaSet__GetObjectKindⁱᵐᵖˡ); ("GetObjectMeta"%go, ReplicaSet__GetObjectMetaⁱᵐᵖˡ); ("GetOwnerReferences"%go, ReplicaSet__GetOwnerReferencesⁱᵐᵖˡ); ("GetResourceVersion"%go, ReplicaSet__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, ReplicaSet__GetSelfLinkⁱᵐᵖˡ); ("GetUID"%go, ReplicaSet__GetUIDⁱᵐᵖˡ); ("GroupVersionKind"%go, ReplicaSet__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, ReplicaSet__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ReplicaSet__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ReplicaSet__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ReplicaSet__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ReplicaSet__Resetⁱᵐᵖˡ); ("SetAnnotations"%go, ReplicaSet__SetAnnotationsⁱᵐᵖˡ); ("SetCreationTimestamp"%go, ReplicaSet__SetCreationTimestampⁱᵐᵖˡ); ("SetDeletionGracePeriodSeconds"%go, ReplicaSet__SetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("SetDeletionTimestamp"%go, ReplicaSet__SetDeletionTimestampⁱᵐᵖˡ); ("SetFinalizers"%go, ReplicaSet__SetFinalizersⁱᵐᵖˡ); ("SetGenerateName"%go, ReplicaSet__SetGenerateNameⁱᵐᵖˡ); ("SetGeneration"%go, ReplicaSet__SetGenerationⁱᵐᵖˡ); ("SetGroupVersionKind"%go, ReplicaSet__SetGroupVersionKindⁱᵐᵖˡ); ("SetLabels"%go, ReplicaSet__SetLabelsⁱᵐᵖˡ); ("SetManagedFields"%go, ReplicaSet__SetManagedFieldsⁱᵐᵖˡ); ("SetName"%go, ReplicaSet__SetNameⁱᵐᵖˡ); ("SetNamespace"%go, ReplicaSet__SetNamespaceⁱᵐᵖˡ); ("SetOwnerReferences"%go, ReplicaSet__SetOwnerReferencesⁱᵐᵖˡ); ("SetResourceVersion"%go, ReplicaSet__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, ReplicaSet__SetSelfLinkⁱᵐᵖˡ); ("SetUID"%go, ReplicaSet__SetUIDⁱᵐᵖˡ); ("Size"%go, ReplicaSet__Sizeⁱᵐᵖˡ); ("String"%go, ReplicaSet__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ReplicaSet__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ReplicaSet__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ReplicaSet__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ReplicaSet__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ReplicaSet__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ReplicaSet__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ReplicaSet__XXX_Unmarshalⁱᵐᵖˡ)]); (ReplicaSetList.id, [("SwaggerDoc"%go, ReplicaSetList__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ReplicaSetList.id, [("APILifecycleIntroduced"%go, ReplicaSetList__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, ReplicaSetList__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ReplicaSetList__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, ReplicaSetList__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, ReplicaSetList__Descriptorⁱᵐᵖˡ); ("GetContinue"%go, ReplicaSetList__GetContinueⁱᵐᵖˡ); ("GetListMeta"%go, ReplicaSetList__GetListMetaⁱᵐᵖˡ); ("GetObjectKind"%go, ReplicaSetList__GetObjectKindⁱᵐᵖˡ); ("GetRemainingItemCount"%go, ReplicaSetList__GetRemainingItemCountⁱᵐᵖˡ); ("GetResourceVersion"%go, ReplicaSetList__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, ReplicaSetList__GetSelfLinkⁱᵐᵖˡ); ("GroupVersionKind"%go, ReplicaSetList__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, ReplicaSetList__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ReplicaSetList__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ReplicaSetList__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ReplicaSetList__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ReplicaSetList__Resetⁱᵐᵖˡ); ("SetContinue"%go, ReplicaSetList__SetContinueⁱᵐᵖˡ); ("SetGroupVersionKind"%go, ReplicaSetList__SetGroupVersionKindⁱᵐᵖˡ); ("SetRemainingItemCount"%go, ReplicaSetList__SetRemainingItemCountⁱᵐᵖˡ); ("SetResourceVersion"%go, ReplicaSetList__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, ReplicaSetList__SetSelfLinkⁱᵐᵖˡ); ("Size"%go, ReplicaSetList__Sizeⁱᵐᵖˡ); ("String"%go, ReplicaSetList__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ReplicaSetList__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ReplicaSetList__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ReplicaSetList__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ReplicaSetList__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ReplicaSetList__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ReplicaSetList__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ReplicaSetList__XXX_Unmarshalⁱᵐᵖˡ)]); (ReplicaSetSpec.id, [("SwaggerDoc"%go, ReplicaSetSpec__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ReplicaSetSpec.id, [("DeepCopy"%go, ReplicaSetSpec__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ReplicaSetSpec__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, ReplicaSetSpec__Descriptorⁱᵐᵖˡ); ("Marshal"%go, ReplicaSetSpec__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ReplicaSetSpec__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ReplicaSetSpec__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ReplicaSetSpec__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ReplicaSetSpec__Resetⁱᵐᵖˡ); ("Size"%go, ReplicaSetSpec__Sizeⁱᵐᵖˡ); ("String"%go, ReplicaSetSpec__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ReplicaSetSpec__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ReplicaSetSpec__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ReplicaSetSpec__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ReplicaSetSpec__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ReplicaSetSpec__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ReplicaSetSpec__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ReplicaSetSpec__XXX_Unmarshalⁱᵐᵖˡ)]); (ReplicaSetStatus.id, [("SwaggerDoc"%go, ReplicaSetStatus__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ReplicaSetStatus.id, [("DeepCopy"%go, ReplicaSetStatus__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ReplicaSetStatus__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, ReplicaSetStatus__Descriptorⁱᵐᵖˡ); ("Marshal"%go, ReplicaSetStatus__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ReplicaSetStatus__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ReplicaSetStatus__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ReplicaSetStatus__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ReplicaSetStatus__Resetⁱᵐᵖˡ); ("Size"%go, ReplicaSetStatus__Sizeⁱᵐᵖˡ); ("String"%go, ReplicaSetStatus__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ReplicaSetStatus__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ReplicaSetStatus__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ReplicaSetStatus__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ReplicaSetStatus__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ReplicaSetStatus__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ReplicaSetStatus__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ReplicaSetStatus__XXX_Unmarshalⁱᵐᵖˡ)]); (ReplicaSetConditionType.id, []); (ptrT.id ReplicaSetConditionType.id, []); (ReplicaSetCondition.id, [("SwaggerDoc"%go, ReplicaSetCondition__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ReplicaSetCondition.id, [("DeepCopy"%go, ReplicaSetCondition__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ReplicaSetCondition__DeepCopyIntoⁱᵐᵖˡ); ("Descriptor"%go, ReplicaSetCondition__Descriptorⁱᵐᵖˡ); ("Marshal"%go, ReplicaSetCondition__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ReplicaSetCondition__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ReplicaSetCondition__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ReplicaSetCondition__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ReplicaSetCondition__Resetⁱᵐᵖˡ); ("Size"%go, ReplicaSetCondition__Sizeⁱᵐᵖˡ); ("String"%go, ReplicaSetCondition__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ReplicaSetCondition__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ReplicaSetCondition__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ReplicaSetCondition__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ReplicaSetCondition__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ReplicaSetCondition__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ReplicaSetCondition__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ReplicaSetCondition__XXX_Unmarshalⁱᵐᵖˡ)]); (ControllerRevision.id, [("SwaggerDoc"%go, ControllerRevision__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ControllerRevision.id, [("APILifecycleIntroduced"%go, ControllerRevision__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, ControllerRevision__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ControllerRevision__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, ControllerRevision__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, ControllerRevision__Descriptorⁱᵐᵖˡ); ("GetAnnotations"%go, ControllerRevision__GetAnnotationsⁱᵐᵖˡ); ("GetCreationTimestamp"%go, ControllerRevision__GetCreationTimestampⁱᵐᵖˡ); ("GetDeletionGracePeriodSeconds"%go, ControllerRevision__GetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("GetDeletionTimestamp"%go, ControllerRevision__GetDeletionTimestampⁱᵐᵖˡ); ("GetFinalizers"%go, ControllerRevision__GetFinalizersⁱᵐᵖˡ); ("GetGenerateName"%go, ControllerRevision__GetGenerateNameⁱᵐᵖˡ); ("GetGeneration"%go, ControllerRevision__GetGenerationⁱᵐᵖˡ); ("GetLabels"%go, ControllerRevision__GetLabelsⁱᵐᵖˡ); ("GetManagedFields"%go, ControllerRevision__GetManagedFieldsⁱᵐᵖˡ); ("GetName"%go, ControllerRevision__GetNameⁱᵐᵖˡ); ("GetNamespace"%go, ControllerRevision__GetNamespaceⁱᵐᵖˡ); ("GetObjectKind"%go, ControllerRevision__GetObjectKindⁱᵐᵖˡ); ("GetObjectMeta"%go, ControllerRevision__GetObjectMetaⁱᵐᵖˡ); ("GetOwnerReferences"%go, ControllerRevision__GetOwnerReferencesⁱᵐᵖˡ); ("GetResourceVersion"%go, ControllerRevision__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, ControllerRevision__GetSelfLinkⁱᵐᵖˡ); ("GetUID"%go, ControllerRevision__GetUIDⁱᵐᵖˡ); ("GroupVersionKind"%go, ControllerRevision__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, ControllerRevision__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ControllerRevision__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ControllerRevision__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ControllerRevision__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ControllerRevision__Resetⁱᵐᵖˡ); ("SetAnnotations"%go, ControllerRevision__SetAnnotationsⁱᵐᵖˡ); ("SetCreationTimestamp"%go, ControllerRevision__SetCreationTimestampⁱᵐᵖˡ); ("SetDeletionGracePeriodSeconds"%go, ControllerRevision__SetDeletionGracePeriodSecondsⁱᵐᵖˡ); ("SetDeletionTimestamp"%go, ControllerRevision__SetDeletionTimestampⁱᵐᵖˡ); ("SetFinalizers"%go, ControllerRevision__SetFinalizersⁱᵐᵖˡ); ("SetGenerateName"%go, ControllerRevision__SetGenerateNameⁱᵐᵖˡ); ("SetGeneration"%go, ControllerRevision__SetGenerationⁱᵐᵖˡ); ("SetGroupVersionKind"%go, ControllerRevision__SetGroupVersionKindⁱᵐᵖˡ); ("SetLabels"%go, ControllerRevision__SetLabelsⁱᵐᵖˡ); ("SetManagedFields"%go, ControllerRevision__SetManagedFieldsⁱᵐᵖˡ); ("SetName"%go, ControllerRevision__SetNameⁱᵐᵖˡ); ("SetNamespace"%go, ControllerRevision__SetNamespaceⁱᵐᵖˡ); ("SetOwnerReferences"%go, ControllerRevision__SetOwnerReferencesⁱᵐᵖˡ); ("SetResourceVersion"%go, ControllerRevision__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, ControllerRevision__SetSelfLinkⁱᵐᵖˡ); ("SetUID"%go, ControllerRevision__SetUIDⁱᵐᵖˡ); ("Size"%go, ControllerRevision__Sizeⁱᵐᵖˡ); ("String"%go, ControllerRevision__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ControllerRevision__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ControllerRevision__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ControllerRevision__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ControllerRevision__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ControllerRevision__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ControllerRevision__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ControllerRevision__XXX_Unmarshalⁱᵐᵖˡ)]); (ControllerRevisionList.id, [("SwaggerDoc"%go, ControllerRevisionList__SwaggerDocⁱᵐᵖˡ)]); (ptrT.id ControllerRevisionList.id, [("APILifecycleIntroduced"%go, ControllerRevisionList__APILifecycleIntroducedⁱᵐᵖˡ); ("DeepCopy"%go, ControllerRevisionList__DeepCopyⁱᵐᵖˡ); ("DeepCopyInto"%go, ControllerRevisionList__DeepCopyIntoⁱᵐᵖˡ); ("DeepCopyObject"%go, ControllerRevisionList__DeepCopyObjectⁱᵐᵖˡ); ("Descriptor"%go, ControllerRevisionList__Descriptorⁱᵐᵖˡ); ("GetContinue"%go, ControllerRevisionList__GetContinueⁱᵐᵖˡ); ("GetListMeta"%go, ControllerRevisionList__GetListMetaⁱᵐᵖˡ); ("GetObjectKind"%go, ControllerRevisionList__GetObjectKindⁱᵐᵖˡ); ("GetRemainingItemCount"%go, ControllerRevisionList__GetRemainingItemCountⁱᵐᵖˡ); ("GetResourceVersion"%go, ControllerRevisionList__GetResourceVersionⁱᵐᵖˡ); ("GetSelfLink"%go, ControllerRevisionList__GetSelfLinkⁱᵐᵖˡ); ("GroupVersionKind"%go, ControllerRevisionList__GroupVersionKindⁱᵐᵖˡ); ("Marshal"%go, ControllerRevisionList__Marshalⁱᵐᵖˡ); ("MarshalTo"%go, ControllerRevisionList__MarshalToⁱᵐᵖˡ); ("MarshalToSizedBuffer"%go, ControllerRevisionList__MarshalToSizedBufferⁱᵐᵖˡ); ("ProtoMessage"%go, ControllerRevisionList__ProtoMessageⁱᵐᵖˡ); ("Reset"%go, ControllerRevisionList__Resetⁱᵐᵖˡ); ("SetContinue"%go, ControllerRevisionList__SetContinueⁱᵐᵖˡ); ("SetGroupVersionKind"%go, ControllerRevisionList__SetGroupVersionKindⁱᵐᵖˡ); ("SetRemainingItemCount"%go, ControllerRevisionList__SetRemainingItemCountⁱᵐᵖˡ); ("SetResourceVersion"%go, ControllerRevisionList__SetResourceVersionⁱᵐᵖˡ); ("SetSelfLink"%go, ControllerRevisionList__SetSelfLinkⁱᵐᵖˡ); ("Size"%go, ControllerRevisionList__Sizeⁱᵐᵖˡ); ("String"%go, ControllerRevisionList__Stringⁱᵐᵖˡ); ("SwaggerDoc"%go, ControllerRevisionList__SwaggerDocⁱᵐᵖˡ); ("Unmarshal"%go, ControllerRevisionList__Unmarshalⁱᵐᵖˡ); ("XXX_DiscardUnknown"%go, ControllerRevisionList__XXX_DiscardUnknownⁱᵐᵖˡ); ("XXX_Marshal"%go, ControllerRevisionList__XXX_Marshalⁱᵐᵖˡ); ("XXX_Merge"%go, ControllerRevisionList__XXX_Mergeⁱᵐᵖˡ); ("XXX_Size"%go, ControllerRevisionList__XXX_Sizeⁱᵐᵖˡ); ("XXX_Unmarshal"%go, ControllerRevisionList__XXX_Unmarshalⁱᵐᵖˡ)])].
-
-#[global] Instance info' : PkgInfo v1.v1 :=
-  {|
-    pkg_vars := vars';
-    pkg_functions := functions';
-    pkg_msets := msets';
-    pkg_imported_pkgs := [code.k8s_io.api.core.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.api.core.v1.v1];
-  |}.
-
-Axiom _'init : val.
-
-Definition initialize' : val :=
+Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    package.init #v1.v1 (λ: <>,
-      exception_do (do:  (v1.initialize' #());;;
+    package.init pkg_id.v1 (λ: <>,
+      exception_do (do:  (go.GlobalAlloc SchemeGroupVersion schema.GroupVersion #());;;
       do:  (schema.initialize' #());;;
       do:  (v1.initialize' #());;;
       do:  (v1.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (package.alloc v1.v1 #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -2003,13 +525,10 @@ Definition initialize' : val :=
       do:  (ErrInvalidLengthGenerated'init #());;;
       do:  (ErrIntOverflowGenerated'init #());;;
       do:  (ErrUnexpectedEndOfGroupGenerated'init #());;;
-      let: "$r0" := (let: "$Group" := #GroupName in
-      let: "$Version" := #"v1"%go in
-      struct.make #schema.GroupVersion [{
-        "Group" ::= "$Group";
-        "Version" ::= "$Version"
-      }]) in
-      do:  ((globals.get #SchemeGroupVersion) <-[#schema.GroupVersion] "$r0");;;
+      let: "$r0" := (let: "$v0" := (Convert go.untyped_string go.string GroupName) in
+      let: "$v1" := #"v1"%go in
+      CompositeLiteral schema.GroupVersion (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Version"%go)) (ElementExpression go.string "$v1")])) in
+      do:  ((GlobalVarAddr SchemeGroupVersion #()) <-[schema.GroupVersion] "$r0");;;
       do:  (SchemeBuilder'init #());;;
       do:  (localSchemeBuilder'init #());;;
       do:  (AddToScheme'init #());;;
@@ -2045,5 +564,799 @@ Definition initialize' : val :=
       do:  (map_StatefulSetUpdateStrategy'init #()))
       ).
 
-End code.
+Module StatefulSet.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSet.
+
+Class StatefulSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSet_type_repr  :: go.TypeReprUnderlying StatefulSetⁱᵐᵖˡ StatefulSet.t;
+  #[global] StatefulSet_underlying :: (StatefulSet) <u (StatefulSetⁱᵐᵖˡ);
+  #[global] StatefulSetⁱᵐᵖˡ_underlying :: (StatefulSetⁱᵐᵖˡ) ↓u (StatefulSetⁱᵐᵖˡ);
+}.
+
+Module PodManagementPolicyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End PodManagementPolicyType.
+
+Class PodManagementPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PodManagementPolicyType_type_repr  :: go.TypeReprUnderlying PodManagementPolicyTypeⁱᵐᵖˡ PodManagementPolicyType.t;
+  #[global] PodManagementPolicyType_underlying :: (PodManagementPolicyType) <u (PodManagementPolicyTypeⁱᵐᵖˡ);
+  #[global] PodManagementPolicyTypeⁱᵐᵖˡ_underlying :: (PodManagementPolicyTypeⁱᵐᵖˡ) ↓u (PodManagementPolicyTypeⁱᵐᵖˡ);
+}.
+
+Module StatefulSetUpdateStrategy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetUpdateStrategy.
+
+Class StatefulSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyⁱᵐᵖˡ StatefulSetUpdateStrategy.t;
+  #[global] StatefulSetUpdateStrategy_underlying :: (StatefulSetUpdateStrategy) <u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
+  #[global] StatefulSetUpdateStrategyⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
+}.
+
+Module StatefulSetUpdateStrategyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetUpdateStrategyType.
+
+Class StatefulSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetUpdateStrategyType_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyTypeⁱᵐᵖˡ StatefulSetUpdateStrategyType.t;
+  #[global] StatefulSetUpdateStrategyType_underlying :: (StatefulSetUpdateStrategyType) <u (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ);
+  #[global] StatefulSetUpdateStrategyTypeⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ);
+}.
+
+Module RollingUpdateStatefulSetStrategy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End RollingUpdateStatefulSetStrategy.
+
+Class RollingUpdateStatefulSetStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] RollingUpdateStatefulSetStrategy_type_repr  :: go.TypeReprUnderlying RollingUpdateStatefulSetStrategyⁱᵐᵖˡ RollingUpdateStatefulSetStrategy.t;
+  #[global] RollingUpdateStatefulSetStrategy_underlying :: (RollingUpdateStatefulSetStrategy) <u (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ);
+  #[global] RollingUpdateStatefulSetStrategyⁱᵐᵖˡ_underlying :: (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) ↓u (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ);
+}.
+
+Module PersistentVolumeClaimRetentionPolicyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End PersistentVolumeClaimRetentionPolicyType.
+
+Class PersistentVolumeClaimRetentionPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PersistentVolumeClaimRetentionPolicyType_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ PersistentVolumeClaimRetentionPolicyType.t;
+  #[global] PersistentVolumeClaimRetentionPolicyType_underlying :: (PersistentVolumeClaimRetentionPolicyType) <u (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ) ↓u (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ);
+}.
+
+Module StatefulSetPersistentVolumeClaimRetentionPolicy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetPersistentVolumeClaimRetentionPolicy.
+
+Class StatefulSetPersistentVolumeClaimRetentionPolicy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_type_repr  :: go.TypeReprUnderlying StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ StatefulSetPersistentVolumeClaimRetentionPolicy.t;
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_underlying :: (StatefulSetPersistentVolumeClaimRetentionPolicy) <u (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ);
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ_underlying :: (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) ↓u (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ);
+}.
+
+Module StatefulSetOrdinals.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetOrdinals.
+
+Class StatefulSetOrdinals_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetOrdinals_type_repr  :: go.TypeReprUnderlying StatefulSetOrdinalsⁱᵐᵖˡ StatefulSetOrdinals.t;
+  #[global] StatefulSetOrdinals_underlying :: (StatefulSetOrdinals) <u (StatefulSetOrdinalsⁱᵐᵖˡ);
+  #[global] StatefulSetOrdinalsⁱᵐᵖˡ_underlying :: (StatefulSetOrdinalsⁱᵐᵖˡ) ↓u (StatefulSetOrdinalsⁱᵐᵖˡ);
+}.
+
+Module StatefulSetSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetSpec.
+
+Class StatefulSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetSpec_type_repr  :: go.TypeReprUnderlying StatefulSetSpecⁱᵐᵖˡ StatefulSetSpec.t;
+  #[global] StatefulSetSpec_underlying :: (StatefulSetSpec) <u (StatefulSetSpecⁱᵐᵖˡ);
+  #[global] StatefulSetSpecⁱᵐᵖˡ_underlying :: (StatefulSetSpecⁱᵐᵖˡ) ↓u (StatefulSetSpecⁱᵐᵖˡ);
+}.
+
+Module StatefulSetStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetStatus.
+
+Class StatefulSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetStatus_type_repr  :: go.TypeReprUnderlying StatefulSetStatusⁱᵐᵖˡ StatefulSetStatus.t;
+  #[global] StatefulSetStatus_underlying :: (StatefulSetStatus) <u (StatefulSetStatusⁱᵐᵖˡ);
+  #[global] StatefulSetStatusⁱᵐᵖˡ_underlying :: (StatefulSetStatusⁱᵐᵖˡ) ↓u (StatefulSetStatusⁱᵐᵖˡ);
+}.
+
+Module StatefulSetConditionType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetConditionType.
+
+Class StatefulSetConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetConditionType_type_repr  :: go.TypeReprUnderlying StatefulSetConditionTypeⁱᵐᵖˡ StatefulSetConditionType.t;
+  #[global] StatefulSetConditionType_underlying :: (StatefulSetConditionType) <u (StatefulSetConditionTypeⁱᵐᵖˡ);
+  #[global] StatefulSetConditionTypeⁱᵐᵖˡ_underlying :: (StatefulSetConditionTypeⁱᵐᵖˡ) ↓u (StatefulSetConditionTypeⁱᵐᵖˡ);
+}.
+
+Module StatefulSetCondition.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetCondition.
+
+Class StatefulSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetCondition_type_repr  :: go.TypeReprUnderlying StatefulSetConditionⁱᵐᵖˡ StatefulSetCondition.t;
+  #[global] StatefulSetCondition_underlying :: (StatefulSetCondition) <u (StatefulSetConditionⁱᵐᵖˡ);
+  #[global] StatefulSetConditionⁱᵐᵖˡ_underlying :: (StatefulSetConditionⁱᵐᵖˡ) ↓u (StatefulSetConditionⁱᵐᵖˡ);
+}.
+
+Module StatefulSetList.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetList.
+
+Class StatefulSetList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetList_type_repr  :: go.TypeReprUnderlying StatefulSetListⁱᵐᵖˡ StatefulSetList.t;
+  #[global] StatefulSetList_underlying :: (StatefulSetList) <u (StatefulSetListⁱᵐᵖˡ);
+  #[global] StatefulSetListⁱᵐᵖˡ_underlying :: (StatefulSetListⁱᵐᵖˡ) ↓u (StatefulSetListⁱᵐᵖˡ);
+}.
+
+Module Deployment.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End Deployment.
+
+Class Deployment_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] Deployment_type_repr  :: go.TypeReprUnderlying Deploymentⁱᵐᵖˡ Deployment.t;
+  #[global] Deployment_underlying :: (Deployment) <u (Deploymentⁱᵐᵖˡ);
+  #[global] Deploymentⁱᵐᵖˡ_underlying :: (Deploymentⁱᵐᵖˡ) ↓u (Deploymentⁱᵐᵖˡ);
+}.
+
+Module DeploymentSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentSpec.
+
+Class DeploymentSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentSpec_type_repr  :: go.TypeReprUnderlying DeploymentSpecⁱᵐᵖˡ DeploymentSpec.t;
+  #[global] DeploymentSpec_underlying :: (DeploymentSpec) <u (DeploymentSpecⁱᵐᵖˡ);
+  #[global] DeploymentSpecⁱᵐᵖˡ_underlying :: (DeploymentSpecⁱᵐᵖˡ) ↓u (DeploymentSpecⁱᵐᵖˡ);
+}.
+
+Module DeploymentStrategy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentStrategy.
+
+Class DeploymentStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentStrategy_type_repr  :: go.TypeReprUnderlying DeploymentStrategyⁱᵐᵖˡ DeploymentStrategy.t;
+  #[global] DeploymentStrategy_underlying :: (DeploymentStrategy) <u (DeploymentStrategyⁱᵐᵖˡ);
+  #[global] DeploymentStrategyⁱᵐᵖˡ_underlying :: (DeploymentStrategyⁱᵐᵖˡ) ↓u (DeploymentStrategyⁱᵐᵖˡ);
+}.
+
+Module DeploymentStrategyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentStrategyType.
+
+Class DeploymentStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentStrategyType_type_repr  :: go.TypeReprUnderlying DeploymentStrategyTypeⁱᵐᵖˡ DeploymentStrategyType.t;
+  #[global] DeploymentStrategyType_underlying :: (DeploymentStrategyType) <u (DeploymentStrategyTypeⁱᵐᵖˡ);
+  #[global] DeploymentStrategyTypeⁱᵐᵖˡ_underlying :: (DeploymentStrategyTypeⁱᵐᵖˡ) ↓u (DeploymentStrategyTypeⁱᵐᵖˡ);
+}.
+
+Module RollingUpdateDeployment.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End RollingUpdateDeployment.
+
+Class RollingUpdateDeployment_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] RollingUpdateDeployment_type_repr  :: go.TypeReprUnderlying RollingUpdateDeploymentⁱᵐᵖˡ RollingUpdateDeployment.t;
+  #[global] RollingUpdateDeployment_underlying :: (RollingUpdateDeployment) <u (RollingUpdateDeploymentⁱᵐᵖˡ);
+  #[global] RollingUpdateDeploymentⁱᵐᵖˡ_underlying :: (RollingUpdateDeploymentⁱᵐᵖˡ) ↓u (RollingUpdateDeploymentⁱᵐᵖˡ);
+}.
+
+Module DeploymentStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentStatus.
+
+Class DeploymentStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentStatus_type_repr  :: go.TypeReprUnderlying DeploymentStatusⁱᵐᵖˡ DeploymentStatus.t;
+  #[global] DeploymentStatus_underlying :: (DeploymentStatus) <u (DeploymentStatusⁱᵐᵖˡ);
+  #[global] DeploymentStatusⁱᵐᵖˡ_underlying :: (DeploymentStatusⁱᵐᵖˡ) ↓u (DeploymentStatusⁱᵐᵖˡ);
+}.
+
+Module DeploymentConditionType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentConditionType.
+
+Class DeploymentConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentConditionType_type_repr  :: go.TypeReprUnderlying DeploymentConditionTypeⁱᵐᵖˡ DeploymentConditionType.t;
+  #[global] DeploymentConditionType_underlying :: (DeploymentConditionType) <u (DeploymentConditionTypeⁱᵐᵖˡ);
+  #[global] DeploymentConditionTypeⁱᵐᵖˡ_underlying :: (DeploymentConditionTypeⁱᵐᵖˡ) ↓u (DeploymentConditionTypeⁱᵐᵖˡ);
+}.
+
+Module DeploymentCondition.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentCondition.
+
+Class DeploymentCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentCondition_type_repr  :: go.TypeReprUnderlying DeploymentConditionⁱᵐᵖˡ DeploymentCondition.t;
+  #[global] DeploymentCondition_underlying :: (DeploymentCondition) <u (DeploymentConditionⁱᵐᵖˡ);
+  #[global] DeploymentConditionⁱᵐᵖˡ_underlying :: (DeploymentConditionⁱᵐᵖˡ) ↓u (DeploymentConditionⁱᵐᵖˡ);
+}.
+
+Module DeploymentList.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DeploymentList.
+
+Class DeploymentList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DeploymentList_type_repr  :: go.TypeReprUnderlying DeploymentListⁱᵐᵖˡ DeploymentList.t;
+  #[global] DeploymentList_underlying :: (DeploymentList) <u (DeploymentListⁱᵐᵖˡ);
+  #[global] DeploymentListⁱᵐᵖˡ_underlying :: (DeploymentListⁱᵐᵖˡ) ↓u (DeploymentListⁱᵐᵖˡ);
+}.
+
+Module DaemonSetUpdateStrategy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetUpdateStrategy.
+
+Class DaemonSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying DaemonSetUpdateStrategyⁱᵐᵖˡ DaemonSetUpdateStrategy.t;
+  #[global] DaemonSetUpdateStrategy_underlying :: (DaemonSetUpdateStrategy) <u (DaemonSetUpdateStrategyⁱᵐᵖˡ);
+  #[global] DaemonSetUpdateStrategyⁱᵐᵖˡ_underlying :: (DaemonSetUpdateStrategyⁱᵐᵖˡ) ↓u (DaemonSetUpdateStrategyⁱᵐᵖˡ);
+}.
+
+Module DaemonSetUpdateStrategyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetUpdateStrategyType.
+
+Class DaemonSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetUpdateStrategyType_type_repr  :: go.TypeReprUnderlying DaemonSetUpdateStrategyTypeⁱᵐᵖˡ DaemonSetUpdateStrategyType.t;
+  #[global] DaemonSetUpdateStrategyType_underlying :: (DaemonSetUpdateStrategyType) <u (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ);
+  #[global] DaemonSetUpdateStrategyTypeⁱᵐᵖˡ_underlying :: (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ) ↓u (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ);
+}.
+
+Module RollingUpdateDaemonSet.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End RollingUpdateDaemonSet.
+
+Class RollingUpdateDaemonSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] RollingUpdateDaemonSet_type_repr  :: go.TypeReprUnderlying RollingUpdateDaemonSetⁱᵐᵖˡ RollingUpdateDaemonSet.t;
+  #[global] RollingUpdateDaemonSet_underlying :: (RollingUpdateDaemonSet) <u (RollingUpdateDaemonSetⁱᵐᵖˡ);
+  #[global] RollingUpdateDaemonSetⁱᵐᵖˡ_underlying :: (RollingUpdateDaemonSetⁱᵐᵖˡ) ↓u (RollingUpdateDaemonSetⁱᵐᵖˡ);
+}.
+
+Module DaemonSetSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetSpec.
+
+Class DaemonSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetSpec_type_repr  :: go.TypeReprUnderlying DaemonSetSpecⁱᵐᵖˡ DaemonSetSpec.t;
+  #[global] DaemonSetSpec_underlying :: (DaemonSetSpec) <u (DaemonSetSpecⁱᵐᵖˡ);
+  #[global] DaemonSetSpecⁱᵐᵖˡ_underlying :: (DaemonSetSpecⁱᵐᵖˡ) ↓u (DaemonSetSpecⁱᵐᵖˡ);
+}.
+
+Module DaemonSetStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetStatus.
+
+Class DaemonSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetStatus_type_repr  :: go.TypeReprUnderlying DaemonSetStatusⁱᵐᵖˡ DaemonSetStatus.t;
+  #[global] DaemonSetStatus_underlying :: (DaemonSetStatus) <u (DaemonSetStatusⁱᵐᵖˡ);
+  #[global] DaemonSetStatusⁱᵐᵖˡ_underlying :: (DaemonSetStatusⁱᵐᵖˡ) ↓u (DaemonSetStatusⁱᵐᵖˡ);
+}.
+
+Module DaemonSetConditionType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetConditionType.
+
+Class DaemonSetConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetConditionType_type_repr  :: go.TypeReprUnderlying DaemonSetConditionTypeⁱᵐᵖˡ DaemonSetConditionType.t;
+  #[global] DaemonSetConditionType_underlying :: (DaemonSetConditionType) <u (DaemonSetConditionTypeⁱᵐᵖˡ);
+  #[global] DaemonSetConditionTypeⁱᵐᵖˡ_underlying :: (DaemonSetConditionTypeⁱᵐᵖˡ) ↓u (DaemonSetConditionTypeⁱᵐᵖˡ);
+}.
+
+Module DaemonSetCondition.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetCondition.
+
+Class DaemonSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetCondition_type_repr  :: go.TypeReprUnderlying DaemonSetConditionⁱᵐᵖˡ DaemonSetCondition.t;
+  #[global] DaemonSetCondition_underlying :: (DaemonSetCondition) <u (DaemonSetConditionⁱᵐᵖˡ);
+  #[global] DaemonSetConditionⁱᵐᵖˡ_underlying :: (DaemonSetConditionⁱᵐᵖˡ) ↓u (DaemonSetConditionⁱᵐᵖˡ);
+}.
+
+Module DaemonSet.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSet.
+
+Class DaemonSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSet_type_repr  :: go.TypeReprUnderlying DaemonSetⁱᵐᵖˡ DaemonSet.t;
+  #[global] DaemonSet_underlying :: (DaemonSet) <u (DaemonSetⁱᵐᵖˡ);
+  #[global] DaemonSetⁱᵐᵖˡ_underlying :: (DaemonSetⁱᵐᵖˡ) ↓u (DaemonSetⁱᵐᵖˡ);
+}.
+
+Module DaemonSetList.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End DaemonSetList.
+
+Class DaemonSetList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetList_type_repr  :: go.TypeReprUnderlying DaemonSetListⁱᵐᵖˡ DaemonSetList.t;
+  #[global] DaemonSetList_underlying :: (DaemonSetList) <u (DaemonSetListⁱᵐᵖˡ);
+  #[global] DaemonSetListⁱᵐᵖˡ_underlying :: (DaemonSetListⁱᵐᵖˡ) ↓u (DaemonSetListⁱᵐᵖˡ);
+}.
+
+Module ReplicaSetSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Replicas' : loc;
+  MinReadySeconds' : w32;
+  Selector' : loc;
+  Template' : v1.PodTemplateSpec.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+
+End ReplicaSetSpec.
+
+Definition ReplicaSetSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Replicas"%go (go.PointerType go.int32));
+  (go.FieldDecl "MinReadySeconds"%go go.int32);
+  (go.FieldDecl "Selector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "Template"%go v1.PodTemplateSpec)
+].
+Program Definition ReplicaSetSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetSpec'fds_unsealed).
+Global Instance equals_unfold_ReplicaSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetSpec'fds =→ ReplicaSetSpec'fds_unsealed.
+Proof. rewrite /ReplicaSetSpec'fds seal_eq //. Qed.
+
+Definition ReplicaSetSpecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetSpec'fds).
+
+Class ReplicaSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetSpec_type_repr  :: go.TypeReprUnderlying ReplicaSetSpecⁱᵐᵖˡ ReplicaSetSpec.t;
+  #[global] ReplicaSetSpec_underlying :: (ReplicaSetSpec) <u (ReplicaSetSpecⁱᵐᵖˡ);
+  #[global] ReplicaSetSpec_get_Replicas (x : ReplicaSetSpec.t) :: ⟦StructFieldGet (ReplicaSetSpecⁱᵐᵖˡ) "Replicas", #x⟧ ⤳[under] #x.(ReplicaSetSpec.Replicas');
+  #[global] ReplicaSetSpec_set_Replicas (x : ReplicaSetSpec.t) y :: ⟦StructFieldSet (ReplicaSetSpecⁱᵐᵖˡ) "Replicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetSpec.Replicas' := y|>);
+  #[global] ReplicaSetSpec_get_MinReadySeconds (x : ReplicaSetSpec.t) :: ⟦StructFieldGet (ReplicaSetSpecⁱᵐᵖˡ) "MinReadySeconds", #x⟧ ⤳[under] #x.(ReplicaSetSpec.MinReadySeconds');
+  #[global] ReplicaSetSpec_set_MinReadySeconds (x : ReplicaSetSpec.t) y :: ⟦StructFieldSet (ReplicaSetSpecⁱᵐᵖˡ) "MinReadySeconds", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetSpec.MinReadySeconds' := y|>);
+  #[global] ReplicaSetSpec_get_Selector (x : ReplicaSetSpec.t) :: ⟦StructFieldGet (ReplicaSetSpecⁱᵐᵖˡ) "Selector", #x⟧ ⤳[under] #x.(ReplicaSetSpec.Selector');
+  #[global] ReplicaSetSpec_set_Selector (x : ReplicaSetSpec.t) y :: ⟦StructFieldSet (ReplicaSetSpecⁱᵐᵖˡ) "Selector", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetSpec.Selector' := y|>);
+  #[global] ReplicaSetSpec_get_Template (x : ReplicaSetSpec.t) :: ⟦StructFieldGet (ReplicaSetSpecⁱᵐᵖˡ) "Template", #x⟧ ⤳[under] #x.(ReplicaSetSpec.Template');
+  #[global] ReplicaSetSpec_set_Template (x : ReplicaSetSpec.t) y :: ⟦StructFieldSet (ReplicaSetSpecⁱᵐᵖˡ) "Template", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetSpec.Template' := y|>);
+}.
+
+Module ReplicaSetStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Replicas' : w32;
+  FullyLabeledReplicas' : w32;
+  ReadyReplicas' : w32;
+  AvailableReplicas' : w32;
+  TerminatingReplicas' : loc;
+  ObservedGeneration' : w64;
+  Conditions' : slice.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+
+End ReplicaSetStatus.
+
+Definition ReplicaSetStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Replicas"%go go.int32);
+  (go.FieldDecl "FullyLabeledReplicas"%go go.int32);
+  (go.FieldDecl "ReadyReplicas"%go go.int32);
+  (go.FieldDecl "AvailableReplicas"%go go.int32);
+  (go.FieldDecl "TerminatingReplicas"%go (go.PointerType go.int32));
+  (go.FieldDecl "ObservedGeneration"%go go.int64);
+  (go.FieldDecl "Conditions"%go (go.SliceType ReplicaSetCondition))
+].
+Program Definition ReplicaSetStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetStatus'fds_unsealed).
+Global Instance equals_unfold_ReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetStatus'fds =→ ReplicaSetStatus'fds_unsealed.
+Proof. rewrite /ReplicaSetStatus'fds seal_eq //. Qed.
+
+Definition ReplicaSetStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetStatus'fds).
+
+Class ReplicaSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetStatus_type_repr  :: go.TypeReprUnderlying ReplicaSetStatusⁱᵐᵖˡ ReplicaSetStatus.t;
+  #[global] ReplicaSetStatus_underlying :: (ReplicaSetStatus) <u (ReplicaSetStatusⁱᵐᵖˡ);
+  #[global] ReplicaSetStatus_get_Replicas (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "Replicas", #x⟧ ⤳[under] #x.(ReplicaSetStatus.Replicas');
+  #[global] ReplicaSetStatus_set_Replicas (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "Replicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.Replicas' := y|>);
+  #[global] ReplicaSetStatus_get_FullyLabeledReplicas (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "FullyLabeledReplicas", #x⟧ ⤳[under] #x.(ReplicaSetStatus.FullyLabeledReplicas');
+  #[global] ReplicaSetStatus_set_FullyLabeledReplicas (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "FullyLabeledReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.FullyLabeledReplicas' := y|>);
+  #[global] ReplicaSetStatus_get_ReadyReplicas (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "ReadyReplicas", #x⟧ ⤳[under] #x.(ReplicaSetStatus.ReadyReplicas');
+  #[global] ReplicaSetStatus_set_ReadyReplicas (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "ReadyReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.ReadyReplicas' := y|>);
+  #[global] ReplicaSetStatus_get_AvailableReplicas (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "AvailableReplicas", #x⟧ ⤳[under] #x.(ReplicaSetStatus.AvailableReplicas');
+  #[global] ReplicaSetStatus_set_AvailableReplicas (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "AvailableReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.AvailableReplicas' := y|>);
+  #[global] ReplicaSetStatus_get_TerminatingReplicas (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "TerminatingReplicas", #x⟧ ⤳[under] #x.(ReplicaSetStatus.TerminatingReplicas');
+  #[global] ReplicaSetStatus_set_TerminatingReplicas (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "TerminatingReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.TerminatingReplicas' := y|>);
+  #[global] ReplicaSetStatus_get_ObservedGeneration (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "ObservedGeneration", #x⟧ ⤳[under] #x.(ReplicaSetStatus.ObservedGeneration');
+  #[global] ReplicaSetStatus_set_ObservedGeneration (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "ObservedGeneration", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.ObservedGeneration' := y|>);
+  #[global] ReplicaSetStatus_get_Conditions (x : ReplicaSetStatus.t) :: ⟦StructFieldGet (ReplicaSetStatusⁱᵐᵖˡ) "Conditions", #x⟧ ⤳[under] #x.(ReplicaSetStatus.Conditions');
+  #[global] ReplicaSetStatus_set_Conditions (x : ReplicaSetStatus.t) y :: ⟦StructFieldSet (ReplicaSetStatusⁱᵐᵖˡ) "Conditions", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetStatus.Conditions' := y|>);
+}.
+
+Module ReplicaSet.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : v1.ObjectMeta.t;
+  Spec' : v1.ReplicaSetSpec.t;
+  Status' : v1.ReplicaSetStatus.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+
+End ReplicaSet.
+
+Definition ReplicaSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.FieldDecl "Spec"%go ReplicaSetSpec);
+  (go.FieldDecl "Status"%go ReplicaSetStatus)
+].
+Program Definition ReplicaSet'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSet'fds_unsealed).
+Global Instance equals_unfold_ReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSet'fds =→ ReplicaSet'fds_unsealed.
+Proof. rewrite /ReplicaSet'fds seal_eq //. Qed.
+
+Definition ReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSet'fds).
+
+Class ReplicaSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSet_type_repr  :: go.TypeReprUnderlying ReplicaSetⁱᵐᵖˡ ReplicaSet.t;
+  #[global] ReplicaSet_underlying :: (ReplicaSet) <u (ReplicaSetⁱᵐᵖˡ);
+  #[global] ReplicaSet_get_TypeMeta (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(ReplicaSet.TypeMeta');
+  #[global] ReplicaSet_set_TypeMeta (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.TypeMeta' := y|>);
+  #[global] ReplicaSet_get_ObjectMeta (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(ReplicaSet.ObjectMeta');
+  #[global] ReplicaSet_set_ObjectMeta (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.ObjectMeta' := y|>);
+  #[global] ReplicaSet_get_Spec (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "Spec", #x⟧ ⤳[under] #x.(ReplicaSet.Spec');
+  #[global] ReplicaSet_set_Spec (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Spec' := y|>);
+  #[global] ReplicaSet_get_Status (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(ReplicaSet.Status');
+  #[global] ReplicaSet_set_Status (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Status' := y|>);
+}.
+
+Module ReplicaSetList.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End ReplicaSetList.
+
+Class ReplicaSetList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetList_type_repr  :: go.TypeReprUnderlying ReplicaSetListⁱᵐᵖˡ ReplicaSetList.t;
+  #[global] ReplicaSetList_underlying :: (ReplicaSetList) <u (ReplicaSetListⁱᵐᵖˡ);
+  #[global] ReplicaSetListⁱᵐᵖˡ_underlying :: (ReplicaSetListⁱᵐᵖˡ) ↓u (ReplicaSetListⁱᵐᵖˡ);
+}.
+
+Module ReplicaSetConditionType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+End def.
+End ReplicaSetConditionType.
+
+Definition ReplicaSetConditionTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class ReplicaSetConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetConditionType_underlying :: (ReplicaSetConditionType) <u (ReplicaSetConditionTypeⁱᵐᵖˡ);
+}.
+
+Module ReplicaSetCondition.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Type' : v1.ReplicaSetConditionType.t;
+  Status' : v1.ConditionStatus.t;
+  LastTransitionTime' : v1.Time.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+
+End ReplicaSetCondition.
+
+Definition ReplicaSetCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go ReplicaSetConditionType);
+  (go.FieldDecl "Status"%go v1.ConditionStatus);
+  (go.FieldDecl "LastTransitionTime"%go v1.Time);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "Message"%go go.string)
+].
+Program Definition ReplicaSetCondition'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetCondition'fds_unsealed).
+Global Instance equals_unfold_ReplicaSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetCondition'fds =→ ReplicaSetCondition'fds_unsealed.
+Proof. rewrite /ReplicaSetCondition'fds seal_eq //. Qed.
+
+Definition ReplicaSetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetCondition'fds).
+
+Class ReplicaSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetCondition_type_repr  :: go.TypeReprUnderlying ReplicaSetConditionⁱᵐᵖˡ ReplicaSetCondition.t;
+  #[global] ReplicaSetCondition_underlying :: (ReplicaSetCondition) <u (ReplicaSetConditionⁱᵐᵖˡ);
+  #[global] ReplicaSetCondition_get_Type (x : ReplicaSetCondition.t) :: ⟦StructFieldGet (ReplicaSetConditionⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(ReplicaSetCondition.Type');
+  #[global] ReplicaSetCondition_set_Type (x : ReplicaSetCondition.t) y :: ⟦StructFieldSet (ReplicaSetConditionⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetCondition.Type' := y|>);
+  #[global] ReplicaSetCondition_get_Status (x : ReplicaSetCondition.t) :: ⟦StructFieldGet (ReplicaSetConditionⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(ReplicaSetCondition.Status');
+  #[global] ReplicaSetCondition_set_Status (x : ReplicaSetCondition.t) y :: ⟦StructFieldSet (ReplicaSetConditionⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetCondition.Status' := y|>);
+  #[global] ReplicaSetCondition_get_LastTransitionTime (x : ReplicaSetCondition.t) :: ⟦StructFieldGet (ReplicaSetConditionⁱᵐᵖˡ) "LastTransitionTime", #x⟧ ⤳[under] #x.(ReplicaSetCondition.LastTransitionTime');
+  #[global] ReplicaSetCondition_set_LastTransitionTime (x : ReplicaSetCondition.t) y :: ⟦StructFieldSet (ReplicaSetConditionⁱᵐᵖˡ) "LastTransitionTime", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetCondition.LastTransitionTime' := y|>);
+  #[global] ReplicaSetCondition_get_Reason (x : ReplicaSetCondition.t) :: ⟦StructFieldGet (ReplicaSetConditionⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(ReplicaSetCondition.Reason');
+  #[global] ReplicaSetCondition_set_Reason (x : ReplicaSetCondition.t) y :: ⟦StructFieldSet (ReplicaSetConditionⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetCondition.Reason' := y|>);
+  #[global] ReplicaSetCondition_get_Message (x : ReplicaSetCondition.t) :: ⟦StructFieldGet (ReplicaSetConditionⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(ReplicaSetCondition.Message');
+  #[global] ReplicaSetCondition_set_Message (x : ReplicaSetCondition.t) y :: ⟦StructFieldSet (ReplicaSetConditionⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetCondition.Message' := y|>);
+}.
+
+Module ControllerRevision.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End ControllerRevision.
+
+Class ControllerRevision_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ControllerRevision_type_repr  :: go.TypeReprUnderlying ControllerRevisionⁱᵐᵖˡ ControllerRevision.t;
+  #[global] ControllerRevision_underlying :: (ControllerRevision) <u (ControllerRevisionⁱᵐᵖˡ);
+  #[global] ControllerRevisionⁱᵐᵖˡ_underlying :: (ControllerRevisionⁱᵐᵖˡ) ↓u (ControllerRevisionⁱᵐᵖˡ);
+}.
+
+Module ControllerRevisionList.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End ControllerRevisionList.
+
+Class ControllerRevisionList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ControllerRevisionList_type_repr  :: go.TypeReprUnderlying ControllerRevisionListⁱᵐᵖˡ ControllerRevisionList.t;
+  #[global] ControllerRevisionList_underlying :: (ControllerRevisionList) <u (ControllerRevisionListⁱᵐᵖˡ);
+  #[global] ControllerRevisionListⁱᵐᵖˡ_underlying :: (ControllerRevisionListⁱᵐᵖˡ) ↓u (ControllerRevisionListⁱᵐᵖˡ);
+}.
+
+Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSet_instance :: StatefulSet_Assumptions;
+  #[global] PodManagementPolicyType_instance :: PodManagementPolicyType_Assumptions;
+  #[global] StatefulSetUpdateStrategy_instance :: StatefulSetUpdateStrategy_Assumptions;
+  #[global] StatefulSetUpdateStrategyType_instance :: StatefulSetUpdateStrategyType_Assumptions;
+  #[global] RollingUpdateStatefulSetStrategy_instance :: RollingUpdateStatefulSetStrategy_Assumptions;
+  #[global] PersistentVolumeClaimRetentionPolicyType_instance :: PersistentVolumeClaimRetentionPolicyType_Assumptions;
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_instance :: StatefulSetPersistentVolumeClaimRetentionPolicy_Assumptions;
+  #[global] StatefulSetOrdinals_instance :: StatefulSetOrdinals_Assumptions;
+  #[global] StatefulSetSpec_instance :: StatefulSetSpec_Assumptions;
+  #[global] StatefulSetStatus_instance :: StatefulSetStatus_Assumptions;
+  #[global] StatefulSetConditionType_instance :: StatefulSetConditionType_Assumptions;
+  #[global] StatefulSetCondition_instance :: StatefulSetCondition_Assumptions;
+  #[global] StatefulSetList_instance :: StatefulSetList_Assumptions;
+  #[global] Deployment_instance :: Deployment_Assumptions;
+  #[global] DeploymentSpec_instance :: DeploymentSpec_Assumptions;
+  #[global] DeploymentStrategy_instance :: DeploymentStrategy_Assumptions;
+  #[global] DeploymentStrategyType_instance :: DeploymentStrategyType_Assumptions;
+  #[global] RollingUpdateDeployment_instance :: RollingUpdateDeployment_Assumptions;
+  #[global] DeploymentStatus_instance :: DeploymentStatus_Assumptions;
+  #[global] DeploymentConditionType_instance :: DeploymentConditionType_Assumptions;
+  #[global] DeploymentCondition_instance :: DeploymentCondition_Assumptions;
+  #[global] DeploymentList_instance :: DeploymentList_Assumptions;
+  #[global] DaemonSetUpdateStrategy_instance :: DaemonSetUpdateStrategy_Assumptions;
+  #[global] DaemonSetUpdateStrategyType_instance :: DaemonSetUpdateStrategyType_Assumptions;
+  #[global] RollingUpdateDaemonSet_instance :: RollingUpdateDaemonSet_Assumptions;
+  #[global] DaemonSetSpec_instance :: DaemonSetSpec_Assumptions;
+  #[global] DaemonSetStatus_instance :: DaemonSetStatus_Assumptions;
+  #[global] DaemonSetConditionType_instance :: DaemonSetConditionType_Assumptions;
+  #[global] DaemonSetCondition_instance :: DaemonSetCondition_Assumptions;
+  #[global] DaemonSet_instance :: DaemonSet_Assumptions;
+  #[global] DaemonSetList_instance :: DaemonSetList_Assumptions;
+  #[global] ReplicaSet_instance :: ReplicaSet_Assumptions;
+  #[global] ReplicaSetList_instance :: ReplicaSetList_Assumptions;
+  #[global] ReplicaSetSpec_instance :: ReplicaSetSpec_Assumptions;
+  #[global] ReplicaSetStatus_instance :: ReplicaSetStatus_Assumptions;
+  #[global] ReplicaSetConditionType_instance :: ReplicaSetConditionType_Assumptions;
+  #[global] ReplicaSetCondition_instance :: ReplicaSetCondition_Assumptions;
+  #[global] ControllerRevision_instance :: ControllerRevision_Assumptions;
+  #[global] ControllerRevisionList_instance :: ControllerRevisionList_Assumptions;
+  #[global] import_v1_Assumption :: v1.Assumptions;
+  #[global] import_v1_Assumption :: v1.Assumptions;
+  #[global] import_schema_Assumption :: schema.Assumptions;
+}.
 End v1.

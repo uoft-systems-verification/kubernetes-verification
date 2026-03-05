@@ -1,5 +1,6 @@
-From Perennial.algebra Require Export auth_map auth_set.
-Require Export New.proof.sync.
+From Perennial.algebra Require Export auth_map.
+From New.ghost Require Export auth_set.
+From New.proof.sync_proof Require Export mutex.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.

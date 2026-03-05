@@ -2,448 +2,489 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.apimachinery.pkg.api.meta.
 
 Set Default Proof Using "Type".
 
 Module meta.
-
-(* type meta.AmbiguousResourceError *)
 Module AmbiguousResourceError.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AmbiguousResourceError_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.AmbiguousResourceError.t). Admitted.
+
+#[global] Instance AmbiguousResourceError_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.AmbiguousResourceError.t) (meta.AmbiguousResourceErrorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AmbiguousResourceError.
 
-Global Instance bounded_size_AmbiguousResourceError : BoundedTypeSize meta.AmbiguousResourceError.
-Admitted.
-
-Global Instance into_val_AmbiguousResourceError `{ffi_syntax} : IntoVal AmbiguousResourceError.t.
-Admitted.
-
-Global Instance into_val_typed_AmbiguousResourceError `{ffi_syntax} : IntoValTyped AmbiguousResourceError.t meta.AmbiguousResourceError.
-Admitted.
-
-(* type meta.AmbiguousKindError *)
 Module AmbiguousKindError.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AmbiguousKindError_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.AmbiguousKindError.t). Admitted.
+
+#[global] Instance AmbiguousKindError_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.AmbiguousKindError.t) (meta.AmbiguousKindErrorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AmbiguousKindError.
 
-Global Instance bounded_size_AmbiguousKindError : BoundedTypeSize meta.AmbiguousKindError.
-Admitted.
-
-Global Instance into_val_AmbiguousKindError `{ffi_syntax} : IntoVal AmbiguousKindError.t.
-Admitted.
-
-Global Instance into_val_typed_AmbiguousKindError `{ffi_syntax} : IntoValTyped AmbiguousKindError.t meta.AmbiguousKindError.
-Admitted.
-
-(* type meta.NoResourceMatchError *)
 Module NoResourceMatchError.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NoResourceMatchError_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.NoResourceMatchError.t). Admitted.
+
+#[global] Instance NoResourceMatchError_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.NoResourceMatchError.t) (meta.NoResourceMatchErrorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NoResourceMatchError.
 
-Global Instance bounded_size_NoResourceMatchError : BoundedTypeSize meta.NoResourceMatchError.
-Admitted.
-
-Global Instance into_val_NoResourceMatchError `{ffi_syntax} : IntoVal NoResourceMatchError.t.
-Admitted.
-
-Global Instance into_val_typed_NoResourceMatchError `{ffi_syntax} : IntoValTyped NoResourceMatchError.t meta.NoResourceMatchError.
-Admitted.
-
-(* type meta.NoKindMatchError *)
 Module NoKindMatchError.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NoKindMatchError_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.NoKindMatchError.t). Admitted.
+
+#[global] Instance NoKindMatchError_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.NoKindMatchError.t) (meta.NoKindMatchErrorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NoKindMatchError.
 
-Global Instance bounded_size_NoKindMatchError : BoundedTypeSize meta.NoKindMatchError.
-Admitted.
-
-Global Instance into_val_NoKindMatchError `{ffi_syntax} : IntoVal NoKindMatchError.t.
-Admitted.
-
-Global Instance into_val_typed_NoKindMatchError `{ffi_syntax} : IntoValTyped NoKindMatchError.t meta.NoKindMatchError.
-Admitted.
-
-(* type meta.FirstHitRESTMapper *)
 Module FirstHitRESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FirstHitRESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.FirstHitRESTMapper.t). Admitted.
+
+#[global] Instance FirstHitRESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.FirstHitRESTMapper.t) (meta.FirstHitRESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FirstHitRESTMapper.
 
-Global Instance bounded_size_FirstHitRESTMapper : BoundedTypeSize meta.FirstHitRESTMapper.
-Admitted.
-
-Global Instance into_val_FirstHitRESTMapper `{ffi_syntax} : IntoVal FirstHitRESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_FirstHitRESTMapper `{ffi_syntax} : IntoValTyped FirstHitRESTMapper.t meta.FirstHitRESTMapper.
-Admitted.
-
-(* type meta.ListMetaAccessor *)
 Module ListMetaAccessor.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ListMetaAccessor_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.ListMetaAccessor.t). Admitted.
+
+#[global] Instance ListMetaAccessor_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.ListMetaAccessor.t) (meta.ListMetaAccessorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ListMetaAccessor.
 
-Global Instance bounded_size_ListMetaAccessor : BoundedTypeSize meta.ListMetaAccessor.
-Admitted.
-
-Global Instance into_val_ListMetaAccessor `{ffi_syntax} : IntoVal ListMetaAccessor.t.
-Admitted.
-
-Global Instance into_val_typed_ListMetaAccessor `{ffi_syntax} : IntoValTyped ListMetaAccessor.t meta.ListMetaAccessor.
-Admitted.
-
-(* type meta.List *)
 Module List.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance List_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.List.t). Admitted.
+
+#[global] Instance List_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.List.t) (meta.Listⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End List.
 
-Global Instance bounded_size_List : BoundedTypeSize meta.List.
-Admitted.
-
-Global Instance into_val_List `{ffi_syntax} : IntoVal List.t.
-Admitted.
-
-Global Instance into_val_typed_List `{ffi_syntax} : IntoValTyped List.t meta.List.
-Admitted.
-
-(* type meta.Type' *)
 Module Type'.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Type'_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.Type'.t). Admitted.
+
+#[global] Instance Type'_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.Type'.t) (meta.Type'ⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Type'.
 
-Global Instance bounded_size_Type' : BoundedTypeSize meta.Type'.
-Admitted.
-
-Global Instance into_val_Type' `{ffi_syntax} : IntoVal Type'.t.
-Admitted.
-
-Global Instance into_val_typed_Type' `{ffi_syntax} : IntoValTyped Type'.t meta.Type'.
-Admitted.
-
-(* type meta.MetadataAccessor *)
 Module MetadataAccessor.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance MetadataAccessor_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.MetadataAccessor.t). Admitted.
+
+#[global] Instance MetadataAccessor_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.MetadataAccessor.t) (meta.MetadataAccessorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End MetadataAccessor.
 
-Global Instance bounded_size_MetadataAccessor : BoundedTypeSize meta.MetadataAccessor.
-Admitted.
-
-Global Instance into_val_MetadataAccessor `{ffi_syntax} : IntoVal MetadataAccessor.t.
-Admitted.
-
-Global Instance into_val_typed_MetadataAccessor `{ffi_syntax} : IntoValTyped MetadataAccessor.t meta.MetadataAccessor.
-Admitted.
-
-(* type meta.RESTScopeName *)
 Module RESTScopeName.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RESTScopeName_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.RESTScopeName.t). Admitted.
+
+#[global] Instance RESTScopeName_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.RESTScopeName.t) (meta.RESTScopeNameⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RESTScopeName.
 
-Global Instance bounded_size_RESTScopeName : BoundedTypeSize meta.RESTScopeName.
-Admitted.
-
-Global Instance into_val_RESTScopeName `{ffi_syntax} : IntoVal RESTScopeName.t.
-Admitted.
-
-Global Instance into_val_typed_RESTScopeName `{ffi_syntax} : IntoValTyped RESTScopeName.t meta.RESTScopeName.
-Admitted.
-
-(* type meta.RESTScope *)
 Module RESTScope.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RESTScope_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.RESTScope.t). Admitted.
+
+#[global] Instance RESTScope_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.RESTScope.t) (meta.RESTScopeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RESTScope.
 
-Global Instance bounded_size_RESTScope : BoundedTypeSize meta.RESTScope.
-Admitted.
-
-Global Instance into_val_RESTScope `{ffi_syntax} : IntoVal RESTScope.t.
-Admitted.
-
-Global Instance into_val_typed_RESTScope `{ffi_syntax} : IntoValTyped RESTScope.t meta.RESTScope.
-Admitted.
-
-(* type meta.RESTMapping *)
 Module RESTMapping.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RESTMapping_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.RESTMapping.t). Admitted.
+
+#[global] Instance RESTMapping_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.RESTMapping.t) (meta.RESTMappingⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RESTMapping.
 
-Global Instance bounded_size_RESTMapping : BoundedTypeSize meta.RESTMapping.
-Admitted.
-
-Global Instance into_val_RESTMapping `{ffi_syntax} : IntoVal RESTMapping.t.
-Admitted.
-
-Global Instance into_val_typed_RESTMapping `{ffi_syntax} : IntoValTyped RESTMapping.t meta.RESTMapping.
-Admitted.
-
-(* type meta.RESTMapper *)
 Module RESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.RESTMapper.t). Admitted.
+
+#[global] Instance RESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.RESTMapper.t) (meta.RESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RESTMapper.
 
-Global Instance bounded_size_RESTMapper : BoundedTypeSize meta.RESTMapper.
-Admitted.
-
-Global Instance into_val_RESTMapper `{ffi_syntax} : IntoVal RESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_RESTMapper `{ffi_syntax} : IntoValTyped RESTMapper.t meta.RESTMapper.
-Admitted.
-
-(* type meta.ResettableRESTMapper *)
 Module ResettableRESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResettableRESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.ResettableRESTMapper.t). Admitted.
+
+#[global] Instance ResettableRESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.ResettableRESTMapper.t) (meta.ResettableRESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResettableRESTMapper.
 
-Global Instance bounded_size_ResettableRESTMapper : BoundedTypeSize meta.ResettableRESTMapper.
-Admitted.
-
-Global Instance into_val_ResettableRESTMapper `{ffi_syntax} : IntoVal ResettableRESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_ResettableRESTMapper `{ffi_syntax} : IntoValTyped ResettableRESTMapper.t meta.ResettableRESTMapper.
-Admitted.
-
-(* type meta.lazyObject *)
 Module lazyObject.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance lazyObject_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.lazyObject.t). Admitted.
+
+#[global] Instance lazyObject_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.lazyObject.t) (meta.lazyObjectⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End lazyObject.
 
-Global Instance bounded_size_lazyObject : BoundedTypeSize meta.lazyObject.
-Admitted.
-
-Global Instance into_val_lazyObject `{ffi_syntax} : IntoVal lazyObject.t.
-Admitted.
-
-Global Instance into_val_typed_lazyObject `{ffi_syntax} : IntoValTyped lazyObject.t meta.lazyObject.
-Admitted.
-
-(* type meta.objectAccessor *)
 Module objectAccessor.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance objectAccessor_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.objectAccessor.t). Admitted.
+
+#[global] Instance objectAccessor_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.objectAccessor.t) (meta.objectAccessorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End objectAccessor.
 
-Global Instance bounded_size_objectAccessor : BoundedTypeSize meta.objectAccessor.
-Admitted.
-
-Global Instance into_val_objectAccessor `{ffi_syntax} : IntoVal objectAccessor.t.
-Admitted.
-
-Global Instance into_val_typed_objectAccessor `{ffi_syntax} : IntoValTyped objectAccessor.t meta.objectAccessor.
-Admitted.
-
-(* type meta.resourceAccessor *)
 Module resourceAccessor.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance resourceAccessor_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.resourceAccessor.t). Admitted.
+
+#[global] Instance resourceAccessor_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.resourceAccessor.t) (meta.resourceAccessorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End resourceAccessor.
 
-Global Instance bounded_size_resourceAccessor : BoundedTypeSize meta.resourceAccessor.
-Admitted.
-
-Global Instance into_val_resourceAccessor `{ffi_syntax} : IntoVal resourceAccessor.t.
-Admitted.
-
-Global Instance into_val_typed_resourceAccessor `{ffi_syntax} : IntoValTyped resourceAccessor.t meta.resourceAccessor.
-Admitted.
-
-(* type meta.genericAccessor *)
 Module genericAccessor.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance genericAccessor_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.genericAccessor.t). Admitted.
+
+#[global] Instance genericAccessor_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.genericAccessor.t) (meta.genericAccessorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End genericAccessor.
 
-Global Instance bounded_size_genericAccessor : BoundedTypeSize meta.genericAccessor.
-Admitted.
-
-Global Instance into_val_genericAccessor `{ffi_syntax} : IntoVal genericAccessor.t.
-Admitted.
-
-Global Instance into_val_typed_genericAccessor `{ffi_syntax} : IntoValTyped genericAccessor.t meta.genericAccessor.
-Admitted.
-
-(* type meta.MultiRESTMapper *)
 Module MultiRESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance MultiRESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.MultiRESTMapper.t). Admitted.
+
+#[global] Instance MultiRESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.MultiRESTMapper.t) (meta.MultiRESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End MultiRESTMapper.
 
-Global Instance bounded_size_MultiRESTMapper : BoundedTypeSize meta.MultiRESTMapper.
-Admitted.
-
-Global Instance into_val_MultiRESTMapper `{ffi_syntax} : IntoVal MultiRESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_MultiRESTMapper `{ffi_syntax} : IntoValTyped MultiRESTMapper.t meta.MultiRESTMapper.
-Admitted.
-
-(* type meta.PriorityRESTMapper *)
 Module PriorityRESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PriorityRESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.PriorityRESTMapper.t). Admitted.
+
+#[global] Instance PriorityRESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.PriorityRESTMapper.t) (meta.PriorityRESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PriorityRESTMapper.
 
-Global Instance bounded_size_PriorityRESTMapper : BoundedTypeSize meta.PriorityRESTMapper.
-Admitted.
-
-Global Instance into_val_PriorityRESTMapper `{ffi_syntax} : IntoVal PriorityRESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_PriorityRESTMapper `{ffi_syntax} : IntoValTyped PriorityRESTMapper.t meta.PriorityRESTMapper.
-Admitted.
-
-(* type meta.restScope *)
 Module restScope.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance restScope_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.restScope.t). Admitted.
+
+#[global] Instance restScope_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.restScope.t) (meta.restScopeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End restScope.
 
-Global Instance bounded_size_restScope : BoundedTypeSize meta.restScope.
-Admitted.
-
-Global Instance into_val_restScope `{ffi_syntax} : IntoVal restScope.t.
-Admitted.
-
-Global Instance into_val_typed_restScope `{ffi_syntax} : IntoValTyped restScope.t meta.restScope.
-Admitted.
-
-(* type meta.DefaultRESTMapper *)
 Module DefaultRESTMapper.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DefaultRESTMapper_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.DefaultRESTMapper.t). Admitted.
+
+#[global] Instance DefaultRESTMapper_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.DefaultRESTMapper.t) (meta.DefaultRESTMapperⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DefaultRESTMapper.
 
-Global Instance bounded_size_DefaultRESTMapper : BoundedTypeSize meta.DefaultRESTMapper.
-Admitted.
-
-Global Instance into_val_DefaultRESTMapper `{ffi_syntax} : IntoVal DefaultRESTMapper.t.
-Admitted.
-
-Global Instance into_val_typed_DefaultRESTMapper `{ffi_syntax} : IntoValTyped DefaultRESTMapper.t meta.DefaultRESTMapper.
-Admitted.
-
-(* type meta.kindByPreferredGroupVersion *)
 Module kindByPreferredGroupVersion.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance kindByPreferredGroupVersion_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.kindByPreferredGroupVersion.t). Admitted.
+
+#[global] Instance kindByPreferredGroupVersion_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.kindByPreferredGroupVersion.t) (meta.kindByPreferredGroupVersionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End kindByPreferredGroupVersion.
 
-Global Instance bounded_size_kindByPreferredGroupVersion : BoundedTypeSize meta.kindByPreferredGroupVersion.
-Admitted.
-
-Global Instance into_val_kindByPreferredGroupVersion `{ffi_syntax} : IntoVal kindByPreferredGroupVersion.t.
-Admitted.
-
-Global Instance into_val_typed_kindByPreferredGroupVersion `{ffi_syntax} : IntoValTyped kindByPreferredGroupVersion.t meta.kindByPreferredGroupVersion.
-Admitted.
-
-(* type meta.resourceByPreferredGroupVersion *)
 Module resourceByPreferredGroupVersion.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : meta.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance resourceByPreferredGroupVersion_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (meta.resourceByPreferredGroupVersion.t). Admitted.
+
+#[global] Instance resourceByPreferredGroupVersion_into_val_typed
+   :
+  IntoValTypedUnderlying (meta.resourceByPreferredGroupVersion.t) (meta.resourceByPreferredGroupVersionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End resourceByPreferredGroupVersion.
 
-Global Instance bounded_size_resourceByPreferredGroupVersion : BoundedTypeSize meta.resourceByPreferredGroupVersion.
-Admitted.
-
-Global Instance into_val_resourceByPreferredGroupVersion `{ffi_syntax} : IntoVal resourceByPreferredGroupVersion.t.
-Admitted.
-
-Global Instance into_val_typed_resourceByPreferredGroupVersion `{ffi_syntax} : IntoValTyped resourceByPreferredGroupVersion.t meta.resourceByPreferredGroupVersion.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_meta : IsPkgDefinedPure meta :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single meta ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_meta : IsPkgDefined meta :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single meta ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-Global Instance wp_func_call_Accessor :
-  WpFuncCall meta.Accessor _ (is_pkg_defined meta) :=
-  ltac:(solve_wp_func_call).
-
-End names.
 End meta.
