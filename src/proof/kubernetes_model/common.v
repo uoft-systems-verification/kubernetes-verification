@@ -20,7 +20,18 @@ Admitted.
 Lemma wp_applyValidationAndDefaulting i o (name : go_string):
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i o 1 ∗
-      ⌜ ObjectMetaV.valid (KObjectV.objectmeta o) ⌝
+      ⌜ let m := KObjectV.objectmeta o in
+        (m.(ObjectMetaV.GenerateName') ≠ ""%go →
+          valid_generate_name m.(ObjectMetaV.GenerateName')) ∧
+        m.(ObjectMetaV.Name') ≠ ""%go ∧
+        valid_name m.(ObjectMetaV.Name') ∧
+        m.(ObjectMetaV.Namespace') ≠ ""%go ∧
+        valid_namespace m.(ObjectMetaV.Namespace') ∧
+        valid_labels m.(ObjectMetaV.Labels') ∧
+        valid_annotations m.(ObjectMetaV.Annotations') ∧
+        valid_owner_references m.(ObjectMetaV.OwnerReferences') ∧
+        valid_finalizers m.(ObjectMetaV.Finalizers') ∧
+        valid_managed_fields m.(ObjectMetaV.ManagedFields') ⌝
   }}}
     @! apimodel.applyValidationAndDefaulting #i #name
   {{{ o', RET #interface.nil;

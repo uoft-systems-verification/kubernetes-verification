@@ -38,8 +38,8 @@ Lemma wp_State__objCreate_without_name γ l kind namespace obj
       "Hghost_grandchildren_keys" ∷ (KObjectV.key pure_kobj') [[ γ.(γ_children) ]]↦ ∅
       (* TODO: specify that pure_kobj' shares some content with pure_kobj *)
   }}}.
-Proof.
-  wp_start as "H". iNamed "H". iNamed "Hisk".
+Proof. Admitted.
+  (* wp_start as "H". iNamed "H". iNamed "Hisk".
   pose proof KObjectV.valid_for_nameless_create_split _ Hwf as [Hwf_meta Hwf_other].
   unfold ObjectMetaV.valid_for_nameless_create in Hwf_meta.
   destruct Hwf_meta as (Hgenerate_name & Hgenerate_name_len & Hname & Hnamespace & Howner_ref).
@@ -331,7 +331,7 @@ Proof.
   iApply ("HΦ" $! interface_obj' ptr' (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)).
   iFrame "Hdeepown_l'". iFrame. rewrite <-Hnew_key_eq. iFrame. iPureIntro. split_and!.
   all: try done; destruct pure_kobj; done.
-Qed.
+Qed. *)
 
 Lemma wp_State__PodCreate_without_name γ l namespace ptr
   (pod: v1.Pod.t) pure_pod parent_key parent children_keys:

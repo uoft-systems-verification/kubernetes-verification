@@ -74,6 +74,16 @@ End ManagedFieldsEntryV.
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
 Axiom valid_name: go_string → Prop.
 
+Definition valid_generate_name generate_name : Prop :=
+  (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
+  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix.
+
+  (* Below is the actual validation logic for generate_name, which is too complex and seems buggy *)
+  (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L37 *)
+  (* TODO: there might be a bug in Kubernetes that performs name[:len(name)-2] in generic.go *)
+  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧ valid_name (prefix ++ "a"%go)) ∨
+  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧ valid_name generate_name. *)
+
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
 Axiom valid_namespace: go_string → Prop.
 
@@ -131,36 +141,38 @@ Record t := mk {
   ManagedFields' : option (list ManagedFieldsEntryV.t);
 }.
 
-(* TODO: translate https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go to spec *)
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155 *)
 Definition valid (m: t) : Prop :=
-  (m.(GenerateName') ≠ ""%go → (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ valid_name prefix) ∨ valid_name m.(GenerateName')) ∧
+  (m.(GenerateName') ≠ ""%go → valid_generate_name m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
   valid_name m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧
   valid_namespace m.(Namespace') ∧
-  match m.(OwnerReferences') with
-  | None => True
-  | Some os => OwnerReferenceV.list_valid os
-  end.
+  valid_generation m.(Generation') ∧
+  valid_labels m.(Labels') ∧
+  valid_annotations m.(Annotations') ∧
+  valid_owner_references m.(OwnerReferences') ∧
+  valid_finalizers m.(Finalizers') ∧
+  valid_managed_fields m.(ManagedFields').
 
 Definition valid_nameless_create ns (m: t) : Prop :=
-  (* The generate_name in the meta must be a valid name followed by a "-"; this is overly restrict but still practical *)
-  (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix) ∧
-  (* The max len of generate_name must be 58 so that the suffix can fit int:
+  valid_generate_name m.(GenerateName') ∧
+  (* The max len of generate_name must be 58 so that the suffix can fit in:
     https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
   length m.(GenerateName') ≤ 58 ∧
   (* The name in the meta must be empty for nameless create *)
   m.(Name') = ""%go ∧
   (* The namespace in the meta is either empty or equal to the provided ns *)
   (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
-  match m.(OwnerReferences') with
-  | None => True
-  | Some os => OwnerReferenceV.list_valid os
-  end.
+  valid_labels m.(Labels') ∧
+  valid_annotations m.(Annotations') ∧
+  valid_owner_references m.(OwnerReferences') ∧
+  valid_finalizers m.(Finalizers') ∧
+  valid_managed_fields m.(ManagedFields').
 
 Definition valid_for_nameless_create (m: t) : Prop :=
   (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
-  (* The max len of generate_name of the pod must be 58 so that the suffix can fit int:
+  (* The max len of generate_name of the pod must be 58 so that the suffix can fit in:
     https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
   length m.(GenerateName') ≤ 58 ∧
   m.(Name') = ""%go ∧
@@ -891,8 +903,14 @@ Proof.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
   unfold ObjectMetaV.valid in Hwf.
-  destruct Hwf as (_ & _ & _ & _ & _ & Hwf_ownerref).
+  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
-  - apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
+  - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
+    assert (OwnerReferenceV.list_valid os) as Hwf_list.
+    { intros i1 o1 i2 o2 (Hlookup1 & Hctrl1 & Hlookup2 & Hctrl2).
+      destruct Hwf_ownerref as [Hunique _].
+      eauto.
+    }
+    apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
   - contradiction.
 Qed.
