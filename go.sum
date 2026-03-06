@@ -21,6 +21,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mit-pdos/perennial-cli v0.4.1 h1:PRrhKXy7ueY9dlhTa+UMo4CUGh/PqnoLQ6fXNTM/Kps=
 github.com/mit-pdos/perennial-cli v0.4.1/go.mod h1:LKBAUqb/ZvU75dPPJM4CX+Z3psF66TeSffglJVLEfHc=
+github.com/mit-pdos/perennial-cli v0.4.3 h1:IhungH/yHz9WpO/HJ1Bvyv7mikBaz2F5LS16LT0XcNU=
+github.com/mit-pdos/perennial-cli v0.4.3/go.mod h1:LKBAUqb/ZvU75dPPJM4CX+Z3psF66TeSffglJVLEfHc=
 github.com/pb33f/ordered-map/v2 v2.3.0 h1:k2OhVEQkhTCQMhAicQ3Z6iInzoZNQ7L9MVomwKBZ5WQ=
 github.com/pb33f/ordered-map/v2 v2.3.0/go.mod h1:oe5ue+6ZNhy7QN9cPZvPA23Hx0vMHnNVeMg4fGdCANw=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
