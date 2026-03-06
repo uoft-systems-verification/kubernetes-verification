@@ -16,7 +16,7 @@ Lemma wp_State__objListLocked_pod γ l phys_state_l phys_state abs_state kind na
       "Hown_abs" ∷ map_ctx γ.(γ_state) 1 abs_state ∗
       "Hphys_abs_rep" ∷ state_rep phys_state abs_state ∗
       "Hghostpods" ∷ ([∗ map] key ↦ pod ∈ pure_pod_map, key [[ γ.(γ_state) ]]↦ KObjectV.Pod pod) ∗
-      "%Habs_state_valid" ∷ ⌜ ∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.valid obj ⌝
+      "%Habs_state_valid" ∷ ⌜ ∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.valid_old obj ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objListLocked" #kind #namespace
   {{{ sl ptr_list pure_pod_list, RET #sl;

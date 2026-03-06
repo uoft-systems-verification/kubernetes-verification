@@ -85,31 +85,6 @@ func (s *State) setResourceVersion(metadata metav1.Object) {
 	metadata.SetResourceVersion(strconv.FormatInt(s.resourceVersionCounter, 10))
 }
 
-// applySchemaDefaults applies schema-based defaults to the object.
-// This matches the API server's defaulting behavior that happens during decoding.
-// These defaults are applied BEFORE PrepareForCreate and validation.
-func applySchemaDefaults(objCopy interface{}) error {
-	switch obj := objCopy.(type) {
-	case *corev1.Pod:
-		// SetObjectDefaults_Pod recursively applies all defaults:
-		// - PodSpec defaults (DNSPolicy, RestartPolicy, TerminationGracePeriodSeconds, etc.)
-		// - Container defaults (ImagePullPolicy, TerminationMessagePolicy, etc.)
-		// - Volume defaults, Probe defaults, etc.
-		corev1defaults.SetObjectDefaults_Pod(obj)
-
-	case *appsv1.ReplicaSet:
-		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
-		// - ReplicaSet.Spec.Replicas defaults to 1
-		// - Pod template defaults (same as Pod)
-		appsv1defaults.SetObjectDefaults_ReplicaSet(obj)
-
-	default:
-		return fmt.Errorf("unsupported object type for schema defaults: %T", objCopy)
-	}
-
-	return nil
-}
-
 // validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
 // This matches the API server's generic metadata validation that happens in BeforeCreate.
 func validateObjectMeta(metadata metav1.Object, kind string) error {
@@ -212,59 +187,174 @@ func applyPriorityAdmission(pod *core.Pod) {
 	// because the model doesn't implement PriorityClass storage yet.
 }
 
-// applyStrategyAndValidate applies resource-specific strategy (PrepareForCreate, Validate, Canonicalize).
-// This matches the API server's BeforeCreate behavior of calling strategy hooks and validation functions.
-// Returns an error if conversion fails or validation fails (converted from field.ErrorList to error).
-func applyStrategyAndValidate(objCopy interface{}, name string) error {
-	ctx := context.Background()
-
-	switch obj := objCopy.(type) {
+// convertVersionedToLegacy converts supported external/versioned API objects
+// to their internal Kubernetes representations.
+func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
+	switch typed := obj.(type) {
 	case *corev1.Pod:
-
 		internalPod := &core.Pod{}
-
-		if err := legacyscheme.Scheme.Convert(obj, internalPod, nil); err != nil {
-			return errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Pod to internal Pod: %v", err))
+		if err := legacyscheme.Scheme.Convert(typed, internalPod, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Pod to internal Pod: %v", err))
 		}
+		return internalPod, nil
+	case *appsv1.ReplicaSet:
+		internalRS := &apps.ReplicaSet{}
+		if err := legacyscheme.Scheme.Convert(typed, internalRS, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v", err))
+		}
+		return internalRS, nil
+	default:
+		return nil, fmt.Errorf("unsupported versioned object type for conversion: %T", obj)
+	}
+}
 
-		podstrategy.Strategy.PrepareForCreate(ctx, internalPod)
+// applySchemaDefaults applies schema-based defaults to the object.
+// This matches the API server's defaulting behavior that happens during decoding.
+// These defaults are applied BEFORE PrepareForCreate and validation.
+func applySchemaDefaults(obj interface{}) error {
+	switch typed := obj.(type) {
+	case *corev1.Pod:
+		// SetObjectDefaults_Pod recursively applies all defaults:
+		// - PodSpec defaults (DNSPolicy, RestartPolicy, TerminationGracePeriodSeconds, etc.)
+		// - Container defaults (ImagePullPolicy, TerminationMessagePolicy, etc.)
+		// - Volume defaults, Probe defaults, etc.
+		corev1defaults.SetObjectDefaults_Pod(typed)
+	case *appsv1.ReplicaSet:
+		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
+		// - ReplicaSet.Spec.Replicas defaults to 1
+		// - Pod template defaults (same as Pod)
+		appsv1defaults.SetObjectDefaults_ReplicaSet(typed)
+	default:
+		return fmt.Errorf("unsupported object type for schema defaults: %T", obj)
+	}
+	return nil
+}
 
+func applyStrategyPrepareForCreate(obj interface{}) error {
+	ctx := context.Background()
+	switch typed := obj.(type) {
+	case *core.Pod:
+		podstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *apps.ReplicaSet:
+		rsstrategy.Strategy.PrepareForCreate(ctx, typed)
+	default:
+		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
+	}
+	return nil
+}
+
+func applyAdmissionMutate(obj interface{}) error {
+	switch typed := obj.(type) {
+	case *core.Pod:
 		// Apply admission controller mutations (these run after PrepareForCreate in real k8s)
 		// Note: ServiceAccount admission controller is NOT enabled in envtest, so we don't apply it here.
 		// A full Kubernetes cluster would set ServiceAccountName="default" if empty, but envtest doesn't.
-		applyDefaultTolerationSeconds(internalPod)
-		applyPriorityAdmission(internalPod)
+		applyDefaultTolerationSeconds(typed)
+		applyPriorityAdmission(typed)
+	case *apps.ReplicaSet:
+		return nil
+	default:
+		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
+	}
+	return nil
+}
 
-		if errs := podstrategy.Strategy.Validate(ctx, internalPod); len(errs) > 0 {
+func applyAdmissionValidate(obj interface{}) error {
+	switch obj.(type) {
+	case *core.Pod:
+		// The built-in admission plugins this model currently mirrors for Pod create are:
+		// - DefaultTolerationSeconds: mutation only, no Validate method
+		// - Priority: its Validate method applies to PriorityClass objects, not Pods
+		// So there is no additional Pod admission validation to run here.
+		return nil
+	case *apps.ReplicaSet:
+		// This model does not mirror any ReplicaSet-specific validating admission plugins.
+		return nil
+	default:
+		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
+	}
+}
+
+func applyStrategyValidate(obj interface{}, name string) error {
+	ctx := context.Background()
+	switch typed := obj.(type) {
+	case *core.Pod:
+		if errs := podstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "Pod"}, name, errs)
 		}
-		podstrategy.Strategy.Canonicalize(internalPod)
-
-		if err := legacyscheme.Scheme.Convert(internalPod, obj, nil); err != nil {
-			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal Pod back to v1.Pod: %v", err))
-		}
-
-	case *appsv1.ReplicaSet:
-		internalRS := &apps.ReplicaSet{}
-		if err := legacyscheme.Scheme.Convert(obj, internalRS, nil); err != nil {
-			return errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v", err))
-		}
-
-		rsstrategy.Strategy.PrepareForCreate(ctx, internalRS)
-
-		if errs := rsstrategy.Strategy.Validate(ctx, internalRS); len(errs) > 0 {
+	case *apps.ReplicaSet:
+		if errs := rsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, name, errs)
 		}
-		rsstrategy.Strategy.Canonicalize(internalRS)
-
-		if err := legacyscheme.Scheme.Convert(internalRS, obj, nil); err != nil {
-			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal ReplicaSet back to appsv1.ReplicaSet: %v", err))
-		}
-
 	default:
-		return fmt.Errorf("unsupported object type for strategy and validation: %T", objCopy)
+		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
+	}
+	return nil
+}
+
+func applyStrategyCanonicalize(obj interface{}) error {
+	switch typed := obj.(type) {
+	case *core.Pod:
+		podstrategy.Strategy.Canonicalize(typed)
+	case *apps.ReplicaSet:
+		rsstrategy.Strategy.Canonicalize(typed)
+	default:
+		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
+	}
+	return nil
+}
+
+func applyValidationAndDefaulting(obj interface{}, name string) error {
+	// This applies OpenAPI schema defaults like DNSPolicy=ClusterFirst, RestartPolicy=Always, etc.
+	// In real k8s, this happens in the decoder before the handler even sees the object.
+	// We do it here because we don't have a full decode pipeline.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L127
+	if err := applySchemaDefaults(obj); err != nil {
+		return err
+	}
+	legacyObj, err := convertVersionedToLegacy(obj)
+	if err != nil {
+		return err
 	}
 
+	// Apply mutating admission.
+	// In real k8s, this runs in the create handler before storage create:
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L202-L206
+	if err := applyAdmissionMutate(legacyObj); err != nil {
+		return err
+	}
+
+	// Apply the strategy's PrepareForCreate hook.
+	// This is part of rest.BeforeCreate in the storage layer:
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L120
+	if err := applyStrategyPrepareForCreate(legacyObj); err != nil {
+		return err
+	}
+
+	// Apply the strategy's custom validation.
+	// Note: generic metadata validation from rest.BeforeCreate is handled separately.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L122-L124
+	if err := applyStrategyValidate(legacyObj, name); err != nil {
+		return err
+	}
+
+	// Canonicalize the object after validation, matching rest.BeforeCreate.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L137
+	if err := applyStrategyCanonicalize(legacyObj); err != nil {
+		return err
+	}
+
+	// Apply validating admission after BeforeCreate has produced a fully formed object.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L504-L510
+	if err := applyAdmissionValidate(legacyObj); err != nil {
+		return err
+	}
+
+	// Model-specific: write the final internal object back into the caller's
+	// original versioned object pointer.
+	if err := legacyscheme.Scheme.Convert(legacyObj, obj, nil); err != nil {
+		return errors.NewBadRequest(fmt.Sprintf("failed to convert internal object back to versioned object: %v", err))
+	}
 	return nil
 }
 
@@ -277,14 +367,6 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 	metadata, err := meta.Accessor(objCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
-	}
-
-	// This applies OpenAPI schema defaults like DNSPolicy=ClusterFirst, RestartPolicy=Always, etc.
-	// In real k8s, this happens in the decoder before the handler even sees the object.
-	// We do it here because we don't have a full decode pipeline.
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L127
-	if err := applySchemaDefaults(objCopy); err != nil {
-		return nil, err
 	}
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L171
@@ -309,8 +391,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 		metadata.SetName(name)
 	}
 
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L120-L137
-	if err := applyStrategyAndValidate(objCopy, name); err != nil {
+	if err := applyValidationAndDefaulting(objCopy, name); err != nil {
 		return nil, err
 	}
 

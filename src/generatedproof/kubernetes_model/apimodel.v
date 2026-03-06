@@ -303,10 +303,6 @@ Global Instance wp_func_call_randomSuffix :
   WpFuncCall apimodel.randomSuffix _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_applySchemaDefaults :
-  WpFuncCall apimodel.applySchemaDefaults _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_validateObjectMeta :
   WpFuncCall apimodel.validateObjectMeta _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
@@ -319,8 +315,36 @@ Global Instance wp_func_call_applyPriorityAdmission :
   WpFuncCall apimodel.applyPriorityAdmission _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_applyStrategyAndValidate :
-  WpFuncCall apimodel.applyStrategyAndValidate _ (is_pkg_defined apimodel) :=
+Global Instance wp_func_call_convertVersionedToLegacy :
+  WpFuncCall apimodel.convertVersionedToLegacy _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applySchemaDefaults :
+  WpFuncCall apimodel.applySchemaDefaults _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyStrategyPrepareForCreate :
+  WpFuncCall apimodel.applyStrategyPrepareForCreate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyAdmissionMutate :
+  WpFuncCall apimodel.applyAdmissionMutate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyAdmissionValidate :
+  WpFuncCall apimodel.applyAdmissionValidate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyStrategyValidate :
+  WpFuncCall apimodel.applyStrategyValidate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyStrategyCanonicalize :
+  WpFuncCall apimodel.applyStrategyCanonicalize _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyValidationAndDefaulting :
+  WpFuncCall apimodel.applyValidationAndDefaulting _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_shouldOrphanDependents :

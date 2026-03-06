@@ -34,7 +34,7 @@ Definition state_rep (phys_state: gmap KKey.t interface.t) (abs_state: gmap KKey
 
 Record ghost_valid (used_uid: gset go_string) (abs_state: gmap KKey.t KObjectV.t) (children: gmap KKey.t (gset KKey.t)) (fresh_keys: gset KKey.t) : Prop :=
 mk_ghost_valid {
-  Habs_state_valid: (∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.valid obj);
+  Habs_state_valid: (∀ k obj, abs_state !! k = Some obj → k = KObjectV.key obj ∧ KObjectV.valid_old obj);
   Hparents_exist: (dom children = dom abs_state);
   Hchildren_exist : (∀ k s, children !! k = Some s → s ⊆ dom abs_state);
   Hparents_children_same_namespace: (∀ k s child_key, children !! k = Some s → child_key ∈ s → k.(KKey.Namespace') = child_key.(KKey.Namespace'));

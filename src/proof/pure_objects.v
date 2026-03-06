@@ -6,16 +6,6 @@ From New.proof Require Export time string.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
-Axiom valid_name: go_string → Prop.
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
-Axiom valid_namespace: go_string → Prop.
-
-Lemma valid_namespace_slash_free ns:
-  valid_namespace ns → slash_free ns.
-Proof. Admitted.
-
 Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -55,6 +45,9 @@ Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L69 *)
+Axiom valid : t → Prop.
+
 Definition list_valid (os: list t) : Prop :=
   (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
   ∀ i1 o1 i2 o2,
@@ -63,6 +56,59 @@ Definition list_valid (os: list t) : Prop :=
       i1 = i2.
 End def.
 End OwnerReferenceV.
+
+Module ManagedFieldsEntryV.
+Section def.
+Context `{hG: !heapGS Σ}.
+
+Axiom t : Type.
+
+Axiom deepown : v1.ManagedFieldsEntry.t → t → dfrac → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+End def.
+End ManagedFieldsEntryV.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
+Axiom valid_name: go_string → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
+Axiom valid_namespace: go_string → Prop.
+
+Lemma valid_namespace_slash_free ns:
+  valid_namespace ns → slash_free ns.
+Proof. Admitted.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
+Axiom valid_generation: w64 → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
+Axiom valid_labels: option (gmap go_string go_string) → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
+Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
+Definition valid_owner_references (o: option (list OwnerReferenceV.t)) : Prop :=
+  match o with
+  | Some os =>
+    (∀ i1 i2 or1 or2,
+      os !! i1 = Some or1 →
+      os !! i2 = Some or2 →
+      or1.(OwnerReferenceV.Controller') = Some true →
+      or2.(OwnerReferenceV.Controller') = Some true →
+      i1 = i2) ∧
+    (∀ or, or ∈ os → OwnerReferenceV.valid or)
+  | None => True
+  end.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L197 *)
+Axiom valid_finalizers: option (list go_string) → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L269 *)
+Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
 
 Module ObjectMetaV.
 Section def.
@@ -82,7 +128,7 @@ Record t := mk {
   Annotations' : option (gmap go_string go_string);
   OwnerReferences' : option (list OwnerReferenceV.t);
   Finalizers' : option (list go_string);
-  (* ManagedFields' : slice.t; *)
+  ManagedFields' : option (list ManagedFieldsEntryV.t);
 }.
 
 (* TODO: translate https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go to spec *)
@@ -92,6 +138,21 @@ Definition valid (m: t) : Prop :=
   valid_name m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧
   valid_namespace m.(Namespace') ∧
+  match m.(OwnerReferences') with
+  | None => True
+  | Some os => OwnerReferenceV.list_valid os
+  end.
+
+Definition valid_nameless_create ns (m: t) : Prop :=
+  (* The generate_name in the meta must be a valid name followed by a "-"; this is overly restrict but still practical *)
+  (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix) ∧
+  (* The max len of generate_name must be 58 so that the suffix can fit int:
+    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
+  length m.(GenerateName') ≤ 58 ∧
+  (* The name in the meta must be empty for nameless create *)
+  m.(Name') = ""%go ∧
+  (* The namespace in the meta is either empty or equal to the provided ns *)
+  (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
   match m.(OwnerReferences') with
   | None => True
   | Some os => OwnerReferenceV.list_valid os
@@ -154,12 +215,19 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   end) ∗
   "%Hdeepown_ownerreferences_none" ∷ ⌜c.(v1.ObjectMeta.OwnerReferences') = slice.nil ↔ v.(OwnerReferences') = None⌝ ∗
   "Hdeepown_ownerreferences_some" ∷ (match v.(OwnerReferences') with
-  | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦*{dq} cos ∗ [∗list] co;vo ∈ cos;vos, OwnerReferenceV.deepown co vo dq
+  | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦*{dq} cos ∗
+                        [∗list] co;vo ∈ cos;vos, OwnerReferenceV.deepown co vo dq
   | None => True%I
   end) ∗
   "%Hdeepown_finalizers_none" ∷ ⌜c.(v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None⌝ ∗
   "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with
   | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{dq} cfs ∗ ⌜ cfs = vfs ⌝
+  | None => True%I
+  end) ∗
+  "%Hdeepown_managedfields_none" ∷ ⌜c.(v1.ObjectMeta.ManagedFields') = slice.nil ↔ v.(ManagedFields') = None⌝ ∗
+  "Hdeepown_managedfields_some" ∷ (match v.(ManagedFields') with
+  | Some vms => ∃ cms, c.(v1.ObjectMeta.ManagedFields') ↦*{dq} cms ∗
+                        [∗list] cm;vm ∈ cms;vms, ManagedFieldsEntryV.deepown cm vm dq
   | None => True%I
   end).
 
@@ -428,6 +496,9 @@ Section def.
 Inductive t :=
 | PodSpec (p : PodSpecV.t)
 | ReplicaSetSpec (rs : ReplicaSetSpecV.t).
+Axiom valid: t → Prop.
+Axiom valid_create: t → Prop.
+Axiom defaulted: t → t → Prop.
 Axiom created: t → t → Prop. (* input spec → output spec *)
 Axiom updated: t → t → t → Prop. (* old spec → input spec → output spec *)
 End def.
@@ -438,6 +509,8 @@ Section def.
 Inductive t :=
 | PodStatus (p : PodStatusV.t)
 | ReplicaSetStatus (rs : ReplicaSetStatusV.t).
+Axiom valid: t → Prop.
+Axiom valid_create: t → Prop.
 Axiom created: t → t → Prop. (* input status → output status *)
 Axiom updated: t → t → t → Prop. (* old status → input status → output status *)
 End def.
@@ -492,6 +565,39 @@ Axiom valid_update: go_string → go_string → t → t → Prop.
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
 Definition valid o : Prop :=
+  kind o = (typemeta o).(v1.TypeMeta.Kind') ∧
+  ObjectMetaV.valid (objectmeta o) ∧
+  ObjectSpecV.valid (spec o) ∧
+  ObjectStatusV.valid (status o).
+
+Definition valid_nameless_create knd ns o : Prop :=
+  knd = kind o ∧
+  knd = (typemeta o).(v1.TypeMeta.Kind') ∧
+  ObjectMetaV.valid_nameless_create ns (objectmeta o) ∧
+  ObjectSpecV.valid_create (spec o) ∧
+  ObjectStatusV.valid_create (status o).
+
+Definition same_kind (o1 o2 : t) : Prop :=
+  match o1, o2 with
+  | Pod _, Pod _ => True
+  | ReplicaSet _, ReplicaSet _ => True
+  | _, _ => False
+  end.
+
+Definition defaulted o o' : Prop :=
+  typemeta o = typemeta o' ∧
+  objectmeta o = objectmeta o' ∧
+  ObjectSpecV.defaulted (spec o) (spec o') ∧
+  status o = status o'.
+
+Definition nameless_created ns o o' : Prop :=
+  same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
+  typemeta o = typemeta o' ∧
+  ObjectMetaV.nameless_created ns (objectmeta o) (objectmeta o') ∧
+  ObjectSpecV.created (spec o) (spec o') ∧
+  ObjectStatusV.created (status o) (status o').
+
+Definition valid_old o : Prop :=
   match o with
   | Pod p => PodV.valid p
   | ReplicaSet rs => ReplicaSetV.valid rs
@@ -501,15 +607,6 @@ Definition valid_without_meta o : Prop :=
   match o with
   | Pod p => PodV.valid_without_meta p
   | ReplicaSet rs => ReplicaSetV.valid_without_meta rs
-  end.
-
-Definition valid_nameless_create knd ns o : Prop :=
-  knd = kind o ∧
-  (ns = (objectmeta o).(ObjectMetaV.Namespace') ∨
-    (objectmeta o).(ObjectMetaV.Namespace') = ""%go) ∧
-  match o with
-  | Pod p => PodV.valid_for_nameless_create p
-  | ReplicaSet rs =>  ReplicaSetV.valid_for_nameless_create rs
   end.
 
 Definition valid_for_nameless_create o : Prop :=
@@ -522,13 +619,6 @@ Definition valid_for_nameless_create_without_meta o : Prop :=
   match o with
   | Pod p => PodV.valid_for_nameless_create_without_meta p
   | ReplicaSet rs => ReplicaSetV.valid_for_nameless_create_without_meta rs
-  end.
-
-Definition same_constructor (o1 o2 : t) : Prop :=
-  match o1, o2 with
-  | Pod _, Pod _ => True
-  | ReplicaSet _, ReplicaSet _ => True
-  | _, _ => False
   end.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -582,7 +672,7 @@ Qed.
 
 Lemma valid_merge o m:
   ObjectMetaV.valid m ∧ valid_without_meta o →
-    valid (update_objectmeta o m).
+    valid_old (update_objectmeta o m).
 Proof. destruct o; done. Qed.
 
 (* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
@@ -742,12 +832,12 @@ Proof.
 Qed.
 
 Lemma valid_object_has_valid_objectmeta obj:
-  KObjectV.valid obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
+  KObjectV.valid_old obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
 Proof. destruct obj; simpl; intros [H _]; done. Qed.
 
 Lemma valid_object_has_valid_key key obj:
   key = KObjectV.key obj →
-  KObjectV.valid obj →
+  KObjectV.valid_old obj →
     key.(KKey.Name') ≠ ""%go ∧
     valid_name key.(KKey.Name') ∧
     key.(KKey.Namespace') ≠ ""%go ∧
@@ -791,7 +881,7 @@ Proof.
 Qed.
 
 Lemma valid_obj_has_at_most_one_controller_parent obj:
-  KObjectV.valid obj →
+  KObjectV.valid_old obj →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       obj_has_controller_parent_of obj kind1 name1 uid1 →
         obj_has_controller_parent_of obj kind2 name2 uid2 →

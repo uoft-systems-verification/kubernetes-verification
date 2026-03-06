@@ -21,7 +21,7 @@ Lemma wp_State__objDelete γ l key
   }}}
     l @ (ptrT.id apimodel.State.id) @ "objDelete" #key
   {{{ (pure_kobj': KObjectV.t), RET #interface.nil;
-      (("%Hsame_cons" ∷ ⌜ KObjectV.same_constructor pure_kobj pure_kobj' ⌝ ∗
+      (("%Hsame_cons" ∷ ⌜ KObjectV.same_kind pure_kobj pure_kobj' ⌝ ∗
         "%Hts" ∷ ⌜ (KObjectV.objectmeta pure_kobj').(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
         "Hghost_pure_kobj" ∷ key [[ γ.(γ_state) ]]↦ pure_kobj' ∗
         "Hghost_children_keys" ∷ parent_key [[ γ.(γ_children) ]]↦ children_keys ∗
@@ -102,9 +102,9 @@ Proof.
         assert ((KObjectV.objectmeta updated_pure_kobj).(ObjectMetaV.UID') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.UID'))
         as updated_pure_kobj_uid_eq.
         { destruct pure_kobj; done. }
-        assert (key = KObjectV.key updated_pure_kobj ∧ KObjectV.valid updated_pure_kobj)
+        assert (key = KObjectV.key updated_pure_kobj ∧ KObjectV.valid_old updated_pure_kobj)
           as [Hagree Hwf].
-        { assert (key = KObjectV.key pure_kobj ∧ KObjectV.valid pure_kobj) as [Hagree Hwf].
+        { assert (key = KObjectV.key pure_kobj ∧ KObjectV.valid_old pure_kobj) as [Hagree Hwf].
           { apply Habs_state_valid. done. } destruct pure_kobj; done. }
         apply mk_ghost_valid.
         - intros k o Hlookup.

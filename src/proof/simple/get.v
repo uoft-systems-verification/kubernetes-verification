@@ -17,7 +17,7 @@ Lemma wp_State__objGet γ l key pure_kobj:
   {{{ obj ptr, RET (#obj, #true);
       ⌜ KObjectV.valid_interface obj ptr pure_kobj ⌝ ∗
       KObjectV.deepown_l ptr pure_kobj 1 ∗
-      ⌜ KObjectV.valid pure_kobj ⌝ ∗
+      ⌜ KObjectV.valid_old pure_kobj ⌝ ∗
       ⌜ key.(KKey.Namespace') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.Namespace') ⌝ ∗
       ⌜ key.(KKey.Name') = (KObjectV.objectmeta pure_kobj).(ObjectMetaV.Name') ⌝ ∗
       key [[ γ.(γ_state) ]]↦ pure_kobj
@@ -47,7 +47,7 @@ Proof.
   iDestruct "Hdeepown_i" as (ptr0) "(%Hvalid_interface0 & Hdeepown_l0)".
   iAssert (state_rep phys_state abs_state) with "[Hdeepown_l0 Hother_rep]" as "Hinv_Hphys_abs_rep".
   { iApply "Hother_rep". iExists ptr0, kobj. iFrame. done. }
-  assert (key = KObjectV.key pure_kobj ∧ KObjectV.valid pure_kobj) as [-> Hwf].
+  assert (key = KObjectV.key pure_kobj ∧ KObjectV.valid_old pure_kobj) as [-> Hwf].
   { destruct Hinv_Hghost_valid. apply Habs_state_valid. exact Hkey_in_abs. }
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").

@@ -27,9 +27,9 @@ Lemma wp_State__objCreate_without_name γ l kind namespace obj
     l @ (ptrT.id apimodel.State.id) @ "objCreate" #kind #namespace #obj
   {{{ obj' ptr' pure_kobj', RET (#obj', #interface.nil);
       "%Hvalid_interface'" ∷ ⌜ KObjectV.valid_interface obj' ptr' pure_kobj' ⌝ ∗
-      "%Hsame_cons" ∷ ⌜ KObjectV.same_constructor pure_kobj pure_kobj' ⌝ ∗
+      "%Hsame_cons" ∷ ⌜ KObjectV.same_kind pure_kobj pure_kobj' ⌝ ∗
       "Hdeepown_l'" ∷ KObjectV.deepown_l ptr' pure_kobj' 1 ∗
-      "%Hwf" ∷ ⌜ KObjectV.valid pure_kobj' ⌝ ∗
+      "%Hwf" ∷ ⌜ KObjectV.valid_old pure_kobj' ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ (KObjectV.objectmeta pure_kobj').(ObjectMetaV.Namespace') = namespace ⌝ ∗
       "%Hnew_key_notin" ∷ ⌜ (KObjectV.key pure_kobj') ∉ children_keys ⌝ ∗
       "Hghost_pure_kobj'" ∷ (KObjectV.key pure_kobj') [[ γ.(γ_state) ]]↦ pure_kobj' ∗
@@ -148,7 +148,7 @@ Proof.
     iSplitL "Hdeepown_l_copied".
     - iExists copied_ptr0, kobj. iFrame. iPureIntro. exact Hvalid_interface_copied0.
     - done. }
-  assert (KObjectV.valid (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)) as Hwf'.
+  assert (KObjectV.valid_old (KObjectV.update_objectmeta pure_kobj new_pure_objectmeta)) as Hwf'.
   { assert (ObjectMetaV.valid new_pure_objectmeta) as Hwf_meta'.
     { unfold ObjectMetaV.valid. 
       split_and!.
