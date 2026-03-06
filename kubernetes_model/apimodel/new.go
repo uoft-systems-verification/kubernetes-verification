@@ -88,31 +88,23 @@ func (s *State) setResourceVersion(metadata metav1.Object) {
 // applySchemaDefaults applies schema-based defaults to the object.
 // This matches the API server's defaulting behavior that happens during decoding.
 // These defaults are applied BEFORE PrepareForCreate and validation.
-func applySchemaDefaults(kind string, objCopy interface{}) error {
-	switch kind {
-	case "Pod":
-		pod, ok := objCopy.(*corev1.Pod)
-		if !ok {
-			return fmt.Errorf("expected *corev1.Pod for kind Pod, got %T", objCopy)
-		}
+func applySchemaDefaults(objCopy interface{}) error {
+	switch obj := objCopy.(type) {
+	case *corev1.Pod:
 		// SetObjectDefaults_Pod recursively applies all defaults:
 		// - PodSpec defaults (DNSPolicy, RestartPolicy, TerminationGracePeriodSeconds, etc.)
 		// - Container defaults (ImagePullPolicy, TerminationMessagePolicy, etc.)
 		// - Volume defaults, Probe defaults, etc.
-		corev1defaults.SetObjectDefaults_Pod(pod)
+		corev1defaults.SetObjectDefaults_Pod(obj)
 
-	case "ReplicaSet":
-		rs, ok := objCopy.(*appsv1.ReplicaSet)
-		if !ok {
-			return fmt.Errorf("expected *appsv1.ReplicaSet for kind ReplicaSet, got %T", objCopy)
-		}
+	case *appsv1.ReplicaSet:
 		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
 		// - ReplicaSet.Spec.Replicas defaults to 1
 		// - Pod template defaults (same as Pod)
-		appsv1defaults.SetObjectDefaults_ReplicaSet(rs)
+		appsv1defaults.SetObjectDefaults_ReplicaSet(obj)
 
 	default:
-		return fmt.Errorf("unsupported kind for schema defaults: %s", kind)
+		return fmt.Errorf("unsupported object type for schema defaults: %T", objCopy)
 	}
 
 	return nil
@@ -223,19 +215,15 @@ func applyPriorityAdmission(pod *core.Pod) {
 // applyStrategyAndValidate applies resource-specific strategy (PrepareForCreate, Validate, Canonicalize).
 // This matches the API server's BeforeCreate behavior of calling strategy hooks and validation functions.
 // Returns an error if conversion fails or validation fails (converted from field.ErrorList to error).
-func applyStrategyAndValidate(kind string, objCopy interface{}, name string) error {
+func applyStrategyAndValidate(objCopy interface{}, name string) error {
 	ctx := context.Background()
 
-	switch kind {
-	case "Pod":
-		pod, ok := objCopy.(*corev1.Pod)
-		if !ok {
-			return fmt.Errorf("expected *corev1.Pod for kind Pod, got %T", objCopy)
-		}
+	switch obj := objCopy.(type) {
+	case *corev1.Pod:
 
 		internalPod := &core.Pod{}
 
-		if err := legacyscheme.Scheme.Convert(pod, internalPod, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(obj, internalPod, nil); err != nil {
 			return errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Pod to internal Pod: %v", err))
 		}
 
@@ -248,38 +236,33 @@ func applyStrategyAndValidate(kind string, objCopy interface{}, name string) err
 		applyPriorityAdmission(internalPod)
 
 		if errs := podstrategy.Strategy.Validate(ctx, internalPod); len(errs) > 0 {
-			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: kind}, name, errs)
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "Pod"}, name, errs)
 		}
 		podstrategy.Strategy.Canonicalize(internalPod)
 
-		if err := legacyscheme.Scheme.Convert(internalPod, pod, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(internalPod, obj, nil); err != nil {
 			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal Pod back to v1.Pod: %v", err))
 		}
 
-	case "ReplicaSet":
-		rs, ok := objCopy.(*appsv1.ReplicaSet)
-		if !ok {
-			return fmt.Errorf("expected *appsv1.ReplicaSet for kind ReplicaSet, got %T", objCopy)
-		}
-
+	case *appsv1.ReplicaSet:
 		internalRS := &apps.ReplicaSet{}
-		if err := legacyscheme.Scheme.Convert(rs, internalRS, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(obj, internalRS, nil); err != nil {
 			return errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v", err))
 		}
 
 		rsstrategy.Strategy.PrepareForCreate(ctx, internalRS)
 
 		if errs := rsstrategy.Strategy.Validate(ctx, internalRS); len(errs) > 0 {
-			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: kind}, name, errs)
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, name, errs)
 		}
 		rsstrategy.Strategy.Canonicalize(internalRS)
 
-		if err := legacyscheme.Scheme.Convert(internalRS, rs, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(internalRS, obj, nil); err != nil {
 			return errors.NewBadRequest(fmt.Sprintf("failed to convert internal ReplicaSet back to appsv1.ReplicaSet: %v", err))
 		}
 
 	default:
-		return fmt.Errorf("unsupported kind: %s", kind)
+		return fmt.Errorf("unsupported object type for strategy and validation: %T", objCopy)
 	}
 
 	return nil
@@ -300,7 +283,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 	// In real k8s, this happens in the decoder before the handler even sees the object.
 	// We do it here because we don't have a full decode pipeline.
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L127
-	if err := applySchemaDefaults(kind, objCopy); err != nil {
+	if err := applySchemaDefaults(objCopy); err != nil {
 		return nil, err
 	}
 
@@ -327,7 +310,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 	}
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L120-L137
-	if err := applyStrategyAndValidate(kind, objCopy, name); err != nil {
+	if err := applyStrategyAndValidate(objCopy, name); err != nil {
 		return nil, err
 	}
 

@@ -1106,50 +1106,25 @@ Definition applySchemaDefaults : go_string := "kubernetes_model/apimodel.applySc
 
    go: new.go:91:6 *)
 Definition applySchemaDefaultsⁱᵐᵖˡ : val :=
-  λ: "kind" "objCopy",
+  λ: "objCopy",
     exception_do (let: "objCopy" := (mem.alloc "objCopy") in
-    let: "kind" := (mem.alloc "kind") in
-    let: "$sw" := (![#stringT] "kind") in
-    (if: "$sw" = #"Pod"%go
+    let: "$y" := (![#interfaceT] "objCopy") in
+    let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.Pod.id)) in
+    (if: "$ok"
     then
-      let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-      let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-      let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "objCopy") #(ptrT.id v1.Pod.id)) in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  ("pod" <-[#ptrT] "$r0");;;
-      do:  ("ok" <-[#boolT] "$r1");;;
-      (if: (~ (![#boolT] "ok"))
-      then
-        return: (let: "$a0" := #"expected *corev1.Pod for kind Pod, got %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
-         slice.literal #interfaceT ["$sl0"])) in
-         (func_call #fmt.Errorf) "$a0" "$a1")
-      else do:  #());;;
-      do:  (let: "$a0" := (![#ptrT] "pod") in
+      let: "obj" := (mem.alloc "$x") in
+      do:  (let: "$a0" := (![#ptrT] "obj") in
       (func_call #v1.SetObjectDefaults_Pod) "$a0")
     else
-      (if: "$sw" = #"ReplicaSet"%go
+      let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.ReplicaSet.id)) in
+      (if: "$ok"
       then
-        let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-        let: "rs" := (mem.alloc (type.zero_val #ptrT)) in
-        let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "objCopy") #(ptrT.id v1.ReplicaSet.id)) in
-        let: "$r0" := "$ret0" in
-        let: "$r1" := "$ret1" in
-        do:  ("rs" <-[#ptrT] "$r0");;;
-        do:  ("ok" <-[#boolT] "$r1");;;
-        (if: (~ (![#boolT] "ok"))
-        then
-          return: (let: "$a0" := #"expected *appsv1.ReplicaSet for kind ReplicaSet, got %T"%go in
-           let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
-           slice.literal #interfaceT ["$sl0"])) in
-           (func_call #fmt.Errorf) "$a0" "$a1")
-        else do:  #());;;
-        do:  (let: "$a0" := (![#ptrT] "rs") in
+        let: "obj" := (mem.alloc "$x") in
+        do:  (let: "$a0" := (![#ptrT] "obj") in
         (func_call #v1.SetObjectDefaults_ReplicaSet) "$a0")
       else
-        return: (let: "$a0" := #"unsupported kind for schema defaults: %s"%go in
-         let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] "kind")) in
+        return: (let: "$a0" := #"unsupported object type for schema defaults: %T"%go in
+         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")));;;
     return: (#interface.nil)).
@@ -1159,7 +1134,7 @@ Definition validateObjectMeta : go_string := "kubernetes_model/apimodel.validate
 (* validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
    This matches the API server's generic metadata validation that happens in BeforeCreate.
 
-   go: new.go:123:6 *)
+   go: new.go:115:6 *)
 Definition validateObjectMetaⁱᵐᵖˡ : val :=
   λ: "metadata" "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -1197,7 +1172,7 @@ Definition applyDefaultTolerationSeconds : go_string := "kubernetes_model/apimod
    node.kubernetes.io/unreachable:NoExecute with 300s toleration seconds.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go
 
-   go: new.go:150:6 *)
+   go: new.go:142:6 *)
 Definition applyDefaultTolerationSecondsⁱᵐᵖˡ : val :=
   λ: "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1289,7 +1264,7 @@ Definition applyPriorityAdmission : go_string := "kubernetes_model/apimodel.appl
    - If PriorityClassName is specified, we cannot look it up (not implemented), so we skip
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go
 
-   go: new.go:204:6 *)
+   go: new.go:196:6 *)
 Definition applyPriorityAdmissionⁱᵐᵖˡ : val :=
   λ: "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1315,32 +1290,19 @@ Definition applyStrategyAndValidate : go_string := "kubernetes_model/apimodel.ap
    This matches the API server's BeforeCreate behavior of calling strategy hooks and validation functions.
    Returns an error if conversion fails or validation fails (converted from field.ErrorList to error).
 
-   go: new.go:226:6 *)
+   go: new.go:218:6 *)
 Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
-  λ: "kind" "objCopy" "name",
+  λ: "objCopy" "name",
     exception_do (let: "name" := (mem.alloc "name") in
     let: "objCopy" := (mem.alloc "objCopy") in
-    let: "kind" := (mem.alloc "kind") in
     let: "ctx" := (mem.alloc (type.zero_val #context.Context)) in
     let: "$r0" := ((func_call #context.Background) #()) in
     do:  ("ctx" <-[#context.Context] "$r0");;;
-    let: "$sw" := (![#stringT] "kind") in
-    (if: "$sw" = #"Pod"%go
+    let: "$y" := (![#interfaceT] "objCopy") in
+    let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.Pod.id)) in
+    (if: "$ok"
     then
-      let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-      let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-      let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "objCopy") #(ptrT.id v1.Pod.id)) in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  ("pod" <-[#ptrT] "$r0");;;
-      do:  ("ok" <-[#boolT] "$r1");;;
-      (if: (~ (![#boolT] "ok"))
-      then
-        return: (let: "$a0" := #"expected *corev1.Pod for kind Pod, got %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
-         slice.literal #interfaceT ["$sl0"])) in
-         (func_call #fmt.Errorf) "$a0" "$a1")
-      else do:  #());;;
+      let: "obj" := (mem.alloc "$x") in
       let: "internalPod" := (mem.alloc (type.zero_val #ptrT)) in
       let: "$r0" := (mem.alloc (struct.make #core.Pod [{
         "TypeMeta" ::= type.zero_val #v1.TypeMeta;
@@ -1350,7 +1312,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
       }])) in
       do:  ("internalPod" <-[#ptrT] "$r0");;;
       (let: "err" := (mem.alloc (type.zero_val #error)) in
-      let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "pod")) in
+      let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "obj")) in
       let: "$a1" := (interface.make #(ptrT.id core.Pod.id) (![#ptrT] "internalPod")) in
       let: "$a2" := #interface.nil in
       (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
@@ -1379,7 +1341,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
       slice.len "$a0") #(W64 0)
       then
         return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Group" := #""%go in
-         let: "$Kind" := (![#stringT] "kind") in
+         let: "$Kind" := #"Pod"%go in
          struct.make #schema.GroupKind [{
            "Group" ::= "$Group";
            "Kind" ::= "$Kind"
@@ -1392,7 +1354,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
       (method_call #pod.podStrategy.id #"Canonicalize"%go (![#pod.podStrategy] (globals.get #pod.Strategy))) "$a0");;;
       (let: "err" := (mem.alloc (type.zero_val #error)) in
       let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id core.Pod.id) (![#ptrT] "internalPod")) in
-      let: "$a1" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "pod")) in
+      let: "$a1" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "obj")) in
       let: "$a2" := #interface.nil in
       (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
       do:  ("err" <-[#error] "$r0");;;
@@ -1405,22 +1367,10 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
          (func_call #errors.NewBadRequest) "$a0"))
       else do:  #()))
     else
-      (if: "$sw" = #"ReplicaSet"%go
+      let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.ReplicaSet.id)) in
+      (if: "$ok"
       then
-        let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-        let: "rs" := (mem.alloc (type.zero_val #ptrT)) in
-        let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "objCopy") #(ptrT.id v1.ReplicaSet.id)) in
-        let: "$r0" := "$ret0" in
-        let: "$r1" := "$ret1" in
-        do:  ("rs" <-[#ptrT] "$r0");;;
-        do:  ("ok" <-[#boolT] "$r1");;;
-        (if: (~ (![#boolT] "ok"))
-        then
-          return: (let: "$a0" := #"expected *appsv1.ReplicaSet for kind ReplicaSet, got %T"%go in
-           let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
-           slice.literal #interfaceT ["$sl0"])) in
-           (func_call #fmt.Errorf) "$a0" "$a1")
-        else do:  #());;;
+        let: "obj" := (mem.alloc "$x") in
         let: "internalRS" := (mem.alloc (type.zero_val #ptrT)) in
         let: "$r0" := (mem.alloc (struct.make #apps.ReplicaSet [{
           "TypeMeta" ::= type.zero_val #v1.TypeMeta;
@@ -1430,7 +1380,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
         }])) in
         do:  ("internalRS" <-[#ptrT] "$r0");;;
         (let: "err" := (mem.alloc (type.zero_val #error)) in
-        let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
+        let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "obj")) in
         let: "$a1" := (interface.make #(ptrT.id apps.ReplicaSet.id) (![#ptrT] "internalRS")) in
         let: "$a2" := #interface.nil in
         (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
@@ -1455,7 +1405,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
         slice.len "$a0") #(W64 0)
         then
           return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Group" := #"apps"%go in
-           let: "$Kind" := (![#stringT] "kind") in
+           let: "$Kind" := #"ReplicaSet"%go in
            struct.make #schema.GroupKind [{
              "Group" ::= "$Group";
              "Kind" ::= "$Kind"
@@ -1468,7 +1418,7 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
         (method_call #replicaset.rsStrategy.id #"Canonicalize"%go (![#replicaset.rsStrategy] (globals.get #replicaset.Strategy))) "$a0");;;
         (let: "err" := (mem.alloc (type.zero_val #error)) in
         let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id apps.ReplicaSet.id) (![#ptrT] "internalRS")) in
-        let: "$a1" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
+        let: "$a1" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "obj")) in
         let: "$a2" := #interface.nil in
         (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
         do:  ("err" <-[#error] "$r0");;;
@@ -1481,13 +1431,13 @@ Definition applyStrategyAndValidateⁱᵐᵖˡ : val :=
            (func_call #errors.NewBadRequest) "$a0"))
         else do:  #()))
       else
-        return: (let: "$a0" := #"unsupported kind: %s"%go in
-         let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] "kind")) in
+        return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
+         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "objCopy") in
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")));;;
     return: (#interface.nil)).
 
-(* go: new.go:288:17 *)
+(* go: new.go:271:17 *)
 Definition State__createⁱᵐᵖˡ : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -1521,9 +1471,8 @@ Definition State__createⁱᵐᵖˡ : val :=
        (func_call #fmt.Errorf) "$a0" "$a1")
     else do:  #());;;
     (let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "$r0" := (let: "$a0" := (![#stringT] "kind") in
-    let: "$a1" := (![#interfaceT] "objCopy") in
-    (func_call #applySchemaDefaults) "$a0" "$a1") in
+    let: "$r0" := (let: "$a0" := (![#interfaceT] "objCopy") in
+    (func_call #applySchemaDefaults) "$a0") in
     do:  ("err" <-[#error] "$r0");;;
     (if: (~ (interface.eq (![#error] "err") #interface.nil))
     then return: (#interface.nil, ![#error] "err")
@@ -1564,10 +1513,9 @@ Definition State__createⁱᵐᵖˡ : val :=
       (interface.get #"SetName"%go (![#v1.Object] "metadata")) "$a0")
     else do:  #());;;
     (let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "$r0" := (let: "$a0" := (![#stringT] "kind") in
-    let: "$a1" := (![#interfaceT] "objCopy") in
-    let: "$a2" := (![#stringT] "name") in
-    (func_call #applyStrategyAndValidate) "$a0" "$a1" "$a2") in
+    let: "$r0" := (let: "$a0" := (![#interfaceT] "objCopy") in
+    let: "$a1" := (![#stringT] "name") in
+    (func_call #applyStrategyAndValidate) "$a0" "$a1") in
     do:  ("err" <-[#error] "$r0");;;
     (if: (~ (interface.eq (![#error] "err") #interface.nil))
     then return: (#interface.nil, ![#error] "err")
@@ -1618,7 +1566,7 @@ Definition shouldOrphanDependents : go_string := "kubernetes_model/apimodel.shou
 (* shouldOrphanDependents determines if the orphan finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L888-L925
 
-   go: new.go:358:6 *)
+   go: new.go:341:6 *)
 Definition shouldOrphanDependentsⁱᵐᵖˡ : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -1655,7 +1603,7 @@ Definition shouldDeleteDependents : go_string := "kubernetes_model/apimodel.shou
 (* shouldDeleteDependents determines if the foreground deletion finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L927-L966
 
-   go: new.go:386:6 *)
+   go: new.go:369:6 *)
 Definition shouldDeleteDependentsⁱᵐᵖˡ : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -1691,7 +1639,7 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ : val :=
    It returns whether the finalizer list needs updating and the new finalizer list.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L976-L1005
 
-   go: new.go:415:17 *)
+   go: new.go:398:17 *)
 Definition State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ : val :=
   λ: "s" "metadata" "options" "ownerUID",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -1774,7 +1722,7 @@ Definition validateDeletePreconditions : go_string := "kubernetes_model/apimodel
    Returns a Conflict error if preconditions don't match.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
 
-   go: new.go:466:6 *)
+   go: new.go:449:6 *)
 Definition validateDeletePreconditionsⁱᵐᵖˡ : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -1827,7 +1775,7 @@ Definition checkGracefulDelete : go_string := "kubernetes_model/apimodel.checkGr
    Returns (graceful, pendingGraceful, error).
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
 
-   go: new.go:499:6 *)
+   go: new.go:482:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
   λ: "kind" "obj" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -1911,7 +1859,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
    Returns the updated object and whether to delete immediately.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1044-L1129
 
-   go: new.go:547:17 *)
+   go: new.go:530:17 *)
 Definition State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ : val :=
   λ: "s" "key" "obj" "metadata" "options" "graceful" "finalizersChanged",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -1987,7 +1935,7 @@ Definition State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ : val :=
      - Admission webhooks for delete validation
      - ResourceQuota updates on deletion
 
-   go: new.go:618:17 *)
+   go: new.go:601:17 *)
 Definition State__deleteⁱᵐᵖˡ : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -2119,7 +2067,7 @@ Definition State__deleteⁱᵐᵖˡ : val :=
    graceful deletion, and finalizer handling. Returns the deleted (or updated) Pod object.
    PodCreate2 creates a Pod using create, which includes admission controller logic.
 
-   go: new.go:687:17 *)
+   go: new.go:670:17 *)
 Definition State__PodCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2156,7 +2104,7 @@ Definition State__PodCreate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetCreate2 creates a ReplicaSet using create, which includes admission controller logic.
 
-   go: new.go:702:17 *)
+   go: new.go:685:17 *)
 Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2193,7 +2141,7 @@ Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
 
 (* PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.
 
-   go: new.go:717:17 *)
+   go: new.go:700:17 *)
 Definition State__PodDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2217,7 +2165,7 @@ Definition State__PodDelete2ⁱᵐᵖˡ : val :=
 (* ReplicaSetDelete2 deletes a ReplicaSet with full DeleteOptions support.
    ReplicaSets don't support graceful deletion but do support finalizers and preconditions.
 
-   go: new.go:724:17 *)
+   go: new.go:707:17 *)
 Definition State__ReplicaSetDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
