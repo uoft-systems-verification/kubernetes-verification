@@ -7,7 +7,7 @@ Context `{!kviewG Σ}.
 Context `{!cviewG KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
-Lemma wp_State__get γ l key:
+Lemma wp_State__get γ l key :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
@@ -24,7 +24,7 @@ Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk".
 Admitted.
 
-Lemma wp_State__get_none γ l key uid:
+Lemma wp_State__get_none γ l key uid :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Htomb" ∷ own_tombstone_frag γ uid
@@ -41,7 +41,7 @@ Lemma wp_State__get_none γ l key uid:
   }}}.
 Proof. Admitted.
 
-Lemma wp_State__get_some_au γ l key:
+Lemma wp_State__get_some_au γ l key :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
@@ -137,7 +137,7 @@ Proof.
   all: iApply "HΦ".
 Qed.
 
-Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o:
+Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_meta" ∷ own_meta_frag γ key uid dq kmeta ∗

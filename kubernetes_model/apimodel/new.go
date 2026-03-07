@@ -69,13 +69,12 @@ func (s *State) generateNewName(kind, namespace, generateName string) string {
 	}
 }
 
-func (s *State) generateNewUIDAndUpdate() string {
+func (s *State) generateNewUIDAndUpdate() types.UID {
 	for {
 		uid := uuid.NewUUID()
-		uidStr := string(uid)
-		if _, exists := s.usedUID[uidStr]; !exists {
-			s.usedUID[uidStr] = struct{}{}
-			return uidStr
+		if _, exists := s.usedUID[uid]; !exists {
+			s.usedUID[uid] = struct{}{}
+			return uid
 		}
 	}
 }
@@ -378,7 +377,9 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 	}
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L484
-	rest.FillObjectMetaSystemFields(metadata)
+	// We don't directly call rest.FillObjectMetaSystemFields(metadata) here because we want to prove the generated UID is never used before
+	metadata.SetCreationTimestamp(metav1.Now())
+	metadata.SetUID(s.generateNewUIDAndUpdate())
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L485-L487
 	name := metadata.GetName()

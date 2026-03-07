@@ -17,6 +17,20 @@ Lemma wp_deepCopy i obj:
 Proof.
 Admitted.
 
+Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit):
+  {{{ is_pkg_init apimodel ∗
+      l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
+      used_uid_l ↦$ used_uid
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "generateNewUIDAndUpdate" #()
+  {{{ uid, RET #uid;
+      ⌜ used_uid !! uid = None ⌝ ∗
+      l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
+      used_uid_l ↦$ <[uid:=()]> used_uid
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_applyValidationAndDefaulting i o (name : go_string):
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i o 1 ∗

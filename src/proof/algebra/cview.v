@@ -40,18 +40,18 @@ Implicit Types (a : authO) (b : fragUR).
 Implicit Types (k : K) (r : R) (v : V) (n : nat).
 
 Local Definition proj_state a : gmap K V := fst a.
-Local Definition proj_used_references a : gset R := snd a.
+Local Definition proj_used_reference a : gset R := snd a.
 
 Local Definition view_rel_raw n a b :=
   (* each obj in a is a used reference *)
-  (map_Forall (λ k v, (g k v) ∈ (proj_used_references a)) (proj_state a)) ∧
+  (map_Forall (λ k v, (g k v) ∈ (proj_used_reference a)) (proj_state a)) ∧
   (* dfracs are valid *)
   (map_Forall (λ _ '(dq, _), ✓ dq) b) ∧
   (* for each (r, ks) in b, ks is the set of children of r in a *)
   (map_Forall (λ r '(_, agree_ks),
     ∃ ks, agree_ks ≡ to_agree ks ∧ ks = dom (filter (λ '(_, v), f v = Some r) (proj_state a))) b) ∧
   (* each r in b is a used reference *)
-  (map_Forall (λ r _, r ∈ (proj_used_references a)) b).
+  (map_Forall (λ r _, r ∈ (proj_used_reference a)) b).
 
 Local Lemma view_rel_raw_mono n1 n2 a1 a2 b1 b2 :
   view_rel_raw n1 a1 b1 →
@@ -188,7 +188,7 @@ Notation "◯C b" := (cview_frag b) (at level 20).
 Lemma auth_frag_valid a r dq ks:
 ✓ (●C a ⋅ ◯C (mk_frag r dq ks)) →
 ks = dom (filter (λ '(_, v), f v = Some r) (proj_state a)) ∧
-r ∈ (proj_used_references a).
+r ∈ (proj_used_reference a).
 Proof.
   intros Hvalid.
   rewrite /cview_auth /cview_frag in Hvalid.
@@ -212,10 +212,10 @@ Lemma create_child a k v r ks cks:
 f v = Some r →
 g k v ≠ r → (* No self-parenting *)
 dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
-g k v ∉ (proj_used_references a) →
+g k v ∉ (proj_used_reference a) →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v]> (proj_state a)), ((proj_used_references a) ∪ {[g k v]})) ⋅
+  ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
   ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅
   ◯C (mk_frag (g k v) 1 cks).
 Proof.
@@ -254,7 +254,7 @@ Proof.
     { apply (inj to_agree). by rewrite Hagree. }
     apply leibniz_equiv in Hks_eqv. subst ks'. done.
   }
-  assert (Hr_used : r ∈ proj_used_references a).
+  assert (Hr_used : r ∈ proj_used_reference a).
   { eapply Hreferences; done. }
 
   split_and!.
@@ -409,7 +409,7 @@ f v' = Some r →
 g k v = g k v' →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v']> (proj_state a)), (proj_used_references a)) ⋅
+  ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
   ◯C (mk_frag r 1 (ks ∪ {[k]})).
 Proof.
   intros Hak Hnone Hfr Hg.
@@ -436,7 +436,7 @@ Proof.
     { apply (inj to_agree). by rewrite Hagree. }
     apply leibniz_equiv in Hks_eqv. subst ks'. done.
   }
-  assert (Hr_used : r ∈ proj_used_references a).
+  assert (Hr_used : r ∈ proj_used_reference a).
   { eapply Hreferences; done. }
   assert (Hdom_transfer :
     ∀ x,
@@ -551,7 +551,7 @@ f v' = None →
 g k v = g k v' →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v']> (proj_state a)), (proj_used_references a)) ⋅
+  ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
   ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hak Hfr Hnone Hg.
@@ -578,7 +578,7 @@ Proof.
     { apply (inj to_agree). by rewrite Hagree. }
     apply leibniz_equiv in Hks_eqv. subst ks'. done.
   }
-  assert (Hr_used : r ∈ proj_used_references a).
+  assert (Hr_used : r ∈ proj_used_reference a).
   { eapply Hreferences; done. }
   assert (Hdom_transfer :
     ∀ x,
@@ -696,7 +696,7 @@ Lemma delete_child a k v r ks:
 f v = Some r →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
-  ●C ((delete k (proj_state a)), (proj_used_references a)) ⋅
+  ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
   ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hak Hfr.
@@ -723,7 +723,7 @@ Proof.
     { apply (inj to_agree). by rewrite Hagree. }
     apply leibniz_equiv in Hks_eqv. subst ks'. done.
   }
-  assert (Hr_used : r ∈ proj_used_references a).
+  assert (Hr_used : r ∈ proj_used_reference a).
   { eapply Hreferences; done. }
   assert (Hdom_transfer :
     ∀ x,
@@ -829,7 +829,7 @@ Lemma delete_child2 a k r ks:
 k ∈ ks →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
-  ●C ((delete k (proj_state a)), (proj_used_references a)) ⋅
+  ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
   ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hk.
@@ -856,7 +856,7 @@ Proof.
     { apply (inj to_agree). by rewrite Hagree. }
     apply leibniz_equiv in Hks_eqv. subst ks'. done.
   }
-  assert (Hr_used : r ∈ proj_used_references a).
+  assert (Hr_used : r ∈ proj_used_reference a).
   { eapply Hreferences; done. }
   assert (Hk_in_dom : k ∈ dom (filter (λ '(_, v0), f v0 = Some r) (proj_state a))).
   { rewrite -Hks_dom. done. }
@@ -966,7 +966,7 @@ Lemma simple_update a k v v':
 (proj_state a) !! k = Some v →
 f v = f v' →
 g k v = g k v' →
-●C a ~~> ●C ((<[k := v']> (proj_state a)), (proj_used_references a)).
+●C a ~~> ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)).
 Proof.
   intros Hak Hfv Hg.
   apply view_update_auth.
@@ -1025,9 +1025,9 @@ Lemma create_orphan a k v cks:
 (proj_state a) !! k = None →
 f v = None →
 dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
-g k v ∉ (proj_used_references a) →
+g k v ∉ (proj_used_reference a) →
 ●C a ~~>
-  ●C ((<[k := v]> (proj_state a)), ((proj_used_references a) ∪ {[g k v]})) ⋅
+  ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
   ◯C (mk_frag (g k v) 1 cks).
 Proof.
   intros Hak Hnone Hcks Hfresh.
@@ -1121,7 +1121,7 @@ Qed.
 Lemma delete_orphan a k v:
 (proj_state a) !! k = Some v →
 f v = None →
-●C a ~~> ●C ((delete k (proj_state a)), (proj_used_references a)).
+●C a ~~> ●C ((delete k (proj_state a)), (proj_used_reference a)).
 Proof.
   intros Hak Hnone.
   apply view_update_auth.
@@ -1173,20 +1173,20 @@ Proof. apply _. Qed.
 Global Instance own_frag_timeless γ b : Timeless (own γ (◯C b)).
 Proof. apply _. Qed.
 
-Definition own_auth γ (state: gmap K V) (used_references: gset R) : iProp Σ :=
-  own γ (●C (state, used_references)).
+Definition own_auth γ (state: gmap K V) (used_reference: gset R) : iProp Σ :=
+  own γ (●C (state, used_reference)).
 
 Definition own_frag γ r dq ks : iProp Σ :=
   own γ (◯C (mk_frag r dq ks)).
 
-Lemma create_child_vs {γ state used_references r ks} k v cks:
+Lemma create_child_vs {γ state used_reference r ks} k v cks:
 state !! k = None →
 f v = Some r →
 g k v ≠ r → (* No self-parenting *)
 dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
-g k v ∉ used_references →
-own_auth γ state used_references -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v]> state) (used_references ∪ {[g k v]}) ∗
+g k v ∉ used_reference →
+own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
   own_frag γ r 1 (ks ∪ {[k]}) ∗
   own_frag γ (g k v) 1 cks.
 Proof.
@@ -1199,13 +1199,13 @@ Proof.
   iFrame.
 Qed.
 
-Lemma adopt_orphan_vs {γ state used_references r ks} k v v':
+Lemma adopt_orphan_vs {γ state used_reference r ks} k v v':
 state !! k = Some v →
 f v = None →
 f v' = Some r →
 g k v = g k v' →
-own_auth γ state used_references -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v']> state) used_references ∗ own_frag γ r 1 (ks ∪ {[k]}).
+own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∪ {[k]}).
 Proof.
   iIntros (Hak Hnone Hfr Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1215,13 +1215,13 @@ Proof.
   iFrame.
 Qed.
 
-Lemma release_child_vs {γ state used_references r ks} k v v':
+Lemma release_child_vs {γ state used_reference r ks} k v v':
 state !! k = Some v →
 f v = Some r →
 f v' = None →
 g k v = g k v' →
-own_auth γ state used_references -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v']> state) used_references ∗ own_frag γ r 1 (ks ∖ {[k]}).
+own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hak Hfr Hnone Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1231,11 +1231,11 @@ Proof.
   iFrame.
 Qed.
 
-Lemma delete_child_vs {γ state used_references r ks} k v:
+Lemma delete_child_vs {γ state used_reference r ks} k v:
 state !! k = Some v →
 f v = Some r →
-own_auth γ state used_references -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (delete k state) used_references ∗ own_frag γ r 1 (ks ∖ {[k]}).
+own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hak Hfr) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1245,10 +1245,10 @@ Proof.
   iFrame.
 Qed.
 
-Lemma delete_child_vs2 {γ state used_references r ks} k:
+Lemma delete_child_vs2 {γ state used_reference r ks} k:
 k ∈ ks →
-own_auth γ state used_references -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (delete k state) used_references ∗ own_frag γ r 1 (ks ∖ {[k]}).
+own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+  own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hk) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1258,11 +1258,11 @@ Proof.
   iFrame.
 Qed.
 
-Lemma simple_update_vs {γ state used_references} k v v':
+Lemma simple_update_vs {γ state used_reference} k v v':
 state !! k = Some v →
 f v = f v' →
 g k v = g k v' →
-own_auth γ state used_references ==∗ own_auth γ (<[k := v']> state) used_references.
+own_auth γ state used_reference ==∗ own_auth γ (<[k := v']> state) used_reference.
 Proof.
   iIntros (Hak Hf Hg) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
@@ -1270,13 +1270,13 @@ Proof.
   iModIntro. iExact "Hauth".
 Qed.
 
-Lemma create_orphan_vs {γ state used_references} k v cks:
+Lemma create_orphan_vs {γ state used_reference} k v cks:
 state !! k = None →
 f v = None →
 dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
-g k v ∉ used_references →
-own_auth γ state used_references ==∗
-  own_auth γ (<[k := v]> state) (used_references ∪ {[g k v]}) ∗
+g k v ∉ used_reference →
+own_auth γ state used_reference ==∗
+  own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
   own_frag γ (g k v) 1 cks.
 Proof.
   iIntros (Hak Hnone Hcks Hfresh) "Hauth".
@@ -1287,10 +1287,10 @@ Proof.
   iFrame.
 Qed.
 
-Lemma delete_orphan_vs {γ state used_references} k v:
+Lemma delete_orphan_vs {γ state used_reference} k v:
 state !! k = Some v →
 f v = None →
-own_auth γ state used_references ==∗ own_auth γ (delete k state) used_references.
+own_auth γ state used_reference ==∗ own_auth γ (delete k state) used_reference.
 Proof.
   iIntros (Hak Hnone) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".

@@ -16,7 +16,7 @@ Definition fragUR : ucmra := prodUR metaUR (prodUR specUR statusUR).
 Implicit Types (a : authO) (b : fragUR).
 
 Local Definition proj_state a : gmap KKey.t KObjectV.t := fst a.
-Local Definition proj_used_uids a : gset types.UID.t := snd a.
+Local Definition proj_used_uid a : gset types.UID.t := snd a.
 
 Local Definition proj_meta b : metaUR := fst b.
 Local Definition proj_spec b : specUR := fst (snd b).
@@ -29,16 +29,16 @@ Definition meta_is_child_of meta key uid: Prop :=
   | None => False
   end.
 
-Definition no_speculative_parent_reference meta (used_uids: gset types.UID.t): Prop :=
-  ∀ parent_key uid, meta_is_child_of meta parent_key uid → uid ∈ used_uids.
+Definition no_speculative_parent_reference meta (used_uid: gset types.UID.t): Prop :=
+  ∀ parent_key uid, meta_is_child_of meta parent_key uid → uid ∈ used_uid.
 
 Local Definition valid_kauth a : Prop :=
   map_Forall (λ k obj,
     k = KObjectV.key obj ∧
     KObjectV.valid obj ∧
-    (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uids a ∧
+    (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uid a ∧
     (* No object's parent reference can speculatively point to uid that has never existed *)
-    no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) ∧
+    no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) ∧
     map_Forall (λ k' obj',
       (* Each obj has unique uid *)
       (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
@@ -55,7 +55,7 @@ Local Definition compatible_kfrag b a : Prop :=
   ) (proj_meta b) ∧
   map_Forall (λ '(k, uid) '(dq, agree_spec),
     ∃ spec, agree_spec ≡ to_agree (A := leibnizO ObjectSpecV.t) spec ∧
-      uid ∈ proj_used_uids a ∧
+      uid ∈ proj_used_uid a ∧
       ✓ dq ∧
       ∀ obj, proj_state a !! k = Some obj →
         (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
@@ -63,7 +63,7 @@ Local Definition compatible_kfrag b a : Prop :=
   ) (proj_spec b) ∧
   map_Forall (λ '(k, uid) '(dq, agree_status),
     ∃ status, agree_status ≡ to_agree (A := leibnizO ObjectStatusV.t) status ∧
-      uid ∈ proj_used_uids a ∧
+      uid ∈ proj_used_uid a ∧
       ✓ dq ∧
       ∀ obj, proj_state a !! k = Some obj →
         (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
@@ -376,7 +376,7 @@ Lemma auth_meta_valid a k uid dq meta:
 ✓ (●K a ⋅ ◯K (mk_meta_frag k uid dq meta)) →
 ∃ obj, (proj_state a) !! k = Some obj ∧
   (KObjectV.objectmeta obj) = meta ∧
-  meta.(ObjectMetaV.UID') ∈ proj_used_uids a.
+  meta.(ObjectMetaV.UID') ∈ proj_used_uid a.
 Proof.
   intros Hvalid.
   pose proof (auth_frag_valid 0%nat a (mk_meta_frag k uid dq meta) Hvalid 0%nat)
@@ -460,11 +460,11 @@ Definition valid_k_uid_obj k uid obj: Prop :=
 
 Lemma create_kobj a k uid obj:
 (proj_state a) !! k = None →
-uid ∉ (proj_used_uids a) →
+uid ∉ (proj_used_uid a) →
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) →
 ●K a ~~>
-  (●K ((<[k := obj]> (proj_state a)), ((proj_used_uids a) ∪ {[uid]})) ⋅
+  (●K ((<[k := obj]> (proj_state a)), ((proj_used_uid a) ∪ {[uid]})) ⋅
       ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj)) ⋅
       ◯K (mk_spec_frag k uid 1 (KObjectV.spec obj)) ⋅
       ◯K (mk_status_frag k uid 1 (KObjectV.status obj))).
@@ -773,7 +773,7 @@ Qed.
 
 Lemma delete_kobj a k uid meta:
 ●K a ⋅ ◯K (mk_meta_frag k uid 1 meta) ~~>
-  ●K (delete k (proj_state a), proj_used_uids a).
+  ●K (delete k (proj_state a), proj_used_uid a).
 Proof.
   apply view_update_dealloc.
   intros n bf [Hvalid [Hmeta [Hspec Hstatus]]].
@@ -879,13 +879,13 @@ Qed.
 
 Lemma update_kobj a k uid meta spec prev_obj obj:
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) →
 (proj_state a) !! k = Some prev_obj →
 (KObjectV.status prev_obj) = (KObjectV.status obj) →
 (●K a ⋅
   ◯K (mk_meta_frag k uid 1 meta) ⋅
   ◯K (mk_spec_frag k uid 1 spec)) ~~>
-  (●K ((<[k := obj]> (proj_state a)), proj_used_uids a) ⋅
+  (●K ((<[k := obj]> (proj_state a)), proj_used_uid a) ⋅
     ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj)) ⋅
     ◯K (mk_spec_frag k uid 1 (KObjectV.spec obj))).
 Proof.
@@ -948,7 +948,7 @@ Proof.
     (KObjectV.objectmeta prev_obj).(ObjectMetaV.UID') =
     (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
   { rewrite Huid_prev Huid_obj_eq. done. }
-  assert (Huid_in_used : uid ∈ proj_used_uids a).
+  assert (Huid_in_used : uid ∈ proj_used_uid a).
   { pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hak) as Hkobj_prev.
     destruct Hkobj_prev as (_ & _ & Huid_prev_in & _ & _).
     rewrite Huid_prev in Huid_prev_in. done.
@@ -1155,13 +1155,13 @@ Qed.
 
 Lemma update_status_kobj a k uid meta status prev_obj obj:
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uids a) →
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) →
 (proj_state a) !! k = Some prev_obj →
 (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
   (●K a ⋅
   ◯K (mk_meta_frag k uid 1 meta) ⋅
   ◯K (mk_status_frag k uid 1 status)) ~~>
-  (●K ((<[k := obj]> (proj_state a)), proj_used_uids a) ⋅
+  (●K ((<[k := obj]> (proj_state a)), proj_used_uid a) ⋅
     ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj)) ⋅
     ◯K (mk_status_frag k uid 1 (KObjectV.status obj))).
 Proof.
@@ -1224,7 +1224,7 @@ Proof.
     (KObjectV.objectmeta prev_obj).(ObjectMetaV.UID') =
     (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
   { rewrite Huid_prev Huid_obj_eq. done. }
-  assert (Huid_in_used : uid ∈ proj_used_uids a).
+  assert (Huid_in_used : uid ∈ proj_used_uid a).
   { pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hak) as Hkobj_prev.
     destruct Hkobj_prev as (_ & _ & Huid_prev_in & _ & _).
     rewrite Huid_prev in Huid_prev_in. done.
@@ -1449,8 +1449,8 @@ Proof. apply _. Qed.
 Global Instance own_frag_timeless γ b : Timeless (own γ (◯K b)).
 Proof. apply _. Qed.
 
-Definition own_auth γ (state: gmap KKey.t KObjectV.t) (used_uids: gsetO types.UID.t) : iProp Σ :=
-  own γ (●K (state, used_uids)).
+Definition own_auth γ (state: gmap KKey.t KObjectV.t) (used_uid: gsetO types.UID.t) : iProp Σ :=
+  own γ (●K (state, used_uid)).
 
 Definition own_meta_frag γ k uid dq m : iProp Σ :=
   own γ (◯K (mk_meta_frag k uid dq m)).
@@ -1461,8 +1461,8 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
 
-Lemma own_auth_valid {γ state used_uids} k obj:
-own_auth γ state used_uids -∗
+Lemma own_auth_valid {γ state used_uid} k obj:
+own_auth γ state used_uid -∗
 ⌜ state !! k = Some obj →
 k = KObjectV.key obj ∧
 KObjectV.valid obj ⌝.
@@ -1472,17 +1472,17 @@ Proof.
   iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
   iPureIntro.
   intros Hlookup.
-  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1 (state, used_uids)) Hvalid0)
+  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1 (state, used_uid)) Hvalid0)
     as [_ Hrel0].
-  assert (Hvalid : ✓ (●K (state, used_uids))).
+  assert (Hvalid : ✓ (●K (state, used_uid))).
   { rewrite /kview_auth.
-    apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uids))).
+    apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uid))).
     split; [done|].
     intros n.
-    change (view_rel_raw n (state, used_uids) ε).
+    change (view_rel_raw n (state, used_uid) ε).
     exact Hrel0.
   }
-  eapply (auth_valid (state, used_uids) k obj).
+  eapply (auth_valid (state, used_uid) k obj).
   - exact Hvalid.
   - simpl. exact Hlookup.
 Qed.
@@ -1510,12 +1510,12 @@ Proof.
   done.
 Qed.
 
-Lemma own_meta_exists {γ state used_uids} k uid dq meta:
-own_auth γ state used_uids -∗
+Lemma own_meta_exists {γ state used_uid} k uid dq meta:
+own_auth γ state used_uid -∗
 own_meta_frag γ k uid dq meta -∗
   ⌜ ∃ obj, state !! k = Some obj ∧
   (KObjectV.objectmeta obj) = meta ∧
-  meta.(ObjectMetaV.UID') ∈ used_uids ⌝.
+  meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
 Proof.
   iIntros "Hauth Hmeta".
   iDestruct (own_valid_2 with "Hauth Hmeta") as "Hvalid".
@@ -1523,18 +1523,18 @@ Proof.
   iPureIntro.
   rewrite /kview_auth /kview_frag in Hvalid0.
   pose proof (proj1 (view_both_validN view_rel 0%nat
-    (state, used_uids) (mk_meta_frag k uid dq meta)) Hvalid0) as Hrel0.
-  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_meta_frag k uid dq meta))).
+    (state, used_uid) (mk_meta_frag k uid dq meta)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uid) ⋅ ◯K (mk_meta_frag k uid dq meta))).
   { rewrite /kview_auth /kview_frag.
-    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_meta_frag k uid dq meta))).
+    apply (proj2 (view_both_valid view_rel (state, used_uid) (mk_meta_frag k uid dq meta))).
     intros n. exact Hrel0.
   }
-  pose proof (auth_meta_valid (state, used_uids) k uid dq meta Hvalid) as Hexists.
+  pose proof (auth_meta_valid (state, used_uid) k uid dq meta Hvalid) as Hexists.
   exact Hexists.
 Qed.
 
-Lemma own_spec_exists {γ state used_uids} k uid dq spec:
-own_auth γ state used_uids -∗
+Lemma own_spec_exists {γ state used_uid} k uid dq spec:
+own_auth γ state used_uid -∗
 own_spec_frag γ k uid dq spec -∗
   ⌜ ∀ obj, state !! k = Some obj →
   (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
@@ -1546,18 +1546,18 @@ Proof.
   iPureIntro.
   rewrite /kview_auth /kview_frag in Hvalid0.
   pose proof (proj1 (view_both_validN view_rel 0%nat
-    (state, used_uids) (mk_spec_frag k uid dq spec)) Hvalid0) as Hrel0.
-  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_spec_frag k uid dq spec))).
+    (state, used_uid) (mk_spec_frag k uid dq spec)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uid) ⋅ ◯K (mk_spec_frag k uid dq spec))).
   { rewrite /kview_auth /kview_frag.
-    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_spec_frag k uid dq spec))).
+    apply (proj2 (view_both_valid view_rel (state, used_uid) (mk_spec_frag k uid dq spec))).
     intros n. exact Hrel0.
   }
   intros obj Hlookup_obj Huid_obj.
-  eapply (auth_spec_valid (state, used_uids) k uid dq spec Hvalid obj); simpl; eauto.
+  eapply (auth_spec_valid (state, used_uid) k uid dq spec Hvalid obj); simpl; eauto.
 Qed.
 
-Lemma own_status_exists {γ state used_uids} k uid dq status:
-own_auth γ state used_uids -∗
+Lemma own_status_exists {γ state used_uid} k uid dq status:
+own_auth γ state used_uid -∗
 own_status_frag γ k uid dq status -∗
   ⌜ ∀ obj, state !! k = Some obj →
   (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid →
@@ -1569,14 +1569,14 @@ Proof.
   iPureIntro.
   rewrite /kview_auth /kview_frag in Hvalid0.
   pose proof (proj1 (view_both_validN view_rel 0%nat
-    (state, used_uids) (mk_status_frag k uid dq status)) Hvalid0) as Hrel0.
-  assert (Hvalid : ✓ (●K (state, used_uids) ⋅ ◯K (mk_status_frag k uid dq status))).
+    (state, used_uid) (mk_status_frag k uid dq status)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●K (state, used_uid) ⋅ ◯K (mk_status_frag k uid dq status))).
   { rewrite /kview_auth /kview_frag.
-    apply (proj2 (view_both_valid view_rel (state, used_uids) (mk_status_frag k uid dq status))).
+    apply (proj2 (view_both_valid view_rel (state, used_uid) (mk_status_frag k uid dq status))).
     intros n. exact Hrel0.
   }
   intros obj Hlookup_obj Huid_obj.
-  pose proof (auth_frag_valid 0%nat (state, used_uids) (mk_status_frag k uid dq status) Hvalid 0%nat)
+  pose proof (auth_frag_valid 0%nat (state, used_uid) (mk_status_frag k uid dq status) Hvalid 0%nat)
     as Hrel.
   destruct Hrel as [_ [_ [_ Hstatus]]].
   assert (Hlookup :
@@ -1593,13 +1593,13 @@ Proof.
   eapply Hstatus_obj; eauto.
 Qed.
 
-Lemma create_kobj_vs {γ state used_uids} k uid obj:
+Lemma create_kobj_vs {γ state used_uid} k uid obj:
 state !! k = None →
-uid ∉ used_uids →
+uid ∉ used_uid →
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
-own_auth γ state used_uids ==∗
-  own_auth γ ((<[k := obj]> state)) (used_uids ∪ {[uid]}) ∗
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
+own_auth γ state used_uid ==∗
+  own_auth γ ((<[k := obj]> state)) (used_uid ∪ {[uid]}) ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
   own_spec_frag γ k uid 1 (KObjectV.spec obj) ∗
   own_status_frag γ k uid 1 (KObjectV.status obj).
@@ -1614,9 +1614,9 @@ Proof.
   iFrame.
 Qed.
 
-Lemma delete_kobj_vs {γ state used_uids k uid meta}:
-own_auth γ state used_uids -∗ own_meta_frag γ k uid 1 meta ==∗
-  own_auth γ (delete k state) used_uids.
+Lemma delete_kobj_vs {γ state used_uid k uid meta}:
+own_auth γ state used_uid -∗ own_meta_frag γ k uid 1 meta ==∗
+  own_auth γ (delete k state) used_uid.
 Proof.
   iIntros "Hauth Hmeta".
   iMod (own_update_2 with "Hauth Hmeta") as "Hauth".
@@ -1624,15 +1624,15 @@ Proof.
   iModIntro. done.
 Qed.
 
-Lemma update_kobj_vs {γ state used_uids k uid meta spec} prev_obj obj:
+Lemma update_kobj_vs {γ state used_uid k uid meta spec} prev_obj obj:
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
 state !! k = Some prev_obj →
 (KObjectV.status prev_obj) = (KObjectV.status obj) →
-own_auth γ state used_uids -∗
+own_auth γ state used_uid -∗
 own_meta_frag γ k uid 1 meta -∗
 own_spec_frag γ k uid 1 spec ==∗
-  own_auth γ (<[k := obj]> state) used_uids ∗
+  own_auth γ (<[k := obj]> state) used_uid ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
   own_spec_frag γ k uid 1 (KObjectV.spec obj).
 Proof.
@@ -1645,15 +1645,15 @@ Proof.
   iFrame.
 Qed.
 
-Lemma update_status_kobj_vs {γ state used_uids k uid meta status} prev_obj obj:
+Lemma update_status_kobj_vs {γ state used_uid k uid meta status} prev_obj obj:
 valid_k_uid_obj k uid obj →
-no_speculative_parent_reference (KObjectV.objectmeta obj) used_uids →
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
 state !! k = Some prev_obj →
 (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
-own_auth γ state used_uids -∗
+own_auth γ state used_uid -∗
 own_meta_frag γ k uid 1 meta -∗
 own_status_frag γ k uid 1 status ==∗
-  own_auth γ (<[k := obj]> state) used_uids ∗
+  own_auth γ (<[k := obj]> state) used_uid ∗
   own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
   own_status_frag γ k uid 1 (KObjectV.status obj).
 Proof.

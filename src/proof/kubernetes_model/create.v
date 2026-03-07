@@ -7,7 +7,7 @@ Context `{!kviewG Σ}.
 Context `{!cviewG KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
-Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid:
+Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
@@ -37,7 +37,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
   ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i {{ Φ }}.
 Proof. Admitted.
 
-Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid dq children:
+Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid dq children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
