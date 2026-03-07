@@ -46,6 +46,7 @@ import (
 type State struct {
 	m                      map[KKey]interface{}
 	usedUID                map[types.UID]struct{}
+	usedRV                 map[string]struct{}
 	resourceVersionCounter int64
 	mu                     *sync.Mutex
 }
@@ -60,6 +61,7 @@ func NewState() *State {
 	return &State{
 		m:                      make(map[KKey]interface{}),
 		usedUID:                make(map[types.UID]struct{}),
+		usedRV:                 make(map[string]struct{}),
 		resourceVersionCounter: 0,
 		mu:                     new(sync.Mutex),
 	}

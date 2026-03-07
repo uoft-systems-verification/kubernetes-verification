@@ -42,6 +42,7 @@ Context `{ffi_syntax}.
 Record t := mk {
   m' : loc;
   usedUID' : loc;
+  usedRV' : loc;
   resourceVersionCounter' : w64;
   mu' : loc;
 }.
@@ -57,12 +58,13 @@ Global Instance State_wf : struct.Wf apimodel.State.
 Proof. apply _. Qed.
 
 Global Instance settable_State : Settable State.t :=
-  settable! State.mk < State.m'; State.usedUID'; State.resourceVersionCounter'; State.mu' >.
+  settable! State.mk < State.m'; State.usedUID'; State.usedRV'; State.resourceVersionCounter'; State.mu' >.
 Global Instance into_val_State : IntoVal State.t :=
   {| to_val_def v :=
     struct.val_aux apimodel.State [
     "m" ::= #(State.m' v);
     "usedUID" ::= #(State.usedUID' v);
+    "usedRV" ::= #(State.usedRV' v);
     "resourceVersionCounter" ::= #(State.resourceVersionCounter' v);
     "mu" ::= #(State.mu' v)
     ]%struct
@@ -70,7 +72,7 @@ Global Instance into_val_State : IntoVal State.t :=
 
 Global Program Instance into_val_typed_State : IntoValTyped State.t apimodel.State :=
 {|
-  default_val := State.mk (default_val _) (default_val _) (default_val _) (default_val _);
+  default_val := State.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
 |}.
 Next Obligation. solve_to_val_type. Qed.
 Next Obligation. solve_zero_val. Qed.
@@ -83,6 +85,9 @@ Proof. solve_into_val_struct_field. Qed.
 Global Instance into_val_struct_field_State_usedUID : IntoValStructField "usedUID" apimodel.State State.usedUID'.
 Proof. solve_into_val_struct_field. Qed.
 
+Global Instance into_val_struct_field_State_usedRV : IntoValStructField "usedRV" apimodel.State State.usedRV'.
+Proof. solve_into_val_struct_field. Qed.
+
 Global Instance into_val_struct_field_State_resourceVersionCounter : IntoValStructField "resourceVersionCounter" apimodel.State State.resourceVersionCounter'.
 Proof. solve_into_val_struct_field. Qed.
 
@@ -91,15 +96,16 @@ Proof. solve_into_val_struct_field. Qed.
 
 
 Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_State m' usedUID' resourceVersionCounter' mu':
+Global Instance wp_struct_make_State m' usedUID' usedRV' resourceVersionCounter' mu':
   PureWp True
     (struct.make #apimodel.State (alist_val [
       "m" ::= #m';
       "usedUID" ::= #usedUID';
+      "usedRV" ::= #usedRV';
       "resourceVersionCounter" ::= #resourceVersionCounter';
       "mu" ::= #mu'
     ]))%struct
-    #(State.mk m' usedUID' resourceVersionCounter' mu').
+    #(State.mk m' usedUID' usedRV' resourceVersionCounter' mu').
 Proof. solve_struct_make_pure_wp. Qed.
 
 
@@ -107,6 +113,7 @@ Global Instance State_struct_fields_split dq l (v : State.t) :
   StructFieldsSplit dq l v (
     "Hm" ∷ l ↦s[apimodel.State :: "m"]{dq} v.(State.m') ∗
     "HusedUID" ∷ l ↦s[apimodel.State :: "usedUID"]{dq} v.(State.usedUID') ∗
+    "HusedRV" ∷ l ↦s[apimodel.State :: "usedRV"]{dq} v.(State.usedRV') ∗
     "HresourceVersionCounter" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"]{dq} v.(State.resourceVersionCounter') ∗
     "Hmu" ∷ l ↦s[apimodel.State :: "mu"]{dq} v.(State.mu')
   ).
@@ -118,6 +125,7 @@ Proof.
   rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
   simpl_one_flatten_struct (# (State.m' v)) (apimodel.State) "m"%go.
   simpl_one_flatten_struct (# (State.usedUID' v)) (apimodel.State) "usedUID"%go.
+  simpl_one_flatten_struct (# (State.usedRV' v)) (apimodel.State) "usedRV"%go.
   simpl_one_flatten_struct (# (State.resourceVersionCounter' v)) (apimodel.State) "resourceVersionCounter"%go.
 
   solve_field_ref_f.
@@ -443,6 +451,10 @@ Global Instance wp_method_call_State'ptr_generateNewUIDAndUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "generateNewUIDAndUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_generateResourceVersionAndUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "generateResourceVersionAndUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_get :
   WpMethodCall (ptrT.id apimodel.State.id) "get" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
@@ -473,10 +485,6 @@ Global Instance wp_method_call_State'ptr_objListLocked :
 
 Global Instance wp_method_call_State'ptr_objUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "objUpdate" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_State'ptr_setResourceVersion :
-  WpMethodCall (ptrT.id apimodel.State.id) "setResourceVersion" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_updateForGracefulDeletionAndFinalizers :

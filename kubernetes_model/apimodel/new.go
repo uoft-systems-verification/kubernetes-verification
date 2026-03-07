@@ -79,9 +79,14 @@ func (s *State) generateNewUIDAndUpdate() types.UID {
 	}
 }
 
-func (s *State) setResourceVersion(metadata metav1.Object) {
-	s.resourceVersionCounter++
-	metadata.SetResourceVersion(strconv.FormatInt(s.resourceVersionCounter, 10))
+func (s *State) generateResourceVersionAndUpdate() string {
+	for {
+		rv := strconv.FormatInt(rand.Int63(), 10)
+		if _, exists := s.usedRV[rv]; !exists {
+			s.usedRV[rv] = struct{}{}
+			return rv
+		}
+	}
 }
 
 // validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
@@ -411,7 +416,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 		return nil, errors.NewAlreadyExists(schema.GroupResource{Resource: kind}, name)
 	}
 
-	s.setResourceVersion(metadata)
+	metadata.SetResourceVersion(s.generateResourceVersionAndUpdate())
 
 	s.m[key] = objCopy
 
@@ -606,7 +611,7 @@ func checkGracefulDelete(kind string, obj interface{}, options *metav1.DeleteOpt
 }
 
 // updateForGracefulDeletionAndFinalizers sets DeletionTimestamp and DeletionGracePeriodSeconds,
-// updates finalizers, increments resource version, and stores the updated object.
+// updates finalizers, assigns a fresh resource version, and stores the updated object.
 // Returns the updated object and whether to delete immediately.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1044-L1129
 func (s *State) updateForGracefulDeletionAndFinalizers(
