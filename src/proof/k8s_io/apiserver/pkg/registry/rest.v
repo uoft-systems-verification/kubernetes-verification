@@ -5,11 +5,12 @@ From New.proof Require Import prelude empty_ffi pure_objects.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
-Lemma wp_WipeObjectMetaSystemFields l m :
+Lemma wp_WipeObjectMetaSystemFields i l m :
   {{{ is_pkg_init rest ∗
+      ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
       l ↦ m
   }}}
-    @! rest.WipeObjectMetaSystemFields #l
+    @! rest.WipeObjectMetaSystemFields #i
   {{{ time, RET #();
       l ↦ m <| v1.ObjectMeta.CreationTimestamp' := time |>
             <| v1.ObjectMeta.UID' := ""%go |>
@@ -19,11 +20,12 @@ Lemma wp_WipeObjectMetaSystemFields l m :
   }}}.
 Proof. Admitted.
 
-Lemma wp_FillObjectMetaSystemFields l m :
+Lemma wp_FillObjectMetaSystemFields i l m :
   {{{ is_pkg_init rest ∗
+      ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
       l ↦ m
   }}}
-    @! rest.FillObjectMetaSystemFields #l
+    @! rest.FillObjectMetaSystemFields #i
   {{{ time timev uid, RET #();
       l ↦ m <| v1.ObjectMeta.CreationTimestamp' := time |>
             <| v1.ObjectMeta.UID' := uid |> ∗
@@ -31,12 +33,13 @@ Lemma wp_FillObjectMetaSystemFields l m :
   }}}.
 Proof. Admitted.
 
-Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns l m :
+Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns i l m :
   {{{ is_pkg_init rest ∗
+      ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
       l ↦ m ∗
       ⌜ m.(v1.ObjectMeta.Namespace') = ""%go ∨ m.(v1.ObjectMeta.Namespace') = ns ⌝
   }}}
-    @! rest.EnsureObjectNamespaceMatchesRequestNamespace #ns #l
+    @! rest.EnsureObjectNamespaceMatchesRequestNamespace #ns #i
   {{{ RET #interface.nil;
       l ↦ m <| v1.ObjectMeta.Namespace' := ns |>
   }}}.

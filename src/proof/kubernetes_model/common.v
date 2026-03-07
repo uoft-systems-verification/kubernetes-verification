@@ -17,7 +17,7 @@ Lemma wp_deepCopy i obj:
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit):
+Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
   {{{ is_pkg_init apimodel ∗
       l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
       used_uid_l ↦$ used_uid
@@ -31,7 +31,19 @@ Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.
 Proof.
 Admitted.
 
-Lemma wp_applyValidationAndDefaulting i o (name : go_string):
+Lemma wp_validateObjectMeta i (kind : go_string) m dq :
+  {{{ is_pkg_init apimodel ∗
+      ObjectMetaV.deepown_i i m dq ∗
+      ⌜ ObjectMetaV.valid m ⌝
+  }}}
+    @! apimodel.validateObjectMeta #i #kind
+  {{{ RET #interface.nil;
+      True
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_applyValidationAndDefaulting i o (name : go_string) :
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i o 1 ∗
       ⌜ let m := KObjectV.objectmeta o in
