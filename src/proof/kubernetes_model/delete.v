@@ -4,8 +4,7 @@ From New.proof.kubernetes_model Require Export inv.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
-Context `{!cviewG (K:=KKey.t) (R:=KKey.t * types.UID.t) (V:=KObjectV.t)
-  (f:=obj_parent_ref) (g:=obj_ref) Σ}.
+Context `{!cviewG Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
 Lemma wp_State__delete_au γ l key uid_ptr uid_o rv_ptr rv_o (reserved: bool):

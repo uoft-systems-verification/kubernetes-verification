@@ -5,8 +5,7 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
-Context `{!cviewG (K:=KKey.t) (R:=KKey.t * types.UID.t) (V:=KObjectV.t)
-  (f:=obj_parent_ref) (g:=obj_ref) Σ}.
+Context `{!cviewG Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
 Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid :

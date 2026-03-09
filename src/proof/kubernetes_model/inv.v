@@ -10,8 +10,7 @@ From New.proof.algebra Require Export kview cview mono_gset.
 Section spec.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
-Context `{!cviewG (K:=KKey.t) (R:=KKey.t * types.UID.t) (V:=KObjectV.t)
-  (f:=obj_parent_ref) (g:=obj_ref) Σ}.
+Context `{!cviewG Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
 Record KubernetesGname := mk_γk {
