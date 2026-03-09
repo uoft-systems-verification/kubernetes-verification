@@ -8,40 +8,39 @@ Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Lemma wp_WipeObjectMetaSystemFields i l m :
   {{{ is_pkg_init rest ∗
       ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
-      l ↦ m
+      ObjectMetaV.deepown_l l m 1
   }}}
     @! rest.WipeObjectMetaSystemFields #i
   {{{ time, RET #();
-      l ↦ m <| v1.ObjectMeta.CreationTimestamp' := time |>
-            <| v1.ObjectMeta.UID' := ""%go |>
-            <| v1.ObjectMeta.DeletionTimestamp' := null |>
-            <| v1.ObjectMeta.DeletionGracePeriodSeconds' := null |>
-            <| v1.ObjectMeta.SelfLink' := ""%go |>
+      ObjectMetaV.deepown_l l (m <| ObjectMetaV.CreationTimestamp' := time |>
+                                <| ObjectMetaV.UID' := ""%go |>
+                                <| ObjectMetaV.DeletionTimestamp' := None |>
+                                <| ObjectMetaV.DeletionGracePeriodSeconds' := None |>
+                                <| ObjectMetaV.SelfLink' := ""%go |>) 1
   }}}.
 Proof. Admitted.
 
 Lemma wp_FillObjectMetaSystemFields i l m :
   {{{ is_pkg_init rest ∗
       ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
-      l ↦ m
+      ObjectMetaV.deepown_l l m 1
   }}}
     @! rest.FillObjectMetaSystemFields #i
-  {{{ time timev uid, RET #();
-      l ↦ m <| v1.ObjectMeta.CreationTimestamp' := time |>
-            <| v1.ObjectMeta.UID' := uid |> ∗
-      TimeV.deepown time timev
+  {{{ time uid, RET #();
+      ObjectMetaV.deepown_l l (m <| ObjectMetaV.CreationTimestamp' := time |>
+                                 <| ObjectMetaV.UID' := uid |>) 1
   }}}.
 Proof. Admitted.
 
 Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns i l m :
   {{{ is_pkg_init rest ∗
       ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
-      l ↦ m ∗
-      ⌜ m.(v1.ObjectMeta.Namespace') = ""%go ∨ m.(v1.ObjectMeta.Namespace') = ns ⌝
+      ObjectMetaV.deepown_l l m 1 ∗
+      ⌜ m.(ObjectMetaV.Namespace') = ""%go ∨ m.(ObjectMetaV.Namespace') = ns ⌝
   }}}
     @! rest.EnsureObjectNamespaceMatchesRequestNamespace #ns #i
   {{{ RET #interface.nil;
-      l ↦ m <| v1.ObjectMeta.Namespace' := ns |>
+      ObjectMetaV.deepown_l l (m <| ObjectMetaV.Namespace' := ns |>) 1
   }}}.
 Proof. Admitted.
 

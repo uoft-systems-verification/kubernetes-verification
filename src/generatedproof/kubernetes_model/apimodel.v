@@ -447,12 +447,12 @@ Global Instance wp_method_call_State'ptr_generateNewName :
   WpMethodCall (ptrT.id apimodel.State.id) "generateNewName" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_generateNewUIDAndUpdate :
-  WpMethodCall (ptrT.id apimodel.State.id) "generateNewUIDAndUpdate" _ (is_pkg_defined apimodel) :=
+Global Instance wp_method_call_State'ptr_generateNewRVAndUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "generateNewRVAndUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_generateResourceVersionAndUpdate :
-  WpMethodCall (ptrT.id apimodel.State.id) "generateResourceVersionAndUpdate" _ (is_pkg_defined apimodel) :=
+Global Instance wp_method_call_State'ptr_generateNewUIDAndUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "generateNewUIDAndUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_get :

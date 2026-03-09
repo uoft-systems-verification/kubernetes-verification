@@ -31,21 +31,37 @@ Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.
 Proof.
 Admitted.
 
-Lemma wp_validateObjectMeta i (kind : go_string) m dq :
+Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
   {{{ is_pkg_init apimodel ∗
-      ObjectMetaV.deepown_i i m dq ∗
-      ⌜ ObjectMetaV.valid m ⌝
+      l ↦s[apimodel.State :: "usedRV"] used_rv_l ∗
+      used_rv_l ↦$ used_rv
   }}}
-    @! apimodel.validateObjectMeta #i #kind
-  {{{ RET #interface.nil;
-      True
+    l @ (ptrT.id apimodel.State.id) @ "generateNewRVAndUpdate" #()
+  {{{ rv, RET #rv;
+      ⌜ used_rv !! rv = None ⌝ ∗
+      l ↦s[apimodel.State :: "usedRV"] used_rv_l ∗
+      used_rv_l ↦$ <[rv:=()]> used_rv
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_applyValidationAndDefaulting i o (name : go_string) :
+Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
   {{{ is_pkg_init apimodel ∗
-      KObjectV.deepown_i i o 1 ∗
+      ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
+      ObjectMetaV.deepown_l l m dq ∗
+      ⌜ ObjectMetaV.valid m ⌝
+  }}}
+    @! apimodel.validateObjectMeta #i #kind
+  {{{ RET #interface.nil;
+      ObjectMetaV.deepown_l l m dq
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      KObjectV.deepown_l l o 1 ∗
       ⌜ let m := KObjectV.objectmeta o in
         (m.(ObjectMetaV.GenerateName') ≠ ""%go →
           valid_generate_name m.(ObjectMetaV.GenerateName')) ∧
@@ -61,11 +77,33 @@ Lemma wp_applyValidationAndDefaulting i o (name : go_string) :
   }}}
     @! apimodel.applyValidationAndDefaulting #i #name
   {{{ o', RET #interface.nil;
-      KObjectV.deepown_i i o' 1 ∗
+      KObjectV.deepown_l l o' 1 ∗
+      ⌜ KObjectV.same_kind o o' ⌝ ∗
       ⌜ ObjectMetaV.valid (KObjectV.objectmeta o') ⌝ ∗
+      ⌜ ObjectSpecV.valid (KObjectV.spec o') ⌝ ∗
+      ⌜ ObjectStatusV.valid (KObjectV.status o') ⌝ ∗
+      ⌜ KObjectV.typemeta o' = KObjectV.typemeta o ⌝ ∗
       ⌜ KObjectV.objectmeta o' = ((KObjectV.objectmeta o) <| ObjectMetaV.Generation' := W64 1 |>) ⌝ ∗
       ⌜ ObjectSpecV.created (KObjectV.spec o) (KObjectV.spec o') ⌝ ∗
       ⌜ ObjectStatusV.created (KObjectV.status o) (KObjectV.status o') ⌝
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
+  {{{ is_pkg_init apimodel ∗
+      ⌜ valid_generate_name generate_name ⌝ ∗
+      ⌜ length generate_name ≤ 58 ⌝ ∗
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "generateNewName" #kind #namespace #generate_name
+  {{{ (new_name: go_string), RET #new_name;
+      ⌜ new_name ≠ ""%go ⌝ ∗
+      ⌜ valid_name new_name ⌝ ∗
+      ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
   }}}.
 Proof.
 Admitted.

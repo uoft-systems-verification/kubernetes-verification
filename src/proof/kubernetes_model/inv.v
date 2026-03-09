@@ -10,28 +10,8 @@ From New.proof.algebra Require Export kview cview mono_gset.
 Section spec.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
-
-Definition obj_parent_ref obj : option (KKey.t * types.UID.t) :=
-  match (KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences') with
-  | Some orefs => match list_find (λ oref, oref.(OwnerReferenceV.Controller') = Some true) orefs with
-    | Some (_, oref) => Some (
-                          {|
-                            KKey.Kind' := oref.(OwnerReferenceV.Kind');
-                            KKey.Namespace' := (KObjectV.objectmeta obj).(ObjectMetaV.Namespace');
-                            KKey.Name' := oref.(OwnerReferenceV.Name');
-                          |},
-                          oref.(OwnerReferenceV.UID')
-                        )
-    | None => None
-    end
-  | None => None
-  end.
-
-Definition obj_ref k obj : KKey.t * types.UID.t :=
-  (k, (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
-
-Context `{!cviewG KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref Σ}.
-
+Context `{!cviewG (K:=KKey.t) (R:=KKey.t * types.UID.t) (V:=KObjectV.t)
+  (f:=obj_parent_ref) (g:=obj_ref) Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
 Record KubernetesGname := mk_γk {
@@ -53,12 +33,10 @@ Definition own_status_frag γ k uid dq st : iProp Σ :=
   kview.own_status_frag γ.(γ_state) k uid dq st.
 
 Definition own_children_auth γ state used_reference : iProp Σ :=
-  cview.own_auth KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref
-  γ.(γ_children) state used_reference.
+  cview.own_auth γ.(γ_children) state used_reference.
 
 Definition own_children_frag γ key uid dq keys : iProp Σ :=
-  cview.own_frag KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref
-  γ.(γ_children) (key, uid) dq keys.
+  cview.own_frag γ.(γ_children) (key, uid) dq keys.
 
 Definition own_tombstone_auth γ tombed_uid : iProp Σ :=
   mono_gset.own_auth types.UID.t γ.(γ_tombstone) tombed_uid.
@@ -67,15 +45,16 @@ Definition own_tombstone_frag γ tombed_uid : iProp Σ :=
   mono_gset.own_frag types.UID.t γ.(γ_tombstone) tombed_uid.
 
 Definition kubernetes_inv γ l : iProp Σ :=
-  ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (rvc: w64)
-    (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit)
+  ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
+    (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)
     (abs_state: gmap KKey.t KObjectV.t) (used_uid: gset types.UID.t) (tombed_uid: gset types.UID.t)
     (used_reference: gset (KKey.t * types.UID.t)),
     "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
     "Hstate_used_uid_addr" ∷ l ↦s[apimodel.State :: "usedUID"] phys_used_uid_l ∗
-    "Hstate_rvc_addr" ∷ l ↦s[apimodel.State :: "resourceVersionCounter"] rvc ∗
+    "Hstate_used_rv_addr" ∷ l ↦s[apimodel.State :: "usedRV"] phys_used_rv_l ∗
     "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
     "Hown_used_uid" ∷ phys_used_uid_l ↦$ phys_used_uid ∗
+    "Hown_used_rv" ∷ phys_used_rv_l ↦$ phys_used_rv ∗
     "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
     "Hown_tombstone" ∷ own_tombstone_auth γ tombed_uid ∗

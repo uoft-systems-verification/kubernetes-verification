@@ -4,7 +4,8 @@ From New.proof.kubernetes_model Require Export inv common.
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
-Context `{!cviewG KKey.t (KKey.t * types.UID.t) KObjectV.t obj_parent_ref obj_ref Σ}.
+Context `{!cviewG (K:=KKey.t) (R:=KKey.t * types.UID.t) (V:=KObjectV.t)
+  (f:=obj_parent_ref) (g:=obj_ref) Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
 Lemma wp_State__get γ l key :
@@ -109,7 +110,7 @@ Proof.
   iApply fupd_wp.
   iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
-  destruct (Hin_auth Hlookup_abs) as [Hkey_eq Hwf].
+  destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
   iPoseProof (kview.own_meta_valid _ _ _ _ with "Hown_meta")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
   iPoseProof (kview.own_meta_exists _ _ _ _ with "Hinv_Hown_abs Hown_meta")

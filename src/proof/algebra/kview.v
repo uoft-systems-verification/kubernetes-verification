@@ -22,15 +22,8 @@ Local Definition proj_meta b : metaUR := fst b.
 Local Definition proj_spec b : specUR := fst (snd b).
 Local Definition proj_status b : statusUR := snd (snd b).
 
-Definition meta_is_child_of meta key uid: Prop :=
-  meta.(ObjectMetaV.Namespace') = key.(KKey.Namespace') ∧
-  match meta.(ObjectMetaV.OwnerReferences') with
-  | Some os => os_has_controller_parent_of os key.(KKey.Kind') key.(KKey.Name') uid
-  | None => False
-  end.
-
 Definition no_speculative_parent_reference meta (used_uid: gset types.UID.t): Prop :=
-  ∀ parent_key uid, meta_is_child_of meta parent_key uid → uid ∈ used_uid.
+  ∀ kind name uid, meta_parent_ref_is meta kind name uid → uid ∈ used_uid.
 
 Local Definition valid_kauth a : Prop :=
   map_Forall (λ k obj,
@@ -112,8 +105,8 @@ Proof.
     destruct Hobj_valid as (Hkey & Hwf & Huid_in & Hno_spec & Huniq).
     split_and!; [done|done| | |done].
     - apply (proj1 (Hused_elem _)). done.
-    - intros parent_key uid Hchild.
-      apply (proj1 (Hused_elem _)).
+    - intros kind name uid Hparent.
+      apply (proj1 (Hused_elem uid)).
       eapply Hno_spec. done.
   }
   split.
@@ -310,7 +303,13 @@ Lemma auth_valid a k obj:
 ✓ (●K a) →
 (proj_state a) !! k = Some obj →
 k = KObjectV.key obj ∧
-KObjectV.valid obj.
+KObjectV.valid obj ∧
+(KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uid a ∧
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) ∧
+map_Forall (λ k' obj',
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
+) (proj_state a).
 Proof.
   intros Hvalid Hlookup.
   rewrite /kview_auth in Hvalid.
@@ -320,8 +319,24 @@ Proof.
   destruct Hrel as [Hvalid_a _].
   rewrite /valid_kauth in Hvalid_a.
   pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup) as Hobj_valid.
-  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _).
-  split; [done|done].
+  exact Hobj_valid.
+Qed.
+
+Lemma auth_valid_forall a:
+✓ (●K a) →
+∀ k obj,
+(proj_state a) !! k = Some obj →
+k = KObjectV.key obj ∧
+KObjectV.valid obj ∧
+(KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ proj_used_uid a ∧
+no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) ∧
+map_Forall (λ k' obj',
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
+) (proj_state a).
+Proof.
+  intros Hvalid k obj Hlookup.
+  eapply (auth_valid a k obj); done.
 Qed.
 
 Lemma auth_frag_valid (n: nat) a b:
@@ -503,7 +518,7 @@ Proof.
       inversion Hlookup_new. subst obj'.
       split_and!. all: try done.
       * rewrite Huid_obj. set_solver.
-      * intros parent_key uid0 Hchild.
+      * intros kind name uid0 Hparent.
         apply elem_of_union_l.
         eapply Hno_spec. done.
       * eapply map_Forall_lookup_2.
@@ -529,7 +544,7 @@ Proof.
       destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
       split_and!. all: try done.
       * set_solver.
-      * intros parent_key uid0 Hchild.
+      * intros kind name uid0 Hparent.
         apply elem_of_union_l.
         eapply Hno_spec_old. done.
       * eapply map_Forall_lookup_2.
@@ -1461,11 +1476,18 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
 
+(* TODO: lift state !! k = Some obj *)
 Lemma own_auth_valid {γ state used_uid} k obj:
 own_auth γ state used_uid -∗
 ⌜ state !! k = Some obj →
 k = KObjectV.key obj ∧
-KObjectV.valid obj ⌝.
+KObjectV.valid obj ∧
+(KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ used_uid ∧
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid ∧
+map_Forall (λ k' obj',
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
+) state ⌝.
 Proof.
   iIntros "Hauth".
   iDestruct (own_valid with "Hauth") as "Hvalid".
@@ -1485,6 +1507,36 @@ Proof.
   eapply (auth_valid (state, used_uid) k obj).
   - exact Hvalid.
   - simpl. exact Hlookup.
+Qed.
+
+Lemma own_auth_valid_forall {γ state used_uid}:
+own_auth γ state used_uid -∗
+⌜ ∀ k obj,
+state !! k = Some obj →
+k = KObjectV.key obj ∧
+KObjectV.valid obj ∧
+(KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ used_uid ∧
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid ∧
+map_Forall (λ k' obj',
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
+) state ⌝.
+Proof.
+  iIntros "Hauth".
+  iDestruct (own_valid with "Hauth") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1 (state, used_uid)) Hvalid0)
+    as [_ Hrel0].
+  assert (Hvalid : ✓ (●K (state, used_uid))).
+  { rewrite /kview_auth.
+    apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uid))).
+    split; [done|].
+    intros n.
+    change (view_rel_raw n (state, used_uid) ε).
+    exact Hrel0.
+  }
+  exact (auth_valid_forall (state, used_uid) Hvalid).
 Qed.
 
 Lemma own_meta_valid {γ} k uid dq meta:

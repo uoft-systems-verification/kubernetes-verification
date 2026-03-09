@@ -29,8 +29,8 @@ From iris.algebra Require Import cmra gset.
 
 
 Section cview.
-Context (K : Type) `{Countable K} (R : Type) `{Countable R} (V : Type).
-Context (f : V → option R) (g : K → V → R).
+Context {K : Type} `{Countable K} {R : Type} `{Countable R} {V : Type}.
+Context {f : V → option R} {g : K → V → R}.
 
 Definition authO : ofe := prodO (gmapO K (leibnizO V)) (gsetO (leibnizO R)).
 
@@ -1179,13 +1179,36 @@ Definition own_auth γ (state: gmap K V) (used_reference: gset R) : iProp Σ :=
 Definition own_frag γ r dq ks : iProp Σ :=
   own γ (◯C (mk_frag r dq ks)).
 
+Lemma own_auth_frag_valid {γ state used_reference r dq ks}:
+own_auth γ state used_reference -∗
+own_frag γ r dq ks -∗
+⌜ ks = dom (filter (λ '(_, v), f v = Some r) state) ⌝ ∗
+⌜ r ∈ used_reference ⌝.
+Proof.
+  iIntros "Hauth Hfrag".
+  iDestruct (own_valid_2 with "Hauth Hfrag") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  rewrite /own_auth /own_frag in Hvalid0.
+  pose proof (proj1 (view_both_validN view_rel 0%nat
+    (state, used_reference) (mk_frag r dq ks)) Hvalid0) as Hrel0.
+  assert (Hvalid : ✓ (●C (state, used_reference) ⋅ ◯C (mk_frag r dq ks))).
+  { rewrite /cview_auth /cview_frag.
+    apply (proj2 (view_both_valid view_rel (state, used_reference) (mk_frag r dq ks))).
+    intros n. exact Hrel0.
+  }
+  pose proof (auth_frag_valid (state, used_reference) r dq ks Hvalid) as [Hks Hr].
+  split; done.
+Qed.
+
 Lemma create_child_vs {γ state used_reference r ks} k v cks:
 state !! k = None →
 f v = Some r →
 g k v ≠ r → (* No self-parenting *)
 dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
 g k v ∉ used_reference →
-own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+own_auth γ state used_reference -∗
+own_frag γ r 1 ks ==∗
   own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
   own_frag γ r 1 (ks ∪ {[k]}) ∗
   own_frag γ (g k v) 1 cks.

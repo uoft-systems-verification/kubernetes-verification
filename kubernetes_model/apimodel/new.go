@@ -79,7 +79,7 @@ func (s *State) generateNewUIDAndUpdate() types.UID {
 	}
 }
 
-func (s *State) generateResourceVersionAndUpdate() string {
+func (s *State) generateNewRVAndUpdate() string {
 	for {
 		rv := strconv.FormatInt(rand.Int63(), 10)
 		if _, exists := s.usedRV[rv]; !exists {
@@ -377,7 +377,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 	rest.WipeObjectMetaSystemFields(metadata)
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L175
-	if err := rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+	if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
 		return nil, err
 	}
 
@@ -397,12 +397,12 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 		metadata.SetName(name)
 	}
 
-	if err := applyValidationAndDefaulting(objCopy, name); err != nil {
+	if err = applyValidationAndDefaulting(objCopy, name); err != nil {
 		return nil, err
 	}
 
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L129-L131
-	if err := validateObjectMeta(metadata, kind); err != nil {
+	if err = validateObjectMeta(metadata, kind); err != nil {
 		return nil, err
 	}
 
@@ -416,7 +416,7 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 		return nil, errors.NewAlreadyExists(schema.GroupResource{Resource: kind}, name)
 	}
 
-	metadata.SetResourceVersion(s.generateResourceVersionAndUpdate())
+	metadata.SetResourceVersion(s.generateNewRVAndUpdate())
 
 	s.m[key] = objCopy
 

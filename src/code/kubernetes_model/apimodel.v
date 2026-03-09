@@ -1089,7 +1089,7 @@ Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ : val :=
       else do:  #())))).
 
 (* go: new.go:82:17 *)
-Definition State__generateResourceVersionAndUpdateⁱᵐᵖˡ : val :=
+Definition State__generateNewRVAndUpdateⁱᵐᵖˡ : val :=
   λ: "s" <>,
     exception_do (let: "s" := (mem.alloc "s") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
@@ -1654,8 +1654,7 @@ Definition State__createⁱᵐᵖˡ : val :=
     else do:  #());;;
     do:  (let: "$a0" := (![#v1.Object] "metadata") in
     (func_call #rest.WipeObjectMetaSystemFields) "$a0");;;
-    (let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "$r0" := (let: "$a0" := (![#stringT] "namespace") in
+    (let: "$r0" := (let: "$a0" := (![#stringT] "namespace") in
     let: "$a1" := (![#v1.Object] "metadata") in
     (func_call #rest.EnsureObjectNamespaceMatchesRequestNamespace) "$a0" "$a1") in
     do:  ("err" <-[#error] "$r0");;;
@@ -1689,16 +1688,14 @@ Definition State__createⁱᵐᵖˡ : val :=
       do:  (let: "$a0" := (![#stringT] "name") in
       (interface.get #"SetName"%go (![#v1.Object] "metadata")) "$a0")
     else do:  #());;;
-    (let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "$r0" := (let: "$a0" := (![#interfaceT] "objCopy") in
+    (let: "$r0" := (let: "$a0" := (![#interfaceT] "objCopy") in
     let: "$a1" := (![#stringT] "name") in
     (func_call #applyValidationAndDefaulting) "$a0" "$a1") in
     do:  ("err" <-[#error] "$r0");;;
     (if: (~ (interface.eq (![#error] "err") #interface.nil))
     then return: (#interface.nil, ![#error] "err")
     else do:  #()));;;
-    (let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "$r0" := (let: "$a0" := (![#v1.Object] "metadata") in
+    (let: "$r0" := (let: "$a0" := (![#v1.Object] "metadata") in
     let: "$a1" := (![#stringT] "kind") in
     (func_call #validateObjectMeta) "$a0" "$a1") in
     do:  ("err" <-[#error] "$r0");;;
@@ -1731,7 +1728,7 @@ Definition State__createⁱᵐᵖˡ : val :=
        let: "$a1" := (![#stringT] "name") in
        (func_call #errors.NewAlreadyExists) "$a0" "$a1"))
     else do:  #()));;;
-    do:  (let: "$a0" := ((method_call #(ptrT.id State.id) #"generateResourceVersionAndUpdate"%go (![#ptrT] "s")) #()) in
+    do:  (let: "$a0" := ((method_call #(ptrT.id State.id) #"generateNewRVAndUpdate"%go (![#ptrT] "s")) #()) in
     (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![#interfaceT] "objCopy") in
     do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) (![#KKey] "key") "$r0");;;
@@ -2367,7 +2364,7 @@ Definition vars' : list (go_string * go_type) := [].
 
 Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodCreate2"%go, State__PodCreate2ⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodDelete2"%go, State__PodDelete2ⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("ReplicaSetCreate2"%go, State__ReplicaSetCreate2ⁱᵐᵖˡ); ("ReplicaSetDelete2"%go, State__ReplicaSetDelete2ⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("deletionFinalizersForGarbageCollection"%go, State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("generateResourceVersionAndUpdate"%go, State__generateResourceVersionAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objCreate"%go, State__objCreateⁱᵐᵖˡ); ("objDelete"%go, State__objDeleteⁱᵐᵖˡ); ("objGet"%go, State__objGetⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("objUpdate"%go, State__objUpdateⁱᵐᵖˡ); ("updateForGracefulDeletionAndFinalizers"%go, State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodCreate2"%go, State__PodCreate2ⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodDelete2"%go, State__PodDelete2ⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("ReplicaSetCreate2"%go, State__ReplicaSetCreate2ⁱᵐᵖˡ); ("ReplicaSetDelete2"%go, State__ReplicaSetDelete2ⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("deletionFinalizersForGarbageCollection"%go, State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objCreate"%go, State__objCreateⁱᵐᵖˡ); ("objDelete"%go, State__objDeleteⁱᵐᵖˡ); ("objGet"%go, State__objGetⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("objUpdate"%go, State__objUpdateⁱᵐᵖˡ); ("updateForGracefulDeletionAndFinalizers"%go, State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
 
 #[global] Instance info' : PkgInfo apimodel.apimodel :=
   {|

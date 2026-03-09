@@ -170,6 +170,14 @@ Definition valid_nameless_create ns (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
+Definition nameless_created ns m m' : Prop :=
+  m'.(Namespace') = ns ∧
+  m'.(GenerateName') = m.(GenerateName') ∧
+  m'.(Annotations') = m.(Annotations') ∧
+  m'.(Labels') = m.(Labels') ∧
+  m'.(OwnerReferences') = m.(OwnerReferences') ∧
+  m'.(Finalizers') = m.(Finalizers').
+
 Definition valid_for_nameless_create (m: t) : Prop :=
   (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
   (* The max len of generate_name of the pod must be 58 so that the suffix can fit in:
@@ -183,8 +191,6 @@ Definition valid_for_nameless_create (m: t) : Prop :=
   end.
 
 Axiom created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
-
-Axiom nameless_created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
 
 Axiom updated: t → t → t → Prop. (* old meta → input meta → output meta (new meta) *)
 
@@ -557,6 +563,12 @@ Definition update_objectmeta o m: t :=
   | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
   end.
 
+Axiom spec_update_objectmeta :
+  ∀ o m, spec (update_objectmeta o m) = spec o.
+
+Axiom status_update_objectmeta :
+  ∀ o m, status (update_objectmeta o m) = status o.
+
 Definition kind o : go_string :=
   match o with
   | Pod _ => PodV.kind
@@ -806,6 +818,39 @@ Proof.
   intros [[] ?]; reflexivity.
 Qed.
 
+Definition meta_parent_ref meta : option (KKey.t * types.UID.t) :=
+  match meta.(ObjectMetaV.OwnerReferences') with
+  | Some orefs => match list_find (λ oref, oref.(OwnerReferenceV.Controller') = Some true) orefs with
+    | Some (_, oref) => Some (
+                          {|
+                            KKey.Kind' := oref.(OwnerReferenceV.Kind');
+                            KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+                            KKey.Name' := oref.(OwnerReferenceV.Name');
+                          |},
+                          oref.(OwnerReferenceV.UID')
+                        )
+    | None => None
+    end
+  | None => None
+  end.
+
+
+Definition meta_parent_ref_is meta kind name uid : Prop :=
+  meta_parent_ref meta = Some ({|
+                                KKey.Kind' := kind;
+                                KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+                                KKey.Name' := name;
+                              |}, uid).
+
+Definition obj_parent_ref obj : option (KKey.t * types.UID.t) :=
+  meta_parent_ref (KObjectV.objectmeta obj).
+
+Definition obj_parent_ref_is obj kind name uid : Prop :=
+  meta_parent_ref_is (KObjectV.objectmeta obj) kind name uid.
+
+Definition obj_ref k obj : KKey.t * types.UID.t :=
+  (k, (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
+
 Definition is_controller_parent_of (o: OwnerReferenceV.t) kind name uid : Prop :=
   o.(OwnerReferenceV.Controller') = Some true ∧
   o.(OwnerReferenceV.Kind') = kind ∧
@@ -914,3 +959,34 @@ Proof.
     apply valid_owner_references_has_at_most_one_controller_parent with (os := os); assumption.
   - contradiction.
 Qed.
+
+(* Use this when the goal is to prove [KObjectV.valid] for an object obtained by
+   [KObjectV.update_objectmeta]. The parameters are expected to be:
+   - [Hvalid_meta]: validity of the replacement objectmeta.
+   - [Htypemeta_eq]: the updated object has the same typemeta as the pre-update
+     object.
+   - [Hkind_typemeta]: the pre-update object's kind agrees with its typemeta
+     kind field.
+   - [Hkind_eq]: the pre-update object's [KObjectV.kind] is the expected kind of
+     the concrete constructor branch.
+   - [Hvalid_spec]: validity of the object's spec before the objectmeta update.
+   - [Hvalid_status]: validity of the object's status before the objectmeta
+     update.
+   The tactic combines these to rebuild [KObjectV.valid] for the updated object,
+   reusing [KObjectV.spec_update_objectmeta] and
+   [KObjectV.status_update_objectmeta]. In practice this is most convenient
+   after destructing the concrete object constructors so [simpl] exposes the
+   required equalities. *)
+Ltac solve_update_objectmeta_valid
+    Hvalid_meta Htypemeta_eq Hkind_typemeta Hkind_eq Hvalid_spec Hvalid_status :=
+  destruct Hvalid_meta as
+    (Hgenerate_name_valid & Hname_nonempty & Hname_valid & Hns_nonempty' & Hns_valid' &
+      Hgeneration_valid & Hlabels_valid & Hannotations_valid &
+      Hownerrefs_valid & Hfinalizers_valid & Hmanagedfields_valid);
+  split_and!;
+    [ rewrite <- Htypemeta_eq in Hkind_typemeta;
+      exact (eq_trans (eq_sym Hkind_eq) Hkind_typemeta)
+    | split_and!; done
+    | rewrite KObjectV.spec_update_objectmeta; exact Hvalid_spec
+    | rewrite KObjectV.status_update_objectmeta; exact Hvalid_status
+    ].
