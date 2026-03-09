@@ -383,7 +383,7 @@ Proof.
     + subst k. rewrite /KObjectV.key /= Hobj_meta_eq //.
     + split.
       * rewrite Hobj_meta_eq in Huid_obj. symmetry. exact Huid_obj.
-      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & Hwf_meta & _);
+      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & Hwf_meta & _ & _);
         rewrite Hobj_meta_eq in Hwf_meta; done.
 Qed.
 

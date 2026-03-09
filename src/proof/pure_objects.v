@@ -557,18 +557,6 @@ Axiom spec: t → ObjectSpecV.t.
 
 Axiom status: t → ObjectStatusV.t.
 
-Definition update_objectmeta o m: t :=
-  match o with
-  | Pod pod => Pod (pod <| PodV.ObjectMeta' := m |>)
-  | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
-  end.
-
-Axiom spec_update_objectmeta :
-  ∀ o m, spec (update_objectmeta o m) = spec o.
-
-Axiom status_update_objectmeta :
-  ∀ o m, status (update_objectmeta o m) = status o.
-
 Definition kind o : go_string :=
   match o with
   | Pod _ => PodV.kind
@@ -582,21 +570,41 @@ Definition key o : KKey.t :=
     KKey.Name' := (objectmeta o).(ObjectMetaV.Name')
   |}.
 
+Definition update_objectmeta o m: t :=
+  match o with
+  | Pod pod => Pod (pod <| PodV.ObjectMeta' := m |>)
+  | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
+  end.
+
+Axiom kind_update_objectmeta :
+  ∀ o m, kind (update_objectmeta o m) = kind o.
+
+Axiom typemeta_update_objectmeta :
+  ∀ o m, typemeta (update_objectmeta o m) = typemeta o.
+
+Axiom spec_update_objectmeta :
+  ∀ o m, spec (update_objectmeta o m) = spec o.
+
+Axiom status_update_objectmeta :
+  ∀ o m, status (update_objectmeta o m) = status o.
+
 Axiom valid_create: go_string → go_string → t → Prop.
 
 Axiom valid_update: go_string → go_string → t → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
+Axiom typemeta_valid : go_string → v1.TypeMeta.t → Prop.
+
 Definition valid o : Prop :=
-  kind o = (typemeta o).(v1.TypeMeta.Kind') ∧
+  typemeta_valid (kind o) (typemeta o) ∧
   ObjectMetaV.valid (objectmeta o) ∧
   ObjectSpecV.valid (spec o) ∧
   ObjectStatusV.valid (status o).
 
 Definition valid_nameless_create knd ns o : Prop :=
   knd = kind o ∧
-  knd = (typemeta o).(v1.TypeMeta.Kind') ∧
+  typemeta_valid (kind o) (typemeta o) ∧
   ObjectMetaV.valid_nameless_create ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).
@@ -962,13 +970,8 @@ Qed.
 
 (* Use this when the goal is to prove [KObjectV.valid] for an object obtained by
    [KObjectV.update_objectmeta]. The parameters are expected to be:
+   - [Hvalid_typemeta]: typemeta validity of the pre-update object.
    - [Hvalid_meta]: validity of the replacement objectmeta.
-   - [Htypemeta_eq]: the updated object has the same typemeta as the pre-update
-     object.
-   - [Hkind_typemeta]: the pre-update object's kind agrees with its typemeta
-     kind field.
-   - [Hkind_eq]: the pre-update object's [KObjectV.kind] is the expected kind of
-     the concrete constructor branch.
    - [Hvalid_spec]: validity of the object's spec before the objectmeta update.
    - [Hvalid_status]: validity of the object's status before the objectmeta
      update.
@@ -978,15 +981,12 @@ Qed.
    after destructing the concrete object constructors so [simpl] exposes the
    required equalities. *)
 Ltac solve_update_objectmeta_valid
-    Hvalid_meta Htypemeta_eq Hkind_typemeta Hkind_eq Hvalid_spec Hvalid_status :=
-  destruct Hvalid_meta as
-    (Hgenerate_name_valid & Hname_nonempty & Hname_valid & Hns_nonempty' & Hns_valid' &
-      Hgeneration_valid & Hlabels_valid & Hannotations_valid &
-      Hownerrefs_valid & Hfinalizers_valid & Hmanagedfields_valid);
+    Hvalid_typemeta Hvalid_meta Hvalid_spec Hvalid_status :=
   split_and!;
-    [ rewrite <- Htypemeta_eq in Hkind_typemeta;
-      exact (eq_trans (eq_sym Hkind_eq) Hkind_typemeta)
-    | split_and!; done
+    [ rewrite KObjectV.kind_update_objectmeta;
+      rewrite KObjectV.typemeta_update_objectmeta;
+      exact Hvalid_typemeta
+    | exact Hvalid_meta
     | rewrite KObjectV.spec_update_objectmeta; exact Hvalid_spec
     | rewrite KObjectV.status_update_objectmeta; exact Hvalid_status
     ].

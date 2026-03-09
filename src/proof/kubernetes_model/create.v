@@ -128,12 +128,18 @@ Proof.
     as "[%Hchildren_eq_dom %Hin_used_reference]".
   assert (KObjectV.valid kobj2) as Hvalid2.
   { subst kobj2.
-    destruct Hvalid as (Hkind_eq & Hkind_typemeta & _ & _ & _).
-    destruct kobj; destruct kobj1;
-    simpl in Hsame_kind, Hkind_eq, Hkind_typemeta, Htypemeta_eq, Hvalid_meta;
-    try done.
-    all: solve_update_objectmeta_valid
-      Hvalid_meta Htypemeta_eq Hkind_typemeta Hkind_eq Hvalid_spec Hvalid_status.
+    destruct Hvalid as (Hkind_eq & Hvalid_typemeta & _ & _ & _).
+    destruct kobj; destruct kobj1; try done.
+    all: (
+      lazymatch goal with
+      | Hvalid_typemeta : KObjectV.typemeta_valid ?kind ?tm_old,
+        Htypemeta_eq : ?tm_new = ?tm_old |- _ =>
+          assert (KObjectV.typemeta_valid kind tm_new) as Hvalid_typemeta1
+            by (rewrite Htypemeta_eq; exact Hvalid_typemeta)
+      end;
+      solve_update_objectmeta_valid
+        Hvalid_typemeta1 Hvalid_meta Hvalid_spec Hvalid_status
+    ).
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
