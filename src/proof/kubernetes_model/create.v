@@ -123,7 +123,8 @@ Proof.
       generated_rv |>)).
   iApply fupd_wp.
   iMod "Hau" as (children) "H". iNamed "H".
-  iPoseProof (cview.own_auth_frag_valid with "[$Hinv_Hown_children] [$Hown_children]")
+  iPoseProof (cview.own_auth_frag_valid (pk := parent_key) (puid := parent_uid)
+    with "[$Hinv_Hown_children] [$Hown_children]")
     as "[%Hchildren_eq_dom %Hin_used_reference]".
   assert (KObjectV.valid kobj2) as Hvalid2.
   { subst kobj2.
@@ -134,7 +135,7 @@ Proof.
       | Hvalid_typemeta : KObjectV.typemeta_valid ?kind ?tm_old,
         Htypemeta_eq : ?tm_new = ?tm_old |- _ =>
           assert (KObjectV.typemeta_valid kind tm_new) as Hvalid_typemeta1
-            by (rewrite Htypemeta_eq; exact Hvalid_typemeta)
+            by (rewrite Htypemeta_eq; done)
       end;
       solve_update_objectmeta_valid
         Hvalid_typemeta1 Hvalid_meta Hvalid_spec Hvalid_status
@@ -142,7 +143,7 @@ Proof.
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
-    iPureIntro. exact Hdom_eq. }
+    iPureIntro. done. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
@@ -185,12 +186,18 @@ Proof.
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     set_solver.
   }
-  iMod (cview.create_child_vs key kobj2 ∅ with "[$Hinv_Hown_children] [$Hown_children]")
+  iMod (cview.create_child_vs2 (pk := parent_key) (puid := parent_uid)
+    key generated_uid kobj2
+    with "[$Hinv_Hown_children] [$Hown_children]")
     as "(Hinv_Hown_children & Hown_children & Hown_grandchildren)".
+  { subst kobj2.
+    destruct kobj; destruct kobj1;
+    try done; rewrite Hm_eq; done.
+  }
   { apply not_elem_of_dom.
     apply not_elem_of_dom in Hnn_fresh.
     rewrite Hdom_eq in Hnn_fresh.
-    exact Hnn_fresh.
+    done.
   }
   { subst kobj2.
     destruct kobj; destruct kobj1;
@@ -213,88 +220,20 @@ Proof.
       inversion Hpr; subst; unfold obj_parent_ref, meta_parent_ref; simpl;
       rewrite Hfind H0 H1; destruct parent_key; done.
   }
-  { intros Hself.
-    assert (Huid_eq : generated_uid = parent_uid).
-    { unfold obj_ref in Hself.
-      subst key kobj2.
-      destruct kobj; destruct kobj1; try done.
-      all: rewrite Hm_eq in Hself; simpl in Hself; inversion Hself; done.
-    }
-    assert (Huid_fresh : generated_uid ∉ used_uid).
-    { apply not_elem_of_dom in Hgenerated_uid_is_not_used.
-      rewrite <- Hinv_Hused_uid_eq_dom_phys_used_uid in Hgenerated_uid_is_not_used.
-      exact Hgenerated_uid_is_not_used.
-    }
-    apply Huid_fresh.
-    rewrite Hinv_Hused_uid_eq_set_map_used_reference.
-    rewrite Huid_eq.
-    set_solver.
-  }
-  { assert (map_Forall (λ _ v, obj_parent_ref v ≠ Some (key, generated_uid)) abs_state) as Huid_never_referred.
-    { rewrite map_Forall_lookup.
-      intros k' obj Hlookup Hparent.
-      pose proof (Habs_state_valid _ _ Hlookup) as (_ & _ & _ & Hno_spec & _).
-      assert (Huid_fresh : generated_uid ∉ used_uid).
-      { apply not_elem_of_dom in Hgenerated_uid_is_not_used.
-        rewrite <- Hinv_Hused_uid_eq_dom_phys_used_uid in Hgenerated_uid_is_not_used.
-        done.
-      }
-      apply Huid_fresh.
-      unfold no_speculative_parent_reference in Hno_spec.
-      unfold obj_parent_ref, meta_parent_ref in Hparent.
-      destruct ((KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as [orefs|] eqn:Horefs; [|done].
-      destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
-        as [[idx oref]|] eqn:Hfind; [|done].
-      injection Hparent as _ _ _ Huid_eq.
-      rewrite <- Huid_eq.
-      eapply Hno_spec.
-      unfold meta_parent_ref_is, meta_parent_ref.
-      rewrite Horefs Hfind.
-      done.
-    }
-    apply dom_empty_iff_L. apply map_empty. intros k'. rewrite map_lookup_filter.
-    destruct (abs_state !! k') as [|] eqn:Hlookup; [|done].
-    simpl. case_decide as Heq.
-    - exfalso.
-      pose proof (map_Forall_lookup_1 _ _ _ _ Huid_never_referred Hlookup) as Hnref.
-      assert (Hobj_ref : obj_ref key kobj2 = (key, generated_uid)).
-      { unfold obj_ref. subst kobj2.
-        destruct kobj; destruct kobj1;
-        simpl in Hsame_kind, Hm_eq |- *;
-        try done; rewrite Hm_eq; reflexivity.
-      }
-      apply Hnref.
-      rewrite <- Hobj_ref.
-      done.
-    - done.
+  { rewrite map_Forall_lookup.
+    intros k' obj Hlookup.
+    pose proof (Habs_state_valid _ _ Hlookup) as (_ & _ & _ & Hno_spec & _).
+    rewrite Hinv_Hused_uid_eq_set_map_used_reference in Hno_spec.
+    exact Hno_spec.
   }
   { intros Hin.
     assert (Huid_fresh : generated_uid ∉ used_uid).
     { apply not_elem_of_dom in Hgenerated_uid_is_not_used.
       rewrite <- Hinv_Hused_uid_eq_dom_phys_used_uid in Hgenerated_uid_is_not_used.
-      exact Hgenerated_uid_is_not_used.
+      done.
     }
-    assert (Hobj_ref : obj_ref key kobj2 = (key, generated_uid)).
-    { unfold obj_ref. subst kobj2.
-      destruct kobj; destruct kobj1;
-      try done; rewrite Hm_eq; done.
-    }
-    assert (Hobj_uid : generated_uid = snd (obj_ref key kobj2)).
-    { rewrite Hobj_ref. done. }
     apply Huid_fresh. rewrite Hinv_Hused_uid_eq_set_map_used_reference.
-    rewrite Hobj_uid.
-    eapply (elem_of_map_2 (λ v : KKey.t * types.UID.t, snd v)).
     done.
-  }
-  iAssert (own_children_frag γ key generated_uid 1 ∅) with "[Hown_grandchildren]" as "Hown_grandchildren".
-  { assert (Hobj_ref : obj_ref key kobj2 = (key, generated_uid)).
-    { unfold obj_ref. subst kobj2.
-      destruct kobj; destruct kobj1;
-      try done; rewrite Hm_eq; done.
-    }
-    rewrite /own_children_frag /cview.own_frag /cview.mk_frag.
-    iEval (rewrite Hobj_ref) in "Hown_grandchildren".
-    iExact "Hown_grandchildren".
   }
   iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children $Hown_grandchildren]") as "HΦ".
   { iPureIntro. split_and!.
@@ -325,7 +264,7 @@ Proof.
       rewrite Hchildren_eq_dom in Hin.
       apply elem_of_dom in Hin as [obj Hlookup].
       apply map_lookup_filter_Some in Hlookup as [Hlookup _].
-      eexists. exact Hlookup.
+      eexists. done.
     - subst kobj2.
       destruct kobj; destruct kobj1;
       simpl in Hm_eq |- *;
@@ -339,7 +278,7 @@ Proof.
       pose proof Hnn_fresh as Hkey_not_in_phys_dom.
       apply not_elem_of_dom in Hkey_not_in_phys_dom.
       rewrite Hdom_eq in Hkey_not_in_phys_dom.
-      exact Hkey_not_in_phys_dom.
+      done.
     }
     rewrite (big_sepM2_insert _ phys_state abs_state key i1 kobj2 Hkey_not_in_phys Hkey_not_in_abs).
     iSplitL "Hdeepown_i1".
@@ -370,7 +309,7 @@ Proof.
       { apply not_elem_of_dom.
         apply not_elem_of_dom in Hnn_fresh.
         rewrite Hdom_eq in Hnn_fresh.
-        exact Hnn_fresh.
+        done.
       }
       assert (Hobj_uid : generated_uid = (KObjectV.objectmeta kobj2).(ObjectMetaV.UID')).
       { subst kobj2.
@@ -381,7 +320,7 @@ Proof.
       assert (Huid_fresh : generated_uid ∉ used_uid).
       { apply not_elem_of_dom in Hgenerated_uid_is_not_used.
         rewrite <- Hinv_Hused_uid_eq_dom_phys_used_uid in Hgenerated_uid_is_not_used.
-        exact Hgenerated_uid_is_not_used.
+        done.
       }
       rewrite (map_to_set_insert_L
         (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID'))

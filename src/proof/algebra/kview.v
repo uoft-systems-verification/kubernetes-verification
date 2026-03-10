@@ -22,9 +22,6 @@ Local Definition proj_meta b : metaUR := fst b.
 Local Definition proj_spec b : specUR := fst (snd b).
 Local Definition proj_status b : statusUR := snd (snd b).
 
-Definition no_speculative_parent_reference meta (used_uid: gset types.UID.t): Prop :=
-  ∀ kind name uid, meta_parent_ref_is meta kind name uid → uid ∈ used_uid.
-
 Local Definition valid_kauth a : Prop :=
   map_Forall (λ k obj,
     k = KObjectV.key obj ∧

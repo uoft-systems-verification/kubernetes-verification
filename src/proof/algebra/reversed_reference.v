@@ -2,17 +2,17 @@ From New.proof Require Import prelude.
 From iris.algebra Require Import cmra gset.
 
 (*
-  reversed_reference describes reversed reference using Iris' view resource algebra.
-  
+  reversed_reference is used to track the reference between objects in a state.
+  It is *reversed* because given an object k, reversed_reference tracks the set
+  of objects whose reference points to k. reversed_reference is implemented using
+  the view RA in Iris.
+
   The auth is a map from key (K) to value (V), where each value has at most one
-  reference (R) pointing to another key in the map. We say the reference is from
-  a child to its parent.
+  reference (R) pointing to another key in the map.
 
   The frag is a map from reference to set of keys. For each reference, the set of
   keys give us exactly the set of values in the auth that shares this reference.
-  The frag gives us the reversed reference: from the parent to all its children.
-  Note that entry (r, s) in the frag doesn't imply that the parent referred to as r
-  currently exists in the auth.
+  The frag gives us the *reversed* reference.
 
   Function f abstracts how to retrieve the reference from the value. Function g
   abstracts how to convert the key and value into a reference that other values
@@ -29,8 +29,8 @@ From iris.algebra Require Import cmra gset.
 
 
 Section reversed_reference.
-Context {K : Type} `{Countable K} {R : Type} `{Countable R} {V : Type}.
-Context {f : V → option R} {g : K → V → R}.
+Context (K : Type) `{Countable K} (R : Type) `{Countable R} (V : Type).
+Context (f : V → option R) (g : K → V → R).
 
 Definition authO : ofe := prodO (gmapO K (leibnizO V)) (gsetO (leibnizO R)).
 
@@ -47,7 +47,7 @@ Local Definition view_rel_raw n a b :=
   (map_Forall (λ k v, (g k v) ∈ (proj_used_reference a)) (proj_state a)) ∧
   (* dfracs are valid *)
   (map_Forall (λ _ '(dq, _), ✓ dq) b) ∧
-  (* for each (r, ks) in b, ks is the set of children of r in a *)
+  (* for each (r, ks) in b, ks is the set of objects that point to r in a *)
   (map_Forall (λ r '(_, agree_ks),
     ∃ ks, agree_ks ≡ to_agree ks ∧ ks = dom (filter (λ '(_, v), f v = Some r) (proj_state a))) b) ∧
   (* each r in b is a used reference *)
@@ -207,7 +207,7 @@ Proof.
   eapply Hreferences; done.
 Qed.
 
-Lemma create_child a k v r ks cks:
+Lemma create_reference a k v r ks cks:
 (proj_state a) !! k = None →
 f v = Some r →
 g k v ≠ r → (* No self-parenting *)
@@ -402,7 +402,7 @@ Proof.
         specialize (Hreferences _ _ Hlookup_old). set_solver.
 Qed.
 
-Lemma adopt_orphan a k v r ks v':
+Lemma set_reference a k v r ks v':
 (proj_state a) !! k = Some v →
 f v = None →
 f v' = Some r →
@@ -544,7 +544,7 @@ Proof.
       eapply Hreferences; done.
 Qed.
 
-Lemma release_child a k v r ks v':
+Lemma unset_reference a k v r ks v':
 (proj_state a) !! k = Some v →
 f v = Some r →
 f v' = None →
@@ -691,7 +691,7 @@ Proof.
       eapply Hreferences; done.
 Qed.
 
-Lemma delete_child a k v r ks:
+Lemma delete_reference a k v r ks:
 (proj_state a) !! k = Some v →
 f v = Some r →
 ●C a ⋅
@@ -825,7 +825,7 @@ Proof.
       eapply Hreferences; done.
 Qed.
 
-Lemma delete_child2 a k r ks:
+Lemma delete_reference2 a k r ks:
 k ∈ ks →
 ●C a ⋅
 ◯C (mk_frag r 1 ks) ~~>
@@ -1021,7 +1021,7 @@ Proof.
     eapply Hreferences; done.
 Qed.
 
-Lemma create_orphan a k v cks:
+Lemma simple_create a k v cks:
 (proj_state a) !! k = None →
 f v = None →
 dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
@@ -1118,7 +1118,7 @@ Proof.
       specialize (Hreferences _ _ Hb). set_solver.
 Qed.
 
-Lemma delete_orphan a k v:
+Lemma simple_delete a k v:
 (proj_state a) !! k = Some v →
 f v = None →
 ●C a ~~> ●C ((delete k (proj_state a)), (proj_used_reference a)).
@@ -1201,7 +1201,7 @@ Proof.
   split; done.
 Qed.
 
-Lemma create_child_vs {γ state used_reference r ks} k v cks:
+Lemma create_reference_vs {γ state used_reference r ks} k v cks:
 state !! k = None →
 f v = Some r →
 g k v ≠ r → (* No self-parenting *)
@@ -1215,14 +1215,14 @@ own_frag γ r 1 ks ==∗
 Proof.
   iIntros (Hak Hfr Hnself Hcks Hfresh) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply create_child; done. }
+  { eapply create_reference; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[H Hfrag2]".
   iDestruct (own_op with "H") as "[Hauth Hfrag1]".
   iFrame.
 Qed.
 
-Lemma adopt_orphan_vs {γ state used_reference r ks} k v v':
+Lemma set_reference_vs {γ state used_reference r ks} k v v':
 state !! k = Some v →
 f v = None →
 f v' = Some r →
@@ -1232,13 +1232,13 @@ own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
 Proof.
   iIntros (Hak Hnone Hfr Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply adopt_orphan; done. }
+  { eapply set_reference; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[Hauth Hfrag]".
   iFrame.
 Qed.
 
-Lemma release_child_vs {γ state used_reference r ks} k v v':
+Lemma unset_reference_vs {γ state used_reference r ks} k v v':
 state !! k = Some v →
 f v = Some r →
 f v' = None →
@@ -1248,13 +1248,13 @@ own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
 Proof.
   iIntros (Hak Hfr Hnone Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply release_child; done. }
+  { eapply unset_reference; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[Hauth Hfrag]".
   iFrame.
 Qed.
 
-Lemma delete_child_vs {γ state used_reference r ks} k v:
+Lemma delete_reference_vs {γ state used_reference r ks} k v:
 state !! k = Some v →
 f v = Some r →
 own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
@@ -1262,20 +1262,20 @@ own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
 Proof.
   iIntros (Hak Hfr) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply delete_child; done. }
+  { eapply delete_reference; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[Hauth Hfrag]".
   iFrame.
 Qed.
 
-Lemma delete_child_vs2 {γ state used_reference r ks} k:
+Lemma delete_reference_vs2 {γ state used_reference r ks} k:
 k ∈ ks →
 own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
   own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hk) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply delete_child2; done. }
+  { eapply delete_reference2; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[Hauth Hfrag]".
   iFrame.
@@ -1293,7 +1293,7 @@ Proof.
   iModIntro. iExact "Hauth".
 Qed.
 
-Lemma create_orphan_vs {γ state used_reference} k v cks:
+Lemma simple_create_vs {γ state used_reference} k v cks:
 state !! k = None →
 f v = None →
 dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
@@ -1304,20 +1304,20 @@ own_auth γ state used_reference ==∗
 Proof.
   iIntros (Hak Hnone Hcks Hfresh) "Hauth".
   iMod (own_update with "Hauth") as "H".
-  { eapply create_orphan; done. }
+  { eapply simple_create; done. }
   iModIntro.
   iDestruct (own_op with "H") as "[Hauth Hfrag]".
   iFrame.
 Qed.
 
-Lemma delete_orphan_vs {γ state used_reference} k v:
+Lemma simple_delete_vs {γ state used_reference} k v:
 state !! k = Some v →
 f v = None →
 own_auth γ state used_reference ==∗ own_auth γ (delete k state) used_reference.
 Proof.
   iIntros (Hak Hnone) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
-  { eapply delete_orphan; done. }
+  { eapply simple_delete; done. }
   iModIntro. iExact "Hauth".
 Qed.
 

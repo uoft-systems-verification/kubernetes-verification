@@ -35,7 +35,7 @@ Definition own_children_auth γ state used_reference : iProp Σ :=
   cview.own_auth γ.(γ_children) state used_reference.
 
 Definition own_children_frag γ key uid dq keys : iProp Σ :=
-  cview.own_frag γ.(γ_children) (key, uid) dq keys.
+  cview.own_frag γ.(γ_children) key uid dq keys.
 
 Definition own_tombstone_auth γ tombed_uid : iProp Σ :=
   mono_gset.own_auth types.UID.t γ.(γ_tombstone) tombed_uid.

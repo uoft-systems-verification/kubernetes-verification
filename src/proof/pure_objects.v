@@ -859,6 +859,9 @@ Definition obj_parent_ref_is obj kind name uid : Prop :=
 Definition obj_ref k obj : KKey.t * types.UID.t :=
   (k, (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
 
+Definition no_speculative_parent_reference meta (used_uid: gset types.UID.t): Prop :=
+  ∀ kind name uid, meta_parent_ref_is meta kind name uid → uid ∈ used_uid.
+
 Definition is_controller_parent_of (o: OwnerReferenceV.t) kind name uid : Prop :=
   o.(OwnerReferenceV.Controller') = Some true ∧
   o.(OwnerReferenceV.Kind') = kind ∧
