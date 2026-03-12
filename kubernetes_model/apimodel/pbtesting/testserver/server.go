@@ -158,6 +158,13 @@ func (s *TestServer) GetPod(ctx context.Context, name string) (*corev1.Pod, erro
 	return s.client.CoreV1().Pods(s.namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+// UpdatePod updates a Pod in the test server.
+func (s *TestServer) UpdatePod(ctx context.Context, pod *corev1.Pod) (*corev1.Pod, error) {
+	pod = pod.DeepCopy()
+	pod.Namespace = s.namespace
+	return s.client.CoreV1().Pods(s.namespace).Update(ctx, pod, metav1.UpdateOptions{})
+}
+
 // CreateReplicaSet creates a ReplicaSet in the test server.
 func (s *TestServer) CreateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 	rs = rs.DeepCopy()
@@ -168,6 +175,13 @@ func (s *TestServer) CreateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet
 // GetReplicaSet gets a ReplicaSet from the test server.
 func (s *TestServer) GetReplicaSet(ctx context.Context, name string) (*appsv1.ReplicaSet, error) {
 	return s.client.AppsV1().ReplicaSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+// UpdateReplicaSet updates a ReplicaSet in the test server.
+func (s *TestServer) UpdateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	rs = rs.DeepCopy()
+	rs.Namespace = s.namespace
+	return s.client.AppsV1().ReplicaSets(s.namespace).Update(ctx, rs, metav1.UpdateOptions{})
 }
 
 // DeletePod deletes a Pod from the test server with optional DeleteOptions.

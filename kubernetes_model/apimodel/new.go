@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -14,10 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/apis/apps"
@@ -263,10 +267,43 @@ func applyAdmissionMutate(obj interface{}) error {
 	return nil
 }
 
+// applyAdmissionMutateForUpdate mirrors the mutating admission plugins that affect the
+// normal Pod/ReplicaSet update path.
+// References:
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/update.go#L169-L189
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go#L107-L145
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go#L136-L158
+func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
+	switch typed := obj.(type) {
+	case *core.Pod:
+		oldPod, ok := oldObj.(*core.Pod)
+		if !ok {
+			return fmt.Errorf("expected *core.Pod for old object, got %T", oldObj)
+		}
+
+		applyDefaultTolerationSeconds(typed)
+
+		// Priority admission preserves the stored values on update when the client omits them.
+		if typed.Spec.Priority == nil && oldPod.Spec.Priority != nil {
+			priority := *oldPod.Spec.Priority
+			typed.Spec.Priority = &priority
+		}
+		if typed.Spec.PreemptionPolicy == nil && oldPod.Spec.PreemptionPolicy != nil {
+			policy := *oldPod.Spec.PreemptionPolicy
+			typed.Spec.PreemptionPolicy = &policy
+		}
+	case *apps.ReplicaSet:
+		return nil
+	default:
+		return fmt.Errorf("unsupported object type for update admission mutation: %T", obj)
+	}
+	return nil
+}
+
 func applyAdmissionValidate(obj interface{}) error {
 	switch obj.(type) {
 	case *core.Pod:
-		// The built-in admission plugins this model currently mirrors for Pod create are:
+		// The built-in admission plugins this model currently mirrors for Pod create/update are:
 		// - DefaultTolerationSeconds: mutation only, no Validate method
 		// - Priority: its Validate method applies to PriorityClass objects, not Pods
 		// So there is no additional Pod admission validation to run here.
@@ -276,6 +313,38 @@ func applyAdmissionValidate(obj interface{}) error {
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
+	}
+}
+
+func allowUnconditionalUpdate(kind string) (bool, error) {
+	switch kind {
+	case "Pod", "ReplicaSet":
+		// Both Pod and ReplicaSet strategies return true from AllowUnconditionalUpdate() in release-1.34.
+		// References:
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/strategy.go#L159-L160
+		return true, nil
+	default:
+		return false, fmt.Errorf("unsupported kind for update: %s", kind)
+	}
+}
+
+func malformedUpdateResourceVersionError(err error) error {
+	return &errors.StatusError{ErrStatus: metav1.Status{
+		Status:  metav1.StatusFailure,
+		Code:    http.StatusInternalServerError,
+		Message: err.Error(),
+	}}
+}
+
+func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, error) {
+	switch obj.(type) {
+	case *core.Pod:
+		return podstrategy.Strategy, nil
+	case *apps.ReplicaSet:
+		return rsstrategy.Strategy, nil
+	default:
+		return nil, fmt.Errorf("unsupported object type for update strategy: %T", obj)
 	}
 }
 
@@ -304,6 +373,61 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		rsstrategy.Strategy.Canonicalize(typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
+	}
+	return nil
+}
+
+// applyValidationAndDefaultingOnUpdate models the decode/defaulting/admission/storage
+// pipeline for a regular Kubernetes update, but intentionally skips UpdateOptions.
+// References:
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/update.go#L113-L220
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go#L107-L165
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L753-L770
+func applyValidationAndDefaultingOnUpdate(newObj, oldObj interface{}, namespace string) error {
+	// Decoder defaulting happens before mutating admission and BeforeUpdate in the real API.
+	if err := applySchemaDefaults(newObj); err != nil {
+		return err
+	}
+
+	legacyNewObj, err := convertVersionedToLegacy(newObj)
+	if err != nil {
+		return err
+	}
+	legacyOldObj, err := convertVersionedToLegacy(oldObj)
+	if err != nil {
+		return err
+	}
+
+	if err := applyAdmissionMutateForUpdate(legacyNewObj, legacyOldObj); err != nil {
+		return err
+	}
+
+	newRuntimeObj, ok := legacyNewObj.(runtime.Object)
+	if !ok {
+		return fmt.Errorf("updated object does not implement runtime.Object: %T", legacyNewObj)
+	}
+	oldRuntimeObj, ok := legacyOldObj.(runtime.Object)
+	if !ok {
+		return fmt.Errorf("existing object does not implement runtime.Object: %T", legacyOldObj)
+	}
+
+	strategy, err := updateStrategyForLegacyObject(legacyNewObj)
+	if err != nil {
+		return err
+	}
+
+	ctx := genericapirequest.WithNamespace(genericapirequest.NewContext(), namespace)
+	if err := rest.BeforeUpdate(strategy, ctx, newRuntimeObj, oldRuntimeObj); err != nil {
+		return err
+	}
+
+	// This model currently mirrors no additional validating admission for Pod/ReplicaSet updates.
+	if err := applyAdmissionValidate(legacyNewObj); err != nil {
+		return err
+	}
+
+	if err := legacyscheme.Scheme.Convert(legacyNewObj, newObj, nil); err != nil {
+		return errors.NewBadRequest(fmt.Sprintf("failed to convert internal updated object back to versioned object: %v", err))
 	}
 	return nil
 }
@@ -420,6 +544,113 @@ func (s *State) create(kind, namespace string, obj interface{}) (interface{}, er
 
 	s.m[key] = objCopy
 
+	return deepCopy(objCopy), nil
+}
+
+// update models the ordinary storage update path for Kubernetes resources, excluding
+// UpdateOptions and create-on-update.
+// References:
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L652-L777
+// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L233-L260
+func (s *State) update(kind, namespace string, obj interface{}) (interface{}, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	objCopy := deepCopy(obj)
+
+	metadata, err := meta.Accessor(objCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access object metadata: %w", err)
+	}
+
+	if err := rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+		return nil, err
+	}
+
+	name := metadata.GetName()
+	if name == "" {
+		return nil, errors.NewBadRequest(fmt.Sprintf("object of kind %q must specify a name for update", kind))
+	}
+
+	key := KKey{
+		Kind:      kind,
+		Name:      name,
+		Namespace: namespace,
+	}
+
+	existingObj, exists := s.m[key]
+	if !exists {
+		return nil, errors.NewNotFound(schema.GroupResource{Resource: kind}, name)
+	}
+
+	existingObjCopy := deepCopy(existingObj)
+	existingMetadata, err := meta.Accessor(existingObjCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
+	}
+
+	// A non-empty UID on the incoming object acts like a storage precondition in the real update path.
+	if uid := metadata.GetUID(); len(uid) > 0 && uid != existingMetadata.GetUID() {
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("UID mismatch: expected %q, got %q", existingMetadata.GetUID(), uid),
+		)
+	}
+
+	allowUnconditional, err := allowUnconditionalUpdate(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store.Update copies the live resourceVersion onto the object when the strategy allows
+	// unconditional update and the client omitted metadata.resourceVersion.
+	if metadata.GetResourceVersion() == "" {
+		if !allowUnconditional {
+			return nil, errors.NewInvalid(
+				schema.GroupKind{Kind: kind},
+				name,
+				field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), metadata.GetResourceVersion(), "must be specified for an update")},
+			)
+		}
+		metadata.SetResourceVersion(existingMetadata.GetResourceVersion())
+	} else {
+		// The generic store asks the storage versioner to parse the non-empty incoming
+		// resourceVersion before optimistic-lock comparison. A malformed value therefore
+		// fails before it can become a normal stale-resourceVersion conflict.
+		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L659-L666
+		if _, err := strconv.ParseUint(metadata.GetResourceVersion(), 10, 64); err != nil {
+			return nil, malformedUpdateResourceVersionError(err)
+		}
+	}
+
+	if metadata.GetResourceVersion() != existingMetadata.GetResourceVersion() {
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingMetadata.GetResourceVersion(), metadata.GetResourceVersion()),
+		)
+	}
+
+	if err := applyValidationAndDefaultingOnUpdate(objCopy, existingObjCopy, namespace); err != nil {
+		return nil, err
+	}
+
+	// The apiserver deletes objects during update when they are already deleting and the update
+	// removes the last finalizer.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L565-L583
+	if genericregistry.ShouldDeleteDuringUpdate(context.Background(), "", objCopy.(runtime.Object), existingObjCopy.(runtime.Object)) {
+		delete(s.m, key)
+		return deepCopy(objCopy), nil
+	}
+
+	metadata, err = meta.Accessor(objCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access updated object metadata: %w", err)
+	}
+	metadata.SetResourceVersion(s.generateNewRVAndUpdate())
+
+	s.m[key] = objCopy
 	return deepCopy(objCopy), nil
 }
 
@@ -781,6 +1012,36 @@ func (s *State) ReplicaSetCreate2(namespace string, rs *appsv1.ReplicaSet) (*app
 	}
 
 	return createdRS, nil
+}
+
+// PodUpdate2 updates a Pod using the richer storage/update model.
+func (s *State) PodUpdate2(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	obj, err := s.update("Pod", namespace, pod)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedPod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedPod, nil
+}
+
+// ReplicaSetUpdate2 updates a ReplicaSet using the richer storage/update model.
+func (s *State) ReplicaSetUpdate2(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	obj, err := s.update("ReplicaSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
 }
 
 // PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.

@@ -36,6 +36,174 @@ func MinimalPodGen() *rapid.Generator[*corev1.Pod] {
 	})
 }
 
+// ComprehensivePodMut mutates a pair of Pod update inputs in the same way.
+//
+// This split follows the normal Pod update path in Kubernetes release-1.34:
+// - ValidatePodUpdate: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L5573-L5664
+// - podStrategy.PrepareForUpdate: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L103-L108
+func ComprehensivePodMut(rt *rapid.T, modelPod, realPod *corev1.Pod, exists, valid bool) {
+	metadataInvalid := ObjectMetaMut(rt, modelPod, realPod, exists, valid)
+
+	if valid {
+		mutateAllowedPodSpecFields(rt, modelPod, realPod)
+		return
+	}
+
+	if !exists || metadataInvalid {
+		// The update is already invalid because the object is missing or metadata was
+		// corrupted. Keep the spec on a normal update path so the rejection cause stays simple.
+		mutateAllowedPodSpecFields(rt, modelPod, realPod)
+		return
+	}
+
+	mutateAllowedPodSpecFields(rt, modelPod, realPod)
+	mutateImmutablePodUpdateFields(rt, modelPod, realPod)
+}
+
+func mutateAllowedPodSpecFields(rt *rapid.T, modelPod, realPod *corev1.Pod) {
+	mutatePodContainerImages(rt, modelPod.Spec.Containers, realPod.Spec.Containers, "updatePodContainerImage")
+	mutatePodContainerImages(rt, modelPod.Spec.InitContainers, realPod.Spec.InitContainers, "updatePodInitContainerImage")
+
+	if rapid.Bool().Draw(rt, "updatePodActiveDeadlineSeconds") {
+		var seconds int64
+		if modelPod.Spec.ActiveDeadlineSeconds == nil {
+			seconds = int64(rapid.IntRange(1, 300).Draw(rt, "updatePodActiveDeadlineValue"))
+		} else {
+			oldSeconds := *modelPod.Spec.ActiveDeadlineSeconds
+			if oldSeconds <= 0 {
+				seconds = 0
+			} else {
+				seconds = int64(rapid.IntRange(0, int(oldSeconds)).Draw(rt, "updatePodActiveDeadlineValue"))
+				if seconds == oldSeconds {
+					seconds = oldSeconds - 1
+				}
+			}
+		}
+		modelPod.Spec.ActiveDeadlineSeconds = &seconds
+		realPod.Spec.ActiveDeadlineSeconds = &seconds
+	}
+
+	if rapid.Bool().Draw(rt, "updatePodAddToleration") {
+		toleration := corev1.Toleration{
+			Key:      rapid.SampledFrom([]string{"example.com/not-ready", "example.com/drain", "example.com/spot"}).Draw(rt, "updatePodTolerationKey"),
+			Operator: corev1.TolerationOpExists,
+			Effect:   corev1.TaintEffectNoSchedule,
+		}
+		modelPod.Spec.Tolerations = append(modelPod.Spec.Tolerations, toleration)
+		realPod.Spec.Tolerations = append(realPod.Spec.Tolerations, toleration)
+	}
+
+	if len(modelPod.Spec.SchedulingGates) > 0 && len(realPod.Spec.SchedulingGates) > 0 &&
+		rapid.Bool().Draw(rt, "updatePodDeleteSchedulingGate") {
+		idx := rapid.IntRange(0, len(modelPod.Spec.SchedulingGates)-1).Draw(rt, "updatePodSchedulingGateIdx")
+		modelPod.Spec.SchedulingGates = append(modelPod.Spec.SchedulingGates[:idx], modelPod.Spec.SchedulingGates[idx+1:]...)
+		realPod.Spec.SchedulingGates = append(realPod.Spec.SchedulingGates[:idx], realPod.Spec.SchedulingGates[idx+1:]...)
+	}
+
+	if modelPod.Spec.TerminationGracePeriodSeconds != nil &&
+		realPod.Spec.TerminationGracePeriodSeconds != nil &&
+		*modelPod.Spec.TerminationGracePeriodSeconds < 0 &&
+		rapid.Bool().Draw(rt, "updatePodNegativeTerminationGracePeriod") {
+		one := int64(1)
+		modelPod.Spec.TerminationGracePeriodSeconds = &one
+		realPod.Spec.TerminationGracePeriodSeconds = &one
+	}
+}
+
+func mutatePodContainerImages(rt *rapid.T, modelContainers, realContainers []corev1.Container, drawPrefix string) {
+	for i := range modelContainers {
+		if i >= len(realContainers) {
+			break
+		}
+
+		image := rapid.SampledFrom([]string{
+			"nginx:1.25",
+			"nginx:1.27",
+			"busybox:1.36",
+			"alpine:3.19",
+		}).Draw(rt, fmt.Sprintf("%s%d", drawPrefix, i))
+		if image == modelContainers[i].Image {
+			image = "redis:7"
+		}
+		modelContainers[i].Image = image
+		realContainers[i].Image = image
+	}
+}
+
+func mutateImmutablePodUpdateFields(rt *rapid.T, modelPod, realPod *corev1.Pod) {
+	restartPolicy := corev1.RestartPolicyNever
+	if modelPod.Spec.RestartPolicy == corev1.RestartPolicyNever {
+		restartPolicy = corev1.RestartPolicyOnFailure
+	}
+	modelPod.Spec.RestartPolicy = restartPolicy
+	realPod.Spec.RestartPolicy = restartPolicy
+
+	dnsPolicy := corev1.DNSDefault
+	if modelPod.Spec.DNSPolicy == corev1.DNSDefault {
+		dnsPolicy = corev1.DNSClusterFirst
+	}
+	modelPod.Spec.DNSPolicy = dnsPolicy
+	realPod.Spec.DNSPolicy = dnsPolicy
+
+	serviceAccount := rapid.StringMatching(`[a-z][a-z0-9]{2,8}`).Draw(rt, "updatePodServiceAccount")
+	if serviceAccount == modelPod.Spec.ServiceAccountName {
+		serviceAccount = "otheraccount"
+	}
+	modelPod.Spec.ServiceAccountName = serviceAccount
+	realPod.Spec.ServiceAccountName = serviceAccount
+
+	schedulerName := rapid.StringMatching(`[a-z][a-z0-9-]{2,12}`).Draw(rt, "updatePodSchedulerName")
+	if schedulerName == modelPod.Spec.SchedulerName {
+		schedulerName = "other-scheduler"
+	}
+	modelPod.Spec.SchedulerName = schedulerName
+	realPod.Spec.SchedulerName = schedulerName
+
+	nodeSelectorKey := rapid.StringMatching(`[a-z][a-z0-9]{0,8}`).Draw(rt, "updatePodNodeSelectorKey")
+	nodeSelectorValue := rapid.StringMatching(`[a-z][a-z0-9-]{0,8}`).Draw(rt, "updatePodNodeSelectorValue")
+	modelPod.Spec.NodeSelector = map[string]string{nodeSelectorKey: nodeSelectorValue}
+	realPod.Spec.NodeSelector = map[string]string{nodeSelectorKey: nodeSelectorValue}
+
+	terminationGracePeriodSeconds := int64(rapid.IntRange(1, 120).Draw(rt, "updatePodTerminationGracePeriod"))
+	if modelPod.Spec.TerminationGracePeriodSeconds != nil &&
+		terminationGracePeriodSeconds == *modelPod.Spec.TerminationGracePeriodSeconds {
+		terminationGracePeriodSeconds++
+	}
+	modelPod.Spec.TerminationGracePeriodSeconds = &terminationGracePeriodSeconds
+	realPod.Spec.TerminationGracePeriodSeconds = &terminationGracePeriodSeconds
+
+	if len(modelPod.Spec.Containers) > 0 && len(realPod.Spec.Containers) > 0 {
+		command := []string{
+			rapid.SampledFrom([]string{"sleep", "sh", "echo"}).Draw(rt, "updatePodCommand"),
+			rapid.SampledFrom([]string{"1", "60", "hello"}).Draw(rt, "updatePodCommandArg"),
+		}
+		modelPod.Spec.Containers[0].Command = command
+		realPod.Spec.Containers[0].Command = command
+
+		envName := rapid.StringMatching(`[A-Z][A-Z0-9_]{1,8}`).Draw(rt, "updatePodEnvName")
+		envValue := rapid.StringMatching(`[a-z0-9-]{1,8}`).Draw(rt, "updatePodEnvValue")
+		modelPod.Spec.Containers[0].Env = append(modelPod.Spec.Containers[0].Env, corev1.EnvVar{Name: envName, Value: envValue})
+		realPod.Spec.Containers[0].Env = append(realPod.Spec.Containers[0].Env, corev1.EnvVar{Name: envName, Value: envValue})
+	}
+
+	pullSecretName := rapid.StringMatching(`[a-z][a-z0-9-]{2,10}`).Draw(rt, "updatePodImagePullSecret")
+	modelPod.Spec.ImagePullSecrets = append(modelPod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: pullSecretName})
+	realPod.Spec.ImagePullSecrets = append(realPod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: pullSecretName})
+
+	volumeName := rapid.StringMatching(`[a-z][a-z0-9-]{2,10}`).Draw(rt, "updatePodVolumeName")
+	volume := corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+	modelPod.Spec.Volumes = append(modelPod.Spec.Volumes, volume)
+	realPod.Spec.Volumes = append(realPod.Spec.Volumes, volume)
+
+	modelPod.Status.Phase = corev1.PodRunning
+	realPod.Status.Phase = corev1.PodRunning
+}
+
 // ComprehensivePodGen generates pods with many randomized fields.
 // This exercises more of the API surface area and defaulting logic.
 func ComprehensivePodGen() *rapid.Generator[*corev1.Pod] {

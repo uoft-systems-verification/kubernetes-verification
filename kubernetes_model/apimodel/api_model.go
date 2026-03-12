@@ -25,21 +25,18 @@ import (
 //
 // (3) Transition validation during Update: validate that state transitions are valid (e.g., Phase changes)
 //
-// (4) ShouldDeleteDuringUpdate: if a to-be-delete object is updated to remove all its finalizers, then it will be deleted
-//     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L773-L777
-//
-// (5) API options, e.g., CreateOption
+// (4) API options, e.g., CreateOption / UpdateOptions
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/types.go#L579
 //
-// (6) Admission webhooks and admission plugins
+// (5) Admission webhooks and admission plugins
 //     - Validating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/validating/plugin.go
 //     - Mutating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/mutating/plugin.go
 //     - Built-in plugins: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/kubeapiserver/admission/exclusion/resources.go
 //
-// (7) Warnings collection - Collects warnings during create/update (non-fatal issues)
+// (6) Warnings collection - Collects warnings during create/update (non-fatal issues)
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L133 (WarningsOnCreate)
 //
-// (8) BeginCreate/FinishCreate/AfterCreate hooks
+// (7) BeginCreate/FinishCreate/AfterCreate hooks
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L490-L499
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L551-L553
 

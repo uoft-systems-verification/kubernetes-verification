@@ -5,7 +5,7 @@ set -euo pipefail
 usage() {
   echo "Usage: $0 <n>"
   echo
-  echo "n    Number of times to run TestPBTCreateDelete."
+  echo "n    Number of times to run TestPBT."
 }
 
 if [[ $# -ne 1 ]]; then
@@ -34,5 +34,5 @@ cd "$MODEL_DIR"
 for ((i = 1; i <= N; i++)); do
   echo "=== Run $i/$N ==="
   KUBEBUILDER_ASSETS="$(setup-envtest use 1.34.0 -p path)" \
-    go test -v ./apimodel -run TestPBTCreateDelete -rapid.checks=1 -timeout=10m
+    go test -v ./apimodel -run TestPBT -rapid.checks=1 -timeout=10m
 done
