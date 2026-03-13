@@ -11,7 +11,9 @@ From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.
 From New.proof.k8s_io.apimachinery.pkg.util Require Export uuid_init.
 From New.proof.k8s_io.apimachinery.pkg.util.validation Require Export field_init.
+From New.proof.k8s_io.apiserver.pkg.endpoints Require Export request_init.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest_init.
+From New.proof.k8s_io.apiserver.pkg.registry.generic Require Export registry_init.
 From New.proof.k8s_io.kubernetes.pkg.api Require Export legacyscheme_init.
 From New.proof.k8s_io.kubernetes.pkg.apis Require Export apps_init.
 From New.proof.k8s_io.kubernetes.pkg.apis Require Export core_init.

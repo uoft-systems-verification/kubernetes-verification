@@ -16,8 +16,11 @@ Require Export New.generatedproof.context.
 Require Export New.generatedproof.math.rand.
 Require Export New.generatedproof.time.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.validation.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.uuid.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.validation.field.
+Require Export New.generatedproof.k8s_io.apiserver.pkg.endpoints.request.
+Require Export New.generatedproof.k8s_io.apiserver.pkg.registry.generic.registry.
 Require Export New.generatedproof.k8s_io.apiserver.pkg.registry.rest.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.legacyscheme.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.apis.apps.
@@ -242,8 +245,11 @@ Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
       is_pkg_defined_pure code.math.rand.rand ∧
       is_pkg_defined_pure code.time.time ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.validation.validation ∧
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.runtime ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.uuid.uuid ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.util.validation.field.field ∧
+      is_pkg_defined_pure code.k8s_io.apiserver.pkg.endpoints.request.request ∧
+      is_pkg_defined_pure code.k8s_io.apiserver.pkg.registry.generic.registry.registry ∧
       is_pkg_defined_pure code.k8s_io.apiserver.pkg.registry.rest.rest ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.apis.apps.apps ∧
@@ -276,8 +282,11 @@ Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
        is_pkg_defined code.math.rand.rand ∗
        is_pkg_defined code.time.time ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.validation.validation ∗
+       is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.runtime ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.util.uuid.uuid ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.util.validation.field.field ∗
+       is_pkg_defined code.k8s_io.apiserver.pkg.endpoints.request.request ∗
+       is_pkg_defined code.k8s_io.apiserver.pkg.registry.generic.registry.registry ∗
        is_pkg_defined code.k8s_io.apiserver.pkg.registry.rest.rest ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.apis.apps.apps ∗
@@ -339,8 +348,24 @@ Global Instance wp_func_call_applyAdmissionMutate :
   WpFuncCall apimodel.applyAdmissionMutate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_applyAdmissionMutateForUpdate :
+  WpFuncCall apimodel.applyAdmissionMutateForUpdate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_applyAdmissionValidate :
   WpFuncCall apimodel.applyAdmissionValidate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_allowUnconditionalUpdate :
+  WpFuncCall apimodel.allowUnconditionalUpdate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_malformedUpdateResourceVersionError :
+  WpFuncCall apimodel.malformedUpdateResourceVersionError _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_updateStrategyForLegacyObject :
+  WpFuncCall apimodel.updateStrategyForLegacyObject _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_applyStrategyValidate :
@@ -349,6 +374,10 @@ Global Instance wp_func_call_applyStrategyValidate :
 
 Global Instance wp_func_call_applyStrategyCanonicalize :
   WpFuncCall apimodel.applyStrategyCanonicalize _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyValidationAndDefaultingOnUpdate :
+  WpFuncCall apimodel.applyValidationAndDefaultingOnUpdate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_applyValidationAndDefaulting :
@@ -415,6 +444,10 @@ Global Instance wp_method_call_State'ptr_PodUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_PodUpdate2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate2" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_ReplicaSetCreate2 :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetCreate2" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
@@ -429,6 +462,10 @@ Global Instance wp_method_call_State'ptr_ReplicaSetGet :
 
 Global Instance wp_method_call_State'ptr_ReplicaSetMutGet :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetMutGet" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_ReplicaSetUpdate2 :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetUpdate2" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_create :
@@ -485,6 +522,10 @@ Global Instance wp_method_call_State'ptr_objListLocked :
 
 Global Instance wp_method_call_State'ptr_objUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "objUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_update :
+  WpMethodCall (ptrT.id apimodel.State.id) "update" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_updateForGracefulDeletionAndFinalizers :

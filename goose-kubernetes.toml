@@ -31,6 +31,8 @@ packages = [
     "./staging/src/k8s.io/apimachinery/pkg/watch",
     "./staging/src/k8s.io/apimachinery/pkg/util/uuid",
     "./staging/src/k8s.io/apimachinery/pkg/util/validation/field",
+    "./staging/src/k8s.io/apiserver/pkg/endpoints/request",
+    "./staging/src/k8s.io/apiserver/pkg/registry/generic/registry",
     "./staging/src/k8s.io/apiserver/pkg/registry/rest",
     "./staging/src/k8s.io/apiserver/pkg/util/feature",
     "./staging/src/k8s.io/client-go/kubernetes",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -332,7 +331,7 @@ func allowUnconditionalUpdate(kind string) (bool, error) {
 func malformedUpdateResourceVersionError(err error) error {
 	return &errors.StatusError{ErrStatus: metav1.Status{
 		Status:  metav1.StatusFailure,
-		Code:    http.StatusInternalServerError,
+		Code:    500,
 		Message: err.Error(),
 	}}
 }
