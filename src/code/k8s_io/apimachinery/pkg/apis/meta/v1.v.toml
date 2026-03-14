@@ -44,6 +44,9 @@ translate = [
     "NamespaceNone",
     "NamespaceSystem",
     "NamespacePublic",
+    "DeleteOptions",
+    "Preconditions",
+    "DeletionPropagation",
 ]
 
 imports = [

@@ -2504,88 +2504,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")))).
 
-(* updateForGracefulDeletionAndFinalizers sets DeletionTimestamp and DeletionGracePeriodSeconds,
-   updates finalizers, assigns a fresh resource version, and stores the updated object.
-   Returns the updated object and whether to delete immediately.
-   Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1044-L1129
-
-   go: new.go:847:17 *)
-Definition State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ : val :=
-  λ: "s" "key" "obj" "metadata" "options" "graceful" "finalizersChanged",
-    exception_do (let: "s" := (mem.alloc "s") in
-    let: "finalizersChanged" := (mem.alloc "finalizersChanged") in
-    let: "graceful" := (mem.alloc "graceful") in
-    let: "options" := (mem.alloc "options") in
-    let: "metadata" := (mem.alloc "metadata") in
-    let: "obj" := (mem.alloc "obj") in
-    let: "key" := (mem.alloc "key") in
-    let: "pendingFinalizers" := (mem.alloc (type.zero_val #boolT)) in
-    let: "$r0" := ((let: "$a0" := ((interface.get #"GetFinalizers"%go (![#v1.Object] "metadata")) #()) in
-    slice.len "$a0") ≠ #(W64 0)) in
-    do:  ("pendingFinalizers" <-[#boolT] "$r0");;;
-    let: "firstGracefulDeletion" := (mem.alloc (type.zero_val #boolT)) in
-    let: "$r0" := (((interface.get #"GetDeletionTimestamp"%go (![#v1.Object] "metadata")) #()) = #null) in
-    do:  ("firstGracefulDeletion" <-[#boolT] "$r0");;;
-    (if: ![#boolT] "firstGracefulDeletion"
-    then
-      let: "now" := (mem.alloc (type.zero_val #v1.Time)) in
-      let: "$r0" := ((func_call #v1.Now) #()) in
-      do:  ("now" <-[#v1.Time] "$r0");;;
-      do:  (let: "$a0" := "now" in
-      (interface.get #"SetDeletionTimestamp"%go (![#v1.Object] "metadata")) "$a0")
-    else do:  #());;;
-    let: "gracePeriod" := (mem.alloc (type.zero_val #int64T)) in
-    let: "$r0" := #(W64 0) in
-    do:  ("gracePeriod" <-[#int64T] "$r0");;;
-    (if: (![#boolT] "graceful") && ((![#ptrT] (struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go (![#ptrT] "options"))) ≠ #null)
-    then
-      let: "$r0" := (![#int64T] (![#ptrT] (struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go (![#ptrT] "options")))) in
-      do:  ("gracePeriod" <-[#int64T] "$r0");;;
-      do:  (let: "$a0" := (![#ptrT] (struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go (![#ptrT] "options"))) in
-      (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0")
-    else
-      (if: ![#boolT] "graceful"
-      then
-        do:  (let: "$a0" := "gracePeriod" in
-        (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0")
-      else
-        (if: ![#boolT] "pendingFinalizers"
-        then
-          do:  (let: "$a0" := "gracePeriod" in
-          (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0")
-        else do:  #())));;;
-    (if: (![#boolT] "firstGracefulDeletion") && (int_gt ((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) #(W64 0))
-    then
-      (if: ![#boolT] "graceful"
-      then
-        do:  (let: "$a0" := (((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) + #(W64 1)) in
-        (interface.get #"SetGeneration"%go (![#v1.Object] "metadata")) "$a0")
-      else
-        (if: ![#boolT] "pendingFinalizers"
-        then
-          do:  (let: "$a0" := (((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) + #(W64 1)) in
-          (interface.get #"SetGeneration"%go (![#v1.Object] "metadata")) "$a0")
-        else do:  #()))
-    else do:  #());;;
-    do:  ((struct.field_ref #State #"resourceVersionCounter"%go (![#ptrT] "s")) <-[#int64T] ((![#int64T] (struct.field_ref #State #"resourceVersionCounter"%go (![#ptrT] "s"))) + #(W64 1)));;;
-    do:  (let: "$a0" := (let: "$a0" := (![#int64T] (struct.field_ref #State #"resourceVersionCounter"%go (![#ptrT] "s"))) in
-    let: "$a1" := #(W64 10) in
-    (func_call #strconv.FormatInt) "$a0" "$a1") in
-    (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
-    let: "$r0" := (![#interfaceT] "obj") in
-    do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) (![#KKey] "key") "$r0");;;
-    let: "deleteImmediately" := (mem.alloc (type.zero_val #boolT)) in
-    let: "$r0" := ((~ (![#boolT] "pendingFinalizers")) && ((![#int64T] "gracePeriod") = #(W64 0))) in
-    do:  ("deleteImmediately" <-[#boolT] "$r0");;;
-    return: (let: "$a0" := (![#interfaceT] "obj") in
-     (func_call #deepCopy) "$a0", ![#boolT] "deleteImmediately", #interface.nil)).
-
-(* - TODO:
-     - DeleteCollection (bulk delete with label selectors)
-     - Admission webhooks for delete validation
-     - ResourceQuota updates on deletion
-
-   go: new.go:918:17 *)
+(* go: new.go:843:17 *)
 Definition State__deleteⁱᵐᵖˡ : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -2676,48 +2595,64 @@ Definition State__deleteⁱᵐᵖˡ : val :=
     (if: (![#boolT] "pendingGraceful") && (~ (![#boolT] "shouldUpdateFinalizers"))
     then return: (#interface.nil)
     else do:  #());;;
-    let: "pendingFinalizers" := (mem.alloc (type.zero_val #boolT)) in
-    let: "$r0" := ((let: "$a0" := ((interface.get #"GetFinalizers"%go (![#v1.Object] "metadata")) #()) in
-    slice.len "$a0") ≠ #(W64 0)) in
-    do:  ("pendingFinalizers" <-[#boolT] "$r0");;;
-    (if: ((![#boolT] "graceful") || (![#boolT] "pendingFinalizers")) || (![#boolT] "shouldUpdateFinalizers")
+    let: "gracePeriod" := (mem.alloc (type.zero_val #int64T)) in
+    let: "$r0" := #(W64 0) in
+    do:  ("gracePeriod" <-[#int64T] "$r0");;;
+    (if: (![#boolT] "graceful") && ((![#ptrT] (struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go "options")) ≠ #null)
     then
-      let: "err" := (mem.alloc (type.zero_val #error)) in
-      let: "deleteImmediately" := (mem.alloc (type.zero_val #boolT)) in
-      let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![#KKey] "key") in
-      let: "$a1" := (![#interfaceT] "objCopy") in
-      let: "$a2" := (![#v1.Object] "metadata") in
-      let: "$a3" := "options" in
-      let: "$a4" := (![#boolT] "graceful") in
-      let: "$a5" := (![#boolT] "shouldUpdateFinalizers") in
-      (method_call #(ptrT.id State.id) #"updateForGracefulDeletionAndFinalizers"%go (![#ptrT] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      let: "$r2" := "$ret2" in
-      do:  "$r0";;;
-      do:  ("deleteImmediately" <-[#boolT] "$r1");;;
-      do:  ("err" <-[#error] "$r2");;;
-      (if: (~ (interface.eq (![#error] "err") #interface.nil))
-      then return: (![#error] "err")
-      else do:  #());;;
-      (if: ![#boolT] "deleteImmediately"
-      then
-        do:  (let: "$a0" := (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) in
-        let: "$a1" := (![#KKey] "key") in
-        map.delete "$a0" "$a1")
-      else do:  #());;;
+      let: "$r0" := (![#int64T] (![#ptrT] (struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go "options"))) in
+      do:  ("gracePeriod" <-[#int64T] "$r0")
+    else do:  #());;;
+    (if: ((let: "$a0" := ((interface.get #"GetFinalizers"%go (![#v1.Object] "metadata")) #()) in
+    slice.len "$a0") = #(W64 0)) && ((![#int64T] "gracePeriod") = #(W64 0))
+    then
+      do:  (let: "$a0" := (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) in
+      let: "$a1" := (![#KKey] "key") in
+      map.delete "$a0" "$a1");;;
       return: (#interface.nil)
     else do:  #());;;
-    do:  (let: "$a0" := (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) in
-    let: "$a1" := (![#KKey] "key") in
-    map.delete "$a0" "$a1");;;
+    let: "objectChanged" := (mem.alloc (type.zero_val #boolT)) in
+    let: "$r0" := (![#boolT] "shouldUpdateFinalizers") in
+    do:  ("objectChanged" <-[#boolT] "$r0");;;
+    let: "currentGracePeriod" := (mem.alloc (type.zero_val #ptrT)) in
+    let: "$r0" := ((interface.get #"GetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) #()) in
+    do:  ("currentGracePeriod" <-[#ptrT] "$r0");;;
+    (if: ((![#ptrT] "currentGracePeriod") = #null) || ((![#int64T] (![#ptrT] "currentGracePeriod")) ≠ (![#int64T] "gracePeriod"))
+    then
+      do:  (let: "$a0" := "gracePeriod" in
+      (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0");;;
+      let: "$r0" := #true in
+      do:  ("objectChanged" <-[#boolT] "$r0")
+    else do:  #());;;
+    (if: ((interface.get #"GetDeletionTimestamp"%go (![#v1.Object] "metadata")) #()) = #null
+    then
+      let: "now" := (mem.alloc (type.zero_val #v1.Time)) in
+      let: "$r0" := ((func_call #v1.Now) #()) in
+      do:  ("now" <-[#v1.Time] "$r0");;;
+      do:  (let: "$a0" := "now" in
+      (interface.get #"SetDeletionTimestamp"%go (![#v1.Object] "metadata")) "$a0");;;
+      let: "$r0" := #true in
+      do:  ("objectChanged" <-[#boolT] "$r0");;;
+      (if: int_gt ((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) #(W64 0)
+      then
+        do:  (let: "$a0" := (((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) + #(W64 1)) in
+        (interface.get #"SetGeneration"%go (![#v1.Object] "metadata")) "$a0")
+      else do:  #())
+    else do:  #());;;
+    (if: ![#boolT] "objectChanged"
+    then
+      do:  (let: "$a0" := ((method_call #(ptrT.id State.id) #"generateNewRVAndUpdate"%go (![#ptrT] "s")) #()) in
+      (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
+      let: "$r0" := (![#interfaceT] "objCopy") in
+      do:  (map.insert (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) (![#KKey] "key") "$r0")
+    else do:  #());;;
     return: (#interface.nil)).
 
 (* PodDelete2 deletes a Pod with full DeleteOptions support, including preconditions,
    graceful deletion, and finalizer handling. Returns the deleted (or updated) Pod object.
    PodCreate2 creates a Pod using create, which includes admission controller logic.
 
-   go: new.go:987:17 *)
+   go: new.go:934:17 *)
 Definition State__PodCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2754,7 +2689,7 @@ Definition State__PodCreate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetCreate2 creates a ReplicaSet using create, which includes admission controller logic.
 
-   go: new.go:1002:17 *)
+   go: new.go:949:17 *)
 Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2791,7 +2726,7 @@ Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
 
 (* PodUpdate2 updates a Pod using the richer storage/update model.
 
-   go: new.go:1017:17 *)
+   go: new.go:964:17 *)
 Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2828,7 +2763,7 @@ Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetUpdate2 updates a ReplicaSet using the richer storage/update model.
 
-   go: new.go:1032:17 *)
+   go: new.go:979:17 *)
 Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2865,7 +2800,7 @@ Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
 
 (* PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.
 
-   go: new.go:1047:17 *)
+   go: new.go:994:17 *)
 Definition State__PodDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2889,7 +2824,7 @@ Definition State__PodDelete2ⁱᵐᵖˡ : val :=
 (* ReplicaSetDelete2 deletes a ReplicaSet with full DeleteOptions support.
    ReplicaSets don't support graceful deletion but do support finalizers and preconditions.
 
-   go: new.go:1054:17 *)
+   go: new.go:1001:17 *)
 Definition State__ReplicaSetDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2914,7 +2849,7 @@ Definition vars' : list (go_string * go_type) := [].
 
 Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionMutateForUpdate, applyAdmissionMutateForUpdateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (allowUnconditionalUpdate, allowUnconditionalUpdateⁱᵐᵖˡ); (malformedUpdateResourceVersionError, malformedUpdateResourceVersionErrorⁱᵐᵖˡ); (updateStrategyForLegacyObject, updateStrategyForLegacyObjectⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaultingOnUpdate, applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodCreate2"%go, State__PodCreate2ⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodDelete2"%go, State__PodDelete2ⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("PodUpdate2"%go, State__PodUpdate2ⁱᵐᵖˡ); ("ReplicaSetCreate2"%go, State__ReplicaSetCreate2ⁱᵐᵖˡ); ("ReplicaSetDelete2"%go, State__ReplicaSetDelete2ⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("ReplicaSetUpdate2"%go, State__ReplicaSetUpdate2ⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("deletionFinalizersForGarbageCollection"%go, State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objCreate"%go, State__objCreateⁱᵐᵖˡ); ("objDelete"%go, State__objDeleteⁱᵐᵖˡ); ("objGet"%go, State__objGetⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("objUpdate"%go, State__objUpdateⁱᵐᵖˡ); ("update"%go, State__updateⁱᵐᵖˡ); ("updateForGracefulDeletionAndFinalizers"%go, State__updateForGracefulDeletionAndFinalizersⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodCreate2"%go, State__PodCreate2ⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodDelete2"%go, State__PodDelete2ⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("PodUpdate2"%go, State__PodUpdate2ⁱᵐᵖˡ); ("ReplicaSetCreate2"%go, State__ReplicaSetCreate2ⁱᵐᵖˡ); ("ReplicaSetDelete2"%go, State__ReplicaSetDelete2ⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("ReplicaSetUpdate2"%go, State__ReplicaSetUpdate2ⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("deletionFinalizersForGarbageCollection"%go, State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objCreate"%go, State__objCreateⁱᵐᵖˡ); ("objDelete"%go, State__objDeleteⁱᵐᵖˡ); ("objGet"%go, State__objGetⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("objUpdate"%go, State__objUpdateⁱᵐᵖˡ); ("update"%go, State__updateⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
 
 #[global] Instance info' : PkgInfo apimodel.apimodel :=
   {|

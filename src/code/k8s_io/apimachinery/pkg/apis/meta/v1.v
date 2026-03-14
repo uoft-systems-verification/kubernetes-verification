@@ -738,7 +738,9 @@ Axiom ResourceVersionMatchExact : val.
 
 Axiom GetOptions : go_type.
 
-Axiom DeletionPropagation : go_type.
+Definition DeletionPropagation : go_type := stringT.
+#[global] Typeclasses Opaque DeletionPropagation.
+#[global] Opaque DeletionPropagation.
 
 Axiom DeletePropagationOrphan : val.
 
@@ -748,7 +750,17 @@ Axiom DeletePropagationForeground : val.
 
 Axiom DryRunAll : go_string.
 
-Axiom DeleteOptions : go_type.
+Definition DeleteOptions : go_type := structT [
+  "TypeMeta" :: TypeMeta;
+  "GracePeriodSeconds" :: ptrT;
+  "Preconditions" :: ptrT;
+  "OrphanDependents" :: ptrT;
+  "PropagationPolicy" :: ptrT;
+  "DryRun" :: sliceT;
+  "IgnoreStoreReadErrorWithClusterBreakingPotential" :: ptrT
+].
+#[global] Typeclasses Opaque DeleteOptions.
+#[global] Opaque DeleteOptions.
 
 Axiom FieldValidationIgnore : go_string.
 
@@ -764,7 +776,12 @@ Axiom ApplyOptions : go_type.
 
 Axiom UpdateOptions : go_type.
 
-Axiom Preconditions : go_type.
+Definition Preconditions : go_type := structT [
+  "UID" :: ptrT;
+  "ResourceVersion" :: ptrT
+].
+#[global] Typeclasses Opaque Preconditions.
+#[global] Opaque Preconditions.
 
 Axiom Status : go_type.
 

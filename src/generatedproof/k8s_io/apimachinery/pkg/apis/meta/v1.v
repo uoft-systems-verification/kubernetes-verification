@@ -738,37 +738,128 @@ Admitted.
 
 (* type v1.DeletionPropagation *)
 Module DeletionPropagation.
+
+#[global] Transparent v1.DeletionPropagation.
+#[global] Typeclasses Transparent v1.DeletionPropagation.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Definition t := go_string.
 End def.
 End DeletionPropagation.
-
-Global Instance bounded_size_DeletionPropagation : BoundedTypeSize v1.DeletionPropagation.
-Admitted.
-
-Global Instance into_val_DeletionPropagation `{ffi_syntax} : IntoVal DeletionPropagation.t.
-Admitted.
-
-Global Instance into_val_typed_DeletionPropagation `{ffi_syntax} : IntoValTyped DeletionPropagation.t v1.DeletionPropagation.
-Admitted.
 
 (* type v1.DeleteOptions *)
 Module DeleteOptions.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  TypeMeta' : TypeMeta.t;
+  GracePeriodSeconds' : loc;
+  Preconditions' : loc;
+  OrphanDependents' : loc;
+  PropagationPolicy' : loc;
+  DryRun' : slice.t;
+  IgnoreStoreReadErrorWithClusterBreakingPotential' : loc;
+}.
 End def.
 End DeleteOptions.
 
-Global Instance bounded_size_DeleteOptions : BoundedTypeSize v1.DeleteOptions.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent v1.DeleteOptions.
+#[local] Typeclasses Transparent v1.DeleteOptions.
 
-Global Instance into_val_DeleteOptions `{ffi_syntax} : IntoVal DeleteOptions.t.
-Admitted.
+Global Instance DeleteOptions_wf : struct.Wf v1.DeleteOptions.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_DeleteOptions `{ffi_syntax} : IntoValTyped DeleteOptions.t v1.DeleteOptions.
-Admitted.
+Global Instance settable_DeleteOptions : Settable DeleteOptions.t :=
+  settable! DeleteOptions.mk < DeleteOptions.TypeMeta'; DeleteOptions.GracePeriodSeconds'; DeleteOptions.Preconditions'; DeleteOptions.OrphanDependents'; DeleteOptions.PropagationPolicy'; DeleteOptions.DryRun'; DeleteOptions.IgnoreStoreReadErrorWithClusterBreakingPotential' >.
+Global Instance into_val_DeleteOptions : IntoVal DeleteOptions.t :=
+  {| to_val_def v :=
+    struct.val_aux v1.DeleteOptions [
+    "TypeMeta" ::= #(DeleteOptions.TypeMeta' v);
+    "GracePeriodSeconds" ::= #(DeleteOptions.GracePeriodSeconds' v);
+    "Preconditions" ::= #(DeleteOptions.Preconditions' v);
+    "OrphanDependents" ::= #(DeleteOptions.OrphanDependents' v);
+    "PropagationPolicy" ::= #(DeleteOptions.PropagationPolicy' v);
+    "DryRun" ::= #(DeleteOptions.DryRun' v);
+    "IgnoreStoreReadErrorWithClusterBreakingPotential" ::= #(DeleteOptions.IgnoreStoreReadErrorWithClusterBreakingPotential' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_DeleteOptions : IntoValTyped DeleteOptions.t v1.DeleteOptions :=
+{|
+  default_val := DeleteOptions.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_TypeMeta : IntoValStructField "TypeMeta" v1.DeleteOptions DeleteOptions.TypeMeta'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_GracePeriodSeconds : IntoValStructField "GracePeriodSeconds" v1.DeleteOptions DeleteOptions.GracePeriodSeconds'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_Preconditions : IntoValStructField "Preconditions" v1.DeleteOptions DeleteOptions.Preconditions'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_OrphanDependents : IntoValStructField "OrphanDependents" v1.DeleteOptions DeleteOptions.OrphanDependents'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_PropagationPolicy : IntoValStructField "PropagationPolicy" v1.DeleteOptions DeleteOptions.PropagationPolicy'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_DryRun : IntoValStructField "DryRun" v1.DeleteOptions DeleteOptions.DryRun'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_DeleteOptions_IgnoreStoreReadErrorWithClusterBreakingPotential : IntoValStructField "IgnoreStoreReadErrorWithClusterBreakingPotential" v1.DeleteOptions DeleteOptions.IgnoreStoreReadErrorWithClusterBreakingPotential'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_DeleteOptions TypeMeta' GracePeriodSeconds' Preconditions' OrphanDependents' PropagationPolicy' DryRun' IgnoreStoreReadErrorWithClusterBreakingPotential':
+  PureWp True
+    (struct.make #v1.DeleteOptions (alist_val [
+      "TypeMeta" ::= #TypeMeta';
+      "GracePeriodSeconds" ::= #GracePeriodSeconds';
+      "Preconditions" ::= #Preconditions';
+      "OrphanDependents" ::= #OrphanDependents';
+      "PropagationPolicy" ::= #PropagationPolicy';
+      "DryRun" ::= #DryRun';
+      "IgnoreStoreReadErrorWithClusterBreakingPotential" ::= #IgnoreStoreReadErrorWithClusterBreakingPotential'
+    ]))%struct
+    #(DeleteOptions.mk TypeMeta' GracePeriodSeconds' Preconditions' OrphanDependents' PropagationPolicy' DryRun' IgnoreStoreReadErrorWithClusterBreakingPotential').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance DeleteOptions_struct_fields_split dq l (v : DeleteOptions.t) :
+  StructFieldsSplit dq l v (
+    "HTypeMeta" ∷ l ↦s[v1.DeleteOptions :: "TypeMeta"]{dq} v.(DeleteOptions.TypeMeta') ∗
+    "HGracePeriodSeconds" ∷ l ↦s[v1.DeleteOptions :: "GracePeriodSeconds"]{dq} v.(DeleteOptions.GracePeriodSeconds') ∗
+    "HPreconditions" ∷ l ↦s[v1.DeleteOptions :: "Preconditions"]{dq} v.(DeleteOptions.Preconditions') ∗
+    "HOrphanDependents" ∷ l ↦s[v1.DeleteOptions :: "OrphanDependents"]{dq} v.(DeleteOptions.OrphanDependents') ∗
+    "HPropagationPolicy" ∷ l ↦s[v1.DeleteOptions :: "PropagationPolicy"]{dq} v.(DeleteOptions.PropagationPolicy') ∗
+    "HDryRun" ∷ l ↦s[v1.DeleteOptions :: "DryRun"]{dq} v.(DeleteOptions.DryRun') ∗
+    "HIgnoreStoreReadErrorWithClusterBreakingPotential" ∷ l ↦s[v1.DeleteOptions :: "IgnoreStoreReadErrorWithClusterBreakingPotential"]{dq} v.(DeleteOptions.IgnoreStoreReadErrorWithClusterBreakingPotential')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (DeleteOptions.TypeMeta' v)) (v1.DeleteOptions) "TypeMeta"%go.
+  simpl_one_flatten_struct (# (DeleteOptions.GracePeriodSeconds' v)) (v1.DeleteOptions) "GracePeriodSeconds"%go.
+  simpl_one_flatten_struct (# (DeleteOptions.Preconditions' v)) (v1.DeleteOptions) "Preconditions"%go.
+  simpl_one_flatten_struct (# (DeleteOptions.OrphanDependents' v)) (v1.DeleteOptions) "OrphanDependents"%go.
+  simpl_one_flatten_struct (# (DeleteOptions.PropagationPolicy' v)) (v1.DeleteOptions) "PropagationPolicy"%go.
+  simpl_one_flatten_struct (# (DeleteOptions.DryRun' v)) (v1.DeleteOptions) "DryRun"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type v1.CreateOptions *)
 Module CreateOptions.
@@ -842,18 +933,75 @@ Admitted.
 Module Preconditions.
 Section def.
 Context `{ffi_syntax}.
-Axiom t : Type.
+Record t := mk {
+  UID' : loc;
+  ResourceVersion' : loc;
+}.
 End def.
 End Preconditions.
 
-Global Instance bounded_size_Preconditions : BoundedTypeSize v1.Preconditions.
-Admitted.
+Section instances.
+Context `{ffi_syntax}.
+#[local] Transparent v1.Preconditions.
+#[local] Typeclasses Transparent v1.Preconditions.
 
-Global Instance into_val_Preconditions `{ffi_syntax} : IntoVal Preconditions.t.
-Admitted.
+Global Instance Preconditions_wf : struct.Wf v1.Preconditions.
+Proof. apply _. Qed.
 
-Global Instance into_val_typed_Preconditions `{ffi_syntax} : IntoValTyped Preconditions.t v1.Preconditions.
-Admitted.
+Global Instance settable_Preconditions : Settable Preconditions.t :=
+  settable! Preconditions.mk < Preconditions.UID'; Preconditions.ResourceVersion' >.
+Global Instance into_val_Preconditions : IntoVal Preconditions.t :=
+  {| to_val_def v :=
+    struct.val_aux v1.Preconditions [
+    "UID" ::= #(Preconditions.UID' v);
+    "ResourceVersion" ::= #(Preconditions.ResourceVersion' v)
+    ]%struct
+  |}.
+
+Global Program Instance into_val_typed_Preconditions : IntoValTyped Preconditions.t v1.Preconditions :=
+{|
+  default_val := Preconditions.mk (default_val _) (default_val _);
+|}.
+Next Obligation. solve_to_val_type. Qed.
+Next Obligation. solve_zero_val. Qed.
+Next Obligation. solve_to_val_inj. Qed.
+Final Obligation. solve_decision. Qed.
+
+Global Instance into_val_struct_field_Preconditions_UID : IntoValStructField "UID" v1.Preconditions Preconditions.UID'.
+Proof. solve_into_val_struct_field. Qed.
+
+Global Instance into_val_struct_field_Preconditions_ResourceVersion : IntoValStructField "ResourceVersion" v1.Preconditions Preconditions.ResourceVersion'.
+Proof. solve_into_val_struct_field. Qed.
+
+
+Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
+Global Instance wp_struct_make_Preconditions UID' ResourceVersion':
+  PureWp True
+    (struct.make #v1.Preconditions (alist_val [
+      "UID" ::= #UID';
+      "ResourceVersion" ::= #ResourceVersion'
+    ]))%struct
+    #(Preconditions.mk UID' ResourceVersion').
+Proof. solve_struct_make_pure_wp. Qed.
+
+
+Global Instance Preconditions_struct_fields_split dq l (v : Preconditions.t) :
+  StructFieldsSplit dq l v (
+    "HUID" ∷ l ↦s[v1.Preconditions :: "UID"]{dq} v.(Preconditions.UID') ∗
+    "HResourceVersion" ∷ l ↦s[v1.Preconditions :: "ResourceVersion"]{dq} v.(Preconditions.ResourceVersion')
+  ).
+Proof.
+  rewrite /named.
+  apply struct_fields_split_intro.
+  unfold_typed_pointsto; split_pointsto_app.
+
+  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
+  simpl_one_flatten_struct (# (Preconditions.UID' v)) (v1.Preconditions) "UID"%go.
+
+  solve_field_ref_f.
+Qed.
+
+End instances.
 
 (* type v1.Status *)
 Module Status.

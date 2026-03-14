@@ -528,9 +528,5 @@ Global Instance wp_method_call_State'ptr_update :
   WpMethodCall (ptrT.id apimodel.State.id) "update" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_updateForGracefulDeletionAndFinalizers :
-  WpMethodCall (ptrT.id apimodel.State.id) "updateForGracefulDeletionAndFinalizers" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
 End names.
 End apimodel.

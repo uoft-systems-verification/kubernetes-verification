@@ -840,86 +840,11 @@ func checkGracefulDelete(kind string, obj interface{}, options *metav1.DeleteOpt
 	}
 }
 
-// updateForGracefulDeletionAndFinalizers sets DeletionTimestamp and DeletionGracePeriodSeconds,
-// updates finalizers, assigns a fresh resource version, and stores the updated object.
-// Returns the updated object and whether to delete immediately.
-// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1044-L1129
-func (s *State) updateForGracefulDeletionAndFinalizers(
-	key KKey,
-	obj interface{},
-	metadata metav1.Object,
-	options *metav1.DeleteOptions,
-	graceful bool,
-	finalizersChanged bool,
-) (interface{}, bool, error) {
-	pendingFinalizers := len(metadata.GetFinalizers()) != 0
-
-	// Track if this is the first time setting DeletionTimestamp
-	firstGracefulDeletion := metadata.GetDeletionTimestamp() == nil
-
-	// Set DeletionTimestamp if not already set
-	if firstGracefulDeletion {
-		now := metav1.Now()
-		metadata.SetDeletionTimestamp(&now)
-	}
-
-	// Set DeletionGracePeriodSeconds
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1028
-	gracePeriod := int64(0)
-	if graceful && options.GracePeriodSeconds != nil {
-		// For resources that support graceful deletion, use the specified grace period
-		gracePeriod = *options.GracePeriodSeconds
-		metadata.SetDeletionGracePeriodSeconds(options.GracePeriodSeconds)
-	} else if graceful {
-		// For graceful resources with no grace period specified, use 0
-		metadata.SetDeletionGracePeriodSeconds(&gracePeriod)
-	} else if pendingFinalizers {
-		// For resources that don't support graceful deletion (like ReplicaSets),
-		// if there are finalizers, set DeletionGracePeriodSeconds to 0.
-		// This matches markAsDeleting behavior in Kubernetes.
-		metadata.SetDeletionGracePeriodSeconds(&gracePeriod)
-	}
-
-	// Increment generation when setting DeletionTimestamp for the first time
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L166-L172
-	// For graceful deletion: increment when first setting DeletionTimestamp
-	// For non-graceful deletion with finalizers: increment in markAsDeleting
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1016-L1020
-	if firstGracefulDeletion && metadata.GetGeneration() > 0 {
-		if graceful {
-			// Graceful deletion: increment generation when first setting DeletionTimestamp
-			metadata.SetGeneration(metadata.GetGeneration() + 1)
-		} else if pendingFinalizers {
-			// Non-graceful deletion with finalizers: increment generation (matches markAsDeleting)
-			metadata.SetGeneration(metadata.GetGeneration() + 1)
-		}
-	}
-
-	// Increment resource version (object was updated)
-	s.resourceVersionCounter++
-	metadata.SetResourceVersion(strconv.FormatInt(s.resourceVersionCounter, 10))
-
-	// Store the updated object
-	s.m[key] = obj
-
-	// Determine if we should delete immediately:
-	// - If there are pending finalizers, never delete immediately
-	// - If grace period > 0, never delete immediately
-	// - Otherwise, delete immediately (grace period is 0 and no finalizers)
-	deleteImmediately := !pendingFinalizers && gracePeriod == 0
-
-	return deepCopy(obj), deleteImmediately, nil
-}
-
-// - TODO:
-//   - DeleteCollection (bulk delete with label selectors)
-//   - Admission webhooks for delete validation
-//   - ResourceQuota updates on deletion
 func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// 1. Get existing object
+	// Get existing object
 	obj, exists := s.m[key]
 	if !exists {
 		return errors.NewNotFound(schema.GroupResource{Resource: key.Kind}, key.Name)
@@ -931,18 +856,18 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		return fmt.Errorf("failed to access object metadata: %w", err)
 	}
 
-	// 2. Validate preconditions (UID, ResourceVersion)
+	// Validate preconditions (UID, ResourceVersion)
 	if err := validateDeletePreconditions(metadata, &options, key.Kind); err != nil {
 		return err
 	}
 
-	// 3. Call strategy's CheckGracefulDelete
+	// Call strategy's CheckGracefulDelete
 	graceful, pendingGraceful, err := checkGracefulDelete(key.Kind, objCopy, &options)
 	if err != nil {
 		return err
 	}
 
-	// 4. Update GC finalizers based on PropagationPolicy (Phase C1)
+	// Update GC finalizers based on PropagationPolicy
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1172-L1176
 	shouldUpdateFinalizers, newFinalizers := s.deletionFinalizersForGarbageCollection(metadata, &options, metadata.GetUID())
 	if shouldUpdateFinalizers {
@@ -956,28 +881,50 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		return nil
 	}
 
-	// 5. Check for finalizers
-	pendingFinalizers := len(metadata.GetFinalizers()) != 0
+	gracePeriod := int64(0)
+	if graceful && options.GracePeriodSeconds != nil {
+		// For resources that support graceful deletion, use the specified grace period.
+		gracePeriod = *options.GracePeriodSeconds
+	}
 
-	// 6. Graceful deletion or finalizers? Update object and possibly delete immediately
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1174
-	if graceful || pendingFinalizers || shouldUpdateFinalizers {
-		_, deleteImmediately, err := s.updateForGracefulDeletionAndFinalizers(key, objCopy, metadata, &options, graceful, shouldUpdateFinalizers)
-		if err != nil {
-			return err
-		}
-
-		// If delete immediately (grace period is 0 and no finalizers), remove from storage
-		if deleteImmediately {
-			delete(s.m, key)
-		}
-
+	if len(metadata.GetFinalizers()) == 0 && gracePeriod == 0 {
+		delete(s.m, key)
 		return nil
 	}
 
-	// 7. Delete immediately (no graceful deletion needed)
-	delete(s.m, key)
+	// Real Kubernetes only advances resourceVersion when the delete path writes a changed
+	// object back to storage; no-op delete updates preserve the stored RV.
+	objectChanged := shouldUpdateFinalizers
 
+	currentGracePeriod := metadata.GetDeletionGracePeriodSeconds()
+	if currentGracePeriod == nil || *currentGracePeriod != gracePeriod {
+		metadata.SetDeletionGracePeriodSeconds(&gracePeriod)
+		objectChanged = true
+	}
+
+	// Track if this is the first time setting DeletionTimestamp.
+	if metadata.GetDeletionTimestamp() == nil {
+		// Set DeletionTimestamp if not already set.
+		now := metav1.Now()
+		metadata.SetDeletionTimestamp(&now)
+		objectChanged = true
+		// Increment generation when setting DeletionTimestamp for the first time.
+		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L166-L172
+		// For graceful deletion: increment when first setting DeletionTimestamp.
+		// For non-graceful deletion with finalizers: increment in markAsDeleting.
+		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1016-L1020
+		if metadata.GetGeneration() > 0 {
+			metadata.SetGeneration(metadata.GetGeneration() + 1)
+		}
+	}
+
+	if objectChanged {
+		// Assign a fresh resource version for the metadata update.
+		metadata.SetResourceVersion(s.generateNewRVAndUpdate())
+
+		// Store the updated object.
+		s.m[key] = objCopy
+	}
 	return nil
 }
 
