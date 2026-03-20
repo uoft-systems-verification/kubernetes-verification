@@ -107,6 +107,70 @@ Proof.
   done.
 Qed.
 
+Lemma wp_GetUID l m dq :
+  {{{ is_pkg_init v1 ∗
+      l ↦{dq} m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetUID" #()
+  {{{ RET #m.(v1.ObjectMeta.UID');
+      l ↦{dq} m
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_GetUID_deepown l m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l l m dq
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetUID" #()
+  {{{ RET #m.(ObjectMetaV.UID');
+      ObjectMetaV.deepown_l l m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
+  wp_apply (wp_GetUID with "[$Hinit $Hl]").
+  iIntros "Hl".
+  iNamed "Hdeepown".
+  rewrite Hdeepown_uid.
+  iApply "HΦ".
+  iExists c.
+  iFrame.
+  iPureIntro.
+  done.
+Qed.
+
+Lemma wp_GetResourceVersion l m dq :
+  {{{ is_pkg_init v1 ∗
+      l ↦{dq} m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetResourceVersion" #()
+  {{{ RET #m.(v1.ObjectMeta.ResourceVersion');
+      l ↦{dq} m
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_GetResourceVersion_deepown l m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l l m dq
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetResourceVersion" #()
+  {{{ RET #m.(ObjectMetaV.ResourceVersion');
+      ObjectMetaV.deepown_l l m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
+  wp_apply (wp_GetResourceVersion with "[$Hinit $Hl]").
+  iIntros "Hl".
+  iNamed "Hdeepown".
+  rewrite Hdeepown_resourceversion.
+  iApply "HΦ".
+  iExists c.
+  iFrame.
+  iPureIntro.
+  done.
+Qed.
+
 Lemma wp_SetNamespace l m namespace :
   {{{ is_pkg_init v1 ∗
       l ↦ m
@@ -315,13 +379,13 @@ Proof.
   done.
 Qed.
 
-Lemma wp_GetFinalizers l m :
+Lemma wp_GetFinalizers l m dq :
   {{{ is_pkg_init v1 ∗
-      l ↦ m
+      l ↦{dq} m
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetFinalizers" #()
   {{{ RET #m.(v1.ObjectMeta.Finalizers');
-      l ↦ m
+      l ↦{dq} m
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
