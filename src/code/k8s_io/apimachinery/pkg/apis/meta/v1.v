@@ -712,9 +712,9 @@ Axiom ListMeta : go_type.
 
 Axiom ObjectNameField : go_string.
 
-Axiom FinalizerOrphanDependents : go_string.
+Definition FinalizerOrphanDependents : go_string := "orphan"%go.
 
-Axiom FinalizerDeleteDependents : go_string.
+Definition FinalizerDeleteDependents : go_string := "foregroundDeletion"%go.
 
 Definition NamespaceDefault : go_string := "default"%go.
 
@@ -742,11 +742,11 @@ Definition DeletionPropagation : go_type := stringT.
 #[global] Typeclasses Opaque DeletionPropagation.
 #[global] Opaque DeletionPropagation.
 
-Axiom DeletePropagationOrphan : val.
+Definition DeletePropagationOrphan : val := #"Orphan"%go.
 
-Axiom DeletePropagationBackground : val.
+Definition DeletePropagationBackground : val := #"Background"%go.
 
-Axiom DeletePropagationForeground : val.
+Definition DeletePropagationForeground : val := #"Foreground"%go.
 
 Axiom DryRunAll : go_string.
 

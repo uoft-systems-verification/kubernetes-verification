@@ -47,6 +47,11 @@ translate = [
     "DeleteOptions",
     "Preconditions",
     "DeletionPropagation",
+    "DeletePropagationOrphan",
+    "DeletePropagationBackground",
+    "DeletePropagationForeground",
+    "FinalizerOrphanDependents",
+    "FinalizerDeleteDependents",
 ]
 
 imports = [

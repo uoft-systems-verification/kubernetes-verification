@@ -311,21 +311,6 @@ Proof. (* This proof is fully written by Codex *)
     done.
 Qed.
 
-Axiom delete_propagation_orphan_eq :
-  v1.DeletePropagationOrphan = #("Orphan"%go).
-
-Axiom delete_propagation_foreground_eq :
-  v1.DeletePropagationForeground = #("Foreground"%go).
-
-Axiom delete_propagation_background_eq :
-  v1.DeletePropagationBackground = #("Background"%go).
-
-Axiom finalizer_orphan_dependents_eq :
-  v1.FinalizerOrphanDependents = "orphan"%go.
-
-Axiom finalizer_delete_dependents_eq :
-  v1.FinalizerDeleteDependents = "foregroundDeletion"%go.
-
 Lemma wp_checkGracefulDelete
     (kind : go_string) (i : interface.t) (o : KObjectV.t)
     (options_l : loc) (options : DeleteOptionsV.t) :
@@ -383,10 +368,9 @@ Proof. (* This proof is fully written by Codex *)
     wp_auto.
     rewrite Hpropagation_policy_nonnull_decide /=.
     wp_auto.
-    rewrite delete_propagation_orphan_eq
-      delete_propagation_foreground_eq
-      delete_propagation_background_eq.
-    wp_auto.
+    rewrite /v1.DeletePropagationOrphan
+      /v1.DeletePropagationForeground
+      /v1.DeletePropagationBackground.
     destruct (bool_decide (propagation_policy = "Orphan"%go)) eqn:Hpropagation_policy_orphan.
     + rewrite Hpropagation_policy_orphan. wp_auto.
       iAssert (DeleteOptionsV.deepown_l options_l options dq) with
@@ -491,8 +475,8 @@ Proof. (* This proof is fully written by Codex *)
                    { iPureIntro. exact Hlookup. }
                    iIntros "Hfinalizers_l".
                    wp_auto.
-                   rewrite finalizer_orphan_dependents_eq
-                     finalizer_delete_dependents_eq.
+                   rewrite /v1.FinalizerOrphanDependents
+                     /v1.FinalizerDeleteDependents.
                    destruct (bool_decide (this_finalizer = "orphan"%go)) eqn:Hthis_finalizer_orphan.
                    { wp_auto.
                         wp_for_post.
@@ -658,8 +642,8 @@ Proof. (* This proof is fully written by Codex *)
         { iPureIntro. exact Hlookup. }
         iIntros "Hfinalizers_l".
         wp_auto.
-        rewrite finalizer_orphan_dependents_eq
-          finalizer_delete_dependents_eq.
+        rewrite /v1.FinalizerOrphanDependents
+          /v1.FinalizerDeleteDependents.
         destruct (bool_decide (this_finalizer = "orphan"%go)) eqn:Hthis_finalizer_orphan.
         { wp_auto.
           wp_for_post.
@@ -822,10 +806,9 @@ Proof. (* This proof is fully written by Codex *)
     wp_auto.
     rewrite Hpropagation_policy_nonnull_decide /=.
     wp_auto.
-    rewrite delete_propagation_orphan_eq
-      delete_propagation_foreground_eq
-      delete_propagation_background_eq.
-    wp_auto.
+    rewrite /v1.DeletePropagationOrphan
+      /v1.DeletePropagationForeground
+      /v1.DeletePropagationBackground.
     destruct (bool_decide (propagation_policy = "Foreground"%go)) eqn:Hpropagation_policy_foreground.
     + rewrite Hpropagation_policy_foreground. wp_auto.
       iAssert (DeleteOptionsV.deepown_l options_l options dq) with
@@ -929,8 +912,8 @@ Proof. (* This proof is fully written by Codex *)
                  { iPureIntro. exact Hlookup. }
                  iIntros "Hfinalizers_l".
                  wp_auto.
-                 rewrite finalizer_orphan_dependents_eq
-                   finalizer_delete_dependents_eq.
+                 rewrite /v1.FinalizerOrphanDependents
+                   /v1.FinalizerDeleteDependents.
                  destruct (bool_decide (this_finalizer = "foregroundDeletion"%go)) eqn:Hthis_finalizer_delete.
                  { wp_auto.
                    wp_for_post.
@@ -1095,8 +1078,8 @@ Proof. (* This proof is fully written by Codex *)
         { iPureIntro. exact Hlookup. }
         iIntros "Hfinalizers_l".
         wp_auto.
-        rewrite finalizer_orphan_dependents_eq
-          finalizer_delete_dependents_eq.
+        rewrite /v1.FinalizerOrphanDependents
+          /v1.FinalizerDeleteDependents.
         destruct (bool_decide (this_finalizer = "foregroundDeletion"%go)) eqn:Hthis_finalizer_delete.
         { wp_auto.
           wp_for_post.
