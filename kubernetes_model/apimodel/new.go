@@ -715,7 +715,6 @@ func shouldDeleteDependents(metadata metav1.Object, options *metav1.DeleteOption
 func (s *State) deletionFinalizersForGarbageCollection(
 	metadata metav1.Object,
 	options *metav1.DeleteOptions,
-	ownerUID types.UID,
 ) (bool, []string) {
 	shouldOrphan := shouldOrphanDependents(metadata, options)
 	shouldDeleteInForeground := shouldDeleteDependents(metadata, options)
@@ -796,7 +795,7 @@ func validateDeletePreconditions(metadata metav1.Object, options *metav1.DeleteO
 // checkGracefulDelete calls strategy-specific graceful delete logic.
 // Returns (graceful, pendingGraceful, error).
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
-func checkGracefulDelete(kind string, obj interface{}, options *metav1.DeleteOptions) (bool, bool, error) {
+func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, bool, error) {
 	ctx := context.Background()
 
 	// Negative grace periods are treated as 1s
@@ -805,16 +804,11 @@ func checkGracefulDelete(kind string, obj interface{}, options *metav1.DeleteOpt
 		options.GracePeriodSeconds = &period
 	}
 
-	switch kind {
-	case "Pod":
-		pod, ok := obj.(*corev1.Pod)
-		if !ok {
-			return false, false, fmt.Errorf("expected *corev1.Pod for kind Pod, got %T", obj)
-		}
-
+	switch typed := obj.(type) {
+	case *corev1.Pod:
 		// Convert to internal type for strategy
 		internalPod := &core.Pod{}
-		if err := legacyscheme.Scheme.Convert(pod, internalPod, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(typed, internalPod, nil); err != nil {
 			return false, false, err
 		}
 
@@ -825,18 +819,18 @@ func checkGracefulDelete(kind string, obj interface{}, options *metav1.DeleteOpt
 		pendingGraceful := internalPod.DeletionTimestamp != nil
 
 		// Convert back to external type
-		if err := legacyscheme.Scheme.Convert(internalPod, pod, nil); err != nil {
+		if err := legacyscheme.Scheme.Convert(internalPod, typed, nil); err != nil {
 			return false, false, err
 		}
 
 		return graceful, pendingGraceful, nil
 
-	case "ReplicaSet":
+	case *appsv1.ReplicaSet:
 		// ReplicaSets don't support graceful deletion
 		return false, false, nil
 
 	default:
-		return false, false, fmt.Errorf("unsupported kind: %s", kind)
+		return false, false, fmt.Errorf("unsupported object type for graceful delete: %T", obj)
 	}
 }
 
@@ -862,14 +856,14 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	}
 
 	// Call strategy's CheckGracefulDelete
-	graceful, pendingGraceful, err := checkGracefulDelete(key.Kind, objCopy, &options)
+	graceful, pendingGraceful, err := checkGracefulDelete(objCopy, &options)
 	if err != nil {
 		return err
 	}
 
 	// Update GC finalizers based on PropagationPolicy
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1172-L1176
-	shouldUpdateFinalizers, newFinalizers := s.deletionFinalizersForGarbageCollection(metadata, &options, metadata.GetUID())
+	shouldUpdateFinalizers, newFinalizers := s.deletionFinalizersForGarbageCollection(metadata, &options)
 	if shouldUpdateFinalizers {
 		metadata.SetFinalizers(newFinalizers)
 	}

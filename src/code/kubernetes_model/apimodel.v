@@ -2291,9 +2291,8 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ : val :=
 
    go: new.go:715:17 *)
 Definition State__deletionFinalizersForGarbageCollectionⁱᵐᵖˡ : val :=
-  λ: "s" "metadata" "options" "ownerUID",
+  λ: "s" "metadata" "options",
     exception_do (let: "s" := (mem.alloc "s") in
-    let: "ownerUID" := (mem.alloc "ownerUID") in
     let: "options" := (mem.alloc "options") in
     let: "metadata" := (mem.alloc "metadata") in
     let: "shouldOrphan" := (mem.alloc (type.zero_val #boolT)) in
@@ -2372,7 +2371,7 @@ Definition validateDeletePreconditions : go_string := "kubernetes_model/apimodel
    Returns a Conflict error if preconditions don't match.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
 
-   go: new.go:766:6 *)
+   go: new.go:765:6 *)
 Definition validateDeletePreconditionsⁱᵐᵖˡ : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -2425,12 +2424,11 @@ Definition checkGracefulDelete : go_string := "kubernetes_model/apimodel.checkGr
    Returns (graceful, pendingGraceful, error).
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
 
-   go: new.go:799:6 *)
+   go: new.go:798:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
-  λ: "kind" "obj" "options",
+  λ: "obj" "options",
     exception_do (let: "options" := (mem.alloc "options") in
     let: "obj" := (mem.alloc "obj") in
-    let: "kind" := (mem.alloc "kind") in
     let: "ctx" := (mem.alloc (type.zero_val #context.Context)) in
     let: "$r0" := ((func_call #context.Background) #()) in
     do:  ("ctx" <-[#context.Context] "$r0");;;
@@ -2442,23 +2440,11 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
       let: "$r0" := "period" in
       do:  ((struct.field_ref #v1.DeleteOptions #"GracePeriodSeconds"%go (![#ptrT] "options")) <-[#ptrT] "$r0")
     else do:  #());;;
-    let: "$sw" := (![#stringT] "kind") in
-    (if: "$sw" = #"Pod"%go
+    let: "$y" := (![#interfaceT] "obj") in
+    let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.Pod.id)) in
+    (if: "$ok"
     then
-      let: "ok" := (mem.alloc (type.zero_val #boolT)) in
-      let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-      let: ("$ret0", "$ret1") := (interface.checked_type_assert #ptrT (![#interfaceT] "obj") #(ptrT.id v1.Pod.id)) in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  ("pod" <-[#ptrT] "$r0");;;
-      do:  ("ok" <-[#boolT] "$r1");;;
-      (if: (~ (![#boolT] "ok"))
-      then
-        return: (#false, #false, let: "$a0" := #"expected *corev1.Pod for kind Pod, got %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "obj") in
-         slice.literal #interfaceT ["$sl0"])) in
-         (func_call #fmt.Errorf) "$a0" "$a1")
-      else do:  #());;;
+      let: "typed" := (mem.alloc "$x") in
       let: "internalPod" := (mem.alloc (type.zero_val #ptrT)) in
       let: "$r0" := (mem.alloc (struct.make #core.Pod [{
         "TypeMeta" ::= type.zero_val #v1.TypeMeta;
@@ -2468,7 +2454,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
       }])) in
       do:  ("internalPod" <-[#ptrT] "$r0");;;
       (let: "err" := (mem.alloc (type.zero_val #error)) in
-      let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "pod")) in
+      let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "typed")) in
       let: "$a1" := (interface.make #(ptrT.id core.Pod.id) (![#ptrT] "internalPod")) in
       let: "$a2" := #interface.nil in
       (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
@@ -2487,7 +2473,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
       do:  ("pendingGraceful" <-[#boolT] "$r0");;;
       (let: "err" := (mem.alloc (type.zero_val #error)) in
       let: "$r0" := (let: "$a0" := (interface.make #(ptrT.id core.Pod.id) (![#ptrT] "internalPod")) in
-      let: "$a1" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "pod")) in
+      let: "$a1" := (interface.make #(ptrT.id v1.Pod.id) (![#ptrT] "typed")) in
       let: "$a2" := #interface.nil in
       (method_call #(ptrT.id runtime.Scheme.id) #"Convert"%go (![#ptrT] (globals.get #legacyscheme.Scheme))) "$a0" "$a1" "$a2") in
       do:  ("err" <-[#error] "$r0");;;
@@ -2496,15 +2482,18 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
       else do:  #()));;;
       return: (![#boolT] "graceful", ![#boolT] "pendingGraceful", #interface.nil)
     else
-      (if: "$sw" = #"ReplicaSet"%go
-      then return: (#false, #false, #interface.nil)
+      let: ("$x", "$ok") := (interface.checked_type_assert #ptrT "$y" #(ptrT.id v1.ReplicaSet.id)) in
+      (if: "$ok"
+      then
+        let: "typed" := (mem.alloc "$x") in
+        return: (#false, #false, #interface.nil)
       else
-        return: (#false, #false, let: "$a0" := #"unsupported kind: %s"%go in
-         let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] "kind")) in
+        return: (#false, #false, let: "$a0" := #"unsupported object type for graceful delete: %T"%go in
+         let: "$a1" := ((let: "$sl0" := (![#interfaceT] "obj") in
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")))).
 
-(* go: new.go:843:17 *)
+(* go: new.go:837:17 *)
 Definition State__deleteⁱᵐᵖˡ : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -2564,10 +2553,9 @@ Definition State__deleteⁱᵐᵖˡ : val :=
     else do:  #()));;;
     let: "pendingGraceful" := (mem.alloc (type.zero_val #boolT)) in
     let: "graceful" := (mem.alloc (type.zero_val #boolT)) in
-    let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![#stringT] (struct.field_ref #KKey #"Kind"%go "key")) in
-    let: "$a1" := (![#interfaceT] "objCopy") in
-    let: "$a2" := "options" in
-    (func_call #checkGracefulDelete) "$a0" "$a1" "$a2") in
+    let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![#interfaceT] "objCopy") in
+    let: "$a1" := "options" in
+    (func_call #checkGracefulDelete) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     let: "$r2" := "$ret2" in
@@ -2581,8 +2569,7 @@ Definition State__deleteⁱᵐᵖˡ : val :=
     let: "shouldUpdateFinalizers" := (mem.alloc (type.zero_val #boolT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#v1.Object] "metadata") in
     let: "$a1" := "options" in
-    let: "$a2" := ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #()) in
-    (method_call #(ptrT.id State.id) #"deletionFinalizersForGarbageCollection"%go (![#ptrT] "s")) "$a0" "$a1" "$a2") in
+    (method_call #(ptrT.id State.id) #"deletionFinalizersForGarbageCollection"%go (![#ptrT] "s")) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("shouldUpdateFinalizers" <-[#boolT] "$r0");;;
@@ -2652,7 +2639,7 @@ Definition State__deleteⁱᵐᵖˡ : val :=
    graceful deletion, and finalizer handling. Returns the deleted (or updated) Pod object.
    PodCreate2 creates a Pod using create, which includes admission controller logic.
 
-   go: new.go:934:17 *)
+   go: new.go:928:17 *)
 Definition State__PodCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2689,7 +2676,7 @@ Definition State__PodCreate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetCreate2 creates a ReplicaSet using create, which includes admission controller logic.
 
-   go: new.go:949:17 *)
+   go: new.go:943:17 *)
 Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2726,7 +2713,7 @@ Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
 
 (* PodUpdate2 updates a Pod using the richer storage/update model.
 
-   go: new.go:964:17 *)
+   go: new.go:958:17 *)
 Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2763,7 +2750,7 @@ Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetUpdate2 updates a ReplicaSet using the richer storage/update model.
 
-   go: new.go:979:17 *)
+   go: new.go:973:17 *)
 Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2800,7 +2787,7 @@ Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
 
 (* PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.
 
-   go: new.go:994:17 *)
+   go: new.go:988:17 *)
 Definition State__PodDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2824,7 +2811,7 @@ Definition State__PodDelete2ⁱᵐᵖˡ : val :=
 (* ReplicaSetDelete2 deletes a ReplicaSet with full DeleteOptions support.
    ReplicaSets don't support graceful deletion but do support finalizers and preconditions.
 
-   go: new.go:1001:17 *)
+   go: new.go:995:17 *)
 Definition State__ReplicaSetDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
