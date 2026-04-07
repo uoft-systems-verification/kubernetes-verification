@@ -392,6 +392,10 @@ Global Instance wp_func_call_shouldDeleteDependents :
   WpFuncCall apimodel.shouldDeleteDependents _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_deletionFinalizersForGarbageCollection :
+  WpFuncCall apimodel.deletionFinalizersForGarbageCollection _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_validateDeletePreconditions :
   WpFuncCall apimodel.validateDeletePreconditions _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
@@ -474,10 +478,6 @@ Global Instance wp_method_call_State'ptr_create :
 
 Global Instance wp_method_call_State'ptr_delete :
   WpMethodCall (ptrT.id apimodel.State.id) "delete" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_State'ptr_deletionFinalizersForGarbageCollection :
-  WpMethodCall (ptrT.id apimodel.State.id) "deletionFinalizersForGarbageCollection" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_generateNewName :

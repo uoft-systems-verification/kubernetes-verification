@@ -46,6 +46,24 @@ Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string uni
 Proof.
 Admitted.
 
+Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
+  {{{ is_pkg_init apimodel ∗
+      ⌜ valid_generate_name generate_name ⌝ ∗
+      ⌜ length generate_name ≤ 58 ⌝ ∗
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "generateNewName" #kind #namespace #generate_name
+  {{{ (new_name: go_string), RET #new_name;
+      ⌜ new_name ≠ ""%go ⌝ ∗
+      ⌜ valid_name new_name ⌝ ∗
+      ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
+      l ↦s[apimodel.State :: "m"] m_ptr ∗
+      m_ptr ↦$ phys_state
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
@@ -311,20 +329,27 @@ Proof. (* This proof is fully written by Codex *)
     done.
 Qed.
 
-Lemma wp_checkGracefulDelete
-    (kind : go_string) (i : interface.t) (o : KObjectV.t)
-    (options_l : loc) (options : DeleteOptionsV.t) :
+(* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
+Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
+Axiom delete_pending_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
+(* Abstracts the possibly-updated DeleteOptions returned by checkGracefulDelete. *)
+Axiom delete_noralized_options : KObjectV.t -> DeleteOptionsV.t -> DeleteOptionsV.t.
+
+Lemma wp_checkGracefulDelete i o options_l options :
   {{{ is_pkg_init apimodel ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i o 1 ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options 1
   }}}
-    @! apimodel.checkGracefulDelete #kind #i #options_l
-  {{{ (graceful pendingGraceful : bool) (err : error.t) (o' : KObjectV.t)
-      (options' : DeleteOptionsV.t), RET (#graceful, #pendingGraceful, #err);
-      KObjectV.deepown_i i o' 1 ∗
+    @! apimodel.checkGracefulDelete #i #options_l
+  {{{ (graceful pendingGraceful : bool) (err : error.t) (options' : DeleteOptionsV.t),
+      RET (#graceful, #pendingGraceful, #err);
+      KObjectV.deepown_i i o 1 ∗
       DeleteOptionsV.deepown_l options_l options' 1 ∗
+      ⌜ options' = delete_noralized_options o options ⌝ ∗
       ⌜ pendingGraceful = true →
-          (KObjectV.objectmeta o').(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
+          (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+      ⌜ graceful = delete_graceful o options ⌝ ∗
+      ⌜ pendingGraceful = delete_pending_graceful o options ⌝
   }}}.
 Proof.
 Admitted.
@@ -1203,40 +1228,72 @@ Proof. (* This proof is fully written by Codex *)
       }
 Qed.
 
-Lemma wp_State__deletionFinalizersForGarbageCollection
-    (l : loc) (metadata_i : interface.t) (metadata_l : loc) (m : ObjectMetaV.t)
-    (options_l : loc) (options : DeleteOptionsV.t) (dq : dfrac) (owner_uid : types.UID.t) :
+(* delete_should_update_finalizers and delete_new_finalizers abstract the result of deletionFinalizersForGarbageCollection *)
+Axiom delete_should_update_finalizers : ObjectMetaV.t -> DeleteOptionsV.t -> bool.
+Axiom delete_new_finalizers : ObjectMetaV.t -> DeleteOptionsV.t -> option (list go_string).
+
+Lemma wp_deletionFinalizersForGarbageCollection
+    (l : loc) metadata_i metadata_l m options_l options dq :
   {{{ is_pkg_init apimodel ∗
       "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (ptrT.id v1.ObjectMeta.id) #metadata_l ⌝ ∗
       "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "deletionFinalizersForGarbageCollection"
-      #metadata_i #options_l #owner_uid
-  {{{ (should_update_finalizers : bool) (new_finalizers_sl : slice.t),
+    @! apimodel.deletionFinalizersForGarbageCollection #metadata_i #options_l
+  {{{ (should_update_finalizers : bool) (new_finalizers_sl : slice.t) (finalizers :  option (list go_string)),
       RET (#should_update_finalizers, #new_finalizers_sl);
       ObjectMetaV.deepown_l metadata_l m dq ∗
-      DeleteOptionsV.deepown_l options_l options dq
+      DeleteOptionsV.deepown_l options_l options dq ∗
+      ⌜ new_finalizers_sl = slice.nil ↔ finalizers = None ⌝ ∗
+      (match finalizers with
+      | Some fs => ∃ cfs, new_finalizers_sl ↦* cfs ∗ ⌜ cfs = fs ⌝
+      | None => True%I
+      end) ∗
+      ⌜ should_update_finalizers = delete_should_update_finalizers m options ⌝ ∗
+      ⌜ finalizers = delete_new_finalizers m options ⌝
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
-  {{{ is_pkg_init apimodel ∗
-      ⌜ valid_generate_name generate_name ⌝ ∗
-      ⌜ length generate_name ≤ 58 ⌝ ∗
-      l ↦s[apimodel.State :: "m"] m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}
-    l @ (ptrT.id apimodel.State.id) @ "generateNewName" #kind #namespace #generate_name
-  {{{ (new_name: go_string), RET #new_name;
-      ⌜ new_name ≠ ""%go ⌝ ∗
-      ⌜ valid_name new_name ⌝ ∗
-      ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
-      l ↦s[apimodel.State :: "m"] m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}.
-Proof.
-Admitted.
+(* Corresponds to the *negation* of early return
+    [if pendingGraceful && !shouldUpdateFinalizers { return nil }]. *)
+Definition delete_not_short_circuits o options : Prop :=
+  ¬ (delete_pending_graceful o options = true ∧
+    delete_should_update_finalizers (KObjectV.objectmeta o) options = false).
+
+Definition delete_zero_finalizers o options : Prop :=
+  match delete_new_finalizers (KObjectV.objectmeta o) options with
+  | None => True
+  | Some fs => fs = []
+  end.
+
+(* Corresponds to:
+    [gracePeriod := int64(0)]
+    [if graceful && options.GracePeriodSeconds != nil { gracePeriod = *options.GracePeriodSeconds }] *)
+Definition delete_zero_grace_period o options : Prop :=
+  (if delete_graceful o options then
+    match (delete_noralized_options o options).(DeleteOptionsV.GracePeriodSeconds') with
+    | Some grace_period => grace_period
+    | None => W64 0
+    end
+  else W64 0) = W64 0.
+
+(*  This captures exactly when the delete path removes [key] from [s.m].
+    Reading [kubernetes_model/apimodel/new.go] top-to-bottom:
+    1. We must not take the earlier "already pending graceful deletion" fast path:
+      [if pendingGraceful && !shouldUpdateFinalizers { return nil }].
+    2. After GC finalizer processing, the object must have no finalizers left.
+    3. The computed grace period must be zero.
+    When all three hold, the Go code reaches:
+      [if len(metadata.GetFinalizers()) == 0 && gracePeriod == 0 { delete(s.m, key) }] *)
+Definition delete_removes_from_state_map o options : Prop :=
+  delete_not_short_circuits o options ∧
+  delete_zero_finalizers o options ∧
+  delete_zero_grace_period o options.
+
+Axiom delete_removes_from_state_map_dec :
+  forall (o : KObjectV.t) (options : DeleteOptionsV.t),
+    Decision (delete_removes_from_state_map o options).
+Global Existing Instance delete_removes_from_state_map_dec.
 
 End proof.

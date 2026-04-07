@@ -712,10 +712,7 @@ func shouldDeleteDependents(metadata metav1.Object, options *metav1.DeleteOption
 // deletionFinalizersForGarbageCollection determines which finalizers should be set for garbage collection.
 // It returns whether the finalizer list needs updating and the new finalizer list.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L976-L1005
-func (s *State) deletionFinalizersForGarbageCollection(
-	metadata metav1.Object,
-	options *metav1.DeleteOptions,
-) (bool, []string) {
+func deletionFinalizersForGarbageCollection(metadata metav1.Object, options *metav1.DeleteOptions) (bool, []string) {
 	shouldOrphan := shouldOrphanDependents(metadata, options)
 	shouldDeleteInForeground := shouldDeleteDependents(metadata, options)
 
@@ -798,7 +795,7 @@ func validateDeletePreconditions(metadata metav1.Object, options *metav1.DeleteO
 func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, bool, error) {
 	ctx := context.Background()
 
-	// Negative grace periods are treated as 1s
+	// Negative grace periods are treated as 1s.
 	if options.GracePeriodSeconds != nil && *options.GracePeriodSeconds < 0 {
 		period := int64(1)
 		options.GracePeriodSeconds = &period
@@ -863,7 +860,7 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 
 	// Update GC finalizers based on PropagationPolicy
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1172-L1176
-	shouldUpdateFinalizers, newFinalizers := s.deletionFinalizersForGarbageCollection(metadata, &options)
+	shouldUpdateFinalizers, newFinalizers := deletionFinalizersForGarbageCollection(metadata, &options)
 	if shouldUpdateFinalizers {
 		metadata.SetFinalizers(newFinalizers)
 	}
