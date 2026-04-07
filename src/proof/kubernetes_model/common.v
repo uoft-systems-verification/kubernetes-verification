@@ -123,6 +123,30 @@ Definition delete_preconditions_match (m : ObjectMetaV.t) (options : DeleteOptio
        end)
   end.
 
+#[global] Instance delete_preconditions_match_dec m options :
+  Decision (delete_preconditions_match m options).
+Proof.
+  unfold delete_preconditions_match.
+  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|].
+  - destruct preconditions.(PreconditionsV.UID') as [uid|];
+      destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|];
+      simpl.
+    + destruct (decide (uid = m.(ObjectMetaV.UID'))) as [Huid|Huid];
+        destruct (decide (rv = m.(ObjectMetaV.ResourceVersion'))) as [Hrv|Hrv].
+      * left. split; assumption.
+      * right. intros [_ Hrv']. contradiction.
+      * right. intros [Huid' _]. contradiction.
+      * right. intros [Huid' _]. contradiction.
+    + destruct (decide (uid = m.(ObjectMetaV.UID'))) as [Huid|Huid].
+      * left. split; [assumption|done].
+      * right. intros [Huid' _]. contradiction.
+    + destruct (decide (rv = m.(ObjectMetaV.ResourceVersion'))) as [Hrv|Hrv].
+      * left. split; [done|assumption].
+      * right. intros [_ Hrv']. contradiction.
+    + left. done.
+  - left. done.
+Qed.
+
 Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_string) :
   {{{ is_pkg_init apimodel ∗
       "%Hi" ∷ ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗

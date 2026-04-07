@@ -196,8 +196,6 @@ Axiom updated: t → t → t → Prop. (* old meta → input meta → output met
 
 Axiom rv_updated: t → t → Prop. (* old meta → output meta (new meta) *)
 
-Axiom deleting: t → t → Prop.
-
 Axiom simple_update: t → t → Prop.
 
 Axiom simple_update_status: t → t → Prop.
