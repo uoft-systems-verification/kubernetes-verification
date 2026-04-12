@@ -90,7 +90,7 @@ Proof.
       apply not_elem_of_dom. done. }
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
-    iPoseProof (kview.own_meta_exists _ _ _ _ with "Hinv_Hown_abs Hown_meta")
+    iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta")
       as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
     assert (abs_state !! key ≠ None) as Hlookup_abs''.
     { intros Hnone. rewrite Hlookup_abs' in Hnone. done. }
@@ -110,18 +110,18 @@ Proof.
   iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
-  iPoseProof (kview.own_meta_valid _ _ _ _ with "Hown_meta")
+  iPoseProof (kview.own_meta_valid with "Hown_meta")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
-  iPoseProof (kview.own_meta_exists _ _ _ _ with "Hinv_Hown_abs Hown_meta")
+  iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta")
     as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
   assert (obj = kobj) as ->.
   { rewrite Hlookup_abs in Hlookup_abs'. inversion Hlookup_abs'. done. }
   destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
-  1, 2: iPoseProof (kview.own_spec_exists _ _ _ _ with "Hinv_Hown_abs Hown_spec") as "%Hspec_found";
+  1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec") as "%Hspec_found";
         assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
           (symmetry; eapply Hspec_found; [exact Hlookup_abs|];
            rewrite Hmeta_eq; symmetry; exact Huid_eq).
-  1, 3: iPoseProof (kview.own_status_exists _ _ _ _ with "Hinv_Hown_abs Hown_status") as "%Hstatus_found";
+  1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status") as "%Hstatus_found";
         assert (kstatus = KObjectV.status kobj) as Hkstatus_eq by
           (symmetry; eapply Hstatus_found; [exact Hlookup_abs|];
            rewrite Hmeta_eq; symmetry; exact Huid_eq).

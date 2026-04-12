@@ -26,6 +26,7 @@ Require Export New.code.k8s_io.kubernetes.pkg.controller.
 Require Export New.code.k8s_io.kubernetes.pkg.registry.apps.replicaset.
 Require Export New.code.k8s_io.kubernetes.pkg.registry.core.pod.
 Require Export New.code.math.rand.
+Require Export New.code.reflect.
 Require Export New.code.strconv.
 Require Export New.code.sync.
 Require Export New.code.time.
@@ -975,7 +976,7 @@ Definition State__ReplicaSetMutGetⁱᵐᵖˡ : val :=
     else do:  #());;;
     return: (![#ptrT] "rs", #interface.nil)).
 
-(* go: new.go:39:17 *)
+(* go: new.go:40:17 *)
 Definition State__getⁱᵐᵖˡ : val :=
   λ: "s" "key",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -1009,7 +1010,7 @@ Definition State__getⁱᵐᵖˡ : val :=
 
 Definition randomSuffix : go_string := "kubernetes_model/apimodel.randomSuffix"%go.
 
-(* go: new.go:51:6 *)
+(* go: new.go:52:6 *)
 Definition randomSuffixⁱᵐᵖˡ : val :=
   λ: "n",
     exception_do (let: "n" := (mem.alloc "n") in
@@ -1034,7 +1035,7 @@ Definition randomSuffixⁱᵐᵖˡ : val :=
       do:  ((slice.elem_ref #byteT (![#sliceT] "b") (![#intT] "i")) <-[#byteT] "$r0")));;;
     return: (string.from_bytes (![#sliceT] "b"))).
 
-(* go: new.go:61:17 *)
+(* go: new.go:62:17 *)
 Definition State__generateNewNameⁱᵐᵖˡ : val :=
   λ: "s" "kind" "namespace" "generateName",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -1066,7 +1067,7 @@ Definition State__generateNewNameⁱᵐᵖˡ : val :=
       then return: (![#stringT] "name")
       else do:  #())))).
 
-(* go: new.go:75:17 *)
+(* go: new.go:76:17 *)
 Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ : val :=
   λ: "s" <>,
     exception_do (let: "s" := (mem.alloc "s") in
@@ -1091,7 +1092,7 @@ Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ : val :=
         return: (![#types.UID] "uid")
       else do:  #())))).
 
-(* go: new.go:85:17 *)
+(* go: new.go:86:17 *)
 Definition State__generateNewRVAndUpdateⁱᵐᵖˡ : val :=
   λ: "s" <>,
     exception_do (let: "s" := (mem.alloc "s") in
@@ -1123,7 +1124,7 @@ Definition validateObjectMeta : go_string := "kubernetes_model/apimodel.validate
 (* validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
    This matches the API server's generic metadata validation that happens in BeforeCreate.
 
-   go: new.go:97:6 *)
+   go: new.go:98:6 *)
 Definition validateObjectMetaⁱᵐᵖˡ : val :=
   λ: "metadata" "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -1161,7 +1162,7 @@ Definition applyDefaultTolerationSeconds : go_string := "kubernetes_model/apimod
    node.kubernetes.io/unreachable:NoExecute with 300s toleration seconds.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go
 
-   go: new.go:124:6 *)
+   go: new.go:125:6 *)
 Definition applyDefaultTolerationSecondsⁱᵐᵖˡ : val :=
   λ: "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1253,7 +1254,7 @@ Definition applyPriorityAdmission : go_string := "kubernetes_model/apimodel.appl
    - If PriorityClassName is specified, we cannot look it up (not implemented), so we skip
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go
 
-   go: new.go:178:6 *)
+   go: new.go:179:6 *)
 Definition applyPriorityAdmissionⁱᵐᵖˡ : val :=
   λ: "pod",
     exception_do (let: "pod" := (mem.alloc "pod") in
@@ -1278,7 +1279,7 @@ Definition convertVersionedToLegacy : go_string := "kubernetes_model/apimodel.co
 (* convertVersionedToLegacy converts supported external/versioned API objects
    to their internal Kubernetes representations.
 
-   go: new.go:199:6 *)
+   go: new.go:200:6 *)
 Definition convertVersionedToLegacyⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1350,7 +1351,7 @@ Definition applySchemaDefaults : go_string := "kubernetes_model/apimodel.applySc
    This matches the API server's defaulting behavior that happens during decoding.
    These defaults are applied BEFORE PrepareForCreate and validation.
 
-   go: new.go:221:6 *)
+   go: new.go:222:6 *)
 Definition applySchemaDefaultsⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1377,7 +1378,7 @@ Definition applySchemaDefaultsⁱᵐᵖˡ : val :=
 
 Definition applyStrategyPrepareForCreate : go_string := "kubernetes_model/apimodel.applyStrategyPrepareForCreate"%go.
 
-(* go: new.go:240:6 *)
+(* go: new.go:241:6 *)
 Definition applyStrategyPrepareForCreateⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1409,7 +1410,7 @@ Definition applyStrategyPrepareForCreateⁱᵐᵖˡ : val :=
 
 Definition applyAdmissionMutate : go_string := "kubernetes_model/apimodel.applyAdmissionMutate"%go.
 
-(* go: new.go:253:6 *)
+(* go: new.go:254:6 *)
 Definition applyAdmissionMutateⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1444,7 +1445,7 @@ Definition applyAdmissionMutateForUpdate : go_string := "kubernetes_model/apimod
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go#L107-L145
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go#L136-L158
 
-   go: new.go:275:6 *)
+   go: new.go:276:6 *)
 Definition applyAdmissionMutateForUpdateⁱᵐᵖˡ : val :=
   λ: "obj" "oldObj",
     exception_do (let: "oldObj" := (mem.alloc "oldObj") in
@@ -1501,7 +1502,7 @@ Definition applyAdmissionMutateForUpdateⁱᵐᵖˡ : val :=
 
 Definition applyAdmissionValidate : go_string := "kubernetes_model/apimodel.applyAdmissionValidate"%go.
 
-(* go: new.go:302:6 *)
+(* go: new.go:303:6 *)
 Definition applyAdmissionValidateⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1521,7 +1522,7 @@ Definition applyAdmissionValidateⁱᵐᵖˡ : val :=
 
 Definition allowUnconditionalUpdate : go_string := "kubernetes_model/apimodel.allowUnconditionalUpdate"%go.
 
-(* go: new.go:318:6 *)
+(* go: new.go:319:6 *)
 Definition allowUnconditionalUpdateⁱᵐᵖˡ : val :=
   λ: "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -1536,7 +1537,7 @@ Definition allowUnconditionalUpdateⁱᵐᵖˡ : val :=
 
 Definition malformedUpdateResourceVersionError : go_string := "kubernetes_model/apimodel.malformedUpdateResourceVersionError"%go.
 
-(* go: new.go:331:6 *)
+(* go: new.go:332:6 *)
 Definition malformedUpdateResourceVersionErrorⁱᵐᵖˡ : val :=
   λ: "err",
     exception_do (let: "err" := (mem.alloc "err") in
@@ -1558,7 +1559,7 @@ Definition malformedUpdateResourceVersionErrorⁱᵐᵖˡ : val :=
 
 Definition updateStrategyForLegacyObject : go_string := "kubernetes_model/apimodel.updateStrategyForLegacyObject"%go.
 
-(* go: new.go:339:6 *)
+(* go: new.go:340:6 *)
 Definition updateStrategyForLegacyObjectⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1578,7 +1579,7 @@ Definition updateStrategyForLegacyObjectⁱᵐᵖˡ : val :=
 
 Definition applyStrategyValidate : go_string := "kubernetes_model/apimodel.applyStrategyValidate"%go.
 
-(* go: new.go:350:6 *)
+(* go: new.go:351:6 *)
 Definition applyStrategyValidateⁱᵐᵖˡ : val :=
   λ: "obj" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1641,7 +1642,7 @@ Definition applyStrategyValidateⁱᵐᵖˡ : val :=
 
 Definition applyStrategyCanonicalize : go_string := "kubernetes_model/apimodel.applyStrategyCanonicalize"%go.
 
-(* go: new.go:367:6 *)
+(* go: new.go:368:6 *)
 Definition applyStrategyCanonicalizeⁱᵐᵖˡ : val :=
   λ: "obj",
     exception_do (let: "obj" := (mem.alloc "obj") in
@@ -1675,7 +1676,7 @@ Definition applyValidationAndDefaultingOnUpdate : go_string := "kubernetes_model
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go#L107-L165
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L753-L770
 
-   go: new.go:385:6 *)
+   go: new.go:386:6 *)
 Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ : val :=
   λ: "newObj" "oldObj" "namespace",
     exception_do (let: "namespace" := (mem.alloc "namespace") in
@@ -1794,7 +1795,7 @@ Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ : val :=
 
 Definition applyValidationAndDefaulting : go_string := "kubernetes_model/apimodel.applyValidationAndDefaulting"%go.
 
-(* go: new.go:434:6 *)
+(* go: new.go:435:6 *)
 Definition applyValidationAndDefaultingⁱᵐᵖˡ : val :=
   λ: "obj" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -1869,7 +1870,7 @@ Definition applyValidationAndDefaultingⁱᵐᵖˡ : val :=
     else do:  #()));;;
     return: (#interface.nil)).
 
-(* go: new.go:488:17 *)
+(* go: new.go:489:17 *)
 Definition State__createⁱᵐᵖˡ : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -1991,7 +1992,7 @@ Definition State__createⁱᵐᵖˡ : val :=
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L652-L777
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L233-L260
 
-   go: new.go:554:17 *)
+   go: new.go:555:17 *)
 Definition State__updateⁱᵐᵖˡ : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -2216,7 +2217,7 @@ Definition shouldOrphanDependents : go_string := "kubernetes_model/apimodel.shou
 (* shouldOrphanDependents determines if the orphan finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L888-L925
 
-   go: new.go:658:6 *)
+   go: new.go:659:6 *)
 Definition shouldOrphanDependentsⁱᵐᵖˡ : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -2253,7 +2254,7 @@ Definition shouldDeleteDependents : go_string := "kubernetes_model/apimodel.shou
 (* shouldDeleteDependents determines if the foreground deletion finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L927-L966
 
-   go: new.go:686:6 *)
+   go: new.go:687:6 *)
 Definition shouldDeleteDependentsⁱᵐᵖˡ : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -2291,7 +2292,7 @@ Definition deletionFinalizersForGarbageCollection : go_string := "kubernetes_mod
    It returns whether the finalizer list needs updating and the new finalizer list.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L976-L1005
 
-   go: new.go:715:6 *)
+   go: new.go:716:6 *)
 Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -2366,13 +2367,57 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ : val :=
       else do:  #())));;;
     return: (#false, ![#sliceT] "oldFinalizers")).
 
+Definition newPreconditionUIDConflictError : go_string := "kubernetes_model/apimodel.newPreconditionUIDConflictError"%go.
+
+(* go: new.go:760:6 *)
+Definition newPreconditionUIDConflictErrorⁱᵐᵖˡ : val :=
+  λ: "kind" "name" "preconditionUID" "uid",
+    exception_do (let: "uid" := (mem.alloc "uid") in
+    let: "preconditionUID" := (mem.alloc "preconditionUID") in
+    let: "name" := (mem.alloc "name") in
+    let: "kind" := (mem.alloc "kind") in
+    return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Resource" := (![#stringT] "kind") in
+     struct.make #schema.GroupResource [{
+       "Group" ::= type.zero_val #stringT;
+       "Resource" ::= "$Resource"
+     }]) in
+     let: "$a1" := (![#stringT] "name") in
+     let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
+     let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] "preconditionUID")) in
+     let: "$sl1" := (interface.make #stringT.id (![#stringT] "uid")) in
+     slice.literal #interfaceT ["$sl0"; "$sl1"])) in
+     (func_call #fmt.Errorf) "$a0" "$a1") in
+     (func_call #errors.NewConflict) "$a0" "$a1" "$a2"))).
+
+Definition newPreconditionRVConflictError : go_string := "kubernetes_model/apimodel.newPreconditionRVConflictError"%go.
+
+(* go: new.go:768:6 *)
+Definition newPreconditionRVConflictErrorⁱᵐᵖˡ : val :=
+  λ: "kind" "name" "preconditionRV" "rv",
+    exception_do (let: "rv" := (mem.alloc "rv") in
+    let: "preconditionRV" := (mem.alloc "preconditionRV") in
+    let: "name" := (mem.alloc "name") in
+    let: "kind" := (mem.alloc "kind") in
+    return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Resource" := (![#stringT] "kind") in
+     struct.make #schema.GroupResource [{
+       "Group" ::= type.zero_val #stringT;
+       "Resource" ::= "$Resource"
+     }]) in
+     let: "$a1" := (![#stringT] "name") in
+     let: "$a2" := (let: "$a0" := #"the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified"%go in
+     let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] "preconditionRV")) in
+     let: "$sl1" := (interface.make #stringT.id (![#stringT] "rv")) in
+     slice.literal #interfaceT ["$sl0"; "$sl1"])) in
+     (func_call #fmt.Errorf) "$a0" "$a1") in
+     (func_call #errors.NewConflict) "$a0" "$a1" "$a2"))).
+
 Definition validateDeletePreconditions : go_string := "kubernetes_model/apimodel.validateDeletePreconditions"%go.
 
 (* validateDeletePreconditions checks if the preconditions in DeleteOptions match the object's metadata.
    Returns a Conflict error if preconditions don't match.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
 
-   go: new.go:762:6 *)
+   go: new.go:779:6 *)
 Definition validateDeletePreconditionsⁱᵐᵖˡ : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (mem.alloc "kind") in
@@ -2385,36 +2430,22 @@ Definition validateDeletePreconditionsⁱᵐᵖˡ : val :=
     then
       (if: (![#types.UID] (![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")))))) ≠ ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #())
       then
-        return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Resource" := (![#stringT] "kind") in
-         struct.make #schema.GroupResource [{
-           "Group" ::= type.zero_val #stringT;
-           "Resource" ::= "$Resource"
-         }]) in
+        return: (let: "$a0" := (![#stringT] "kind") in
          let: "$a1" := ((interface.get #"GetName"%go (![#v1.Object] "metadata")) #()) in
-         let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
-         let: "$a1" := ((let: "$sl0" := (interface.make #types.UID.id (![#types.UID] (![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options"))))))) in
-         let: "$sl1" := (interface.make #types.UID.id ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #())) in
-         slice.literal #interfaceT ["$sl0"; "$sl1"])) in
-         (func_call #fmt.Errorf) "$a0" "$a1") in
-         (func_call #errors.NewConflict) "$a0" "$a1" "$a2"))
+         let: "$a2" := (![#types.UID] (![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")))))) in
+         let: "$a3" := ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #()) in
+         (func_call #newPreconditionUIDConflictError) "$a0" "$a1" "$a2" "$a3")
       else do:  #())
     else do:  #());;;
     (if: (![#ptrT] (struct.field_ref #v1.Preconditions #"ResourceVersion"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options"))))) ≠ #null
     then
       (if: (![#stringT] (![#ptrT] (struct.field_ref #v1.Preconditions #"ResourceVersion"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")))))) ≠ ((interface.get #"GetResourceVersion"%go (![#v1.Object] "metadata")) #())
       then
-        return: (interface.make #(ptrT.id errors.StatusError.id) (let: "$a0" := (let: "$Resource" := (![#stringT] "kind") in
-         struct.make #schema.GroupResource [{
-           "Group" ::= type.zero_val #stringT;
-           "Resource" ::= "$Resource"
-         }]) in
+        return: (let: "$a0" := (![#stringT] "kind") in
          let: "$a1" := ((interface.get #"GetName"%go (![#v1.Object] "metadata")) #()) in
-         let: "$a2" := (let: "$a0" := #"the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified"%go in
-         let: "$a1" := ((let: "$sl0" := (interface.make #stringT.id (![#stringT] (![#ptrT] (struct.field_ref #v1.Preconditions #"ResourceVersion"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options"))))))) in
-         let: "$sl1" := (interface.make #stringT.id ((interface.get #"GetResourceVersion"%go (![#v1.Object] "metadata")) #())) in
-         slice.literal #interfaceT ["$sl0"; "$sl1"])) in
-         (func_call #fmt.Errorf) "$a0" "$a1") in
-         (func_call #errors.NewConflict) "$a0" "$a1" "$a2"))
+         let: "$a2" := (![#stringT] (![#ptrT] (struct.field_ref #v1.Preconditions #"ResourceVersion"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")))))) in
+         let: "$a3" := ((interface.get #"GetResourceVersion"%go (![#v1.Object] "metadata")) #()) in
+         (func_call #newPreconditionRVConflictError) "$a0" "$a1" "$a2" "$a3")
       else do:  #())
     else do:  #());;;
     return: (#interface.nil)).
@@ -2425,7 +2456,7 @@ Definition checkGracefulDelete : go_string := "kubernetes_model/apimodel.checkGr
    Returns (graceful, pendingGraceful, error).
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
 
-   go: new.go:795:6 *)
+   go: new.go:806:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
   λ: "obj" "options",
     exception_do (let: "options" := (mem.alloc "options") in
@@ -2494,7 +2525,18 @@ Definition checkGracefulDeleteⁱᵐᵖˡ : val :=
          slice.literal #interfaceT ["$sl0"])) in
          (func_call #fmt.Errorf) "$a0" "$a1")))).
 
-(* go: new.go:834:17 *)
+Definition objDeepEqual : go_string := "kubernetes_model/apimodel.objDeepEqual"%go.
+
+(* go: new.go:845:6 *)
+Definition objDeepEqualⁱᵐᵖˡ : val :=
+  λ: "obj1" "obj2",
+    exception_do (let: "obj2" := (mem.alloc "obj2") in
+    let: "obj1" := (mem.alloc "obj1") in
+    return: (let: "$a0" := (![#interfaceT] "obj1") in
+     let: "$a1" := (![#interfaceT] "obj2") in
+     (func_call #reflect.DeepEqual) "$a0" "$a1")).
+
+(* go: new.go:849:17 *)
 Definition State__deleteⁱᵐᵖˡ : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (mem.alloc "s") in
@@ -2507,6 +2549,8 @@ Definition State__deleteⁱᵐᵖˡ : val :=
       "$f" #();;
       "$oldf" #()
       )));;;
+    let: "$r0" := (![#v1.DeleteOptions] ((method_call #(ptrT.id v1.DeleteOptions.id) #"DeepCopy"%go "options") #())) in
+    do:  ("options" <-[#v1.DeleteOptions] "$r0");;;
     let: "exists" := (mem.alloc (type.zero_val #boolT)) in
     let: "obj" := (mem.alloc (type.zero_val #interfaceT)) in
     let: ("$ret0", "$ret1") := (map.get (![type.mapT #KKey #interfaceT] (struct.field_ref #State #"m"%go (![#ptrT] "s"))) (![#KKey] "key")) in
@@ -2575,13 +2619,13 @@ Definition State__deleteⁱᵐᵖˡ : val :=
     let: "$r1" := "$ret1" in
     do:  ("shouldUpdateFinalizers" <-[#boolT] "$r0");;;
     do:  ("newFinalizers" <-[#sliceT] "$r1");;;
+    (if: (![#boolT] "pendingGraceful") && (~ (![#boolT] "shouldUpdateFinalizers"))
+    then return: (#interface.nil)
+    else do:  #());;;
     (if: ![#boolT] "shouldUpdateFinalizers"
     then
       do:  (let: "$a0" := (![#sliceT] "newFinalizers") in
       (interface.get #"SetFinalizers"%go (![#v1.Object] "metadata")) "$a0")
-    else do:  #());;;
-    (if: (![#boolT] "pendingGraceful") && (~ (![#boolT] "shouldUpdateFinalizers"))
-    then return: (#interface.nil)
     else do:  #());;;
     let: "gracePeriod" := (mem.alloc (type.zero_val #int64T)) in
     let: "$r0" := #(W64 0) in
@@ -2599,18 +2643,13 @@ Definition State__deleteⁱᵐᵖˡ : val :=
       map.delete "$a0" "$a1");;;
       return: (#interface.nil)
     else do:  #());;;
-    let: "objectChanged" := (mem.alloc (type.zero_val #boolT)) in
-    let: "$r0" := (![#boolT] "shouldUpdateFinalizers") in
-    do:  ("objectChanged" <-[#boolT] "$r0");;;
     let: "currentGracePeriod" := (mem.alloc (type.zero_val #ptrT)) in
     let: "$r0" := ((interface.get #"GetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) #()) in
     do:  ("currentGracePeriod" <-[#ptrT] "$r0");;;
     (if: ((![#ptrT] "currentGracePeriod") = #null) || ((![#int64T] (![#ptrT] "currentGracePeriod")) ≠ (![#int64T] "gracePeriod"))
     then
       do:  (let: "$a0" := "gracePeriod" in
-      (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0");;;
-      let: "$r0" := #true in
-      do:  ("objectChanged" <-[#boolT] "$r0")
+      (interface.get #"SetDeletionGracePeriodSeconds"%go (![#v1.Object] "metadata")) "$a0")
     else do:  #());;;
     (if: ((interface.get #"GetDeletionTimestamp"%go (![#v1.Object] "metadata")) #()) = #null
     then
@@ -2619,15 +2658,15 @@ Definition State__deleteⁱᵐᵖˡ : val :=
       do:  ("now" <-[#v1.Time] "$r0");;;
       do:  (let: "$a0" := "now" in
       (interface.get #"SetDeletionTimestamp"%go (![#v1.Object] "metadata")) "$a0");;;
-      let: "$r0" := #true in
-      do:  ("objectChanged" <-[#boolT] "$r0");;;
       (if: int_gt ((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) #(W64 0)
       then
         do:  (let: "$a0" := (((interface.get #"GetGeneration"%go (![#v1.Object] "metadata")) #()) + #(W64 1)) in
         (interface.get #"SetGeneration"%go (![#v1.Object] "metadata")) "$a0")
       else do:  #())
     else do:  #());;;
-    (if: ![#boolT] "objectChanged"
+    (if: (~ (let: "$a0" := (![#interfaceT] "objCopy") in
+    let: "$a1" := (![#interfaceT] "obj") in
+    (func_call #objDeepEqual) "$a0" "$a1"))
     then
       do:  (let: "$a0" := ((method_call #(ptrT.id State.id) #"generateNewRVAndUpdate"%go (![#ptrT] "s")) #()) in
       (interface.get #"SetResourceVersion"%go (![#v1.Object] "metadata")) "$a0");;;
@@ -2640,7 +2679,7 @@ Definition State__deleteⁱᵐᵖˡ : val :=
    graceful deletion, and finalizer handling. Returns the deleted (or updated) Pod object.
    PodCreate2 creates a Pod using create, which includes admission controller logic.
 
-   go: new.go:925:17 *)
+   go: new.go:939:17 *)
 Definition State__PodCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2677,7 +2716,7 @@ Definition State__PodCreate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetCreate2 creates a ReplicaSet using create, which includes admission controller logic.
 
-   go: new.go:940:17 *)
+   go: new.go:954:17 *)
 Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2714,7 +2753,7 @@ Definition State__ReplicaSetCreate2ⁱᵐᵖˡ : val :=
 
 (* PodUpdate2 updates a Pod using the richer storage/update model.
 
-   go: new.go:955:17 *)
+   go: new.go:969:17 *)
 Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2751,7 +2790,7 @@ Definition State__PodUpdate2ⁱᵐᵖˡ : val :=
 
 (* ReplicaSetUpdate2 updates a ReplicaSet using the richer storage/update model.
 
-   go: new.go:970:17 *)
+   go: new.go:984:17 *)
 Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2788,7 +2827,7 @@ Definition State__ReplicaSetUpdate2ⁱᵐᵖˡ : val :=
 
 (* PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.
 
-   go: new.go:985:17 *)
+   go: new.go:999:17 *)
 Definition State__PodDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2812,7 +2851,7 @@ Definition State__PodDelete2ⁱᵐᵖˡ : val :=
 (* ReplicaSetDelete2 deletes a ReplicaSet with full DeleteOptions support.
    ReplicaSets don't support graceful deletion but do support finalizers and preconditions.
 
-   go: new.go:992:17 *)
+   go: new.go:1006:17 *)
 Definition State__ReplicaSetDelete2ⁱᵐᵖˡ : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (mem.alloc "s") in
@@ -2835,7 +2874,7 @@ Definition State__ReplicaSetDelete2ⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionMutateForUpdate, applyAdmissionMutateForUpdateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (allowUnconditionalUpdate, allowUnconditionalUpdateⁱᵐᵖˡ); (malformedUpdateResourceVersionError, malformedUpdateResourceVersionErrorⁱᵐᵖˡ); (updateStrategyForLegacyObject, updateStrategyForLegacyObjectⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaultingOnUpdate, applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (deletionFinalizersForGarbageCollection, deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionMutateForUpdate, applyAdmissionMutateForUpdateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (allowUnconditionalUpdate, allowUnconditionalUpdateⁱᵐᵖˡ); (malformedUpdateResourceVersionError, malformedUpdateResourceVersionErrorⁱᵐᵖˡ); (updateStrategyForLegacyObject, updateStrategyForLegacyObjectⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaultingOnUpdate, applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (deletionFinalizersForGarbageCollection, deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); (newPreconditionUIDConflictError, newPreconditionUIDConflictErrorⁱᵐᵖˡ); (newPreconditionRVConflictError, newPreconditionRVConflictErrorⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ); (objDeepEqual, objDeepEqualⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodCreate2"%go, State__PodCreate2ⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodDelete2"%go, State__PodDelete2ⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("PodUpdate2"%go, State__PodUpdate2ⁱᵐᵖˡ); ("ReplicaSetCreate2"%go, State__ReplicaSetCreate2ⁱᵐᵖˡ); ("ReplicaSetDelete2"%go, State__ReplicaSetDelete2ⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("ReplicaSetUpdate2"%go, State__ReplicaSetUpdate2ⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objCreate"%go, State__objCreateⁱᵐᵖˡ); ("objDelete"%go, State__objDeleteⁱᵐᵖˡ); ("objGet"%go, State__objGetⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("objUpdate"%go, State__objUpdateⁱᵐᵖˡ); ("update"%go, State__updateⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
 
@@ -2844,7 +2883,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, [
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.fmt.fmt; code.strconv.strconv; code.sync.sync; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.api.meta.meta; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.kubernetes.pkg.controller.controller; code.context.context; code.math.rand.rand; code.time.time; code.k8s_io.apimachinery.pkg.api.validation.validation; code.k8s_io.apimachinery.pkg.runtime.runtime; code.k8s_io.apimachinery.pkg.util.uuid.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.field; code.k8s_io.apiserver.pkg.endpoints.request.request; code.k8s_io.apiserver.pkg.registry.generic.registry.registry; code.k8s_io.apiserver.pkg.registry.rest.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.v1; code.k8s_io.kubernetes.pkg.apis.core.core; code.k8s_io.kubernetes.pkg.apis.core.v1.v1; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset; code.k8s_io.kubernetes.pkg.registry.core.pod.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.install];
+    pkg_imported_pkgs := [code.fmt.fmt; code.strconv.strconv; code.sync.sync; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.api.meta.meta; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.kubernetes.pkg.controller.controller; code.context.context; code.math.rand.rand; code.reflect.reflect; code.time.time; code.k8s_io.apimachinery.pkg.api.validation.validation; code.k8s_io.apimachinery.pkg.runtime.runtime; code.k8s_io.apimachinery.pkg.util.uuid.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.field; code.k8s_io.apiserver.pkg.endpoints.request.request; code.k8s_io.apiserver.pkg.registry.generic.registry.registry; code.k8s_io.apiserver.pkg.registry.rest.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.v1; code.k8s_io.kubernetes.pkg.apis.core.core; code.k8s_io.kubernetes.pkg.apis.core.v1.v1; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset; code.k8s_io.kubernetes.pkg.registry.core.pod.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.install];
   |}.
 
 Definition initialize' : val :=
@@ -2866,6 +2905,7 @@ Definition initialize' : val :=
       do:  (runtime.initialize' #());;;
       do:  (validation.initialize' #());;;
       do:  (time.initialize' #());;;
+      do:  (reflect.initialize' #());;;
       do:  (rand.initialize' #());;;
       do:  (context.initialize' #());;;
       do:  (controller.initialize' #());;;

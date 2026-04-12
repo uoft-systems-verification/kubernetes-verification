@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -756,6 +757,22 @@ func deletionFinalizersForGarbageCollection(metadata metav1.Object, options *met
 	return false, oldFinalizers
 }
 
+func newPreconditionUIDConflictError(kind string, name string, preconditionUID string, uid string) error {
+	return errors.NewConflict(
+		schema.GroupResource{Resource: kind},
+		name,
+		fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
+			preconditionUID, uid))
+}
+
+func newPreconditionRVConflictError(kind string, name string, preconditionRV string, rv string) error {
+	return errors.NewConflict(
+		schema.GroupResource{Resource: kind},
+		name,
+		fmt.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
+			preconditionRV, rv))
+}
+
 // validateDeletePreconditions checks if the preconditions in DeleteOptions match the object's metadata.
 // Returns a Conflict error if preconditions don't match.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
@@ -767,22 +784,16 @@ func validateDeletePreconditions(metadata metav1.Object, options *metav1.DeleteO
 	// Check UID precondition
 	if options.Preconditions.UID != nil {
 		if *options.Preconditions.UID != metadata.GetUID() {
-			return errors.NewConflict(
-				schema.GroupResource{Resource: kind},
-				metadata.GetName(),
-				fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
-					*options.Preconditions.UID, metadata.GetUID()))
+			return newPreconditionUIDConflictError(kind, metadata.GetName(),
+				string(*options.Preconditions.UID), string(metadata.GetUID()))
 		}
 	}
 
 	// Check ResourceVersion precondition
 	if options.Preconditions.ResourceVersion != nil {
 		if *options.Preconditions.ResourceVersion != metadata.GetResourceVersion() {
-			return errors.NewConflict(
-				schema.GroupResource{Resource: kind},
-				metadata.GetName(),
-				fmt.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
-					*options.Preconditions.ResourceVersion, metadata.GetResourceVersion()))
+			return newPreconditionRVConflictError(kind, metadata.GetName(),
+				string(*options.Preconditions.ResourceVersion), string(metadata.GetResourceVersion()))
 		}
 	}
 
@@ -831,9 +842,15 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 	}
 }
 
+func objDeepEqual(obj1 interface{}, obj2 interface{}) bool {
+	return reflect.DeepEqual(obj1, obj2)
+}
+
 func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	options = *options.DeepCopy()
 
 	// Get existing object
 	obj, exists := s.m[key]
@@ -861,15 +878,16 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	// Update GC finalizers based on PropagationPolicy
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1172-L1176
 	shouldUpdateFinalizers, newFinalizers := deletionFinalizersForGarbageCollection(metadata, &options)
-	if shouldUpdateFinalizers {
-		metadata.SetFinalizers(newFinalizers)
-	}
 
 	// If already pending graceful deletion and no finalizer updates needed, just return success
 	// (the deletion timestamp was already set in a previous delete call)
 	// Note: We still allow updating finalizers on already-deleting objects to match real API behavior
 	if pendingGraceful && !shouldUpdateFinalizers {
 		return nil
+	}
+
+	if shouldUpdateFinalizers {
+		metadata.SetFinalizers(newFinalizers)
 	}
 
 	gracePeriod := int64(0)
@@ -883,14 +901,9 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		return nil
 	}
 
-	// Real Kubernetes only advances resourceVersion when the delete path writes a changed
-	// object back to storage; no-op delete updates preserve the stored RV.
-	objectChanged := shouldUpdateFinalizers
-
 	currentGracePeriod := metadata.GetDeletionGracePeriodSeconds()
 	if currentGracePeriod == nil || *currentGracePeriod != gracePeriod {
 		metadata.SetDeletionGracePeriodSeconds(&gracePeriod)
-		objectChanged = true
 	}
 
 	// Track if this is the first time setting DeletionTimestamp.
@@ -898,7 +911,6 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		// Set DeletionTimestamp if not already set.
 		now := metav1.Now()
 		metadata.SetDeletionTimestamp(&now)
-		objectChanged = true
 		// Increment generation when setting DeletionTimestamp for the first time.
 		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L166-L172
 		// For graceful deletion: increment when first setting DeletionTimestamp.
@@ -909,7 +921,9 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		}
 	}
 
-	if objectChanged {
+	// Real Kubernetes only advances resourceVersion when the delete path writes a changed
+	// object back to storage; no-op delete updates preserve the stored RV.
+	if !objDeepEqual(objCopy, obj) {
 		// Assign a fresh resource version for the metadata update.
 		metadata.SetResourceVersion(s.generateNewRVAndUpdate())
 

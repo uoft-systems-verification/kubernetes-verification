@@ -14,6 +14,7 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.math.rand.
+Require Export New.generatedproof.reflect.
 Require Export New.generatedproof.time.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.validation.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
@@ -243,6 +244,7 @@ Global Instance is_pkg_defined_pure_apimodel : IsPkgDefinedPure apimodel :=
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller ∧
       is_pkg_defined_pure code.context.context ∧
       is_pkg_defined_pure code.math.rand.rand ∧
+      is_pkg_defined_pure code.reflect.reflect ∧
       is_pkg_defined_pure code.time.time ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.validation.validation ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.runtime ∧
@@ -280,6 +282,7 @@ Global Program Instance is_pkg_defined_apimodel : IsPkgDefined apimodel :=
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller ∗
        is_pkg_defined code.context.context ∗
        is_pkg_defined code.math.rand.rand ∗
+       is_pkg_defined code.reflect.reflect ∗
        is_pkg_defined code.time.time ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.api.validation.validation ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.runtime ∗
@@ -396,12 +399,24 @@ Global Instance wp_func_call_deletionFinalizersForGarbageCollection :
   WpFuncCall apimodel.deletionFinalizersForGarbageCollection _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_newPreconditionUIDConflictError :
+  WpFuncCall apimodel.newPreconditionUIDConflictError _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_newPreconditionRVConflictError :
+  WpFuncCall apimodel.newPreconditionRVConflictError _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_validateDeletePreconditions :
   WpFuncCall apimodel.validateDeletePreconditions _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_checkGracefulDelete :
   WpFuncCall apimodel.checkGracefulDelete _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_objDeepEqual :
+  WpFuncCall apimodel.objDeepEqual _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_method_call_State'ptr_ByIndex :

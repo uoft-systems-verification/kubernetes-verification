@@ -12,28 +12,28 @@ Lemma wp_Now :
   }}}.
 Proof. Admitted.
 
-Lemma wp_GetName l m :
+Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗
-      l ↦ m
+      l ↦{dq} m
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetName" #()
   {{{ RET #m.(v1.ObjectMeta.Name');
-      l ↦ m
+      l ↦{dq} m
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
-Lemma wp_GetName_deepown l m :
+Lemma wp_GetName_deepown l m dq:
   {{{ is_pkg_init v1 ∗
-      ObjectMetaV.deepown_l l m 1
+      ObjectMetaV.deepown_l l m dq
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetName" #()
   {{{ RET #m.(ObjectMetaV.Name');
-      ObjectMetaV.deepown_l l m 1
+      ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_GetName with "[$Hinit $Hl]").
+  wp_apply (wp_GetName with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   rewrite Hdeepown_name.
@@ -65,7 +65,7 @@ Lemma wp_SetName_deepown l m name :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetName with "[$Hinit $Hl]").
+  wp_apply (wp_SetName with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -75,28 +75,28 @@ Proof.
   done.
 Qed.
 
-Lemma wp_GetGenerateName l m :
+Lemma wp_GetGenerateName l m dq :
   {{{ is_pkg_init v1 ∗
-      l ↦ m
+      l ↦{dq} m
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetGenerateName" #()
   {{{ RET #m.(v1.ObjectMeta.GenerateName');
-      l ↦ m
+      l ↦{dq} m
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
-Lemma wp_GetGenerateName_deepown l m :
+Lemma wp_GetGenerateName_deepown l m dq :
   {{{ is_pkg_init v1 ∗
-      ObjectMetaV.deepown_l l m 1
+      ObjectMetaV.deepown_l l m dq
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetGenerateName" #()
   {{{ RET #m.(ObjectMetaV.GenerateName');
-      ObjectMetaV.deepown_l l m 1
+      ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_GetGenerateName with "[$Hinit $Hl]").
+  wp_apply (wp_GetGenerateName with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   rewrite Hdeepown_generatename.
@@ -128,7 +128,7 @@ Lemma wp_GetUID_deepown l m dq :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_GetUID with "[$Hinit $Hl]").
+  wp_apply (wp_GetUID with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   rewrite Hdeepown_uid.
@@ -160,7 +160,7 @@ Lemma wp_GetResourceVersion_deepown l m dq :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_GetResourceVersion with "[$Hinit $Hl]").
+  wp_apply (wp_GetResourceVersion with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   rewrite Hdeepown_resourceversion.
@@ -192,7 +192,7 @@ Lemma wp_SetNamespace_deepown l m namespace :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetNamespace with "[$Hinit $Hl]").
+  wp_apply (wp_SetNamespace with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -224,7 +224,7 @@ Lemma wp_SetCreationTimestamp_deepown l m creation_timestamp pure_creation_times
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l & Hdeepown_time) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetCreationTimestamp with "[$Hinit $Hl]").
+  wp_apply (wp_SetCreationTimestamp with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -234,13 +234,13 @@ Proof.
   done.
 Qed.
 
-Lemma wp_GetDeletionTimestamp l m :
+Lemma wp_GetDeletionTimestamp l m dq :
   {{{ is_pkg_init v1 ∗
-      l ↦ m
+      l ↦{dq} m
   }}}
     l @ (ptrT.id v1.ObjectMeta.id) @ "GetDeletionTimestamp" #()
   {{{ RET #m.(v1.ObjectMeta.DeletionTimestamp');
-      l ↦ m
+      l ↦{dq} m
   }}}.
 Proof. wp_start as "H". iNamed "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
@@ -270,7 +270,7 @@ Lemma wp_SetDeletionTimestamp_deepown l m deletion_timestamp pure_deletion_times
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l & %Hdeletiontimestamp_none & Hdeletiontimestamp_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetDeletionTimestamp with "[$Hinit $Hl]").
+  wp_apply (wp_SetDeletionTimestamp with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -280,38 +280,47 @@ Proof.
   done.
 Qed.
 
-Lemma wp_SetDeletionGracePeriodSeconds l m deletion_grace_period_seconds :
+Lemma wp_GetDeletionGracePeriodSeconds l m dq :
   {{{ is_pkg_init v1 ∗
-      l ↦ m
+      l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #deletion_grace_period_seconds
-  {{{ RET #();
-      l ↦ m <| v1.ObjectMeta.DeletionGracePeriodSeconds' := deletion_grace_period_seconds |>
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetDeletionGracePeriodSeconds" #()
+  {{{ RET #m.(v1.ObjectMeta.DeletionGracePeriodSeconds');
+      l ↦{dq} m
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
-Lemma wp_SetDeletionGracePeriodSeconds_deepown
-    l m deletion_grace_period_seconds pure_deletion_grace_period_seconds :
+Lemma wp_SetDeletionGracePeriodSeconds l m dgps :
+  {{{ is_pkg_init v1 ∗
+      l ↦ m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #dgps
+  {{{ RET #();
+      l ↦ m <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps |>
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_SetDeletionGracePeriodSeconds_deepown l m dgps pure_dgps :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1 ∗
-      ⌜ deletion_grace_period_seconds = null ↔ pure_deletion_grace_period_seconds = None ⌝ ∗
-      (match pure_deletion_grace_period_seconds with
-       | Some vd => ∃ cd, deletion_grace_period_seconds ↦ cd ∗ ⌜ cd = vd ⌝
+      ⌜ dgps = null ↔ pure_dgps = None ⌝ ∗
+      (match pure_dgps with
+       | Some vd => ∃ cd, dgps ↦ cd ∗ ⌜ cd = vd ⌝
        | None => True
        end)
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #deletion_grace_period_seconds
+    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #dgps
   {{{ RET #();
-      ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionGracePeriodSeconds' := pure_deletion_grace_period_seconds |>) 1
+      ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionGracePeriodSeconds' := pure_dgps |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hdeletion_grace_period_seconds_none & Hdeletion_grace_period_seconds_some) HΦ".
+  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hdgps_none & Hdgps_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hinit $Hl]").
+  wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
-  iExists (c <| v1.ObjectMeta.DeletionGracePeriodSeconds' := deletion_grace_period_seconds |>).
+  iExists (c <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps |>).
   iFrame.
   iPureIntro.
   done.
@@ -338,7 +347,7 @@ Lemma wp_SetSelfLink_deepown l m self_link :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetSelfLink with "[$Hinit $Hl]").
+  wp_apply (wp_SetSelfLink with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -369,7 +378,7 @@ Lemma wp_SetResourceVersion_deepown l m resource_version :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetResourceVersion with "[$Hinit $Hl]").
+  wp_apply (wp_SetResourceVersion with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -388,6 +397,80 @@ Lemma wp_GetFinalizers l m dq :
       l ↦{dq} m
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_GetFinalizers_deepown l m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l l m dq
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetFinalizers" #()
+  {{{ sl, RET #sl;
+      ⌜ sl = slice.nil ↔ m.(ObjectMetaV.Finalizers') = None ⌝ ∗
+      match m.(ObjectMetaV.Finalizers') with
+      | Some vfs => ∃ cfs, sl ↦*{dq} cfs ∗ ⌜ cfs = vfs ⌝ ∗ (sl ↦*{dq} cfs -∗ ObjectMetaV.deepown_l l m dq)
+      | None => ObjectMetaV.deepown_l l m dq
+      end
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
+  wp_apply (wp_GetFinalizers with "[$Hl]").
+  iIntros "Hl".
+  iNamed "Hdeepown".
+  iApply "HΦ".
+  iSplit. 1: done.
+  destruct m.(ObjectMetaV.Finalizers') as [|] eqn:Heq.
+  - iDestruct "Hdeepown_finalizers_some" as (cfs) "[Hcfs_ptr <-]".
+    iExists cfs. iFrame. iSplit. 1: done.
+    iIntros "Hdeepown_finalizers_some".
+    iFrame. iFrame "%".
+    iSplit.
+    + iPureIntro. split.
+      * intros H. apply (proj1 Hdeepown_finalizers_none) in H. done.
+      * intros H. rewrite Heq in H. done.
+    + rewrite Heq. iFrame. done.
+  - iFrame. iFrame "%".
+    iSplit.
+    + iPureIntro. split.
+      * intros H. apply (proj1 Hdeepown_finalizers_none) in H. done.
+      * intros H. apply (proj2 Hdeepown_finalizers_none). done.
+    + rewrite Heq. iFrame.
+Qed.
+
+Lemma wp_SetFinalizers l m fs :
+  {{{ is_pkg_init v1 ∗
+      l ↦ m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "SetFinalizers" #fs
+  {{{ RET #();
+      l ↦ m <| v1.ObjectMeta.Finalizers' := fs |>
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_SetFinalizers_deepown l m fs pure_fs :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l l m 1 ∗
+      ⌜ fs = slice.nil ↔ pure_fs = None ⌝ ∗
+      (match pure_fs with
+       | Some vfs => ∃ cfs, fs ↦* cfs ∗ ⌜ cfs = vfs ⌝
+       | None => True
+       end)
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "SetFinalizers" #fs
+  {{{ RET #();
+      ObjectMetaV.deepown_l l (m <| ObjectMetaV.Finalizers' := pure_fs |>) 1
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hfs_none & Hfs_some) HΦ".
+  iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
+  wp_apply (wp_SetFinalizers with "[$Hl]").
+  iIntros "Hl".
+  iNamed "Hdeepown".
+  iApply "HΦ".
+  iExists (c <| v1.ObjectMeta.Finalizers' := fs |>).
+  iFrame.
+  iPureIntro.
+  done.
+Qed.
 
 Lemma wp_SetUID l m uid :
   {{{ is_pkg_init v1 ∗
@@ -410,7 +493,7 @@ Lemma wp_SetUID_deepown l m uid :
 Proof.
   iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
-  wp_apply (wp_SetUID with "[$Hinit $Hl]").
+  wp_apply (wp_SetUID with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
@@ -420,6 +503,17 @@ Proof.
   done.
 Qed.
 
+Lemma wp_DeleteOptions__DeepCopy l options :
+  {{{ is_pkg_init v1 ∗
+      DeleteOptionsV.deepown_l l options 1
+  }}}
+    l @ (ptrT.id v1.DeleteOptions.id) @ "DeepCopy" #()
+  {{{ l', RET #l';
+      DeleteOptionsV.deepown_l l' options 1 ∗
+      DeleteOptionsV.deepown_l l options 1
+  }}}.
+Proof. Admitted.
+  
 Definition new_controller_ref_valid controller_ref kind m : Prop :=
   controller_ref.(OwnerReferenceV.Kind') = kind ∧
   controller_ref.(OwnerReferenceV.Name') = m.(ObjectMetaV.Name') ∧

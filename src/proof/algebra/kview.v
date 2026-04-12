@@ -1506,6 +1506,24 @@ Proof.
   - simpl. exact Hlookup.
 Qed.
 
+Lemma own_auth_valid2 {γ state used_uid} k obj:
+state !! k = Some obj →
+own_auth γ state used_uid -∗
+⌜ k = KObjectV.key obj ∧
+KObjectV.valid obj ∧
+(KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ used_uid ∧
+no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid ∧
+map_Forall (λ k' obj',
+  (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
+) state ⌝.
+Proof.
+  iIntros (Hlookup) "Hauth".
+  iDestruct (own_auth_valid k obj with "Hauth") as %Hvalid.
+  iPureIntro.
+  exact (Hvalid Hlookup).
+Qed.
+
 Lemma own_auth_valid_forall {γ state used_uid}:
 own_auth γ state used_uid -∗
 ⌜ ∀ k obj,
@@ -1536,7 +1554,7 @@ Proof.
   exact (auth_valid_forall (state, used_uid) Hvalid).
 Qed.
 
-Lemma own_meta_valid {γ} k uid dq meta:
+Lemma own_meta_valid {γ k uid dq meta}:
 own_meta_frag γ k uid dq meta -∗
   ⌜ k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
   k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
@@ -1559,7 +1577,7 @@ Proof.
   done.
 Qed.
 
-Lemma own_meta_exists {γ state used_uid} k uid dq meta:
+Lemma own_meta_exists {γ state used_uid k uid dq meta}:
 own_auth γ state used_uid -∗
 own_meta_frag γ k uid dq meta -∗
   ⌜ ∃ obj, state !! k = Some obj ∧
@@ -1582,7 +1600,22 @@ Proof.
   exact Hexists.
 Qed.
 
-Lemma own_spec_exists {γ state used_uid} k uid dq spec:
+Lemma own_meta_exists2 {γ state used_uid obj k uid dq meta}:
+state !! k = Some obj →
+own_auth γ state used_uid -∗
+own_meta_frag γ k uid dq meta -∗
+  ⌜ (KObjectV.objectmeta obj) = meta ∧
+  meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
+Proof.
+  iIntros (Hlookup) "Hauth Hmeta".
+  iDestruct (own_meta_exists with "Hauth Hmeta") as %(obj' & Hlookup' & Hmeta_eq & Huid_in).
+  iPureIntro.
+  rewrite Hlookup in Hlookup'.
+  injection Hlookup' as <-.
+  split; done.
+Qed.
+
+Lemma own_spec_exists {γ state used_uid k uid dq spec}:
 own_auth γ state used_uid -∗
 own_spec_frag γ k uid dq spec -∗
   ⌜ ∀ obj, state !! k = Some obj →
@@ -1605,7 +1638,7 @@ Proof.
   eapply (auth_spec_valid (state, used_uid) k uid dq spec Hvalid obj); simpl; eauto.
 Qed.
 
-Lemma own_status_exists {γ state used_uid} k uid dq status:
+Lemma own_status_exists {γ state used_uid k uid dq status}:
 own_auth γ state used_uid -∗
 own_status_frag γ k uid dq status -∗
   ⌜ ∀ obj, state !! k = Some obj →

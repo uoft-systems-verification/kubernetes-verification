@@ -147,15 +147,29 @@ Proof.
   - left. done.
 Qed.
 
+Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
+  {{{ err, RET #err; ⌜ err ≠ interface.nil ⌝ }}}.
+Proof. Admitted.
+
+Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
+  {{{ err, RET #err; ⌜ err ≠ interface.nil ⌝ }}}.
+Proof. Admitted.
+
 Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_string) :
   {{{ is_pkg_init apimodel ∗
       "%Hi" ∷ ⌜ i = interface.mk (ptrT.id v1.ObjectMeta.id) #l ⌝ ∗
       "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l l m dq ∗
-      "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq ∗
-      "%Hpre" ∷ ⌜ delete_preconditions_match m options ⌝
+      "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
     @! apimodel.validateDeletePreconditions #i #options_l #kind
-  {{{ RET #interface.nil;
+  {{{ err, RET #err;
+      ⌜ delete_preconditions_match m options ∧ err = interface.nil
+        ∨
+        ¬ delete_preconditions_match m options ∧ err ≠ interface.nil ⌝ ∗
       ObjectMetaV.deepown_l l m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
@@ -164,152 +178,289 @@ Proof. (* This proof is fully written by Codex *)
   iNamed "H". subst i.
   iDestruct "Hdeepown_options_l" as (coptions) "[Hoptions_l Hdeepown_options]".
   iNamed "Hdeepown_options".
-  unfold delete_preconditions_match in Hpre.
-  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|] eqn:Hpreconditions in Hpre |- *.
+  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|] eqn:Hpreconditions.
   - iDestruct "Hdeepown_preconditions_some" as (cpreconditions) "[Hpreconditions_l Hdeepown_preconditions]".
     iNamed "Hdeepown_preconditions".
     assert (v1.DeleteOptions.Preconditions' coptions ≠ null) as Hpreconditions_not_null.
-    { intros Hnull.
-      apply (proj1 Hdeepown_preconditions_none) in Hnull.
-      congruence.
-    }
+    { intros Hnull. apply (proj1 Hdeepown_preconditions_none) in Hnull. congruence. }
     assert (bool_decide (v1.DeleteOptions.Preconditions' coptions = null) = false) as Hpreconditions_nonnull_decide.
     { apply bool_decide_false. done. }
     wp_auto.
-    rewrite Hpreconditions_nonnull_decide.
+    rewrite Hpreconditions_nonnull_decide /=.
     wp_auto.
-    destruct preconditions.(PreconditionsV.UID') as [uid|] eqn:Huid in Hpre |- *.
-    + destruct Hpre as [Huid_eq Hpre].
-      iDestruct "Hdeepown_uid_some" as (cuid) "[Huid_l ->]".
+    destruct preconditions.(PreconditionsV.UID') as [uid|] eqn:Huid.
+    + iDestruct "Hdeepown_uid_some" as (cuid) "[Huid_l ->]".
       assert (v1.Preconditions.UID' cpreconditions ≠ null) as Huid_not_null.
-      { intros Hnull.
-        apply (proj1 Hdeepown_uid_none) in Hnull.
-        congruence.
-      }
+      { intros Hnull. apply (proj1 Hdeepown_uid_none) in Hnull. congruence. }
       assert (bool_decide (v1.Preconditions.UID' cpreconditions = null) = false) as Huid_nonnull_decide.
       { apply bool_decide_false. done. }
       rewrite Huid_nonnull_decide /=.
       wp_auto.
       wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l]").
       iIntros "Hdeepown_m_l".
-      rewrite Huid_eq. wp_auto.
-      rewrite bool_decide_true //. wp_auto.
-      destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|] eqn:Hrv in Hpre |- *.
-      * rename Hpre into Hrv_eq.
-        iDestruct "Hdeepown_resourceversion_some" as (crv) "[Hrv_l ->]".
-        assert (v1.Preconditions.ResourceVersion' cpreconditions ≠ null) as Hrv_not_null.
-        { intros Hnull.
-          apply (proj1 Hdeepown_resourceversion_none) in Hnull.
-          congruence.
-        }
-        assert (bool_decide (v1.Preconditions.ResourceVersion' cpreconditions = null) = false) as Hrv_nonnull_decide.
-        { apply bool_decide_false. done. }
-        rewrite Hrv_nonnull_decide /=.
-        wp_auto.
-        wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
-        iIntros "Hdeepown_m_l".
-        rewrite Hrv_eq. wp_auto.
+      destruct (decide (uid = m.(ObjectMetaV.UID'))) as [Huid_eq|Huid_neq].
+      * rewrite Huid_eq. wp_auto.
         rewrite bool_decide_true //. wp_auto.
-        iAssert ((match preconditions.(PreconditionsV.UID') with
-          | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
-          | None => True
-          end)%I) with "[Huid_l]" as "Huid_some_packed".
-        { rewrite Huid /=. iExists (ObjectMetaV.UID' m). iFrame "Huid_l". iPureIntro. symmetry. done. }
-        iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
-          | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
-          | None => True
-          end)%I) with "[Hrv_l]" as "Hrv_some_packed".
-        { rewrite Hrv /=. iExists (ObjectMetaV.ResourceVersion' m). iFrame "Hrv_l". iPureIntro. symmetry. done. }
-        iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
-          with "[Huid_some_packed Hrv_some_packed]" as "Hpreconditions_packed".
-        { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
-        iAssert ((match options.(DeleteOptionsV.Preconditions') with
-          | Some vp =>
-              ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
-          | None => True
-          end)%I) with "[Hpreconditions_l Hpreconditions_packed]" as "Hpreconditions_some_packed".
-        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame "Hpreconditions_l Hpreconditions_packed". }
-        iApply "HΦ".
-        iFrame "Hdeepown_m_l".
-        iExists coptions.
-        iFrame.
-        iPureIntro.
-        done.
-      * assert (v1.Preconditions.ResourceVersion' cpreconditions = null) as Hrv_null.
-        { apply (proj2 Hdeepown_resourceversion_none). done. }
-        rewrite bool_decide_true //=.
+        destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|] eqn:Hrv.
+        -- iDestruct "Hdeepown_resourceversion_some" as (crv) "[Hrv_l ->]".
+           assert (v1.Preconditions.ResourceVersion' cpreconditions ≠ null) as Hrv_not_null.
+           { intros Hnull. apply (proj1 Hdeepown_resourceversion_none) in Hnull. congruence. }
+           assert (bool_decide (v1.Preconditions.ResourceVersion' cpreconditions = null) = false) as Hrv_nonnull_decide.
+           { apply bool_decide_false. done. }
+           rewrite Hrv_nonnull_decide /=.
+           wp_auto.
+           wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+           iIntros "Hdeepown_m_l".
+           destruct (decide (rv = m.(ObjectMetaV.ResourceVersion'))) as [Hrv_eq|Hrv_neq].
+           ++ rewrite Hrv_eq. wp_auto.
+              rewrite bool_decide_true //. wp_auto.
+              iAssert ((match preconditions.(PreconditionsV.UID') with
+                | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
+                | None => True
+                end)%I) with "[Huid_l]" as "Hdeepown_uid_some".
+              { rewrite Huid /=. iExists (ObjectMetaV.UID' m). iFrame "Huid_l". iPureIntro. symmetry. done. }
+              iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
+                | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
+                | None => True
+                end)%I) with "[Hrv_l]" as "Hdeepown_resourceversion_some".
+              { rewrite Hrv /=. iExists (ObjectMetaV.ResourceVersion' m). iFrame "Hrv_l". iPureIntro. symmetry. done. }
+              iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
+                with "[Hdeepown_uid_some Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
+              { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+              iAssert ((match options.(DeleteOptionsV.Preconditions') with
+                | Some vp =>
+                    ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
+                | None => True
+                end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+              { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+              iAssert (DeleteOptionsV.deepown_l options_l options dq)
+                with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+              { iExists coptions.
+                rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+                iFrame.
+                iPureIntro.
+                done. }
+              iApply "HΦ".
+              iFrame "Hdeepown_m_l Hdeepown_options_l".
+              iPureIntro.
+              left. split.
+              { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=. split; assumption. }
+              done.
+           ++ wp_auto.
+              rewrite bool_decide_false //.
+              wp_auto.
+              wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]").
+              iIntros "Hdeepown_m_l".
+              wp_auto.
+              wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+              iIntros "Hdeepown_m_l".
+              wp_auto.
+              wp_apply (wp_newPreconditionRVConflictError with "[$]").
+              iIntros (err) "%Herr_non_nil".
+              wp_auto.
+              iAssert ((match preconditions.(PreconditionsV.UID') with
+                | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
+                | None => True
+                end)%I) with "[Huid_l]" as "Hdeepown_uid_some".
+              { rewrite Huid /=. iExists (ObjectMetaV.UID' m). iFrame "Huid_l". iPureIntro. symmetry. done. }
+              iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
+                | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
+                | None => True
+                end)%I) with "[Hrv_l]" as "Hdeepown_resourceversion_some".
+              { rewrite Hrv /=. iExists rv. iFrame "Hrv_l". iPureIntro. done. }
+              iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
+                with "[Hdeepown_uid_some Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
+              { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+              iAssert ((match options.(DeleteOptionsV.Preconditions') with
+                | Some vp =>
+                    ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
+                | None => True
+                end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+              { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+              iAssert (DeleteOptionsV.deepown_l options_l options dq)
+                with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+              { iExists coptions.
+                rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+                iFrame.
+                iPureIntro.
+                done. }
+              iApply "HΦ".
+              iFrame "Hdeepown_m_l Hdeepown_options_l".
+              iPureIntro.
+              right. split.
+              { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
+                intros [_ Hmatch]. apply Hrv_neq. exact Hmatch. }
+              done.
+        -- assert (v1.Preconditions.ResourceVersion' cpreconditions = null) as Hrv_null.
+           { apply (proj2 Hdeepown_resourceversion_none). done. }
+           rewrite bool_decide_true //=.
+           wp_auto.
+           iAssert ((match preconditions.(PreconditionsV.UID') with
+             | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
+             | None => True
+             end)%I) with "[Huid_l]" as "Hdeepown_uid_some".
+           { rewrite Huid /=. iExists (ObjectMetaV.UID' m). iFrame "Huid_l". iPureIntro. symmetry. done. }
+           iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
+             | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
+             | None => True
+             end)%I) as "Hdeepown_resourceversion_some_rebuild".
+           { rewrite Hrv /=. done. }
+           iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
+             with "[Hdeepown_uid_some Hdeepown_resourceversion_some_rebuild]" as "Hdeepown_preconditions".
+           { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+           iAssert ((match options.(DeleteOptionsV.Preconditions') with
+             | Some vp =>
+                 ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
+             | None => True
+             end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+           { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+           iAssert (DeleteOptionsV.deepown_l options_l options dq)
+             with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+           { iExists coptions.
+             rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+             iFrame.
+             iPureIntro.
+             done. }
+           iApply "HΦ".
+           iFrame "Hdeepown_m_l Hdeepown_options_l".
+           iPureIntro.
+           left. split.
+           { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=. split; [assumption|done]. }
+           done.
+      * wp_auto.
+        rewrite bool_decide_false //.
+        wp_auto.
+        wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]").
+        iIntros "Hdeepown_m_l".
+        wp_auto.
+        wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l]").
+        iIntros "Hdeepown_m_l".
+        wp_auto.
+        wp_apply (wp_newPreconditionUIDConflictError with "[$]").
+        iIntros (err) "%Herr_non_nil".
         wp_auto.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
           | None => True
-          end)%I) with "[Huid_l]" as "Huid_some_packed".
-        { rewrite Huid /=. iExists (ObjectMetaV.UID' m). iFrame "Huid_l". iPureIntro. symmetry. done. }
-        iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
-          | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
-          | None => True
-          end)%I) as "Hrv_some_packed".
-        { rewrite Hrv /=. done. }
+          end)%I) with "[Huid_l]" as "Hdeepown_uid_some".
+        { rewrite Huid /=. iExists uid. iFrame "Huid_l". iPureIntro. done. }
         iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
-          with "[Huid_some_packed Hrv_some_packed]" as "Hpreconditions_packed".
-        { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+          with "[Hdeepown_uid_some Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
+        { rewrite /PreconditionsV.deepown Huid /=. iFrame. iPureIntro. done. }
         iAssert ((match options.(DeleteOptionsV.Preconditions') with
           | Some vp =>
               ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
           | None => True
-          end)%I) with "[Hpreconditions_l Hpreconditions_packed]" as "Hpreconditions_some_packed".
-        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame "Hpreconditions_l Hpreconditions_packed". }
+          end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+        iAssert (DeleteOptionsV.deepown_l options_l options dq)
+          with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+        { iExists coptions.
+          rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+          iFrame.
+          iPureIntro.
+          done. }
         iApply "HΦ".
-        iFrame "Hdeepown_m_l".
-        iExists coptions.
-        iFrame.
+        iFrame "Hdeepown_m_l Hdeepown_options_l".
         iPureIntro.
+        right. split.
+        { rewrite /delete_preconditions_match Hpreconditions Huid /=.
+          intros [Hmatch _]. apply Huid_neq. exact Hmatch. }
         done.
-    + destruct Hpre as [_ Hpre].
-      assert (v1.Preconditions.UID' cpreconditions = null) as Huid_null.
+    + assert (v1.Preconditions.UID' cpreconditions = null) as Huid_null.
       { apply (proj2 Hdeepown_uid_none). done. }
       rewrite bool_decide_true //=.
       wp_auto.
-      destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|] eqn:Hrv in Hpre |- *.
-      * rename Hpre into Hrv_eq.
-        iDestruct "Hdeepown_resourceversion_some" as (crv) "[Hrv_l ->]".
+      destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|] eqn:Hrv.
+      * iDestruct "Hdeepown_resourceversion_some" as (crv) "[Hrv_l ->]".
         assert (v1.Preconditions.ResourceVersion' cpreconditions ≠ null) as Hrv_not_null.
-        { intros Hnull.
-          apply (proj1 Hdeepown_resourceversion_none) in Hnull.
-          congruence.
-        }
+        { intros Hnull. apply (proj1 Hdeepown_resourceversion_none) in Hnull. congruence. }
         assert (bool_decide (v1.Preconditions.ResourceVersion' cpreconditions = null) = false) as Hrv_nonnull_decide.
         { apply bool_decide_false. done. }
         rewrite Hrv_nonnull_decide /=.
         wp_auto.
         wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
         iIntros "Hdeepown_m_l".
-        rewrite Hrv_eq. wp_auto.
-        rewrite bool_decide_true //. wp_auto.
-        iAssert ((match preconditions.(PreconditionsV.UID') with
-          | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
-          | None => True
-          end)%I) as "Huid_some_packed".
-        { rewrite Huid /=. done. }
-        iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
-          | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
-          | None => True
-          end)%I) with "[Hrv_l]" as "Hrv_some_packed".
-        { rewrite Hrv /=. iExists (ObjectMetaV.ResourceVersion' m). iFrame "Hrv_l". iPureIntro. symmetry. done. }
-        iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
-          with "[Huid_some_packed Hrv_some_packed]" as "Hpreconditions_packed".
-        { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
-        iAssert ((match options.(DeleteOptionsV.Preconditions') with
-          | Some vp =>
-              ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
-          | None => True
-          end)%I) with "[Hpreconditions_l Hpreconditions_packed]" as "Hpreconditions_some_packed".
-        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame "Hpreconditions_l Hpreconditions_packed". }
-        iApply "HΦ".
-        iFrame "Hdeepown_m_l".
-        iExists coptions.
-        iFrame.
-        iPureIntro.
-        done.
+        destruct (decide (rv = m.(ObjectMetaV.ResourceVersion'))) as [Hrv_eq|Hrv_neq].
+        -- rewrite Hrv_eq. wp_auto.
+           rewrite bool_decide_true //. wp_auto.
+           iAssert ((match preconditions.(PreconditionsV.UID') with
+             | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
+             | None => True
+             end)%I) as "Hdeepown_uid_some_rebuild".
+           { rewrite Huid /=. done. }
+           iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
+             | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
+             | None => True
+             end)%I) with "[Hrv_l]" as "Hdeepown_resourceversion_some".
+           { rewrite Hrv /=. iExists (ObjectMetaV.ResourceVersion' m). iFrame "Hrv_l". iPureIntro. symmetry. done. }
+           iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
+             with "[Hdeepown_uid_some_rebuild Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
+           { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+           iAssert ((match options.(DeleteOptionsV.Preconditions') with
+             | Some vp =>
+                 ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
+             | None => True
+             end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+           { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+           iAssert (DeleteOptionsV.deepown_l options_l options dq)
+             with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+           { iExists coptions.
+             rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+             iFrame.
+             iPureIntro.
+             done. }
+           iApply "HΦ".
+           iFrame "Hdeepown_m_l Hdeepown_options_l".
+           iPureIntro.
+           left. split.
+           { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=. split; [done|assumption]. }
+           done.
+        -- wp_auto.
+           rewrite bool_decide_false //.
+           wp_auto.
+           wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]").
+           iIntros "Hdeepown_m_l".
+           wp_auto.
+           wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+           iIntros "Hdeepown_m_l".
+           wp_auto.
+           wp_apply (wp_newPreconditionRVConflictError with "[$]").
+           iIntros (err) "%Herr_non_nil".
+           wp_auto.
+           iAssert ((match preconditions.(PreconditionsV.UID') with
+             | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
+             | None => True
+             end)%I) as "Hdeepown_uid_some_rebuild".
+           { rewrite Huid /=. done. }
+           iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
+             | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
+             | None => True
+             end)%I) with "[Hrv_l]" as "Hdeepown_resourceversion_some".
+           { rewrite Hrv /=. iExists rv. iFrame "Hrv_l". iPureIntro. done. }
+           iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
+             with "[Hdeepown_uid_some_rebuild Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
+           { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
+           iAssert ((match options.(DeleteOptionsV.Preconditions') with
+             | Some vp =>
+                 ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
+             | None => True
+             end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+           { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. }
+           iAssert (DeleteOptionsV.deepown_l options_l options dq)
+             with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+           { iExists coptions.
+             rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+             iFrame.
+             iPureIntro.
+             done. }
+           iApply "HΦ".
+           iFrame "Hdeepown_m_l Hdeepown_options_l".
+           iPureIntro.
+           right. split.
+           { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
+             intros [_ Hmatch]. apply Hrv_neq. exact Hmatch. }
+           done.
       * assert (v1.Preconditions.ResourceVersion' cpreconditions = null) as Hrv_null.
         { apply (proj2 Hdeepown_resourceversion_none). done. }
         rewrite bool_decide_true //=.
@@ -317,63 +468,77 @@ Proof. (* This proof is fully written by Codex *)
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
           | None => True
-          end)%I) as "Huid_some_packed".
+          end)%I) as "Hdeepown_uid_some_rebuild".
         { rewrite Huid /=. done. }
         iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
           | Some vrv => ∃ crv, v1.Preconditions.ResourceVersion' cpreconditions ↦{dq} crv ∗ ⌜ crv = vrv ⌝
           | None => True
-          end)%I) as "Hrv_some_packed".
+          end)%I) as "Hdeepown_resourceversion_some_rebuild".
         { rewrite Hrv /=. done. }
         iAssert (PreconditionsV.deepown cpreconditions preconditions dq)
-          with "[Huid_some_packed Hrv_some_packed]" as "Hpreconditions_packed".
+          with "[Hdeepown_uid_some_rebuild Hdeepown_resourceversion_some_rebuild]" as "Hdeepown_preconditions".
         { rewrite /PreconditionsV.deepown Huid Hrv /=. iFrame. iPureIntro. done. }
         iAssert ((match options.(DeleteOptionsV.Preconditions') with
           | Some vp =>
               ∃ cp, v1.DeleteOptions.Preconditions' coptions ↦{dq} cp ∗ PreconditionsV.deepown cp vp dq
           | None => True
-          end)%I) with "[Hpreconditions_l Hpreconditions_packed]" as "Hpreconditions_some_packed".
-        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame "Hpreconditions_l Hpreconditions_packed". }
+          end)%I) with "[Hpreconditions_l Hdeepown_preconditions]" as "Hdeepown_preconditions_some".
+        { rewrite Hpreconditions /=. iExists cpreconditions. iFrame. done. }
+        iAssert (DeleteOptionsV.deepown_l options_l options dq)
+          with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+        { iExists coptions.
+          rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+          iFrame.
+          iPureIntro.
+          done. }
         iApply "HΦ".
-        iFrame "Hdeepown_m_l".
-        iExists coptions.
-        iFrame.
+        iFrame "Hdeepown_m_l Hdeepown_options_l".
         iPureIntro.
+        left. split.
+        { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=. split; done. }
         done.
   - assert (v1.DeleteOptions.Preconditions' coptions = null) as Hpreconditions_null.
     { apply (proj2 Hdeepown_preconditions_none). done. }
     wp_auto.
     rewrite bool_decide_true //.
     wp_auto.
+    iAssert (DeleteOptionsV.deepown_l options_l options dq)
+      with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]" as "Hdeepown_options_l".
+    { iExists coptions.
+      rewrite /DeleteOptionsV.deepown Hpreconditions /=.
+      iFrame.
+      iPureIntro.
+      done. }
     iApply "HΦ".
-    iFrame "Hdeepown_m_l".
-    iExists coptions.
-    rewrite /DeleteOptionsV.deepown Hpreconditions /=.
-    iFrame.
+    iFrame "Hdeepown_m_l Hdeepown_options_l".
     iPureIntro.
+    left. split.
+    { rewrite /delete_preconditions_match Hpreconditions /=. done. }
     done.
 Qed.
 
 (* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
 Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
-Axiom delete_pending_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
-(* Abstracts the possibly-updated DeleteOptions returned by checkGracefulDelete. *)
-Axiom delete_noralized_options : KObjectV.t -> DeleteOptionsV.t -> DeleteOptionsV.t.
+Axiom delete_pending_graceful : KObjectV.t -> bool.
+Axiom delete_new_grace_period_seconds : KObjectV.t -> DeleteOptionsV.t -> option w64.
 
-Lemma wp_checkGracefulDelete i o options_l options :
+Lemma wp_checkGracefulDelete i l o options_l options :
   {{{ is_pkg_init apimodel ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i o 1 ∗
+      "%Hvalid_i" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      "Hdeepown_l" ∷ KObjectV.deepown_l l o 1 ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options 1
   }}}
     @! apimodel.checkGracefulDelete #i #options_l
-  {{{ (graceful pendingGraceful : bool) (err : error.t) (options' : DeleteOptionsV.t),
-      RET (#graceful, #pendingGraceful, #err);
-      KObjectV.deepown_i i o 1 ∗
+  {{{ graceful pendingGraceful options',
+      RET (#graceful, #pendingGraceful, #interface.nil);
+      KObjectV.deepown_l l o 1 ∗
       DeleteOptionsV.deepown_l options_l options' 1 ∗
-      ⌜ options' = delete_noralized_options o options ⌝ ∗
       ⌜ pendingGraceful = true →
-          (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+        (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
       ⌜ graceful = delete_graceful o options ⌝ ∗
-      ⌜ pendingGraceful = delete_pending_graceful o options ⌝
+      ⌜ pendingGraceful = delete_pending_graceful o ⌝ ∗
+      ⌜ options' = (options <| DeleteOptionsV.GracePeriodSeconds' :=
+        delete_new_grace_period_seconds o options |>) ⌝
   }}}.
 Proof.
 Admitted.
@@ -1256,15 +1421,14 @@ Qed.
 Axiom delete_should_update_finalizers : ObjectMetaV.t -> DeleteOptionsV.t -> bool.
 Axiom delete_new_finalizers : ObjectMetaV.t -> DeleteOptionsV.t -> option (list go_string).
 
-Lemma wp_deletionFinalizersForGarbageCollection
-    (l : loc) metadata_i metadata_l m options_l options dq :
+Lemma wp_deletionFinalizersForGarbageCollection metadata_i metadata_l m options_l options dq :
   {{{ is_pkg_init apimodel ∗
       "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (ptrT.id v1.ObjectMeta.id) #metadata_l ⌝ ∗
       "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
     @! apimodel.deletionFinalizersForGarbageCollection #metadata_i #options_l
-  {{{ (should_update_finalizers : bool) (new_finalizers_sl : slice.t) (finalizers :  option (list go_string)),
+  {{{ should_update_finalizers new_finalizers_sl (finalizers :  option (list go_string)),
       RET (#should_update_finalizers, #new_finalizers_sl);
       ObjectMetaV.deepown_l metadata_l m dq ∗
       DeleteOptionsV.deepown_l options_l options dq ∗
@@ -1282,7 +1446,7 @@ Admitted.
 (* Corresponds to the *negation* of early return
     [if pendingGraceful && !shouldUpdateFinalizers { return nil }]. *)
 Definition delete_not_short_circuits o options : Prop :=
-  ¬ (delete_pending_graceful o options = true ∧
+  ¬ (delete_pending_graceful o = true ∧
     delete_should_update_finalizers (KObjectV.objectmeta o) options = false).
 
 Definition delete_zero_finalizers o options : Prop :=
@@ -1291,12 +1455,9 @@ Definition delete_zero_finalizers o options : Prop :=
   | Some fs => fs = []
   end.
 
-(* Corresponds to:
-    [gracePeriod := int64(0)]
-    [if graceful && options.GracePeriodSeconds != nil { gracePeriod = *options.GracePeriodSeconds }] *)
 Definition delete_zero_grace_period o options : Prop :=
   (if delete_graceful o options then
-    match (delete_noralized_options o options).(DeleteOptionsV.GracePeriodSeconds') with
+    match delete_new_grace_period_seconds o options with
     | Some grace_period => grace_period
     | None => W64 0
     end

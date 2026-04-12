@@ -25,6 +25,7 @@ From New.proof.k8s_io.kubernetes.pkg.registry.apps Require Export replicaset_ini
 From New.proof.k8s_io.kubernetes.pkg.registry.core Require Export pod_init.
 From New.proof Require Export strconv_init.
 From New.proof Require Export rand_init.
+From New.proof Require Export reflect_init.
 Require Export New.generatedproof.kubernetes_model.apimodel.
 
 Section proof.
