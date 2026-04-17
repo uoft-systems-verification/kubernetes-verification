@@ -171,6 +171,26 @@ Proof.
   done.
 Qed.
 
+Lemma wp_GetGeneration l m dq :
+  {{{ is_pkg_init v1 ∗
+      l ↦{dq} m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetGeneration" #()
+  {{{ RET #m.(v1.ObjectMeta.Generation');
+      l ↦{dq} m
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_SetGeneration l m generation :
+  {{{ is_pkg_init v1 ∗
+      l ↦ m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "SetGeneration" #generation
+  {{{ RET #();
+      l ↦ m <| v1.ObjectMeta.Generation' := generation |>
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
 Lemma wp_SetNamespace l m namespace :
   {{{ is_pkg_init v1 ∗
       l ↦ m

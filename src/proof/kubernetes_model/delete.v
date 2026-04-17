@@ -83,7 +83,54 @@ Proof.
       * exact (Huid_not_in_deleted0 Huid_in_deleted0).
 Qed.
 
+Lemma tombed_uid_update_eq_used_uid_sub
+  (abs_state : gmap KKey.t KObjectV.t) (used_uid tombed_uid : gset types.UID.t)
+  key old_kobj new_kobj :
+  tombed_uid = used_uid ∖ map_to_set (C:=gset types.UID.t)
+    (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj)) abs_state →
+  abs_state !! key = Some old_kobj →
+  ObjectMetaV.UID' (KObjectV.objectmeta new_kobj) =
+    ObjectMetaV.UID' (KObjectV.objectmeta old_kobj) →
+  tombed_uid = used_uid ∖ map_to_set (C:=gset types.UID.t)
+    (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
+    (<[key := new_kobj]> abs_state).
+Proof.
+  intros Htombed Hlookup_abs Huid_eq.
+  set (uid := ObjectMetaV.UID' (KObjectV.objectmeta old_kobj)).
+  set (uids := λ m : gmap KKey.t KObjectV.t,
+    map_to_set (C:=gset types.UID.t)
+      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
+      m).
+  assert (uids abs_state = {[uid]} ∪ uids (delete key abs_state)) as Hmap_to_set_old.
+  { rewrite /uids.
+    rewrite <- (insert_delete_id abs_state key old_kobj Hlookup_abs) at 1.
+    assert (delete key abs_state !! key = None) as Hlookup_delete.
+    { apply lookup_delete_eq. }
+    rewrite (map_to_set_insert_L
+      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
+      (delete key abs_state) key old_kobj Hlookup_delete).
+    reflexivity.
+  }
+  assert (uids (<[key := new_kobj]> abs_state) = {[uid]} ∪ uids (delete key abs_state))
+    as Hmap_to_set_new.
+  { rewrite /uids.
+    rewrite <- (insert_delete_eq abs_state key new_kobj).
+    assert (delete key abs_state !! key = None) as Hlookup_delete.
+    { apply lookup_delete_eq. }
+    rewrite (map_to_set_insert_L
+      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
+      (delete key abs_state) key new_kobj Hlookup_delete).
+    rewrite Huid_eq.
+    reflexivity.
+  }
+  rewrite Htombed.
+  change (used_uid ∖ uids abs_state = used_uid ∖ uids (<[key := new_kobj]> abs_state)).
+  rewrite Hmap_to_set_old Hmap_to_set_new.
+  reflexivity.
+Qed.
+
 (* TODO: specifies in which case the object is deleted from the state map *)
+(* TODO: finish all the shelved goals once wp_if_join is available *)
 Lemma wp_State__delete_au γ l key options_c options:
   ∀ Φ,
     is_pkg_init apimodel ∗
@@ -91,6 +138,7 @@ Lemma wp_State__delete_au γ l key options_c options:
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children,
       "%Hkey_in" ∷ ⌜key ∈ children⌝ ∗
+      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ err kmeta',
@@ -147,8 +195,8 @@ Proof.
   { apply bool_decide_eq_true in Hdecide. done. }
   assert (∃ kobj, abs_state !! key = Some kobj) as [kobj Hlookup_abs].
   { apply elem_of_dom. rewrite <- Hdom_eq. apply elem_of_dom. eexists. done. }
-  iDestruct (big_sepM2_lookup_acc _ _ _ _ _ _ Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep")
-    as "(Hdeepown_i & Hother_rep)". rewrite Hlookup_phys. wp_auto.
+  iDestruct (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs
+    with "Hinv_Hphys_abs_rep") as "[Hdeepown_i Hother_rep]". rewrite Hlookup_phys. wp_auto.
   wp_apply (wp_deepCopy with "[$Hdeepown_i]"). iIntros (i1) "(Hdeepown_i1 & Hdeepown_i)". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l1]".
   wp_apply wp_Accessor. 1: iPureIntro; done. rewrite bool_decide_true //. wp_auto.
@@ -167,7 +215,7 @@ Proof.
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
-    { iApply "Hother_rep". iFrame. }
+    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
@@ -176,15 +224,34 @@ Proof.
   rewrite bool_decide_true //. wp_auto.
   wp_apply (wp_checkGracefulDelete with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_other_l1 $Hdeepown_l_options1]").
   { iSplit; first done. iApply KObjectV.deepown_l_restore. iFrame. }
-  iIntros (graceful pendingGraceful options1) "(Hdeepown_l1 & Hdeepown_l_options1 & %Hif_pendinggraceful & %Hgraceful_eq &
-    %Hpendinggraceful_eq & %Hoptions_eq)". wp_auto.
+  iIntros (graceful pendingGraceful options1) "(Hdeepown_l1 & Hdeepown_l_options1 & %Hif_pendinggraceful & %Hgraceful_eq
+    & %Hpendinggraceful_eq & %Hoptions_eq)". wp_auto.
   rewrite bool_decide_true //. wp_auto.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_other_l1)".
-  wp_apply (wp_deletionFinalizersForGarbageCollection with "[$Hdeepown_m_l1 $Hdeepown_l_options1]"). 1: done.
-  iIntros (should_update_finalizers new_finalizers_sl finalizers) "(Hdeepown_m_l1 & Hdeepown_l_options1 & %Hsl & Hsl &
-    %Hshould_update_finalizers_eq & %Hfinalizers_eq)". wp_auto.
+  destruct (bool_decide (valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers'))) as [|]
+    eqn:Hvalid_kmeta_finalizers.
+  2: {
+    iApply fupd_wp.
+    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%H".
+    destruct H as (_ & _ & _ & Hvalid_kmeta).
+    unfold ObjectMetaV.valid in Hvalid_kmeta.
+    destruct Hvalid_kmeta as
+      (_ & _ & _ & _ & _ & _ & _ & _ & _ & Hvalid_finalizers & _).
+    iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%H". 1: done.
+    destruct H as (Hkmeta_eq & _).
+    rewrite <- Hkmeta_eq in Hvalid_finalizers.
+    apply bool_decide_eq_false in Hvalid_kmeta_finalizers.
+    exfalso. apply Hvalid_kmeta_finalizers. done.
+  }
+  apply bool_decide_eq_true in Hvalid_kmeta_finalizers.
+  wp_apply (wp_deletionFinalizersForGarbageCollection with "[$Hdeepown_m_l1 $Hdeepown_l_options1]").
+  { iFrame "%". done. }
+  iIntros (should_update_finalizers new_finalizers_sl new_finalizers) "(%Hshould_update_finalizers_eq &
+    %Hnew_finalizers_eq & %Hvalid_new_finalizers & %Hnew_finalizers_none & Hnew_finalizers_some & Hdeepown_m_l1 &
+    Hdeepown_l_options1)". wp_auto.
   destruct pendingGraceful as [|]; wp_auto; destruct should_update_finalizers as [|]; wp_auto.
-  2 : {
+  2: {
     assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) ≠ None) as Hdt_not_none.
     { apply Hif_pendinggraceful. done. }
     iApply fupd_wp.
@@ -195,75 +262,192 @@ Proof.
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
-    { iApply "Hother_rep". iFrame. }
+    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iApply "HΦ".
   }
-  1, 2: wp_apply (wp_SetFinalizers_deepown with "[$Hdeepown_m_l1 $Hsl]"); [done|];
-    iIntros "Hdeepown_m_l1"; wp_auto.
-  all: destruct graceful as [|]; wp_auto;
-    iDestruct "Hdeepown_l_options1" as "(%options_c1 & Hoptions_ptr & Hdeepown_options1)";
-    iNamed "Hdeepown_options1"; subst options1.
-  1, 3, 5: wp_auto; destruct (delete_new_grace_period_seconds kobj options) as [gps|].
-  1, 3, 5: iDestruct "Hdeepown_graceperiodseconds_some" as (cgps) "[Hgps_ptr ->]";
-    assert (bool_decide (v1.DeleteOptions.GracePeriodSeconds' options_c1 = null) = false) as ->
-      by (apply bool_decide_false; intros Hcontra;
-          apply (proj1 Hdeepown_graceperiodseconds_none) in Hcontra; done); wp_auto.
-  4, 5, 6:
+  2, 3: shelve.
+  iDestruct "Hdeepown_m_l1" as "(%mc & Hmc_ptr & Hdeepown_m)".
+  wp_apply (wp_SetFinalizers with "[$Hmc_ptr]") as "Hmc_ptr".
+  destruct graceful as [|]; wp_auto.
+  2: shelve.
+  iDestruct "Hdeepown_l_options1" as "(%options_c1 & Hoptions_ptr & Hdeepown_options1)".
+  iNamed "Hdeepown_options1". subst options1.
+  wp_auto. destruct (delete_new_grace_period_seconds kobj options) as [gps|].
+  2: shelve.
+  iDestruct "Hdeepown_graceperiodseconds_some" as (cgps) "[Hgps_ptr ->]".
+  assert (bool_decide (v1.DeleteOptions.GracePeriodSeconds' options_c1 = null) = false) as ->.
+  { apply bool_decide_false; intros Hcontra.
+    apply (proj1 Hdeepown_graceperiodseconds_none) in Hcontra. done. }
+  wp_auto.
+  (* 4, 5, 6:
     assert (bool_decide (v1.DeleteOptions.GracePeriodSeconds' options_c1 = null) = true) as ->
       by (apply bool_decide_true;
-          apply (proj2 Hdeepown_graceperiodseconds_none); done); wp_auto.
+          apply (proj2 Hdeepown_graceperiodseconds_none); done); wp_auto. *)
+  
+  wp_apply (wp_GetFinalizers with "[$Hmc_ptr]") as "Hmc_ptr".
+  destruct (bool_decide (slice.len_f new_finalizers_sl = W64 0)) as [|]; wp_auto.
+  2: shelve.
+  destruct (bool_decide (gps = W64 0)) as [|]; wp_auto.
   1: {
-    iDestruct "Hdeepown_m_l1" as "(%mc & Hmc_ptr & Hdeepown_m)".
-    wp_apply (wp_GetFinalizers with "[$Hmc_ptr]").
-    iIntros "Hmc_ptr". wp_auto.
-    destruct (bool_decide (slice.len_f (v1.ObjectMeta.Finalizers' mc) = W64 0)) as [|]; wp_auto.
-    1: destruct (bool_decide (gps = W64 0)) as [|]; wp_auto.
-    1: {
-      wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
-      iApply fupd_wp.
-      iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
-      iPoseProof (kview.own_auth_valid2 with "Hinv_Hown_abs") as "%H". 1: done.
-      destruct H as (_ & _ & _ & _ & Hunique_id).
-      iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%H".
-      destruct H as (_ & _ & -> & _).
-      iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "(<- & %Huid_in)". 1: done.
-      iMod (kview.delete_kobj_vs with "[$Hinv_Hown_abs] [$Hown_meta_frag]") as "Hinv_Hown_abs".
-      iMod (cview.delete_child_vs2 key with "[$Hinv_Hown_children] [$Hown_children_frag]")
-        as "(Hinv_Hown_children & Hown_children_frag)". 1: done.
-      iMod (mono_gset.insert_vs types.UID.t (KObjectV.objectmeta kobj).(ObjectMetaV.UID')
-        with "[$Hinv_Hown_tombstone]") as "(Hinv_Hown_tombstone & Hown_tombstone_frag)".
-      iMod ("Hclose" $! interface.nil (KObjectV.objectmeta kobj) with "[Hown_children_frag Hown_tombstone_frag]") as "HΦ".
-      { iLeft. iFrame "%". iSplit. 1: done. iRight. iFrame. }
-      iModIntro.
-      iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
-        with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
-      { iApply "Hother_rep". iFrame. }
-      iCombineNamed "Hinv_*" as "H".
-      wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
-      { iNamed "H". iFrame. iFrame "#". iModIntro. iSplitL.
-        { iDestruct (big_sepM2_delete _ phys_state abs_state key _ _
-            Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep") as "[_ H]". done.
-        }
-        iPureIntro. split_and!. all: try done.
-        apply tombed_uid_delete_eq_used_uid_sub; done.
+    wp_apply (wp_map_delete with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
+    iApply fupd_wp.
+    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iPoseProof (kview.own_auth_valid2 with "Hinv_Hown_abs") as "%H". 1: done.
+    destruct H as (_ & _ & _ & _ & Hunique_id).
+    iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%H".
+    destruct H as (_ & _ & -> & _).
+    iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "(<- & %Huid_in)". 1: done.
+    iMod (kview.delete_kobj_vs with "[$Hinv_Hown_abs] [$Hown_meta_frag]") as "Hinv_Hown_abs".
+    iMod (cview.delete_child_vs2 key with "[$Hinv_Hown_children] [$Hown_children_frag]")
+      as "(Hinv_Hown_children & Hown_children_frag)". 1: done.
+    iMod (mono_gset.insert_vs types.UID.t (KObjectV.objectmeta kobj).(ObjectMetaV.UID')
+      with "[$Hinv_Hown_tombstone]") as "(Hinv_Hown_tombstone & Hown_tombstone_frag)".
+    iMod ("Hclose" $! interface.nil (KObjectV.objectmeta kobj) with "[Hown_children_frag Hown_tombstone_frag]") as "HΦ".
+    { iLeft. iFrame "%". iSplit. 1: done. iRight. iFrame. }
+    iModIntro.
+    iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
+      with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
+    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". iModIntro. iSplitL.
+      { iDestruct (big_sepM2_delete _ phys_state abs_state key _ _
+          Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep") as "[_ H]". done.
       }
-      iApply "HΦ".
+      iPureIntro. split_and!. all: try done.
+      apply tombed_uid_delete_eq_used_uid_sub; done.
     }
-    all: wp_apply (wp_GetDeletionGracePeriodSeconds with "[$Hmc_ptr]");
-      iIntros "Hmc_ptr"; wp_auto.
-    all: destruct (bool_decide (v1.ObjectMeta.DeletionGracePeriodSeconds' mc = null)) as [|]; wp_auto.
-    all: admit.
-    (* 1: {
-      wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hmc_ptr]").
-      iIntros "Hmc_ptr". wp_auto.
-      wp_apply (wp_GetDeletionTimestamp with "[$Hmc_ptr]").
-      iIntros "Hmc_ptr". wp_auto.
-    } *)
-    (* 2, 4: destruct (bool_decide ((KObjectV.objectmeta kobj).(ObjectMetaV.DeletionGracePeriodSeconds') = Some gps)) as [|] eqn:Heq. *)
+    iApply "HΦ".
   }
+  wp_apply (wp_GetDeletionGracePeriodSeconds with "[$Hmc_ptr]") as "Hmc_ptr".
+  destruct (bool_decide (v1.ObjectMeta.DeletionGracePeriodSeconds' mc = null)) as [|]; wp_auto.
+  2: shelve.
+  wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_GetDeletionTimestamp with "[$Hmc_ptr]") as "Hmc_ptr".
+  destruct (bool_decide (v1.ObjectMeta.DeletionTimestamp' mc = null)) as [|]; wp_auto.
+  2: shelve.
+  wp_apply (v1.wp_Now). iIntros (timec timev) "Htime". wp_auto.
+  wp_apply (wp_SetDeletionTimestamp with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_GetGeneration with "[$Hmc_ptr]") as "Hmc_ptr".
+  destruct (bool_decide ((sint.Z (v1.ObjectMeta.Generation' mc) > sint.Z (W64 0))%Z)) as [|]; wp_auto.
+  2: shelve.
+  wp_apply (wp_GetGeneration with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_SetGeneration with "[$Hmc_ptr]") as "Hmc_ptr".
+  set new_kmetac := mc <| v1.ObjectMeta.Finalizers' := new_finalizers_sl |>
+    <| v1.ObjectMeta.DeletionGracePeriodSeconds' := gracePeriod_ptr |>
+    <| v1.ObjectMeta.DeletionTimestamp' := now_ptr |>
+    <| v1.ObjectMeta.Generation' := word.add (v1.ObjectMeta.Generation' mc) (W64 1) |>.
+  set new_kmeta := (KObjectV.objectmeta kobj) <| ObjectMetaV.Finalizers' := new_finalizers |>
+    <| ObjectMetaV.DeletionGracePeriodSeconds' := Some gps |>
+    <| ObjectMetaV.DeletionTimestamp' := Some timev |>
+    <| ObjectMetaV.Generation' := word.add (ObjectMetaV.Generation' (KObjectV.objectmeta kobj)) (W64 1) |>.
+  iAssert (ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l1 kobj) new_kmeta 1)
+    with "[Hmc_ptr Hdeepown_m gracePeriod now Htime Hnew_finalizers_some]" as "Hdeepown_m_l1".
+  { iAssert (⌜ now_ptr ≠ null ⌝%I) as "%Hnow_ptr_not_null".
+    { iDestruct (typed_pointsto_not_null with "now") as %H; [done|]. done. }
+    iAssert (⌜ gracePeriod_ptr ≠ null ⌝%I) as "%HgracePeriod_ptr_not_null".
+    { iDestruct (typed_pointsto_not_null with "gracePeriod") as %H; [done|]. done. }
+    iExists new_kmetac. iNamed "Hdeepown_m". iFrame. iFrame "%". unfold new_kmetac, new_kmeta.
+    rewrite Hdeepown_generation. iSplit; [done|].
+    iPureIntro. split_and!. all: done.
+  }
+  iAssert (KObjectV.deepown_i i1 (KObjectV.update_objectmeta kobj new_kmeta) 1)
+    with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_other_l1]" as "Hdeepown_i1".
+  { iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_other_l1]") as "H".
+    iFrame. destruct kobj. all: done. }
+  wp_apply (wp_objDeepEqual with "[$Hdeepown_i1 $Hdeepown_i]").
+  iIntros (v) "(Hdeepown_i1 & Hdeepown_i & %Hv)".
+  destruct v; wp_auto.
+  1: {
+    assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) ≠ None) as Hdt_not_none.
+    { apply Hif_pendinggraceful. done. }
+    iApply fupd_wp.
+    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "(<- & %Huid_in)". 1: done.
+    iMod ("Hclose" $! interface.nil (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
+    { iLeft. iFrame. iFrame "%". iSplit. 1: done. iLeft. iFrame. }
+    iModIntro.
+    iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
+      with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
+    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iApply "HΦ".
+  }
+  wp_apply (wp_State__generateNewRVAndUpdate with "[$Hinv_Hstate_used_rv_addr $Hinv_Hown_used_rv]").
+  iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto.
+  iPoseProof (KObjectV.deepown_i_yields_deepown_l i1 l1 with "[$Hdeepown_i1]") as "Hdeepown_l1".
+  { iPureIntro. destruct kobj; done. }
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_other_l1)".
+  assert (KObjectV.objectmeta_ptr l1 kobj = KObjectV.objectmeta_ptr l1 (KObjectV.update_objectmeta kobj new_kmeta)) as ->.
+  { destruct kobj; done. }
+  wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_m_l1]") as "Hdeepown_m_l1".
+  wp_apply (wp_map_insert with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
+  iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_other_l1]") as "Hdeepown_l1".
+  set new_kmeta1 := new_kmeta <| ObjectMetaV.ResourceVersion' := generated_rv |>.
+  assert (KObjectV.update_objectmeta (KObjectV.update_objectmeta kobj new_kmeta)
+    (KObjectV.objectmeta (KObjectV.update_objectmeta kobj new_kmeta) <| ObjectMetaV.ResourceVersion' := generated_rv |>)
+    = KObjectV.update_objectmeta kobj new_kmeta1  ) as ->.
+  { destruct kobj; done. }
+  iAssert (KObjectV.deepown_i i1 (KObjectV.update_objectmeta kobj new_kmeta1) 1) with "[Hdeepown_l1]" as "Hdeepown_i1".
+  { iFrame. iPureIntro. destruct kobj. all: done. }
+  set new_kobj := KObjectV.update_objectmeta kobj new_kmeta1.
+  iApply fupd_wp.
+  iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+  iPoseProof (kview.own_auth_valid2 key kobj with "Hinv_Hown_abs") as "%H". 1: done.
+  destruct H as (-> & Hvalid_kobj & Huid_in & Hno_speculative_parent_reference & _).
+  iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%H".
+  destruct H as (_ & _ & -> & _).
+  iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%H". 1: done.
+  destruct H as (Hkmeta_eq & _).
+  rewrite <-Hkmeta_eq. rewrite <-Hkmeta_eq in Hgeneration_no_overflow.
+  iMod (kview.update_meta_kobj_vs kobj new_kobj with "[$Hinv_Hown_abs] [$Hown_meta_frag]")
+    as "(Hinv_Hown_abs & Hown_meta_frag)".
+  { split_and!. 1, 2: destruct kobj; done.
+    destruct Hvalid_kobj as (Hvalid_tm & Hvalid_m & Hvalid_spec & Hvalid_status).
+    split_and!. all: unfold new_kobj.
+    - destruct kobj; done.
+    - assert (ObjectMetaV.valid new_kmeta1) as Hvalid_m1.
+      { unfold ObjectMetaV.valid in Hvalid_m.
+        decompose [and] Hvalid_m.
+        split_and!. all: try done.
+        unfold valid_generation, new_kmeta1, new_kmeta. simpl.
+        clear -Hgeneration_no_overflow.
+        word.
+      }
+      destruct kobj; done.
+    - destruct kobj; done.
+    - destruct kobj; done.
+  }
+  { destruct kobj; done. }
+  { done. }
+  { destruct kobj; done. }
+  { destruct kobj; done. }
+  iMod (cview.simple_update_vs (KObjectV.key kobj) kobj new_kobj with "[$Hinv_Hown_children]") as "Hinv_Hown_children".
+  { done. }
+  { destruct kobj; done. }
+  { destruct kobj; done. }
+  iMod ("Hclose" $! interface.nil (KObjectV.objectmeta new_kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
+  { iLeft. iFrame. iFrame "%". iSplit. 1: done. iLeft. iFrame. iPureIntro.
+    destruct kobj; done.
+  }
+  iModIntro.
+  iAssert (([∗ map] i; obj ∈ <[KObjectV.key kobj:=i1]> phys_state; <[KObjectV.key kobj:=new_kobj]> abs_state,
+    KObjectV.deepown_i i obj 1)%I) with "[Hdeepown_i1 Hother_rep]" as "Hinv_Hphys_abs_rep".
+  { rewrite big_sepM2_insert_delete. iFrame. }
+  iCombineNamed "Hinv_*" as "H".
+  wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+  { iNamed "H".
+    iFrame "#". iFrame. iPureIntro. split_and!.
+    all: try done.
+    eapply tombed_uid_update_eq_used_uid_sub; [done|done|].
+    destruct kobj; done.
+  }
+  iApply "HΦ".
 Admitted.
 
 Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_uid children :
@@ -271,6 +455,7 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
+      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
@@ -297,6 +482,7 @@ Proof.
   iApply wp_State__delete_au.
   iFrame "#". iFrame.
   iApply fupd_mask_intro; [set_solver|iIntros "Hmask"].
+  iSplit. 1: done.
   iSplit. 1: done.
   iIntros (err kmeta') "Hpost".
   iMod "Hmask" as "_".

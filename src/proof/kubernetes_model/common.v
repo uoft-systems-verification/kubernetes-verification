@@ -18,6 +18,20 @@ Lemma wp_deepCopy i obj:
 Proof.
 Admitted.
 
+Lemma wp_objDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
+  {{{ is_pkg_init apimodel ∗
+      KObjectV.deepown_i i1 obj1 dq1 ∗
+      KObjectV.deepown_i i2 obj2 dq2
+  }}}
+    @! apimodel.objDeepEqual #i1 #i2
+  {{{ v, RET #v;
+      KObjectV.deepown_i i1 obj1 dq1 ∗
+      KObjectV.deepown_i i2 obj2 dq2 ∗
+      ⌜ v = true ↔ obj1 = obj2 ⌝
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
   {{{ is_pkg_init apimodel ∗
       l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
@@ -1425,20 +1439,21 @@ Lemma wp_deletionFinalizersForGarbageCollection metadata_i metadata_l m options_
   {{{ is_pkg_init apimodel ∗
       "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (ptrT.id v1.ObjectMeta.id) #metadata_l ⌝ ∗
       "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
-      "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
+      "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq ∗
+      "%Hvalid_finalizers" ∷ ⌜ valid_finalizers m.(ObjectMetaV.Finalizers') ⌝
   }}}
     @! apimodel.deletionFinalizersForGarbageCollection #metadata_i #options_l
-  {{{ should_update_finalizers new_finalizers_sl (finalizers :  option (list go_string)),
-      RET (#should_update_finalizers, #new_finalizers_sl);
-      ObjectMetaV.deepown_l metadata_l m dq ∗
-      DeleteOptionsV.deepown_l options_l options dq ∗
-      ⌜ new_finalizers_sl = slice.nil ↔ finalizers = None ⌝ ∗
-      (match finalizers with
+  {{{ should_update_finalizers new_finalizers_sl new_finalizers, RET (#should_update_finalizers, #new_finalizers_sl);
+      ⌜ should_update_finalizers = delete_should_update_finalizers m options ⌝ ∗
+      ⌜ new_finalizers = delete_new_finalizers m options ⌝ ∗
+      ⌜ valid_finalizers new_finalizers ⌝ ∗
+      ⌜ new_finalizers_sl = slice.nil ↔ new_finalizers = None ⌝ ∗
+      (match new_finalizers with
       | Some fs => ∃ cfs, new_finalizers_sl ↦* cfs ∗ ⌜ cfs = fs ⌝
       | None => True%I
       end) ∗
-      ⌜ should_update_finalizers = delete_should_update_finalizers m options ⌝ ∗
-      ⌜ finalizers = delete_new_finalizers m options ⌝
+      ObjectMetaV.deepown_l metadata_l m dq ∗
+      DeleteOptionsV.deepown_l options_l options dq
   }}}.
 Proof.
 Admitted.

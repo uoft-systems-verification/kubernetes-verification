@@ -92,7 +92,8 @@ Lemma valid_namespace_slash_free ns:
 Proof. Admitted.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
-Axiom valid_generation: w64 → Prop.
+Definition valid_generation (generation: w64) : Prop :=
+  (0 <= sint.Z generation)%Z.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
 Axiom valid_labels: option (gmap go_string go_string) → Prop.
@@ -116,6 +117,8 @@ Definition valid_owner_references (o: option (list OwnerReferenceV.t)) : Prop :=
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L197 *)
 Axiom valid_finalizers: option (list go_string) → Prop.
+Axiom valid_finalizers_dec : ∀ fs, Decision (valid_finalizers fs).
+Global Existing Instance valid_finalizers_dec.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L269 *)
 Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
@@ -552,9 +555,17 @@ Definition objectmeta o : ObjectMetaV.t :=
   | ReplicaSet rs => rs.(ReplicaSetV.ObjectMeta')
   end.
 
-Axiom spec: t → ObjectSpecV.t.
+Definition spec o: ObjectSpecV.t :=
+  match o with
+  | Pod p => ObjectSpecV.PodSpec p.(PodV.Spec')
+  | ReplicaSet rs => ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')
+  end.
 
-Axiom status: t → ObjectStatusV.t.
+Definition status o: ObjectStatusV.t :=
+  match o with
+  | Pod p => ObjectStatusV.PodStatus p.(PodV.Status')
+  | ReplicaSet rs => ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status')
+  end.
 
 Definition kind o : go_string :=
   match o with
@@ -789,6 +800,18 @@ Proof.
   assert (update_objectmeta v (objectmeta v) = v) as ->.
   { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
   iFrame.
+Qed.
+
+Lemma deepown_i_yields_deepown_l i l v dq:
+  deepown_i i v dq ∗ ⌜ valid_interface i l v ⌝ -∗
+    deepown_l l v dq.
+Proof.
+  iIntros "[Hdeepown_i %Hvalid]".
+  iDestruct "Hdeepown_i" as (l') "[%Hvalid' Hdeepown_l]".
+  destruct v; simpl in *;
+  subst i;
+  simplify_eq;
+  done.
 Qed.
 
 End proof.
