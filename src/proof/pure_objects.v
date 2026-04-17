@@ -892,6 +892,10 @@ Definition valid_interface i (l : loc) : Prop :=
 
 Definition deepown_i i v dq: iProp Σ :=
   ∃ l, ⌜ valid_interface i l ⌝ ∗ deepown_l l v dq.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L157 *)
+Axiom valid : t -> Prop.
+
 End def.
 End DeleteOptionsV.
 

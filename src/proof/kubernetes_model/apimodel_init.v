@@ -6,6 +6,7 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export validation_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Export validation_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.

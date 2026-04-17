@@ -363,7 +363,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__create_nameless_au.
-  iFrame "#". iFrame. iSplit; [done|]. iSplit; [done|]. iSplit; [done|]. iSplit; [done|]. iSplit; [done|].
+  iFrame "#". iFrame "%". iFrame.
   iApply fupd_mask_intro; [ set_solver | iIntros "Hmask" ].
   iIntros (i' kobj' key uid) "Hpost".
   iMod "Hmask" as "_".

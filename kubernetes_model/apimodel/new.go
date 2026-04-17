@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -657,6 +658,12 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 // shouldOrphanDependents determines if the orphan finalizer should be set based on DeleteOptions.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L888-L925
 func shouldOrphanDependents(metadata metav1.Object, options *metav1.DeleteOptions) bool {
+	// If an explicit orphan request was set at deletion time, it has highest priority.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L897-L900
+	if options != nil && options.OrphanDependents != nil {
+		return *options.OrphanDependents
+	}
+
 	// If PropagationPolicy is set, it takes highest priority
 	if options != nil && options.PropagationPolicy != nil {
 		switch *options.PropagationPolicy {
@@ -685,6 +692,12 @@ func shouldOrphanDependents(metadata metav1.Object, options *metav1.DeleteOption
 // shouldDeleteDependents determines if the foreground deletion finalizer should be set based on DeleteOptions.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L927-L966
 func shouldDeleteDependents(metadata metav1.Object, options *metav1.DeleteOptions) bool {
+	// An explicit orphan request disables foreground deletion finalization.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L939-L943
+	if options != nil && options.OrphanDependents != nil {
+		return false
+	}
+
 	// If PropagationPolicy is set, it takes highest priority
 	if options != nil && options.PropagationPolicy != nil {
 		switch *options.PropagationPolicy {
@@ -773,6 +786,19 @@ func newPreconditionRVConflictError(kind string, name string, preconditionRV str
 			preconditionRV, rv))
 }
 
+// validateDeleteOptions checks structural DeleteOptions validation that upstream performs in BeforeDelete.
+// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L80-L81
+func validateDeleteOptions(options *metav1.DeleteOptions) error {
+	if errs := metav1validation.ValidateDeleteOptions(options); len(errs) > 0 {
+		return errors.NewInvalid(
+			schema.GroupKind{Group: metav1.GroupName, Kind: "DeleteOptions"},
+			"",
+			errs,
+		)
+	}
+	return nil
+}
+
 // validateDeletePreconditions checks if the preconditions in DeleteOptions match the object's metadata.
 // Returns a Conflict error if preconditions don't match.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
@@ -812,6 +838,55 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 		options.GracePeriodSeconds = &period
 	}
 
+	metadata, err := meta.Accessor(obj)
+	if err != nil {
+		return false, false, fmt.Errorf("failed to access object metadata: %w", err)
+	}
+
+	// Existing negative grace periods are normalized to 1s before any already-deleting logic.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L97-L99
+	if currentGracePeriod := metadata.GetDeletionGracePeriodSeconds(); currentGracePeriod != nil && *currentGracePeriod < 0 {
+		period := int64(1)
+		metadata.SetDeletionGracePeriodSeconds(&period)
+	}
+
+	// If deletion is already pending, a repeated delete may only shorten the
+	// remaining grace period. This mirrors the already-deleting branch in
+	// apiserver/pkg/registry/rest.BeforeDelete.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L107-L151
+	if metadata.GetDeletionTimestamp() != nil {
+		currentGracePeriod := metadata.GetDeletionGracePeriodSeconds()
+		if currentGracePeriod == nil || *currentGracePeriod == 0 {
+			return false, false, nil
+		}
+		if options.GracePeriodSeconds != nil {
+			period := *options.GracePeriodSeconds
+			if period >= *currentGracePeriod {
+				return false, true, nil
+			}
+
+			newDeletionTimestamp := metav1.NewTime(
+				metadata.GetDeletionTimestamp().Add(-1 * time.Second * time.Duration(*currentGracePeriod)).
+					Add(time.Second * time.Duration(period)),
+			)
+			now := metav1.Now()
+			if newDeletionTimestamp.Before(&now) {
+				newDeletionTimestamp = now
+				if period != 0 {
+					// Preserve the "still graceful" behavior when the remaining grace
+					// period has already elapsed.
+					period = 1
+				}
+			}
+			metadata.SetDeletionTimestamp(&newDeletionTimestamp)
+			metadata.SetDeletionGracePeriodSeconds(&period)
+			return true, false, nil
+		}
+
+		options.GracePeriodSeconds = currentGracePeriod
+		return false, true, nil
+	}
+
 	switch typed := obj.(type) {
 	case *corev1.Pod:
 		// Convert to internal type for strategy
@@ -842,8 +917,35 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 	}
 }
 
+// objDeepEqual approximates upstream's "did the delete path actually change the stored object?"
+// check, but it is not exactly the same logic.
+//
+// Upstream relies on the storage-layer GuaranteedUpdate / no-op-update behavior to decide whether
+// an update is persisted and therefore whether resourceVersion advances; it does not compare the
+// in-memory objects with a single reflect.DeepEqual-style helper in the registry layer.
+//
+// This model uses reflect.DeepEqual as a simple in-memory approximation because the model has no
+// storage codec / transformer layer. That can diverge from upstream in edge cases where storage
+// normalization or Go representation details affect equality.
 func objDeepEqual(obj1 interface{}, obj2 interface{}) bool {
 	return reflect.DeepEqual(obj1, obj2)
+}
+
+// deletionTimestampForDelete computes the initial DeletionTimestamp written by the delete path.
+// Graceful deletion uses now+gracePeriod; non-graceful deletion with finalizers uses "now",
+// mirroring markAsDeleting in upstream storage.
+// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L163-L165
+// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1022-L1028
+func deletionTimestampForDelete(graceful bool, gracePeriod int64) *metav1.Time {
+	if graceful {
+		requestedDeletionTimestamp := metav1.NewTime(
+			metav1.Now().Add(time.Second * time.Duration(gracePeriod)),
+		)
+		return &requestedDeletionTimestamp
+	}
+
+	now := metav1.Now()
+	return &now
 }
 
 func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
@@ -864,27 +966,39 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 		return fmt.Errorf("failed to access object metadata: %w", err)
 	}
 
+	// Validate DeleteOptions the same way rest.BeforeDelete does.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L80-L81
+	if err := validateDeleteOptions(&options); err != nil {
+		return err
+	}
+
 	// Validate preconditions (UID, ResourceVersion)
-	if err := validateDeletePreconditions(metadata, &options, key.Kind); err != nil {
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L83-L91
+	if err = validateDeletePreconditions(metadata, &options, key.Kind); err != nil {
 		return err
 	}
 
 	// Call strategy's CheckGracefulDelete
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L154-L174
 	graceful, pendingGraceful, err := checkGracefulDelete(objCopy, &options)
 	if err != nil {
 		return err
 	}
 
-	// Update GC finalizers based on PropagationPolicy
-	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1172-L1176
-	shouldUpdateFinalizers, newFinalizers := deletionFinalizersForGarbageCollection(metadata, &options)
-
-	// If already pending graceful deletion and no finalizer updates needed, just return success
-	// (the deletion timestamp was already set in a previous delete call)
-	// Note: We still allow updating finalizers on already-deleting objects to match real API behavior
-	if pendingGraceful && !shouldUpdateFinalizers {
+	// Once graceful deletion is pending, repeated deletes can only shorten the remaining grace
+	// period. For objects already marked deleting with zero grace period, the apiserver still
+	// allows PropagationPolicy / OrphanDependents to update GC finalizers.
+	// References:
+	// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1062-L1069
+	// - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1074-L1084
+	if pendingGraceful {
 		return nil
 	}
+
+	// Recompute GC finalizers for every non-pending delete, including repeated deletes on objects
+	// that already have DeletionTimestamp set with zero grace period.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1074-L1084
+	shouldUpdateFinalizers, newFinalizers := deletionFinalizersForGarbageCollection(metadata, &options)
 
 	if shouldUpdateFinalizers {
 		metadata.SetFinalizers(newFinalizers)
@@ -909,8 +1023,7 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	// Track if this is the first time setting DeletionTimestamp.
 	if metadata.GetDeletionTimestamp() == nil {
 		// Set DeletionTimestamp if not already set.
-		now := metav1.Now()
-		metadata.SetDeletionTimestamp(&now)
+		metadata.SetDeletionTimestamp(deletionTimestampForDelete(graceful, gracePeriod))
 		// Increment generation when setting DeletionTimestamp for the first time.
 		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L166-L172
 		// For graceful deletion: increment when first setting DeletionTimestamp.

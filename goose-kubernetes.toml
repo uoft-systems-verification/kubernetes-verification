@@ -23,6 +23,7 @@ packages = [
     "./staging/src/k8s.io/apimachinery/pkg/api/resource",
     "./staging/src/k8s.io/apimachinery/pkg/api/validation",
     "./staging/src/k8s.io/apimachinery/pkg/apis/meta/v1",
+    "./staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation",
     "./staging/src/k8s.io/apimachinery/pkg/labels",
     "./staging/src/k8s.io/apimachinery/pkg/runtime",
     "./staging/src/k8s.io/apimachinery/pkg/runtime/schema",
