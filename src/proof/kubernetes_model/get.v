@@ -46,12 +46,12 @@ Lemma wp_State__get_some_au γ l key :
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     |={⊤,∅}=> ∃ uid dq kmeta kspec_o kstatus_o,
-      "Hown_meta" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec" ∷ match kspec_o with
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ match kspec_o with
       | Some kspec => own_spec_frag γ key uid dq kspec
       | None => True
       end ∗
-      "Hown_status" ∷ match kstatus_o with
+      "Hown_status_frag" ∷ match kstatus_o with
       | Some kstatus => own_status_frag γ key uid dq kstatus
       | None => True
       end ∗
@@ -90,7 +90,7 @@ Proof.
       apply not_elem_of_dom. done. }
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
-    iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta")
+    iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
       as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
     assert (abs_state !! key ≠ None) as Hlookup_abs''.
     { intros Hnone. rewrite Hlookup_abs' in Hnone. done. }
@@ -110,22 +110,22 @@ Proof.
   iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
-  iPoseProof (kview.own_meta_valid with "Hown_meta")
+  iPoseProof (kview.own_meta_valid with "Hown_meta_frag")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
-  iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta")
+  iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
     as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
   assert (obj = kobj) as ->.
   { rewrite Hlookup_abs in Hlookup_abs'. inversion Hlookup_abs'. done. }
   destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
-  1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec") as "%Hspec_found";
+  1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found";
         assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
           (symmetry; eapply Hspec_found; [exact Hlookup_abs|];
            rewrite Hmeta_eq; symmetry; exact Huid_eq).
-  1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status") as "%Hstatus_found";
+  1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found";
         assert (kstatus = KObjectV.status kobj) as Hkstatus_eq by
           (symmetry; eapply Hstatus_found; [exact Hlookup_abs|];
            rewrite Hmeta_eq; symmetry; exact Huid_eq).
-  all: iMod ("Hclose" $! i' kobj with "[Hown_meta Hown_spec Hown_status Hdeepown_i']") as "HΦ";
+  all: iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ";
     [iFrame; iPureIntro; split_and!; done|].
   all: iModIntro.
   all: iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
@@ -140,12 +140,12 @@ Qed.
 Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "Hown_meta" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec" ∷ match kspec_o with
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ match kspec_o with
       | Some kspec => own_spec_frag γ key uid dq kspec
       | None => True
       end ∗
-      "Hown_status" ∷ match kstatus_o with
+      "Hown_status_frag" ∷ match kstatus_o with
       | Some kstatus => own_status_frag γ key uid dq kstatus
       | None => True
       end

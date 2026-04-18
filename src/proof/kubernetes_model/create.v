@@ -19,7 +19,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
     "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
     |={⊤,∅}=> ∃ children,
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ i' kobj' key uid,
         ⌜ KObjectV.valid kobj' ⌝ ∗
         ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
@@ -124,7 +124,7 @@ Proof.
   iApply fupd_wp.
   iMod "Hau" as (children) "H". iNamed "H".
   iPoseProof (cview.own_auth_frag_valid (pk := parent_key) (puid := parent_uid)
-    with "[$Hinv_Hown_children] [$Hown_children]")
+    with "[$Hinv_Hown_children] [$Hown_children_frag]")
     as "[%Hchildren_eq_dom %Hin_used_reference]".
   assert (KObjectV.valid kobj2) as Hvalid2.
   { subst kobj2.
@@ -188,8 +188,8 @@ Proof.
   }
   iMod (cview.create_child_vs2 (pk := parent_key) (puid := parent_uid)
     key generated_uid kobj2
-    with "[$Hinv_Hown_children] [$Hown_children]")
-    as "(Hinv_Hown_children & Hown_children & Hown_grandchildren)".
+    with "[$Hinv_Hown_children] [$Hown_children_frag]")
+    as "(Hinv_Hown_children & Hown_children_frag & Hown_grandchildren)".
   { subst kobj2.
     destruct kobj; destruct kobj1;
     try done; rewrite Hm_eq; done.
@@ -235,7 +235,7 @@ Proof.
     apply Huid_fresh. rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     done.
   }
-  iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children $Hown_grandchildren]") as "HΦ".
+  iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
   { iPureIntro. split_and!.
     - done.
     - unfold ObjectMetaV.nameless_created.
@@ -342,7 +342,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i
   {{{ i' kobj' key uid, RET (#i', #interface.nil);
