@@ -14,6 +14,23 @@ Axiom deepown : v1.Time.t → t → iProp Σ.
 End def.
 End TimeV.
 
+Axiom valid_kind: go_string → Prop.
+
+(* Upstream reference: Kubernetes validates CRD `spec.names.kind` by
+   lowercasing it and checking it as a DNS-1035 label, which excludes `/`.
+   See:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation/validation.go#L762-L763 *)
+Lemma valid_kind_slash_free kind:
+  valid_kind kind → slash_free kind.
+Proof. Admitted.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
+Axiom valid_name: go_string → Prop.
+
+Lemma valid_name_slash_free name:
+  valid_name name → slash_free name.
+Proof. Admitted.
+
 Module OwnerReferenceV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -70,9 +87,6 @@ Definition deepown_l l v dq: iProp Σ :=
 
 End def.
 End ManagedFieldsEntryV.
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
-Axiom valid_name: go_string → Prop.
 
 Definition valid_generate_name generate_name : Prop :=
   (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
@@ -586,17 +600,21 @@ Definition update_objectmeta o m: t :=
   | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
   end.
 
-Axiom kind_update_objectmeta :
+Lemma kind_update_objectmeta :
   ∀ o m, kind (update_objectmeta o m) = kind o.
+Proof. destruct o; done. Qed.
 
-Axiom typemeta_update_objectmeta :
+Lemma typemeta_update_objectmeta :
   ∀ o m, typemeta (update_objectmeta o m) = typemeta o.
+Proof. destruct o; done. Qed.
 
-Axiom spec_update_objectmeta :
+Lemma spec_update_objectmeta :
   ∀ o m, spec (update_objectmeta o m) = spec o.
+Proof. destruct o; done. Qed.
 
-Axiom status_update_objectmeta :
+Lemma status_update_objectmeta :
   ∀ o m, status (update_objectmeta o m) = status o.
+Proof. destruct o; done. Qed.
 
 Axiom valid_create: go_string → go_string → t → Prop.
 
@@ -604,7 +622,9 @@ Axiom valid_update: go_string → go_string → t → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
-Axiom typemeta_valid : go_string → v1.TypeMeta.t → Prop.
+(* TODO: this definition is incomplete but for now we only care about kind *)
+Definition typemeta_valid kind tm : Prop :=
+  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
 
 Definition valid o : Prop :=
   typemeta_valid (kind o) (typemeta o) ∧

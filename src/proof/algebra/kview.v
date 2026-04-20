@@ -1825,6 +1825,31 @@ Proof.
   split; done.
 Qed.
 
+Lemma own_meta_map_exists {γ state used_uid m dq}:
+own_auth γ state used_uid -∗
+([∗ map] k↦meta ∈ m, own_meta_frag γ k meta.(ObjectMetaV.UID') dq meta) -∗
+  ⌜ map_Forall (λ k meta, ∃ obj, state !! k = Some obj ∧ (KObjectV.objectmeta obj) = meta) m ⌝ ∗
+  ⌜ map_Forall (λ _ meta, meta.(ObjectMetaV.UID') ∈ used_uid) m ⌝.
+Proof.
+  iIntros "Hauth Hm".
+  iInduction m as [|k meta m Hnotin] "IH" using map_ind.
+  - rewrite big_sepM_empty.
+    iPureIntro.
+    split; apply map_Forall_empty.
+  - rewrite big_sepM_insert //.
+    iDestruct "Hm" as "[Hmeta Hm]".
+    iDestruct (own_meta_exists with "Hauth Hmeta") as %(obj & Hlookup & Hmeta_eq & Huid_in).
+    iDestruct ("IH" with "Hauth Hm") as %(Hmeta_forall & Huid_forall).
+    iPureIntro.
+    split.
+    + apply map_Forall_insert_2.
+      * exists obj. split; done.
+      * exact Hmeta_forall.
+    + apply map_Forall_insert_2.
+      * exact Huid_in.
+      * exact Huid_forall.
+Qed.
+
 Lemma own_spec_exists {γ state used_uid k uid dq spec}:
 own_auth γ state used_uid -∗
 own_spec_frag γ k uid dq spec -∗

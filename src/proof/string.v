@@ -124,6 +124,30 @@ Definition dash_free (s: go_string) : Prop :=
 Definition slash_free (s: go_string) : Prop :=
   Forall (λ b, b ≠ byte_slash) s.
 
+Definition w8_eq_dec (x y : w8) : {x = y} + {x ≠ y}.
+Proof.
+  destruct (decide (x = y)); [left|right]; done.
+Defined.
+
+Lemma slash_free_count_occ_zero s :
+  slash_free s ↔ count_occ w8_eq_dec s byte_slash = 0%nat.
+Proof.
+  unfold slash_free.
+  induction s as [|b s IH]; simpl.
+  - split; done.
+  - split.
+    + intros Hsf.
+      inversion Hsf as [|? ? Hneq Hsf']; subst.
+      destruct (w8_eq_dec b byte_slash) as [->|Hneq'].
+      * exfalso. apply Hneq. reflexivity.
+      * apply IH in Hsf'. exact Hsf'.
+    + intros Hcount.
+      destruct (w8_eq_dec b byte_slash) as [->|Hneq']; simpl in Hcount.
+      * discriminate.
+      * constructor; [exact Hneq'|].
+        apply IH. exact Hcount.
+Qed.
+
 Definition reserved_derived_name (derived_name: go_string) : Prop :=
   ∃ prefix suffix,
     reserved_name prefix ∧
@@ -197,6 +221,60 @@ Proof.
   apply app_prefix_sep_inj in Hcontra; [|done|done].
   destruct Hcontra as [Hns_eq _].
   done.
+Qed.
+
+Lemma pod_controller_index_key_slash_count namespace kind name uid :
+  count_occ w8_eq_dec (namespace ++ "/"%go ++ kind ++ "/"%go ++ name ++ "/"%go ++ uid) byte_slash =
+    (count_occ w8_eq_dec namespace byte_slash +
+     count_occ w8_eq_dec kind byte_slash +
+     count_occ w8_eq_dec name byte_slash +
+     count_occ w8_eq_dec uid byte_slash + 3)%nat.
+Proof.
+  assert ("/"%go = [byte_slash]) as Hslash_eq by done.
+  rewrite Hslash_eq.
+  repeat rewrite count_occ_app.
+  repeat match goal with
+  | |- context [count_occ w8_eq_dec [byte_slash] byte_slash] =>
+      replace (count_occ w8_eq_dec [byte_slash] byte_slash) with 1%nat by
+        (simpl; destruct (w8_eq_dec byte_slash byte_slash); [done|congruence])
+  end.
+  lia.
+Qed.
+
+Lemma pod_controller_index_key_inj_right namespace1 kind1 name1 uid1 namespace2 kind2 name2 uid2 :
+  slash_free namespace1 →
+  slash_free namespace2 →
+  slash_free kind2 →
+  slash_free name2 →
+  slash_free uid2 →
+  namespace1 ++ "/"%go ++ kind1 ++ "/"%go ++ name1 ++ "/"%go ++ uid1 =
+  namespace2 ++ "/"%go ++ kind2 ++ "/"%go ++ name2 ++ "/"%go ++ uid2 →
+  namespace1 = namespace2 ∧ kind1 = kind2 ∧ name1 = name2 ∧ uid1 = uid2.
+Proof.
+  intros Hns1_sf Hns2_sf Hkind2_sf Hname2_sf Huid2_sf Heq.
+  pose proof (pod_controller_index_key_slash_count namespace1 kind1 name1 uid1) as Hcount1.
+  pose proof (pod_controller_index_key_slash_count namespace2 kind2 name2 uid2) as Hcount2.
+  pose proof (proj1 (slash_free_count_occ_zero namespace1) Hns1_sf) as Hns1_count.
+  pose proof (proj1 (slash_free_count_occ_zero namespace2) Hns2_sf) as Hns2_count.
+  pose proof (proj1 (slash_free_count_occ_zero kind2) Hkind2_sf) as Hkind2_count.
+  pose proof (proj1 (slash_free_count_occ_zero name2) Hname2_sf) as Hname2_count.
+  pose proof (proj1 (slash_free_count_occ_zero uid2) Huid2_sf) as Huid2_count.
+  rewrite Heq in Hcount1.
+  rewrite Hns2_count in Hcount2.
+  rewrite Hkind2_count in Hcount2.
+  rewrite Hname2_count in Hcount2.
+  rewrite Huid2_count in Hcount2.
+  rewrite Hns1_count in Hcount1.
+  rewrite Hcount2 in Hcount1.
+  assert (count_occ w8_eq_dec kind1 byte_slash = 0%nat ∧
+          count_occ w8_eq_dec name1 byte_slash = 0%nat ∧
+          count_occ w8_eq_dec uid1 byte_slash = 0%nat) as (Hkind1_count & Hname1_count & Huid1_count).
+  { lia. }
+  pose proof (proj2 (slash_free_count_occ_zero kind1) Hkind1_count) as Hkind1_sf.
+  pose proof (proj2 (slash_free_count_occ_zero name1) Hname1_count) as Hname1_sf.
+  pose proof (proj2 (slash_free_count_occ_zero uid1) Huid1_count) as Huid1_sf.
+  eapply pod_controller_index_key_inj; [|exact Heq].
+  repeat split; eauto.
 Qed.
 
 

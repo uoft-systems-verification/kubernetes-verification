@@ -112,10 +112,8 @@ Proof.
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
-  iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
-    as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
-  assert (obj = kobj) as ->.
-  { rewrite Hlookup_abs in Hlookup_abs'. inversion Hlookup_abs'. done. }
+  iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
+    as "(%Hmeta_eq & %Huid_in)". 1: done.
   destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
   1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found";
         assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
