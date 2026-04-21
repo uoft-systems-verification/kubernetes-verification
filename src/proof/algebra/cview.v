@@ -60,6 +60,30 @@ Proof.
     γ state used_reference (pk, puid) dq ks).
 Qed.
 
+Lemma own_auth_frag_valid2 {γ state used_reference pk puid dq ks}:
+  map_Forall (λ k obj, k.(KKey.Namespace') = (KObjectV.objectmeta obj).(ObjectMetaV.Namespace')) state →
+  own_auth γ state used_reference -∗
+  own_frag γ pk puid dq ks -∗
+  ⌜ set_Forall (λ k, k.(KKey.Namespace') = pk.(KKey.Namespace')) ks ⌝.
+Proof.
+  iIntros (Hkey_namespace) "Hauth Hfrag".
+  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[Hks _].
+  iPureIntro.
+  unfold set_Forall.
+  intros k Hk.
+  rewrite Hks in Hk.
+  apply elem_of_dom in Hk as [obj Hlookup].
+  apply map_lookup_filter_Some in Hlookup as [Hlookup Hparent].
+  rewrite (map_Forall_lookup_1 _ _ _ _ Hkey_namespace Hlookup).
+  unfold obj_parent_ref, meta_parent_ref in Hparent.
+  destruct ((KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as [orefs|]
+    eqn:Horefs; simpl in Hparent; [|discriminate].
+  destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
+    as [[idx oref]|] eqn:Hfind; simpl in Hparent; [|discriminate].
+  inversion Hparent; done.
+Qed.
+
+
 Lemma create_child_vs {γ state used_reference pk puid ks} k uid v cks:
   uid = (KObjectV.objectmeta v).(ObjectMetaV.UID') →
   state !! k = None →
