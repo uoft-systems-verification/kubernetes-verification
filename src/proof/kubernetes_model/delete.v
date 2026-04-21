@@ -138,14 +138,14 @@ Lemma wp_State__delete_au γ l key options_c options:
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
     ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children,
-      "%Hkey_in" ∷ ⌜key ∈ children⌝ ∗
+      "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ err kmeta',
         (* delete succeeds as uid and rv matches *)
         ⌜ delete_preconditions_match kmeta options ⌝ ∗
-        ⌜err = interface.nil⌝ ∗
+        ⌜ err = interface.nil ⌝ ∗
         ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
           ⌜kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None⌝ ∗
           own_meta_frag γ key uid 1 kmeta' ∗
@@ -158,7 +158,7 @@ Lemma wp_State__delete_au γ l key options_c options:
         ∨
         (* delete fails as the delete preconditions do not match *)
         ⌜ ¬ delete_preconditions_match kmeta options ⌝ ∗
-        ⌜err ≠ interface.nil⌝ ∗
+        ⌜ err ≠ interface.nil ⌝ ∗
         own_meta_frag γ key uid 1 kmeta ∗
         own_children_frag γ parent_key parent_uid 1 children
           ={∅,⊤}=∗ ▷ Φ (# err)

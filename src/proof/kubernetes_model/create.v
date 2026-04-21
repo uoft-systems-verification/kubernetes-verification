@@ -142,8 +142,7 @@ Proof.
     ).
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
-  { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
-    iPureIntro. done. }
+  { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".

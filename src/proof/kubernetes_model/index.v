@@ -27,14 +27,14 @@ Lemma wp_index_of_podController i pod dq:
 Proof. Admitted.
 
 Lemma matching_podController_indexed_value_implies_being_children_pods pods parent_key parent_uid :
-slash_free parent_key.(KKey.Kind') →
-slash_free parent_key.(KKey.Namespace') →
-slash_free parent_key.(KKey.Name') →
-slash_free parent_uid →
-Forall PodV.valid pods →
-filter (λ pod, podController_indexed_value pod = parent_key.(KKey.Namespace') ++ "/"%go ++
-  parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid) pods =
-filter (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods.
+  slash_free parent_key.(KKey.Kind') →
+  slash_free parent_key.(KKey.Namespace') →
+  slash_free parent_key.(KKey.Name') →
+  slash_free parent_uid →
+  Forall PodV.valid pods →
+  filter (λ pod, podController_indexed_value pod = parent_key.(KKey.Namespace') ++ "/"%go ++
+    parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid) pods =
+  filter (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods.
 Proof.
   intros Hparent_kind_sf Hparent_ns_sf Hparent_name_sf Hparent_uid_sf Hpods_valid.
   induction Hpods_valid as [|pod pods Hpod_valid Hpods_valid IH]; simpl; [done|].
@@ -123,6 +123,16 @@ Proof.
   - eapply Permutation_trans; done.
 Qed.
 
+Lemma Forall_filter {A} (P Q : A → Prop) `{!∀ x, Decision (Q x)} xs :
+  Forall P xs →
+  Forall P (filter Q xs).
+Proof.
+  intros Hxs.
+  induction Hxs as [|x xs HP Hxs IH]; simpl; [done|].
+  rewrite filter_cons.
+  destruct (decide (Q x)); simpl; [constructor; done|done].
+Qed.
+
 Lemma filter_pod_parent_ref_fmap (pods : list PodV.t) parent_key parent_uid :
   filter (λ obj : KObjectV.t, obj_parent_ref obj = Some (parent_key, parent_uid))
     (KObjectV.Pod <$> pods) =
@@ -187,14 +197,13 @@ Proof.
   apply map_to_list_filter_perm.
 Qed.
 
-Lemma pods_is_permutation_of_meta_map_for_meta (pods : list PodV.t) (meta_map : gmap KKey.t ObjectMetaV.t) (abs_state : gmap KKey.t KObjectV.t)
-  parent_key parent_uid :
-KObjectV.Pod <$> pods ≡ₚ (map_to_list (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state)).*2 →
-dom meta_map = filter (λ key, KKey.Kind' key = "Pod"%go)
-  (dom (filter (λ '(_, v), obj_parent_ref v = Some (parent_key, parent_uid)) abs_state)) →
-map_Forall (λ k meta, ∃ obj, abs_state !! k = Some obj ∧ KObjectV.objectmeta obj = meta) meta_map →
-PodV.ObjectMeta' <$> (filter (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods) ≡ₚ
-  (map_to_list meta_map).*2.
+Lemma pods_is_permutation_of_meta_map_for_meta (pods : list PodV.t) (meta_map : gmap KKey.t ObjectMetaV.t) (abs_state : gmap KKey.t KObjectV.t) parent_key parent_uid :
+  KObjectV.Pod <$> pods ≡ₚ (map_to_list (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state)).*2 →
+  dom meta_map = filter (λ key, KKey.Kind' key = "Pod"%go)
+    (dom (filter (λ '(_, v), obj_parent_ref v = Some (parent_key, parent_uid)) abs_state)) →
+  map_Forall (λ k meta, ∃ obj, abs_state !! k = Some obj ∧ KObjectV.objectmeta obj = meta) meta_map →
+  PodV.ObjectMeta' <$> (filter (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods) ≡ₚ
+    (map_to_list meta_map).*2.
 Proof.
   intros Hperm Hdom Hmeta_lookup.
   set pod_state := filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state.
@@ -265,10 +274,6 @@ Qed.
 
 (* Definition ByIndex_podController_map_list_rel
   (parent_key : KKey.t) (pod_map : gmap KKey.t PodV.t) (pods : list PodV.t) : Prop :=
-  (* every pod in the list is valid *)
-  (Forall PodV.valid pods) ∧
-  (* no dup keys in the list *)
-  NoDup (PodV.key <$> pods) ∧
   (* every pod in the list is also in the map *)
   (Forall (λ pod, pod_map !! (PodV.key pod) = Some pod) pods) ∧
   (* every pod in the map is also in the list *)
@@ -294,6 +299,8 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         sl ↦* interfaces ∗
         ([∗ list] i;pod ∈ interfaces;pods, KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
         ⌜ PodV.ObjectMeta' <$> pods ≡ₚ (map_to_list meta_map).*2 ⌝ ∗
+        ⌜ Forall PodV.valid pods ⌝ ∗
+        ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
         ([∗ map] key ↦ meta ∈ meta_map, own_meta_frag γ key meta.(ObjectMetaV.UID') dq meta) ∗
         own_children_frag γ parent_key parent_uid dq children_keys
           ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V
@@ -306,8 +313,8 @@ Proof.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply (wp_State__objListLocked_Pod_NamespaceAll with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
     $Hinv_Hphys_abs_rep]").
-  iIntros (sl interfaces pods) "(Hsl & Hdeepown_i_interfaces & %Hlist_result & %Hpods_valid & Hinv_Hstate_m_addr &
-    Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto.
+  iIntros (sl interfaces pods) "(Hsl & Hdeepown_i_interfaces & %Hlist_result & %Hpods_valid & %Hpods_nodup &
+    Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto.
   iPoseProof own_slice_nil as "Hslice_nil".
   iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
@@ -412,9 +419,12 @@ Proof.
     rewrite (matching_podController_indexed_value_implies_being_children_pods pods parent_key parent_uid). all: try done.
     set returned_pods := filter (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods.
     iMod ("Hclose" $! sl' interfaces' returned_pods (DfracOwn 1) with "[Hown_meta_frags Hown_children_frag Hsl' Hlist_pre]") as "HΦ".
-    { iFrame. iPureIntro. 
-      apply (pods_is_permutation_of_meta_map_for_meta pods meta_map abs_state).
-      all: done.
+    { iFrame. iPureIntro. split_and!.
+      - apply (pods_is_permutation_of_meta_map_for_meta pods meta_map abs_state).
+        all: done.
+      - apply Forall_filter. done.
+      - eapply sublist_NoDup; [exact Hpods_nodup|].
+        apply fmap_sublist, sublist_filter.
     }
     iModIntro.
     iCombineNamed "Hinv_*" as "H".
