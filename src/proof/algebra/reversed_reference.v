@@ -186,9 +186,9 @@ Notation "●C a" := (cview_auth 1 a) (at level 20).
 Notation "◯C b" := (cview_frag b) (at level 20).
 
 Lemma auth_frag_valid a r dq ks:
-✓ (●C a ⋅ ◯C (mk_frag r dq ks)) →
-ks = dom (filter (λ '(_, v), f v = Some r) (proj_state a)) ∧
-r ∈ (proj_used_reference a).
+  ✓ (●C a ⋅ ◯C (mk_frag r dq ks)) →
+  ks = dom (filter (λ '(_, v), f v = Some r) (proj_state a)) ∧
+  r ∈ (proj_used_reference a).
 Proof.
   intros Hvalid.
   rewrite /cview_auth /cview_frag in Hvalid.
@@ -208,16 +208,16 @@ Proof.
 Qed.
 
 Lemma create_reference a k v r ks cks:
-(proj_state a) !! k = None →
-f v = Some r →
-g k v ≠ r → (* No self-parenting *)
-dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
-g k v ∉ (proj_used_reference a) →
-●C a ⋅
-◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
-  ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅
-  ◯C (mk_frag (g k v) 1 cks).
+  (proj_state a) !! k = None →
+  f v = Some r →
+  g k v ≠ r → (* No self-parenting *)
+  dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
+  g k v ∉ (proj_used_reference a) →
+  ●C a ⋅
+  ◯C (mk_frag r 1 ks) ~~>
+    ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
+    ◯C (mk_frag r 1 (ks ∪ {[k]})) ⋅
+    ◯C (mk_frag (g k v) 1 cks).
 Proof.
   intros Hak Hfr Hnself Hcks Hfresh.
   rewrite -assoc /cview_frag -view_frag_op.
@@ -403,14 +403,14 @@ Proof.
 Qed.
 
 Lemma set_reference a k v r ks v':
-(proj_state a) !! k = Some v →
-f v = None →
-f v' = Some r →
-g k v = g k v' →
-●C a ⋅
-◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
-  ◯C (mk_frag r 1 (ks ∪ {[k]})).
+  (proj_state a) !! k = Some v →
+  f v = None →
+  f v' = Some r →
+  g k v = g k v' →
+  ●C a ⋅
+  ◯C (mk_frag r 1 ks) ~~>
+    ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
+    ◯C (mk_frag r 1 (ks ∪ {[k]})).
 Proof.
   intros Hak Hnone Hfr Hg.
   apply view_update.
@@ -545,14 +545,14 @@ Proof.
 Qed.
 
 Lemma unset_reference a k v r ks v':
-(proj_state a) !! k = Some v →
-f v = Some r →
-f v' = None →
-g k v = g k v' →
-●C a ⋅
-◯C (mk_frag r 1 ks) ~~>
-  ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
-  ◯C (mk_frag r 1 (ks ∖ {[k]})).
+  (proj_state a) !! k = Some v →
+  f v = Some r →
+  f v' = None →
+  g k v = g k v' →
+  ●C a ⋅
+  ◯C (mk_frag r 1 ks) ~~>
+    ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)) ⋅
+    ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hak Hfr Hnone Hg.
   apply view_update.
@@ -692,12 +692,12 @@ Proof.
 Qed.
 
 Lemma delete_reference a k v r ks:
-(proj_state a) !! k = Some v →
-f v = Some r →
-●C a ⋅
-◯C (mk_frag r 1 ks) ~~>
-  ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
-  ◯C (mk_frag r 1 (ks ∖ {[k]})).
+  (proj_state a) !! k = Some v →
+  f v = Some r →
+  ●C a ⋅
+  ◯C (mk_frag r 1 ks) ~~>
+    ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
+    ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hak Hfr.
   apply view_update.
@@ -826,11 +826,11 @@ Proof.
 Qed.
 
 Lemma delete_reference2 a k r ks:
-k ∈ ks →
-●C a ⋅
-◯C (mk_frag r 1 ks) ~~>
-  ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
-  ◯C (mk_frag r 1 (ks ∖ {[k]})).
+  k ∈ ks →
+  ●C a ⋅
+  ◯C (mk_frag r 1 ks) ~~>
+    ●C ((delete k (proj_state a)), (proj_used_reference a)) ⋅
+    ◯C (mk_frag r 1 (ks ∖ {[k]})).
 Proof.
   intros Hk.
   apply view_update.
@@ -963,10 +963,10 @@ Proof.
 Qed.
 
 Lemma simple_update a k v v':
-(proj_state a) !! k = Some v →
-f v = f v' →
-g k v = g k v' →
-●C a ~~> ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)).
+  (proj_state a) !! k = Some v →
+  f v = f v' →
+  g k v = g k v' →
+  ●C a ~~> ●C ((<[k := v']> (proj_state a)), (proj_used_reference a)).
 Proof.
   intros Hak Hfv Hg.
   apply view_update_auth.
@@ -1022,13 +1022,13 @@ Proof.
 Qed.
 
 Lemma simple_create a k v cks:
-(proj_state a) !! k = None →
-f v = None →
-dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
-g k v ∉ (proj_used_reference a) →
-●C a ~~>
-  ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
-  ◯C (mk_frag (g k v) 1 cks).
+  (proj_state a) !! k = None →
+  f v = None →
+  dom (filter (λ '(_, v'), f v' = Some (g k v)) (proj_state a)) = cks →
+  g k v ∉ (proj_used_reference a) →
+  ●C a ~~>
+    ●C ((<[k := v]> (proj_state a)), ((proj_used_reference a) ∪ {[g k v]})) ⋅
+    ◯C (mk_frag (g k v) 1 cks).
 Proof.
   intros Hak Hnone Hcks Hfresh.
   apply view_update_alloc.
@@ -1119,9 +1119,9 @@ Proof.
 Qed.
 
 Lemma simple_delete a k v:
-(proj_state a) !! k = Some v →
-f v = None →
-●C a ~~> ●C ((delete k (proj_state a)), (proj_used_reference a)).
+  (proj_state a) !! k = Some v →
+  f v = None →
+  ●C a ~~> ●C ((delete k (proj_state a)), (proj_used_reference a)).
 Proof.
   intros Hak Hnone.
   apply view_update_auth.
@@ -1180,10 +1180,10 @@ Definition own_frag γ r dq ks : iProp Σ :=
   own γ (◯C (mk_frag r dq ks)).
 
 Lemma own_auth_frag_valid {γ state used_reference r dq ks}:
-own_auth γ state used_reference -∗
-own_frag γ r dq ks -∗
-⌜ ks = dom (filter (λ '(_, v), f v = Some r) state) ⌝ ∗
-⌜ r ∈ used_reference ⌝.
+  own_auth γ state used_reference -∗
+  own_frag γ r dq ks -∗
+  ⌜ ks = dom (filter (λ '(_, v), f v = Some r) state) ⌝ ∗
+  ⌜ r ∈ used_reference ⌝.
 Proof.
   iIntros "Hauth Hfrag".
   iDestruct (own_valid_2 with "Hauth Hfrag") as "Hvalid".
@@ -1202,16 +1202,16 @@ Proof.
 Qed.
 
 Lemma create_reference_vs {γ state used_reference r ks} k v cks:
-state !! k = None →
-f v = Some r →
-g k v ≠ r → (* No self-parenting *)
-dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
-g k v ∉ used_reference →
-own_auth γ state used_reference -∗
-own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
-  own_frag γ r 1 (ks ∪ {[k]}) ∗
-  own_frag γ (g k v) 1 cks.
+  state !! k = None →
+  f v = Some r →
+  g k v ≠ r → (* No self-parenting *)
+  dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
+  g k v ∉ used_reference →
+  own_auth γ state used_reference -∗
+  own_frag γ r 1 ks ==∗
+    own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
+    own_frag γ r 1 (ks ∪ {[k]}) ∗
+    own_frag γ (g k v) 1 cks.
 Proof.
   iIntros (Hak Hfr Hnself Hcks Hfresh) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1223,12 +1223,12 @@ Proof.
 Qed.
 
 Lemma set_reference_vs {γ state used_reference r ks} k v v':
-state !! k = Some v →
-f v = None →
-f v' = Some r →
-g k v = g k v' →
-own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∪ {[k]}).
+  state !! k = Some v →
+  f v = None →
+  f v' = Some r →
+  g k v = g k v' →
+  own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+    own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∪ {[k]}).
 Proof.
   iIntros (Hak Hnone Hfr Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1239,12 +1239,12 @@ Proof.
 Qed.
 
 Lemma unset_reference_vs {γ state used_reference r ks} k v v':
-state !! k = Some v →
-f v = Some r →
-f v' = None →
-g k v = g k v' →
-own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
+  state !! k = Some v →
+  f v = Some r →
+  f v' = None →
+  g k v = g k v' →
+  own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+    own_auth γ (<[k := v']> state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hak Hfr Hnone Hg) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1255,10 +1255,10 @@ Proof.
 Qed.
 
 Lemma delete_reference_vs {γ state used_reference r ks} k v:
-state !! k = Some v →
-f v = Some r →
-own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
+  state !! k = Some v →
+  f v = Some r →
+  own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+    own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hak Hfr) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1269,9 +1269,9 @@ Proof.
 Qed.
 
 Lemma delete_reference_vs2 {γ state used_reference r ks} k:
-k ∈ ks →
-own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
-  own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
+  k ∈ ks →
+  own_auth γ state used_reference -∗ own_frag γ r 1 ks ==∗
+    own_auth γ (delete k state) used_reference ∗ own_frag γ r 1 (ks ∖ {[k]}).
 Proof.
   iIntros (Hk) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
@@ -1282,10 +1282,10 @@ Proof.
 Qed.
 
 Lemma simple_update_vs {γ state used_reference} k v v':
-state !! k = Some v →
-f v = f v' →
-g k v = g k v' →
-own_auth γ state used_reference ==∗ own_auth γ (<[k := v']> state) used_reference.
+  state !! k = Some v →
+  f v = f v' →
+  g k v = g k v' →
+  own_auth γ state used_reference ==∗ own_auth γ (<[k := v']> state) used_reference.
 Proof.
   iIntros (Hak Hf Hg) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
@@ -1294,13 +1294,13 @@ Proof.
 Qed.
 
 Lemma simple_create_vs {γ state used_reference} k v cks:
-state !! k = None →
-f v = None →
-dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
-g k v ∉ used_reference →
-own_auth γ state used_reference ==∗
-  own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
-  own_frag γ (g k v) 1 cks.
+  state !! k = None →
+  f v = None →
+  dom (filter (λ '(_, v'), f v' = Some (g k v)) state) = cks →
+  g k v ∉ used_reference →
+  own_auth γ state used_reference ==∗
+    own_auth γ (<[k := v]> state) (used_reference ∪ {[g k v]}) ∗
+    own_frag γ (g k v) 1 cks.
 Proof.
   iIntros (Hak Hnone Hcks Hfresh) "Hauth".
   iMod (own_update with "Hauth") as "H".
@@ -1311,9 +1311,9 @@ Proof.
 Qed.
 
 Lemma simple_delete_vs {γ state used_reference} k v:
-state !! k = Some v →
-f v = None →
-own_auth γ state used_reference ==∗ own_auth γ (delete k state) used_reference.
+  state !! k = Some v →
+  f v = None →
+  own_auth γ state used_reference ==∗ own_auth γ (delete k state) used_reference.
 Proof.
   iIntros (Hak Hnone) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
