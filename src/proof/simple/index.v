@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.simple Require Export apimodel list.
 From New.proof Require Export util.
-From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof.simple Require Export apimodel_init.
 
 Section proof.
 Context `{!mapG Σ KKey.t KObjectV.t}.

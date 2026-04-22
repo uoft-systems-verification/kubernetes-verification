@@ -1,7 +1,7 @@
 package simplereplicaset
 
 import (
-	"kubernetes_model/apimodel"
+	"kubernetes_model/simple"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -16,10 +16,10 @@ import (
 // * concurrent creation/deletion
 // * sort before deletion
 
-var state *apimodel.State
+var state *simple.State
 
 func init() {
-	state = apimodel.NewState()
+	state = simple.NewState()
 }
 
 func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject *apps.ReplicaSet, controllerRef *metav1.OwnerReference) error {

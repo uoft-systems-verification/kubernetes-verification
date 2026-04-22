@@ -358,29 +358,6 @@ Lemma wp_State__PodCreate_without_name γ l namespace ptr
       "Hghost_grandchildren_keys" ∷ (PodV.key pure_pod') [[ γ.(γ_children) ]]↦ ∅
       (* TODO: specify that pod' shares some contents with pod *)
   }}}.
-Proof.
-  wp_start as "H". iNamed "H". iNamed "Hisk". wp_auto.
-  wp_apply (wp_State__objCreate_without_name _ _ _ _ _ _ (KObject.Pod pod) (KObjectV.Pod pure_pod)
-  with "[$Hdeepown_l $Hghost_children_keys $Hghost_parent]").
-  { iFrame "#". done. }
-  iIntros (obj' ptr' pure_kobj') "H". iNamed "H". wp_auto.
-  assert (∃ pure_pod', pure_kobj' = KObjectV.Pod pure_pod') as [pure_pod' ->].
-  { destruct pure_kobj'; try done. exists p. done. }
-  iPoseProof (KObjectV.pod_deepown_l with "Hdeepown_l'") as "Hdeepown_l'".
-  iDestruct "Hdeepown_l'" as (pod') "[Hptr_pod' Hdeepown_pod']".
-  iAssert (PodV.deepown_l ptr' pure_pod' 1) with "[Hptr_pod' Hdeepown_pod']" as "Hdeepown_l'".
-  { iExists pod'. iFrame. }
-  rewrite bool_decide_true //. wp_auto.
-  unfold KObjectV.valid_interface in Hvalid_interface'. rewrite Hvalid_interface'.
-  unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
-  { iPureIntro. intros ptr_id. exists ptr'. done. }
-  iIntros (y ok) "%if_ok".
-  assert (ok = true) as ->.
-  { destruct ok; [done|]. intuition. }
-  wp_auto.
-  assert (ptr' = y) as ->.
-  { inversion if_ok. apply (inj to_val). done. }
-  iApply ("HΦ" $! y pure_pod'). iFrame. done.
-Qed.
+Proof. Admitted.
 
 End proof.

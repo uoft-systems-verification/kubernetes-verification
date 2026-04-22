@@ -4,7 +4,7 @@ Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
-Require Export New.code.kubernetes_model.apimodel.
+Require Export New.code.kubernetes_model.simple.
 
 From New.golang Require Import defn.
 Definition simplereplicaset : go_string := "kubernetes_model/simplereplicaset".
@@ -41,7 +41,7 @@ Definition CreatePodⁱᵐᵖˡ : val :=
     else do:  #());;;
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
     let: "$a1" := (![#ptrT] "pod") in
-    (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
+    (method_call #(ptrT.id simple.State.id) #"PodCreate"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -78,7 +78,7 @@ Definition FilterPodsByOwnerⁱᵐᵖˡ : val :=
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := #controller.PodControllerIndex in
     let: "$a2" := (![#stringT] "key") in
-    (method_call #(ptrT.id apimodel.State.id) #"ByIndex"%go (![#ptrT] (globals.get #state))) "$a0" "$a1" "$a2") in
+    (method_call #(ptrT.id simple.State.id) #"ByIndex"%go (![#ptrT] (globals.get #state))) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("pods" <-[#sliceT] "$r0");;;
@@ -167,7 +167,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
         else do:  #());;;
         let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
         let: "$a1" := (![#ptrT] "pod") in
-        (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
+        (method_call #(ptrT.id simple.State.id) #"PodCreate"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
         let: "$r0" := "$ret0" in
         let: "$r1" := "$ret1" in
         do:  "$r0";;;
@@ -190,7 +190,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
           (let: "err" := (mem.alloc (type.zero_val #error)) in
           let: "$r0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
           let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod")))) in
-          (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
+          (method_call #(ptrT.id simple.State.id) #"PodDelete"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
           do:  ("err" <-[#error] "$r0");;;
           (if: (~ (interface.eq (![#error] "err") #interface.nil))
           then
@@ -213,7 +213,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
     let: "rs" := (mem.alloc (type.zero_val #ptrT)) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
     let: "$a1" := (![#stringT] "name") in
-    (method_call #(ptrT.id apimodel.State.id) #"ReplicaSetGet"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
+    (method_call #(ptrT.id simple.State.id) #"ReplicaSetGet"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("rs" <-[#ptrT] "$r0");;;
@@ -261,7 +261,7 @@ Definition msets' : list (go_string * (list (go_string * val))) := [].
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.kubernetes_model.apimodel.apimodel; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.kubernetes.pkg.controller.controller];
+    pkg_imported_pkgs := [code.kubernetes_model.simple.simple; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.kubernetes.pkg.controller.controller];
   |}.
 
 Definition initialize' : val :=
@@ -272,10 +272,10 @@ Definition initialize' : val :=
       do:  (errors.initialize' #());;;
       do:  (v1.initialize' #());;;
       do:  (v1.initialize' #());;;
-      do:  (apimodel.initialize' #());;;
+      do:  (simple.initialize' #());;;
       do:  (package.alloc simplereplicaset.simplereplicaset #());;;
       do:  ((λ: <>,
-        exception_do (let: "$r0" := ((func_call #apimodel.NewState) #()) in
+        exception_do (let: "$r0" := ((func_call #simple.NewState) #()) in
         do:  ((globals.get #state) <-[#ptrT] "$r0");;;
         return: #())
         ) #()))

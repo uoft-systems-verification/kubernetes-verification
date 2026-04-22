@@ -198,7 +198,16 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
           (let: "err" := (mem.alloc (type.zero_val #error)) in
           let: "$r0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
           let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod")))) in
-          (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #state))) "$a0" "$a1") in
+          let: "$a2" := (struct.make #v1.DeleteOptions [{
+            "TypeMeta" ::= type.zero_val #v1.TypeMeta;
+            "GracePeriodSeconds" ::= type.zero_val #ptrT;
+            "Preconditions" ::= type.zero_val #ptrT;
+            "OrphanDependents" ::= type.zero_val #ptrT;
+            "PropagationPolicy" ::= type.zero_val #ptrT;
+            "DryRun" ::= type.zero_val #sliceT;
+            "IgnoreStoreReadErrorWithClusterBreakingPotential" ::= type.zero_val #ptrT
+          }]) in
+          (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #state))) "$a0" "$a1" "$a2") in
           do:  ("err" <-[#error] "$r0");;;
           (if: (~ (interface.eq (![#error] "err") #interface.nil))
           then
