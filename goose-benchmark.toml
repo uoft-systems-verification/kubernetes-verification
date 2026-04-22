@@ -1,0 +1,3 @@
+rocq = "src"
+go_path = "./benchmark/"
+packages = ["./basic"]
