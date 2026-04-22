@@ -433,4 +433,36 @@ Proof.
     iApply "HΦ".
 Qed.
 
+Lemma wp_State__ByIndex_podController γ l indexed_value meta_map parent_key parent_uid children_keys dq :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_meta_frags" ∷ ([∗ map] key ↦ meta ∈ meta_map, own_meta_frag γ key meta.(ObjectMetaV.UID') dq meta) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid dq children_keys ∗
+      "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
+        parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ dom meta_map = filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧ slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧ slash_free parent_uid ⌝
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "ByIndex" #"Pod"%go #"podController"%go #indexed_value
+  {{{ sl interfaces pods dq', RET (#sl, #interface.nil);
+      sl ↦* interfaces ∗
+      ([∗ list] i;pod ∈ interfaces;pods, KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      ⌜ PodV.ObjectMeta' <$> pods ≡ₚ (map_to_list meta_map).*2 ⌝ ∗
+      ⌜ Forall PodV.valid pods ⌝ ∗
+      ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+      ([∗ map] key ↦ meta ∈ meta_map, own_meta_frag γ key meta.(ObjectMetaV.UID') dq meta) ∗
+      own_children_frag γ parent_key parent_uid dq children_keys
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iApply wp_State__ByIndex_podController_au.
+  iFrame "#". iFrame "%". iFrame.
+  iApply fupd_mask_intro; [set_solver|iIntros "Hmask"].
+  iIntros (sl interfaces pods dq') "Hpost".
+  iMod "Hmask" as "_".
+  iModIntro. iNext.
+  iApply ("HΦ" $! sl interfaces pods dq' with "Hpost").
+Qed.
+
 End proof.

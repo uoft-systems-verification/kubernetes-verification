@@ -496,4 +496,38 @@ Proof.
   iApply ("HΦ" $! err kmeta' with "Hpost").
 Qed.
 
+Lemma wp_State__delete_success γ l key options_c options uid kmeta parent_key parent_uid children :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
+      "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
+      "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
+      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
+      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "delete" #key #options_c
+  {{{ kmeta', RET #interface.nil;
+      ( ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+        own_meta_frag γ key uid 1 kmeta' ∗
+        own_children_frag γ parent_key parent_uid 1 children
+        ∨
+        own_tombstone_frag γ uid ∗
+        own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+      )
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_apply (wp_State__delete with "[$Hdeepown_options $Hown_meta_frag $Hown_children_frag]").
+  { iFrame "#". iFrame "%". }
+  iIntros (err kmeta') "Hpost".
+  iDestruct "Hpost" as "[Hsuccess|Hfailure]".
+  - iDestruct "Hsuccess" as "(%_ & %Herr & Hpost)".
+    subst err.
+    iApply ("HΦ" $! kmeta' with "Hpost").
+  - iDestruct "Hfailure" as "(%Hnot_delete_preconditions & _)".
+    exfalso. apply Hnot_delete_preconditions. done.
+Qed.
+
 End proof.
