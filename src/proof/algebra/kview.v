@@ -441,6 +441,62 @@ Proof.
     rewrite Hagree. done.
 Qed.
 
+Lemma meta_meta_false k1 uid1 meta1 k2 uid2 meta2 :
+  k1 = k2 →
+  ✓ (◯K (mk_meta_frag k1 uid1 1 meta1) ⋅
+     ◯K (mk_meta_frag k2 uid2 1 meta2)) →
+  False.
+Proof.
+  intros -> Hvalid.
+  destruct (decide (uid1 = uid2)) as [->|Huid_ne].
+  - pose proof (meta_meta_valid k2 uid2 1 meta1 1 meta2 Hvalid) as [Hvdq _].
+    simpl in Hvdq.
+    pose proof (dfrac_valid_own_l (DfracOwn 1) 1 Hvdq) as Hlt.
+    apply (Qp.lt_nge 1 1) in Hlt.
+    apply Hlt.
+    done.
+  - rewrite /kview_frag -view_frag_op in Hvalid.
+    pose proof (proj1
+      (view_frag_valid view_rel
+        (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2))
+      Hvalid 0%nat) as [a Hrel].
+    destruct Hrel as [_ [Hmeta _]].
+    assert (Hlookup1 :
+      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid1) =
+      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta1)).
+    { rewrite /proj_meta /mk_meta_frag /= lookup_op.
+      assert (Hpair_ne : (k2, uid2) ≠ (k2, uid1)).
+      { intros Hpair.
+        apply Huid_ne.
+        now inversion Hpair. }
+      rewrite lookup_singleton_eq.
+      rewrite (lookup_singleton_ne (k2, uid2) (k2, uid1)
+        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta2) Hpair_ne).
+      rewrite right_id //.
+    }
+    assert (Hlookup2 :
+      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid2) =
+      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta2)).
+    { rewrite /proj_meta /mk_meta_frag /= lookup_op.
+      assert (Hpair_ne : (k2, uid1) ≠ (k2, uid2)).
+      { intros Hpair.
+        apply Huid_ne.
+        now inversion Hpair. }
+      rewrite (lookup_singleton_ne (k2, uid1) (k2, uid2)
+        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta1) Hpair_ne).
+      rewrite lookup_singleton_eq.
+      rewrite left_id //.
+    }
+    destruct (Hmeta _ _ Hlookup1) as (meta1' & _ & _ & Hobj1).
+    destruct (Hmeta _ _ Hlookup2) as (meta2' & _ & _ & Hobj2).
+    destruct Hobj1 as (obj1 & Hlookup_obj1 & Huid_obj1 & _).
+    destruct Hobj2 as (obj2 & Hlookup_obj2 & Huid_obj2 & _).
+    rewrite Hlookup_obj1 in Hlookup_obj2.
+    injection Hlookup_obj2 as <-.
+    rewrite Huid_obj1 in Huid_obj2.
+    contradiction.
+Qed.
+
 Lemma auth_spec_valid a k uid dq spec:
   ✓ (●K a ⋅ ◯K (mk_spec_frag k uid dq spec)) →
   ∀ obj, (proj_state a) !! k = Some obj →
@@ -1787,6 +1843,31 @@ Proof.
   done.
 Qed.
 
+Lemma own_meta_meta_false {γ k1 uid1 meta1 k2 uid2 meta2} :
+  k1 = k2 →
+  own_meta_frag γ k1 uid1 1 meta1 -∗
+  own_meta_frag γ k2 uid2 1 meta2 -∗
+  False.
+Proof.
+  iIntros (Hk_eq) "Hmeta1 Hmeta2".
+  iDestruct (own_valid_2 with "Hmeta1 Hmeta2") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  assert (Hvalid :
+    ✓ (◯K (mk_meta_frag k1 uid1 1 meta1) ⋅ ◯K (mk_meta_frag k2 uid2 1 meta2))).
+  { rewrite /kview_frag -view_frag_op in Hvalid0 |- *.
+    destruct (proj1 (view_frag_validN view_rel 0%nat
+      (mk_meta_frag k1 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2)) Hvalid0)
+      as [a Hrel0].
+    apply (proj2 (view_frag_valid view_rel
+      (mk_meta_frag k1 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2))).
+    intros n.
+    exists a.
+    exact Hrel0.
+  }
+  exact (meta_meta_false k1 uid1 meta1 k2 uid2 meta2 Hk_eq Hvalid).
+Qed.
+
 Lemma own_meta_exists {γ state used_uid k uid dq meta}:
   own_auth γ state used_uid -∗
   own_meta_frag γ k uid dq meta -∗
@@ -1825,22 +1906,28 @@ Proof.
   split; done.
 Qed.
 
-Lemma own_meta_map_exists {γ state used_uid m dq}:
+Lemma own_meta_map_exists {γ state used_uid K A} `{Countable K}
+  (key_of : K → A → KKey.t) (meta_of : K → A → ObjectMetaV.t) (m : gmap K A) dq :
   own_auth γ state used_uid -∗
-  ([∗ map] k↦meta ∈ m, own_meta_frag γ k meta.(ObjectMetaV.UID') dq meta) -∗
-    ⌜ map_Forall (λ k meta, ∃ obj, state !! k = Some obj ∧ (KObjectV.objectmeta obj) = meta) m ⌝ ∗
-    ⌜ map_Forall (λ _ meta, meta.(ObjectMetaV.UID') ∈ used_uid) m ⌝.
+  ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) -∗
+    own_auth γ state used_uid ∗
+    ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) ∗
+    ⌜ map_Forall (λ k x, ∃ obj, state !! key_of k x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of k x) m ⌝ ∗
+    ⌜ map_Forall (λ k x, (meta_of k x).(ObjectMetaV.UID') ∈ used_uid) m ⌝.
 Proof.
   iIntros "Hauth Hm".
-  iInduction m as [|k meta m Hnotin] "IH" using map_ind.
+  iInduction m as [|k x m Hnotin] "IH" using map_ind.
   - rewrite big_sepM_empty.
+    iFrame.
     iPureIntro.
     split; apply map_Forall_empty.
   - rewrite big_sepM_insert //.
-    iDestruct "Hm" as "[Hmeta Hm]".
-    iDestruct (own_meta_exists with "Hauth Hmeta") as %(obj & Hlookup & Hmeta_eq & Huid_in).
-    iDestruct ("IH" with "Hauth Hm") as %(Hmeta_forall & Huid_forall).
+    iDestruct "Hm" as "[Hx Hm]".
+    iPoseProof (own_meta_exists with "Hauth Hx") as "%Hhead".
+    iDestruct ("IH" with "Hauth Hm") as "(Hauth & Hm & %Hmeta_forall & %Huid_forall)".
+    iFrame.
     iPureIntro.
+    destruct Hhead as (obj & Hlookup & Hmeta_eq & Huid_in).
     split.
     + apply map_Forall_insert_2.
       * exists obj. split; done.
@@ -1850,14 +1937,33 @@ Proof.
       * exact Huid_forall.
 Qed.
 
+Lemma own_meta_list_no_dup {γ A} (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t) xs:
+  ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') 1 (meta_of x)) -∗
+    ⌜ NoDup (key_of <$> xs) ⌝.
+Proof.
+  iIntros "Hxs".
+  iInduction xs as [|x xs] "IH".
+  - rewrite big_sepL_nil.
+    iPureIntro.
+    constructor.
+  - rewrite big_sepL_cons.
+    iDestruct "Hxs" as "[Hx Hxs]".
+    destruct (decide (key_of x ∈ key_of <$> xs)) as [Hin|Hnotin].
+    + apply list_elem_of_fmap_1 in Hin as (y & Hkey_eq & Hyin).
+      iDestruct (big_sepL_elem_of_acc with "Hxs") as "[Hy _]"; first exact Hyin.
+      iExFalso.
+      iApply (own_meta_meta_false Hkey_eq with "Hx Hy").
+    + iDestruct ("IH" with "Hxs") as %Hnodup.
+      iPureIntro.
+      constructor; done.
+Qed.
+
 Lemma own_meta_list_exists {γ state used_uid A} (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t) xs dq :
   own_auth γ state used_uid -∗
   ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) -∗
     own_auth γ state used_uid ∗
     ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) ∗
-    ⌜ Forall
-        (λ x, ∃ obj, state !! key_of x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of x)
-        xs ⌝ ∗
+    ⌜ Forall (λ x, ∃ obj, state !! key_of x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of x) xs ⌝ ∗
     ⌜ Forall (λ x, (meta_of x).(ObjectMetaV.UID') ∈ used_uid) xs ⌝.
 Proof.
   iIntros "Hauth Hxs".
