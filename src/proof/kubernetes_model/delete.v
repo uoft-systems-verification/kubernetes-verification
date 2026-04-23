@@ -139,7 +139,6 @@ Lemma wp_State__delete_au γ l key options_c options:
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
     ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ err kmeta',
@@ -242,7 +241,7 @@ Proof.
     destruct H as (_ & _ & _ & Hvalid_kmeta).
     unfold ObjectMetaV.valid in Hvalid_kmeta.
     destruct Hvalid_kmeta as
-      (_ & _ & _ & _ & _ & _ & _ & _ & _ & Hvalid_finalizers & _).
+      (_ & _ & _ & _ & _ & _ & _ & _ & Hvalid_finalizers & _).
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%H". 1: done.
     destruct H as (Hkmeta_eq & _).
     rewrite <- Hkmeta_eq in Hvalid_finalizers.
@@ -411,7 +410,7 @@ Proof.
   destruct H as (_ & _ & -> & _).
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%H". 1: done.
   destruct H as (Hkmeta_eq & _).
-  rewrite <-Hkmeta_eq. rewrite <-Hkmeta_eq in Hgeneration_no_overflow.
+  rewrite <-Hkmeta_eq.
   iMod (kview.update_meta_kobj_vs kobj new_kobj with "[$Hinv_Hown_abs] [$Hown_meta_frag]")
     as "(Hinv_Hown_abs & Hown_meta_frag)".
   { split_and!. 1, 2: destruct kobj; done.
@@ -422,9 +421,6 @@ Proof.
       { unfold ObjectMetaV.valid in Hvalid_m.
         decompose [and] Hvalid_m.
         split_and!. all: try done.
-        unfold valid_generation, new_kmeta1, new_kmeta. simpl.
-        clear -Hgeneration_no_overflow.
-        word.
       }
       destruct kobj; done.
     - destruct kobj; done.
@@ -463,7 +459,6 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
       "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
@@ -502,7 +497,6 @@ Lemma wp_State__delete_matching_pre γ l key options_c options uid kmeta parent_
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
       "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
@@ -541,7 +535,6 @@ Lemma wp_State__PodDelete_matching_pre γ l key namespace name options_c options
         KKey.Name' := name
       |} ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
       "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children

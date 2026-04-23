@@ -165,7 +165,11 @@ Definition valid (m: t) : Prop :=
   valid_name m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧
   valid_namespace m.(Namespace') ∧
-  valid_generation m.(Generation') ∧
+  (* Kubernetes validates generation as non-negative on create/update, but
+     generation is an int64 and some server-side increments do not guard
+     against overflow. Do not make non-negativity a persistent object
+     invariant. *)
+  (* valid_generation m.(Generation') ∧ *)
   valid_labels m.(Labels') ∧
   valid_annotations m.(Annotations') ∧
   valid_owner_references m.(OwnerReferences') ∧
@@ -1083,7 +1087,7 @@ Proof.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
   unfold ObjectMetaV.valid in Hwf.
-  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
+  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
   - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
     assert (OwnerReferenceV.list_valid os) as Hwf_list.
