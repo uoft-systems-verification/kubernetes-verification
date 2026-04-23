@@ -66,7 +66,7 @@ Proof.
   - rewrite !filter_cons.
     destruct (decide (P y)); destruct (decide (P x)); simpl; try done.
     apply perm_swap.
-  - eapply Permutation_trans; done.
+  - eapply Permutation_trans with (l' := filter P l'); done.
 Qed.
 
 Lemma Forall_filter {A} (P Q : A → Prop) `{!∀ x, Decision (Q x)} xs :
