@@ -1850,6 +1850,38 @@ Proof.
       * exact Huid_forall.
 Qed.
 
+Lemma own_meta_list_exists {γ state used_uid A} (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t) xs dq :
+  own_auth γ state used_uid -∗
+  ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) -∗
+    own_auth γ state used_uid ∗
+    ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) ∗
+    ⌜ Forall
+        (λ x, ∃ obj, state !! key_of x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of x)
+        xs ⌝ ∗
+    ⌜ Forall (λ x, (meta_of x).(ObjectMetaV.UID') ∈ used_uid) xs ⌝.
+Proof.
+  iIntros "Hauth Hxs".
+  iInduction xs as [|x xs] "IH".
+  - rewrite !big_sepL_nil.
+    iFrame.
+    iPureIntro.
+    split; constructor.
+  - rewrite !big_sepL_cons.
+    iDestruct "Hxs" as "[Hmeta Hxs]".
+    iPoseProof (own_meta_exists with "Hauth Hmeta") as "%Hhead".
+    iDestruct ("IH" with "Hauth Hxs") as "(Hauth & Hxs & %Hmeta_forall & %Huid_forall)".
+    iFrame.
+    iPureIntro.
+    destruct Hhead as (obj & Hlookup & Hmeta_eq & Huid_in).
+    split.
+    + constructor.
+      * exists obj. split; done.
+      * exact Hmeta_forall.
+    + constructor.
+      * exact Huid_in.
+      * exact Huid_forall.
+Qed.
+
 Lemma own_spec_exists {γ state used_uid k uid dq spec}:
   own_auth γ state used_uid -∗
   own_spec_frag γ k uid dq spec -∗

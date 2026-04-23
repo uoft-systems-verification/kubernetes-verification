@@ -331,12 +331,15 @@ Record t := mk {
 Definition kind : go_string :=
   "Pod"%go.
 
-Definition key (v: t) : KKey.t :=
+Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
   {|
     KKey.Kind' := kind;
-    KKey.Namespace' := v.(ObjectMeta').(ObjectMetaV.Namespace');
-    KKey.Name' := v.(ObjectMeta').(ObjectMetaV.Name')
+    KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+    KKey.Name' := meta.(ObjectMetaV.Name')
   |}.
+
+Definition key (v: t) : KKey.t :=
+  meta_key v.(ObjectMeta').
 
 Definition valid (pod: t) : Prop :=
   ObjectMetaV.valid pod.(ObjectMeta') ∧
@@ -454,12 +457,15 @@ Record t := mk {
 Definition kind : go_string :=
    "ReplicaSet"%go.
 
-Definition key (v: t) : KKey.t :=
+Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
   {|
     KKey.Kind' := kind;
-    KKey.Namespace' := v.(ObjectMeta').(ObjectMetaV.Namespace');
-    KKey.Name' := v.(ObjectMeta').(ObjectMetaV.Name')
+    KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+    KKey.Name' := meta.(ObjectMetaV.Name')
   |}.
+
+Definition key (v: t) : KKey.t :=
+  meta_key v.(ObjectMeta').
 
 Definition valid (rs: t) : Prop :=
   ObjectMetaV.valid rs.(ObjectMeta') ∧

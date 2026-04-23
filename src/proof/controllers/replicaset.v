@@ -15,31 +15,33 @@ Context `{!mono_gsetG types.UID.t Σ}.
 Definition is_pod_active (pod: PodV.t): Prop :=
   pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
 
-Definition mk_pod_key (namespace name: go_string) : KKey.t :=
-  {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
+Definition current_state_matches rs pods : Prop :=
+  match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with
+  | Some replicas => length (filter is_pod_active pods) = sint.nat replicas
+  | None => False
+  end.
 
-Definition mk_replicaset_key (namespace name: go_string) : KKey.t :=
-  {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name;|}.
-
-Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs meta_map n:
+Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs pods :
   {{{ is_pkg_init replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr replicaset.state) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
-      "Hown_rs_meta_frag" ∷ own_meta_frag γ (mk_replicaset_key namespace name) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
-      "Hown_pod_meta_frags" ∷ ([∗ map] k ↦ meta ∈ meta_map, own_meta_frag γ k meta.(ObjectMetaV.UID') 1 meta) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (mk_replicaset_key namespace name) uid 1 (dom meta_map) ∗
-      "%Hpod_meta" ∷ ⌜ set_Forall (λ key, key.(KKey.Kind') = "Pod"%go) (dom meta_map) ⌝ ∗
-      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
+      "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
+      "Hown_pod_meta_frags" ∷ ([∗ list] k ↦ pod ∈ pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) uid 1 (list_to_set (PodV.key <$> pods)) ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hdeletion_timestamp_eq" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝
+      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
   }}}
   @! replicaset.syncReplicaSet #namespace #name
-  {{{ meta_map', RET #interface.nil;
-      ⌜ size (filter (λ kv, kv.2.(ObjectMetaV.DeletionTimestamp') = None) meta_map') = sint.nat n ⌝ ∗
-      own_meta_frag γ (mk_replicaset_key namespace name) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
-      ([∗ map] k ↦ meta ∈ meta_map', own_meta_frag γ k meta.(ObjectMetaV.UID') 1 meta) ∗
-      own_children_frag γ (mk_replicaset_key namespace name) uid 1 (dom meta_map')
+  {{{ pods', RET #interface.nil;
+      ⌜ current_state_matches rs pods' ⌝ ∗
+      own_meta_frag γ (ReplicaSetV.key rs) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
+      ([∗ list] pod ∈ pods',
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
+      own_children_frag γ (ReplicaSetV.key rs) uid 1 (list_to_set (PodV.key <$> pods'))
   }}}.
 Proof. Admitted.
 
