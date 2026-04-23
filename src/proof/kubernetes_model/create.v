@@ -22,6 +22,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ i' kobj' key uid,
         ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
         ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
         ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
         ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
@@ -237,6 +238,8 @@ Proof.
   iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
   { iPureIntro. split_and!.
     - done.
+    - subst kobj2.
+      destruct kobj; destruct kobj1; done.
     - unfold ObjectMetaV.nameless_created.
       subst kobj2.
       destruct kobj; destruct kobj1;
@@ -345,19 +348,20 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
   }}}
     l @ (ptrT.id apimodel.State.id) @ "create" #kind #namespace #i
   {{{ i' kobj' key uid, RET (#i', #interface.nil);
-      ⌜ KObjectV.valid kobj' ⌝ ∗
-      ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-      ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
-      ⌜ key = (KObjectV.key kobj') ⌝ ∗
-      ⌜ key ∉ children ⌝ ∗
-      ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
-      KObjectV.deepown_i i' kobj' 1 ∗
-      own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
-      own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
-      own_children_frag γ key uid 1 ∅
+      "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
+      "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+      "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hspec_created" ∷ ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = (KObjectV.key kobj') ⌝ ∗
+      "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
+      "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
+      "Hown_meta" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+      "Hown_spec" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
+      "Hown_status" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -368,6 +372,60 @@ Proof.
   iMod "Hmask" as "_".
   iModIntro. iNext.
   iApply ("HΦ" $! i' kobj' key uid with "Hpost").
+Qed.
+
+Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_uid children :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create "Pod"%go namespace (KObjectV.Pod pod) ⌝ ∗
+      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
+      "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
+      "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+      "%Hpr" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "PodCreate" #namespace #pod_l
+  {{{ pod_l' pod' key uid, RET (#pod_l', #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod') ⌝ ∗
+      "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+      "%Hspec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
+      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status')) (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = PodV.key pod' ⌝ ∗
+      "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
+      "Hown_meta" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
+      "Hown_status" ∷ own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
+      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren" ∷ own_children_frag γ key uid 1 ∅
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call. wp_call. wp_auto.
+  iAssert (KObjectV.deepown_i (interface.mk (ptrT.id v1.Pod.id) #pod_l) (KObjectV.Pod pod) 1)
+    with "[Hdeepown_l]" as "Hdeepown_i".
+  { iExists pod_l. iSplit; [done|]. iFrame. }
+  wp_apply (wp_State__create_nameless
+    γ l "Pod"%go namespace (interface.mk (ptrT.id v1.Pod.id) #pod_l)
+    (KObjectV.Pod pod) parent_key parent_uid children
+    with "[$Hinit $Hisk $Hdeepown_i $Hown_children_frag]").
+  { iPureIntro. split_and!; done. }
+  iIntros (i' kobj' key uid) "Hpost". iNamed "Hpost".
+  destruct kobj' as [pod'|]; [|done].
+  iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]". wp_auto.
+  rewrite bool_decide_true //. wp_auto.
+  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
+  { iPureIntro. intros ptr_id. exists pod_l'. done. }
+  iIntros (y ok) "%if_ok".
+  assert (ok = true) as ->.
+  { destruct ok; [done|]. intuition. }
+  wp_auto.
+  assert (pod_l' = y) as ->.
+  { inversion if_ok. apply (inj to_val). done. }
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
 End proof.

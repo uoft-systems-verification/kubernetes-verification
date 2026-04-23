@@ -442,16 +442,8 @@ Global Instance wp_method_call_State'ptr_PodCreate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodCreate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_PodCreate2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "PodCreate2" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
 Global Instance wp_method_call_State'ptr_PodDelete :
   WpMethodCall (ptrT.id apimodel.State.id) "PodDelete" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_State'ptr_PodDelete2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "PodDelete2" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_PodGet :
@@ -474,16 +466,12 @@ Global Instance wp_method_call_State'ptr_PodUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_PodUpdate2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate2" _ (is_pkg_defined apimodel) :=
+Global Instance wp_method_call_State'ptr_ReplicaSetCreate :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetCreate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_ReplicaSetCreate2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetCreate2" _ (is_pkg_defined apimodel) :=
-  ltac:(solve_wp_method_call).
-
-Global Instance wp_method_call_State'ptr_ReplicaSetDelete2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetDelete2" _ (is_pkg_defined apimodel) :=
+Global Instance wp_method_call_State'ptr_ReplicaSetDelete :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetDelete" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_ReplicaSetGet :
@@ -494,8 +482,8 @@ Global Instance wp_method_call_State'ptr_ReplicaSetMutGet :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetMutGet" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
-Global Instance wp_method_call_State'ptr_ReplicaSetUpdate2 :
-  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetUpdate2" _ (is_pkg_defined apimodel) :=
+Global Instance wp_method_call_State'ptr_ReplicaSetUpdate :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_create :

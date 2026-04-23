@@ -469,20 +469,20 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
   }}}
     l @ (ptrT.id apimodel.State.id) @ "delete" #key #options_c
   {{{ err kmeta', RET #err;
-      ( ⌜ delete_preconditions_match kmeta options ⌝ ∗
-        ⌜ err = interface.nil ⌝ ∗
-        ( ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          own_meta_frag γ key uid 1 kmeta' ∗
-          own_children_frag γ parent_key parent_uid 1 children
+      ( "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
+        "%Herr_eq" ∷ ⌜ err = interface.nil ⌝ ∗
+        ( "%Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
+          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
           ∨
-          own_tombstone_frag γ uid ∗
-          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+          "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid ∗
+          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
         )
       ∨
-        ⌜ ¬ delete_preconditions_match kmeta options ⌝ ∗
-        ⌜ err ≠ interface.nil ⌝ ∗
-        own_meta_frag γ key uid 1 kmeta ∗
-        own_children_frag γ parent_key parent_uid 1 children
+        "%Hdelete_preconditions_not_match" ∷ ⌜ ¬ delete_preconditions_match kmeta options ⌝ ∗
+        "%Herr_neq" ∷ ⌜ err ≠ interface.nil ⌝ ∗
+        "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+        "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
       )
   }}}.
 Proof.
@@ -496,7 +496,7 @@ Proof.
   iApply ("HΦ" $! err kmeta' with "Hpost").
 Qed.
 
-Lemma wp_State__delete_success γ l key options_c options uid kmeta parent_key parent_uid children :
+Lemma wp_State__delete_matching_pre γ l key options_c options uid kmeta parent_key parent_uid children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
@@ -509,12 +509,12 @@ Lemma wp_State__delete_success γ l key options_c options uid kmeta parent_key p
   }}}
     l @ (ptrT.id apimodel.State.id) @ "delete" #key #options_c
   {{{ kmeta', RET #interface.nil;
-      ( ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-        own_meta_frag γ key uid 1 kmeta' ∗
-        own_children_frag γ parent_key parent_uid 1 children
+      ( "%Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+        "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
+        "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
         ∨
-        own_tombstone_frag γ uid ∗
-        own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid ∗
+        "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
       )
   }}}.
 Proof.
@@ -528,6 +528,45 @@ Proof.
     iApply ("HΦ" $! kmeta' with "Hpost").
   - iDestruct "Hfailure" as "(%Hnot_delete_preconditions & _)".
     exfalso. apply Hnot_delete_preconditions. done.
+Qed.
+
+Lemma wp_State__PodDelete_matching_pre γ l key namespace name options_c options uid kmeta parent_key parent_uid children :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
+      "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "Pod"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
+      "%Hgeneration_no_overflow" ∷ ⌜ 0 ≤ sint.Z kmeta.(ObjectMetaV.Generation') + 1 < 2^63 ⌝ ∗
+      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+  }}}
+    l @ (ptrT.id apimodel.State.id) @ "PodDelete" #namespace #name #options_c
+  {{{ kmeta', RET #interface.nil;
+      ( "%Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+        "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
+        "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+        ∨
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid ∗
+        "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+      )
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
+  wp_method_call. wp_call. wp_auto.
+  wp_apply (wp_State__delete_matching_pre γ l
+    {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
+    options_c options uid kmeta parent_key parent_uid children
+    with "[$Hinit $Hisk $Hdeepown_options $Hown_meta_frag $Hown_children_frag]").
+  { iFrame "%". }
+  iIntros (kmeta') "Hpost".
+  wp_auto.
+  iApply ("HΦ" with "Hpost").
 Qed.
 
 End proof.

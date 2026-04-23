@@ -162,7 +162,7 @@ func TestPBT(t *testing.T) {
 							return generators.InvalidPodGen().Draw(rt, "invalidPod")
 						},
 						func(p *corev1.Pod) *corev1.Pod { return p.DeepCopy() },
-						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodCreate2(ns, obj) },
+						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodCreate(ns, obj) },
 						func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) { return server.CreatePod(ctx, obj) },
 						func(ns, name string) (interface{}, error) { return state.PodGet(ns, name) },
 						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
@@ -185,7 +185,7 @@ func TestPBT(t *testing.T) {
 						},
 						func(rs *appsv1.ReplicaSet) *appsv1.ReplicaSet { return rs.DeepCopy() },
 						func(ns string, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
-							return state.ReplicaSetCreate2(ns, obj)
+							return state.ReplicaSetCreate(ns, obj)
 						},
 						func(ctx context.Context, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 							return server.CreateReplicaSet(ctx, obj)
@@ -206,7 +206,7 @@ func TestPBT(t *testing.T) {
 						"Pod",
 						func(ns, name string) (*corev1.Pod, error) { return state.PodGet(ns, name) },
 						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
-						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodUpdate2(ns, obj) },
+						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodUpdate(ns, obj) },
 						func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) { return server.UpdatePod(ctx, obj) },
 						func(p *corev1.Pod) *corev1.Pod { return p.DeepCopy() },
 						func(name, namespace string) *corev1.Pod {
@@ -227,7 +227,7 @@ func TestPBT(t *testing.T) {
 							return server.GetReplicaSet(ctx, name)
 						},
 						func(ns string, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
-							return state.ReplicaSetUpdate2(ns, obj)
+							return state.ReplicaSetUpdate(ns, obj)
 						},
 						func(ctx context.Context, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 							return server.UpdateReplicaSet(ctx, obj)
@@ -252,7 +252,7 @@ func TestPBT(t *testing.T) {
 						"Pod",
 						state.PodGet,
 						server.GetPod,
-						state.PodDelete2,
+						state.PodDelete,
 						server.DeletePod,
 					)
 
@@ -262,7 +262,7 @@ func TestPBT(t *testing.T) {
 						"ReplicaSet",
 						state.ReplicaSetGet,
 						server.GetReplicaSet,
-						state.ReplicaSetDelete2,
+						state.ReplicaSetDelete,
 						server.DeleteReplicaSet,
 					)
 				}

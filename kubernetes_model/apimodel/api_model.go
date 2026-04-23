@@ -203,121 +203,6 @@ func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, er
 	return items, nil
 }
 
-// Returned value must be treated as read-only.
-func (s *State) PodGet(namespace, name string) (*corev1.Pod, error) {
-	return s.PodMutGet(namespace, name)
-}
-
-func (s *State) PodMutGet(namespace, name string) (*corev1.Pod, error) {
-	key := KKey{
-		Kind:      "Pod",
-		Namespace: namespace,
-		Name:      name,
-	}
-
-	obj, err := s.get(key)
-	if err != nil {
-		return nil, errors.NewNotFound(corev1.Resource("pod"), name)
-	}
-
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		// This should never happen
-		return nil, fmt.Errorf("state entry for pod %s/%s is not a *v1.Pod", namespace, name)
-	}
-
-	return pod, nil
-}
-
-// Returned value must be treated as read-only.
-func (s *State) PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
-	return s.PodMutList(namespace, selector)
-}
-
-func (s *State) PodMutList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
-	objs, err := s.objListBySelector("Pod", namespace, selector)
-	if err != nil {
-		return nil, err
-	}
-
-	pods := make([]*corev1.Pod, 0, len(objs))
-	for _, obj := range objs {
-		pod, ok := obj.(*corev1.Pod)
-		if !ok {
-			return nil, fmt.Errorf("state entry is not a *v1.Pod")
-		}
-		pods = append(pods, pod)
-	}
-
-	return pods, nil
-}
-
-func (s *State) PodCreate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
-	obj, err := s.create("Pod", namespace, pod)
-	if err != nil {
-		return nil, err
-	}
-
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		// This should never happen
-		return nil, fmt.Errorf("state entry is not a *v1.Pod")
-	}
-
-	return pod, err
-}
-
-func (s *State) PodUpdate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
-	obj, err := s.update("Pod", namespace, pod)
-	if err != nil {
-		return nil, err
-	}
-
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		// This should never happen
-		return nil, fmt.Errorf("state entry is not a *v1.Pod")
-	}
-
-	return pod, err
-}
-
-func (s *State) PodDelete(namespace, name string, options metav1.DeleteOptions) error {
-	key := KKey{
-		Kind:      "Pod",
-		Namespace: namespace,
-		Name:      name,
-	}
-
-	return s.delete(key, options)
-}
-
-// Returned value must be treated as read-only.
-func (s *State) ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
-	return s.ReplicaSetMutGet(namespace, name)
-}
-
-func (s *State) ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, error) {
-	key := KKey{
-		Kind:      "ReplicaSet",
-		Namespace: namespace,
-		Name:      name,
-	}
-
-	obj, err := s.get(key)
-	if err != nil {
-		return nil, errors.NewNotFound(appsv1.Resource("replicaset"), name)
-	}
-
-	rs, ok := obj.(*appsv1.ReplicaSet)
-	if !ok {
-		// This should never happen
-		return nil, fmt.Errorf("state entry for replicaset %s/%s is not a *v1.ReplicaSet", namespace, name)
-	}
-
-	return rs, nil
-}
-
 func (s *State) get(key KKey) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1326,10 +1211,56 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 	return nil
 }
 
-// PodDelete2 deletes a Pod with full DeleteOptions support, including preconditions,
-// graceful deletion, and finalizer handling. Returns the deleted (or updated) Pod object.
-// PodCreate2 creates a Pod using create, which includes admission controller logic.
-func (s *State) PodCreate2(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+// Returned value must be treated as read-only.
+func (s *State) PodGet(namespace, name string) (*corev1.Pod, error) {
+	return s.PodMutGet(namespace, name)
+}
+
+func (s *State) PodMutGet(namespace, name string) (*corev1.Pod, error) {
+	key := KKey{
+		Kind:      "Pod",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(corev1.Resource("pod"), name)
+	}
+
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for pod %s/%s is not a *v1.Pod", namespace, name)
+	}
+
+	return pod, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) PodList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
+	return s.PodMutList(namespace, selector)
+}
+
+func (s *State) PodMutList(namespace string, selector labels.Selector) ([]*corev1.Pod, error) {
+	objs, err := s.objListBySelector("Pod", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	pods := make([]*corev1.Pod, 0, len(objs))
+	for _, obj := range objs {
+		pod, ok := obj.(*corev1.Pod)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.Pod")
+		}
+		pods = append(pods, pod)
+	}
+
+	return pods, nil
+}
+
+func (s *State) PodCreate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
 	obj, err := s.create("Pod", namespace, pod)
 	if err != nil {
 		return nil, err
@@ -1343,23 +1274,7 @@ func (s *State) PodCreate2(namespace string, pod *corev1.Pod) (*corev1.Pod, erro
 	return createdPod, nil
 }
 
-// ReplicaSetCreate2 creates a ReplicaSet using create, which includes admission controller logic.
-func (s *State) ReplicaSetCreate2(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
-	obj, err := s.create("ReplicaSet", namespace, rs)
-	if err != nil {
-		return nil, err
-	}
-
-	createdRS, ok := obj.(*appsv1.ReplicaSet)
-	if !ok {
-		return nil, fmt.Errorf("create returned unexpected type %T", obj)
-	}
-
-	return createdRS, nil
-}
-
-// PodUpdate2 updates a Pod using the richer storage/update model.
-func (s *State) PodUpdate2(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+func (s *State) PodUpdate(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
 	obj, err := s.update("Pod", namespace, pod)
 	if err != nil {
 		return nil, err
@@ -1373,8 +1288,57 @@ func (s *State) PodUpdate2(namespace string, pod *corev1.Pod) (*corev1.Pod, erro
 	return updatedPod, nil
 }
 
-// ReplicaSetUpdate2 updates a ReplicaSet using the richer storage/update model.
-func (s *State) ReplicaSetUpdate2(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+func (s *State) PodDelete(namespace, name string, options metav1.DeleteOptions) error {
+	key := KKey{
+		Kind:      "Pod",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ReplicaSetGet(namespace, name string) (*appsv1.ReplicaSet, error) {
+	return s.ReplicaSetMutGet(namespace, name)
+}
+
+func (s *State) ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, error) {
+	key := KKey{
+		Kind:      "ReplicaSet",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(appsv1.Resource("replicaset"), name)
+	}
+
+	rs, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for replicaset %s/%s is not a *v1.ReplicaSet", namespace, name)
+	}
+
+	return rs, nil
+}
+
+func (s *State) ReplicaSetCreate(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	obj, err := s.create("ReplicaSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	createdRS, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdRS, nil
+}
+
+func (s *State) ReplicaSetUpdate(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 	obj, err := s.update("ReplicaSet", namespace, rs)
 	if err != nil {
 		return nil, err
@@ -1388,15 +1352,7 @@ func (s *State) ReplicaSetUpdate2(namespace string, rs *appsv1.ReplicaSet) (*app
 	return updatedRS, nil
 }
 
-// PodDelete2 deletes a Pod with full DeleteOptions support, including graceful deletion.
-func (s *State) PodDelete2(namespace, name string, options metav1.DeleteOptions) error {
-	key := KKey{Kind: "Pod", Namespace: namespace, Name: name}
-	return s.delete(key, options)
-}
-
-// ReplicaSetDelete2 deletes a ReplicaSet with full DeleteOptions support.
-// ReplicaSets don't support graceful deletion but do support finalizers and preconditions.
-func (s *State) ReplicaSetDelete2(namespace, name string, options metav1.DeleteOptions) error {
+func (s *State) ReplicaSetDelete(namespace, name string, options metav1.DeleteOptions) error {
 	key := KKey{Kind: "ReplicaSet", Namespace: namespace, Name: name}
 	return s.delete(key, options)
 }
