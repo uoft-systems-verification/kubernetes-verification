@@ -498,19 +498,21 @@ Lemma wp_State__ByIndex_podController γ l indexed_value pods parent_key parent_
       "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
         parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) = filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
-      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧ slash_free parent_key.(KKey.Namespace') ∧
-        slash_free parent_key.(KKey.Name') ∧ slash_free parent_uid ⌝
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧
+        slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧
+        slash_free parent_uid ⌝
   }}}
     l @ (ptrT.id apimodel.State.id) @ "ByIndex" #"Pod"%go #"podController"%go #indexed_value
   {{{ sl interfaces pods' dq', RET (#sl, #interface.nil);
-      sl ↦* interfaces ∗
-      ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
-      ⌜ PodV.ObjectMeta' <$> pods' ≡ₚ PodV.ObjectMeta' <$> pods ⌝ ∗
-      ⌜ Forall PodV.valid pods' ⌝ ∗
-      ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
-      ([∗ list] pod ∈ pods',
+      "Hsl" ∷ sl ↦* interfaces ∗
+      "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      "%Hmeta_perm" ∷ ⌜ PodV.ObjectMeta' <$> pods' ≡ₚ PodV.ObjectMeta' <$> pods ⌝ ∗
+      "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods' ⌝ ∗
+      "%Hpods_nodup_ret" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      "Hown_meta_frags_ret" ∷ ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta')) ∗
-      own_children_frag γ parent_key parent_uid dq children_keys
+      "Hown_children_frag_ret" ∷ own_children_frag γ parent_key parent_uid dq children_keys
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".

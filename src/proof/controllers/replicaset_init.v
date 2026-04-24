@@ -7,7 +7,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
-From New.proof.simple Require Export apimodel_init.
+From New.proof.controllers Require Export common_init.
 Require Export New.generatedproof.controllers.replicaset.
 
 

@@ -24,7 +24,7 @@ Definition current_state_matches rs pods : Prop :=
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs pods :
   {{{ is_pkg_init replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr replicaset.state) ↦□ l ∗
+      "#Hglobal_l" ∷ (global_addr common.State) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] k ↦ pod ∈ pods,
@@ -35,7 +35,7 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs p
       "%Hdeletion_timestamp_eq" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
   }}}
-  @! replicaset.syncReplicaSet #namespace #name
+    @! replicaset.syncReplicaSet #namespace #name
   {{{ pods', RET #interface.nil;
       ⌜ current_state_matches rs pods' ⌝ ∗
       own_meta_frag γ (ReplicaSetV.key rs) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
