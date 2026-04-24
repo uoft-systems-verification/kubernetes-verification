@@ -46,17 +46,9 @@ Definition CreatePodⁱᵐᵖˡ : val :=
     do:  ("err" <-[#error] "$r1");;;
     return: (![#error] "err")).
 
-Definition IsPodActive : go_string := "controllers/replicaset.IsPodActive"%go.
-
-(* go: replica_set.go:28:6 *)
-Definition IsPodActiveⁱᵐᵖˡ : val :=
-  λ: "p",
-    exception_do (let: "p" := (mem.alloc "p") in
-    return: ((![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "p")))) = #null)).
-
 Definition FilterActivePods : go_string := "controllers/replicaset.FilterActivePods"%go.
 
-(* go: replica_set.go:32:6 *)
+(* go: replica_set.go:28:6 *)
 Definition FilterActivePodsⁱᵐᵖˡ : val :=
   λ: "pods",
     exception_do (let: "pods" := (mem.alloc "pods") in
@@ -66,8 +58,7 @@ Definition FilterActivePodsⁱᵐᵖˡ : val :=
     slice.for_range #ptrT "$range" (λ: "$key" "$value",
       do:  ("p" <-[#ptrT] "$value");;;
       do:  "$key";;;
-      (if: let: "$a0" := (![#ptrT] "p") in
-      (func_call #IsPodActive) "$a0"
+      (if: (![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "p")))) = #null
       then
         let: "$r0" := (let: "$a0" := (![#sliceT] "result") in
         let: "$a1" := ((let: "$sl0" := (![#ptrT] "p") in
@@ -79,7 +70,7 @@ Definition FilterActivePodsⁱᵐᵖˡ : val :=
 
 Definition manageReplicas : go_string := "controllers/replicaset.manageReplicas"%go.
 
-(* go: replica_set.go:42:6 *)
+(* go: replica_set.go:38:6 *)
 Definition manageReplicasⁱᵐᵖˡ : val :=
   λ: "activePods" "rs",
     exception_do (let: "rs" := (mem.alloc "rs") in
@@ -159,7 +150,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
 
 Definition syncReplicaSet : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
-(* go: replica_set.go:70:6 *)
+(* go: replica_set.go:66:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -207,7 +198,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [(CreatePod, CreatePodⁱᵐᵖˡ); (IsPodActive, IsPodActiveⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(CreatePod, CreatePodⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [].
 

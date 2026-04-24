@@ -25,14 +25,10 @@ func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject 
 	return err
 }
 
-func IsPodActive(p *v1.Pod) bool {
-	return p.DeletionTimestamp == nil
-}
-
 func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 	var result []*v1.Pod
 	for _, p := range pods {
-		if IsPodActive(p) {
+		if p.DeletionTimestamp == nil {
 			result = append(result, p)
 		}
 	}

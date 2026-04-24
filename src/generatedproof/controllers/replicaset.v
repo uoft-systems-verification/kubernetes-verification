@@ -52,10 +52,6 @@ Global Instance wp_func_call_CreatePod :
   WpFuncCall replicaset.CreatePod _ (is_pkg_defined replicaset) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_IsPodActive :
-  WpFuncCall replicaset.IsPodActive _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_FilterActivePods :
   WpFuncCall replicaset.FilterActivePods _ (is_pkg_defined replicaset) :=
   ltac:(solve_wp_func_call).
