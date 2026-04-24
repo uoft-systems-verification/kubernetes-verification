@@ -48,14 +48,6 @@ Global Program Instance is_pkg_defined_replicaset : IsPkgDefined replicaset :=
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
-Global Instance wp_func_call_CreatePod :
-  WpFuncCall replicaset.CreatePod _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_FilterActivePods :
-  WpFuncCall replicaset.FilterActivePods _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_func_call).
-
 Global Instance wp_func_call_manageReplicas :
   WpFuncCall replicaset.manageReplicas _ (is_pkg_defined replicaset) :=
   ltac:(solve_wp_func_call).

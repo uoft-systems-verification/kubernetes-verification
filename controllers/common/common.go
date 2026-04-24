@@ -14,6 +14,16 @@ func init() {
 	State = apimodel.NewState()
 }
 
+func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
+	var result []*v1.Pod
+	for _, p := range pods {
+		if p.DeletionTimestamp == nil {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
 func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
 	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})

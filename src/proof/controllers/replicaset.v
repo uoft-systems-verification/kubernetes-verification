@@ -1,6 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
+From New.proof.controllers Require Export common.
 From New.proof.controllers Require Export replicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
@@ -12,119 +13,11 @@ Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
 Context `{!mono_gsetG types.UID.t Σ}.
 
-Definition is_pod_active (pod: PodV.t): Prop :=
-  pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
-
 Definition current_state_matches rs pods : Prop :=
   match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with
-  | Some replicas => length (filter is_pod_active pods) = sint.nat replicas
+  | Some replicas => length (filter is_pod_alive pods) = sint.nat replicas
   | None => False
   end.
-
-Lemma deepown_preserves_deletion_timestamp_activeness pod pure_pod dq:
-  PodV.deepown pod pure_pod dq -∗
-    ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null ↔
-      is_pod_active pure_pod ⌝.
-Proof.
-  iIntros "H". iNamed "H". iNamed "Hdeepown_objectmeta".
-  iPureIntro. unfold is_pod_active.
-  rewrite Hdeepown_deletiontimestamp_none. done.
-Qed.
-
-Lemma wp_FilterActivePods sl ptrs pods dq :
-  {{{ is_pkg_init code.controllers.replicaset.replicaset ∗
-      "Hsl" ∷ sl ↦* ptrs ∗
-      "Hdeepown_l_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq)
-  }}}
-    @! replicaset.FilterActivePods #sl
-  {{{ sl' ptrs', RET #sl';
-      sl' ↦* ptrs' ∗
-      ([∗ list] ptr;pod ∈ ptrs';filter is_pod_active pods, PodV.deepown_l ptr pod dq)
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  iPoseProof own_slice_nil as "Hslice_nil".
-  iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
-  iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
-  iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
-  iDestruct (big_sepL2_length with "Hdeepown_l_pods") as %Hlen.
-  set I := (∃ (i: w64) (p: loc) (result: slice.t) (ptrs': list loc),
-    "Hi_ptr" ∷ i_ptr ↦ i ∗
-    "Hp_ptr" ∷ p_ptr ↦ p ∗
-    "Hresult_ptr" ∷ result_ptr ↦ result ∗
-    "Hresult" ∷ result ↦* ptrs' ∗
-    "Hlist_pre" ∷ ([∗ list] ptr;pod ∈ ptrs';filter is_pod_active (take (sint.nat i) pods),
-      PodV.deepown_l ptr pod dq) ∗
-    "Hlist_post" ∷ ([∗ list] ptr;pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pods),
-      PodV.deepown_l ptr pod dq) ∗
-    "Hown_result_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
-    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f sl) ⌝
-  )%I.
-  iAssert (I) with "[i result p Hdeepown_l_pods]" as "Hloop_inv".
-  { iExists (W64 0), (default_val loc), slice.nil, [].
-    iFrame. iFrame "#".
-    rewrite !take_0 !filter_nil !big_sepL2_nil. done. }
-  wp_for "Hloop_inv".
-  wp_if_destruct.
-  - wp_pure; first word.
-    list_elem ptrs (sint.Z i) as this_ptr.
-    wp_apply (wp_load_slice_elem with "[$Hsl]"); [word|eauto| ]. iIntros "Hsl". wp_auto.
-    assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
-    { apply lookup_lt_is_Some_2. rewrite -Hlen Hsl_len1. word. }
-    iPoseProof (big_sepL2_head_tail _ _ _ this_ptr this_pod with "Hlist_post") as "[Hthis Hother]".
-    { split. all: rewrite lookup_drop Nat.add_0_r; done. }
-    iDestruct "Hthis" as (this_pod_c) "[Hthis_ptr Hthis_pod]".
-    iDestruct (deepown_preserves_deletion_timestamp_activeness with "Hthis_pod") as %Hactive.
-    iDestruct (struct_fields_split with "Hthis_ptr") as "Hthis_fields".
-    iNamed "Hthis_fields".
-    wp_auto.
-    wp_if_destruct.
-    + assert (is_pod_active this_pod) as Hpod_active.
-      { apply Hactive. done. }
-      wp_apply wp_slice_literal. iIntros (sl0) "Hsl0". wp_auto.
-      wp_apply (wp_slice_append with "[$Hresult $Hown_result_cap $Hsl0]").
-      iIntros (result') "(Hresult & Hown_result_cap & Hsl0)". wp_auto.
-      iDestruct (struct_fields_combine (v:=this_pod_c)
-        with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hthis_ptr".
-      iAssert (PodV.deepown_l this_ptr this_pod dq) with "[Hthis_ptr Hthis_pod]" as "Hthis".
-      { iExists this_pod_c. iFrame. }
-      iApply wp_for_post_do. wp_auto.
-      iFrame "Hsl HΦ pods".
-      iExists (word.add i (W64 1)), this_ptr, result', (ptrs' ++ [this_ptr]).
-      assert (filter is_pod_active (take (sint.nat i) pods) ++ [this_pod] =
-              filter is_pod_active (take (sint.nat (word.add i (W64 1))) pods)) as <-.
-      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-        rewrite (take_S_r _ _ this_pod); [done|].
-        rewrite list.filter_app filter_singleton_True; [done|done|done]. }
-      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-      rewrite !drop_drop Nat.add_1_r.
-      iFrame.
-      iSplitR; [done|]. iPureIntro. word.
-    + assert (¬ is_pod_active this_pod) as Hpod_active.
-      { intros Hpod_active.
-        apply Hactive in Hpod_active. done. }
-      iDestruct (struct_fields_combine (v:=this_pod_c)
-        with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hthis_ptr".
-      iAssert (PodV.deepown_l this_ptr this_pod dq) with "[Hthis_ptr Hthis_pod]" as "Hthis".
-      { iExists this_pod_c. iFrame. }
-      iApply wp_for_post_do. wp_auto.
-      iFrame "Hsl HΦ pods".
-      iExists (word.add i (W64 1)), this_ptr, result, ptrs'.
-      assert (filter is_pod_active (take (sint.nat i) pods) =
-              filter is_pod_active (take (sint.nat (word.add i (W64 1))) pods)) as <-.
-      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-        rewrite (take_S_r _ _ this_pod); [done|].
-        rewrite list.filter_app filter_singleton_False; [done|done|rewrite app_nil_r; done]. }
-      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-      rewrite !drop_drop Nat.add_1_r.
-      iFrame. iPureIntro. word.
-  - assert (take (sint.nat i) pods = pods) as ->.
-    { assert (sint.nat i = length ptrs) as Hi_len.
-      { rewrite Hsl_len1. word. }
-      rewrite Hlen in Hi_len. rewrite Hi_len.
-      apply take_ge. lia. }
-    iApply "HΦ". iFrame.
-Qed.
 
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs pods :
   {{{ is_pkg_init code.controllers.replicaset.replicaset ∗
@@ -141,7 +34,7 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name uid rs p
       "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
   }}}
     @! replicaset.syncReplicaSet #namespace #name
-  {{{ pods', RET #interface.nil;
+  {{{ (pods' : list PodV.t), RET #interface.nil;
       ⌜ current_state_matches rs pods' ⌝ ∗
       own_meta_frag γ (ReplicaSetV.key rs) uid 1 rs.(ReplicaSetV.ObjectMeta') ∗
       ([∗ list] pod ∈ pods',

@@ -15,9 +15,31 @@ Context `{ffi_syntax}.
 
 Definition State : go_string := "controllers/common.State"%go.
 
-Definition FilterPodsByOwner : go_string := "controllers/common.FilterPodsByOwner"%go.
+Definition FilterActivePods : go_string := "controllers/common.FilterActivePods"%go.
 
 (* go: common.go:17:6 *)
+Definition FilterActivePodsⁱᵐᵖˡ : val :=
+  λ: "pods",
+    exception_do (let: "pods" := (mem.alloc "pods") in
+    let: "result" := (mem.alloc (type.zero_val #sliceT)) in
+    let: "$range" := (![#sliceT] "pods") in
+    (let: "p" := (mem.alloc (type.zero_val #ptrT)) in
+    slice.for_range #ptrT "$range" (λ: "$key" "$value",
+      do:  ("p" <-[#ptrT] "$value");;;
+      do:  "$key";;;
+      (if: (![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "p")))) = #null
+      then
+        let: "$r0" := (let: "$a0" := (![#sliceT] "result") in
+        let: "$a1" := ((let: "$sl0" := (![#ptrT] "p") in
+        slice.literal #ptrT ["$sl0"])) in
+        (slice.append #ptrT) "$a0" "$a1") in
+        do:  ("result" <-[#sliceT] "$r0")
+      else do:  #())));;;
+    return: (![#sliceT] "result")).
+
+Definition FilterPodsByOwner : go_string := "controllers/common.FilterPodsByOwner"%go.
+
+(* go: common.go:27:6 *)
 Definition FilterPodsByOwnerⁱᵐᵖˡ : val :=
   λ: "owner" "ownerKind",
     exception_do (let: "ownerKind" := (mem.alloc "ownerKind") in
@@ -77,7 +99,7 @@ Definition FilterPodsByOwnerⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [(State, ptrT)].
 
-Definition functions' : list (go_string * val) := [(FilterPodsByOwner, FilterPodsByOwnerⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (FilterPodsByOwner, FilterPodsByOwnerⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [].
 

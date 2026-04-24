@@ -16,25 +16,6 @@ import (
 // * concurrent creation/deletion
 // * sort before deletion
 
-func CreatePod(namespace string, template *v1.PodTemplateSpec, controllerObject *apps.ReplicaSet, controllerRef *metav1.OwnerReference) error {
-	pod, err := controller.GetPodFromTemplate(template, controllerObject, controllerRef)
-	if err != nil {
-		return err
-	}
-	_, err = common.State.PodCreate(namespace, pod)
-	return err
-}
-
-func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
-	var result []*v1.Pod
-	for _, p := range pods {
-		if p.DeletionTimestamp == nil {
-			result = append(result, p)
-		}
-	}
-	return result
-}
-
 func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	if diff < 0 {
@@ -77,7 +58,7 @@ func syncReplicaSet(namespace, name string) error {
 		return err
 	}
 
-	allActivePods := FilterActivePods(allRSPods)
+	allActivePods := common.FilterActivePods(allRSPods)
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {

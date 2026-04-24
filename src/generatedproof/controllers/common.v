@@ -42,6 +42,10 @@ Global Program Instance is_pkg_defined_common : IsPkgDefined common :=
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
 
+Global Instance wp_func_call_FilterActivePods :
+  WpFuncCall common.FilterActivePods _ (is_pkg_defined common) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_FilterPodsByOwner :
   WpFuncCall common.FilterPodsByOwner _ (is_pkg_defined common) :=
   ltac:(solve_wp_func_call).

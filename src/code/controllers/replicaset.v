@@ -15,62 +15,9 @@ Section code.
 Context `{ffi_syntax}.
 
 
-Definition CreatePod : go_string := "controllers/replicaset.CreatePod"%go.
-
-(* go: replica_set.go:19:6 *)
-Definition CreatePodⁱᵐᵖˡ : val :=
-  λ: "namespace" "template" "controllerObject" "controllerRef",
-    exception_do (let: "controllerRef" := (mem.alloc "controllerRef") in
-    let: "controllerObject" := (mem.alloc "controllerObject") in
-    let: "template" := (mem.alloc "template") in
-    let: "namespace" := (mem.alloc "namespace") in
-    let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#ptrT] "template") in
-    let: "$a1" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "controllerObject")) in
-    let: "$a2" := (![#ptrT] "controllerRef") in
-    (func_call #controller.GetPodFromTemplate) "$a0" "$a1" "$a2") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("pod" <-[#ptrT] "$r0");;;
-    do:  ("err" <-[#error] "$r1");;;
-    (if: (~ (interface.eq (![#error] "err") #interface.nil))
-    then return: (![#error] "err")
-    else do:  #());;;
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
-    let: "$a1" := (![#ptrT] "pod") in
-    (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  "$r0";;;
-    do:  ("err" <-[#error] "$r1");;;
-    return: (![#error] "err")).
-
-Definition FilterActivePods : go_string := "controllers/replicaset.FilterActivePods"%go.
-
-(* go: replica_set.go:28:6 *)
-Definition FilterActivePodsⁱᵐᵖˡ : val :=
-  λ: "pods",
-    exception_do (let: "pods" := (mem.alloc "pods") in
-    let: "result" := (mem.alloc (type.zero_val #sliceT)) in
-    let: "$range" := (![#sliceT] "pods") in
-    (let: "p" := (mem.alloc (type.zero_val #ptrT)) in
-    slice.for_range #ptrT "$range" (λ: "$key" "$value",
-      do:  ("p" <-[#ptrT] "$value");;;
-      do:  "$key";;;
-      (if: (![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "p")))) = #null
-      then
-        let: "$r0" := (let: "$a0" := (![#sliceT] "result") in
-        let: "$a1" := ((let: "$sl0" := (![#ptrT] "p") in
-        slice.literal #ptrT ["$sl0"])) in
-        (slice.append #ptrT) "$a0" "$a1") in
-        do:  ("result" <-[#sliceT] "$r0")
-      else do:  #())));;;
-    return: (![#sliceT] "result")).
-
 Definition manageReplicas : go_string := "controllers/replicaset.manageReplicas"%go.
 
-(* go: replica_set.go:38:6 *)
+(* go: replica_set.go:19:6 *)
 Definition manageReplicasⁱᵐᵖˡ : val :=
   λ: "activePods" "rs",
     exception_do (let: "rs" := (mem.alloc "rs") in
@@ -150,7 +97,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
 
 Definition syncReplicaSet : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
-(* go: replica_set.go:66:6 *)
+(* go: replica_set.go:47:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in
@@ -184,7 +131,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
     else do:  #());;;
     let: "allActivePods" := (mem.alloc (type.zero_val #sliceT)) in
     let: "$r0" := (let: "$a0" := (![#sliceT] "allRSPods") in
-    (func_call #FilterActivePods) "$a0") in
+    (func_call #common.FilterActivePods) "$a0") in
     do:  ("allActivePods" <-[#sliceT] "$r0");;;
     let: "manageReplicasErr" := (mem.alloc (type.zero_val #error)) in
     (if: (![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) = #null
@@ -198,7 +145,7 @@ Definition syncReplicaSetⁱᵐᵖˡ : val :=
 
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [(CreatePod, CreatePodⁱᵐᵖˡ); (FilterActivePods, FilterActivePodsⁱᵐᵖˡ); (manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
 
 Definition msets' : list (go_string * (list (go_string * val))) := [].
 
