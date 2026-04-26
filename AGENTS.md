@@ -15,8 +15,8 @@ proof examples from the active opam switch. Resolve the path with
 `opam var perennial:build`; the generated proof examples live under
 `$(opam var perennial:build)/new`.
 
-To check a Rocq proof file, run `make path/to/file.vo`. You can pass `-j10`
-to compile independent proofs in parallel, for example
+To check a Rocq proof file, always run `make -j10 path/to/file.vo` so
+independent proofs compile in parallel, for example
 `make -j10 src/proof/benchmark/basic.vo`.
 
 ## Benchmark Proof Runs
@@ -25,7 +25,7 @@ When asked to "run benchmark x with time limit y", try to prove all lemmas in
 the `src/proof/benchmark/x.vo` target until reaching time limit `y`. Prove
 lemmas one by one from top to bottom. After each lemma you prove, run the
 corresponding make target to check it; for benchmark `basic`, run
-`make src/proof/benchmark/basic.vo`.
+`make -j10 src/proof/benchmark/basic.vo`.
 
 If you find during the proof that the spec or code is wrong, fix the spec or
 code and then continue the proof. Do not directly modify generated code in

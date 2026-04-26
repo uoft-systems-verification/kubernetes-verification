@@ -25,7 +25,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 			if err != nil {
 				return err
 			}
-			_, err = common.State.PodCreate(rs.Namespace, pod)
+			_, err = common.State.PodCreate(rs.ObjectMeta.GetNamespace(), pod)
 			if err != nil {
 				return err
 			}
@@ -33,7 +33,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	} else if diff > 0 {
 		podsToDelete := activePods[:diff]
 		for _, pod := range podsToDelete {
-			if err := common.State.PodDelete(rs.Namespace, pod.Name, metav1.DeleteOptions{}); err != nil {
+			if err := common.State.PodDelete(rs.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), metav1.DeleteOptions{}); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}

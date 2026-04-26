@@ -65,28 +65,28 @@ Proof.
         iFrame.
 Qed.
 
-Lemma wp_GetPodFromTemplate template_l obj controller_ref_l
-  dq template pure_template rs_l meta pure_meta pure_controller_ref:
+Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
+  dq template_c template rs_l meta controller_ref:
   {{{ is_pkg_init controller ∗
-      template_l ↦{dq} template ∗
-      PodTemplateSpecV.deepown template pure_template dq ∗
-      ⌜ PodTemplateSpecV.valid pure_template ⌝ ∗
+      template_l ↦{dq} template_c ∗
+      PodTemplateSpecV.deepown template_c template dq ∗
+      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq ∗
+      OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
+      ⌜ PodTemplateSpecV.valid template ⌝ ∗
       ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
-      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      ObjectMetaV.deepown meta pure_meta dq ∗
-      ⌜ ObjectMetaV.valid pure_meta ⌝ ∗
-      ⌜ length pure_meta.(ObjectMetaV.Name') < 58 ⌝ ∗
-      OwnerReferenceV.deepown_l controller_ref_l pure_controller_ref 1
+      ⌜ ObjectMetaV.valid meta ⌝ ∗
+      ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
+      ⌜ OwnerReferenceV.refers_to_controller controller_ref "ReplicaSet"%go
+        meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝
   }}}
   @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
-  {{{ pod_l pure_pod, RET (#pod_l, #interface.nil);
-      PodV.deepown_l pod_l pure_pod 1 ∗
-      ⌜ obj_has_controller_parent_of (KObjectV.Pod pure_pod) "ReplicaSet"%go pure_meta.(ObjectMetaV.Name') pure_meta.(ObjectMetaV.UID') ⌝ ∗
-      ⌜ PodV.valid_for_nameless_create pure_pod ⌝ ∗
-      template_l ↦{dq} template ∗
-      PodTemplateSpecV.deepown template pure_template dq ∗
-      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} meta ∗
-      ObjectMetaV.deepown meta pure_meta dq
+  {{{ pod_l pod, RET (#pod_l, #interface.nil);
+      PodV.deepown_l pod_l pod 1 ∗
+      ⌜ obj_parent_ref_is (KObjectV.Pod pod) "ReplicaSet"%go meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝ ∗
+      ⌜ KObjectV.valid_nameless_create "Pod"%go meta.(ObjectMetaV.Namespace') (KObjectV.Pod pod) ⌝ ∗
+      template_l ↦{dq} template_c ∗
+      PodTemplateSpecV.deepown template_c template dq ∗
+      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq
   }}}.
 Proof. Admitted.
 

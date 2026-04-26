@@ -49,7 +49,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
         (if: (~ (interface.eq (![#error] "err") #interface.nil))
         then return: (![#error] "err")
         else do:  #());;;
-        let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
+        let: ("$ret0", "$ret1") := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs"))) #()) in
         let: "$a1" := (![#ptrT] "pod") in
         (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1") in
         let: "$r0" := "$ret0" in
@@ -72,8 +72,8 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
           do:  ("pod" <-[#ptrT] "$value");;;
           do:  "$key";;;
           (let: "err" := (mem.alloc (type.zero_val #error)) in
-          let: "$r0" := (let: "$a0" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Namespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) in
-          let: "$a1" := (![#stringT] (struct.field_ref #v1.ObjectMeta #"Name"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod")))) in
+          let: "$r0" := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs"))) #()) in
+          let: "$a1" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetName"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
           let: "$a2" := (struct.make #v1.DeleteOptions [{
             "TypeMeta" ::= type.zero_val #v1.TypeMeta;
             "GracePeriodSeconds" ::= type.zero_val #ptrT;

@@ -201,7 +201,8 @@ Proof.
   wp_apply (wp_deepCopy with "[$Hdeepown_i]"). iIntros (i1) "(Hdeepown_i1 & Hdeepown_i)". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l1]".
   wp_apply wp_Accessor. 1: iPureIntro; done. rewrite bool_decide_true //. wp_auto.
-  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_other_l1)".
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as
+    "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_s_l1 & Hdeepown_st_l1)".
   wp_alloc err as "Herr". wp_auto.
   wp_apply (wp_validateDeleteOptions with "[$Hdeepown_l_options1]"). 1: done.
   iIntros "Hdeepown_l_options1". wp_auto.
@@ -226,12 +227,13 @@ Proof.
     iApply "HΦ".
   }
   rewrite bool_decide_true //. wp_auto.
-  wp_apply (wp_checkGracefulDelete with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_other_l1 $Hdeepown_l_options1]").
+  wp_apply (wp_checkGracefulDelete with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_s_l1 Hdeepown_st_l1 $Hdeepown_l_options1]").
   { iSplit; first done. iApply KObjectV.deepown_l_restore. iFrame. }
   iIntros (graceful pendingGraceful options1) "(Hdeepown_l1 & Hdeepown_l_options1 & %Hif_pendinggraceful & %Hgraceful_eq
     & %Hpendinggraceful_eq & %Hoptions_eq)". wp_auto.
   rewrite bool_decide_true //. wp_auto.
-  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_other_l1)".
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as
+    "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_s_l1 & Hdeepown_st_l1)".
   destruct (bool_decide (valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers'))) as [|]
     eqn:Hvalid_kmeta_finalizers.
   2: {
@@ -358,8 +360,8 @@ Proof.
     iPureIntro. split_and!. all: done.
   }
   iAssert (KObjectV.deepown_i i1 (KObjectV.update_objectmeta kobj new_kmeta) 1)
-    with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_other_l1]" as "Hdeepown_i1".
-  { iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_other_l1]") as "H".
+    with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_s_l1 Hdeepown_st_l1]" as "Hdeepown_i1".
+  { iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_s_l1 $Hdeepown_st_l1]") as "H".
     iFrame. destruct kobj. all: done. }
   wp_apply (wp_objDeepEqual with "[$Hdeepown_i1 $Hdeepown_i]").
   iIntros (v) "(Hdeepown_i1 & Hdeepown_i & %Hv)".
@@ -388,12 +390,13 @@ Proof.
   iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto.
   iPoseProof (KObjectV.deepown_i_yields_deepown_l i1 l1 with "[$Hdeepown_i1]") as "Hdeepown_l1".
   { iPureIntro. destruct kobj; done. }
-  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_other_l1)".
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as
+    "(Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_s_l1 & Hdeepown_st_l1)".
   assert (KObjectV.objectmeta_ptr l1 kobj = KObjectV.objectmeta_ptr l1 (KObjectV.update_objectmeta kobj new_kmeta)) as ->.
   { destruct kobj; done. }
   wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_m_l1]") as "Hdeepown_m_l1".
   wp_apply (wp_map_insert with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
-  iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_other_l1]") as "Hdeepown_l1".
+  iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_s_l1 $Hdeepown_st_l1]") as "Hdeepown_l1".
   set new_kmeta1 := new_kmeta <| ObjectMetaV.ResourceVersion' := generated_rv |>.
   assert (KObjectV.update_objectmeta (KObjectV.update_objectmeta kobj new_kmeta)
     (KObjectV.objectmeta (KObjectV.update_objectmeta kobj new_kmeta) <| ObjectMetaV.ResourceVersion' := generated_rv |>)

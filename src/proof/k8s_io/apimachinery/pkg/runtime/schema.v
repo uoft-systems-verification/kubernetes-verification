@@ -5,7 +5,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 
 Lemma wp_GroupVersion__WithKind (gv: schema.GroupVersion.t) kind:
-  {{{ is_pkg_init schema }}}
+  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.runtime.schema.schema }}}
     gv @ schema.GroupVersion.id @ "WithKind" #kind
   {{{ gvk, RET #gvk;
       ⌜ gvk.(schema.GroupVersionKind.Group') = gv.(schema.GroupVersion.Group') ∧

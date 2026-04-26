@@ -191,6 +191,38 @@ Lemma wp_SetGeneration l m generation :
   }}}.
 Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 
+Lemma wp_GetNamespace l m dq :
+  {{{ is_pkg_init v1 ∗
+      l ↦{dq} m
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetNamespace" #()
+  {{{ RET #m.(v1.ObjectMeta.Namespace');
+      l ↦{dq} m
+  }}}.
+Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
+
+Lemma wp_GetNamespace_deepown l m dq:
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l l m dq
+  }}}
+    l @ (ptrT.id v1.ObjectMeta.id) @ "GetNamespace" #()
+  {{{ RET #m.(ObjectMetaV.Namespace');
+      ObjectMetaV.deepown_l l m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
+  wp_apply (wp_GetNamespace with "[$Hl]").
+  iIntros "Hl".
+  iNamed "Hdeepown".
+  rewrite Hdeepown_namespace.
+  iApply "HΦ".
+  iExists c.
+  iFrame.
+  iPureIntro.
+  done.
+Qed.
+
 Lemma wp_SetNamespace l m namespace :
   {{{ is_pkg_init v1 ∗
       l ↦ m
@@ -533,26 +565,19 @@ Lemma wp_DeleteOptions__DeepCopy l options :
       DeleteOptionsV.deepown_l l options 1
   }}}.
 Proof. Admitted.
-  
-Definition new_controller_ref_valid controller_ref kind m : Prop :=
-  controller_ref.(OwnerReferenceV.Kind') = kind ∧
-  controller_ref.(OwnerReferenceV.Name') = m.(ObjectMetaV.Name') ∧
-  controller_ref.(OwnerReferenceV.UID') = m.(ObjectMetaV.UID') ∧
-  controller_ref.(OwnerReferenceV.BlockOwnerDeletion') = Some true ∧
-  controller_ref.(OwnerReferenceV.Controller') = Some true.
 
-Lemma wp_NewControllerRef_replicaset owner gvk rs_l m pure_m dq:
+Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
   {{{ is_pkg_init v1 ∗
       ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
-      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} m ∗
-      ObjectMetaV.deepown m pure_m dq
+      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}
     @! v1.NewControllerRef #owner #gvk
-  {{{ l pure_controller_ref, RET #l;
-      OwnerReferenceV.deepown_l l pure_controller_ref 1 ∗
-      ⌜ new_controller_ref_valid pure_controller_ref gvk.(schema.GroupVersionKind.Kind') pure_m ⌝ ∗
-      rs_l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} m ∗
-      ObjectMetaV.deepown m pure_m dq
+  {{{ l controller_ref, RET #l;
+      OwnerReferenceV.deepown_l l controller_ref 1 ∗
+      ⌜ OwnerReferenceV.refers_to_controller controller_ref gvk.(schema.GroupVersionKind.Kind')
+        m.(ObjectMetaV.Name')
+        m.(ObjectMetaV.UID') ⌝ ∗
+      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}.
 Proof. Admitted.
 
