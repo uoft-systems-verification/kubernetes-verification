@@ -71,13 +71,21 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
         slice.for_range #ptrT "$range" (λ: "$key" "$value",
           do:  ("pod" <-[#ptrT] "$value");;;
           do:  "$key";;;
+          let: "uid" := (mem.alloc (type.zero_val #types.UID)) in
+          let: "$r0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetUID"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
+          do:  ("uid" <-[#types.UID] "$r0");;;
           (let: "err" := (mem.alloc (type.zero_val #error)) in
           let: "$r0" := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs"))) #()) in
           let: "$a1" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetName"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
-          let: "$a2" := (struct.make #v1.DeleteOptions [{
+          let: "$a2" := (let: "$Preconditions" := (mem.alloc (let: "$UID" := "uid" in
+          struct.make #v1.Preconditions [{
+            "UID" ::= "$UID";
+            "ResourceVersion" ::= type.zero_val #ptrT
+          }])) in
+          struct.make #v1.DeleteOptions [{
             "TypeMeta" ::= type.zero_val #v1.TypeMeta;
             "GracePeriodSeconds" ::= type.zero_val #ptrT;
-            "Preconditions" ::= type.zero_val #ptrT;
+            "Preconditions" ::= "$Preconditions";
             "OrphanDependents" ::= type.zero_val #ptrT;
             "PropagationPolicy" ::= type.zero_val #ptrT;
             "DryRun" ::= type.zero_val #sliceT;
@@ -97,7 +105,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
 
 Definition syncReplicaSet : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
-(* go: replica_set.go:47:6 *)
+(* go: replica_set.go:50:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in

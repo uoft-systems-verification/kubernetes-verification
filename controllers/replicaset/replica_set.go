@@ -33,7 +33,10 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	} else if diff > 0 {
 		podsToDelete := activePods[:diff]
 		for _, pod := range podsToDelete {
-			if err := common.State.PodDelete(rs.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), metav1.DeleteOptions{}); err != nil {
+			uid := pod.ObjectMeta.GetUID()
+			if err := common.State.PodDelete(rs.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), metav1.DeleteOptions{
+				Preconditions: &metav1.Preconditions{UID: &uid},
+			}); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}
