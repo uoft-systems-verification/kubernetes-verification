@@ -275,18 +275,6 @@ Definition nameless_created ns m m' : Prop :=
   m'.(OwnerReferences') = m.(OwnerReferences') ∧
   m'.(Finalizers') = m.(Finalizers').
 
-Definition valid_for_nameless_create (m: t) : Prop :=
-  (∃ prefix, m.(GenerateName') = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix ∧ ¬ reserved_name prefix) ∧
-  (* The max len of generate_name of the pod must be 58 so that the suffix can fit in:
-    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
-  length m.(GenerateName') ≤ 58 ∧
-  m.(Name') = ""%go ∧
-  (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace')) ∧
-  match m.(OwnerReferences') with
-  | None => True
-  | Some os => OwnerReferenceV.list_valid os
-  end.
-
 Axiom created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
 
 Axiom updated: t → t → t → Prop. (* old meta → input meta → output meta (new meta) *)
@@ -430,16 +418,6 @@ Definition valid (pod: t) : Prop :=
   PodStatusV.valid pod.(Status').
 
 Definition valid_without_meta (pod: t) : Prop :=
-  PodSpecV.valid pod.(Spec') ∧
-  PodStatusV.valid pod.(Status').
-
-Definition valid_for_nameless_create (pod: t) : Prop :=
-  ObjectMetaV.valid_for_nameless_create pod.(ObjectMeta') ∧
-  (* TODO: should we have valid_for_nameless_create for pod spec and pod status? *)
-  PodSpecV.valid pod.(Spec') ∧
-  PodStatusV.valid pod.(Status').
-
-Definition valid_for_nameless_create_without_meta (pod: t) : Prop :=
   PodSpecV.valid pod.(Spec') ∧
   PodStatusV.valid pod.(Status').
 
@@ -644,16 +622,6 @@ Definition valid (rs: t) : Prop :=
   ReplicaSetStatusV.valid rs.(Status').
 
 Definition valid_without_meta (rs: t) : Prop :=
-  ReplicaSetSpecV.valid rs.(Spec') ∧
-  ReplicaSetStatusV.valid rs.(Status').
-
-Definition valid_for_nameless_create (rs: t) : Prop :=
-  ObjectMetaV.valid_for_nameless_create rs.(ObjectMeta') ∧
-  (* TODO: should we have valid_for_nameless_create for rs spec and rs status? *)
-  ReplicaSetSpecV.valid rs.(Spec') ∧
-  ReplicaSetStatusV.valid rs.(Status').
-
-Definition valid_for_nameless_create_without_meta (rs: t) : Prop :=
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
 
@@ -952,18 +920,6 @@ Definition valid_without_meta o : Prop :=
   | ReplicaSet rs => ReplicaSetV.valid_without_meta rs
   end.
 
-Definition valid_for_nameless_create o : Prop :=
-  match o with
-  | Pod p => PodV.valid_for_nameless_create p
-  | ReplicaSet rs => ReplicaSetV.valid_for_nameless_create rs
-  end.
-
-Definition valid_for_nameless_create_without_meta o : Prop :=
-  match o with
-  | Pod p => PodV.valid_for_nameless_create_without_meta p
-  | ReplicaSet rs => ReplicaSetV.valid_for_nameless_create_without_meta rs
-  end.
-
 Definition deepown_l l v dq: iProp Σ :=
   match v with
   | Pod v => PodV.deepown_l l v dq
@@ -1013,38 +969,6 @@ End def.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
-
-Lemma valid_for_nameless_create_split o:
-  valid_for_nameless_create o →
-    ObjectMetaV.valid_for_nameless_create (objectmeta o) ∧ valid_for_nameless_create_without_meta o.
-Proof.
-  destruct o as [p|rs]; simpl.
-  - unfold PodV.valid_for_nameless_create, PodV.valid_for_nameless_create_without_meta.
-    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
-  - unfold ReplicaSetV.valid_for_nameless_create, ReplicaSetV.valid_for_nameless_create_without_meta.
-    intros (Hmeta & Hspec & Hstatus). split; [done | split; done].
-Qed.
-
-Lemma valid_merge o m:
-  ObjectMetaV.valid m ∧ valid_without_meta o →
-    valid_old (update_objectmeta o m).
-Proof. destruct o; done. Qed.
-
-(* TODO: this lemma is a temporary workaround before we implement initialization logics in the model *)
-Lemma valid_implies o:
-  valid_for_nameless_create_without_meta o →
-    valid_without_meta o.
-Proof. destruct o; done. Qed.
-
-Lemma pod_deepown_l l pure_pod dq:
-  deepown_l l (Pod pure_pod) dq ⊢
-    PodV.deepown_l l pure_pod dq.
-Proof. done. Qed.
-
-Lemma replicaset_deepown_l l pure_rs dq:
-  deepown_l l (ReplicaSet pure_rs) dq ⊢
-    ReplicaSetV.deepown_l l pure_rs dq.
-Proof. done. Qed.
 
 Lemma deepown_l_split l v dq:
   deepown_l l v dq ⊢
