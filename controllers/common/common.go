@@ -5,6 +5,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -12,6 +13,12 @@ var State *apimodel.State
 
 func init() {
 	State = apimodel.NewState()
+}
+
+func NewDeleteOptionsWithUID(uid types.UID) metav1.DeleteOptions {
+	return metav1.DeleteOptions{
+		Preconditions: &metav1.Preconditions{UID: &uid},
+	}
 }
 
 func FilterActivePods(pods []*v1.Pod) []*v1.Pod {

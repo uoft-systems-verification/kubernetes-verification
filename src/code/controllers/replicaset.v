@@ -75,22 +75,10 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
           let: "$r0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetUID"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
           do:  ("uid" <-[#types.UID] "$r0");;;
           (let: "err" := (mem.alloc (type.zero_val #error)) in
-          let: "$r0" := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs"))) #()) in
+          let: "$r0" := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
           let: "$a1" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetName"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
-          let: "$a2" := (let: "$Preconditions" := (mem.alloc (let: "$UID" := "uid" in
-          struct.make #v1.Preconditions [{
-            "UID" ::= "$UID";
-            "ResourceVersion" ::= type.zero_val #ptrT
-          }])) in
-          struct.make #v1.DeleteOptions [{
-            "TypeMeta" ::= type.zero_val #v1.TypeMeta;
-            "GracePeriodSeconds" ::= type.zero_val #ptrT;
-            "Preconditions" ::= "$Preconditions";
-            "OrphanDependents" ::= type.zero_val #ptrT;
-            "PropagationPolicy" ::= type.zero_val #ptrT;
-            "DryRun" ::= type.zero_val #sliceT;
-            "IgnoreStoreReadErrorWithClusterBreakingPotential" ::= type.zero_val #ptrT
-          }]) in
+          let: "$a2" := (let: "$a0" := (![#types.UID] "uid") in
+          (func_call #common.NewDeleteOptionsWithUID) "$a0") in
           (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1" "$a2") in
           do:  ("err" <-[#error] "$r0");;;
           (if: (~ (interface.eq (![#error] "err") #interface.nil))
@@ -105,7 +93,7 @@ Definition manageReplicasⁱᵐᵖˡ : val :=
 
 Definition syncReplicaSet : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
-(* go: replica_set.go:50:6 *)
+(* go: replica_set.go:48:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (mem.alloc "name") in

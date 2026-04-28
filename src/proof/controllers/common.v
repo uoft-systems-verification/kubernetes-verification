@@ -15,6 +15,42 @@ Context `{!mono_gsetG types.UID.t Σ}.
 Definition is_pod_alive (pod: PodV.t): Prop :=
   pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
 
+Definition delete_options_with_uid (uid : types.UID.t) : DeleteOptionsV.t :=
+  {|
+    DeleteOptionsV.TypeMeta' := default_val _;
+    DeleteOptionsV.GracePeriodSeconds' := None;
+    DeleteOptionsV.Preconditions' := Some {|
+      PreconditionsV.UID' := Some uid;
+      PreconditionsV.ResourceVersion' := None;
+    |};
+    DeleteOptionsV.OrphanDependents' := None;
+    DeleteOptionsV.PropagationPolicy' := None;
+  |}.
+
+Lemma wp_NewDeleteOptionsWithUID uid :
+  {{{ is_pkg_init code.controllers.common.common }}}
+    @! common.NewDeleteOptionsWithUID #uid
+  {{{ options, RET #options;
+      DeleteOptionsV.deepown options (delete_options_with_uid uid) 1 ∗
+      ⌜ DeleteOptionsV.valid (delete_options_with_uid uid)⌝
+  }}}.
+Proof. Admitted.
+  (* wp_start as "H".
+  wp_alloc uid_ptr as "Huid_ptr".
+  wp_auto.
+  wp_alloc preconditions_ptr as "Hpreconditions_ptr".
+  wp_auto.
+  iAssert (⌜ uid_ptr ≠ null ⌝%I) as "%Huid_ptr_not_null".
+  { iDestruct (typed_pointsto_not_null with "Huid_ptr") as %H; [done|]. done. }
+  iAssert (⌜ preconditions_ptr ≠ null ⌝%I) as "%Hpreconditions_ptr_not_null".
+  { iDestruct (typed_pointsto_not_null with "Hpreconditions_ptr") as %H; [done|]. done. }
+  iApply "HΦ".
+  rewrite /delete_options_with_uid /DeleteOptionsV.deepown /PreconditionsV.deepown /=.
+  iFrame.
+  iPureIntro.
+  split_and!; naive_solver.
+Qed. *)
+
 Lemma deepown_preserves_deletion_timestamp_activeness pod pure_pod dq:
   PodV.deepown pod pure_pod dq -∗
     ⌜ pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null ↔

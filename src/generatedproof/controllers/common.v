@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.kubernetes_model.apimodel.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.golang.theory.
 
@@ -26,6 +27,7 @@ Global Instance is_pkg_defined_pure_common : IsPkgDefinedPure common :=
       is_pkg_defined_pure code.kubernetes_model.apimodel.apimodel ∧
       is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
       is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
+      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.types.types ∧
       is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
   |}.
 
@@ -37,10 +39,15 @@ Global Program Instance is_pkg_defined_common : IsPkgDefined common :=
        is_pkg_defined code.kubernetes_model.apimodel.apimodel ∗
        is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
        is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
+       is_pkg_defined code.k8s_io.apimachinery.pkg.types.types ∗
        is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
   |}.
 Final Obligation. iIntros. iFrame "#%". Qed.
 #[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
+
+Global Instance wp_func_call_NewDeleteOptionsWithUID :
+  WpFuncCall common.NewDeleteOptionsWithUID _ (is_pkg_defined common) :=
+  ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_FilterActivePods :
   WpFuncCall common.FilterActivePods _ (is_pkg_defined common) :=

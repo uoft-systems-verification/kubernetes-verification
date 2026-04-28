@@ -290,6 +290,10 @@ Context `{hG: !heapGS Σ}.
 Record t := mk {}.
 Axiom valid: t → Prop.
 Axiom deepown : v1.PodSpec.t → t → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
+
 End def.
 End PodSpecV.
 
@@ -323,6 +327,9 @@ Axiom valid: t → Prop.
 Definition deepown (c: v1.PodStatus.t) (v: t): iProp Σ :=
   "%Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝ ∗
   "%true" ∷ True.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
 
 End def.
 End PodStatusV.
@@ -378,6 +385,21 @@ Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+Definition typemeta_ptr l: loc :=
+  struct.field_ref_f v1.Pod "TypeMeta" l.
+
+Definition objectmeta_ptr l: loc :=
+  struct.field_ref_f v1.Pod "ObjectMeta" l.
+
+Definition spec_ptr l: loc :=
+  struct.field_ref_f v1.Pod "Spec" l.
+
+Definition status_ptr l: loc :=
+  struct.field_ref_f v1.Pod "Status" l.
+
+Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
+  v <| ObjectMeta' := m |>.
+
 Definition deepown_without_meta (c: v1.Pod.t) (v: t): iProp Σ :=
   "Hdeepown_spec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') ∗
   "Hdeepown_status" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status').
@@ -389,6 +411,69 @@ Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   deepown_without_meta c v.
 
 End def.
+
+Section proof.
+Context `{hG: !heapGS Σ}.
+
+Lemma deepown_l_split l v dq:
+  deepown_l l v dq ⊢
+    (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+    ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+    PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+    PodStatusV.deepown_l (status_ptr l) v.(Status') dq.
+Proof.
+  unfold deepown_l, deepown.
+  iIntros "H".
+  iDestruct "H" as (c) "[Hl Hdeepown]".
+  iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
+  iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "Hfields".
+  iNamed "Hfields".
+  rewrite -Htypemeta.
+  iFrame "HTypeMeta".
+  iSplitL "HObjectMeta Hobjectmeta".
+  { unfold ObjectMetaV.deepown_l, objectmeta_ptr. iFrame. }
+  iSplitL "HSpec Hspec".
+  { unfold PodSpecV.deepown_l, spec_ptr. iFrame. }
+  unfold PodStatusV.deepown_l, status_ptr. iFrame.
+Qed.
+
+Lemma deepown_l_merge l v vm dq:
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) vm dq ∗
+  PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  PodStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l (update_objectmeta v vm) dq.
+Proof.
+  destruct v as [v_typemeta v_objectmeta v_spec v_status].
+  unfold deepown_l, deepown, update_objectmeta.
+  iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
+  iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
+  iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
+  iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
+  iDestruct (struct_fields_combine
+    (v:= v1.Pod.mk v_typemeta cm cspec cstatus)
+    with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
+  iExists (v1.Pod.mk v_typemeta cm cspec cstatus).
+  iSplitL "Hl"; first iExact "Hl".
+  iSplitR "Hobjectmeta Hspec Hstatus"; first done.
+  simpl. iFrame.
+Qed.
+
+Lemma deepown_l_restore l v dq:
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+  PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  PodStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l v dq.
+Proof.
+  iIntros "H".
+  iPoseProof (deepown_l_merge with "H") as "H".
+  assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
+  { destruct v. done. }
+  iFrame.
+Qed.
+
+End proof.
 End PodV.
 
 Module PodTemplateSpecV.
