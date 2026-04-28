@@ -62,7 +62,7 @@ Proof.
   wp_apply v1.wp_Now. iIntros (now_time now_timev) "Hdeepown_time". wp_auto.
   wp_apply (wp_SetCreationTimestamp_deepown with "[$Hdeepown_m_l $Hdeepown_time]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_State__generateNewUIDAndUpdate with "[$Hinv_Hstate_used_uid_addr $Hinv_Hown_used_uid]").
-  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hinv_Hstate_used_uid_addr & Hinv_Hown_used_uid)". wp_auto.
+  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & %Hgenerated_uid_valid & Hinv_Hstate_used_uid_addr & Hinv_Hown_used_uid)". wp_auto.
   wp_apply (wp_SetUID_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetGenerateName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.

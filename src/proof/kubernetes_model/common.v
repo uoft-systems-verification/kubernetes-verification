@@ -50,6 +50,7 @@ Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.
     l @ (ptrT.id apimodel.State.id) @ "generateNewUIDAndUpdate" #()
   {{{ uid, RET #uid;
       ⌜ used_uid !! uid = None ⌝ ∗
+      ⌜ valid_uid uid ⌝ ∗
       l ↦s[apimodel.State :: "usedUID"] used_uid_l ∗
       used_uid_l ↦$ <[uid:=()]> used_uid
   }}}.

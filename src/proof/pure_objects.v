@@ -31,6 +31,40 @@ Lemma valid_name_slash_free name:
   valid_name name → slash_free name.
 Proof. Admitted.
 
+Definition valid_generate_name generate_name : Prop :=
+  (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
+  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix.
+
+  (* Below is the actual validation logic for generate_name, which is too complex and seems buggy *)
+  (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L37 *)
+  (* TODO: there might be a bug in Kubernetes that performs name[:len(name)-2] in generic.go *)
+  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧ valid_name (prefix ++ "a"%go)) ∨
+  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧ valid_name generate_name. *)
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
+Axiom valid_namespace: go_string → Prop.
+
+Lemma valid_namespace_slash_free ns:
+  valid_namespace ns → slash_free ns.
+Proof. Admitted.
+
+Axiom valid_uid: go_string → Prop.
+
+(* This holds in practice because uuid does not contain slash *)
+Lemma valid_uid_slash_free ns:
+  valid_uid ns → slash_free ns.
+Proof. Admitted.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
+Definition valid_generation (generation: w64) : Prop :=
+  (0 <= sint.Z generation)%Z.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
+Axiom valid_labels: option (gmap go_string go_string) → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
+Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+
 Module OwnerReferenceV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -96,33 +130,6 @@ Definition deepown_l l v dq: iProp Σ :=
 End def.
 End ManagedFieldsEntryV.
 
-Definition valid_generate_name generate_name : Prop :=
-  (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
-  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix.
-
-  (* Below is the actual validation logic for generate_name, which is too complex and seems buggy *)
-  (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L37 *)
-  (* TODO: there might be a bug in Kubernetes that performs name[:len(name)-2] in generic.go *)
-  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧ valid_name (prefix ++ "a"%go)) ∨
-  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧ valid_name generate_name. *)
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
-Axiom valid_namespace: go_string → Prop.
-
-Lemma valid_namespace_slash_free ns:
-  valid_namespace ns → slash_free ns.
-Proof. Admitted.
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
-Definition valid_generation (generation: w64) : Prop :=
-  (0 <= sint.Z generation)%Z.
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
-Axiom valid_labels: option (gmap go_string go_string) → Prop.
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
-Axiom valid_annotations: option (gmap go_string go_string) → Prop.
-
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
 Definition valid_owner_references (o: option (list OwnerReferenceV.t)) : Prop :=
   match o with
@@ -173,6 +180,10 @@ Definition valid (m: t) : Prop :=
   valid_name m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧
   valid_namespace m.(Namespace') ∧
+  (* Kubernetes does not really pose any requirement on uid, but
+     we want to ensure the uid does not contain special characters like
+     slash. This holds in practice because uuid does not contain slash. *)
+  valid_uid m.(UID') ∧
   (* Kubernetes validates generation as non-negative on create/update, but
      generation is an int64 and some server-side increments do not guard
      against overflow. Do not make non-negativity a persistent object
@@ -1312,7 +1323,7 @@ Proof.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
   unfold ObjectMetaV.valid in Hwf.
-  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
+  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
   - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
     assert (OwnerReferenceV.list_valid os) as Hwf_list.

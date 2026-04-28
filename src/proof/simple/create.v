@@ -74,7 +74,7 @@ Proof. Admitted.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hnew_key_not_in_phys. wp_auto.
   wp_apply (wp_State__generateNewUIDAndUpdate with "[$Hinv_Hstate_used_uid_addr $Hinv_Hown_used_uid]").
-  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & Hinv_Hstate_used_uid_addr & Hinv_Hown_used_uid)". wp_auto.
+  iIntros (generated_uid) "(%Hgenerated_uid_is_not_used & %Hgenerated_uid_valid & Hinv_Hstate_used_uid_addr & Hinv_Hown_used_uid)". wp_auto.
   wp_apply (wp_SetUID with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
   wp_apply wp_strconv_FormatInt. iIntros (rv_str) "_". wp_auto.
   wp_apply (wp_SetResourceVersion with "[$Hobjectmeta_ptr]"). iIntros "Hobjectmeta_ptr". wp_auto.
