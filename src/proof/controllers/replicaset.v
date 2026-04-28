@@ -19,6 +19,99 @@ Definition current_state_matches rs pods : Prop :=
   | None => False
   end.
 
+Lemma list_to_set_app_singleton_kkey (x : KKey.t) (l1 l2 l3 : list KKey.t) :
+  list_to_set (C:=gset KKey.t) (l1 ++ ((l2 ++ [x]) ++ l3)) =
+  list_to_set (C:=gset KKey.t) ((x :: l1) ++ l2 ++ l3).
+Proof.
+  apply set_eq. intros k.
+  rewrite !elem_of_list_to_set.
+  rewrite !elem_of_app !list_elem_of_singleton !elem_of_cons.
+  split.
+  - intros [Hl1 | [[Hl2 | Hx] | Hl3]].
+    + left. right. exact Hl1.
+    + right. left. exact Hl2.
+    + subst k. left. left. done.
+    + right. right. exact Hl3.
+  - intros [[Hx | Hl1] | [Hl2 | Hl3]].
+    + subst k. right. left. right. done.
+    + left. exact Hl1.
+    + right. left. left. exact Hl2.
+    + right. right. exact Hl3.
+Qed.
+
+Lemma list_to_set_cons_difference_kkey (x : KKey.t) (l : list KKey.t) :
+  x ∉ l →
+  list_to_set (C:=gset KKey.t) l =
+  list_to_set (C:=gset KKey.t) (x :: l) ∖ {[x]}.
+Proof.
+  intros Hnotin.
+  apply set_eq. intros k.
+  rewrite elem_of_difference !elem_of_list_to_set elem_of_singleton elem_of_cons.
+  split.
+  - intros Hk. split.
+    + right. exact Hk.
+    + intros ->. exact (Hnotin Hk).
+  - intros [[-> | Hk] Hneq].
+    + exfalso. apply Hneq. done.
+    + exact Hk.
+Qed.
+
+Lemma pod_key_not_in_delete_remainder
+    active_pods inactive_pods inactive_pods' this_pod i :
+  NoDup (PodV.key <$> (active_pods ++ inactive_pods)) →
+  active_pods !! i = Some this_pod →
+  (∀ key, key ∈ PodV.key <$> inactive_pods' → key ∈ PodV.key <$> take i active_pods) →
+  PodV.key this_pod ∉
+    PodV.key <$> (drop (S i) active_pods ++ inactive_pods' ++ inactive_pods).
+Proof.
+  intros Hnodup Hlookup Hincluded Hcontra.
+  rewrite !fmap_app !elem_of_app in Hcontra.
+  assert ((active_pods ++ inactive_pods) !! i = Some this_pod) as Hlookup_this.
+  { apply lookup_app_l_Some. exact Hlookup. }
+  assert ((PodV.key <$> (active_pods ++ inactive_pods)) !! i = Some (PodV.key this_pod))
+    as Hlookup_key_this.
+  { rewrite list_lookup_fmap Hlookup_this. done. }
+  destruct Hcontra as [Hdrop | [Hinactive' | Hinactive]].
+  - apply list_elem_of_lookup_1 in Hdrop as (j & Hlookup_drop_key).
+    rewrite list_lookup_fmap in Hlookup_drop_key.
+    destruct (drop (S i) active_pods !! j) as [pod_j|] eqn:Hlookup_drop; simpl in Hlookup_drop_key; [|done].
+    assert ((active_pods ++ inactive_pods) !! (S i + j)%nat = Some pod_j) as Hlookup_j.
+    { apply lookup_app_l_Some. rewrite lookup_drop in Hlookup_drop. exact Hlookup_drop. }
+    assert ((PodV.key <$> (active_pods ++ inactive_pods)) !! (S i + j)%nat = Some (PodV.key this_pod))
+      as Hlookup_key_j.
+    { rewrite list_lookup_fmap Hlookup_j. exact Hlookup_drop_key. }
+    pose proof (NoDup_lookup _ _ _ _ Hnodup Hlookup_key_this Hlookup_key_j) as Heq.
+    lia.
+  - pose proof (Hincluded _ Hinactive') as Hkey_take.
+    apply list_elem_of_lookup_1 in Hkey_take as (j & Hlookup_take_key).
+    rewrite list_lookup_fmap in Hlookup_take_key.
+    destruct (take i active_pods !! j) as [pod_j|] eqn:Hlookup_take; simpl in Hlookup_take_key; [|done].
+    apply lookup_take_Some in Hlookup_take as (Hlookup_active_j & Hj_lt).
+    assert ((active_pods ++ inactive_pods) !! j = Some pod_j) as Hlookup_j.
+    { apply lookup_app_l_Some. exact Hlookup_active_j. }
+    assert ((PodV.key <$> (active_pods ++ inactive_pods)) !! j = Some (PodV.key this_pod))
+      as Hlookup_key_j.
+    { rewrite list_lookup_fmap Hlookup_j. exact Hlookup_take_key. }
+    pose proof (NoDup_lookup _ _ _ _ Hnodup Hlookup_key_this Hlookup_key_j) as Heq.
+    lia.
+  - apply list_elem_of_lookup_1 in Hinactive as (j & Hlookup_inactive_key).
+    rewrite list_lookup_fmap in Hlookup_inactive_key.
+    destruct (inactive_pods !! j) as [pod_j|] eqn:Hlookup_inactive; simpl in Hlookup_inactive_key; [|done].
+    assert ((active_pods ++ inactive_pods) !! (length active_pods + j)%nat = Some pod_j) as Hlookup_j.
+    { rewrite lookup_app.
+      assert (active_pods !! (length active_pods + j)%nat = None) as Hactive_none.
+      { apply lookup_ge_None_2. apply Nat.le_add_r. }
+      rewrite Hactive_none.
+      replace (length active_pods + j - length active_pods)%nat with j by lia.
+      exact Hlookup_inactive. }
+    assert ((PodV.key <$> (active_pods ++ inactive_pods)) !! (length active_pods + j)%nat =
+        Some (PodV.key this_pod)) as Hlookup_key_j.
+    { rewrite list_lookup_fmap Hlookup_j. exact Hlookup_inactive_key. }
+    pose proof (NoDup_lookup _ _ _ _ Hnodup Hlookup_key_this Hlookup_key_j) as Heq.
+    apply lookup_lt_Some in Hlookup.
+    lia.
+Qed.
+
 Lemma filter_all {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
   (∀ x, x ∈ l → P x) →
   filter P l = l.
@@ -29,6 +122,18 @@ Proof.
   { apply Hall. left. }
   rewrite (filter_cons_True P x l HPx).
   f_equal. apply IH. intros y Hy. apply Hall. right. exact Hy.
+Qed.
+
+Lemma filter_none {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
+  (∀ x, x ∈ l → ¬ P x) →
+  filter P l = [].
+Proof.
+  intros Hnone.
+  induction l as [|x l IH]; simpl; first done.
+  assert (¬ P x) as HPx.
+  { apply Hnone. left. }
+  rewrite (filter_cons_False P x l HPx).
+  apply IH. intros y Hy. apply Hnone. right. exact Hy.
 Qed.
 
 Lemma lookup_filter_ge {A} (P : A → Prop) `{∀ x, Decision (P x)}
@@ -108,7 +213,8 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pod
       "%Hrs_valid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
       "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
-      "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝
+      "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝ ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> (active_pods ++ inactive_pods)) ⌝
   }}}
     @! replicaset.manageReplicas #sl #rs_l
   {{{ pods', RET #interface.nil;
@@ -145,8 +251,8 @@ Proof.
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ active_pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods))) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+        (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods))) ∗
       "%Hlen_active_pods'" ∷ ⌜ length active_pods' = Z.to_nat ((sint.Z (slice.len_f sl)) + sint.Z i) ⌝ ∗
       "%Hall_active" ∷ ⌜ ∀ pod, pod ∈ active_pods' → is_pod_alive pod ⌝ ∗
       "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (word.mul (word.sub (slice.len_f sl) (W64 (sint.Z n))) (W64 (-1))) ⌝
@@ -227,36 +333,41 @@ Proof.
     iDestruct (own_slice_f 0 (word.sub (slice.len_f sl) (W64 (sint.Z n))) with "Hsl")
       as "(Hbefore_slice & Hslice & Hafter_slice )"; [word|].
     iDestruct (own_slice_len with "Hslice") as %(Hslice_len1 & Hslice_len2).
-    set I := (∃ (i: w64) (pod_l: loc) (pods': list PodV.t),
+    set I := (∃ (i: w64) (pod_l: loc) (inactive_pods': list PodV.t),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hpod_ptr" ∷ pod_ptr ↦ pod_l ∗
-      "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ pods',
+      "Hown_active_pod_meta_frags" ∷ ([∗ list] pod ∈ drop (sint.nat i) active_pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods')) ∗
-      "%Hincluded" ∷ ⌜ ∀ pod, pod ∈ drop (sint.nat i) pods → pod ∈ pods' ⌝ ∗
-      "%Hlength" ∷ ⌜ length (filter is_pod_alive pods') = Z.to_nat ((sint.Z (slice.len_f sl)) - sint.Z i) ⌝ ∗
+      "Hown_inactive_pod_meta_frags" ∷ ([∗ list] pod ∈ inactive_pods',
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+        (list_to_set (PodV.key <$> ((drop (sint.nat i) active_pods) ++ inactive_pods' ++ inactive_pods))) ∗
+      "%Hinactive" ∷ ⌜ ∀ pod, pod ∈ inactive_pods' → ¬ is_pod_alive pod ⌝ ∗
+      "%Hincluded" ∷ ⌜ ∀ key, key ∈ PodV.key <$> inactive_pods' → key ∈ PodV.key <$> take (sint.nat i) active_pods ⌝ ∗
       "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f (slice.slice_f sl ptrT (W64 0) (word.sub (slice.len_f sl) (W64 (sint.Z n))))) ⌝
     )%I.
-    iAssert (I) with "[i pod Hown_pod_meta_frags Hown_children_frag]" as "Hloop_inv".
-    { iExists (W64 0), (default_val loc), pods. iFrame. iPureIntro. split_and!.
-      - rewrite drop_0. done.
-      - word.
-      - word.
-      - word.
-    }
-    wp_for "Hloop_inv". wp_if_destruct.
-    + wp_pure; [rewrite /slice.slice_f /=;word|].
-      set sliced_ptrs := (subslice (sint.nat (W64 0)) (sint.nat (word.sub (slice.len_f sl) (W64 (sint.Z n)))) ptrs).
-      list_elem sliced_ptrs (sint.Z i) as this_ptr.
+    iAssert (I) with "[i pod Hown_active_pod_meta_frags Hown_children_frag]" as "Hloop_inv".
+    { iExists (W64 0), (default_val loc), [].
+      rewrite drop_0 big_sepL_nil.
+      iFrame.
+      iPureIntro. split.
+      - intros pod0 Hpod0. inversion Hpod0.
+      - split.
+        + intros key Hkey. inversion Hkey.
+        + word.
+	    }
+	    wp_for "Hloop_inv". wp_if_destruct.
+	    + wp_pure; [rewrite /slice.slice_f /=;word|].
+	      set sliced_ptrs := (subslice (sint.nat (W64 0)) (sint.nat (word.sub (slice.len_f sl) (W64 (sint.Z n)))) ptrs).
+	      list_elem sliced_ptrs (sint.Z i) as this_ptr.
       { rewrite Hslice_len1 /slice.slice_f /=. word. }
       wp_apply (wp_load_slice_elem with "[$Hslice]"); [word|eauto|].
       iIntros "Hslice". wp_auto.
       assert (ptrs !! sint.nat i = Some this_ptr) as Hlookup_ptrs.
       { eapply lookup_take_Some in Hthis_ptr_lookup. intuition. }
-      assert (∃ this_pod, (filter is_pod_alive pods) !! sint.nat i = Some this_pod) as [this_pod Hlookup_active_pods].
+      assert (∃ this_pod, active_pods !! sint.nat i = Some this_pod) as [this_pod Hlookup_active_pods].
       { apply lookup_lt_is_Some_2. rewrite <-Hlen. word. }
-      iDestruct (big_sepL2_lookup_acc with "Hdeepown_l_pods") as "[Hdeepown_l_this Hdeepown_l_others]".
+      iDestruct (big_sepL2_lookup_acc with "Hdeepown_l_active_pods") as "[Hdeepown_l_this Hdeepown_l_others]".
       { apply Hlookup_ptrs. }
       { apply Hlookup_active_pods. }
       iPoseProof (PodV.deepown_l_split with "Hdeepown_l_this") as
@@ -266,58 +377,139 @@ Proof.
       wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto.
       wp_apply (common.wp_NewDeleteOptionsWithUID). iIntros (do_c) "(Hdeepown_do & %Hvalid_do)". wp_auto.
       wp_apply wp_globals_get.
-      assert (∃ j, pods' !! j = Some this_pod) as [j Hlookup_pods'].
-      { apply list_elem_of_lookup_1, Hincluded.
-        eapply lookup_filter_elem_of_drop.
-        exact Hlookup_active_pods. }
-      iPoseProof (big_sepL_split_lookup _ _ _ _ Hlookup_pods' with "Hown_pod_meta_frags") as
-        "(Hown_pod_meta_frags_before & Hown_pod_meta_frag_this & Hown_pod_meta_frags_after)".
+      assert (drop (sint.nat i) active_pods = this_pod :: drop (S (sint.nat i)) active_pods)
+        as Hdrop_active_pods.
+      { apply drop_S. exact Hlookup_active_pods. }
+      iEval (rewrite Hdrop_active_pods) in "Hown_active_pod_meta_frags".
+      iDestruct "Hown_active_pod_meta_frags" as
+        "[Hown_pod_meta_frag_this Hown_active_pod_meta_frags_tail]".
       wp_apply (wp_State__PodDelete_matching_pre with "[$Hdeepown_do $Hown_pod_meta_frag_this $Hown_children_frag]").
       { iFrame "#". iSplit.
         - iAssert (is_pkg_init code.controllers.common.common) as "H". all: iPkgInit.
         - iPureIntro. split_and!. all: try done.
           rewrite elem_of_list_to_set.
           apply list_elem_of_fmap_2.
-          eapply list_elem_of_lookup_2.
-          exact Hlookup_pods'. }
+          rewrite elem_of_app. left.
+          rewrite Hdrop_active_pods. left. }
       iIntros (kmeta') "H". wp_auto.
       rewrite bool_decide_true //. wp_auto.
       iApply wp_for_post_do. wp_auto.
       iDestruct "H" as "[H | H]".
       * iNamedPrefix "H" "Hdelete_".
-        iAssert (I) with "[Hi_ptr Hpod_ptr Hown_pod_meta_frags_before Hown_pod_meta_frags_after Hdelete_Hown_meta_frag
-          Hdelete_Hown_children_frag]" as "loop_inv".
-	        { iExists (word.add i (W64 1)), this_ptr,
-	            (take j pods' ++ [this_pod <|PodV.ObjectMeta':=kmeta'|>] ++ drop (S j) pods').
+        iAssert (I) with "[Hi_ptr Hpod_ptr Hdelete_Hown_meta_frag Hdelete_Hown_children_frag
+          Hown_active_pod_meta_frags_tail Hown_inactive_pod_meta_frags]" as "loop_inv".
+	        { iExists (word.add i (W64 1)), this_ptr, (inactive_pods' ++ [this_pod <|PodV.ObjectMeta':=kmeta'|>]).
 	          iPoseProof (kview.own_meta_valid with "Hdelete_Hown_meta_frag") as "%Hmeta_valid".
 	          destruct Hmeta_valid as (Hname_eq & Hnamespace_eq & Huid_eq & _).
 	          assert (PodV.key (this_pod <| PodV.ObjectMeta' := kmeta' |>) = PodV.key this_pod) as Hkey_eq.
 	          { rewrite /PodV.key /PodV.meta_key /=.
 	            rewrite -Hnamespace_eq -Hname_eq.
 	            done. }
-	          iFrame. iSplitL "Hdelete_Hown_meta_frag".
-	          { rewrite big_sepL_singleton Hkey_eq -Huid_eq. iFrame. }
-	          iSplitL.
+	          assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hsucc by word.
+            rewrite Hsucc.
+	          iFrame "Hi_ptr Hpod_ptr".
+            iSplitL "Hown_active_pod_meta_frags_tail".
+            { iFrame. }
+            iSplitL "Hown_inactive_pod_meta_frags Hdelete_Hown_meta_frag".
+            { rewrite big_sepL_app big_sepL_singleton Hkey_eq -Huid_eq. iFrame. }
+	          iSplitL "Hdelete_Hown_children_frag".
 	          { assert (list_to_set (C:=gset KKey.t) (PodV.key <$>
-	              (take j pods' ++ [this_pod <| PodV.ObjectMeta' := kmeta' |>] ++ drop (S j) pods')) =
-	              list_to_set (C:=gset KKey.t) (PodV.key <$> pods')) as Hchildren_eq.
-	            { replace (list_to_set (C:=gset KKey.t) (PodV.key <$> pods')) with
-	                (list_to_set (C:=gset KKey.t)
-	                  (PodV.key <$> (take j pods' ++ [this_pod] ++ drop (S j) pods'))).
-	              2: { rewrite (take_drop_middle pods' j this_pod Hlookup_pods'). done. }
-	              rewrite !fmap_app /= Hkey_eq.
-	              done. }
+                  (drop (S (sint.nat i)) active_pods ++
+                    ((inactive_pods' ++ [this_pod <| PodV.ObjectMeta' := kmeta' |>]) ++ inactive_pods))) =
+	              list_to_set (C:=gset KKey.t) (PodV.key <$>
+                  (drop (sint.nat i) active_pods ++ inactive_pods' ++ inactive_pods))) as Hchildren_eq.
+	            { rewrite Hdrop_active_pods !fmap_app /= Hkey_eq.
+	              apply list_to_set_app_singleton_kkey. }
 	            rewrite Hchildren_eq. iFrame. }
-		        iPureIntro. split_and!.
-	          - admit.
-	          - admit.
-            - word.
-            - rewrite /slice.slice_f /=. word.
+		        iPureIntro. split.
+            - intros pod0 Hpod0.
+              apply elem_of_app in Hpod0 as [Hpod0|Hpod0].
+              + apply Hinactive. done.
+              + rewrite list_elem_of_singleton in Hpod0. subst pod0.
+                unfold is_pod_alive. simpl. exact Hdelete_Hdeletion_timestamp.
+            - split.
+              + intros key Hkey.
+                rewrite fmap_app in Hkey.
+                apply elem_of_app in Hkey as [Hkey|Hkey].
+                * rewrite (take_S_r active_pods (sint.nat i) this_pod Hlookup_active_pods).
+                  rewrite fmap_app. apply elem_of_app. left.
+                  apply Hincluded. done.
+                * simpl in Hkey. rewrite list_elem_of_singleton in Hkey. subst key.
+                  rewrite Hkey_eq.
+                  rewrite (take_S_r active_pods (sint.nat i) this_pod Hlookup_active_pods).
+                  rewrite fmap_app. apply elem_of_app. right.
+                  simpl. left.
+              + rewrite /slice.slice_f /=. word.
 	        }
-        iFrame. iApply "Hdeepown_l_others".
-        (* iApply PodV.deepown_l_restore. iFrame. *)
-
-    Admitted.
+	        iFrame. iApply "Hdeepown_l_others".
+	        iApply PodV.deepown_l_restore. iFrame.
+	      * iNamedPrefix "H" "Hdelete_".
+	        iAssert (I) with "[Hi_ptr Hpod_ptr Hdelete_Hown_children_frag
+	          Hown_active_pod_meta_frags_tail Hown_inactive_pod_meta_frags]" as "loop_inv".
+	        { iExists (word.add i (W64 1)), this_ptr, inactive_pods'.
+	          assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hsucc by word.
+	          rewrite Hsucc.
+	          iFrame "Hi_ptr Hpod_ptr Hown_active_pod_meta_frags_tail Hown_inactive_pod_meta_frags".
+	          iSplitL "Hdelete_Hown_children_frag".
+	          { assert (list_to_set (C:=gset KKey.t) (PodV.key <$>
+                  (drop (S (sint.nat i)) active_pods ++ inactive_pods' ++ inactive_pods)) =
+	              list_to_set (C:=gset KKey.t) (PodV.key <$>
+                  (drop (sint.nat i) active_pods ++ inactive_pods' ++ inactive_pods)) ∖
+                    {[PodV.key this_pod]}) as Hchildren_eq.
+		            { rewrite Hdrop_active_pods !fmap_app /=.
+		              apply list_to_set_cons_difference_kkey.
+		              rewrite -!fmap_app.
+		              apply (pod_key_not_in_delete_remainder active_pods inactive_pods inactive_pods'
+		                this_pod (sint.nat i)); done. }
+	            rewrite Hchildren_eq. iFrame. }
+	          iPureIntro. split.
+	          - exact Hinactive.
+	          - split.
+	            + intros key Hkey.
+	              rewrite (take_S_r active_pods (sint.nat i) this_pod Hlookup_active_pods).
+	              rewrite fmap_app. apply elem_of_app. left.
+		              apply Hincluded. done.
+		            + rewrite /slice.slice_f /=. word. }
+	        iFrame. iApply "Hdeepown_l_others".
+	        iApply PodV.deepown_l_restore. iFrame.
+	      + iPoseProof (own_slice_f (W64 0) (word.sub (slice.len_f sl) (W64 (sint.Z n))) sl
+	          with "[$Hbefore_slice $Hslice $Hafter_slice]") as "Hsl".
+	        { word. }
+	        iAssert (([∗ list] pod ∈ drop (sint.nat i) active_pods ++ inactive_pods',
+	          own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+	            pod.(PodV.ObjectMeta')))%I
+	          with "[Hown_active_pod_meta_frags Hown_inactive_pod_meta_frags]" as "Hown_pod_meta_frags_ret".
+	        { rewrite big_sepL_app. iFrame. }
+	        iAssert (own_children_frag γ (ReplicaSetV.key rs)
+	          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+	          (list_to_set (PodV.key <$> ((drop (sint.nat i) active_pods ++ inactive_pods') ++ inactive_pods))))%I
+	          with "[Hown_children_frag]" as "Hown_children_frag_ret".
+	        { rewrite app_assoc. iFrame. }
+	        iApply "HΦ".
+	        iFrame "Hsl Hdeepown_l_active_pods Hown_pod_meta_frags_ret Hown_children_frag_ret".
+	        iSplitR.
+	        { iPureIntro.
+	          rewrite list.filter_app.
+	          assert (filter is_pod_alive (drop (sint.nat i) active_pods) =
+	              drop (sint.nat i) active_pods) as Hfilter_active.
+	          { apply filter_all. intros pod Hpod.
+	            apply Hactive_pods.
+	            apply list_elem_of_lookup_1 in Hpod as (j & Hlookup_pod).
+	            apply (list_elem_of_lookup_2 active_pods (sint.nat i + j)%nat).
+	            rewrite lookup_drop in Hlookup_pod. exact Hlookup_pod. }
+	          rewrite Hfilter_active.
+	          assert (filter is_pod_alive inactive_pods' = []) as Hfilter_inactive.
+	          { apply filter_none. exact Hinactive. }
+	          rewrite Hfilter_inactive app_nil_r.
+	          assert (sint.Z i = sint.Z (word.sub (slice.len_f sl) (W64 (sint.Z n)))) as Hi_Z.
+	          { rewrite /slice.slice_f /= in Hi. word. }
+	          assert (sint.nat i = sint.nat (word.sub (slice.len_f sl) (W64 (sint.Z n)))) as Hi_eq by word.
+          rewrite length_drop -Hlen Hsl_len1 Hi_eq.
+          word. }
+	        iApply ReplicaSetV.deepown_l_restore. iFrame.
+	        iSplitR. 1: done. iSplitL. 2: done.
+	        rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
+Qed.
 
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods :
   {{{ is_pkg_init code.controllers.replicaset.replicaset ∗
