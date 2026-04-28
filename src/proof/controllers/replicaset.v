@@ -112,90 +112,42 @@ Proof.
     lia.
 Qed.
 
-Lemma filter_all {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
-  (∀ x, x ∈ l → P x) →
-  filter P l = l.
+Lemma list_to_set_pod_key_filter_partition pods :
+  list_to_set (C:=gset KKey.t)
+    (PodV.key <$> (filter is_pod_alive pods ++ filter (λ pod, not (is_pod_alive pod)) pods)) =
+  list_to_set (C:=gset KKey.t) (PodV.key <$> pods).
 Proof.
-  intros Hall.
-  induction l as [|x l IH]; simpl; first done.
-  assert (P x) as HPx.
-  { apply Hall. left. }
-  rewrite (filter_cons_True P x l HPx).
-  f_equal. apply IH. intros y Hy. apply Hall. right. exact Hy.
-Qed.
-
-Lemma filter_none {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
-  (∀ x, x ∈ l → ¬ P x) →
-  filter P l = [].
-Proof.
-  intros Hnone.
-  induction l as [|x l IH]; simpl; first done.
-  assert (¬ P x) as HPx.
-  { apply Hnone. left. }
-  rewrite (filter_cons_False P x l HPx).
-  apply IH. intros y Hy. apply Hnone. right. exact Hy.
-Qed.
-
-Lemma lookup_filter_ge {A} (P : A → Prop) `{∀ x, Decision (P x)}
-    (l : list A) (n : nat) x :
-  filter P l !! n = Some x →
-  ∃ k : nat, n ≤ k ∧ l !! k = Some x.
-Proof.
-  revert n.
-  induction l as [|y l IH]; intros n Hlookup.
-  - destruct n; inversion Hlookup.
-  - rewrite filter_cons in Hlookup.
-    destruct (decide (P y)) as [Hy|Hy].
-    + destruct n as [|n].
-      * simpl in Hlookup. inversion Hlookup; subst.
-        exists O. split; done.
-      * simpl in Hlookup.
-        destruct (IH n Hlookup) as (k & Hle & Hk).
-        exists (S k). split; [lia|done].
-    + destruct (IH n Hlookup) as (k & Hle & Hk).
-      exists (S k). split; [lia|done].
-Qed.
-
-Lemma lookup_filter_elem_of_drop {A} (P : A → Prop) `{∀ x, Decision (P x)}
-    (l : list A) (n : nat) x :
-  filter P l !! n = Some x →
-  x ∈ drop n l.
-Proof.
-  intros Hlookup.
-  destruct (lookup_filter_ge P l n x Hlookup) as (k & Hle & Hk).
-  apply (list_elem_of_lookup_2 (drop n l) (k - n) x).
-  rewrite lookup_drop.
-  replace (n + (k - n))%nat with k by lia.
-  done.
-Qed.
-
-Lemma take_drop_middle_slices {A} (l : list A) i x :
-  l !! i = Some x →
-  take i l = take i (take i l ++ x :: drop (S i) l) ∧
-  drop (S i) (take i l ++ x :: drop (S i) l) = drop (S i) l.
-Proof.
-  intros Hlookup.
-  pose proof (lookup_lt_Some _ _ _ Hlookup) as Hlt.
+  apply set_eq. intros key.
+  rewrite fmap_app !elem_of_list_to_set elem_of_app !list_elem_of_fmap.
   split.
-  - assert ((i <= length (take i l))%nat) as Hlen_take by (rewrite length_take_le; lia).
-    rewrite (take_app_le (take i l) (x :: drop (S i) l) i Hlen_take).
-    rewrite take_take Nat.min_id. done.
-  - replace (S i) with (length (take i l) + 1)%nat by (rewrite length_take_le; lia).
-    rewrite drop_app_add. done.
+  - intros [(pod & -> & Hin)|(pod & -> & Hin)].
+    + apply list_elem_of_filter in Hin as [_ Hin].
+      exists pod. split; done.
+    + apply list_elem_of_filter in Hin as [_ Hin].
+      exists pod. split; done.
+  - intros (pod & -> & Hin).
+    destruct (decide (is_pod_alive pod)) as [Halive|Hnot_alive].
+    + left. exists pod. split; [done|apply list_elem_of_filter; split; done].
+    + right. exists pod. split; [done|apply list_elem_of_filter; split; done].
 Qed.
 
-Lemma big_sepL_split_lookup {A} (Φ : A → iProp Σ) (l : list A) i x :
-  l !! i = Some x →
-  ([∗ list] y ∈ l, Φ y) -∗
-  ([∗ list] y ∈ take i l, Φ y) ∗ Φ x ∗ ([∗ list] y ∈ drop (S i) l, Φ y).
+Lemma pod_key_filter_partition_perm pods :
+  PodV.key <$> (filter is_pod_alive pods ++ filter (λ pod, not (is_pod_alive pod)) pods) ≡ₚ
+  PodV.key <$> pods.
 Proof.
-  iIntros (Hlookup) "H".
-  destruct (take_drop_middle_slices l i x Hlookup) as [Htake Hdrop].
-  rewrite -(take_drop_middle l i x Hlookup) big_sepL_app /=.
-  iDestruct "H" as "(Hbefore & Hx & Hafter)".
-  iEval (rewrite Htake) in "Hbefore".
-  iEval (rewrite -Hdrop) in "Hafter".
-  iFrame.
+  apply Permutation_map.
+  apply filter_partition_perm.
+Qed.
+
+Lemma pod_key_meta_perm pods1 pods2 :
+  PodV.ObjectMeta' <$> pods1 ≡ₚ PodV.ObjectMeta' <$> pods2 →
+  PodV.key <$> pods1 ≡ₚ PodV.key <$> pods2.
+Proof.
+  intros Hperm.
+  unfold PodV.key.
+  rewrite (list_fmap_compose PodV.ObjectMeta' PodV.meta_key pods1).
+  rewrite (list_fmap_compose PodV.ObjectMeta' PodV.meta_key pods2).
+  apply Permutation_map. exact Hperm.
 Qed.
 
 Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pods inactive_pods rs n dq1 dq2 :
@@ -210,7 +162,8 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pod
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods ++ inactive_pods))) ∗
-      "%Hrs_valid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
+      "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝ ∗
       "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
       "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
       "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝ ∗
@@ -241,8 +194,7 @@ Proof.
   iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
   iDestruct (big_sepL2_length with "Hdeepown_l_active_pods") as %Hlen.
   assert (0 ≤ sint.Z n) as Hn.
-  { destruct Hrs_valid as (_ & Hrs_spec_valid & _).
-    pose proof (ReplicaSetSpecV.valid_replicas _ Hrs_spec_valid) as (i & Hi_eq & Hi).
+  { pose proof (ReplicaSetSpecV.valid_replicas _ Hrs_spec_valid) as (i & Hi_eq & Hi).
     rewrite Hi_eq in Hreplicas_eq. congruence. }
   assert ((sint.Z (word.sub (slice.len_f sl) (W64 (sint.Z n)))) = (sint.Z (slice.len_f sl)) - (sint.Z n)) as -> by word.
   assert ((sint.Z (W64 0)) = 0) as -> by word.
@@ -270,8 +222,7 @@ Proof.
       iDestruct (struct_fields_split with "Hrs_spec_l") as "H". iNamedPrefix "H" "Hrs_".
       wp_apply (controller.wp_GetPodFromTemplate_ReplicaSet with "[$Hrs_HTemplate $Hrs_Hdeepown_template
         $Hdeepown_m_l_rs $Hdeepown_l_controller_ref]").
-      { destruct Hrs_valid as (Hrs_meta_valid & Hrs_spec_valid & _).
-        pose proof (ReplicaSetSpecV.valid_template _ Hrs_spec_valid) as Hrs_valid_template.
+      { pose proof (ReplicaSetSpecV.valid_template _ Hrs_spec_valid) as Hrs_valid_template.
         iPureIntro. split_and!. all: try done. }
       iIntros (pod_l pod) "(Hdeepown_l_pod & %Hpr & %Hvalid & Hrs_HTemplate & Hrs_Hdeepown_template & Hdeepown_m_l_rs)".
       wp_auto. rewrite bool_decide_true //. wp_auto.
@@ -281,10 +232,8 @@ Proof.
       { iFrame "#". iSplit.
         - iAssert (is_pkg_init code.controllers.common.common) as "H". all: iPkgInit.
         - iPureIntro. split_and!. all: try done.
-          + destruct Hrs_valid as (Hrs_meta_valid & _).
-            apply ObjectMetaV.valid_namespace_nonempty_of_valid. exact Hrs_meta_valid.
-          + destruct Hrs_valid as (Hrs_meta_valid & _).
-            apply ObjectMetaV.valid_namespace_of_valid. exact Hrs_meta_valid.
+          + apply ObjectMetaV.valid_namespace_nonempty_of_valid. exact Hrs_meta_valid.
+          + apply ObjectMetaV.valid_namespace_of_valid. exact Hrs_meta_valid.
       }
       iIntros (pod_l' pod' key uid) "H". iNamedPrefix "H" "Hcreate_". subst key. subst uid. wp_auto.
       rewrite bool_decide_true //. wp_auto.
@@ -297,7 +246,7 @@ Proof.
             + assert (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods)) ∪ {[PodV.key pod']} =
                 list_to_set (PodV.key <$> ((active_pods' ++ [pod']) ++ inactive_pods)))
                 as ->.
-              { rewrite !fmap_app. simpl. set_solver. }
+              { rewrite !fmap_app. simpl. Timeout 5 set_solver. }
               done.
             + iSplit.
               { iPureIntro. rewrite length_app /= Hlen_active_pods'.
@@ -309,7 +258,7 @@ Proof.
                 - rewrite list_elem_of_singleton in Hpod0. subst pod0.
                   unfold is_pod_alive.
                   unfold ObjectMetaV.nameless_created in Hcreate_Hmeta_created.
-                  naive_solver. }
+	                  Timeout 5 naive_solver. }
               { iPureIntro. word. }
       }
       iFrame. iApply (struct_fields_combine (V:=v1.ReplicaSetSpec.t)). iFrame.
@@ -506,9 +455,9 @@ Proof.
 	          assert (sint.nat i = sint.nat (word.sub (slice.len_f sl) (W64 (sint.Z n)))) as Hi_eq by word.
           rewrite length_drop -Hlen Hsl_len1 Hi_eq.
           word. }
-	        iApply ReplicaSetV.deepown_l_restore. iFrame.
-	        iSplitR. 1: done. iSplitL. 2: done.
-	        rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
+		        iApply ReplicaSetV.deepown_l_restore. iFrame.
+		      iSplitR. 1: done. iSplitL. 2: done.
+		      rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods :
@@ -518,6 +467,8 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods 
       "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         rs.(ReplicaSetV.ObjectMeta') ∗
+      "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] k ↦ pod ∈ pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -525,18 +476,172 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods 
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hdeletion_timestamp_eq" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
+      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
+      "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝
   }}}
     @! replicaset.syncReplicaSet #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       ⌜ current_state_matches rs pods' ⌝ ∗
       own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         rs.(ReplicaSetV.ObjectMeta') ∗
+      own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
       own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods'))
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply wp_globals_get.
+  iAssert (is_pkg_init code.controllers.common.common) as "#Hcommon_init".
+  { iPkgInit. }
+  iAssert (is_pkg_init apimodel) as "#Hapimodel".
+  { iPkgInit. }
+  wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag]").
+  { iFrame "#".
+    iPureIntro.
+    rewrite /ReplicaSetV.key /ReplicaSetV.meta_key Hnamespace_eq Hname_eq.
+    done. }
+  iIntros (rs_l rs_get) "Hget". iNamedPrefix "Hget" "Hget_".
+  iRename "Hget_Hdeepown_l" into "Hdeepown_l_rs".
+  iRename "Hget_Hown_meta_frag" into "Hown_rs_meta_frag".
+  iRename "Hget_Hown_spec_frag" into "Hown_rs_spec_frag".
+  wp_auto.
+  wp_apply (wp_IsNotFound_nil with "[]").
+  { done. }
+  wp_pures.
+  rewrite bool_decide_true //.
+  wp_auto.
+
+  iPoseProof (ReplicaSetV.deepown_l_split with "Hdeepown_l_rs") as
+    "(Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
+  iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
+  destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid).
+  assert (ObjectMetaV.valid rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
+  { rewrite <-Hget_Hmeta_eq. exact Hrs_meta_valid. }
+  destruct Hget_Hvalid' as [Hrs_typemeta_valid _].
+  destruct Hrs_typemeta_valid as [_ Hrs_kind_valid].
+  pose proof (valid_kind_slash_free _ Hrs_kind_valid) as Hrs_kind_slash_free.
+  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hrs_get_meta_valid) as Hrs_namespace_valid.
+  pose proof (ObjectMetaV.valid_name_of_valid _ Hrs_get_meta_valid) as Hrs_name_valid.
+  pose proof (ObjectMetaV.valid_uid_of_valid _ Hrs_get_meta_valid) as Hrs_uid_valid.
+  pose proof (valid_namespace_slash_free _ Hrs_namespace_valid) as Hrs_namespace_slash_free.
+  pose proof (valid_name_slash_free _ Hrs_name_valid) as Hrs_name_slash_free.
+  pose proof (valid_uid_slash_free _ Hrs_uid_valid) as Hrs_uid_slash_free.
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta' with "Hown_pod_meta_frags") as "%Hpods_nodup".
+  assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
+      filter (λ key, key.(KKey.Kind') = "Pod"%go)
+        (list_to_set (C:=gset KKey.t) (PodV.key <$> pods))) as Hdom_eq.
+  { apply set_eq. intros key.
+    rewrite elem_of_filter.
+    split.
+    - intros Hkey_in. split; [|done].
+      apply elem_of_list_to_set in Hkey_in.
+      apply list_elem_of_fmap_1 in Hkey_in as (pod & Hkey_eq & _).
+      subst key.
+      rewrite /PodV.key /PodV.meta_key /PodV.kind //.
+    - intros [_ Hkey_in]. done. }
+  iEval (rewrite Hget_Hkey_eq Hget_Hmeta_eq) in "Hown_children_frag".
+  wp_apply (common.wp_FilterPodsByOwner with
+    "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag]").
+  { iFrame "#".
+    iPureIntro. split_and!; try done. }
+  iIntros (all_sl all_ptrs all_pods dq) "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
+    Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag)".
+  wp_auto.
+  rewrite bool_decide_true //.
+  wp_auto.
+  wp_apply (common.wp_FilterActivePods with "[$Hall_sl $Hall_deepown_pods]").
+  iIntros (active_sl active_ptrs) "(Hactive_sl & Hactive_deepown_pods)".
+  wp_auto.
+
+  iDestruct (big_sepL_filter_partition is_pod_alive
+    (λ pod, own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+      pod.(PodV.ObjectMeta')) all_pods with "Hall_meta_frags")
+    as "[Hactive_meta_frags Hinactive_meta_frags]".
+  assert (PodV.key <$> all_pods ≡ₚ PodV.key <$> pods) as Hall_key_perm.
+  { apply pod_key_meta_perm. exact Hall_meta_perm. }
+  assert (list_to_set (C:=gset KKey.t)
+      (PodV.key <$> (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods)) =
+    list_to_set (C:=gset KKey.t) (PodV.key <$> pods)) as Hchildren_keys_eq.
+  { rewrite list_to_set_pod_key_filter_partition.
+    rewrite Hall_key_perm. done. }
+  iAssert (own_children_frag γ (ReplicaSetV.key rs_get)
+      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      (list_to_set (C:=gset KKey.t)
+        (PodV.key <$> (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))))%I
+    with "[Hown_children_frag]" as "Hown_children_frag".
+  { rewrite Hchildren_keys_eq.
+    iExact "Hown_children_frag". }
+  iDestruct "Hdeepown_m_l_rs" as (rs_meta_c) "[Hrs_meta_l Hdeepown_m_rs]".
+  iNamedPrefix "Hdeepown_m_rs" "Hrs_meta_".
+  assert (rs_meta_c.(v1.ObjectMeta.DeletionTimestamp') = null) as Hrs_deletion_timestamp_null.
+  { apply Hrs_meta_Hdeepown_deletiontimestamp_none.
+    rewrite <-Hget_Hmeta_eq. exact Hdeletion_timestamp_eq. }
+  assert (rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
+    as Hdeletion_timestamp_eq_get.
+  { rewrite <-Hget_Hmeta_eq. exact Hdeletion_timestamp_eq. }
+  wp_auto.
+  rewrite Hrs_deletion_timestamp_null.
+  wp_auto.
+  iEval (rewrite Hdeletion_timestamp_eq_get) in "Hrs_meta_Hdeepown_deletiontimestamp_some".
+  iAssert (ObjectMetaV.deepown rs_meta_c rs_get.(ReplicaSetV.ObjectMeta') 1)
+    with "[Hrs_meta_Hdeepown_creationtimestamp
+      Hrs_meta_Hdeepown_deletiongraceperiodseconds_some
+      Hrs_meta_Hdeepown_labels_some Hrs_meta_Hdeepown_annotations_some
+      Hrs_meta_Hdeepown_ownerreferences_some Hrs_meta_Hdeepown_finalizers_some
+      Hrs_meta_Hdeepown_managedfields_some]" as "Hdeepown_m_rs".
+  { rewrite /ObjectMetaV.deepown Hdeletion_timestamp_eq_get.
+    iFrame "%". iFrame. done. }
+  iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) rs_get.(ReplicaSetV.ObjectMeta') 1)
+    with "[Hrs_meta_l Hdeepown_m_rs]" as "Hdeepown_m_l_rs".
+  { iExists rs_meta_c. iFrame. }
+  iPoseProof (ReplicaSetV.deepown_l_restore with
+    "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]") as
+    "Hdeepown_l_rs".
+
+  pose proof (ReplicaSetSpecV.valid_replicas _ Hrs_spec_valid) as (n & Hreplicas_eq & _).
+  assert (rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n) as Hreplicas_eq_get.
+  { rewrite <-Hget_Hspec_eq. exact Hreplicas_eq. }
+  assert (ReplicaSetSpecV.valid rs_get.(ReplicaSetV.Spec')) as Hrs_get_spec_valid.
+  { rewrite <-Hget_Hspec_eq. exact Hrs_spec_valid. }
+  assert (length rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58) as Hrs_get_name_short.
+  { rewrite <-Hget_Hmeta_eq. exact Hrs_name_short. }
+  assert (NoDup (PodV.key <$>
+      (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))) as Hpartition_nodup.
+  { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
+  wp_apply (wp_manageReplicas γ l gv active_sl rs_l active_ptrs
+    (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
+    rs_get n dq 1 with
+    "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag]").
+  { iFrame "#".
+    iPureIntro. split_and!; try done.
+    intros pod Hpod.
+    apply list_elem_of_filter in Hpod as [Halive _].
+    exact Halive. }
+  iIntros (pods_managed) "(%Hmanaged_len & Hactive_sl & Hactive_deepown_pods & Hdeepown_l_rs &
+    Hmanaged_meta_frags & Hown_children_frag)".
+  wp_auto.
+  iAssert (([∗ list] pod ∈ pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        pod.(PodV.ObjectMeta')))%I
+    with "[Hmanaged_meta_frags Hinactive_meta_frags]" as "Hpod_meta_frags_post".
+  { rewrite big_sepL_app. iFrame. }
+  iEval (rewrite -Hget_Hkey_eq -Hget_Hmeta_eq) in "Hown_children_frag".
+  iApply ("HΦ" $! (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)).
+  iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post Hown_children_frag".
+  iPureIntro.
+  unfold current_state_matches.
+  rewrite Hreplicas_eq.
+  simpl.
+  rewrite list.filter_app.
+  assert (filter is_pod_alive (filter (λ pod, not (is_pod_alive pod)) all_pods) = []) as Hfilter_inactive.
+  { apply filter_none. intros pod Hpod.
+    apply list_elem_of_filter in Hpod as [Hnot_alive _].
+    exact Hnot_alive. }
+  rewrite Hfilter_inactive app_nil_r.
+  exact Hmanaged_len.
+Qed.
 
 End proof.

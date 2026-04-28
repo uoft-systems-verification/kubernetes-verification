@@ -15,19 +15,31 @@ proof examples from the active opam switch. Resolve the path with
 `opam var perennial:build`; the generated proof examples live under
 `$(opam var perennial:build)/new`.
 
-When using `set_solver` or `naive_solver`, always set a 5 second timeout, for
-example `Timeout 5 set_solver.` or `Timeout 5 naive_solver.`.
-
 To check a Rocq proof file, always run `make -j10 path/to/file.vo` so
 independent proofs compile in parallel, for example
 `make -j10 src/proof/benchmark/basic.vo`.
 
-For fast Rocq proof checks while focusing on one lemma, temporarily comment out
-the proof bodies of lemmas that appear above the focused lemma in the same file
-so Rocq reaches the target proof faster. Similarly, when focusing on one goal
-inside a lemma, temporarily comment out proofs for parallel goals that appear
-above the focused goal in the same lemma. Uncomment these proofs after finishing
-the focused proof.
+## Solver Timeouts
+
+To avoid endless waits from inappropriate solver use, never call `set_solver`
+or `naive_solver` directly. Every use must be wrapped in a 5 second timeout:
+`Timeout 5 set_solver.` or `Timeout 5 naive_solver.`. If the timeout fires,
+choose a more explicit proof step instead of increasing the timeout.
+
+## Fast Rocq Proof Checks
+
+When asked to "Run fast proof check" or to use a fast Rocq proof check, always
+isolate the focused target before running `make -j10 path/to/file.vo`.
+Temporarily replace the proof bodies of earlier lemmas in the same file with
+`Admitted.` or otherwise comment them out so Rocq reaches the target proof
+quickly. This is required before repeated checks of a late-file lemma,
+especially in large proof files such as controller proofs.
+
+When focusing on one goal inside a lemma, also temporarily comment out proofs
+for parallel goals that appear above the focused goal in the same lemma. These
+edits are only a local fast-check aid: restore every temporarily admitted or
+commented proof before finishing the task, and do not count checks run with
+temporary admits as completed verification for the final result.
 
 ## Benchmark Proof Runs
 
