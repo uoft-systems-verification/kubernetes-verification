@@ -50,9 +50,8 @@ Proof.
       unfold obj_parent_ref, meta_parent_ref.
       destruct Hpod_valid as [Hmeta_valid _].
       assert (Hpod_ns_sf : slash_free pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')).
-      { unfold ObjectMetaV.valid in Hmeta_valid.
-        destruct Hmeta_valid as (_ & _ & _ & _ & Hns_valid & _).
-        eapply valid_namespace_slash_free; exact Hns_valid. }
+      { eapply valid_namespace_slash_free.
+        eapply ObjectMetaV.valid_namespace_of_valid; exact Hmeta_valid. }
       destruct (ObjectMetaV.OwnerReferences' (PodV.ObjectMeta' pod)) as [orefs|] eqn:Horefs in Hindexed |- *.
       * destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
           as [[idx oref]|] eqn:Hfind in Hindexed |- *.

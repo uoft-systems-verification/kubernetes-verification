@@ -192,7 +192,8 @@ Proof.
             { apply valid_namespace_slash_free.
               assert (PodV.valid this_pure_pod) as Hwf_pod.
               { apply Hwf. apply (list_elem_of_lookup_2 _ (sint.nat i)). done. }
-              destruct Hwf_pod as [Hwf_meta _]. unfold ObjectMetaV.valid in Hwf_meta. intuition. }
+              destruct Hwf_pod as [Hwf_meta _].
+              eapply ObjectMetaV.valid_namespace_of_valid; exact Hwf_meta. }
             assert (slash_free (KKey.Namespace' parent_key)) as Hslash_free2.
             { apply valid_namespace_slash_free.
               destruct Hinv_Hghost_valid. 

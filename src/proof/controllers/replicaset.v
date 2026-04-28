@@ -282,9 +282,9 @@ Proof.
         - iAssert (is_pkg_init code.controllers.common.common) as "H". all: iPkgInit.
         - iPureIntro. split_and!. all: try done.
           + destruct Hrs_valid as (Hrs_meta_valid & _).
-            unfold ObjectMetaV.valid in Hrs_meta_valid. naive_solver.
+            apply ObjectMetaV.valid_namespace_nonempty_of_valid. exact Hrs_meta_valid.
           + destruct Hrs_valid as (Hrs_meta_valid & _).
-            unfold ObjectMetaV.valid in Hrs_meta_valid. naive_solver.
+            apply ObjectMetaV.valid_namespace_of_valid. exact Hrs_meta_valid.
       }
       iIntros (pod_l' pod' key uid) "H". iNamedPrefix "H" "Hcreate_". subst key. subst uid. wp_auto.
       rewrite bool_decide_true //. wp_auto.

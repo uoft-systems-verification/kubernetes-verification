@@ -195,6 +195,62 @@ Definition valid (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
+Lemma valid_generate_name_of_valid m:
+  valid m →
+  m.(GenerateName') ≠ ""%go →
+  valid_generate_name m.(GenerateName').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_name_nonempty_of_valid m:
+  valid m →
+  m.(Name') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_name_of_valid m:
+  valid m →
+  valid_name m.(Name').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_nonempty_of_valid m:
+  valid m →
+  m.(Namespace') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_of_valid m:
+  valid m →
+  valid_namespace m.(Namespace').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_uid_of_valid m:
+  valid m →
+  valid_uid m.(UID').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_labels_of_valid m:
+  valid m →
+  valid_labels m.(Labels').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_annotations_of_valid m:
+  valid m →
+  valid_annotations m.(Annotations').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_owner_references_of_valid m:
+  valid m →
+  valid_owner_references m.(OwnerReferences').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_finalizers_of_valid m:
+  valid m →
+  valid_finalizers m.(Finalizers').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_managed_fields_of_valid m:
+  valid m →
+  valid_managed_fields m.(ManagedFields').
+Proof. unfold valid. tauto. Qed.
+
 Definition valid_nameless_create ns (m: t) : Prop :=
   valid_generate_name m.(GenerateName') ∧
   (* The max len of generate_name must be 58 so that the suffix can fit in:
@@ -1322,8 +1378,7 @@ Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
-  unfold ObjectMetaV.valid in Hwf.
-  destruct Hwf as (_ & _ & _ & _ & _ & _ & _ & _ & Hwf_ownerref & _ & _).
+  pose proof (ObjectMetaV.valid_owner_references_of_valid _ Hwf) as Hwf_ownerref.
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
   - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
     assert (OwnerReferenceV.list_valid os) as Hwf_list.

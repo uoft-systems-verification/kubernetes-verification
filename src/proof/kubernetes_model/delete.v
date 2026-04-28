@@ -241,9 +241,7 @@ Proof.
     iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
     iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%H".
     destruct H as (_ & _ & _ & Hvalid_kmeta).
-    unfold ObjectMetaV.valid in Hvalid_kmeta.
-    destruct Hvalid_kmeta as
-      (_ & _ & _ & _ & _ & _ & _ & _ & _ & Hvalid_finalizers & _).
+    pose proof (ObjectMetaV.valid_finalizers_of_valid _ Hvalid_kmeta) as Hvalid_finalizers.
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%H". 1: done.
     destruct H as (Hkmeta_eq & _).
     rewrite <- Hkmeta_eq in Hvalid_finalizers.
