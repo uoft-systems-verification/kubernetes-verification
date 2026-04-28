@@ -15,9 +15,19 @@ proof examples from the active opam switch. Resolve the path with
 `opam var perennial:build`; the generated proof examples live under
 `$(opam var perennial:build)/new`.
 
+When using `set_solver` or `naive_solver`, always set a 5 second timeout, for
+example `Timeout 5 set_solver.` or `Timeout 5 naive_solver.`.
+
 To check a Rocq proof file, always run `make -j10 path/to/file.vo` so
 independent proofs compile in parallel, for example
 `make -j10 src/proof/benchmark/basic.vo`.
+
+For fast Rocq proof checks while focusing on one lemma, temporarily comment out
+the proof bodies of lemmas that appear above the focused lemma in the same file
+so Rocq reaches the target proof faster. Similarly, when focusing on one goal
+inside a lemma, temporarily comment out proofs for parallel goals that appear
+above the focused goal in the same lemma. Uncomment these proofs after finishing
+the focused proof.
 
 ## Benchmark Proof Runs
 
