@@ -62,7 +62,7 @@ Definition own_frag γ a : iProp Σ :=
   own γ (◯ {[a]}).
 
 Lemma frag_elem_of_auth {γ s} a:
-own_auth γ s -∗ own_frag γ a -∗ ⌜ a ∈ s ⌝.
+  own_auth γ s -∗ own_frag γ a -∗ ⌜ a ∈ s ⌝.
 Proof.
   iIntros "Hauth Hfrag".
   iDestruct (own_valid_2 with "Hauth Hfrag") as %Hvalid.
@@ -72,7 +72,7 @@ Proof.
 Qed.
 
 Lemma insert_vs {γ s} a:
-own_auth γ s ==∗ own_auth γ (s ∪ {[a]}) ∗ own_frag γ a.
+  own_auth γ s ==∗ own_auth γ (s ∪ {[a]}) ∗ own_frag γ a.
 Proof.
   iIntros "Hauth".
   iMod (own_update with "Hauth") as "H".

@@ -458,14 +458,14 @@ Proof.
 		      rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods :
+Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs dq pods :
   {{{ is_pkg_init code.controllers.replicaset.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr common.State) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr v1.SchemeGroupVersion) ↦□ gv ∗
-      "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         rs.(ReplicaSetV.ObjectMeta') ∗
-      "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] k ↦ pod ∈ pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
@@ -480,9 +480,9 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs pods 
     @! replicaset.syncReplicaSet #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       ⌜ current_state_matches rs pods' ⌝ ∗
-      own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         rs.(ReplicaSetV.ObjectMeta') ∗
-      own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
@@ -545,7 +545,7 @@ Proof.
     "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; try done. }
-  iIntros (all_sl all_ptrs all_pods dq) "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
+  iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
     Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag)".
   wp_auto.
   rewrite bool_decide_true //.
@@ -611,7 +611,7 @@ Proof.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
   wp_apply (wp_manageReplicas γ l gv active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
-    rs_get n dq 1 with
+    rs_get n dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; try done.
