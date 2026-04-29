@@ -6,7 +6,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Definition podController_indexed_value pod : go_string :=
   match meta_parent_ref pod.(PodV.ObjectMeta') with

@@ -10,7 +10,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Definition is_pod_alive (pod: PodV.t): Prop :=
   pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.

@@ -5,13 +5,13 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export pure_objects string.
 From New.proof.big_op Require Export big_sepL big_sepM.
-From New.proof.algebra Require Export kview cview mono_gset.
+From New.proof.algebra Require Export kview cview tombstone.
 
 Section spec.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Record KubernetesGname := mk_γk {
   γ_state : gname;
@@ -38,10 +38,10 @@ Definition own_children_frag γ key uid dq keys : iProp Σ :=
   cview.own_frag γ.(γ_children) key uid dq keys.
 
 Definition own_tombstone_auth γ tombed_uid : iProp Σ :=
-  mono_gset.own_auth types.UID.t γ.(γ_tombstone) tombed_uid.
+  tombstone.own_auth γ.(γ_tombstone) tombed_uid.
 
 Definition own_tombstone_frag γ tombed_uid : iProp Σ :=
-  mono_gset.own_frag types.UID.t γ.(γ_tombstone) tombed_uid.
+  tombstone.own_frag γ.(γ_tombstone) tombed_uid.
 
 Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)

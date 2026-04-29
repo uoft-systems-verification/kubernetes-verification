@@ -11,7 +11,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Definition current_state_matches rs pods : Prop :=
   match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with

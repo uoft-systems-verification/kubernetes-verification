@@ -5,7 +5,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Lemma tombed_uid_delete_eq_used_uid_sub
   (abs_state : gmap KKey.t KObjectV.t) (used_uid tombed_uid : gset types.UID.t) key kobj :
@@ -306,7 +306,7 @@ Proof.
     iMod (kview.delete_kobj_vs with "[$Hinv_Hown_abs] [$Hown_meta_frag]") as "Hinv_Hown_abs".
     iMod (cview.delete_child_vs2 key with "[$Hinv_Hown_children] [$Hown_children_frag]")
       as "(Hinv_Hown_children & Hown_children_frag)". 1: done.
-    iMod (mono_gset.insert_vs types.UID.t (KObjectV.objectmeta kobj).(ObjectMetaV.UID')
+    iMod (tombstone.insert_vs (KObjectV.objectmeta kobj).(ObjectMetaV.UID')
       with "[$Hinv_Hown_tombstone]") as "(Hinv_Hown_tombstone & Hown_tombstone_frag)".
     iMod ("Hclose" $! interface.nil (KObjectV.objectmeta kobj) with "[Hown_children_frag Hown_tombstone_frag]") as "HΦ".
     { iLeft. iFrame "%". iSplit. 1: done. iRight. iFrame. }

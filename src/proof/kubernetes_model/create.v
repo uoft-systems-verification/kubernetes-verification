@@ -6,7 +6,7 @@ Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kviewG Σ}.
 Context `{!cviewG Σ}.
-Context `{!mono_gsetG types.UID.t Σ}.
+Context `{!tombstoneG Σ}.
 
 Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid :
   ∀ Φ,
