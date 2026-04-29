@@ -195,62 +195,6 @@ Definition valid (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
-Lemma valid_generate_name_of_valid m:
-  valid m →
-  m.(GenerateName') ≠ ""%go →
-  valid_generate_name m.(GenerateName').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_name_nonempty_of_valid m:
-  valid m →
-  m.(Name') ≠ ""%go.
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_name_of_valid m:
-  valid m →
-  valid_name m.(Name').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_namespace_nonempty_of_valid m:
-  valid m →
-  m.(Namespace') ≠ ""%go.
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_namespace_of_valid m:
-  valid m →
-  valid_namespace m.(Namespace').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_uid_of_valid m:
-  valid m →
-  valid_uid m.(UID').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_labels_of_valid m:
-  valid m →
-  valid_labels m.(Labels').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_annotations_of_valid m:
-  valid m →
-  valid_annotations m.(Annotations').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_owner_references_of_valid m:
-  valid m →
-  valid_owner_references m.(OwnerReferences').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_finalizers_of_valid m:
-  valid m →
-  valid_finalizers m.(Finalizers').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_managed_fields_of_valid m:
-  valid m →
-  valid_managed_fields m.(ManagedFields').
-Proof. unfold valid. tauto. Qed.
-
 Definition valid_nameless_create ns (m: t) : Prop :=
   valid_generate_name m.(GenerateName') ∧
   (* The max len of generate_name must be 58 so that the suffix can fit in:
@@ -337,6 +281,125 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
+
+Section proof.
+
+Lemma valid_generate_name_of_valid m:
+  valid m →
+  m.(GenerateName') ≠ ""%go →
+  valid_generate_name m.(GenerateName').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_name_nonempty_of_valid m:
+  valid m →
+  m.(Name') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_name_of_valid m:
+  valid m →
+  valid_name m.(Name').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_nonempty_of_valid m:
+  valid m →
+  m.(Namespace') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_of_valid m:
+  valid m →
+  valid_namespace m.(Namespace').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_uid_of_valid m:
+  valid m →
+  valid_uid m.(UID').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_labels_of_valid m:
+  valid m →
+  valid_labels m.(Labels').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_annotations_of_valid m:
+  valid m →
+  valid_annotations m.(Annotations').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_owner_references_of_valid m:
+  valid m →
+  valid_owner_references m.(OwnerReferences').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_finalizers_of_valid m:
+  valid m →
+  valid_finalizers m.(Finalizers').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_managed_fields_of_valid m:
+  valid m →
+  valid_managed_fields m.(ManagedFields').
+Proof. unfold valid. tauto. Qed.
+
+Definition without_resource_version (m : t) : t :=
+  m <| ResourceVersion' := ""%go |>.
+
+Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
+  without_resource_version m1 = without_resource_version m2.
+
+Lemma equiv_except_resource_version_name m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(Name') = m2.(Name').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
+Lemma equiv_except_resource_version_namespace m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(Namespace') = m2.(Namespace').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
+Lemma equiv_except_resource_version_uid m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(UID') = m2.(UID').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
+Lemma equiv_except_resource_version_valid m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  valid m1 →
+  valid m2.
+Proof.
+  destruct m1, m2; simpl. intros H Heq. inversion H; subst.
+  unfold valid in *. tauto.
+Qed.
+
+Lemma equiv_except_resource_version_sym m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  equiv_except_resource_version m2 m1.
+Proof.
+  unfold equiv_except_resource_version. intros H. symmetry. done.
+Qed.
+
+Lemma equiv_except_resource_version_deletion_timestamp m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(DeletionTimestamp') = m2.(DeletionTimestamp').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
+Lemma equiv_except_resource_version_finalizers m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(Finalizers') = m2.(Finalizers').
+Proof.
+  rewrite /equiv_except_resource_version /without_resource_version.
+  destruct m1, m2; simpl.
+  intros Hmeta_eq. injection Hmeta_eq. done.
+Qed.
+
+End proof.
 End ObjectMetaV.
 
 Module PodSpecV.

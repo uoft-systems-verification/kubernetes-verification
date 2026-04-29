@@ -138,13 +138,21 @@ Proof.
 Qed.
 
 Lemma pod_key_meta_perm pods1 pods2 :
-  PodV.ObjectMeta' <$> pods1 ≡ₚ PodV.ObjectMeta' <$> pods2 →
+  ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods1) ≡ₚ
+    ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods2) →
   PodV.key <$> pods1 ≡ₚ PodV.key <$> pods2.
 Proof.
   intros Hperm.
-  unfold PodV.key.
-  rewrite (list_fmap_compose PodV.ObjectMeta' PodV.meta_key pods1).
-  rewrite (list_fmap_compose PodV.ObjectMeta' PodV.meta_key pods2).
+  assert (PodV.key <$> pods1 =
+      PodV.meta_key <$> (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods1))) as ->.
+  { rewrite -!list_fmap_compose.
+    apply list_fmap_ext. intros i pod Hlookup.
+    unfold compose, PodV.key, PodV.meta_key, ObjectMetaV.without_resource_version. destruct pod; done. }
+  assert (PodV.key <$> pods2 =
+      PodV.meta_key <$> (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods2))) as ->.
+  { rewrite -!list_fmap_compose.
+    apply list_fmap_ext. intros i pod Hlookup.
+    unfold compose, PodV.key, PodV.meta_key, ObjectMetaV.without_resource_version. destruct pod; done. }
   apply Permutation_map. exact Hperm.
 Qed.
 
@@ -330,7 +338,7 @@ Proof.
       iEval (rewrite Hdrop_active_pods) in "Hown_active_pod_meta_frags".
       iDestruct "Hown_active_pod_meta_frags" as
         "[Hown_pod_meta_frag_this Hown_active_pod_meta_frags_tail]".
-      wp_apply (wp_State__PodDelete_matching_pre with "[$Hdeepown_do $Hown_pod_meta_frag_this $Hown_children_frag]").
+      wp_apply (wp_State__PodDelete with "[$Hdeepown_do $Hown_pod_meta_frag_this $Hown_children_frag]").
       { iFrame "#". iSplit.
         - iAssert (is_pkg_init code.controllers.common.common) as "H". all: iPkgInit.
         - iPureIntro. split_and!. all: try done.
@@ -455,7 +463,7 @@ Proof.
           word. }
 		        iApply ReplicaSetV.deepown_l_restore. iFrame.
 		      iSplitR. 1: done. iSplitL. 2: done.
-		      rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
+          rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs dq pods :
@@ -517,7 +525,9 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
   destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid).
   assert (ObjectMetaV.valid rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
-  { rewrite <-Hget_Hmeta_eq. exact Hrs_meta_valid. }
+  { eapply ObjectMetaV.equiv_except_resource_version_valid.
+    - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
+    - exact Hrs_meta_valid. }
   destruct Hget_Hvalid' as [Hrs_typemeta_valid _].
   destruct Hrs_typemeta_valid as [_ Hrs_kind_valid].
   pose proof (valid_kind_slash_free _ Hrs_kind_valid) as Hrs_kind_slash_free.
@@ -540,7 +550,12 @@ Proof.
       subst key.
       rewrite /PodV.key /PodV.meta_key /PodV.kind //.
     - intros [_ Hkey_in]. done. }
-  iEval (rewrite Hget_Hkey_eq Hget_Hmeta_eq) in "Hown_children_frag".
+  assert (ReplicaSetV.key rs = ReplicaSetV.key rs_get) as Hrs_key_eq.
+  { exact Hget_Hkey_eq. }
+  assert (rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
+      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Hrs_uid_eq.
+  { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
+  iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_children_frag".
   wp_apply (common.wp_FilterPodsByOwner with
     "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag]").
   { iFrame "#".
@@ -576,10 +591,12 @@ Proof.
   iNamedPrefix "Hdeepown_m_rs" "Hrs_meta_".
   assert (rs_meta_c.(v1.ObjectMeta.DeletionTimestamp') = null) as Hrs_deletion_timestamp_null.
   { apply Hrs_meta_Hdeepown_deletiontimestamp_none.
-    rewrite <-Hget_Hmeta_eq. exact Hdeletion_timestamp_eq. }
+    rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _ Hget_Hmeta_eq).
+    exact Hdeletion_timestamp_eq. }
   assert (rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
     as Hdeletion_timestamp_eq_get.
-  { rewrite <-Hget_Hmeta_eq. exact Hdeletion_timestamp_eq. }
+  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _ Hget_Hmeta_eq).
+    exact Hdeletion_timestamp_eq. }
   wp_auto.
   rewrite Hrs_deletion_timestamp_null.
   wp_auto.
@@ -605,7 +622,8 @@ Proof.
   assert (ReplicaSetSpecV.valid rs_get.(ReplicaSetV.Spec')) as Hrs_get_spec_valid.
   { rewrite <-Hget_Hspec_eq. exact Hrs_spec_valid. }
   assert (length rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58) as Hrs_get_name_short.
-  { rewrite <-Hget_Hmeta_eq. exact Hrs_name_short. }
+  { rewrite (ObjectMetaV.equiv_except_resource_version_name _ _ Hget_Hmeta_eq).
+    exact Hrs_name_short. }
   assert (NoDup (PodV.key <$>
       (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))) as Hpartition_nodup.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
@@ -626,7 +644,7 @@ Proof.
         pod.(PodV.ObjectMeta')))%I
     with "[Hmanaged_meta_frags Hinactive_meta_frags]" as "Hpod_meta_frags_post".
   { rewrite big_sepL_app. iFrame. }
-  iEval (rewrite -Hget_Hkey_eq -Hget_Hmeta_eq) in "Hown_children_frag".
+  iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iApply ("HΦ" $! (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)).
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post Hown_children_frag".
   iPureIntro.

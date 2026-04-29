@@ -41,7 +41,7 @@ Local Definition compatible_kfrag b a : Prop :=
       ✓ dq ∧
       ∃ obj, proj_state a !! k = Some obj ∧
         (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid ∧
-        KObjectV.objectmeta obj = meta
+        ObjectMetaV.without_resource_version (KObjectV.objectmeta obj) = meta
   ) (proj_meta b) ∧
   map_Forall (λ '(k, uid) '(dq, agree_spec),
     ∃ spec, agree_spec ≡ to_agree (A := leibnizO ObjectSpecV.t) spec ∧
@@ -290,7 +290,7 @@ Notation "●K a" := (kview_auth 1 a) (at level 20).
 Notation "◯K b" := (kview_frag b) (at level 20).
 
 Definition mk_meta_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (m: ObjectMetaV.t) : fragUR :=
-  ({[(k, uid) := (dq, to_agree m)]}, (∅, ∅)).
+  ({[(k, uid) := (dq, to_agree (ObjectMetaV.without_resource_version m))]}, (∅, ∅)).
 Definition mk_spec_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectSpecV.t) : fragUR :=
   (∅, ({[(k, uid) := (dq, to_agree s)]}, ∅)).
 Definition mk_status_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectStatusV.t) : fragUR :=
@@ -359,66 +359,72 @@ Proof.
   pose proof (proj1 (view_frag_valid view_rel (mk_meta_frag k uid dq meta)) Hvalid 0%nat)
     as [a Hrel].
   destruct Hrel as [Hvalid_a [Hmeta _]].
-  assert (Hlookup :
-    proj_meta (mk_meta_frag k uid dq meta) !! (k, uid) =
-    Some (dq, to_agree (A := leibnizO ObjectMetaV.t) meta)).
-  { rewrite /proj_meta /mk_meta_frag /= lookup_singleton_eq //. }
-  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
-  destruct Hobj as (obj & Hlookup_obj & Huid_obj & Hobj_meta).
-  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
-  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
-  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
-    exact Hagree.
-  }
-  apply leibniz_equiv in Hmeta_eqv.
-  assert (Hobj_meta_eq : KObjectV.objectmeta obj = meta).
-  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
-  split.
-  - subst k. rewrite /KObjectV.key /= Hobj_meta_eq //.
-  - split.
-    + subst k. rewrite /KObjectV.key /= Hobj_meta_eq //.
-    + split.
-      * rewrite Hobj_meta_eq in Huid_obj. symmetry. exact Huid_obj.
-      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & Hwf_meta & _ & _);
-        rewrite Hobj_meta_eq in Hwf_meta; done.
+	  assert (Hlookup :
+	    proj_meta (mk_meta_frag k uid dq meta) !! (k, uid) =
+	    Some (dq, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
+	  { rewrite /proj_meta /mk_meta_frag /= lookup_singleton_eq //. }
+	  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
+	  destruct Hobj as (obj & Hlookup_obj & Huid_obj & Hobj_meta).
+	  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
+	  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
+	    exact Hagree.
+	  }
+	  apply leibniz_equiv in Hmeta_eqv.
+	  assert (Hobj_meta_eq : ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta).
+	  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
+	  split.
+	  - subst k. rewrite /KObjectV.key /=.
+	    exact (ObjectMetaV.equiv_except_resource_version_name _ _ Hobj_meta_eq).
+	  - split.
+	    + subst k. rewrite /KObjectV.key /=.
+	      exact (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hobj_meta_eq).
+	    + split.
+	      * rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). symmetry. exact Huid_obj.
+	      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & Hwf_meta & _ & _);
+	        eapply ObjectMetaV.equiv_except_resource_version_valid; done.
 Qed.
 
 Lemma auth_meta_valid a k uid dq meta:
-  ✓ (●K a ⋅ ◯K (mk_meta_frag k uid dq meta)) →
-  ∃ obj, (proj_state a) !! k = Some obj ∧
-    (KObjectV.objectmeta obj) = meta ∧
-    meta.(ObjectMetaV.UID') ∈ proj_used_uid a.
+	  ✓ (●K a ⋅ ◯K (mk_meta_frag k uid dq meta)) →
+	  ∃ obj, (proj_state a) !! k = Some obj ∧
+	    (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid ∧
+	    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta ∧
+	    meta.(ObjectMetaV.UID') ∈ proj_used_uid a.
 Proof.
   intros Hvalid.
   pose proof (auth_frag_valid 0%nat a (mk_meta_frag k uid dq meta) Hvalid 0%nat)
     as Hrel.
   destruct Hrel as [Hvalid_a [Hmeta _]].
-  assert (Hlookup :
-    proj_meta (mk_meta_frag k uid dq meta) !! (k, uid) =
-    Some (dq, to_agree (A := leibnizO ObjectMetaV.t) meta)).
-  { rewrite /proj_meta /mk_meta_frag /= lookup_singleton_eq //. }
-  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
-  destruct Hobj as (obj & Hlookup_obj & _ & Hobj_meta).
-  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
-  destruct Hobj_valid as (_ & _ & Huid_in & _ & _).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
-  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
-    exact Hagree.
-  }
-  apply leibniz_equiv in Hmeta_eqv.
-  assert (Hobj_meta_eq : KObjectV.objectmeta obj = meta).
-  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
-  exists obj. split_and!.
-  - exact Hlookup_obj.
-  - exact Hobj_meta_eq.
-  - by rewrite <- Hobj_meta_eq.
+	  assert (Hlookup :
+	    proj_meta (mk_meta_frag k uid dq meta) !! (k, uid) =
+	    Some (dq, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
+	  { rewrite /proj_meta /mk_meta_frag /= lookup_singleton_eq //. }
+	  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
+	  destruct Hobj as (obj & Hlookup_obj & Huid_obj & Hobj_meta).
+	  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
+	  destruct Hobj_valid as (_ & _ & Huid_in & _ & _).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
+	    exact Hagree.
+	  }
+	  apply leibniz_equiv in Hmeta_eqv.
+	  assert (Hobj_meta_eq : ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta).
+	  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
+	  exists obj. split_and!.
+	  - exact Hlookup_obj.
+	  - exact Huid_obj.
+	  - exact Hobj_meta_eq.
+	  - rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). done.
 Qed.
 
 Lemma meta_meta_valid k uid dq1 meta1 dq2 meta2:
-  ✓ (◯K (mk_meta_frag k uid dq1 meta1) ⋅
-     ◯K (mk_meta_frag k uid dq2 meta2)) →
-  ✓ (dq1 ⋅ dq2) ∧ meta1 = meta2.
+	  ✓ (◯K (mk_meta_frag k uid dq1 meta1) ⋅
+	     ◯K (mk_meta_frag k uid dq2 meta2)) →
+	  ✓ (dq1 ⋅ dq2) ∧ ObjectMetaV.equiv_except_resource_version meta1 meta2.
 Proof.
   intros Hvalid.
   rewrite /kview_frag -view_frag_op in Hvalid.
@@ -427,17 +433,20 @@ Proof.
       (mk_meta_frag k uid dq1 meta1 ⋅ mk_meta_frag k uid dq2 meta2))
     Hvalid 0%nat) as [a Hrel].
   destruct Hrel as [_ [Hmeta _]].
-  assert (Hlookup :
-    proj_meta (mk_meta_frag k uid dq1 meta1 ⋅ mk_meta_frag k uid dq2 meta2) !! (k, uid) =
-    Some ((dq1, to_agree (A := leibnizO ObjectMetaV.t) meta1) ⋅
-          (dq2, to_agree (A := leibnizO ObjectMetaV.t) meta2))).
-  { rewrite /proj_meta /mk_meta_frag /= lookup_op.
-    rewrite lookup_singleton_eq lookup_singleton_eq Some_op_opM //. }
+	  assert (Hlookup :
+	    proj_meta (mk_meta_frag k uid dq1 meta1 ⋅ mk_meta_frag k uid dq2 meta2) !! (k, uid) =
+	    Some ((dq1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version meta1)) ⋅
+	          (dq2, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version meta2)))).
+	  { rewrite /proj_meta /mk_meta_frag /= lookup_op.
+	    rewrite lookup_singleton_eq lookup_singleton_eq Some_op_opM //. }
   destruct (Hmeta _ _ Hlookup) as (meta & Hagree & Hvdq & _).
   split.
   - exact Hvdq.
-  - change ((meta1 : leibnizO ObjectMetaV.t) = (meta2 : leibnizO ObjectMetaV.t)).
-    apply to_agree_op_inv_L.
+	  - change ((ObjectMetaV.without_resource_version meta1 : leibnizO ObjectMetaV.t) =
+	      (ObjectMetaV.without_resource_version meta2 : leibnizO ObjectMetaV.t)).
+	    apply to_agree_op_inv_L.
     rewrite Hagree. done.
 Qed.
 
@@ -462,28 +471,32 @@ Proof.
       Hvalid 0%nat) as [a Hrel].
     destruct Hrel as [_ [Hmeta _]].
     assert (Hlookup1 :
-      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid1) =
-      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta1)).
+	      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid1) =
+	      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta1))).
     { rewrite /proj_meta /mk_meta_frag /= lookup_op.
       assert (Hpair_ne : (k2, uid2) ≠ (k2, uid1)).
       { intros Hpair.
         apply Huid_ne.
         now inversion Hpair. }
       rewrite lookup_singleton_eq.
-      rewrite (lookup_singleton_ne (k2, uid2) (k2, uid1)
-        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta2) Hpair_ne).
+	      rewrite (lookup_singleton_ne (k2, uid2) (k2, uid1)
+	        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	          (ObjectMetaV.without_resource_version meta2)) Hpair_ne).
       rewrite right_id //.
     }
     assert (Hlookup2 :
-      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid2) =
-      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta2)).
+	      proj_meta (mk_meta_frag k2 uid1 1 meta1 ⋅ mk_meta_frag k2 uid2 1 meta2) !! (k2, uid2) =
+	      Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta2))).
     { rewrite /proj_meta /mk_meta_frag /= lookup_op.
       assert (Hpair_ne : (k2, uid1) ≠ (k2, uid2)).
       { intros Hpair.
         apply Huid_ne.
         now inversion Hpair. }
-      rewrite (lookup_singleton_ne (k2, uid1) (k2, uid2)
-        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta1) Hpair_ne).
+	      rewrite (lookup_singleton_ne (k2, uid1) (k2, uid2)
+	        (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	          (ObjectMetaV.without_resource_version meta1)) Hpair_ne).
       rewrite lookup_singleton_eq.
       rewrite left_id //.
     }
@@ -623,36 +636,37 @@ Proof.
       * inversion Heq_pair. subst k' uid'.
         rewrite /proj_meta /mk_meta_frag /mk_spec_frag /mk_status_frag /kview_frag /= in Hlookup_new.
         rewrite (right_id (A := metaUR) (∅ : metaUR)) in Hlookup_new.
-        rewrite (lookup_op
-          (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-             (KObjectV.objectmeta obj))]} : metaUR) ⋅ ∅)
-          bf.1 (k, uid)) in Hlookup_new.
-        rewrite (lookup_op
-          ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-             (KObjectV.objectmeta obj))]} : metaUR)
-          (∅ : metaUR) (k, uid)) in Hlookup_new.
+	        rewrite (lookup_op
+	          (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	             (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]} : metaUR) ⋅ ∅)
+	          bf.1 (k, uid)) in Hlookup_new.
+	        rewrite (lookup_op
+	          ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	             (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]} : metaUR)
+	          (∅ : metaUR) (k, uid)) in Hlookup_new.
         rewrite lookup_singleton_eq lookup_empty right_id Hmeta_bf_none right_id in Hlookup_new.
         inversion Hlookup_new. subst dq' agree_meta'.
-        exists (KObjectV.objectmeta obj). split_and!. all: try done.
+	        exists (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)).
+	        split_and!. all: try done.
         exists obj. split_and!. all: try done.
         rewrite lookup_insert. destruct (decide (k = k)); done.
       * assert (Hlookup_old : proj_meta bf !! (k', uid') = Some (dq', agree_meta')).
         { rewrite /proj_meta /mk_meta_frag /mk_spec_frag /mk_status_frag /kview_frag /= in Hlookup_new.
           rewrite (right_id (A := metaUR) (∅ : metaUR)) in Hlookup_new.
-          assert (Hsingle_none :
-            ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-              (KObjectV.objectmeta obj))]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) !!
-            (k', uid') = None).
+	          assert (Hsingle_none :
+	            ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) !!
+	            (k', uid') = None).
           { apply lookup_singleton_ne. done. }
-          rewrite (lookup_op
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-               (KObjectV.objectmeta obj))]} : metaUR) ⋅ ∅)
-            bf.1 (k', uid')) in Hlookup_new.
-          rewrite (lookup_op
-            ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-               (KObjectV.objectmeta obj))]} : metaUR)
-            (∅ : metaUR) (k', uid')) in Hlookup_new.
+	          rewrite (lookup_op
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	               (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]} : metaUR) ⋅ ∅)
+	            bf.1 (k', uid')) in Hlookup_new.
+	          rewrite (lookup_op
+	            ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	               (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]} : metaUR)
+	            (∅ : metaUR) (k', uid')) in Hlookup_new.
           rewrite Hsingle_none lookup_empty in Hlookup_new.
           simpl in Hlookup_new.
           rewrite (left_id
@@ -848,9 +862,10 @@ Proof.
   assert (Hbf_none : proj_meta bf !! (k, uid) = None).
   { destruct (proj_meta bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
     exfalso.
-    assert (Hlookup :
-      (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
-      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta) ⋅ (dqf, agf))).
+	    assert (Hlookup :
+	      (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
+	      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta)) ⋅ (dqf, agf))).
     { rewrite /proj_meta /mk_meta_frag /= lookup_op.
       rewrite lookup_singleton_eq Hbf Some_op_opM //. }
     destruct (Hmeta _ _ Hlookup) as (meta0 & _ & Hvdq & _).
@@ -859,14 +874,15 @@ Proof.
     apply (Qp.lt_nge 1 1) in Hlt.
     apply Hlt. done.
   }
-  assert (Hlookup_k :
-    (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
-    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)).
+	  assert (Hlookup_k :
+	    (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
+	    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
   { rewrite /proj_meta /mk_meta_frag /= lookup_op.
     rewrite lookup_singleton_eq Hbf_none right_id //. }
   destruct (Hmeta _ _ Hlookup_k) as (meta0 & Hagree0 & _ & Hobj0).
   destruct Hobj0 as (obj0 & Hobj0_lookup & Hobj0_uid & Hobj0_meta).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
   { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
     by rewrite Hagree0.
   }
@@ -893,12 +909,14 @@ Proof.
         (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k', uid') =
         Some (dq', agree_meta')).
       { rewrite /proj_meta /mk_meta_frag /=.
-        rewrite (lookup_op
-          ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)]})
-          (proj_meta bf) (k', uid')).
-        assert (Hsingle_none :
-          (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)]}
-            : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) !!
+	        rewrite (lookup_op
+	          ({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version meta))]})
+	          (proj_meta bf) (k', uid')).
+	        assert (Hsingle_none :
+	          (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version meta))]}
+	            : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) !!
             (k', uid')) = None).
         { apply lookup_singleton_ne. done. }
         rewrite Hsingle_none.
@@ -962,9 +980,10 @@ Proof.
   assert (Hmeta_bf_none : proj_meta bf !! (k, uid) = None).
   { destruct (proj_meta bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
     exfalso.
-    assert (Hlookup :
-      (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
-      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta) ⋅ (dqf, agf))).
+	    assert (Hlookup :
+	      (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
+	      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta)) ⋅ (dqf, agf))).
     { rewrite /proj_meta /mk_meta_frag /= lookup_op.
       rewrite lookup_singleton_eq Hbf Some_op_opM //. }
     destruct (Hmeta _ _ Hlookup) as (meta0 & _ & Hvdq & _).
@@ -973,14 +992,15 @@ Proof.
     apply (Qp.lt_nge 1 1) in Hlt.
     apply Hlt. done.
   }
-  assert (Hlookup_meta_k_old :
-    (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
-    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)).
+	  assert (Hlookup_meta_k_old :
+	    (proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)) !! (k, uid) =
+	    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
   { rewrite /proj_meta /mk_meta_frag /= lookup_op.
     rewrite lookup_singleton_eq Hmeta_bf_none right_id //. }
   destruct (Hmeta _ _ Hlookup_meta_k_old) as (meta0 & Hagree0 & _ & Hobj0).
   destruct Hobj0 as (obj0 & Hobj0_lookup & Hobj0_uid & _).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
   { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
     by rewrite Hagree0.
   }
@@ -1047,13 +1067,15 @@ Proof.
     + intros [k' uid'] [dq' agree_meta'] Hlookup_new.
       destruct (decide ((k', uid') = (k, uid))) as [Heq_pair|Hneq_pair].
       * inversion Heq_pair. subst k' uid'.
-        assert (Hlookup_k :
-          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅ bf)) !! (k, uid) =
-          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) (KObjectV.objectmeta obj))).
+	        assert (Hlookup_k :
+	          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅ bf)) !! (k, uid) =
+	          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))).
         { rewrite /proj_meta /mk_meta_frag /= lookup_op.
           rewrite lookup_singleton_eq Hmeta_bf_none right_id //. }
         rewrite Hlookup_k in Hlookup_new. inversion Hlookup_new. subst dq' agree_meta'.
-        exists (KObjectV.objectmeta obj). split_and!. all: try done.
+	        exists (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)).
+	        split_and!. all: try done.
         exists obj. split_and!. all: try done.
         rewrite lookup_insert. destruct (decide (k = k)); done.
       * assert (Hlookup_old :
@@ -1062,10 +1084,10 @@ Proof.
         { rewrite /proj_meta /mk_meta_frag /= in Hlookup_new |- *.
           destruct (decide ((k, uid) = (k', uid'))) as [Heq|Hneq].
           { exfalso. apply Hneq_pair. done. }
-          assert (Hdrop_new :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-              (KObjectV.objectmeta obj))]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ bf.1)
+	          assert (Hdrop_new :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite lookup_op.
             destruct (decide ((k, uid) = (k', uid'))) as [Heq'|Hneq']; [done|].
@@ -1076,9 +1098,10 @@ Proof.
             destruct (bf.1 !! (k', uid')) as [[dqf agf]|] eqn:Hbf_lookup.
             all: rewrite Hbf_lookup; done.
           }
-          assert (Hdrop_old :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ bf.1)
+	          assert (Hdrop_old :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version meta))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite lookup_op.
             destruct (decide ((k, uid) = (k', uid'))) as [Heq'|Hneq']; [done|].
@@ -1175,9 +1198,10 @@ Proof.
   assert (Hmeta_bf_none : proj_meta bf !! (k, uid) = None).
   { destruct (proj_meta bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
     exfalso.
-    assert (Hlookup :
-      (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_spec_frag k uid 1 spec ⋅ bf)) !! (k, uid) =
-      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta) ⋅ (dqf, agf))).
+	    assert (Hlookup :
+	      (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_spec_frag k uid 1 spec ⋅ bf)) !! (k, uid) =
+	      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta)) ⋅ (dqf, agf))).
     { rewrite /proj_meta /mk_meta_frag /mk_spec_frag /=.
       rewrite ?lookup_op.
       rewrite lookup_singleton_eq lookup_empty right_id Hbf Some_op_opM //. }
@@ -1202,15 +1226,16 @@ Proof.
     apply (Qp.lt_nge 1 1) in Hlt.
     apply Hlt. done.
   }
-  assert (Hlookup_meta_k_old :
-    (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_spec_frag k uid 1 spec ⋅ bf)) !! (k, uid) =
-    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)).
+	  assert (Hlookup_meta_k_old :
+	    (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_spec_frag k uid 1 spec ⋅ bf)) !! (k, uid) =
+	    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
   { rewrite /proj_meta /mk_meta_frag /mk_spec_frag /=.
     rewrite ?lookup_op.
     rewrite lookup_singleton_eq lookup_empty right_id Hmeta_bf_none right_id //. }
   destruct (Hmeta _ _ Hlookup_meta_k_old) as (meta0 & Hagree0 & _ & Hobj0).
   destruct Hobj0 as (obj0 & Hobj0_lookup & Hobj0_uid & _).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
   { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
     by rewrite Hagree0.
   }
@@ -1277,15 +1302,17 @@ Proof.
     + intros [k' uid'] [dq' agree_meta'] Hlookup_new.
       destruct (decide ((k', uid') = (k, uid))) as [Heq_pair|Hneq_pair].
       * inversion Heq_pair. subst k' uid'.
-        assert (Hlookup_k :
-          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
-                      mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅ bf)) !! (k, uid) =
-          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) (KObjectV.objectmeta obj))).
+	        assert (Hlookup_k :
+	          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
+	                      mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅ bf)) !! (k, uid) =
+	          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))).
         { rewrite /proj_meta /mk_meta_frag /mk_spec_frag /=.
           rewrite ?lookup_op.
           rewrite lookup_singleton_eq lookup_empty right_id Hmeta_bf_none right_id //. }
         rewrite Hlookup_k in Hlookup_new. inversion Hlookup_new. subst dq' agree_meta'.
-        exists (KObjectV.objectmeta obj). split_and!. all: try done.
+	        exists (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)).
+	        split_and!. all: try done.
         exists obj. split_and!. all: try done.
         rewrite lookup_insert. destruct (decide (k = k)); done.
       * assert (Hlookup_old :
@@ -1294,10 +1321,10 @@ Proof.
         { rewrite /proj_meta /mk_meta_frag /mk_spec_frag /= in Hlookup_new |- *.
           destruct (decide ((k, uid) = (k', uid'))) as [Heq|Hneq].
           { exfalso. apply Hneq_pair. done. }
-          assert (Hdrop_new :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-              (KObjectV.objectmeta obj))]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
+	          assert (Hdrop_new :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite right_id.
             rewrite lookup_op.
@@ -1309,9 +1336,10 @@ Proof.
             destruct (bf.1 !! (k', uid')) as [[dqf agf]|] eqn:Hbf_lookup.
             all: rewrite Hbf_lookup; done.
           }
-          assert (Hdrop_old :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
+	          assert (Hdrop_old :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version meta))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite right_id.
             rewrite lookup_op.
@@ -1451,9 +1479,10 @@ Proof.
   assert (Hmeta_bf_none : proj_meta bf !! (k, uid) = None).
   { destruct (proj_meta bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
     exfalso.
-    assert (Hlookup :
-      (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_status_frag k uid 1 status ⋅ bf)) !! (k, uid) =
-      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta) ⋅ (dqf, agf))).
+	    assert (Hlookup :
+	      (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_status_frag k uid 1 status ⋅ bf)) !! (k, uid) =
+	      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	        (ObjectMetaV.without_resource_version meta)) ⋅ (dqf, agf))).
     { rewrite /proj_meta /mk_meta_frag /mk_status_frag /=.
       rewrite ?lookup_op.
       rewrite lookup_singleton_eq lookup_empty right_id Hbf Some_op_opM //. }
@@ -1478,15 +1507,16 @@ Proof.
     apply (Qp.lt_nge 1 1) in Hlt.
     apply Hlt. done.
   }
-  assert (Hlookup_meta_k_old :
-    (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_status_frag k uid 1 status ⋅ bf)) !! (k, uid) =
-    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)).
+	  assert (Hlookup_meta_k_old :
+	    (proj_meta (mk_meta_frag k uid 1 meta ⋅ mk_status_frag k uid 1 status ⋅ bf)) !! (k, uid) =
+	    Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	      (ObjectMetaV.without_resource_version meta))).
   { rewrite /proj_meta /mk_meta_frag /mk_status_frag /=.
     rewrite ?lookup_op.
     rewrite lookup_singleton_eq lookup_empty right_id Hmeta_bf_none right_id //. }
   destruct (Hmeta _ _ Hlookup_meta_k_old) as (meta0 & Hagree0 & _ & Hobj0).
   destruct Hobj0 as (obj0 & Hobj0_lookup & Hobj0_uid & _).
-  assert (Hmeta_eqv : (meta : leibnizO ObjectMetaV.t) ≡ meta0).
+	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
   { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
     by rewrite Hagree0.
   }
@@ -1553,15 +1583,17 @@ Proof.
     + intros [k' uid'] [dq' agree_meta'] Hlookup_new.
       destruct (decide ((k', uid') = (k, uid))) as [Heq_pair|Hneq_pair].
       * inversion Heq_pair. subst k' uid'.
-        assert (Hlookup_k :
-          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
-                      mk_status_frag k uid 1 (KObjectV.status obj) ⋅ bf)) !! (k, uid) =
-          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) (KObjectV.objectmeta obj))).
+	        assert (Hlookup_k :
+	          (proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
+	                      mk_status_frag k uid 1 (KObjectV.status obj) ⋅ bf)) !! (k, uid) =
+	          Some (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	            (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))).
         { rewrite /proj_meta /mk_meta_frag /mk_status_frag /=.
           rewrite ?lookup_op.
           rewrite lookup_singleton_eq lookup_empty right_id Hmeta_bf_none right_id //. }
         rewrite Hlookup_k in Hlookup_new. inversion Hlookup_new. subst dq' agree_meta'.
-        exists (KObjectV.objectmeta obj). split_and!. all: try done.
+	        exists (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)).
+	        split_and!. all: try done.
         exists obj. split_and!. all: try done.
         rewrite lookup_insert. destruct (decide (k = k)); done.
       * assert (Hlookup_old :
@@ -1570,10 +1602,10 @@ Proof.
         { rewrite /proj_meta /mk_meta_frag /mk_status_frag /= in Hlookup_new |- *.
           destruct (decide ((k, uid) = (k', uid'))) as [Heq|Hneq].
           { exfalso. apply Hneq_pair. done. }
-          assert (Hdrop_new :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
-              (KObjectV.objectmeta obj))]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
+	          assert (Hdrop_new :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj)))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite right_id.
             rewrite lookup_op.
@@ -1585,9 +1617,10 @@ Proof.
             destruct (bf.1 !! (k', uid')) as [[dqf agf]|] eqn:Hbf_lookup.
             all: rewrite Hbf_lookup; done.
           }
-          assert (Hdrop_old :
-            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t) meta)]}
-              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
+	          assert (Hdrop_old :
+	            (({[(k, uid) := (DfracOwn 1, to_agree (A := leibnizO ObjectMetaV.t)
+	              (ObjectMetaV.without_resource_version meta))]}
+	              : gmap (KKey.t * types.UID.t) (dfrac * agree (leibnizO ObjectMetaV.t))) ⋅ ∅ ⋅ bf.1)
               !! (k', uid') = bf.1 !! (k', uid')).
           { rewrite right_id.
             rewrite lookup_op.
@@ -1869,11 +1902,12 @@ Proof.
 Qed.
 
 Lemma own_meta_exists {γ state used_uid k uid dq meta}:
-  own_auth γ state used_uid -∗
-  own_meta_frag γ k uid dq meta -∗
-    ⌜ ∃ obj, state !! k = Some obj ∧
-    (KObjectV.objectmeta obj) = meta ∧
-    meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
+	  own_auth γ state used_uid -∗
+	  own_meta_frag γ k uid dq meta -∗
+	    ⌜ ∃ obj, state !! k = Some obj ∧
+	    (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid ∧
+	    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta ∧
+	    meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
 Proof.
   iIntros "Hauth Hmeta".
   iDestruct (own_valid_2 with "Hauth Hmeta") as "Hvalid".
@@ -1892,18 +1926,19 @@ Proof.
 Qed.
 
 Lemma own_meta_exists2 {γ state used_uid obj k uid dq meta}:
-  state !! k = Some obj →
-  own_auth γ state used_uid -∗
-  own_meta_frag γ k uid dq meta -∗
-    ⌜ (KObjectV.objectmeta obj) = meta ∧
-    meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
+	  state !! k = Some obj →
+	  own_auth γ state used_uid -∗
+	  own_meta_frag γ k uid dq meta -∗
+	    ⌜ (KObjectV.objectmeta obj).(ObjectMetaV.UID') = uid ∧
+	    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta ∧
+	    meta.(ObjectMetaV.UID') ∈ used_uid ⌝.
 Proof.
   iIntros (Hlookup) "Hauth Hmeta".
-  iDestruct (own_meta_exists with "Hauth Hmeta") as %(obj' & Hlookup' & Hmeta_eq & Huid_in).
+	  iDestruct (own_meta_exists with "Hauth Hmeta") as %(obj' & Hlookup' & Huid_obj & Hmeta_eq & Huid_in).
   iPureIntro.
   rewrite Hlookup in Hlookup'.
   injection Hlookup' as <-.
-  split; done.
+	  split_and!; done.
 Qed.
 
 Lemma own_meta_map_exists {γ state used_uid K A} `{Countable K}
@@ -1912,7 +1947,9 @@ Lemma own_meta_map_exists {γ state used_uid K A} `{Countable K}
   ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) -∗
     own_auth γ state used_uid ∗
     ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) ∗
-    ⌜ map_Forall (λ k x, ∃ obj, state !! key_of k x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of k x) m ⌝ ∗
+	    ⌜ map_Forall (λ k x, ∃ obj, state !! key_of k x = Some obj ∧
+	      (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of k x).(ObjectMetaV.UID') ∧
+	      ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of k x)) m ⌝ ∗
     ⌜ map_Forall (λ k x, (meta_of k x).(ObjectMetaV.UID') ∈ used_uid) m ⌝.
 Proof.
   iIntros "Hauth Hm".
@@ -1927,10 +1964,10 @@ Proof.
     iDestruct ("IH" with "Hauth Hm") as "(Hauth & Hm & %Hmeta_forall & %Huid_forall)".
     iFrame.
     iPureIntro.
-    destruct Hhead as (obj & Hlookup & Hmeta_eq & Huid_in).
+	    destruct Hhead as (obj & Hlookup & Huid_obj & Hmeta_eq & Huid_in).
     split.
     + apply map_Forall_insert_2.
-      * exists obj. split; done.
+	      * exists obj. split_and!; done.
       * exact Hmeta_forall.
     + apply map_Forall_insert_2.
       * exact Huid_in.
@@ -1963,7 +2000,9 @@ Lemma own_meta_list_exists {γ state used_uid A} (key_of : A → KKey.t) (meta_o
   ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) -∗
     own_auth γ state used_uid ∗
     ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) ∗
-    ⌜ Forall (λ x, ∃ obj, state !! key_of x = Some obj ∧ (KObjectV.objectmeta obj) = meta_of x) xs ⌝ ∗
+	    ⌜ Forall (λ x, ∃ obj, state !! key_of x = Some obj ∧
+	      (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of x).(ObjectMetaV.UID') ∧
+	      ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of x)) xs ⌝ ∗
     ⌜ Forall (λ x, (meta_of x).(ObjectMetaV.UID') ∈ used_uid) xs ⌝.
 Proof.
   iIntros "Hauth Hxs".
@@ -1978,10 +2017,10 @@ Proof.
     iDestruct ("IH" with "Hauth Hxs") as "(Hauth & Hxs & %Hmeta_forall & %Huid_forall)".
     iFrame.
     iPureIntro.
-    destruct Hhead as (obj & Hlookup & Hmeta_eq & Huid_in).
+	    destruct Hhead as (obj & Hlookup & Huid_obj & Hmeta_eq & Huid_in).
     split.
     + constructor.
-      * exists obj. split; done.
+	      * exists obj. split_and!; done.
       * exact Hmeta_forall.
     + constructor.
       * exact Huid_in.

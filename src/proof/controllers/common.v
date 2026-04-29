@@ -179,7 +179,8 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1 dq2 pods children_keys
   {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods', PodV.deepown_l ptr pod dq') ∗
-      ⌜ PodV.ObjectMeta' <$> pods' ≡ₚ PodV.ObjectMeta' <$> pods ⌝ ∗
+      ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods) ⌝ ∗
       ⌜ Forall PodV.valid pods' ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗

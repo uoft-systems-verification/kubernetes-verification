@@ -56,7 +56,7 @@ Lemma wp_State__get_some_au γ l key :
       "Hclose" ∷ (∀ i kobj,
         ⌜ KObjectV.valid kobj ⌝ ∗
         ⌜ key = KObjectV.key kobj ⌝ ∗
-        ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
+        ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
         KObjectV.deepown_i i kobj 1 ∗
         own_meta_frag γ key uid dq kmeta ∗
         match kspec_o with
@@ -89,7 +89,7 @@ Proof.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
     iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
-      as "(%obj & %Hlookup_abs' & %Hmeta_eq & %Huid_in)".
+      as "(%obj & %Hlookup_abs' & %Huid_obj & %Hmeta_eq & %Huid_in)".
     assert (abs_state !! key ≠ None) as Hlookup_abs''.
     { intros Hnone. rewrite Hlookup_abs' in Hnone. done. }
     done.
@@ -111,16 +111,16 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
-    as "(%Hmeta_eq & %Huid_in)". 1: done.
+    as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
   destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
   1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found";
         assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
           (symmetry; eapply Hspec_found; [exact Hlookup_abs|];
-           rewrite Hmeta_eq; symmetry; exact Huid_eq).
+           exact Huid_obj).
   1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found";
         assert (kstatus = KObjectV.status kobj) as Hkstatus_eq by
           (symmetry; eapply Hstatus_found; [exact Hlookup_abs|];
-           rewrite Hmeta_eq; symmetry; exact Huid_eq).
+           exact Huid_obj).
   all: iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ";
     [iFrame; iPureIntro; split_and!; done|].
   all: iModIntro.
@@ -150,7 +150,7 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
   {{{ i kobj, RET (#i, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ kmeta = KObjectV.objectmeta kobj ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
       match kspec_o with
@@ -193,7 +193,7 @@ Lemma wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus :
   {{{ pod_l pod, RET (#pod_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ kmeta = pod.(PodV.ObjectMeta') ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version pod.(PodV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = pod.(PodV.Spec') ⌝ ∗
       "%Hstatus_eq" ∷ ⌜ kstatus = pod.(PodV.Status') ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
@@ -249,7 +249,7 @@ Lemma wp_State__PodGet γ l key namespace name uid dq kmeta kspec kstatus :
   {{{ pod_l pod, RET (#pod_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ kmeta = pod.(PodV.ObjectMeta') ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version pod.(PodV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = pod.(PodV.Spec') ⌝ ∗
       "%Hstatus_eq" ∷ ⌜ kstatus = pod.(PodV.Status') ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
@@ -283,7 +283,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ kmeta = rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
@@ -334,7 +334,7 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ kmeta = rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
