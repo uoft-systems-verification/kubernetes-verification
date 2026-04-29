@@ -7,11 +7,15 @@ From New.proof Require Export pure_objects string.
 From New.proof.big_op Require Export big_sepL big_sepM.
 From New.proof.algebra Require Export kview cview tombstone.
 
+Class kubernetesModelG Σ := {
+  #[global] kubernetes_model_kviewG :: kviewG Σ;
+  #[global] kubernetes_model_cviewG :: cviewG Σ;
+  #[global] kubernetes_model_tombstoneG :: tombstoneG Σ;
+}.
+
 Section spec.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-Context `{!kviewG Σ}.
-Context `{!cviewG Σ}.
-Context `{!tombstoneG Σ}.
+Context `{!kubernetesModelG Σ}.
 
 Record KubernetesGname := mk_γk {
   γ_state : gname;

@@ -3,9 +3,7 @@ From New.proof.kubernetes_model Require Export inv common.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-Context `{!kviewG Σ}.
-Context `{!cviewG Σ}.
-Context `{!tombstoneG Σ}.
+Context `{!kubernetesModelG Σ}.
 
 Lemma wp_State__get γ l key :
   {{{ is_pkg_init apimodel ∗

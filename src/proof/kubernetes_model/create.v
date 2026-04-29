@@ -4,9 +4,7 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-Context `{!kviewG Σ}.
-Context `{!cviewG Σ}.
-Context `{!tombstoneG Σ}.
+Context `{!kubernetesModelG Σ}.
 
 Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid :
   ∀ Φ,

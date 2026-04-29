@@ -8,9 +8,7 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-Context `{!kviewG Σ}.
-Context `{!cviewG Σ}.
-Context `{!tombstoneG Σ}.
+Context `{!kubernetesModelG Σ}.
 
 Definition is_pod_alive (pod: PodV.t): Prop :=
   pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.

@@ -4,9 +4,7 @@ From New.proof.kubernetes_model Require Export inv common list.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
-Context `{!kviewG Σ}.
-Context `{!cviewG Σ}.
-Context `{!tombstoneG Σ}.
+Context `{!kubernetesModelG Σ}.
 
 Definition podController_indexed_value pod : go_string :=
   match meta_parent_ref pod.(PodV.ObjectMeta') with
