@@ -18,16 +18,35 @@ Lemma wp_deepCopy i obj:
 Proof.
 Admitted.
 
-Lemma wp_objDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
+Definition storage_object_normalize (obj : KObjectV.t) : KObjectV.t :=
+  KObjectV.update_objectmeta obj
+    ((KObjectV.objectmeta obj)
+       <| ObjectMetaV.ResourceVersion' := ""%go |>
+       <| ObjectMetaV.SelfLink' := ""%go |>).
+
+Lemma storage_object_normalize_update_objectmeta_deletionTimestamp obj m :
+  storage_object_normalize (KObjectV.update_objectmeta obj m) =
+  storage_object_normalize obj →
+  m.(ObjectMetaV.DeletionTimestamp') =
+  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp').
+Proof.
+  destruct obj as [p|rs].
+  - destruct p as [pt pm ps pst]. destruct pm. destruct m. simpl.
+    intros H. inversion H. done.
+  - destruct rs as [rt rm rspec rstatus]. destruct rm. destruct m. simpl.
+    intros H. inversion H. done.
+Qed.
+
+Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i1 obj1 dq1 ∗
       KObjectV.deepown_i i2 obj2 dq2
   }}}
-    @! apimodel.objDeepEqual #i1 #i2
+    @! apimodel.storageObjectDeepEqual #i1 #i2
   {{{ v, RET #v;
       KObjectV.deepown_i i1 obj1 dq1 ∗
       KObjectV.deepown_i i2 obj2 dq2 ∗
-      ⌜ v = true ↔ obj1 = obj2 ⌝
+      ⌜ v = true ↔ storage_object_normalize obj1 = storage_object_normalize obj2 ⌝
   }}}.
 Proof.
 Admitted.

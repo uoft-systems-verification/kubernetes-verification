@@ -810,6 +810,13 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 		return deepCopy(objCopy), nil
 	}
 
+	// The storage layer avoids writing no-op updates, so resourceVersion is preserved when the
+	// final storage object is unchanged.
+	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go#L539-L562
+	if storageObjectDeepEqual(objCopy, existingObjCopy) {
+		return deepCopy(existingObjCopy), nil
+	}
+
 	metadata, err = meta.Accessor(objCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to access updated object metadata: %w", err)
@@ -1082,18 +1089,32 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 	}
 }
 
-// objDeepEqual approximates upstream's "did the delete path actually change the stored object?"
-// check, but it is not exactly the same logic.
+// storageObjectDeepEqual approximates upstream's "did the storage operation actually change the
+// stored object?" check, but it is not exactly the same logic.
 //
 // Upstream relies on the storage-layer GuaranteedUpdate / no-op-update behavior to decide whether
 // an update is persisted and therefore whether resourceVersion advances; it does not compare the
 // in-memory objects with a single reflect.DeepEqual-style helper in the registry layer.
 //
 // This model uses reflect.DeepEqual as a simple in-memory approximation because the model has no
-// storage codec / transformer layer. That can diverge from upstream in edge cases where storage
+// storage codec / transformer layer. It clears fields that the storage versioner clears before
+// encoding, which keeps no-op decisions from being affected by request-only resourceVersion or
+// selfLink differences. This can still diverge from upstream in edge cases where storage
 // normalization or Go representation details affect equality.
-func objDeepEqual(obj1 interface{}, obj2 interface{}) bool {
-	return reflect.DeepEqual(obj1, obj2)
+func storageObjectDeepEqual(obj1 interface{}, obj2 interface{}) bool {
+	obj1Copy := deepCopy(obj1)
+	obj2Copy := deepCopy(obj2)
+
+	for _, obj := range []interface{}{obj1Copy, obj2Copy} {
+		metadata, err := meta.Accessor(obj)
+		if err != nil {
+			return false
+		}
+		metadata.SetResourceVersion("")
+		metadata.SetSelfLink("")
+	}
+
+	return reflect.DeepEqual(obj1Copy, obj2Copy)
 }
 
 // deletionTimestampForDelete computes the initial DeletionTimestamp written by the delete path.
@@ -1201,7 +1222,7 @@ func (s *State) delete(key KKey, options metav1.DeleteOptions) error {
 
 	// Real Kubernetes only advances resourceVersion when the delete path writes a changed
 	// object back to storage; no-op delete updates preserve the stored RV.
-	if !objDeepEqual(objCopy, obj) {
+	if !storageObjectDeepEqual(objCopy, obj) {
 		// Assign a fresh resource version for the metadata update.
 		metadata.SetResourceVersion(s.generateNewRVAndUpdate())
 

@@ -361,10 +361,11 @@ Proof.
     with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_s_l1 Hdeepown_st_l1]" as "Hdeepown_i1".
   { iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_s_l1 $Hdeepown_st_l1]") as "H".
     iFrame. destruct kobj. all: done. }
-  wp_apply (wp_objDeepEqual with "[$Hdeepown_i1 $Hdeepown_i]").
+  wp_apply (wp_storageObjectDeepEqual with "[$Hdeepown_i1 $Hdeepown_i]").
   iIntros (v) "(Hdeepown_i1 & Hdeepown_i & %Hv)".
   destruct v as [|] eqn:Heq; wp_auto.
-  { assert (KObjectV.update_objectmeta kobj new_kmeta = kobj) as Hkobj_eq.
+  { assert (storage_object_normalize (KObjectV.update_objectmeta kobj new_kmeta) =
+      storage_object_normalize kobj) as Hstorage_eq.
     { apply Hv. done. }
     iApply fupd_wp.
     iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
@@ -372,7 +373,8 @@ Proof.
     iMod ("Hclose" $! interface.nil (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
     { iLeft. iFrame. iFrame "%". iSplit. 1: done. iLeft. iFrame. iPureIntro. intros Hcontra.
       assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) = Some timev) as H.
-      { rewrite <-Hkobj_eq. destruct kobj; done. }
+      { pose proof (storage_object_normalize_update_objectmeta_deletionTimestamp _ _ Hstorage_eq) as Hdt.
+        unfold new_kmeta in Hdt. simpl in Hdt. symmetry. exact Hdt. }
       rewrite H in Hcontra. done.
     }
     iModIntro.

@@ -422,8 +422,8 @@ Global Instance wp_func_call_checkGracefulDelete :
   WpFuncCall apimodel.checkGracefulDelete _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
-Global Instance wp_func_call_objDeepEqual :
-  WpFuncCall apimodel.objDeepEqual _ (is_pkg_defined apimodel) :=
+Global Instance wp_func_call_storageObjectDeepEqual :
+  WpFuncCall apimodel.storageObjectDeepEqual _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_deletionTimestampForDelete :
