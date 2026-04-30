@@ -153,7 +153,7 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
 Proof.
 Admitted.
 
-Definition delete_preconditions_match (m : ObjectMetaV.t) (options : DeleteOptionsV.t) : Prop :=
+Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with
   | None => True
   | Some preconditions =>
@@ -167,8 +167,8 @@ Definition delete_preconditions_match (m : ObjectMetaV.t) (options : DeleteOptio
        end)
   end.
 
-#[global] Instance delete_preconditions_match_dec m options :
-  Decision (delete_preconditions_match m options).
+#[global] Instance delete_preconditions_match_dec options m :
+  Decision (delete_preconditions_match options m).
 Proof.
   unfold delete_preconditions_match.
   destruct options.(DeleteOptionsV.Preconditions') as [preconditions|].
@@ -223,9 +223,9 @@ Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_strin
   }}}
     @! apimodel.validateDeletePreconditions #i #options_l #kind
   {{{ err, RET #err;
-      ⌜ delete_preconditions_match m options ∧ err = interface.nil
+      ⌜ delete_preconditions_match options m ∧ err = interface.nil
         ∨
-        ¬ delete_preconditions_match m options ∧ err ≠ interface.nil ⌝ ∗
+        ¬ delete_preconditions_match options m ∧ err ≠ interface.nil ⌝ ∗
       ObjectMetaV.deepown_l l m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.

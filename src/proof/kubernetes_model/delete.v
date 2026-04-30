@@ -133,6 +133,17 @@ Definition delete_options_preconditions_resource_version_none (options : DeleteO
   | Some preconditions => preconditions.(PreconditionsV.ResourceVersion') = None
   end.
 
+#[global] Instance delete_options_preconditions_resource_version_none_dec options :
+  Decision (delete_options_preconditions_resource_version_none options).
+Proof.
+  unfold delete_options_preconditions_resource_version_none.
+  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|].
+  - destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|].
+    + right. intros H. inversion H.
+    + left. done.
+  - left. done.
+Qed.
+
 Lemma own_meta_frag_equiv_except_resource_version {γ k uid dq meta1 meta2} :
   ObjectMetaV.equiv_except_resource_version meta1 meta2 →
   own_meta_frag γ k uid dq meta2 -∗
@@ -149,8 +160,8 @@ Qed.
 Lemma delete_preconditions_match_equiv_except_resource_version m1 m2 options :
   ObjectMetaV.equiv_except_resource_version m1 m2 →
   delete_options_preconditions_resource_version_none options →
-  delete_preconditions_match m2 options →
-  delete_preconditions_match m1 options.
+  delete_preconditions_match options m2 →
+  delete_preconditions_match options m1.
 Proof.
   intros Hmeta_eq Hrv_none Hmatch.
   rewrite /delete_preconditions_match /delete_options_preconditions_resource_version_none in Hrv_none, Hmatch |- *.
@@ -162,6 +173,59 @@ Proof.
   exact Hmatch.
 Qed.
 
+Definition delete_preconditions_match_uid (options : DeleteOptionsV.t) obj_uid : Prop :=
+  match options.(DeleteOptionsV.Preconditions') with
+  | None => True
+  | Some preconditions =>
+      (match preconditions.(PreconditionsV.UID') with
+       | Some uid => uid = obj_uid
+       | None => True
+       end)
+  end.
+
+Lemma delete_preconditions_match_uid_of_match options uid kmeta :
+  uid = kmeta.(ObjectMetaV.UID') →
+  delete_preconditions_match options kmeta →
+  delete_preconditions_match_uid options uid.
+Proof.
+  intros Huid_eq Hmatch.
+  rewrite /delete_preconditions_match /delete_preconditions_match_uid in Hmatch |- *.
+  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|]; [|done].
+  destruct preconditions.(PreconditionsV.UID') as [precondition_uid|]; [|done].
+  destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|]; simpl in Hmatch;
+    rewrite Huid_eq; intuition.
+Qed.
+
+Lemma delete_preconditions_match_of_uid_rv_none options uid kmeta :
+  uid = kmeta.(ObjectMetaV.UID') →
+  delete_options_preconditions_resource_version_none options →
+  delete_preconditions_match_uid options uid →
+  delete_preconditions_match options kmeta.
+Proof.
+  intros Huid_eq Hrv_none Huid_match.
+  rewrite /delete_options_preconditions_resource_version_none in Hrv_none.
+  rewrite /delete_preconditions_match /delete_preconditions_match_uid in Huid_match |- *.
+  destruct options.(DeleteOptionsV.Preconditions') as [preconditions|]; [|done].
+  destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|]; [done|].
+  destruct preconditions.(PreconditionsV.UID') as [precondition_uid|]; simpl in Huid_match |- *.
+  - split; [rewrite <-Huid_eq; done|done].
+  - split; done.
+Qed.
+
+Definition delete_success_post
+  (γ : KubernetesGname) (key : KKey.t) (uid : types.UID.t)
+  (parent_key : KKey.t) (parent_uid : types.UID.t)
+  (children : gset KKey.t) (kmeta' : ObjectMetaV.t) : iProp Σ :=
+  ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
+    "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+    "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
+    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+    ∨
+    (* the object is deleted *)
+    "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid ∗
+    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+  )%I.
+
 (* TODO: specifies in which case the object is deleted from the state map *)
 (* TODO: finish all the shelved goals once wp_if_join is available *)
 Lemma wp_State__delete_au γ l key options_c options:
@@ -172,23 +236,24 @@ Lemma wp_State__delete_au γ l key options_c options:
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
     ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
-      "%Hdelete_preconditions_rv_none" ∷
-        ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
+      "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hclose" ∷ ( ∀ kmeta',
-        ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
-          ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          own_meta_frag γ key uid 1 kmeta' ∗
-          own_children_frag γ parent_key parent_uid 1 children
-          ∨
-          (* the object is deleted *)
-          own_tombstone_frag γ uid ∗
-          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
-        )
-          ={∅,⊤}=∗ ▷ Φ #interface.nil
-      )
+      "Hclose" ∷ (
+        if decide (delete_options_preconditions_resource_version_none options) then
+          ∀ kmeta',
+            delete_success_post γ key uid parent_key parent_uid children kmeta'
+              ={∅,⊤}=∗ ▷ Φ #interface.nil
+        else
+          ∀ err kmeta',
+            ( (⌜ err = interface.nil ⌝ ∗
+                delete_success_post γ key uid parent_key parent_uid children kmeta') ∨
+              (⌜ err ≠ interface.nil ⌝ ∗
+                own_meta_frag γ key uid 1 kmeta ∗
+                own_children_frag γ parent_key parent_uid 1 children)
+            )
+              ={∅,⊤}=∗ ▷ Φ #err
+      )%I
     ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "delete" #key #options_c {{ Φ }}.
 Proof.
   iIntros (Φ) "(#? & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
@@ -243,8 +308,19 @@ Proof.
     iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
-    exfalso. apply Hdelete_preconditions_not_match.
-    eapply delete_preconditions_match_equiv_except_resource_version; done.
+    destruct (decide (delete_options_preconditions_resource_version_none options)) as [Hrv_none|Hrv_some].
+    { exfalso. apply Hdelete_preconditions_not_match.
+      eapply delete_preconditions_match_of_uid_rv_none; done. }
+    iMod ("Hclose" $! err0 (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
+    { iRight. iFrame. iPureIntro. done. }
+    iModIntro.
+    iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
+      with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
+    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iApply "HΦ".
   }
   rewrite bool_decide_true //. wp_auto.
   wp_apply (wp_checkGracefulDelete with "[Hdeepown_t_l1 Hdeepown_m_l1 Hdeepown_s_l1 Hdeepown_st_l1 $Hdeepown_l_options1]").
@@ -278,8 +354,14 @@ Proof.
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     iPoseProof (own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hown_meta_frag")
       as "Hown_meta_frag".
-    iMod ("Hclose" $! (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
-    { iLeft. iFrame. iPureIntro. done. }
+    iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
+      with "[Hclose Hown_meta_frag Hown_children_frag]" as "HΦ_fupd".
+    { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
+      - iApply ("Hclose" $! (KObjectV.objectmeta kobj)). iLeft. iFrame. iPureIntro. done.
+      - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta kobj)).
+        iLeft. iSplit; first done. iLeft. iFrame. iPureIntro. done.
+    }
+    iMod "HΦ_fupd" as "HΦ".
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -333,8 +415,14 @@ Proof.
     iMod (tombstone.insert_vs (KObjectV.objectmeta kobj).(ObjectMetaV.UID')
       with "[$Hinv_Hown_tombstone]") as "(Hinv_Hown_tombstone & Hown_tombstone_frag)".
     rewrite Huid_obj.
-    iMod ("Hclose" $! (KObjectV.objectmeta kobj) with "[Hown_children_frag Hown_tombstone_frag]") as "HΦ".
-    { iRight. iFrame. }
+    iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
+      with "[Hclose Hown_children_frag Hown_tombstone_frag]" as "HΦ_fupd".
+    { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
+      - iApply ("Hclose" $! (KObjectV.objectmeta kobj)). iRight. iFrame.
+      - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta kobj)).
+        iLeft. iSplit; first done. iRight. iFrame.
+    }
+    iMod "HΦ_fupd" as "HΦ".
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -400,13 +488,23 @@ Proof.
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     iPoseProof (own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hown_meta_frag")
       as "Hown_meta_frag".
-    iMod ("Hclose" $! (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
-    { iLeft. iFrame. iPureIntro. intros Hcontra.
-      assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) = Some timev) as H.
-      { pose proof (storage_object_normalize_update_objectmeta_deletionTimestamp _ _ Hstorage_eq) as Hdt.
-        unfold new_kmeta in Hdt. simpl in Hdt. symmetry. exact Hdt. }
-      rewrite H in Hcontra. done.
+    iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
+      with "[Hclose Hown_meta_frag Hown_children_frag]" as "HΦ_fupd".
+    { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
+      - iApply ("Hclose" $! (KObjectV.objectmeta kobj)).
+        iLeft. iFrame. iPureIntro. intros Hcontra.
+        assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) = Some timev) as H.
+        { pose proof (storage_object_normalize_update_objectmeta_deletionTimestamp _ _ Hstorage_eq) as Hdt.
+          unfold new_kmeta in Hdt. simpl in Hdt. symmetry. exact Hdt. }
+        rewrite H in Hcontra. done.
+      - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta kobj)).
+        iLeft. iSplit; first done. iLeft. iFrame. iPureIntro. intros Hcontra.
+        assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) = Some timev) as H.
+        { pose proof (storage_object_normalize_update_objectmeta_deletionTimestamp _ _ Hstorage_eq) as Hdt.
+          unfold new_kmeta in Hdt. simpl in Hdt. symmetry. exact Hdt. }
+        rewrite H in Hcontra. done.
     }
+    iMod "HΦ_fupd" as "HΦ".
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -468,10 +566,15 @@ Proof.
   { done. }
   { destruct kobj; done. }
   { destruct kobj; done. }
-  iMod ("Hclose" $! (KObjectV.objectmeta new_kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
-  { iLeft. iFrame. iPureIntro.
-    destruct kobj; done.
+  iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
+    with "[Hclose Hown_meta_frag Hown_children_frag]" as "HΦ_fupd".
+  { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
+    - iApply ("Hclose" $! (KObjectV.objectmeta new_kobj)).
+      iLeft. iFrame. iPureIntro. destruct kobj; done.
+    - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta new_kobj)).
+      iLeft. iSplit; first done. iLeft. iFrame. iPureIntro. destruct kobj; done.
   }
+  iMod "HΦ_fupd" as "HΦ".
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[KObjectV.key kobj:=i1]> phys_state; <[KObjectV.key kobj:=new_kobj]> abs_state,
     KObjectV.deepown_i i obj 1)%I) with "[Hdeepown_i1 Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -495,7 +598,7 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
       "%Hdelete_preconditions_rv_none" ∷
         ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
+      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match options kmeta ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
@@ -511,9 +614,17 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid".
+  destruct Hmeta_valid as (_ & _ & Huid_eq & _).
+  pose proof (delete_preconditions_match_uid_of_match options uid kmeta Huid_eq
+    Hdelete_preconditions) as Hdelete_preconditions_uid.
   iApply wp_State__delete_au.
   iFrame "#". iFrame "%". iFrame.
-  iApply fupd_mask_intro; [set_solver|iIntros "Hmask"].
+  iApply fupd_mask_intro.
+  { Timeout 5 set_solver. }
+  iIntros "Hmask".
+  destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|Hrv_some].
+  2: { exfalso. apply Hrv_some. done. }
   iIntros (kmeta') "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.
@@ -531,7 +642,7 @@ Lemma wp_State__PodDelete γ l key namespace name options_c options uid kmeta pa
         KKey.Name' := name
       |} ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match kmeta options ⌝ ∗
+      "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match options kmeta ⌝ ∗
       "%Hdelete_preconditions_rv_none" ∷
         ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
