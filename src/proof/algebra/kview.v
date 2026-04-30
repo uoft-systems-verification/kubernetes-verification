@@ -383,7 +383,7 @@ Proof.
 	      exact (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hobj_meta_eq).
 	    + split.
 	      * rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). symmetry. exact Huid_obj.
-	      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & Hwf_meta & _ & _);
+	      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & _ & Hwf_meta & _ & _);
 	        eapply ObjectMetaV.equiv_except_resource_version_valid; done.
 Qed.
 

@@ -515,7 +515,8 @@ Proof.
     iApply "HΦ".
   }
   wp_apply (wp_State__generateNewRVAndUpdate with "[$Hinv_Hstate_used_rv_addr $Hinv_Hown_used_rv]").
-  iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto.
+  iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & %Hgenerated_rv_valid & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)".
+  wp_auto.
   iPoseProof (KObjectV.deepown_i_yields_deepown_l i1 l1 with "[$Hdeepown_i1]") as "Hdeepown_l1".
   { iPureIntro. destruct kobj; done. }
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as
@@ -546,9 +547,10 @@ Proof.
   { split_and!.
     - destruct kobj; done.
     - unfold new_kobj, new_kmeta1, new_kmeta. destruct kobj; simpl in *; symmetry; exact Huid_obj.
-    - destruct Hvalid_kobj as (Hvalid_tm & Hvalid_m & Hvalid_spec & Hvalid_status).
+    - destruct Hvalid_kobj as (Hvalid_tm & _ & Hvalid_m & Hvalid_spec & Hvalid_status).
       split_and!. all: unfold new_kobj.
       + destruct kobj; done.
+      + destruct kobj; simpl; exact Hgenerated_rv_valid.
       + assert (ObjectMetaV.valid new_kmeta1) as Hvalid_m1.
         { unfold ObjectMetaV.valid in Hvalid_m.
           decompose [and] Hvalid_m.

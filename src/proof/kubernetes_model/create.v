@@ -100,7 +100,8 @@ Proof.
   wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   rewrite /is_Some Hnn_fresh. wp_auto.
   wp_apply (wp_State__generateNewRVAndUpdate with "[$Hinv_Hstate_used_rv_addr $Hinv_Hown_used_rv]").
-  iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto.
+  iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & %Hgenerated_rv_valid & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)".
+  wp_auto.
   wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_map_insert with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   iPoseProof (KObjectV.deepown_l_merge with "[$Hdeepown_t_l $Hdeepown_m_l $Hdeepown_s_l $Hdeepown_st_l]") as "Hdeepown_l".
@@ -139,7 +140,7 @@ Proof.
             by (rewrite Htypemeta_eq; done)
       end;
       solve_update_objectmeta_valid
-        Hvalid_typemeta1 Hvalid_meta Hvalid_spec Hvalid_status
+        Hvalid_typemeta1 Hgenerated_rv_valid Hvalid_meta Hvalid_spec Hvalid_status
     ).
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".

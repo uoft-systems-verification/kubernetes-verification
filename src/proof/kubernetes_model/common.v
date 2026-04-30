@@ -84,6 +84,7 @@ Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string uni
     l @ (ptrT.id apimodel.State.id) @ "generateNewRVAndUpdate" #()
   {{{ rv, RET #rv;
       ⌜ used_rv !! rv = None ⌝ ∗
+      ⌜ valid_resource_version rv ⌝ ∗
       l ↦s[apimodel.State :: "usedRV"] used_rv_l ∗
       used_rv_l ↦$ <[rv:=()]> used_rv
   }}}.

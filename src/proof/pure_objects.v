@@ -55,6 +55,13 @@ Lemma valid_uid_slash_free ns:
   valid_uid ns → slash_free ns.
 Proof. Admitted.
 
+(* A valid resource version should be parsable to a int64, which implies it's not empty *)
+Axiom valid_resource_version: go_string → Prop.
+
+Lemma valid_resource_version_non_empty rv:
+  valid_resource_version rv → rv ≠ ""%go.
+Proof. Admitted.
+
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
 Definition valid_generation (generation: w64) : Prop :=
   (0 <= sint.Z generation)%Z.
@@ -940,6 +947,10 @@ Definition typemeta_valid kind tm : Prop :=
 
 Definition valid o : Prop :=
   typemeta_valid (kind o) (typemeta o) ∧
+  (* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
+     because kview's meta frag needs to be ObjectMetaV.valid and the frag doesn't
+     carry the resource version. *)
+  valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid (objectmeta o) ∧
   ObjectSpecV.valid (spec o) ∧
   ObjectStatusV.valid (status o).
@@ -1380,6 +1391,7 @@ Qed.
 (* Use this when the goal is to prove [KObjectV.valid] for an object obtained by
    [KObjectV.update_objectmeta]. The parameters are expected to be:
    - [Hvalid_typemeta]: typemeta validity of the pre-update object.
+   - [Hvalid_rv]: validity of the replacement metadata's resource version.
    - [Hvalid_meta]: validity of the replacement objectmeta.
    - [Hvalid_spec]: validity of the object's spec before the objectmeta update.
    - [Hvalid_status]: validity of the object's status before the objectmeta
@@ -1390,11 +1402,12 @@ Qed.
    after destructing the concrete object constructors so [simpl] exposes the
    required equalities. *)
 Ltac solve_update_objectmeta_valid
-    Hvalid_typemeta Hvalid_meta Hvalid_spec Hvalid_status :=
+    Hvalid_typemeta Hvalid_rv Hvalid_meta Hvalid_spec Hvalid_status :=
   split_and!;
     [ rewrite KObjectV.kind_update_objectmeta;
       rewrite KObjectV.typemeta_update_objectmeta;
       exact Hvalid_typemeta
+    | simpl; exact Hvalid_rv
     | exact Hvalid_meta
     | rewrite KObjectV.spec_update_objectmeta; exact Hvalid_spec
     | rewrite KObjectV.status_update_objectmeta; exact Hvalid_status
