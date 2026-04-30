@@ -134,9 +134,9 @@ Proof.
     destruct kobj; destruct kobj1; try done.
     all: (
       lazymatch goal with
-      | Hvalid_typemeta : KObjectV.typemeta_valid ?kind ?tm_old,
+      | Hvalid_typemeta : KObjectV.valid_typemeta ?kind ?tm_old,
         Htypemeta_eq : ?tm_new = ?tm_old |- _ =>
-          assert (KObjectV.typemeta_valid kind tm_new) as Hvalid_typemeta1
+          assert (KObjectV.valid_typemeta kind tm_new) as Hvalid_typemeta1
             by (rewrite Htypemeta_eq; done)
       end;
       solve_update_objectmeta_valid

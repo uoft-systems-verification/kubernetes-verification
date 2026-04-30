@@ -942,11 +942,11 @@ Axiom valid_update: go_string → go_string → t → t → Prop.
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
 (* TODO: this definition is incomplete but for now we only care about kind *)
-Definition typemeta_valid kind tm : Prop :=
+Definition valid_typemeta kind tm : Prop :=
   kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
 
 Definition valid o : Prop :=
-  typemeta_valid (kind o) (typemeta o) ∧
+  valid_typemeta (kind o) (typemeta o) ∧
   (* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
      because kview's meta frag needs to be ObjectMetaV.valid and the frag doesn't
      carry the resource version. *)
@@ -957,7 +957,7 @@ Definition valid o : Prop :=
 
 Definition valid_nameless_create knd ns o : Prop :=
   knd = kind o ∧
-  typemeta_valid (kind o) (typemeta o) ∧
+  valid_typemeta (kind o) (typemeta o) ∧
   ObjectMetaV.valid_nameless_create ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).

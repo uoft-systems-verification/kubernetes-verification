@@ -528,8 +528,8 @@ Proof.
   { eapply ObjectMetaV.equiv_except_resource_version_valid.
     - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
     - exact Hrs_meta_valid. }
-  destruct Hget_Hvalid' as [Hrs_typemeta_valid _].
-  destruct Hrs_typemeta_valid as [_ Hrs_kind_valid].
+  destruct Hget_Hvalid' as [Hrs_valid_typemeta _].
+  destruct Hrs_valid_typemeta as [_ Hrs_kind_valid].
   pose proof (valid_kind_slash_free _ Hrs_kind_valid) as Hrs_kind_slash_free.
   pose proof (ObjectMetaV.valid_namespace_of_valid _ Hrs_get_meta_valid) as Hrs_namespace_valid.
   pose proof (ObjectMetaV.valid_name_of_valid _ Hrs_get_meta_valid) as Hrs_name_valid.
