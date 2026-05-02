@@ -50,9 +50,13 @@ Proof. Admitted.
 
 Axiom valid_uid: go_string → Prop.
 
+Lemma valid_uid_non_empty uid:
+  valid_uid uid → uid ≠ ""%go.
+Proof. Admitted.
+
 (* This holds in practice because uuid does not contain slash *)
-Lemma valid_uid_slash_free ns:
-  valid_uid ns → slash_free ns.
+Lemma valid_uid_slash_free uid:
+  valid_uid uid → slash_free uid.
 Proof. Admitted.
 
 (* A valid resource version should be parsable to a int64, which implies it's not empty *)
@@ -226,15 +230,43 @@ Definition nameless_created ns m m' : Prop :=
   m'.(OwnerReferences') = m.(OwnerReferences') ∧
   m'.(Finalizers') = m.(Finalizers').
 
-Axiom created: go_string → t → t → Prop. (* namespace → input meta → output meta *)
+(* m is the existing meta and m' is the meta passed to update.
+   valid_simple_update states the precondition for a simple update to succeed.
+   It essentially states that everything except Annotations and Labels remains unchanged.
+   Note that it does not mention ResourceVersion because the meta frag doesn't carry the
+   ResourceVersion. *)
+Definition valid_simple_update m m' : Prop :=
+  m'.(Name') = m.(Name') ∧
+  m'.(GenerateName') = m.(GenerateName') ∧
+  m'.(Namespace') = m.(Namespace') ∧
+  m'.(SelfLink') = m.(SelfLink') ∧
+  m'.(UID') = m.(UID') ∧
+  m'.(Generation') = m.(Generation') ∧
+  m'.(CreationTimestamp') = m.(CreationTimestamp') ∧
+  m'.(DeletionTimestamp') = m.(DeletionTimestamp') ∧
+  m'.(DeletionGracePeriodSeconds') = m.(DeletionGracePeriodSeconds') ∧
+  m'.(OwnerReferences') = m.(OwnerReferences') ∧
+  m'.(Finalizers') = m.(Finalizers') ∧
+  m'.(ManagedFields') = m.(ManagedFields').
 
-Axiom updated: t → t → t → Prop. (* old meta → input meta → output meta (new meta) *)
-
-Axiom rv_updated: t → t → Prop. (* old meta → output meta (new meta) *)
-
-Axiom simple_update: t → t → Prop.
-
-Axiom simple_update_status: t → t → Prop.
+(* m is the meta passed to update and m' is the new meta after update.
+   updated doesn't mention Generation and ResourceVersion because
+   these two fields will increment after update, and the client doesn't
+   need to know their exact values. *)
+Definition updated m m' : Prop :=
+  m'.(Name') = m.(Name') ∧
+  m'.(GenerateName') = m.(GenerateName') ∧
+  m'.(Namespace') = m.(Namespace') ∧
+  m'.(SelfLink') = m.(SelfLink') ∧
+  m'.(UID') = m.(UID') ∧
+  m'.(CreationTimestamp') = m.(CreationTimestamp') ∧
+  m'.(DeletionTimestamp') = m.(DeletionTimestamp') ∧
+  m'.(DeletionGracePeriodSeconds') = m.(DeletionGracePeriodSeconds') ∧
+  m'.(Labels') = m.(Labels') ∧
+  m'.(Annotations') = m.(Annotations') ∧
+  m'.(OwnerReferences') = m.(OwnerReferences') ∧
+  m'.(Finalizers') = m.(Finalizers') ∧
+  m'.(ManagedFields') = m.(ManagedFields').
 
 Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_name" ∷ ⌜ c.(v1.ObjectMeta.Name') = v.(Name') ⌝ ∗
@@ -831,9 +863,10 @@ Inductive t :=
 | ReplicaSetSpec (rs : ReplicaSetSpecV.t).
 Axiom valid: t → Prop.
 Axiom valid_create: t → Prop.
+Axiom valid_update: t → t → Prop.
 Axiom defaulted: t → t → Prop.
 Axiom created: t → t → Prop. (* input spec → output spec *)
-Axiom updated: t → t → t → Prop. (* old spec → input spec → output spec *)
+Axiom updated: t → t → Prop. (* old spec → input spec → output spec *)
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
@@ -855,8 +888,9 @@ Inductive t :=
 | ReplicaSetStatus (rs : ReplicaSetStatusV.t).
 Axiom valid: t → Prop.
 Axiom valid_create: t → Prop.
+Axiom valid_update: t → t → Prop.
 Axiom created: t → t → Prop. (* input status → output status *)
-Axiom updated: t → t → t → Prop. (* old status → input status → output status *)
+Axiom updated: t → t → Prop. (* old status → input status → output status *)
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
@@ -936,8 +970,6 @@ Lemma status_update_objectmeta :
 Proof. destruct o; done. Qed.
 
 Axiom valid_create: go_string → go_string → t → Prop.
-
-Axiom valid_update: go_string → go_string → t → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
