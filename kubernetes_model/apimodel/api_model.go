@@ -503,6 +503,10 @@ func malformedUpdateResourceVersionError(err error) error {
 	}}
 }
 
+func parseResourceVersion(resourceVersion string) (uint64, error) {
+	return strconv.ParseUint(resourceVersion, 10, 64)
+}
+
 func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, error) {
 	switch obj.(type) {
 	case *core.Pod:
@@ -785,7 +789,7 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 		// resourceVersion before optimistic-lock comparison. A malformed value therefore
 		// fails before it can become a normal stale-resourceVersion conflict.
 		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L659-L666
-		if _, err := strconv.ParseUint(metadata.GetResourceVersion(), 10, 64); err != nil {
+		if _, err := parseResourceVersion(metadata.GetResourceVersion()); err != nil {
 			return nil, malformedUpdateResourceVersionError(err)
 		}
 	}
@@ -805,7 +809,7 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 	// The apiserver deletes objects during update when they are already deleting and the update
 	// removes the last finalizer.
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L565-L583
-	if genericregistry.ShouldDeleteDuringUpdate(context.Background(), "", objCopy.(runtime.Object), existingObjCopy.(runtime.Object)) {
+	if shouldDeleteDuringUpdate(objCopy, existingObjCopy) {
 		delete(s.m, key)
 		return deepCopy(objCopy), nil
 	}
@@ -817,10 +821,6 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 		return deepCopy(existingObjCopy), nil
 	}
 
-	metadata, err = meta.Accessor(objCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to access updated object metadata: %w", err)
-	}
 	metadata.SetResourceVersion(s.generateNewRVAndUpdate())
 
 	s.m[key] = objCopy
@@ -1115,6 +1115,10 @@ func storageObjectDeepEqual(obj1 interface{}, obj2 interface{}) bool {
 	}
 
 	return reflect.DeepEqual(obj1Copy, obj2Copy)
+}
+
+func shouldDeleteDuringUpdate(objCopy, existingObjCopy interface{}) bool {
+	return genericregistry.ShouldDeleteDuringUpdate(context.Background(), "", objCopy.(runtime.Object), existingObjCopy.(runtime.Object))
 }
 
 // deletionTimestampForDelete computes the initial DeletionTimestamp written by the delete path.

@@ -370,6 +370,10 @@ Global Instance wp_func_call_malformedUpdateResourceVersionError :
   WpFuncCall apimodel.malformedUpdateResourceVersionError _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_parseResourceVersion :
+  WpFuncCall apimodel.parseResourceVersion _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_updateStrategyForLegacyObject :
   WpFuncCall apimodel.updateStrategyForLegacyObject _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
@@ -424,6 +428,10 @@ Global Instance wp_func_call_checkGracefulDelete :
 
 Global Instance wp_func_call_storageObjectDeepEqual :
   WpFuncCall apimodel.storageObjectDeepEqual _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_shouldDeleteDuringUpdate :
+  WpFuncCall apimodel.shouldDeleteDuringUpdate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_deletionTimestampForDelete :
