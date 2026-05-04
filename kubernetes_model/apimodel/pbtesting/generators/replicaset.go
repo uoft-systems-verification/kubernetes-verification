@@ -70,6 +70,23 @@ func ComprehensiveReplicaSetMut(rt *rapid.T, modelRS, realRS *appsv1.ReplicaSet,
 	mutateImmutableReplicaSetUpdateFields(rt, modelRS, realRS)
 }
 
+// ComprehensiveReplicaSetStatusMut mutates a pair of ReplicaSet status update inputs in the same way.
+func ComprehensiveReplicaSetStatusMut(rt *rapid.T, modelRS, realRS *appsv1.ReplicaSet, exists, valid bool) {
+	metadataInvalid := ObjectMetaMut(rt, modelRS, realRS, exists, valid)
+
+	if valid {
+		mutateAllowedReplicaSetStatusFields(rt, modelRS, realRS)
+		return
+	}
+
+	if !exists || metadataInvalid {
+		mutateAllowedReplicaSetStatusFields(rt, modelRS, realRS)
+		return
+	}
+
+	mutateInvalidReplicaSetStatusFields(modelRS, realRS)
+}
+
 func mutateAllowedReplicaSetUpdateFields(rt *rapid.T, modelRS, realRS *appsv1.ReplicaSet, exists bool) {
 	replicas := int32(rapid.IntRange(0, 5).Draw(rt, "updateRSReplicas"))
 	if exists && modelRS.Spec.Replicas != nil && replicas == *modelRS.Spec.Replicas {
@@ -129,6 +146,30 @@ func mutateAllowedReplicaSetUpdateFields(rt *rapid.T, modelRS, realRS *appsv1.Re
 		modelRS.Spec.Template.Spec.NodeSelector = map[string]string{nodeSelectorKey: nodeSelectorValue}
 		realRS.Spec.Template.Spec.NodeSelector = map[string]string{nodeSelectorKey: nodeSelectorValue}
 	}
+}
+
+func mutateAllowedReplicaSetStatusFields(rt *rapid.T, modelRS, realRS *appsv1.ReplicaSet) {
+	replicas := int32(rapid.IntRange(0, 5).Draw(rt, "updateRSStatusReplicas"))
+	fullyLabeledReplicas := int32(rapid.IntRange(0, int(replicas)).Draw(rt, "updateRSStatusFullyLabeledReplicas"))
+	readyReplicas := int32(rapid.IntRange(0, int(replicas)).Draw(rt, "updateRSStatusReadyReplicas"))
+	availableReplicas := int32(rapid.IntRange(0, int(readyReplicas)).Draw(rt, "updateRSStatusAvailableReplicas"))
+	observedGeneration := int64(rapid.IntRange(0, 10).Draw(rt, "updateRSStatusObservedGeneration"))
+
+	modelRS.Status.Replicas = replicas
+	modelRS.Status.FullyLabeledReplicas = fullyLabeledReplicas
+	modelRS.Status.ReadyReplicas = readyReplicas
+	modelRS.Status.AvailableReplicas = availableReplicas
+	modelRS.Status.ObservedGeneration = observedGeneration
+	realRS.Status.Replicas = replicas
+	realRS.Status.FullyLabeledReplicas = fullyLabeledReplicas
+	realRS.Status.ReadyReplicas = readyReplicas
+	realRS.Status.AvailableReplicas = availableReplicas
+	realRS.Status.ObservedGeneration = observedGeneration
+}
+
+func mutateInvalidReplicaSetStatusFields(modelRS, realRS *appsv1.ReplicaSet) {
+	modelRS.Status.Replicas = -1
+	realRS.Status.Replicas = -1
 }
 
 func mutateReplicaSetTemplateContainerImages(rt *rapid.T, modelContainers, realContainers []corev1.Container) {

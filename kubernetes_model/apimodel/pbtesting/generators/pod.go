@@ -60,6 +60,23 @@ func ComprehensivePodMut(rt *rapid.T, modelPod, realPod *corev1.Pod, exists, val
 	mutateImmutablePodUpdateFields(rt, modelPod, realPod)
 }
 
+// ComprehensivePodStatusMut mutates a pair of Pod status update inputs in the same way.
+func ComprehensivePodStatusMut(rt *rapid.T, modelPod, realPod *corev1.Pod, exists, valid bool) {
+	metadataInvalid := ObjectMetaMut(rt, modelPod, realPod, exists, valid)
+
+	if valid {
+		mutateAllowedPodStatusFields(rt, modelPod, realPod)
+		return
+	}
+
+	if !exists || metadataInvalid {
+		mutateAllowedPodStatusFields(rt, modelPod, realPod)
+		return
+	}
+
+	mutateInvalidPodStatusFields(modelPod, realPod)
+}
+
 func mutateAllowedPodSpecFields(rt *rapid.T, modelPod, realPod *corev1.Pod) {
 	mutatePodContainerImages(rt, modelPod.Spec.Containers, realPod.Spec.Containers, "updatePodContainerImage")
 	mutatePodContainerImages(rt, modelPod.Spec.InitContainers, realPod.Spec.InitContainers, "updatePodInitContainerImage")
@@ -108,6 +125,34 @@ func mutateAllowedPodSpecFields(rt *rapid.T, modelPod, realPod *corev1.Pod) {
 		modelPod.Spec.TerminationGracePeriodSeconds = &one
 		realPod.Spec.TerminationGracePeriodSeconds = &one
 	}
+}
+
+func mutateAllowedPodStatusFields(rt *rapid.T, modelPod, realPod *corev1.Pod) {
+	phase := rapid.SampledFrom([]corev1.PodPhase{
+		corev1.PodPending,
+		corev1.PodRunning,
+		corev1.PodSucceeded,
+		corev1.PodFailed,
+		corev1.PodUnknown,
+	}).Draw(rt, "updatePodStatusPhase")
+	modelPod.Status.Phase = phase
+	realPod.Status.Phase = phase
+
+	observedGeneration := int64(rapid.IntRange(0, 10).Draw(rt, "updatePodStatusObservedGeneration"))
+	modelPod.Status.ObservedGeneration = observedGeneration
+	realPod.Status.ObservedGeneration = observedGeneration
+
+	reason := rapid.SampledFrom([]string{"Scheduled", "Running", "Completed"}).Draw(rt, "updatePodStatusReason")
+	message := rapid.SampledFrom([]string{"pod scheduled", "containers running", "completed"}).Draw(rt, "updatePodStatusMessage")
+	modelPod.Status.Reason = reason
+	modelPod.Status.Message = message
+	realPod.Status.Reason = reason
+	realPod.Status.Message = message
+}
+
+func mutateInvalidPodStatusFields(modelPod, realPod *corev1.Pod) {
+	modelPod.Status.ObservedGeneration = -1
+	realPod.Status.ObservedGeneration = -1
 }
 
 func mutatePodContainerImages(rt *rapid.T, modelContainers, realContainers []corev1.Container, drawPrefix string) {

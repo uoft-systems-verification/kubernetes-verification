@@ -48,9 +48,10 @@ type opStats struct {
 }
 
 type pbtStats struct {
-	create opStats
-	update opStats
-	delete opStats
+	create       opStats
+	update       opStats
+	updateStatus opStats
+	delete       opStats
 }
 
 type createMode int
@@ -90,6 +91,15 @@ func (s *pbtStats) recordUpdate(err error) {
 	}
 }
 
+func (s *pbtStats) recordUpdateStatus(err error) {
+	s.updateStatus.attempts++
+	if err == nil {
+		s.updateStatus.successes++
+	} else {
+		s.updateStatus.rejections++
+	}
+}
+
 func (s *pbtStats) recordDelete(err error) {
 	s.delete.attempts++
 	if err == nil {
@@ -109,9 +119,10 @@ func (s *pbtStats) recordDelete(err error) {
 func TestPBT(t *testing.T) {
 	stats := &pbtStats{}
 	t.Cleanup(func() {
-		t.Logf("PBT stats: create attempts=%d successes=%d rejections=%d | update attempts=%d successes=%d rejections=%d | delete attempts=%d successes=%d rejections=%d",
+		t.Logf("PBT stats: create attempts=%d successes=%d rejections=%d | update attempts=%d successes=%d rejections=%d | updateStatus attempts=%d successes=%d rejections=%d | delete attempts=%d successes=%d rejections=%d",
 			stats.create.attempts, stats.create.successes, stats.create.rejections,
 			stats.update.attempts, stats.update.successes, stats.update.rejections,
+			stats.updateStatus.attempts, stats.updateStatus.successes, stats.updateStatus.rejections,
 			stats.delete.attempts, stats.delete.successes, stats.delete.rejections,
 		)
 	})
@@ -134,10 +145,12 @@ func TestPBT(t *testing.T) {
 		for range 10000 {
 			// Weighted operation selection: favor Create early to build up state.
 			createWeight := 0.4
-			updateWeight := 0.3
+			updateWeight := 0.25
+			updateStatusWeight := 0.2
 			if len(existingObjects) < 5 {
 				createWeight = 0.7
-				updateWeight = 0.15
+				updateWeight = 0.1
+				updateStatusWeight = 0.1
 			}
 			opRoll := rapid.Float64Range(0, 1).Draw(rt, "operationRoll")
 
@@ -203,7 +216,7 @@ func TestPBT(t *testing.T) {
 				case "Pod":
 					testUpdate(
 						rt, ctx, state, server, namespace, existingObjects, stats,
-						"Pod",
+						"Update", stats.recordUpdate, "Pod",
 						func(ns, name string) (*corev1.Pod, error) { return state.PodGet(ns, name) },
 						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
 						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodUpdate(ns, obj) },
@@ -221,7 +234,7 @@ func TestPBT(t *testing.T) {
 				case "ReplicaSet":
 					testUpdate(
 						rt, ctx, state, server, namespace, existingObjects, stats,
-						"ReplicaSet",
+						"Update", stats.recordUpdate, "ReplicaSet",
 						func(ns, name string) (*appsv1.ReplicaSet, error) { return state.ReplicaSetGet(ns, name) },
 						func(ctx context.Context, name string) (*appsv1.ReplicaSet, error) {
 							return server.GetReplicaSet(ctx, name)
@@ -240,6 +253,54 @@ func TestPBT(t *testing.T) {
 							return rs
 						},
 						generators.ComprehensiveReplicaSetMut,
+					)
+				}
+			case opRoll < createWeight+updateWeight+updateStatusWeight:
+				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+
+				switch kind {
+				case "Pod":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"UpdateStatus", stats.recordUpdateStatus, "Pod",
+						func(ns, name string) (*corev1.Pod, error) { return state.PodGet(ns, name) },
+						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
+						func(ns string, obj *corev1.Pod) (*corev1.Pod, error) { return state.PodUpdateStatus(ns, obj) },
+						func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) {
+							return server.UpdatePodStatus(ctx, obj)
+						},
+						func(p *corev1.Pod) *corev1.Pod { return p.DeepCopy() },
+						func(name, namespace string) *corev1.Pod {
+							pod := generators.MinimalPodGen().Example()
+							pod.Name = name
+							pod.Namespace = namespace
+							return pod
+						},
+						generators.ComprehensivePodStatusMut,
+					)
+
+				case "ReplicaSet":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"UpdateStatus", stats.recordUpdateStatus, "ReplicaSet",
+						func(ns, name string) (*appsv1.ReplicaSet, error) { return state.ReplicaSetGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.ReplicaSet, error) {
+							return server.GetReplicaSet(ctx, name)
+						},
+						func(ns string, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+							return state.ReplicaSetUpdateStatus(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+							return server.UpdateReplicaSetStatus(ctx, obj)
+						},
+						func(rs *appsv1.ReplicaSet) *appsv1.ReplicaSet { return rs.DeepCopy() },
+						func(name, namespace string) *appsv1.ReplicaSet {
+							rs := generators.MinimalReplicaSetGen().Example()
+							rs.Name = name
+							rs.Namespace = namespace
+							return rs
+						},
+						generators.ComprehensiveReplicaSetStatusMut,
 					)
 				}
 			default:
@@ -398,6 +459,8 @@ func testUpdate[T metav1.Object](
 	namespace string,
 	existingObjects map[KKey]bool,
 	stats *pbtStats,
+	opName string,
+	recordResult func(error),
 	kind string,
 	modelGet func(namespace, name string) (T, error),
 	realGet func(ctx context.Context, name string) (T, error),
@@ -432,7 +495,7 @@ func testUpdate[T metav1.Object](
 		} else {
 			idx := rapid.IntRange(0, len(keys)-1).Draw(rt, "updateTargetIdx")
 			targetKey = keys[idx]
-			rt.Logf("Updating existing %s in valid mode: %s (from %d candidates)", kind, targetKey.Name, len(keys))
+			rt.Logf("%s existing %s in valid mode: %s (from %d candidates)", opName, kind, targetKey.Name, len(keys))
 		}
 	}
 
@@ -442,7 +505,7 @@ func testUpdate[T metav1.Object](
 		if len(keys) > 0 && rapid.Bool().Draw(rt, "invalidUpdateTargetsExisting") {
 			idx := rapid.IntRange(0, len(keys)-1).Draw(rt, "updateTargetIdx")
 			targetKey = keys[idx]
-			rt.Logf("Updating existing %s in invalid mode: %s (from %d candidates)", kind, targetKey.Name, len(keys))
+			rt.Logf("%s existing %s in invalid mode: %s (from %d candidates)", opName, kind, targetKey.Name, len(keys))
 		} else {
 			targetKey = KKey{
 				Kind:      kind,
@@ -459,14 +522,14 @@ func testUpdate[T metav1.Object](
 
 	match, diffs := comparators.CompareErrors(preUpdateModelGetErr, preUpdateRealGetErr, false)
 	if !match {
-		rt.Fatalf("%s Get error before Update mismatch for %s:\n%v", kind, targetKey.Name, diffs)
+		rt.Fatalf("%s Get error before %s mismatch for %s:\n%v", kind, opName, targetKey.Name, diffs)
 	}
 
 	exists := preUpdateModelGetErr == nil && preUpdateRealGetErr == nil
 	if exists {
 		match, diffs = comparators.CompareObjects(preUpdateModelGet, preUpdateRealGet)
 		if !match {
-			rt.Fatalf("%s Get result before Update mismatch for %s:\n%v", kind, targetKey.Name, diffs)
+			rt.Fatalf("%s Get result before %s mismatch for %s:\n%v", kind, opName, targetKey.Name, diffs)
 		}
 	}
 
@@ -493,26 +556,31 @@ func testUpdate[T metav1.Object](
 		modelInputJSON, _ := json.MarshalIndent(modelUpdateObj, "    ", "  ")
 		realInputJSON, _ := json.MarshalIndent(realUpdateObj, "    ", "  ")
 
-		rt.Fatalf("%s Update mismatch for %s:\n%v\n"+
-			"Pre-Update Get:\n"+
+		rt.Fatalf("%s %s mismatch for %s:\n%v\n"+
+			"Pre-%s Get:\n"+
 			"  Model Get error: %v\n"+
 			"  Real Get error: %v\n"+
-			"Update objects:\n"+
-			"  Model Update input:\n    %s\n"+
-			"  Real Update input:\n    %s\n"+
-			"Update errors:\n"+
-			"  Model Update error: %v\n"+
-			"  Real Update error: %v",
-			kind, targetKey.Name, diffs,
+			"%s objects:\n"+
+			"  Model %s input:\n    %s\n"+
+			"  Real %s input:\n    %s\n"+
+			"%s errors:\n"+
+			"  Model %s error: %v\n"+
+			"  Real %s error: %v",
+			kind, opName, targetKey.Name, diffs,
+			opName,
 			preUpdateModelGetErr, preUpdateRealGetErr,
-			string(modelInputJSON), string(realInputJSON),
-			modelErr, realErr)
+			opName,
+			opName, string(modelInputJSON),
+			opName, string(realInputJSON),
+			opName,
+			opName, modelErr,
+			opName, realErr)
 	}
 
 	if modelErr == nil {
 		match, diffs = comparators.CompareObjects(modelUpdated, realUpdated)
 		if !match {
-			rt.Fatalf("%s Update result mismatch for %s:\n%v", kind, targetKey.Name, diffs)
+			rt.Fatalf("%s %s result mismatch for %s:\n%v", kind, opName, targetKey.Name, diffs)
 		}
 	}
 
@@ -523,20 +591,20 @@ func testUpdate[T metav1.Object](
 
 	match, diffs = comparators.CompareErrors(modelGetErr, realGetErr, false)
 	if !match {
-		rt.Fatalf("%s Get error after Update mismatch for %s:\n%v", kind, targetKey.Name, diffs)
+		rt.Fatalf("%s Get error after %s mismatch for %s:\n%v", kind, opName, targetKey.Name, diffs)
 	}
 
 	if modelGetErr == nil {
 		match, diffs = comparators.CompareObjects(modelGet2, realGet2)
 		if !match {
-			rt.Fatalf("%s Get result after Update mismatch for %s:\n%v", kind, targetKey.Name, diffs)
+			rt.Fatalf("%s Get result after %s mismatch for %s:\n%v", kind, opName, targetKey.Name, diffs)
 		}
 		existingObjects[targetKey] = true
 	} else if apierrors.IsNotFound(modelGetErr) {
 		delete(existingObjects, targetKey)
 	}
 
-	stats.recordUpdate(modelErr)
+	recordResult(modelErr)
 }
 
 func testDelete[T metav1.Object](

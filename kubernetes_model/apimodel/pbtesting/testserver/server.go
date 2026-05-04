@@ -165,6 +165,13 @@ func (s *TestServer) UpdatePod(ctx context.Context, pod *corev1.Pod) (*corev1.Po
 	return s.client.CoreV1().Pods(s.namespace).Update(ctx, pod, metav1.UpdateOptions{})
 }
 
+// UpdatePodStatus updates a Pod status in the test server.
+func (s *TestServer) UpdatePodStatus(ctx context.Context, pod *corev1.Pod) (*corev1.Pod, error) {
+	pod = pod.DeepCopy()
+	pod.Namespace = s.namespace
+	return s.client.CoreV1().Pods(s.namespace).UpdateStatus(ctx, pod, metav1.UpdateOptions{})
+}
+
 // CreateReplicaSet creates a ReplicaSet in the test server.
 func (s *TestServer) CreateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 	rs = rs.DeepCopy()
@@ -182,6 +189,13 @@ func (s *TestServer) UpdateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet
 	rs = rs.DeepCopy()
 	rs.Namespace = s.namespace
 	return s.client.AppsV1().ReplicaSets(s.namespace).Update(ctx, rs, metav1.UpdateOptions{})
+}
+
+// UpdateReplicaSetStatus updates a ReplicaSet status in the test server.
+func (s *TestServer) UpdateReplicaSetStatus(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	rs = rs.DeepCopy()
+	rs.Namespace = s.namespace
+	return s.client.AppsV1().ReplicaSets(s.namespace).UpdateStatus(ctx, rs, metav1.UpdateOptions{})
 }
 
 // DeletePod deletes a Pod from the test server with optional DeleteOptions.

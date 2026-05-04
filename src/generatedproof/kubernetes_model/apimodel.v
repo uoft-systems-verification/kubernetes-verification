@@ -378,6 +378,10 @@ Global Instance wp_func_call_updateStrategyForLegacyObject :
   WpFuncCall apimodel.updateStrategyForLegacyObject _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_statusUpdateStrategyForLegacyObject :
+  WpFuncCall apimodel.statusUpdateStrategyForLegacyObject _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_applyStrategyValidate :
   WpFuncCall apimodel.applyStrategyValidate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
@@ -388,6 +392,10 @@ Global Instance wp_func_call_applyStrategyCanonicalize :
 
 Global Instance wp_func_call_applyValidationAndDefaultingOnUpdate :
   WpFuncCall apimodel.applyValidationAndDefaultingOnUpdate _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_applyValidationAndDefaultingOnStatusUpdate :
+  WpFuncCall apimodel.applyValidationAndDefaultingOnStatusUpdate _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
 Global Instance wp_func_call_applyValidationAndDefaulting :
@@ -474,6 +482,10 @@ Global Instance wp_method_call_State'ptr_PodUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "PodUpdate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_PodUpdateStatus :
+  WpMethodCall (ptrT.id apimodel.State.id) "PodUpdateStatus" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 Global Instance wp_method_call_State'ptr_ReplicaSetCreate :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetCreate" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
@@ -492,6 +504,10 @@ Global Instance wp_method_call_State'ptr_ReplicaSetMutGet :
 
 Global Instance wp_method_call_State'ptr_ReplicaSetUpdate :
   WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetUpdate" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_ReplicaSetUpdateStatus :
+  WpMethodCall (ptrT.id apimodel.State.id) "ReplicaSetUpdateStatus" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_create :
@@ -532,6 +548,10 @@ Global Instance wp_method_call_State'ptr_objListLocked :
 
 Global Instance wp_method_call_State'ptr_update :
   WpMethodCall (ptrT.id apimodel.State.id) "update" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_updateStatus :
+  WpMethodCall (ptrT.id apimodel.State.id) "updateStatus" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 End names.
