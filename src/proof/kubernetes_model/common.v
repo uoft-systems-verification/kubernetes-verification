@@ -154,6 +154,67 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
 Proof.
 Admitted.
 
+Lemma wp_parseResourceVersion rv :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ valid_resource_version rv ⌝
+  }}}
+    @! apimodel.parseResourceVersion #rv
+  {{{ RET #true;
+    True
+  }}}.
+Proof. Admitted.
+
+Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid new_obj ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
+      ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
+      ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝ ∗
+      ⌜ ObjectMetaV.valid_simple_update
+          (KObjectV.objectmeta old_obj)
+          (KObjectV.objectmeta new_obj) ⌝ ∗
+      ⌜ ObjectSpecV.valid_update
+          (KObjectV.spec old_obj)
+          (KObjectV.spec new_obj) ⌝
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnUpdate #new_i #old_i #namespace
+  {{{ updated_obj, RET #interface.nil;
+      KObjectV.deepown_l new_l updated_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+      ⌜ KObjectV.valid updated_obj ⌝ ∗
+      ⌜ KObjectV.same_kind new_obj updated_obj ⌝ ∗
+      ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
+      ⌜ ObjectMetaV.updated
+          (KObjectV.objectmeta new_obj)
+          (KObjectV.objectmeta updated_obj) ⌝ ∗
+      ⌜ ObjectSpecV.updated
+          (KObjectV.spec new_obj)
+          (KObjectV.spec updated_obj) ⌝ ∗
+      ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝
+  }}}.
+Proof. Admitted.
+
+(* This is not a complete spec for shouldDeleteDuringUpdate, but it is sufficient
+   because we only need to prove that it returns false when DeletionTimestamp is nil. *)
+Lemma wp_shouldDeleteDuringUpdate new_i new_l new_obj old_i old_l old_obj dq :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') = None ⌝
+  }}}
+    @! apimodel.shouldDeleteDuringUpdate #new_i #old_i
+  {{{ RET #false;
+    True
+  }}}.
+Proof. Admitted.
+
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with
   | None => True
