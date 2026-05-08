@@ -10,6 +10,8 @@ Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ}.
 Axiom t : Type.
+Axiom eq_dec : EqDecision t.
+Global Existing Instance eq_dec.
 Axiom deepown : v1.Time.t → t → iProp Σ.
 End def.
 End TimeV.
@@ -88,6 +90,9 @@ Record t := mk {
   BlockOwnerDeletion' : option bool;
 }.
 
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
+
 Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_apiversion" ∷ ⌜ c.(v1.OwnerReference.APIVersion') = v.(APIVersion') ⌝ ∗
   "%Hdeepown_kind" ∷ ⌜ c.(v1.OwnerReference.Kind') = v.(Kind') ⌝ ∗
@@ -132,6 +137,8 @@ Section def.
 Context `{hG: !heapGS Σ}.
 
 Axiom t : Type.
+Axiom eq_dec : EqDecision t.
+Global Existing Instance eq_dec.
 
 Axiom deepown : v1.ManagedFieldsEntry.t → t → dfrac → iProp Σ.
 
@@ -248,6 +255,13 @@ Definition valid_simple_update m m' : Prop :=
   m'.(OwnerReferences') = m.(OwnerReferences') ∧
   m'.(Finalizers') = m.(Finalizers') ∧
   m'.(ManagedFields') = m.(ManagedFields').
+
+Global Instance valid_simple_update_dec m m' :
+  Decision (valid_simple_update m m').
+Proof.
+  unfold valid_simple_update.
+  solve_decision.
+Qed.
 
 (* m is the meta passed to update and m' is the new meta after update.
    updated doesn't mention Generation and ResourceVersion because
@@ -864,6 +878,8 @@ Inductive t :=
 Axiom valid: t → Prop.
 Axiom valid_create: t → Prop.
 Axiom valid_update: t → t → Prop.
+Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
+Global Existing Instance valid_update_dec.
 Axiom defaulted: t → t → Prop.
 Axiom created: t → t → Prop. (* input spec → output spec *)
 Axiom updated: t → t → Prop. (* old spec → input spec → output spec *)
@@ -889,6 +905,8 @@ Inductive t :=
 Axiom valid: t → Prop.
 Axiom valid_create: t → Prop.
 Axiom valid_update: t → t → Prop.
+Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
+Global Existing Instance valid_update_dec.
 Axiom created: t → t → Prop. (* input status → output status *)
 Axiom updated: t → t → Prop. (* old status → input status → output status *)
 

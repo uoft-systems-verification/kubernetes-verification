@@ -418,6 +418,14 @@ Global Instance wp_func_call_newPreconditionUIDConflictError :
   WpFuncCall apimodel.newPreconditionUIDConflictError _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_newUpdateUIDConflictError :
+  WpFuncCall apimodel.newUpdateUIDConflictError _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_newUpdateResourceVersionConflictError :
+  WpFuncCall apimodel.newUpdateResourceVersionConflictError _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_func_call_newPreconditionRVConflictError :
   WpFuncCall apimodel.newPreconditionRVConflictError _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).

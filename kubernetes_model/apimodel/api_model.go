@@ -792,7 +792,7 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
 	}
 
-	if err := rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+	if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
 		return nil, err
 	}
 
@@ -819,49 +819,44 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 	}
 
 	// A non-empty UID on the incoming object acts like a storage precondition in the real update path.
-	if uid := metadata.GetUID(); len(uid) > 0 && uid != existingMetadata.GetUID() {
-		return nil, errors.NewConflict(
-			schema.GroupResource{Resource: kind},
-			name,
-			fmt.Errorf("UID mismatch: expected %q, got %q", existingMetadata.GetUID(), uid),
-		)
+	if uid := metadata.GetUID(); uid != "" && uid != existingMetadata.GetUID() {
+		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
 	}
 
-	allowUnconditional, err := allowUnconditionalUpdate(kind)
-	if err != nil {
-		return nil, err
-	}
-
+	rv := metadata.GetResourceVersion()
+	existingRv := existingMetadata.GetResourceVersion()
 	// Store.Update copies the live resourceVersion onto the object when the strategy allows
 	// unconditional update and the client omitted metadata.resourceVersion.
-	if metadata.GetResourceVersion() == "" {
+	if rv == "" {
+		allowUnconditional, err := allowUnconditionalUpdate(kind)
+		if err != nil {
+			return nil, err
+		}
+
 		if !allowUnconditional {
 			return nil, errors.NewInvalid(
 				schema.GroupKind{Kind: kind},
 				name,
-				field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), metadata.GetResourceVersion(), "must be specified for an update")},
+				field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), rv, "must be specified for an update")},
 			)
 		}
-		metadata.SetResourceVersion(existingMetadata.GetResourceVersion())
+		metadata.SetResourceVersion(existingRv)
 	} else {
 		// The generic store asks the storage versioner to parse the non-empty incoming
 		// resourceVersion before optimistic-lock comparison. A malformed value therefore
 		// fails before it can become a normal stale-resourceVersion conflict.
 		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L659-L666
-		if _, err := parseResourceVersion(metadata.GetResourceVersion()); err != nil {
+		if _, err = parseResourceVersion(rv); err != nil {
 			return nil, malformedUpdateResourceVersionError(err)
 		}
 	}
 
-	if metadata.GetResourceVersion() != existingMetadata.GetResourceVersion() {
-		return nil, errors.NewConflict(
-			schema.GroupResource{Resource: kind},
-			name,
-			fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingMetadata.GetResourceVersion(), metadata.GetResourceVersion()),
-		)
+	rv = metadata.GetResourceVersion()
+	if rv != existingRv {
+		return nil, newUpdateResourceVersionConflictError(kind, name, existingRv, rv)
 	}
 
-	if err := applyValidationAndDefaultingOnUpdate(objCopy, existingObjCopy, namespace); err != nil {
+	if err = applyValidationAndDefaultingOnUpdate(objCopy, existingObjCopy, namespace); err != nil {
 		return nil, err
 	}
 
@@ -870,14 +865,14 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L565-L583
 	if shouldDeleteDuringUpdate(objCopy, existingObjCopy) {
 		delete(s.m, key)
-		return deepCopy(objCopy), nil
+		return objCopy, nil
 	}
 
 	// The storage layer avoids writing no-op updates, so resourceVersion is preserved when the
 	// final storage object is unchanged.
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go#L539-L562
 	if storageObjectDeepEqual(objCopy, existingObjCopy) {
-		return deepCopy(existingObjCopy), nil
+		return existingObjCopy, nil
 	}
 
 	metadata.SetResourceVersion(s.generateNewRVAndUpdate())
@@ -897,7 +892,7 @@ func (s *State) updateStatus(kind, namespace string, obj interface{}) (interface
 		return nil, fmt.Errorf("failed to access object metadata: %w", err)
 	}
 
-	if err := rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+	if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
 		return nil, err
 	}
 
@@ -923,53 +918,48 @@ func (s *State) updateStatus(kind, namespace string, obj interface{}) (interface
 		return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
 	}
 
-	if uid := metadata.GetUID(); len(uid) > 0 && uid != existingMetadata.GetUID() {
-		return nil, errors.NewConflict(
-			schema.GroupResource{Resource: kind},
-			name,
-			fmt.Errorf("UID mismatch: expected %q, got %q", existingMetadata.GetUID(), uid),
-		)
+	if uid := metadata.GetUID(); uid != "" && uid != existingMetadata.GetUID() {
+		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
 	}
 
-	allowUnconditional, err := allowUnconditionalUpdate(kind)
-	if err != nil {
-		return nil, err
-	}
+	rv := metadata.GetResourceVersion()
+	existingRv := existingMetadata.GetResourceVersion()
+	if rv == "" {
+		allowUnconditional, err := allowUnconditionalUpdate(kind)
+		if err != nil {
+			return nil, err
+		}
 
-	if metadata.GetResourceVersion() == "" {
 		if !allowUnconditional {
 			return nil, errors.NewInvalid(
 				schema.GroupKind{Kind: kind},
 				name,
-				field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), metadata.GetResourceVersion(), "must be specified for an update")},
+				field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), rv, "must be specified for an update")},
 			)
 		}
-		metadata.SetResourceVersion(existingMetadata.GetResourceVersion())
+		metadata.SetResourceVersion(existingRv)
 	} else {
-		if _, err := parseResourceVersion(metadata.GetResourceVersion()); err != nil {
+		if _, err = parseResourceVersion(rv); err != nil {
 			return nil, malformedUpdateResourceVersionError(err)
 		}
 	}
 
-	if metadata.GetResourceVersion() != existingMetadata.GetResourceVersion() {
-		return nil, errors.NewConflict(
-			schema.GroupResource{Resource: kind},
-			name,
-			fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingMetadata.GetResourceVersion(), metadata.GetResourceVersion()),
-		)
+	rv = metadata.GetResourceVersion()
+	if rv != existingRv {
+		return nil, newUpdateResourceVersionConflictError(kind, name, existingRv, rv)
 	}
 
-	if err := applyValidationAndDefaultingOnStatusUpdate(objCopy, existingObjCopy, namespace); err != nil {
+	if err = applyValidationAndDefaultingOnStatusUpdate(objCopy, existingObjCopy, namespace); err != nil {
 		return nil, err
 	}
 
 	if shouldDeleteDuringUpdate(objCopy, existingObjCopy) {
 		delete(s.m, key)
-		return deepCopy(objCopy), nil
+		return objCopy, nil
 	}
 
 	if storageObjectDeepEqual(objCopy, existingObjCopy) {
-		return deepCopy(existingObjCopy), nil
+		return existingObjCopy, nil
 	}
 
 	metadata.SetResourceVersion(s.generateNewRVAndUpdate())
@@ -1099,6 +1089,22 @@ func newPreconditionUIDConflictError(kind string, name string, preconditionUID s
 		name,
 		fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
 			preconditionUID, uid))
+}
+
+func newUpdateUIDConflictError(kind string, name string, existingUID types.UID, uid types.UID) error {
+	return errors.NewConflict(
+		schema.GroupResource{Resource: kind},
+		name,
+		fmt.Errorf("UID mismatch: expected %q, got %q", existingUID, uid),
+	)
+}
+
+func newUpdateResourceVersionConflictError(kind string, name string, existingResourceVersion string, resourceVersion string) error {
+	return errors.NewConflict(
+		schema.GroupResource{Resource: kind},
+		name,
+		fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingResourceVersion, resourceVersion),
+	)
 }
 
 func newPreconditionRVConflictError(kind string, name string, preconditionRV string, rv string) error {

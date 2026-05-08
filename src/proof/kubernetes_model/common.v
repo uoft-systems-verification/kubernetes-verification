@@ -24,6 +24,10 @@ Definition storage_object_normalize (obj : KObjectV.t) : KObjectV.t :=
        <| ObjectMetaV.ResourceVersion' := ""%go |>
        <| ObjectMetaV.SelfLink' := ""%go |>).
 
+Lemma objectmeta_update_objectmeta obj m :
+  KObjectV.objectmeta (KObjectV.update_objectmeta obj m) = m.
+Proof. destruct obj; done. Qed.
+
 Lemma storage_object_normalize_update_objectmeta_deletionTimestamp obj m :
   storage_object_normalize (KObjectV.update_objectmeta obj m) =
   storage_object_normalize obj →
@@ -35,6 +39,52 @@ Proof.
     intros H. inversion H. done.
   - destruct rs as [rt rm rspec rstatus]. destruct rm. destruct m. simpl.
     intros H. inversion H. done.
+Qed.
+
+Lemma objectmeta_updated_of_valid_simple_update_without_rv_selflink_eq m_old m_input m_updated :
+  ObjectMetaV.valid_simple_update m_old m_input →
+  ObjectMetaV.updated m_input m_updated →
+  (m_updated <| ObjectMetaV.ResourceVersion' := ""%go |> <| ObjectMetaV.SelfLink' := ""%go |>) =
+  (m_old <| ObjectMetaV.ResourceVersion' := ""%go |> <| ObjectMetaV.SelfLink' := ""%go |>) →
+  ObjectMetaV.updated m_input m_old.
+Proof.
+  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated.
+  destruct m_old, m_input, m_updated; simpl.
+  intros Hvalid Hupdated Hnormalized. inversion Hnormalized; subst.
+  simpl in *. intuition congruence.
+Qed.
+
+Lemma storage_object_normalize_objectmeta_updated obj_old obj_input obj_updated :
+  storage_object_normalize obj_updated = storage_object_normalize obj_old →
+  ObjectMetaV.valid_simple_update
+    (KObjectV.objectmeta obj_old)
+    (KObjectV.objectmeta obj_input) →
+  ObjectMetaV.updated
+    (KObjectV.objectmeta obj_input)
+    (KObjectV.objectmeta obj_updated) →
+  ObjectMetaV.updated
+    (KObjectV.objectmeta obj_input)
+    (KObjectV.objectmeta obj_old).
+Proof.
+  intros Hstorage Hvalid Hupdated.
+  eapply objectmeta_updated_of_valid_simple_update_without_rv_selflink_eq; [done|done|].
+  assert (KObjectV.objectmeta (storage_object_normalize obj_updated) =
+          KObjectV.objectmeta (storage_object_normalize obj_old)) as Hnormalized.
+  { rewrite Hstorage. done. }
+  rewrite /storage_object_normalize !objectmeta_update_objectmeta in Hnormalized.
+  exact Hnormalized.
+Qed.
+
+Lemma storage_object_normalize_spec_eq obj1 obj2 :
+  storage_object_normalize obj1 = storage_object_normalize obj2 →
+  KObjectV.spec obj1 = KObjectV.spec obj2.
+Proof.
+  intros Hstorage.
+  assert (KObjectV.spec (storage_object_normalize obj1) =
+          KObjectV.spec (storage_object_normalize obj2)) as Hspec_eq.
+  { rewrite Hstorage. done. }
+  rewrite /storage_object_normalize !KObjectV.spec_update_objectmeta in Hspec_eq.
+  exact Hspec_eq.
 Qed.
 
 Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
@@ -159,8 +209,24 @@ Lemma wp_parseResourceVersion rv :
       ⌜ valid_resource_version rv ⌝
   }}}
     @! apimodel.parseResourceVersion #rv
-  {{{ RET #true;
+  {{{ (ret : w64), RET (#ret, #interface.nil);
     True
+  }}}.
+Proof. Admitted.
+
+Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
+  {{{ err, RET #err;
+      ⌜ err ≠ interface.nil ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_allowUnconditionalUpdate (kind : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.allowUnconditionalUpdate #kind
+  {{{ (ret : bool), RET #ret;
+      True
   }}}.
 Proof. Admitted.
 
@@ -187,7 +253,7 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
       KObjectV.deepown_l old_l old_obj dq ∗
       ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
       ⌜ KObjectV.valid updated_obj ⌝ ∗
-      ⌜ KObjectV.same_kind new_obj updated_obj ⌝ ∗
+      ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
       ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
       ⌜ ObjectMetaV.updated
           (KObjectV.objectmeta new_obj)
@@ -211,7 +277,8 @@ Lemma wp_shouldDeleteDuringUpdate new_i new_l new_obj old_i old_l old_obj dq :
   }}}
     @! apimodel.shouldDeleteDuringUpdate #new_i #old_i
   {{{ RET #false;
-    True
+    KObjectV.deepown_l new_l new_obj dq ∗
+    KObjectV.deepown_l old_l old_obj dq
   }}}.
 Proof. Admitted.
 
