@@ -494,8 +494,7 @@ Proof.
     assert (sint.nat i = length pods) as -> by word.
     rewrite take_ge. 1: done.
     iPoseProof (kview.own_meta_list_exists PodV.key PodV.ObjectMeta' spec_pods dq
-      with "Hinv_Hown_abs Hown_meta_frags")
-      as "(Hinv_Hown_abs & Hown_meta_frags & %Hlook_up & _)".
+      with "Hinv_Hown_abs Hown_meta_frags") as "(%Hlook_up & %Huid_in)".
     iPoseProof (cview.own_auth_frag_valid with "Hinv_Hown_children Hown_children_frag")
       as "(%Hchildren_keys_eq & %Hin_used_reference)".
     destruct Hslash_free as (Hkind_slash_free & Hns_slash_free & Hname_slash_free & Huid_slash_free).

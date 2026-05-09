@@ -1945,11 +1945,9 @@ Lemma own_meta_map_exists {γ state used_uid K A} `{Countable K}
   (key_of : K → A → KKey.t) (meta_of : K → A → ObjectMetaV.t) (m : gmap K A) dq :
   own_auth γ state used_uid -∗
   ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) -∗
-    own_auth γ state used_uid ∗
-    ([∗ map] k↦x ∈ m, own_meta_frag γ (key_of k x) (meta_of k x).(ObjectMetaV.UID') dq (meta_of k x)) ∗
-	    ⌜ map_Forall (λ k x, ∃ obj, state !! key_of k x = Some obj ∧
-	      (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of k x).(ObjectMetaV.UID') ∧
-	      ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of k x)) m ⌝ ∗
+	  ⌜ map_Forall (λ k x, ∃ obj, state !! key_of k x = Some obj ∧
+	    (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of k x).(ObjectMetaV.UID') ∧
+	    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of k x)) m ⌝ ∗
     ⌜ map_Forall (λ k x, (meta_of k x).(ObjectMetaV.UID') ∈ used_uid) m ⌝.
 Proof.
   iIntros "Hauth Hm".
@@ -1961,7 +1959,7 @@ Proof.
   - rewrite big_sepM_insert //.
     iDestruct "Hm" as "[Hx Hm]".
     iPoseProof (own_meta_exists with "Hauth Hx") as "%Hhead".
-    iDestruct ("IH" with "Hauth Hm") as "(Hauth & Hm & %Hmeta_forall & %Huid_forall)".
+    iDestruct ("IH" with "Hauth Hm") as "(%Hmeta_forall & %Huid_forall)".
     iFrame.
     iPureIntro.
 	    destruct Hhead as (obj & Hlookup & Huid_obj & Hmeta_eq & Huid_in).
@@ -1998,11 +1996,9 @@ Qed.
 Lemma own_meta_list_exists {γ state used_uid A} (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t) xs dq :
   own_auth γ state used_uid -∗
   ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) -∗
-    own_auth γ state used_uid ∗
-    ([∗ list] x ∈ xs, own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq (meta_of x)) ∗
-	    ⌜ Forall (λ x, ∃ obj, state !! key_of x = Some obj ∧
-	      (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of x).(ObjectMetaV.UID') ∧
-	      ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of x)) xs ⌝ ∗
+	  ⌜ Forall (λ x, ∃ obj, state !! key_of x = Some obj ∧
+	    (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (meta_of x).(ObjectMetaV.UID') ∧
+	    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) (meta_of x)) xs ⌝ ∗
     ⌜ Forall (λ x, (meta_of x).(ObjectMetaV.UID') ∈ used_uid) xs ⌝.
 Proof.
   iIntros "Hauth Hxs".
@@ -2014,7 +2010,7 @@ Proof.
   - rewrite !big_sepL_cons.
     iDestruct "Hxs" as "[Hmeta Hxs]".
     iPoseProof (own_meta_exists with "Hauth Hmeta") as "%Hhead".
-    iDestruct ("IH" with "Hauth Hxs") as "(Hauth & Hxs & %Hmeta_forall & %Huid_forall)".
+    iDestruct ("IH" with "Hauth Hxs") as "(%Hmeta_forall & %Huid_forall)".
     iFrame.
     iPureIntro.
 	    destruct Hhead as (obj & Hlookup & Huid_obj & Hmeta_eq & Huid_in).
