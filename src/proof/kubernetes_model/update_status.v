@@ -1,156 +1,24 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export inv common.
+From New.proof.kubernetes_model Require Export inv common update.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
 Context `{!kubernetesModelG Σ}.
 
-Lemma update_own_meta_frag_equiv_except_resource_version {γ k uid dq meta1 meta2} :
-  ObjectMetaV.equiv_except_resource_version meta1 meta2 →
-  own_meta_frag γ k uid dq meta2 -∗
-  own_meta_frag γ k uid dq meta1.
+Lemma storage_object_normalize_status_eq obj1 obj2 :
+  storage_object_normalize obj1 = storage_object_normalize obj2 →
+  KObjectV.status obj1 = KObjectV.status obj2.
 Proof.
-  iIntros (Hmeta_eq) "Hown_meta".
-  assert (kview.mk_meta_frag k uid dq meta1 = kview.mk_meta_frag k uid dq meta2) as Hfrag_eq.
-  { rewrite /kview.mk_meta_frag /ObjectMetaV.equiv_except_resource_version in Hmeta_eq |- *.
-    rewrite Hmeta_eq. done. }
-  rewrite /own_meta_frag /kview.own_meta_frag Hfrag_eq.
-  iExact "Hown_meta".
+  intros Hstorage.
+  assert (KObjectV.status (storage_object_normalize obj1) =
+          KObjectV.status (storage_object_normalize obj2)) as Hstatus_eq.
+  { rewrite Hstorage. done. }
+  rewrite /storage_object_normalize !KObjectV.status_update_objectmeta in Hstatus_eq.
+  exact Hstatus_eq.
 Qed.
 
-Lemma objectmeta_updated_set_resource_version m m' rv :
-  ObjectMetaV.updated m m' →
-  ObjectMetaV.updated m (m' <| ObjectMetaV.ResourceVersion' := rv |>).
-Proof.
-  rewrite /ObjectMetaV.updated.
-  destruct m, m'; simpl; intuition congruence.
-Qed.
-
-Lemma objectmeta_updated_set_resource_version_uid m m' rv :
-  ObjectMetaV.updated m m' →
-  ObjectMetaV.UID' (m' <| ObjectMetaV.ResourceVersion' := rv |>) =
-    ObjectMetaV.UID' m.
-Proof.
-  rewrite /ObjectMetaV.updated.
-  destruct m, m'; simpl; intuition congruence.
-Qed.
-
-Lemma valid_simple_update_updated_set_resource_version_uid m_old m_input m_updated rv :
-  ObjectMetaV.valid_simple_update m_old m_input →
-  ObjectMetaV.updated m_input m_updated →
-  ObjectMetaV.UID' (m_updated <| ObjectMetaV.ResourceVersion' := rv |>) =
-    ObjectMetaV.UID' m_old.
-Proof.
-  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated.
-  destruct m_old, m_input, m_updated; simpl; intuition congruence.
-Qed.
-
-Lemma valid_simple_update_updated_set_resource_version_parent_ref m_old m_input m_updated rv :
-  ObjectMetaV.valid_simple_update m_old m_input →
-  ObjectMetaV.updated m_input m_updated →
-  meta_parent_ref m_old =
-    meta_parent_ref (m_updated <| ObjectMetaV.ResourceVersion' := rv |>).
-Proof.
-  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated /meta_parent_ref.
-  destruct m_old, m_input, m_updated; simpl.
-  intros Hvalid Hupdated.
-  decompose [and] Hvalid. decompose [and] Hupdated. subst.
-  done.
-Qed.
-
-Lemma valid_simple_update_updated_set_resource_version_no_speculative_parent_reference
-    m_old m_input m_updated rv used_uid :
-  ObjectMetaV.valid_simple_update m_old m_input →
-  ObjectMetaV.updated m_input m_updated →
-  no_speculative_parent_reference m_old used_uid →
-  no_speculative_parent_reference
-    (m_updated <| ObjectMetaV.ResourceVersion' := rv |>) used_uid.
-Proof.
-  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated
-          /no_speculative_parent_reference /meta_parent_ref_is /meta_parent_ref.
-  destruct m_old, m_input, m_updated; simpl.
-  intros Hvalid Hupdated Hno_spec kind name uid Hparent.
-  decompose [and] Hvalid. decompose [and] Hupdated. subst.
-  eapply Hno_spec. done.
-Qed.
-
-Lemma key_update_objectmeta_set_resource_version obj rv :
-  KObjectV.key
-    (KObjectV.update_objectmeta obj
-       ((KObjectV.objectmeta obj) <| ObjectMetaV.ResourceVersion' := rv |>)) =
-  KObjectV.key obj.
-Proof.
-  rewrite /KObjectV.key.
-  rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-  destruct (KObjectV.objectmeta obj); done.
-Qed.
-
-Lemma valid_update_objectmeta_set_resource_version obj rv :
-  KObjectV.valid obj →
-  valid_resource_version rv →
-  KObjectV.valid
-    (KObjectV.update_objectmeta obj
-       ((KObjectV.objectmeta obj) <| ObjectMetaV.ResourceVersion' := rv |>)).
-Proof.
-  intros (Hvalid_typemeta & _ & Hvalid_meta & Hvalid_spec & Hvalid_status) Hvalid_rv.
-  split_and!.
-  - rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-    exact Hvalid_typemeta.
-  - rewrite objectmeta_update_objectmeta. done.
-  - rewrite objectmeta_update_objectmeta.
-    destruct (KObjectV.objectmeta obj); simpl in *; done.
-  - rewrite KObjectV.spec_update_objectmeta. done.
-  - rewrite KObjectV.status_update_objectmeta. done.
-Qed.
-
-Lemma update_tombed_uid_update_eq_used_uid_sub
-  (abs_state : gmap KKey.t KObjectV.t) (used_uid tombed_uid : gset types.UID.t)
-  key old_kobj new_kobj :
-  tombed_uid = used_uid ∖ map_to_set (C:=gset types.UID.t)
-    (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj)) abs_state →
-  abs_state !! key = Some old_kobj →
-  ObjectMetaV.UID' (KObjectV.objectmeta new_kobj) =
-    ObjectMetaV.UID' (KObjectV.objectmeta old_kobj) →
-  tombed_uid = used_uid ∖ map_to_set (C:=gset types.UID.t)
-    (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
-    (<[key := new_kobj]> abs_state).
-Proof.
-  intros Htombed Hlookup_abs Huid_eq.
-  set (uid := ObjectMetaV.UID' (KObjectV.objectmeta old_kobj)).
-  set (uids := λ m : gmap KKey.t KObjectV.t,
-    map_to_set (C:=gset types.UID.t)
-      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
-      m).
-  assert (uids abs_state = {[uid]} ∪ uids (delete key abs_state)) as Hmap_to_set_old.
-  { rewrite /uids.
-    rewrite <- (insert_delete_id abs_state key old_kobj Hlookup_abs) at 1.
-    assert (delete key abs_state !! key = None) as Hlookup_delete.
-    { apply lookup_delete_eq. }
-    rewrite (map_to_set_insert_L
-      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
-      (delete key abs_state) key old_kobj Hlookup_delete).
-    reflexivity.
-  }
-  assert (uids (<[key := new_kobj]> abs_state) = {[uid]} ∪ uids (delete key abs_state))
-    as Hmap_to_set_new.
-  { rewrite /uids.
-    rewrite <- (insert_delete_eq abs_state key new_kobj).
-    assert (delete key abs_state !! key = None) as Hlookup_delete.
-    { apply lookup_delete_eq. }
-    rewrite (map_to_set_insert_L
-      (λ (_ : KKey.t) (obj : KObjectV.t), ObjectMetaV.UID' (KObjectV.objectmeta obj))
-      (delete key abs_state) key new_kobj Hlookup_delete).
-    rewrite Huid_eq.
-    reflexivity.
-  }
-  rewrite Htombed.
-  change (used_uid ∖ uids abs_state = used_uid ∖ uids (<[key := new_kobj]> abs_state)).
-  rewrite Hmap_to_set_old Hmap_to_set_new.
-  reflexivity.
-Qed.
-
-Lemma wp_State__update_au γ l kind namespace i kobj :
+Lemma wp_State__update_status_au γ l kind namespace i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
@@ -158,30 +26,32 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
     "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
     "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-    ( |={⊤,∅}=> ∃ key uid kmeta kspec,
+    ( |={⊤,∅}=> ∃ key uid kmeta kstatus,
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 kstatus ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
       "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
-      (* Hno_deletion_timestamp ensures that the update doesn't delete the object *)
+      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update kstatus (KObjectV.status kobj) ⌝ ∗
+      (* Hno_deletion_timestamp ensures that the status update doesn't delete the object. *)
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hclose" ∷ (
           ∀ i' err kobj',
             ( (⌜ err = interface.nil ⌝ ∗
+                ⌜ KObjectV.valid kobj' ⌝ ∗
+                ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
                 ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-                ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+                ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
                 KObjectV.deepown_i i' kobj' 1 ∗
                 own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-                own_spec_frag γ key uid 1 (KObjectV.spec kobj')) ∨
+                own_status_frag γ key uid 1 (KObjectV.status kobj')) ∨
               (⌜ err ≠ interface.nil ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
-                own_spec_frag γ key uid 1 kspec)
+                own_status_frag γ key uid 1 kstatus)
             )
               ={∅,⊤}=∗ ▷ Φ (#i', #err)%V
       )%I
-    ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "update" #kind #namespace #i {{ Φ }}.
+    ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "updateStatus" #kind #namespace #i {{ Φ }}.
 Proof.
   iIntros (Φ) "(#? & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   wp_method_call. wp_call.
@@ -222,7 +92,7 @@ Proof.
     { apply not_elem_of_dom. rewrite <- Hdom_eq.
       apply not_elem_of_dom. done. }
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { unfold key. rewrite Hkind_matches. rewrite Hns_matches. destruct kobj. all: done. }
     iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
@@ -258,7 +128,7 @@ Proof.
   wp_if_destruct.
   2: {
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
@@ -285,10 +155,10 @@ Proof.
     wp_apply wp_newUpdateResourceVersionConflictError.
     iIntros (err) "%Herr_not_nil". wp_auto.
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
-    iMod ("Hclose" $! interface.nil err kobj with "[Hown_meta_frag Hown_spec_frag]") as "HΦ".
+    iMod ("Hclose" $! interface.nil err kobj with "[Hown_meta_frag Hown_status_frag]") as "HΦ".
     { iRight. iFrame. iPureIntro. done. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
@@ -301,18 +171,18 @@ Proof.
     iApply "HΦ".
   }
   set P := ObjectMetaV.valid_simple_update (KObjectV.objectmeta old_kobj) (KObjectV.objectmeta kobj) ∧
-    ObjectSpecV.valid_update (KObjectV.spec old_kobj) (KObjectV.spec kobj).
+    ObjectStatusV.valid_update (KObjectV.status old_kobj) (KObjectV.status kobj).
   destruct (bool_decide(P)) eqn:Hdecide'.
   2: {
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
-    iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
-    assert (KObjectV.spec old_kobj = kspec) as Hspec_eq.
-    { eapply Hspec_found; done. }
+    iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
+    assert (KObjectV.status old_kobj = kstatus) as Hstatus_eq.
+    { eapply Hstatus_found; done. }
     apply bool_decide_eq_false in Hdecide'.
     exfalso. apply Hdecide'. unfold P.
     split.
@@ -320,10 +190,10 @@ Proof.
       rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version in Hmeta_eq.
       destruct (KObjectV.objectmeta old_kobj), kmeta, (KObjectV.objectmeta kobj); simpl in *.
       inversion Hmeta_eq; subst. tauto.
-    - rewrite Hspec_eq. done.
+    - rewrite Hstatus_eq. done.
   }
   apply bool_decide_eq_true in Hdecide'.
-  unfold P in Hdecide'. destruct Hdecide' as [Hvalid_meta_old Hvalid_spec_old].
+  unfold P in Hdecide'. destruct Hdecide' as [Hvalid_meta_old Hvalid_status_old].
   assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := ObjectMetaV.Namespace' (KObjectV.objectmeta kobj) |>)
     = (KObjectV.objectmeta kobj)) as ->.
   { destruct (KObjectV.objectmeta kobj). done. }
@@ -337,16 +207,16 @@ Proof.
     Hno_speculative_parent_reference_old & Huid_unique_old).
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
-  wp_apply (wp_applyValidationAndDefaultingOnUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
+  wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (updated_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hvalid_updated_kobj & %Hsame_key
-    & %Htypemeta_eq & %Hupdated_meta & %Hupdated_spec & %Hstatus_eq)". wp_auto.
+    & %Hsame_kind & %Hupdated_meta & %Hspec_eq & %Hupdated_status)". wp_auto.
   rewrite bool_decide_true //. wp_auto.
   set P' := ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta old_kobj) = None.
   destruct (bool_decide(P')) eqn:Hdecide''.
   2: {
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. symmetry. exact Hkey_new. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
@@ -370,30 +240,35 @@ Proof.
     assert (ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta old_kobj))
       as Hupdated_meta_old.
     { eapply storage_object_normalize_objectmeta_updated; done. }
-    assert (ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec old_kobj))
-      as Hupdated_spec_old.
-    { assert (KObjectV.spec updated_kobj = KObjectV.spec old_kobj) as Hspec_updated_old.
-      { eapply storage_object_normalize_spec_eq. done. }
-      rewrite <-Hspec_updated_old. done. }
+    assert (ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status old_kobj))
+      as Hupdated_status_old.
+    { assert (KObjectV.status updated_kobj = KObjectV.status old_kobj) as Hstatus_updated_old.
+      { eapply storage_object_normalize_status_eq. done. }
+      rewrite <-Hstatus_updated_old. done. }
+    assert (KObjectV.same_kind kobj old_kobj) as Hsame_kind_old.
+    { destruct kobj, old_kobj; simpl in *; try done.
+      all: unfold KObjectV.key in Hkey_old_new; simpl in Hkey_old_new; congruence. }
     iApply fupd_wp.
-    iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+    iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. symmetry. exact Hkey_new. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     iPoseProof (update_own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hown_meta_frag")
       as "Hown_meta_frag".
-    iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
-    assert (KObjectV.spec old_kobj = kspec) as Hspec_eq.
-    { eapply Hspec_found; done. }
+    iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
+    assert (KObjectV.status old_kobj = kstatus) as Hstatus_eq.
+    { eapply Hstatus_found; done. }
     iMod ("Hclose" $! old_i1 interface.nil old_kobj with
-      "[Hdeepown_old_i1 Hown_meta_frag Hown_spec_frag]") as "HΦ".
+      "[Hdeepown_old_i1 Hown_meta_frag Hown_status_frag]") as "HΦ".
     { iLeft.
       iSplit; first done.
       iSplit; first done.
       iSplit; first done.
+      iSplit; first done.
+      iSplit; first done.
       iFrame "Hdeepown_old_i1 Hown_meta_frag".
-      rewrite Hspec_eq. iFrame. }
+      rewrite Hstatus_eq. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -421,7 +296,7 @@ Proof.
   { iFrame. iPureIntro. unfold new_kobj, new_kmeta. destruct updated_kobj; done. }
   iIntros (i1') "[Hdeepown_i1' Hdeepown_i1]". wp_auto.
   iApply fupd_wp.
-  iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
+  iMod "Hau" as (key0 uid kmeta kstatus) "H". iNamed "H".
   assert (key0 = key) as ->.
   { rewrite Hkey_eq. symmetry. exact Hkey_new. }
   assert (kview.valid_k_uid_obj key uid new_kobj) as Hvalid_kuid_new.
@@ -437,9 +312,9 @@ Proof.
     - unfold new_kobj, new_kmeta.
       eapply valid_update_objectmeta_set_resource_version; done.
   }
-  iMod (kview.update_kobj_vs old_kobj new_kobj with
-    "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_spec_frag]")
-    as "(Hinv_Hown_abs & Hown_meta_frag & Hown_spec_frag)".
+  iMod (kview.update_status_kobj_vs old_kobj new_kobj with
+    "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_status_frag]")
+    as "(Hinv_Hown_abs & Hown_meta_frag & Hown_status_frag)".
   { exact Hvalid_kuid_new. }
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
@@ -447,7 +322,7 @@ Proof.
       [exact Hvalid_meta_old|exact Hupdated_meta|exact Hno_speculative_parent_reference_old]. }
   { exact Hlookup_abs. }
   { unfold new_kobj, new_kmeta.
-    rewrite KObjectV.status_update_objectmeta. symmetry. done. }
+    rewrite KObjectV.spec_update_objectmeta. symmetry. done. }
   iMod (cview.simple_update_vs key old_kobj new_kobj with "[$Hinv_Hown_children]")
     as "Hinv_Hown_children".
   { done. }
@@ -457,9 +332,15 @@ Proof.
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     symmetry. eapply valid_simple_update_updated_set_resource_version_uid; done. }
+  assert (KObjectV.same_kind kobj new_kobj) as Hsame_kind_new.
+  { unfold new_kobj. destruct kobj, updated_kobj; done. }
+  assert (KObjectV.valid new_kobj) as Hvalid_new_kobj.
+  { destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj). done. }
   iMod ("Hclose" $! i1' interface.nil new_kobj with
-    "[Hdeepown_i1' Hown_meta_frag Hown_spec_frag]") as "HΦ".
+    "[Hdeepown_i1' Hown_meta_frag Hown_status_frag]") as "HΦ".
   { iLeft.
+    iSplit; first done.
+    iSplit; first done.
     iSplit; first done.
     iSplit.
     { iPureIntro. unfold new_kobj, new_kmeta.
@@ -467,7 +348,7 @@ Proof.
       eapply objectmeta_updated_set_resource_version; done. }
     iSplit.
     { iPureIntro. unfold new_kobj.
-      rewrite KObjectV.spec_update_objectmeta. done. }
+      rewrite KObjectV.status_update_objectmeta. done. }
     iFrame. }
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[key:=i1]> phys_state; <[key:=new_kobj]> abs_state,
@@ -486,7 +367,7 @@ Proof.
   iApply "HΦ".
 Qed.
 
-Lemma wp_State__update γ l kind namespace i kobj key uid kmeta kspec :
+Lemma wp_State__update_status γ l kind namespace i kobj key uid kmeta kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
@@ -495,27 +376,29 @@ Lemma wp_State__update γ l kind namespace i kobj key uid kmeta kspec :
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
       "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
+      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update kstatus (KObjectV.status kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 kstatus
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "update" #kind #namespace #i
+    l @ (ptrT.id apimodel.State.id) @ "updateStatus" #kind #namespace #i
   {{{ i' err kobj', RET (#i', #err);
       (⌜ err = interface.nil ⌝ ∗
+        ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
         ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-        ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+        ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
         KObjectV.deepown_i i' kobj' 1 ∗
         own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-        own_spec_frag γ key uid 1 (KObjectV.spec kobj')) ∨
+        own_status_frag γ key uid 1 (KObjectV.status kobj')) ∨
       (⌜ err ≠ interface.nil ⌝ ∗
         own_meta_frag γ key uid 1 kmeta ∗
-        own_spec_frag γ key uid 1 kspec)
+        own_status_frag γ key uid 1 kstatus)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  iApply wp_State__update_au.
+  iApply wp_State__update_status_au.
   iFrame "#". iFrame "%". iFrame.
   iApply fupd_mask_intro.
   { Timeout 5 set_solver. }
