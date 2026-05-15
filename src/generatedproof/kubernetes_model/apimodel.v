@@ -454,6 +454,14 @@ Global Instance wp_func_call_deletionTimestampForDelete :
   WpFuncCall apimodel.deletionTimestampForDelete _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_func_call).
 
+Global Instance wp_func_call_preconditionUIDMismatch :
+  WpFuncCall apimodel.preconditionUIDMismatch _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
+Global Instance wp_func_call_setPreconditionResourceVersion :
+  WpFuncCall apimodel.setPreconditionResourceVersion _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_func_call).
+
 Global Instance wp_method_call_State'ptr_ByIndex :
   WpMethodCall (ptrT.id apimodel.State.id) "ByIndex" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
@@ -524,6 +532,10 @@ Global Instance wp_method_call_State'ptr_create :
 
 Global Instance wp_method_call_State'ptr_delete :
   WpMethodCall (ptrT.id apimodel.State.id) "delete" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_deleteTx :
+  WpMethodCall (ptrT.id apimodel.State.id) "deleteTx" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
 Global Instance wp_method_call_State'ptr_generateNewName :

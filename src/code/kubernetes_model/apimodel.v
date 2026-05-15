@@ -3078,24 +3078,114 @@ Definition State__ReplicaSetDeleteⁱᵐᵖˡ : val :=
      let: "$a1" := (![#v1.DeleteOptions] "options") in
      (method_call #(ptrT.id State.id) #"delete"%go (![#ptrT] "s")) "$a0" "$a1")).
 
+Definition preconditionUIDMismatch : go_string := "kubernetes_model/apimodel.preconditionUIDMismatch"%go.
+
+(* go: transaction.go:11:6 *)
+Definition preconditionUIDMismatchⁱᵐᵖˡ : val :=
+  λ: "options" "metadata",
+    exception_do (let: "metadata" := (mem.alloc "metadata") in
+    let: "options" := (mem.alloc "options") in
+    return: ((((![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go "options")) ≠ #null) && ((![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go "options")))) ≠ #null)) && ((![#types.UID] (![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go "options"))))) ≠ ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #())))).
+
+Definition setPreconditionResourceVersion : go_string := "kubernetes_model/apimodel.setPreconditionResourceVersion"%go.
+
+(* go: transaction.go:15:6 *)
+Definition setPreconditionResourceVersionⁱᵐᵖˡ : val :=
+  λ: "options" "metadata",
+    exception_do (let: "metadata" := (mem.alloc "metadata") in
+    let: "options" := (mem.alloc "options") in
+    let: "rv" := (mem.alloc (type.zero_val #stringT)) in
+    let: "$r0" := ((interface.get #"GetResourceVersion"%go (![#v1.Object] "metadata")) #()) in
+    do:  ("rv" <-[#stringT] "$r0");;;
+    (if: (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options"))) = #null
+    then
+      let: "$r0" := (mem.alloc (struct.make #v1.Preconditions [{
+        "UID" ::= type.zero_val #ptrT;
+        "ResourceVersion" ::= type.zero_val #ptrT
+      }])) in
+      do:  ((struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")) <-[#ptrT] "$r0")
+    else do:  #());;;
+    let: "$r0" := "rv" in
+    do:  ((struct.field_ref #v1.Preconditions #"ResourceVersion"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go (![#ptrT] "options")))) <-[#ptrT] "$r0");;;
+    return: #()).
+
+(* go: transaction.go:23:17 *)
+Definition State__deleteTxⁱᵐᵖˡ : val :=
+  λ: "s" "key" "options",
+    exception_do (let: "s" := (mem.alloc "s") in
+    let: "options" := (mem.alloc "options") in
+    let: "key" := (mem.alloc "key") in
+    (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
+      let: "optionsCopy" := (mem.alloc (type.zero_val #v1.DeleteOptions)) in
+      let: "$r0" := (![#v1.DeleteOptions] ((method_call #(ptrT.id v1.DeleteOptions.id) #"DeepCopy"%go "options") #())) in
+      do:  ("optionsCopy" <-[#v1.DeleteOptions] "$r0");;;
+      let: "err" := (mem.alloc (type.zero_val #error)) in
+      let: "obj" := (mem.alloc (type.zero_val #interfaceT)) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![#KKey] "key") in
+      (method_call #(ptrT.id State.id) #"get"%go (![#ptrT] "s")) "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("obj" <-[#interfaceT] "$r0");;;
+      do:  ("err" <-[#error] "$r1");;;
+      (if: (~ (interface.eq (![#error] "err") #interface.nil))
+      then return: (![#error] "err")
+      else do:  #());;;
+      let: "metadata" := (mem.alloc (type.zero_val #v1.Object)) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![#interfaceT] "obj") in
+      (func_call #meta.Accessor) "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("metadata" <-[#v1.Object] "$r0");;;
+      do:  ("err" <-[#error] "$r1");;;
+      (if: (~ (interface.eq (![#error] "err") #interface.nil))
+      then
+        return: (let: "$a0" := #"failed to access object metadata: %w"%go in
+         let: "$a1" := ((let: "$sl0" := (![#error] "err") in
+         slice.literal #interfaceT ["$sl0"])) in
+         (func_call #fmt.Errorf) "$a0" "$a1")
+      else do:  #());;;
+      (if: let: "$a0" := (![#v1.DeleteOptions] "optionsCopy") in
+      let: "$a1" := (![#v1.Object] "metadata") in
+      (func_call #preconditionUIDMismatch) "$a0" "$a1"
+      then
+        return: (let: "$a0" := (![#stringT] (struct.field_ref #KKey #"Kind"%go "key")) in
+         let: "$a1" := ((interface.get #"GetName"%go (![#v1.Object] "metadata")) #()) in
+         let: "$a2" := (![#types.UID] (![#ptrT] (struct.field_ref #v1.Preconditions #"UID"%go (![#ptrT] (struct.field_ref #v1.DeleteOptions #"Preconditions"%go "optionsCopy"))))) in
+         let: "$a3" := ((interface.get #"GetUID"%go (![#v1.Object] "metadata")) #()) in
+         (func_call #newPreconditionUIDConflictError) "$a0" "$a1" "$a2" "$a3")
+      else do:  #());;;
+      do:  (let: "$a0" := "optionsCopy" in
+      let: "$a1" := (![#v1.Object] "metadata") in
+      (func_call #setPreconditionResourceVersion) "$a0" "$a1");;;
+      let: "$r0" := (let: "$a0" := (![#KKey] "key") in
+      let: "$a1" := (![#v1.DeleteOptions] "optionsCopy") in
+      (method_call #(ptrT.id State.id) #"delete"%go (![#ptrT] "s")) "$a0" "$a1") in
+      do:  ("err" <-[#error] "$r0");;;
+      (if: let: "$a0" := (![#error] "err") in
+      (func_call #errors.IsConflict) "$a0"
+      then continue: #()
+      else do:  #());;;
+      return: (![#error] "err"))).
+
 Definition vars' : list (go_string * go_type) := [].
 
-Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionMutateForUpdate, applyAdmissionMutateForUpdateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (allowUnconditionalUpdate, allowUnconditionalUpdateⁱᵐᵖˡ); (malformedUpdateResourceVersionError, malformedUpdateResourceVersionErrorⁱᵐᵖˡ); (parseResourceVersion, parseResourceVersionⁱᵐᵖˡ); (updateStrategyForLegacyObject, updateStrategyForLegacyObjectⁱᵐᵖˡ); (statusUpdateStrategyForLegacyObject, statusUpdateStrategyForLegacyObjectⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaultingOnUpdate, applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ); (applyValidationAndDefaultingOnStatusUpdate, applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (deletionFinalizersForGarbageCollection, deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); (newPreconditionUIDConflictError, newPreconditionUIDConflictErrorⁱᵐᵖˡ); (newUpdateUIDConflictError, newUpdateUIDConflictErrorⁱᵐᵖˡ); (newUpdateResourceVersionConflictError, newUpdateResourceVersionConflictErrorⁱᵐᵖˡ); (newPreconditionRVConflictError, newPreconditionRVConflictErrorⁱᵐᵖˡ); (validateDeleteOptions, validateDeleteOptionsⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ); (storageObjectDeepEqual, storageObjectDeepEqualⁱᵐᵖˡ); (shouldDeleteDuringUpdate, shouldDeleteDuringUpdateⁱᵐᵖˡ); (deletionTimestampForDelete, deletionTimestampForDeleteⁱᵐᵖˡ)].
+Definition functions' : list (go_string * val) := [(NewState, NewStateⁱᵐᵖˡ); (deepCopy, deepCopyⁱᵐᵖˡ); (filterByLabelSelector, filterByLabelSelectorⁱᵐᵖˡ); (index_of, index_ofⁱᵐᵖˡ); (randomSuffix, randomSuffixⁱᵐᵖˡ); (validateObjectMeta, validateObjectMetaⁱᵐᵖˡ); (applyDefaultTolerationSeconds, applyDefaultTolerationSecondsⁱᵐᵖˡ); (applyPriorityAdmission, applyPriorityAdmissionⁱᵐᵖˡ); (convertVersionedToLegacy, convertVersionedToLegacyⁱᵐᵖˡ); (applySchemaDefaults, applySchemaDefaultsⁱᵐᵖˡ); (applyStrategyPrepareForCreate, applyStrategyPrepareForCreateⁱᵐᵖˡ); (applyAdmissionMutate, applyAdmissionMutateⁱᵐᵖˡ); (applyAdmissionMutateForUpdate, applyAdmissionMutateForUpdateⁱᵐᵖˡ); (applyAdmissionValidate, applyAdmissionValidateⁱᵐᵖˡ); (allowUnconditionalUpdate, allowUnconditionalUpdateⁱᵐᵖˡ); (malformedUpdateResourceVersionError, malformedUpdateResourceVersionErrorⁱᵐᵖˡ); (parseResourceVersion, parseResourceVersionⁱᵐᵖˡ); (updateStrategyForLegacyObject, updateStrategyForLegacyObjectⁱᵐᵖˡ); (statusUpdateStrategyForLegacyObject, statusUpdateStrategyForLegacyObjectⁱᵐᵖˡ); (applyStrategyValidate, applyStrategyValidateⁱᵐᵖˡ); (applyStrategyCanonicalize, applyStrategyCanonicalizeⁱᵐᵖˡ); (applyValidationAndDefaultingOnUpdate, applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ); (applyValidationAndDefaultingOnStatusUpdate, applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ); (applyValidationAndDefaulting, applyValidationAndDefaultingⁱᵐᵖˡ); (shouldOrphanDependents, shouldOrphanDependentsⁱᵐᵖˡ); (shouldDeleteDependents, shouldDeleteDependentsⁱᵐᵖˡ); (deletionFinalizersForGarbageCollection, deletionFinalizersForGarbageCollectionⁱᵐᵖˡ); (newPreconditionUIDConflictError, newPreconditionUIDConflictErrorⁱᵐᵖˡ); (newUpdateUIDConflictError, newUpdateUIDConflictErrorⁱᵐᵖˡ); (newUpdateResourceVersionConflictError, newUpdateResourceVersionConflictErrorⁱᵐᵖˡ); (newPreconditionRVConflictError, newPreconditionRVConflictErrorⁱᵐᵖˡ); (validateDeleteOptions, validateDeleteOptionsⁱᵐᵖˡ); (validateDeletePreconditions, validateDeletePreconditionsⁱᵐᵖˡ); (checkGracefulDelete, checkGracefulDeleteⁱᵐᵖˡ); (storageObjectDeepEqual, storageObjectDeepEqualⁱᵐᵖˡ); (shouldDeleteDuringUpdate, shouldDeleteDuringUpdateⁱᵐᵖˡ); (deletionTimestampForDelete, deletionTimestampForDeleteⁱᵐᵖˡ); (preconditionUIDMismatch, preconditionUIDMismatchⁱᵐᵖˡ); (setPreconditionResourceVersion, setPreconditionResourceVersionⁱᵐᵖˡ)].
 
-Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("PodUpdateStatus"%go, State__PodUpdateStatusⁱᵐᵖˡ); ("ReplicaSetCreate"%go, State__ReplicaSetCreateⁱᵐᵖˡ); ("ReplicaSetDelete"%go, State__ReplicaSetDeleteⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("ReplicaSetUpdate"%go, State__ReplicaSetUpdateⁱᵐᵖˡ); ("ReplicaSetUpdateStatus"%go, State__ReplicaSetUpdateStatusⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("update"%go, State__updateⁱᵐᵖˡ); ("updateStatus"%go, State__updateStatusⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
+Definition msets' : list (go_string * (list (go_string * val))) := [(State.id, []); (ptrT.id State.id, [("ByIndex"%go, State__ByIndexⁱᵐᵖˡ); ("Index"%go, State__Indexⁱᵐᵖˡ); ("PodCreate"%go, State__PodCreateⁱᵐᵖˡ); ("PodDelete"%go, State__PodDeleteⁱᵐᵖˡ); ("PodGet"%go, State__PodGetⁱᵐᵖˡ); ("PodList"%go, State__PodListⁱᵐᵖˡ); ("PodMutGet"%go, State__PodMutGetⁱᵐᵖˡ); ("PodMutList"%go, State__PodMutListⁱᵐᵖˡ); ("PodUpdate"%go, State__PodUpdateⁱᵐᵖˡ); ("PodUpdateStatus"%go, State__PodUpdateStatusⁱᵐᵖˡ); ("ReplicaSetCreate"%go, State__ReplicaSetCreateⁱᵐᵖˡ); ("ReplicaSetDelete"%go, State__ReplicaSetDeleteⁱᵐᵖˡ); ("ReplicaSetGet"%go, State__ReplicaSetGetⁱᵐᵖˡ); ("ReplicaSetMutGet"%go, State__ReplicaSetMutGetⁱᵐᵖˡ); ("ReplicaSetUpdate"%go, State__ReplicaSetUpdateⁱᵐᵖˡ); ("ReplicaSetUpdateStatus"%go, State__ReplicaSetUpdateStatusⁱᵐᵖˡ); ("create"%go, State__createⁱᵐᵖˡ); ("delete"%go, State__deleteⁱᵐᵖˡ); ("deleteTx"%go, State__deleteTxⁱᵐᵖˡ); ("generateNewName"%go, State__generateNewNameⁱᵐᵖˡ); ("generateNewRVAndUpdate"%go, State__generateNewRVAndUpdateⁱᵐᵖˡ); ("generateNewUIDAndUpdate"%go, State__generateNewUIDAndUpdateⁱᵐᵖˡ); ("get"%go, State__getⁱᵐᵖˡ); ("objList"%go, State__objListⁱᵐᵖˡ); ("objListBySelector"%go, State__objListBySelectorⁱᵐᵖˡ); ("objListLocked"%go, State__objListLockedⁱᵐᵖˡ); ("update"%go, State__updateⁱᵐᵖˡ); ("updateStatus"%go, State__updateStatusⁱᵐᵖˡ)]); (KKey.id, []); (ptrT.id KKey.id, [])].
 
 #[global] Instance info' : PkgInfo apimodel.apimodel :=
   {|
     pkg_vars := vars';
     pkg_functions := functions';
     pkg_msets := msets';
-    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.math.rand.rand; code.reflect.reflect; code.strconv.strconv; code.sync.sync; code.time.time; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.api.meta.meta; code.k8s_io.apimachinery.pkg.api.validation.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.uuid.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.field; code.k8s_io.apiserver.pkg.endpoints.request.request; code.k8s_io.apiserver.pkg.registry.generic.registry.registry; code.k8s_io.apiserver.pkg.registry.rest.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.v1; code.k8s_io.kubernetes.pkg.apis.core.core; code.k8s_io.kubernetes.pkg.apis.core.v1.v1; code.k8s_io.kubernetes.pkg.controller.controller; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset; code.k8s_io.kubernetes.pkg.registry.core.pod.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.install];
+    pkg_imported_pkgs := [code.context.context; code.fmt.fmt; code.math.rand.rand; code.reflect.reflect; code.strconv.strconv; code.sync.sync; code.time.time; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.api.meta.meta; code.k8s_io.apimachinery.pkg.api.validation.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation; code.k8s_io.apimachinery.pkg.labels.labels; code.k8s_io.apimachinery.pkg.runtime.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.schema; code.k8s_io.apimachinery.pkg.types.types; code.k8s_io.apimachinery.pkg.util.uuid.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.field; code.k8s_io.apiserver.pkg.endpoints.request.request; code.k8s_io.apiserver.pkg.registry.generic.registry.registry; code.k8s_io.apiserver.pkg.registry.rest.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.v1; code.k8s_io.kubernetes.pkg.apis.core.core; code.k8s_io.kubernetes.pkg.apis.core.v1.v1; code.k8s_io.kubernetes.pkg.controller.controller; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset; code.k8s_io.kubernetes.pkg.registry.core.pod.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.install; code.k8s_io.apimachinery.pkg.api.errors.errors];
   |}.
 
 Definition initialize' : val :=
   λ: <>,
     package.init #apimodel.apimodel (λ: <>,
-      exception_do (do:  (install.initialize' #());;;
+      exception_do (do:  (errors.initialize' #());;;
+      do:  (install.initialize' #());;;
       do:  (pod.initialize' #());;;
       do:  (replicaset.initialize' #());;;
       do:  (controller.initialize' #());;;

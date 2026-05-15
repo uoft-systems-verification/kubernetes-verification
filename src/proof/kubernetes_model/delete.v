@@ -246,9 +246,10 @@ Lemma wp_State__delete_au γ l key options_c options:
               ={∅,⊤}=∗ ▷ Φ #interface.nil
         else
           ∀ err kmeta',
-            ( (⌜ err = interface.nil ⌝ ∗
+            ( ( ⌜ err = interface.nil ⌝ ∗
                 delete_success_post γ key uid parent_key parent_uid children kmeta') ∨
-              (⌜ err ≠ interface.nil ⌝ ∗
+              ( ⌜ err ≠ interface.nil ⌝ ∗
+                ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
                 own_children_frag γ parent_key parent_uid 1 children)
             )
@@ -301,7 +302,8 @@ Proof.
   rewrite bool_decide_true //. wp_auto.
   wp_apply (wp_validateDeletePreconditions with "[$Hdeepown_m_l1 $Hdeepown_l_options1]"). 1: done.
   iIntros (err0) "(%H & Hdeepown_m_l1 & Hdeepown_l_options1)". wp_auto.
-  destruct H as [[Hdelete_preconditions_match ->]|[Hdelete_preconditions_not_match Herr0]].
+  destruct H as [[Hdelete_preconditions_match ->]|
+    [Hdelete_preconditions_not_match [Herr0 Hconflict_err0]]].
   2: {
     rewrite bool_decide_false //. wp_auto.
     iApply fupd_wp.
@@ -312,7 +314,7 @@ Proof.
     { exfalso. apply Hdelete_preconditions_not_match.
       eapply delete_preconditions_match_of_uid_rv_none; done. }
     iMod ("Hclose" $! err0 (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
-    { iRight. iFrame. iPureIntro. done. }
+    { iRight. iSplit; first done. iSplit; first done. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".

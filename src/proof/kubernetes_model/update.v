@@ -169,13 +169,14 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hclose" ∷ (
           ∀ i' err kobj',
-            ( (⌜ err = interface.nil ⌝ ∗
+            ( ( ⌜ err = interface.nil ⌝ ∗
                 ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
                 ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
                 KObjectV.deepown_i i' kobj' 1 ∗
                 own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
                 own_spec_frag γ key uid 1 (KObjectV.spec kobj')) ∨
-              (⌜ err ≠ interface.nil ⌝ ∗
+              ( ⌜ err ≠ interface.nil ⌝ ∗
+                ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
                 own_spec_frag γ key uid 1 kspec)
             )
@@ -283,13 +284,13 @@ Proof.
   wp_if_destruct.
   2: {
     wp_apply wp_newUpdateResourceVersionConflictError.
-    iIntros (err) "%Herr_not_nil". wp_auto.
+    iIntros (err) "(%Herr_not_nil & %Herr_conflict)". wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iMod ("Hclose" $! interface.nil err kobj with "[Hown_meta_frag Hown_spec_frag]") as "HΦ".
-    { iRight. iFrame. iPureIntro. done. }
+    { iRight. iSplit; first done. iSplit; first done. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
       with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
@@ -523,7 +524,10 @@ Proof.
   iIntros (i' err kobj') "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.
-  iApply ("HΦ" $! i' err kobj' with "Hpost").
+  iApply ("HΦ" $! i' err kobj').
+  iDestruct "Hpost" as "[Hpost|Hpost]".
+  - iLeft. iExact "Hpost".
+  - iRight. iDestruct "Hpost" as "($ & _ & $ & $)".
 Qed.
 
 End proof.

@@ -2,6 +2,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.proof Require Export pure_objects.
+From New.proof.kubernetes_model Require Export errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
@@ -218,7 +219,8 @@ Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_str
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
   {{{ err, RET #err;
-      ⌜ err ≠ interface.nil ⌝
+      ⌜ err ≠ interface.nil ⌝ ∗
+      ⌜ conflict_error err ⌝
   }}}.
 Proof. Admitted.
 
@@ -359,13 +361,19 @@ Qed.
 Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
-  {{{ err, RET #err; ⌜ err ≠ interface.nil ⌝ }}}.
+  {{{ err, RET #err;
+      ⌜ err ≠ interface.nil ⌝ ∗
+      ⌜ conflict_error err ⌝
+  }}}.
 Proof. Admitted.
 
 Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
-  {{{ err, RET #err; ⌜ err ≠ interface.nil ⌝ }}}.
+  {{{ err, RET #err;
+      ⌜ err ≠ interface.nil ⌝ ∗
+      ⌜ conflict_error err ⌝
+  }}}.
 Proof. Admitted.
 
 Lemma wp_validateDeleteOptions l options dq :
@@ -390,7 +398,9 @@ Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_strin
   {{{ err, RET #err;
       ⌜ delete_preconditions_match options m ∧ err = interface.nil
         ∨
-        ¬ delete_preconditions_match options m ∧ err ≠ interface.nil ⌝ ∗
+        ¬ delete_preconditions_match options m ∧
+          err ≠ interface.nil ∧
+          conflict_error err ⌝ ∗
       ObjectMetaV.deepown_l l m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
@@ -477,7 +487,7 @@ Proof. (* This proof is fully written by Codex *)
               iIntros "Hdeepown_m_l".
               wp_auto.
               wp_apply (wp_newPreconditionRVConflictError with "[$]").
-              iIntros (err) "%Herr_non_nil".
+              iIntros (err) "(%Herr_non_nil & %Herr_conflict)".
               wp_auto.
               iAssert ((match preconditions.(PreconditionsV.UID') with
                 | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
@@ -511,7 +521,7 @@ Proof. (* This proof is fully written by Codex *)
               right. split.
               { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
                 intros [_ Hmatch]. apply Hrv_neq. exact Hmatch. }
-              done.
+              split; done.
         -- assert (v1.Preconditions.ResourceVersion' cpreconditions = null) as Hrv_null.
            { apply (proj2 Hdeepown_resourceversion_none). done. }
            rewrite bool_decide_true //=.
@@ -558,7 +568,7 @@ Proof. (* This proof is fully written by Codex *)
         iIntros "Hdeepown_m_l".
         wp_auto.
         wp_apply (wp_newPreconditionUIDConflictError with "[$]").
-        iIntros (err) "%Herr_non_nil".
+        iIntros (err) "(%Herr_non_nil & %Herr_conflict)".
         wp_auto.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
@@ -587,7 +597,7 @@ Proof. (* This proof is fully written by Codex *)
         right. split.
         { rewrite /delete_preconditions_match Hpreconditions Huid /=.
           intros [Hmatch _]. apply Huid_neq. exact Hmatch. }
-        done.
+        split; done.
     + assert (v1.Preconditions.UID' cpreconditions = null) as Huid_null.
       { apply (proj2 Hdeepown_uid_none). done. }
       rewrite bool_decide_true //=.
@@ -647,7 +657,7 @@ Proof. (* This proof is fully written by Codex *)
            iIntros "Hdeepown_m_l".
            wp_auto.
            wp_apply (wp_newPreconditionRVConflictError with "[$]").
-           iIntros (err) "%Herr_non_nil".
+           iIntros (err) "(%Herr_non_nil & %Herr_conflict)".
            wp_auto.
            iAssert ((match preconditions.(PreconditionsV.UID') with
              | Some vu => ∃ cu, v1.Preconditions.UID' cpreconditions ↦{dq} cu ∗ ⌜ cu = vu ⌝
@@ -681,7 +691,7 @@ Proof. (* This proof is fully written by Codex *)
            right. split.
            { rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
              intros [_ Hmatch]. apply Hrv_neq. exact Hmatch. }
-           done.
+           split; done.
       * assert (v1.Preconditions.ResourceVersion' cpreconditions = null) as Hrv_null.
         { apply (proj2 Hdeepown_resourceversion_none). done. }
         rewrite bool_decide_true //=.
