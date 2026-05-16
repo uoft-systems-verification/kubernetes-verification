@@ -6,6 +6,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apiserver/pkg/registry/rest"
 )
 
 func preconditionUIDMismatch(options metav1.DeleteOptions, metadata metav1.Object) bool {
@@ -50,5 +51,91 @@ func (s *State) deleteTx(key KKey, options metav1.DeleteOptions) error {
 			continue
 		}
 		return err
+	}
+}
+
+func (s *State) updateTx(kind, namespace string, obj interface{}) (interface{}, error) {
+	for {
+		objCopy := deepCopy(obj)
+		metadata, err := meta.Accessor(objCopy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to access object metadata: %w", err)
+		}
+
+		if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+			return nil, err
+		}
+
+		name := metadata.GetName()
+		if name == "" {
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("object of kind %q must specify a name for update", kind))
+		}
+
+		key := KKey{
+			Kind:      kind,
+			Name:      name,
+			Namespace: namespace,
+		}
+
+		existingObj, err := s.get(key)
+		if err != nil {
+			return nil, err
+		}
+
+		existingMetadata, err := meta.Accessor(existingObj)
+		if err != nil {
+			return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
+		}
+
+		metadata.SetResourceVersion(existingMetadata.GetResourceVersion())
+
+		updatedObj, err := s.update(kind, namespace, objCopy)
+		if apierrors.IsConflict(err) {
+			continue
+		}
+		return updatedObj, err
+	}
+}
+
+func (s *State) updateStatusTx(kind, namespace string, obj interface{}) (interface{}, error) {
+	for {
+		objCopy := deepCopy(obj)
+		metadata, err := meta.Accessor(objCopy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to access object metadata: %w", err)
+		}
+
+		if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(namespace, metadata); err != nil {
+			return nil, err
+		}
+
+		name := metadata.GetName()
+		if name == "" {
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("object of kind %q must specify a name for status update", kind))
+		}
+
+		key := KKey{
+			Kind:      kind,
+			Name:      name,
+			Namespace: namespace,
+		}
+
+		existingObj, err := s.get(key)
+		if err != nil {
+			return nil, err
+		}
+
+		existingMetadata, err := meta.Accessor(existingObj)
+		if err != nil {
+			return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
+		}
+
+		metadata.SetResourceVersion(existingMetadata.GetResourceVersion())
+
+		updatedObj, err := s.updateStatus(kind, namespace, objCopy)
+		if apierrors.IsConflict(err) {
+			continue
+		}
+		return updatedObj, err
 	}
 }

@@ -574,5 +574,13 @@ Global Instance wp_method_call_State'ptr_updateStatus :
   WpMethodCall (ptrT.id apimodel.State.id) "updateStatus" _ (is_pkg_defined apimodel) :=
   ltac:(solve_wp_method_call).
 
+Global Instance wp_method_call_State'ptr_updateStatusTx :
+  WpMethodCall (ptrT.id apimodel.State.id) "updateStatusTx" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
+Global Instance wp_method_call_State'ptr_updateTx :
+  WpMethodCall (ptrT.id apimodel.State.id) "updateTx" _ (is_pkg_defined apimodel) :=
+  ltac:(solve_wp_method_call).
+
 End names.
 End apimodel.

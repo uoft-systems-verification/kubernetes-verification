@@ -553,31 +553,21 @@ Proof.
   iFrame "#".
   iFrame "%".
   iFrame "Hdeepown_options".
-  iAssert (AU <{ ∃∃ uid0 kmeta0 parent_key0 parent_uid0 children0,
-      "%Hkey_in" ∷ ⌜ key ∈ children0 ⌝ ∗
-      "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid0 ⌝ ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid0 1 kmeta0 ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key0 parent_uid0 1 children0
-    }> @ ⊤, ∅ <{ ∀∀ kmeta',
-      delete_success_post γ key uid0 parent_key0 parent_uid0 children0 kmeta',
-      COMM ▷ Φ #interface.nil
-    }>)%I with "[Hown_meta_frag Hown_children_frag HΦ]" as "Hau".
-  { iAuIntro.
-    iAssert (("%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
-      "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)%I)
-      with "[Hown_meta_frag Hown_children_frag]" as "Hpre".
-    { iFrame. iFrame "%". }
-    iAaccIntro with "Hpre".
-    - iIntros "Hpre".
-      iNamed "Hpre".
-      iFrame.
-      done.
-    - iIntros (kmeta') "Hpost".
-      iModIntro. iNext.
-      iApply ("HΦ" $! kmeta' with "Hpost"). }
-  iFrame "Hau".
+  iEval (rewrite {1}/named).
+  iAuIntro.
+  iAssert (("%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
+    "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
+    "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)%I)
+    with "[Hown_meta_frag Hown_children_frag]" as "Hpre".
+  { iFrame. iFrame "%". }
+  iAaccIntro with "Hpre".
+  - iIntros "Hpre".
+    iNamed "Hpre".
+    iFrame. done.
+  - iIntros (kmeta') "Hpost".
+    iModIntro. iNext.
+    iApply ("HΦ" $! kmeta' with "Hpost").
 Qed.
 
 End proof.
