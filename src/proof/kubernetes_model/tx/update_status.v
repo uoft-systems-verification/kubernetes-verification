@@ -38,18 +38,14 @@ Lemma wp_State__updateStatusTx_au γ l kind namespace i kobj :
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 kstatus ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-        kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update
-        kstatus (KObjectV.status kobj) ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update kstatus (KObjectV.status kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid_updated" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated
-        (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hstatus_updated" ∷ ⌜ ObjectStatusV.updated
-        (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hstatus_updated" ∷ ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj'),
@@ -244,10 +240,8 @@ Lemma wp_State__updateStatusTx γ l kind namespace i kobj key uid kmeta kstatus 
       "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-        kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update
-        kstatus (KObjectV.status kobj) ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+      "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update kstatus (KObjectV.status kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
@@ -257,10 +251,8 @@ Lemma wp_State__updateStatusTx γ l kind namespace i kobj key uid kmeta kstatus 
   {{{ i' kobj', RET (#i', #interface.nil);
       "%Hvalid_updated" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated
-        (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hstatus_updated" ∷ ⌜ ObjectStatusV.updated
-        (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hstatus_updated" ∷ ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj')
@@ -279,10 +271,8 @@ Proof.
     "Hown_status_frag" ∷ own_status_frag γ key uid 1 kstatus ∗
     "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
     "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-    "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-      kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-    "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update
-      kstatus (KObjectV.status kobj) ⌝ ∗
+    "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+    "%Hvalid_status_update" ∷ ⌜ ObjectStatusV.valid_update kstatus (KObjectV.status kobj) ⌝ ∗
     "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
   )%I) with "[Hown_meta_frag Hown_status_frag]" as "Hpre".
   { iFrame. iFrame "%". }

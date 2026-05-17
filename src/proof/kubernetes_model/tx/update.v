@@ -38,16 +38,12 @@ Lemma wp_State__updateTx_au γ l kind namespace i kobj :
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-        kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update
-        kspec (KObjectV.spec kobj) ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
-      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated
-        (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated
-        (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj'),
@@ -236,10 +232,8 @@ Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
       "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-        kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update
-        kspec (KObjectV.spec kobj) ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
@@ -247,10 +241,8 @@ Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
   }}}
     l @ (ptrT.id apimodel.State.id) @ "updateTx" #kind #namespace #i
   {{{ i' kobj', RET (#i', #interface.nil);
-      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated
-        (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated
-        (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj')
@@ -269,10 +261,8 @@ Proof.
     "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
     "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
     "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-    "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update
-      kmeta (KObjectV.objectmeta kobj) ⌝ ∗
-    "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update
-      kspec (KObjectV.spec kobj) ⌝ ∗
+    "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) ⌝ ∗
+    "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
     "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
   )%I) with "[Hown_meta_frag Hown_spec_frag]" as "Hpre".
   { iFrame. iFrame "%". }
