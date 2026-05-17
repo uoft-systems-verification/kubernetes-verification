@@ -9,6 +9,7 @@ version: "dev"
 synopsis: "Specs and proofs for Kubernetes controllers"
 
 depends: [
+  "coq" {= "9.1.0"}
   "perennial"
 ]
 

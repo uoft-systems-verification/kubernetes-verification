@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rocq-version: ["latest", "weekly"]
+        rocq-version: ["9.1.0"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
