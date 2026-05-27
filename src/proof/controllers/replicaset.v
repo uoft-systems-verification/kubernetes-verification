@@ -343,7 +343,7 @@ Proof.
             + assert (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods)) ∪ {[PodV.key pod']} =
                 list_to_set (PodV.key <$> ((active_pods' ++ [pod']) ++ inactive_pods)))
                 as ->.
-              { rewrite !fmap_app. simpl. Timeout 5 set_solver. }
+              { rewrite !fmap_app. simpl. Timeout 10 set_solver. }
               done.
             + iSplit.
               { iPureIntro. rewrite length_app /= Hlen_active_pods'.

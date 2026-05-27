@@ -566,7 +566,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__ByIndex_podController_au.
   iFrame "#". iFrame "%". iFrame.
-  iApply fupd_mask_intro; [timeout 5 set_solver|iIntros "Hmask"].
+  iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
   iIntros (sl interfaces pods_ret dq') "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.

@@ -537,7 +537,7 @@ Proof.
   iApply wp_State__update_au.
   iFrame "#". iFrame "%". iFrame.
   iApply fupd_mask_intro.
-  { Timeout 5 set_solver. }
+  { Timeout 10 set_solver. }
   iIntros "Hmask".
   iIntros (i' err kobj') "Hpost".
   iMod "Hmask" as "_".

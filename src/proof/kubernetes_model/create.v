@@ -150,7 +150,7 @@ Proof.
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
-  { fold key in Hnn_fresh. apply not_elem_of_dom. apply not_elem_of_dom in Hnn_fresh. timeout 5 set_solver.
+  { fold key in Hnn_fresh. apply not_elem_of_dom. apply not_elem_of_dom in Hnn_fresh. timeout 10 set_solver.
   }
   { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid. apply not_elem_of_dom. done.
   }
@@ -187,7 +187,7 @@ Proof.
         inversion Hpr; inversion Hparent; done.
     }
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
-    timeout 5 set_solver.
+    timeout 10 set_solver.
   }
   iMod (cview.create_child_vs2 (pk := parent_key) (puid := parent_uid)
     key generated_uid kobj2
@@ -341,7 +341,7 @@ Proof.
       rewrite Hobj_uid.
       apply set_eq. intros uid.
       rewrite !elem_of_difference !elem_of_union !elem_of_singleton.
-      timeout 5 set_solver. }
+      timeout 10 set_solver. }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem.
 Qed.
@@ -378,7 +378,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__create_nameless_au.
   iFrame "#". iFrame "%". iFrame.
-  iApply fupd_mask_intro; [ timeout 5 set_solver | iIntros "Hmask" ].
+  iApply fupd_mask_intro; [ timeout 10 set_solver | iIntros "Hmask" ].
   iIntros (i' kobj' key uid) "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.

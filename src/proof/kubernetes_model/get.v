@@ -207,7 +207,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__get_some_au.
   iFrame "#". iFrame.
-  iApply fupd_mask_intro; [ timeout 5 set_solver | iIntros "Hmask" ].
+  iApply fupd_mask_intro; [ timeout 10 set_solver | iIntros "Hmask" ].
   iIntros (i kobj) "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.

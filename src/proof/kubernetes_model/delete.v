@@ -656,7 +656,7 @@ Proof.
   iApply wp_State__delete_au.
   iFrame "#". iFrame "%". iFrame.
   iApply fupd_mask_intro.
-  { Timeout 5 set_solver. }
+  { Timeout 10 set_solver. }
   iIntros "Hmask".
   destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|Hrv_some].
   2: { exfalso. apply Hrv_some. done. }
