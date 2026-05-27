@@ -9,19 +9,18 @@ version: "dev"
 synopsis: "Specs and proofs for Kubernetes controllers"
 
 depends: [
-  "coq" {= "9.1.0"}
   "perennial"
 ]
 
 pin-depends: [
-  ["perennial.dev"             "git+https://github.com/mit-pdos/perennial#45ca428e703e5fd489f4cd65915905db391a23ed"]
+  ["perennial.dev"             "git+https://github.com/marshtompsxd/perennial.git#833efefcba4304b7f2cfc357e4c9ea2ba2c6ff09"]
 
   ## begin indirect
-  ["coq-coqutil.dev"           "git+https://github.com/mit-plv/coqutil#fa7e2099cd1de9d5fe41c6b3255f8d95e9a9a7de"]
+  ["coq-coqutil.dev"           "git+https://github.com/mit-plv/coqutil#cfd88cef005cda5ec400108606d27a0d40578a8f"]
   ["coq-record-update.dev"     "git+https://github.com/tchajed/coq-record-update#7b2645210331c3ec4ed75fa5ad0840a723f25151"]
-  ["rocq-stdpp.dev"            "git+https://gitlab.mpi-sws.org/iris/stdpp#a09c2a19de6898fd470983ca2363ade519d70fe1"]
-  ["rocq-iris.dev"             "git+https://gitlab.mpi-sws.org/iris/iris#d8f049ee6e28201a8781622ab4390a62c5293a85"]
-  ["iris-named-props.dev"      "git+https://github.com/tchajed/iris-named-props#c388714a93b1c043ed42a3f446280abd5113d26f"]
+  ["rocq-stdpp.dev"            "git+https://gitlab.mpi-sws.org/iris/stdpp#6151984a1e2770649858f9d578023ffc1b337421"]
+  ["rocq-iris.dev"             "git+https://gitlab.mpi-sws.org/iris/iris#1e6e3a57d8ad52b880633cc69c979ff7e65d6fbc"]
+  ["iris-named-props.dev"      "git+https://github.com/tchajed/iris-named-props#ca663d2709888a789a03edc861b7bde86ddd56e5"]
   ## end
 ]
 

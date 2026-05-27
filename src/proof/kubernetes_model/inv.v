@@ -14,8 +14,10 @@ Class kubernetesModelG Σ := {
 }.
 
 Section spec.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Local Set Default Proof Using "All".
 
 Record KubernetesGname := mk_γk {
   γ_state : gname;
@@ -52,23 +54,27 @@ Definition kubernetes_inv γ l : iProp Σ :=
     (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)
     (abs_state: gmap KKey.t KObjectV.t) (used_uid: gset types.UID.t) (tombed_uid: gset types.UID.t)
     (used_reference: gset (KKey.t * types.UID.t)),
-    "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
-    "Hstate_used_uid_addr" ∷ l ↦s[apimodel.State :: "usedUID"] phys_used_uid_l ∗
-    "Hstate_used_rv_addr" ∷ l ↦s[apimodel.State :: "usedRV"] phys_used_rv_l ∗
+    "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
+    "Hstate_used_uid_addr" ∷ l.[(apimodel.State.t), "usedUID"] ↦ phys_used_uid_l ∗
+    "Hstate_used_rv_addr" ∷ l.[(apimodel.State.t), "usedRV"] ↦ phys_used_rv_l ∗
     "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
     "Hown_used_uid" ∷ phys_used_uid_l ↦$ phys_used_uid ∗
     "Hown_used_rv" ∷ phys_used_rv_l ↦$ phys_used_rv ∗
     "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
     "Hown_tombstone" ∷ own_tombstone_auth γ tombed_uid ∗
-    "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1) ∗
+    "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+      match i with
+      | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+      | interface.nil => False%I
+      end) ∗
     "%Hused_uid_eq_dom_phys_used_uid" ∷ ⌜ used_uid = dom phys_used_uid ⌝ ∗ 
     "%Hused_uid_eq_set_map_used_reference" ∷ ⌜ used_uid = (set_map (λ v, snd v) used_reference) ⌝ ∗
     "%Htombed_uid_eq_used_uid_sub" ∷ ⌜ tombed_uid = used_uid ∖ map_to_set (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID')) abs_state ⌝.
 
 Definition is_kubernetes γ l : iProp Σ :=
   ∃ (mu_l: loc),
-    "Hmu" ∷ l ↦s[apimodel.State :: "mu"]□ mu_l ∗
+    "Hmu" ∷ l.[(apimodel.State.t), "mu"] ↦□ mu_l ∗
     "Hkinv" ∷ is_Mutex mu_l (kubernetes_inv γ l).
 
 End spec.

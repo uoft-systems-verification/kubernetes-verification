@@ -2,617 +2,643 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.fmt.
 Require Export New.generatedproof.k8s_io.api.core.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.meta.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
-Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.meta.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
 
 Set Default Proof Using "Type".
 
 Module controller.
-
-(* type controller.BaseControllerRefManager *)
 Module BaseControllerRefManager.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance BaseControllerRefManager_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.BaseControllerRefManager.t). Admitted.
+
+#[global] Instance BaseControllerRefManager_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.BaseControllerRefManager.t) (controller.BaseControllerRefManagerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End BaseControllerRefManager.
 
-Global Instance bounded_size_BaseControllerRefManager : BoundedTypeSize controller.BaseControllerRefManager.
-Admitted.
-
-Global Instance into_val_BaseControllerRefManager `{ffi_syntax} : IntoVal BaseControllerRefManager.t.
-Admitted.
-
-Global Instance into_val_typed_BaseControllerRefManager `{ffi_syntax} : IntoValTyped BaseControllerRefManager.t controller.BaseControllerRefManager.
-Admitted.
-
-(* type controller.PodControllerRefManager *)
 Module PodControllerRefManager.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodControllerRefManager_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.PodControllerRefManager.t). Admitted.
+
+#[global] Instance PodControllerRefManager_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.PodControllerRefManager.t) (controller.PodControllerRefManagerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodControllerRefManager.
 
-Global Instance bounded_size_PodControllerRefManager : BoundedTypeSize controller.PodControllerRefManager.
-Admitted.
-
-Global Instance into_val_PodControllerRefManager `{ffi_syntax} : IntoVal PodControllerRefManager.t.
-Admitted.
-
-Global Instance into_val_typed_PodControllerRefManager `{ffi_syntax} : IntoValTyped PodControllerRefManager.t controller.PodControllerRefManager.
-Admitted.
-
-(* type controller.ReplicaSetControllerRefManager *)
 Module ReplicaSetControllerRefManager.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicaSetControllerRefManager_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ReplicaSetControllerRefManager.t). Admitted.
+
+#[global] Instance ReplicaSetControllerRefManager_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ReplicaSetControllerRefManager.t) (controller.ReplicaSetControllerRefManagerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicaSetControllerRefManager.
 
-Global Instance bounded_size_ReplicaSetControllerRefManager : BoundedTypeSize controller.ReplicaSetControllerRefManager.
-Admitted.
-
-Global Instance into_val_ReplicaSetControllerRefManager `{ffi_syntax} : IntoVal ReplicaSetControllerRefManager.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicaSetControllerRefManager `{ffi_syntax} : IntoValTyped ReplicaSetControllerRefManager.t controller.ReplicaSetControllerRefManager.
-Admitted.
-
-(* type controller.ControllerRevisionControllerRefManager *)
 Module ControllerRevisionControllerRefManager.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerRevisionControllerRefManager_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControllerRevisionControllerRefManager.t). Admitted.
+
+#[global] Instance ControllerRevisionControllerRefManager_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControllerRevisionControllerRefManager.t) (controller.ControllerRevisionControllerRefManagerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerRevisionControllerRefManager.
 
-Global Instance bounded_size_ControllerRevisionControllerRefManager : BoundedTypeSize controller.ControllerRevisionControllerRefManager.
-Admitted.
-
-Global Instance into_val_ControllerRevisionControllerRefManager `{ffi_syntax} : IntoVal ControllerRevisionControllerRefManager.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerRevisionControllerRefManager `{ffi_syntax} : IntoValTyped ControllerRevisionControllerRefManager.t controller.ControllerRevisionControllerRefManager.
-Admitted.
-
-(* type controller.objectForAddOwnerRefPatch *)
 Module objectForAddOwnerRefPatch.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance objectForAddOwnerRefPatch_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.objectForAddOwnerRefPatch.t). Admitted.
+
+#[global] Instance objectForAddOwnerRefPatch_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.objectForAddOwnerRefPatch.t) (controller.objectForAddOwnerRefPatchⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End objectForAddOwnerRefPatch.
 
-Global Instance bounded_size_objectForAddOwnerRefPatch : BoundedTypeSize controller.objectForAddOwnerRefPatch.
-Admitted.
-
-Global Instance into_val_objectForAddOwnerRefPatch `{ffi_syntax} : IntoVal objectForAddOwnerRefPatch.t.
-Admitted.
-
-Global Instance into_val_typed_objectForAddOwnerRefPatch `{ffi_syntax} : IntoValTyped objectForAddOwnerRefPatch.t controller.objectForAddOwnerRefPatch.
-Admitted.
-
-(* type controller.objectMetaForPatch *)
 Module objectMetaForPatch.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance objectMetaForPatch_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.objectMetaForPatch.t). Admitted.
+
+#[global] Instance objectMetaForPatch_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.objectMetaForPatch.t) (controller.objectMetaForPatchⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End objectMetaForPatch.
 
-Global Instance bounded_size_objectMetaForPatch : BoundedTypeSize controller.objectMetaForPatch.
-Admitted.
-
-Global Instance into_val_objectMetaForPatch `{ffi_syntax} : IntoVal objectMetaForPatch.t.
-Admitted.
-
-Global Instance into_val_typed_objectMetaForPatch `{ffi_syntax} : IntoValTyped objectMetaForPatch.t controller.objectMetaForPatch.
-Admitted.
-
-(* type controller.objectForDeleteOwnerRefStrategicMergePatch *)
 Module objectForDeleteOwnerRefStrategicMergePatch.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance objectForDeleteOwnerRefStrategicMergePatch_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.objectForDeleteOwnerRefStrategicMergePatch.t). Admitted.
+
+#[global] Instance objectForDeleteOwnerRefStrategicMergePatch_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.objectForDeleteOwnerRefStrategicMergePatch.t) (controller.objectForDeleteOwnerRefStrategicMergePatchⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End objectForDeleteOwnerRefStrategicMergePatch.
 
-Global Instance bounded_size_objectForDeleteOwnerRefStrategicMergePatch : BoundedTypeSize controller.objectForDeleteOwnerRefStrategicMergePatch.
-Admitted.
-
-Global Instance into_val_objectForDeleteOwnerRefStrategicMergePatch `{ffi_syntax} : IntoVal objectForDeleteOwnerRefStrategicMergePatch.t.
-Admitted.
-
-Global Instance into_val_typed_objectForDeleteOwnerRefStrategicMergePatch `{ffi_syntax} : IntoValTyped objectForDeleteOwnerRefStrategicMergePatch.t controller.objectForDeleteOwnerRefStrategicMergePatch.
-Admitted.
-
-(* type controller.objectMetaForMergePatch *)
 Module objectMetaForMergePatch.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance objectMetaForMergePatch_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.objectMetaForMergePatch.t). Admitted.
+
+#[global] Instance objectMetaForMergePatch_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.objectMetaForMergePatch.t) (controller.objectMetaForMergePatchⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End objectMetaForMergePatch.
 
-Global Instance bounded_size_objectMetaForMergePatch : BoundedTypeSize controller.objectMetaForMergePatch.
-Admitted.
-
-Global Instance into_val_objectMetaForMergePatch `{ffi_syntax} : IntoVal objectMetaForMergePatch.t.
-Admitted.
-
-Global Instance into_val_typed_objectMetaForMergePatch `{ffi_syntax} : IntoValTyped objectMetaForMergePatch.t controller.objectMetaForMergePatch.
-Admitted.
-
-(* type controller.ResyncPeriodFunc *)
 Module ResyncPeriodFunc.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResyncPeriodFunc_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ResyncPeriodFunc.t). Admitted.
+
+#[global] Instance ResyncPeriodFunc_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ResyncPeriodFunc.t) (controller.ResyncPeriodFuncⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResyncPeriodFunc.
 
-Global Instance bounded_size_ResyncPeriodFunc : BoundedTypeSize controller.ResyncPeriodFunc.
-Admitted.
-
-Global Instance into_val_ResyncPeriodFunc `{ffi_syntax} : IntoVal ResyncPeriodFunc.t.
-Admitted.
-
-Global Instance into_val_typed_ResyncPeriodFunc `{ffi_syntax} : IntoValTyped ResyncPeriodFunc.t controller.ResyncPeriodFunc.
-Admitted.
-
-(* type controller.ControllerExpectationsInterface *)
 Module ControllerExpectationsInterface.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerExpectationsInterface_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControllerExpectationsInterface.t). Admitted.
+
+#[global] Instance ControllerExpectationsInterface_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControllerExpectationsInterface.t) (controller.ControllerExpectationsInterfaceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerExpectationsInterface.
 
-Global Instance bounded_size_ControllerExpectationsInterface : BoundedTypeSize controller.ControllerExpectationsInterface.
-Admitted.
-
-Global Instance into_val_ControllerExpectationsInterface `{ffi_syntax} : IntoVal ControllerExpectationsInterface.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerExpectationsInterface `{ffi_syntax} : IntoValTyped ControllerExpectationsInterface.t controller.ControllerExpectationsInterface.
-Admitted.
-
-(* type controller.ControllerExpectations *)
 Module ControllerExpectations.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerExpectations_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControllerExpectations.t). Admitted.
+
+#[global] Instance ControllerExpectations_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControllerExpectations.t) (controller.ControllerExpectationsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerExpectations.
 
-Global Instance bounded_size_ControllerExpectations : BoundedTypeSize controller.ControllerExpectations.
-Admitted.
-
-Global Instance into_val_ControllerExpectations `{ffi_syntax} : IntoVal ControllerExpectations.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerExpectations `{ffi_syntax} : IntoValTyped ControllerExpectations.t controller.ControllerExpectations.
-Admitted.
-
-(* type controller.ControlleeExpectations *)
 Module ControlleeExpectations.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControlleeExpectations_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControlleeExpectations.t). Admitted.
+
+#[global] Instance ControlleeExpectations_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControlleeExpectations.t) (controller.ControlleeExpectationsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControlleeExpectations.
 
-Global Instance bounded_size_ControlleeExpectations : BoundedTypeSize controller.ControlleeExpectations.
-Admitted.
-
-Global Instance into_val_ControlleeExpectations `{ffi_syntax} : IntoVal ControlleeExpectations.t.
-Admitted.
-
-Global Instance into_val_typed_ControlleeExpectations `{ffi_syntax} : IntoValTyped ControlleeExpectations.t controller.ControlleeExpectations.
-Admitted.
-
-(* type controller.UIDSet *)
 Module UIDSet.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance UIDSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.UIDSet.t). Admitted.
+
+#[global] Instance UIDSet_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.UIDSet.t) (controller.UIDSetⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End UIDSet.
 
-Global Instance bounded_size_UIDSet : BoundedTypeSize controller.UIDSet.
-Admitted.
-
-Global Instance into_val_UIDSet `{ffi_syntax} : IntoVal UIDSet.t.
-Admitted.
-
-Global Instance into_val_typed_UIDSet `{ffi_syntax} : IntoValTyped UIDSet.t controller.UIDSet.
-Admitted.
-
-(* type controller.UIDTrackingControllerExpectations *)
 Module UIDTrackingControllerExpectations.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance UIDTrackingControllerExpectations_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.UIDTrackingControllerExpectations.t). Admitted.
+
+#[global] Instance UIDTrackingControllerExpectations_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.UIDTrackingControllerExpectations.t) (controller.UIDTrackingControllerExpectationsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End UIDTrackingControllerExpectations.
 
-Global Instance bounded_size_UIDTrackingControllerExpectations : BoundedTypeSize controller.UIDTrackingControllerExpectations.
-Admitted.
-
-Global Instance into_val_UIDTrackingControllerExpectations `{ffi_syntax} : IntoVal UIDTrackingControllerExpectations.t.
-Admitted.
-
-Global Instance into_val_typed_UIDTrackingControllerExpectations `{ffi_syntax} : IntoValTyped UIDTrackingControllerExpectations.t controller.UIDTrackingControllerExpectations.
-Admitted.
-
-(* type controller.RSControlInterface *)
 Module RSControlInterface.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RSControlInterface_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.RSControlInterface.t). Admitted.
+
+#[global] Instance RSControlInterface_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.RSControlInterface.t) (controller.RSControlInterfaceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RSControlInterface.
 
-Global Instance bounded_size_RSControlInterface : BoundedTypeSize controller.RSControlInterface.
-Admitted.
-
-Global Instance into_val_RSControlInterface `{ffi_syntax} : IntoVal RSControlInterface.t.
-Admitted.
-
-Global Instance into_val_typed_RSControlInterface `{ffi_syntax} : IntoValTyped RSControlInterface.t controller.RSControlInterface.
-Admitted.
-
-(* type controller.RealRSControl *)
 Module RealRSControl.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RealRSControl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.RealRSControl.t). Admitted.
+
+#[global] Instance RealRSControl_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.RealRSControl.t) (controller.RealRSControlⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RealRSControl.
 
-Global Instance bounded_size_RealRSControl : BoundedTypeSize controller.RealRSControl.
-Admitted.
-
-Global Instance into_val_RealRSControl `{ffi_syntax} : IntoVal RealRSControl.t.
-Admitted.
-
-Global Instance into_val_typed_RealRSControl `{ffi_syntax} : IntoValTyped RealRSControl.t controller.RealRSControl.
-Admitted.
-
-(* type controller.ControllerRevisionControlInterface *)
 Module ControllerRevisionControlInterface.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerRevisionControlInterface_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControllerRevisionControlInterface.t). Admitted.
+
+#[global] Instance ControllerRevisionControlInterface_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControllerRevisionControlInterface.t) (controller.ControllerRevisionControlInterfaceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerRevisionControlInterface.
 
-Global Instance bounded_size_ControllerRevisionControlInterface : BoundedTypeSize controller.ControllerRevisionControlInterface.
-Admitted.
-
-Global Instance into_val_ControllerRevisionControlInterface `{ffi_syntax} : IntoVal ControllerRevisionControlInterface.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerRevisionControlInterface `{ffi_syntax} : IntoValTyped ControllerRevisionControlInterface.t controller.ControllerRevisionControlInterface.
-Admitted.
-
-(* type controller.RealControllerRevisionControl *)
 Module RealControllerRevisionControl.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RealControllerRevisionControl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.RealControllerRevisionControl.t). Admitted.
+
+#[global] Instance RealControllerRevisionControl_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.RealControllerRevisionControl.t) (controller.RealControllerRevisionControlⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RealControllerRevisionControl.
 
-Global Instance bounded_size_RealControllerRevisionControl : BoundedTypeSize controller.RealControllerRevisionControl.
-Admitted.
-
-Global Instance into_val_RealControllerRevisionControl `{ffi_syntax} : IntoVal RealControllerRevisionControl.t.
-Admitted.
-
-Global Instance into_val_typed_RealControllerRevisionControl `{ffi_syntax} : IntoValTyped RealControllerRevisionControl.t controller.RealControllerRevisionControl.
-Admitted.
-
-(* type controller.PodControlInterface *)
 Module PodControlInterface.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodControlInterface_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.PodControlInterface.t). Admitted.
+
+#[global] Instance PodControlInterface_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.PodControlInterface.t) (controller.PodControlInterfaceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodControlInterface.
 
-Global Instance bounded_size_PodControlInterface : BoundedTypeSize controller.PodControlInterface.
-Admitted.
-
-Global Instance into_val_PodControlInterface `{ffi_syntax} : IntoVal PodControlInterface.t.
-Admitted.
-
-Global Instance into_val_typed_PodControlInterface `{ffi_syntax} : IntoValTyped PodControlInterface.t controller.PodControlInterface.
-Admitted.
-
-(* type controller.RealPodControl *)
 Module RealPodControl.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RealPodControl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.RealPodControl.t). Admitted.
+
+#[global] Instance RealPodControl_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.RealPodControl.t) (controller.RealPodControlⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RealPodControl.
 
-Global Instance bounded_size_RealPodControl : BoundedTypeSize controller.RealPodControl.
-Admitted.
-
-Global Instance into_val_RealPodControl `{ffi_syntax} : IntoVal RealPodControl.t.
-Admitted.
-
-Global Instance into_val_typed_RealPodControl `{ffi_syntax} : IntoValTyped RealPodControl.t controller.RealPodControl.
-Admitted.
-
-(* type controller.FakePodControl *)
 Module FakePodControl.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FakePodControl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.FakePodControl.t). Admitted.
+
+#[global] Instance FakePodControl_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.FakePodControl.t) (controller.FakePodControlⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FakePodControl.
 
-Global Instance bounded_size_FakePodControl : BoundedTypeSize controller.FakePodControl.
-Admitted.
-
-Global Instance into_val_FakePodControl `{ffi_syntax} : IntoVal FakePodControl.t.
-Admitted.
-
-Global Instance into_val_typed_FakePodControl `{ffi_syntax} : IntoValTyped FakePodControl.t controller.FakePodControl.
-Admitted.
-
-(* type controller.ByLogging *)
 Module ByLogging.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ByLogging_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ByLogging.t). Admitted.
+
+#[global] Instance ByLogging_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ByLogging.t) (controller.ByLoggingⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ByLogging.
 
-Global Instance bounded_size_ByLogging : BoundedTypeSize controller.ByLogging.
-Admitted.
-
-Global Instance into_val_ByLogging `{ffi_syntax} : IntoVal ByLogging.t.
-Admitted.
-
-Global Instance into_val_typed_ByLogging `{ffi_syntax} : IntoValTyped ByLogging.t controller.ByLogging.
-Admitted.
-
-(* type controller.ActivePods *)
 Module ActivePods.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ActivePods_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ActivePods.t). Admitted.
+
+#[global] Instance ActivePods_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ActivePods.t) (controller.ActivePodsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ActivePods.
 
-Global Instance bounded_size_ActivePods : BoundedTypeSize controller.ActivePods.
-Admitted.
-
-Global Instance into_val_ActivePods `{ffi_syntax} : IntoVal ActivePods.t.
-Admitted.
-
-Global Instance into_val_typed_ActivePods `{ffi_syntax} : IntoValTyped ActivePods.t controller.ActivePods.
-Admitted.
-
-(* type controller.ActivePodsWithRanks *)
 Module ActivePodsWithRanks.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Pods' : slice.t;
-  Rank' : slice.t;
-  Now' : v1.Time.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ActivePodsWithRanks_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ActivePodsWithRanks.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Pods" ∷ l.[(controller.ActivePodsWithRanks.t), "Pods"] ↦{dq} v.(controller.ActivePodsWithRanks.Pods') ∗
+      "Rank" ∷ l.[(controller.ActivePodsWithRanks.t), "Rank"] ↦{dq} v.(controller.ActivePodsWithRanks.Rank') ∗
+      "Now" ∷ l.[(controller.ActivePodsWithRanks.t), "Now"] ↦{dq} v.(controller.ActivePodsWithRanks.Now') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ActivePodsWithRanks_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ActivePodsWithRanks.t) (controller.ActivePodsWithRanksⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ActivePodsWithRanks_access_load_Pods l (v : (controller.ActivePodsWithRanks.t)) dq :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Pods"] ↦{dq} (v.(controller.ActivePodsWithRanks.Pods')))
+    (l.[(controller.ActivePodsWithRanks.t), "Pods"] ↦{dq} (v.(controller.ActivePodsWithRanks.Pods')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ActivePodsWithRanks_access_store_Pods l (v : (controller.ActivePodsWithRanks.t)) Pods' :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Pods"] ↦ (v.(controller.ActivePodsWithRanks.Pods')))
+    (l.[(controller.ActivePodsWithRanks.t), "Pods"] ↦ Pods')
+    (l ↦ v) (l ↦ (v <|(controller.ActivePodsWithRanks.Pods') := Pods'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ActivePodsWithRanks_access_load_Rank l (v : (controller.ActivePodsWithRanks.t)) dq :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Rank"] ↦{dq} (v.(controller.ActivePodsWithRanks.Rank')))
+    (l.[(controller.ActivePodsWithRanks.t), "Rank"] ↦{dq} (v.(controller.ActivePodsWithRanks.Rank')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ActivePodsWithRanks_access_store_Rank l (v : (controller.ActivePodsWithRanks.t)) Rank' :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Rank"] ↦ (v.(controller.ActivePodsWithRanks.Rank')))
+    (l.[(controller.ActivePodsWithRanks.t), "Rank"] ↦ Rank')
+    (l ↦ v) (l ↦ (v <|(controller.ActivePodsWithRanks.Rank') := Rank'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ActivePodsWithRanks_access_load_Now l (v : (controller.ActivePodsWithRanks.t)) dq :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Now"] ↦{dq} (v.(controller.ActivePodsWithRanks.Now')))
+    (l.[(controller.ActivePodsWithRanks.t), "Now"] ↦{dq} (v.(controller.ActivePodsWithRanks.Now')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ActivePodsWithRanks_access_store_Now l (v : (controller.ActivePodsWithRanks.t)) Now' :
+  AccessStrict
+    (l.[(controller.ActivePodsWithRanks.t), "Now"] ↦ (v.(controller.ActivePodsWithRanks.Now')))
+    (l.[(controller.ActivePodsWithRanks.t), "Now"] ↦ Now')
+    (l ↦ v) (l ↦ (v <|(controller.ActivePodsWithRanks.Now') := Now'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End ActivePodsWithRanks.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent controller.ActivePodsWithRanks.
-#[local] Typeclasses Transparent controller.ActivePodsWithRanks.
-
-Global Instance ActivePodsWithRanks_wf : struct.Wf controller.ActivePodsWithRanks.
-Proof. apply _. Qed.
-
-Global Instance settable_ActivePodsWithRanks : Settable ActivePodsWithRanks.t :=
-  settable! ActivePodsWithRanks.mk < ActivePodsWithRanks.Pods'; ActivePodsWithRanks.Rank'; ActivePodsWithRanks.Now' >.
-Global Instance into_val_ActivePodsWithRanks : IntoVal ActivePodsWithRanks.t :=
-  {| to_val_def v :=
-    struct.val_aux controller.ActivePodsWithRanks [
-    "Pods" ::= #(ActivePodsWithRanks.Pods' v);
-    "Rank" ::= #(ActivePodsWithRanks.Rank' v);
-    "Now" ::= #(ActivePodsWithRanks.Now' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ActivePodsWithRanks : IntoValTyped ActivePodsWithRanks.t controller.ActivePodsWithRanks :=
-{|
-  default_val := ActivePodsWithRanks.mk (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ActivePodsWithRanks_Pods : IntoValStructField "Pods" controller.ActivePodsWithRanks ActivePodsWithRanks.Pods'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ActivePodsWithRanks_Rank : IntoValStructField "Rank" controller.ActivePodsWithRanks ActivePodsWithRanks.Rank'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ActivePodsWithRanks_Now : IntoValStructField "Now" controller.ActivePodsWithRanks ActivePodsWithRanks.Now'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ActivePodsWithRanks Pods' Rank' Now':
-  PureWp True
-    (struct.make #controller.ActivePodsWithRanks (alist_val [
-      "Pods" ::= #Pods';
-      "Rank" ::= #Rank';
-      "Now" ::= #Now'
-    ]))%struct
-    #(ActivePodsWithRanks.mk Pods' Rank' Now').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ActivePodsWithRanks_struct_fields_split dq l (v : ActivePodsWithRanks.t) :
-  StructFieldsSplit dq l v (
-    "HPods" ∷ l ↦s[controller.ActivePodsWithRanks :: "Pods"]{dq} v.(ActivePodsWithRanks.Pods') ∗
-    "HRank" ∷ l ↦s[controller.ActivePodsWithRanks :: "Rank"]{dq} v.(ActivePodsWithRanks.Rank') ∗
-    "HNow" ∷ l ↦s[controller.ActivePodsWithRanks :: "Now"]{dq} v.(ActivePodsWithRanks.Now')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ActivePodsWithRanks.Pods' v)) (controller.ActivePodsWithRanks) "Pods"%go.
-  simpl_one_flatten_struct (# (ActivePodsWithRanks.Rank' v)) (controller.ActivePodsWithRanks) "Rank"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type controller.filterRS *)
 Module filterRS.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance filterRS_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.filterRS.t). Admitted.
+
+#[global] Instance filterRS_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.filterRS.t) (controller.filterRSⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End filterRS.
 
-Global Instance bounded_size_filterRS : BoundedTypeSize controller.filterRS.
-Admitted.
-
-Global Instance into_val_filterRS `{ffi_syntax} : IntoVal filterRS.t.
-Admitted.
-
-Global Instance into_val_typed_filterRS `{ffi_syntax} : IntoValTyped filterRS.t controller.filterRS.
-Admitted.
-
-(* type controller.ControllersByCreationTimestamp *)
 Module ControllersByCreationTimestamp.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllersByCreationTimestamp_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ControllersByCreationTimestamp.t). Admitted.
+
+#[global] Instance ControllersByCreationTimestamp_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ControllersByCreationTimestamp.t) (controller.ControllersByCreationTimestampⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllersByCreationTimestamp.
 
-Global Instance bounded_size_ControllersByCreationTimestamp : BoundedTypeSize controller.ControllersByCreationTimestamp.
-Admitted.
-
-Global Instance into_val_ControllersByCreationTimestamp `{ffi_syntax} : IntoVal ControllersByCreationTimestamp.t.
-Admitted.
-
-Global Instance into_val_typed_ControllersByCreationTimestamp `{ffi_syntax} : IntoValTyped ControllersByCreationTimestamp.t controller.ControllersByCreationTimestamp.
-Admitted.
-
-(* type controller.ReplicaSetsByCreationTimestamp *)
 Module ReplicaSetsByCreationTimestamp.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicaSetsByCreationTimestamp_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ReplicaSetsByCreationTimestamp.t). Admitted.
+
+#[global] Instance ReplicaSetsByCreationTimestamp_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ReplicaSetsByCreationTimestamp.t) (controller.ReplicaSetsByCreationTimestampⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicaSetsByCreationTimestamp.
 
-Global Instance bounded_size_ReplicaSetsByCreationTimestamp : BoundedTypeSize controller.ReplicaSetsByCreationTimestamp.
-Admitted.
-
-Global Instance into_val_ReplicaSetsByCreationTimestamp `{ffi_syntax} : IntoVal ReplicaSetsByCreationTimestamp.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicaSetsByCreationTimestamp `{ffi_syntax} : IntoValTyped ReplicaSetsByCreationTimestamp.t controller.ReplicaSetsByCreationTimestamp.
-Admitted.
-
-(* type controller.ReplicaSetsBySizeOlder *)
 Module ReplicaSetsBySizeOlder.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicaSetsBySizeOlder_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ReplicaSetsBySizeOlder.t). Admitted.
+
+#[global] Instance ReplicaSetsBySizeOlder_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ReplicaSetsBySizeOlder.t) (controller.ReplicaSetsBySizeOlderⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicaSetsBySizeOlder.
 
-Global Instance bounded_size_ReplicaSetsBySizeOlder : BoundedTypeSize controller.ReplicaSetsBySizeOlder.
-Admitted.
-
-Global Instance into_val_ReplicaSetsBySizeOlder `{ffi_syntax} : IntoVal ReplicaSetsBySizeOlder.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicaSetsBySizeOlder `{ffi_syntax} : IntoValTyped ReplicaSetsBySizeOlder.t controller.ReplicaSetsBySizeOlder.
-Admitted.
-
-(* type controller.ReplicaSetsBySizeNewer *)
 Module ReplicaSetsBySizeNewer.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : controller.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicaSetsBySizeNewer_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (controller.ReplicaSetsBySizeNewer.t). Admitted.
+
+#[global] Instance ReplicaSetsBySizeNewer_into_val_typed
+   :
+  IntoValTypedUnderlying (controller.ReplicaSetsBySizeNewer.t) (controller.ReplicaSetsBySizeNewerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicaSetsBySizeNewer.
 
-Global Instance bounded_size_ReplicaSetsBySizeNewer : BoundedTypeSize controller.ReplicaSetsBySizeNewer.
-Admitted.
-
-Global Instance into_val_ReplicaSetsBySizeNewer `{ffi_syntax} : IntoVal ReplicaSetsBySizeNewer.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicaSetsBySizeNewer `{ffi_syntax} : IntoValTyped ReplicaSetsBySizeNewer.t controller.ReplicaSetsBySizeNewer.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_controller : IsPkgDefinedPure controller :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single controller ∧
-      is_pkg_defined_pure code.fmt.fmt ∧
-      is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.labels.labels ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.meta.meta ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.runtime;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_controller : IsPkgDefined controller :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single controller ∗
-       is_pkg_defined code.fmt.fmt ∗
-       is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.labels.labels ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.api.meta.meta ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.runtime)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-Global Instance wp_func_call_GetPodFromTemplate :
-  WpFuncCall controller.GetPodFromTemplate _ (is_pkg_defined controller) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_IsPodActive :
-  WpFuncCall controller.IsPodActive _ (is_pkg_defined controller) :=
-  ltac:(solve_wp_func_call).
-
-End names.
 End controller.

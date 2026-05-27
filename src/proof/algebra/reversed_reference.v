@@ -1,5 +1,6 @@
 From New.proof Require Import prelude.
 From iris.algebra Require Import cmra gset.
+From iris.base_logic.lib Require Import own.
 
 (*
   reversed_reference is used to track the reference between objects in a state.

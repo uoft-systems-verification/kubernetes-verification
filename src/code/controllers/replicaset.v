@@ -5,165 +5,166 @@ Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
-
+Module apps_v1 := code.k8s_io.api.apps.v1.v1.
+Module core_v1 := code.k8s_io.api.core.v1.v1.
+Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 From New.golang Require Import defn.
+Module pkg_id.
 Definition replicaset : go_string := "controllers/replicaset".
 
+End pkg_id.
+Export pkg_id.
 Module replicaset.
 
-Section code.
-Context `{ffi_syntax}.
+Definition manageReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.manageReplicas"%go.
 
-
-Definition manageReplicas : go_string := "controllers/replicaset.manageReplicas"%go.
+Definition syncReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
 (* go: replica_set.go:19:6 *)
-Definition manageReplicasⁱᵐᵖˡ : val :=
+Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "activePods" "rs",
-    exception_do (let: "rs" := (mem.alloc "rs") in
-    let: "activePods" := (mem.alloc "activePods") in
-    let: "diff" := (mem.alloc (type.zero_val #intT)) in
-    let: "$r0" := ((let: "$a0" := (![#sliceT] "activePods") in
-    slice.len "$a0") - (s_to_w64 (![#int32T] (![#ptrT] (struct.field_ref #v1.ReplicaSetSpec #"Replicas"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs"))))))) in
-    do:  ("diff" <-[#intT] "$r0");;;
-    (if: int_lt (![#intT] "diff") #(W64 0)
+    exception_do (let: "rs" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) "rs") in
+    let: "activePods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "activePods") in
+    let: "diff" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := ((let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "activePods") in
+    (FuncResolve go.len [go.SliceType (go.PointerType core_v1.Pod)] #()) "$a0") -⟨go.int⟩ (Convert go.int32 go.int (![go.int32] (![go.PointerType go.int32] (StructFieldRef apps_v1.ReplicaSetSpec "Replicas"%go (StructFieldRef apps_v1.ReplicaSet "Spec"%go (![go.PointerType apps_v1.ReplicaSet] "rs"))))))) in
+    do:  ("diff" <-[go.int] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.int] "diff") <⟨go.int⟩ #(W64 0))
     then
-      do:  ("diff" <-[#intT] ((![#intT] "diff") * #(W64 (- 1))));;;
-      (let: "i" := (mem.alloc (type.zero_val #intT)) in
+      do:  ("diff" <-[go.int] ((![go.int] "diff") *⟨go.int⟩ (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1))));;;
+      (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
       let: "$r0" := #(W64 0) in
-      do:  ("i" <-[#intT] "$r0");;;
-      (for: (λ: <>, int_lt (![#intT] "i") (![#intT] "diff")); (λ: <>, do:  ("i" <-[#intT] ((![#intT] "i") + #(W64 1)))) := λ: <>,
-        let: "err" := (mem.alloc (type.zero_val #error)) in
-        let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-        let: ("$ret0", "$ret1") := (let: "$a0" := (struct.field_ref #v1.ReplicaSetSpec #"Template"%go (struct.field_ref #v1.ReplicaSet #"Spec"%go (![#ptrT] "rs"))) in
-        let: "$a1" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
-        let: "$a2" := (let: "$a0" := (interface.make #(ptrT.id v1.ReplicaSet.id) (![#ptrT] "rs")) in
+      do:  ("i" <-[go.int] "$r0");;;
+      (for: (λ: <>, (![go.int] "i") <⟨go.int⟩ (![go.int] "diff")); (λ: <>, do:  ("i" <-[go.int] ((![go.int] "i") +⟨go.int⟩ #(W64 1)))) := λ: <>,
+        let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+        let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
+        let: ("$ret0", "$ret1") := (let: "$a0" := (StructFieldRef apps_v1.ReplicaSetSpec "Template"%go (StructFieldRef apps_v1.ReplicaSet "Spec"%go (![go.PointerType apps_v1.ReplicaSet] "rs"))) in
+        let: "$a1" := (Convert (go.PointerType apps_v1.ReplicaSet) runtime.Object (![go.PointerType apps_v1.ReplicaSet] "rs")) in
+        let: "$a2" := (let: "$a0" := (Convert (go.PointerType apps_v1.ReplicaSet) meta_v1.Object (![go.PointerType apps_v1.ReplicaSet] "rs")) in
         let: "$a1" := (let: "$a0" := #"ReplicaSet"%go in
-        (method_call #schema.GroupVersion.id #"WithKind"%go (![#schema.GroupVersion] (globals.get #v1.SchemeGroupVersion))) "$a0") in
-        (func_call #v1.NewControllerRef) "$a0" "$a1") in
-        (func_call #controller.GetPodFromTemplate) "$a0" "$a1" "$a2") in
+        (MethodResolve (go.PointerType schema.GroupVersion) "WithKind"%go (GlobalVarAddr apps_v1.SchemeGroupVersion #())) "$a0") in
+        (FuncResolve meta_v1.NewControllerRef [] #()) "$a0" "$a1") in
+        (FuncResolve controller.GetPodFromTemplate [] #()) "$a0" "$a1" "$a2") in
         let: "$r0" := "$ret0" in
         let: "$r1" := "$ret1" in
-        do:  ("pod" <-[#ptrT] "$r0");;;
-        do:  ("err" <-[#error] "$r1");;;
-        (if: (~ (interface.eq (![#error] "err") #interface.nil))
-        then return: (![#error] "err")
+        do:  ("pod" <-[go.PointerType core_v1.Pod] "$r0");;;
+        do:  ("err" <-[go.error] "$r1");;;
+        (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+        then return: (![go.error] "err")
         else do:  #());;;
-        let: ("$ret0", "$ret1") := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs"))) #()) in
-        let: "$a1" := (![#ptrT] "pod") in
-        (method_call #(ptrT.id apimodel.State.id) #"PodCreate"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1") in
+        let: ("$ret0", "$ret1") := (let: "$a0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rs"))) #()) in
+        let: "$a1" := (![go.PointerType core_v1.Pod] "pod") in
+        (MethodResolve (go.PointerType apimodel.State) "PodCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr common.State #()))) "$a0" "$a1") in
         let: "$r0" := "$ret0" in
         let: "$r1" := "$ret1" in
         do:  "$r0";;;
-        do:  ("err" <-[#error] "$r1");;;
-        (if: (~ (interface.eq (![#error] "err") #interface.nil))
-        then return: (![#error] "err")
+        do:  ("err" <-[go.error] "$r1");;;
+        (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+        then return: (![go.error] "err")
         else do:  #())))
     else
-      (if: int_gt (![#intT] "diff") #(W64 0)
+      (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ #(W64 0))
       then
-        let: "podsToDelete" := (mem.alloc (type.zero_val #sliceT)) in
-        let: "$r0" := (let: "$s" := (![#sliceT] "activePods") in
-        slice.slice #ptrT "$s" #(W64 0) (![#intT] "diff")) in
-        do:  ("podsToDelete" <-[#sliceT] "$r0");;;
-        let: "$range" := (![#sliceT] "podsToDelete") in
-        (let: "pod" := (mem.alloc (type.zero_val #ptrT)) in
-        slice.for_range #ptrT "$range" (λ: "$key" "$value",
-          do:  ("pod" <-[#ptrT] "$value");;;
+        let: "podsToDelete" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
+        let: "$r0" := (let: "$s" := (![go.SliceType (go.PointerType core_v1.Pod)] "activePods") in
+        Slice (go.SliceType (go.PointerType core_v1.Pod)) ("$s", #(W64 0), ![go.int] "diff")) in
+        do:  ("podsToDelete" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
+        let: "$range" := (![go.SliceType (go.PointerType core_v1.Pod)] "podsToDelete") in
+        (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
+        slice.for_range (go.PointerType core_v1.Pod) "$range" (λ: "$key" "$value",
+          do:  ("pod" <-[go.PointerType core_v1.Pod] "$value");;;
           do:  "$key";;;
-          let: "uid" := (mem.alloc (type.zero_val #types.UID)) in
-          let: "$r0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetUID"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
-          do:  ("uid" <-[#types.UID] "$r0");;;
-          (let: "err" := (mem.alloc (type.zero_val #error)) in
-          let: "$r0" := (let: "$a0" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetNamespace"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
-          let: "$a1" := ((method_call #(ptrT.id v1.ObjectMeta.id) #"GetName"%go (struct.field_ref #v1.Pod #"ObjectMeta"%go (![#ptrT] "pod"))) #()) in
-          let: "$a2" := (let: "$a0" := (![#types.UID] "uid") in
-          (func_call #common.NewDeleteOptionsWithUID) "$a0") in
-          (method_call #(ptrT.id apimodel.State.id) #"PodDelete"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1" "$a2") in
-          do:  ("err" <-[#error] "$r0");;;
-          (if: (~ (interface.eq (![#error] "err") #interface.nil))
+          let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
+          let: "$r0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
+          do:  ("uid" <-[types.UID] "$r0");;;
+          (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+          let: "$r0" := (let: "$a0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
+          let: "$a1" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
+          let: "$a2" := (let: "$a0" := (![types.UID] "uid") in
+          (FuncResolve common.NewDeleteOptionsWithUID [] #()) "$a0") in
+          (MethodResolve (go.PointerType apimodel.State) "PodDelete"%go (![go.PointerType apimodel.State] (GlobalVarAddr common.State #()))) "$a0" "$a1" "$a2") in
+          do:  ("err" <-[go.error] "$r0");;;
+          (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
           then
-            (if: (~ (let: "$a0" := (![#error] "err") in
-            (func_call #errors.IsNotFound) "$a0"))
-            then return: (![#error] "err")
+            (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
+            (FuncResolve errors.IsNotFound [] #()) "$a0"))
+            then return: (![go.error] "err")
             else do:  #())
           else do:  #()))))
       else do:  #()));;;
-    return: (#interface.nil)).
-
-Definition syncReplicaSet : go_string := "controllers/replicaset.syncReplicaSet"%go.
+    return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: replica_set.go:48:6 *)
-Definition syncReplicaSetⁱᵐᵖˡ : val :=
+Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
-    exception_do (let: "name" := (mem.alloc "name") in
-    let: "namespace" := (mem.alloc "namespace") in
-    let: "err" := (mem.alloc (type.zero_val #error)) in
-    let: "rs" := (mem.alloc (type.zero_val #ptrT)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![#stringT] "namespace") in
-    let: "$a1" := (![#stringT] "name") in
-    (method_call #(ptrT.id apimodel.State.id) #"ReplicaSetGet"%go (![#ptrT] (globals.get #common.State))) "$a0" "$a1") in
+    exception_do (let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "rs" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![go.string] "name") in
+    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr common.State #()))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("rs" <-[#ptrT] "$r0");;;
-    do:  ("err" <-[#error] "$r1");;;
-    (if: let: "$a0" := (![#error] "err") in
-    (func_call #errors.IsNotFound) "$a0"
-    then return: (#interface.nil)
+    do:  ("rs" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: let: "$a0" := (![go.error] "err") in
+    (FuncResolve errors.IsNotFound [] #()) "$a0"
+    then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    (if: (~ (interface.eq (![#error] "err") #interface.nil))
-    then return: (![#error] "err")
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (![go.error] "err")
     else do:  #());;;
-    let: "allRSPods" := (mem.alloc (type.zero_val #sliceT)) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")) in
+    let: "allRSPods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rs")) in
     let: "$a1" := #"ReplicaSet"%go in
-    (func_call #common.FilterPodsByOwner) "$a0" "$a1") in
+    (FuncResolve common.FilterPodsByOwner [] #()) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("allRSPods" <-[#sliceT] "$r0");;;
-    do:  ("err" <-[#error] "$r1");;;
-    (if: (~ (interface.eq (![#error] "err") #interface.nil))
-    then return: (![#error] "err")
+    do:  ("allRSPods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (![go.error] "err")
     else do:  #());;;
-    let: "allActivePods" := (mem.alloc (type.zero_val #sliceT)) in
-    let: "$r0" := (let: "$a0" := (![#sliceT] "allRSPods") in
-    (func_call #common.FilterActivePods) "$a0") in
-    do:  ("allActivePods" <-[#sliceT] "$r0");;;
-    let: "manageReplicasErr" := (mem.alloc (type.zero_val #error)) in
-    (if: (![#ptrT] (struct.field_ref #v1.ObjectMeta #"DeletionTimestamp"%go (struct.field_ref #v1.ReplicaSet #"ObjectMeta"%go (![#ptrT] "rs")))) = #null
+    let: "allActivePods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
+    let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "allRSPods") in
+    (FuncResolve common.FilterActivePods [] #()) "$a0") in
+    do:  ("allActivePods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
+    let: "manageReplicasErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rs")))) =⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![#sliceT] "allActivePods") in
-      let: "$a1" := (![#ptrT] "rs") in
-      (func_call #manageReplicas) "$a0" "$a1") in
-      do:  ("manageReplicasErr" <-[#error] "$r0")
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "allActivePods") in
+      let: "$a1" := (![go.PointerType apps_v1.ReplicaSet] "rs") in
+      (FuncResolve manageReplicas [] #()) "$a0" "$a1") in
+      do:  ("manageReplicasErr" <-[go.error] "$r0")
     else do:  #());;;
-    return: (![#error] "manageReplicasErr")).
+    return: (![go.error] "manageReplicasErr")).
 
-Definition vars' : list (go_string * go_type) := [].
+#[global] Instance info' : PkgInfo pkg_id.replicaset :=
+{|
+  pkg_imported_pkgs := [code.controllers.common.pkg_id.common; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
+|}.
 
-Definition functions' : list (go_string * val) := [(manageReplicas, manageReplicasⁱᵐᵖˡ); (syncReplicaSet, syncReplicaSetⁱᵐᵖˡ)].
-
-Definition msets' : list (go_string * (list (go_string * val))) := [].
-
-#[global] Instance info' : PkgInfo replicaset.replicaset :=
-  {|
-    pkg_vars := vars';
-    pkg_functions := functions';
-    pkg_msets := msets';
-    pkg_imported_pkgs := [code.controllers.common.common; code.k8s_io.api.apps.v1.v1; code.k8s_io.api.core.v1.v1; code.k8s_io.apimachinery.pkg.api.errors.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1; code.k8s_io.kubernetes.pkg.controller.controller];
-  |}.
-
-Definition initialize' : val :=
+Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    package.init #replicaset.replicaset (λ: <>,
+    package.init pkg_id.replicaset (λ: <>,
       exception_do (do:  (controller.initialize' #());;;
-      do:  (v1.initialize' #());;;
+      do:  (meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (common.initialize' #());;;
-      do:  (package.alloc replicaset.replicaset #()))
+      do:  (core_v1.initialize' #());;;
+      do:  (apps_v1.initialize' #());;;
+      do:  (common.initialize' #()))
       ).
 
-End code.
+Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] manageReplicas_unfold :: FuncUnfold manageReplicas [] (manageReplicasⁱᵐᵖˡ);
+  #[global] syncReplicaSet_unfold :: FuncUnfold syncReplicaSet [] (syncReplicaSetⁱᵐᵖˡ);
+  #[global] import_common_Assumption :: common.Assumptions;
+  #[global] import_apps_v1_Assumption :: apps_v1.Assumptions;
+  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
+  #[global] import_errors_Assumption :: errors.Assumptions;
+  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_controller_Assumption :: controller.Assumptions;
+}.
 End replicaset.

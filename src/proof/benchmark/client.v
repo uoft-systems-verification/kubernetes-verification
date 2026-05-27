@@ -5,15 +5,19 @@ From New.proof.kubernetes_model Require Export create get delete.
 Set Default Proof Using "Type".
 
 Section init.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : code.benchmark.client.client.Assumptions}.
+Collection W := sem + package_sem.
 
-#[global] Instance : IsPkgInit code.benchmark.client.client := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.benchmark.client.client := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit (iProp Σ) code.benchmark.client.pkg_id.client := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf (iProp Σ) code.benchmark.client.pkg_id.client := build_get_is_pkg_init_wf.
 
 End init.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : code.benchmark.client.client.Assumptions}.
+Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
 
 Definition pod_without_name (pod : PodV.t) : PodV.t :=

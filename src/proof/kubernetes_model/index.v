@@ -3,8 +3,10 @@ From New.proof Require Import util.
 From New.proof.kubernetes_model Require Export inv common list.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Local Set Default Proof Using "All".
 
 Definition podController_indexed_value pod : go_string :=
   match meta_parent_ref pod.(PodV.ObjectMeta') with
@@ -18,7 +20,7 @@ Lemma wp_index_of_podController i pod dq:
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i (KObjectV.Pod pod) dq
   }}}
-    @! apimodel.index_of #"podController"%go #i
+    @! apimodel.index_of #"podController"%go #(interface.ok i)
   {{{ sl, RET (#sl, #interface.nil);
       sl ↦* [podController_indexed_value pod] ∗
       KObjectV.deepown_i i (KObjectV.Pod pod) dq
@@ -346,18 +348,6 @@ Proof.
       Hnodup Hdom Hlook_up).
 Qed.
 
-(* Definition ByIndex_podController_map_list_rel
-  (parent_key : KKey.t) (pod_map : gmap KKey.t PodV.t) (pods : list PodV.t) : Prop :=
-  (* every pod in the list is also in the map *)
-  (Forall (λ pod, pod_map !! (PodV.key pod) = Some pod) pods) ∧
-  (* every pod in the map is also in the list *)
-  map_Forall (λ _ pod, pod ∈ pods) pod_map ∧
-  (* every pod in the map has the right key *)
-  map_Forall (λ key pod, key = PodV.key pod) pod_map ∧
-  (* children keys are the same as the parent key *)
-  map_Forall (λ key _, key.(KKey.Namespace') = parent_key.(KKey.Namespace')) pod_map. *)
-
-
 Lemma wp_State__ByIndex_podController_au γ l indexed_value :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
@@ -375,7 +365,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         slash_free parent_key.(KKey.Name') ∧
         slash_free parent_uid ⌝ ∗
       "Hclose" ∷ (∀ sl interfaces pods' dq',
-        sl ↦* interfaces ∗
+        sl ↦* (interface.ok <$> interfaces) ∗
         ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
         ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
           ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods) ⌝ ∗
@@ -386,11 +376,11 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         own_children_frag γ parent_key parent_uid dq children_keys
           ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V
       )
-  ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "ByIndex" #"Pod"%go #"podController"%go #indexed_value {{ Φ }}.
+  ) -∗ WP l @! (go.PointerType apimodel.State) @! "ByIndex" #"Pod"%go #"podController"%go #indexed_value {{ Φ }}.
 Proof.
   iIntros (Φ) "(#? & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  wp_method_call. wp_call.
-  wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ByIndexⁱᵐᵖˡ. wp_call.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
   wp_apply (wp_State__objListLocked_Pod_NamespaceAll with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
     $Hinv_Hphys_abs_rep]").
@@ -402,60 +392,68 @@ Proof.
   iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
   iDestruct (big_sepL2_length with "Hdeepown_i_interfaces") as %Hlen_pods.
   set P := (λ pod, podController_indexed_value pod = indexed_value).
-  set I := (∃ (i: w64) (val: interface.t) (sl': slice.t) (interfaces': list interface.t) (pods': list PodV.t),
+  set I := (∃ (i: w64) (val: interface.t) (sl': slice.t) (interfaces': list interface.t_ok) (pods': list PodV.t),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
     "Hval_ptr" ∷ val_ptr ↦ val ∗
     "Hitems_ptr" ∷ items_ptr ↦ sl' ∗
-    "Hsl'" ∷ sl' ↦* interfaces' ∗
+    "Hsl'" ∷ sl' ↦* (interface.ok <$> interfaces') ∗
     "Hlist_pre" ∷ ([∗ list] i;pod ∈ interfaces';pods', KObjectV.deepown_i i (KObjectV.Pod pod) 1) ∗
     "Hlist_post" ∷ ([∗ list] i;pod ∈ (drop (sint.nat i) interfaces);(drop (sint.nat i) pods),
       KObjectV.deepown_i i (KObjectV.Pod pod) 1) ∗
     "Hcap_sl'" :: own_slice_cap interface.t sl' (DfracOwn 1) ∗
     "%Hfilter" ∷ ⌜ pods' = filter P (take (sint.nat i) pods) ⌝ ∗
-    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len_f sl) ⌝
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z sl.(slice.len) ⌝
   )%I.
   iAssert (I) with "[i val items Hdeepown_i_interfaces]" as "Hloop_inv".
-  { iExists (W64 0), (default_val interface.t), (default_val slice.t), [], [].
+  { iExists (W64 0), (zero_val interface.t), (zero_val slice.t), [], [].
     iFrame. iFrame "#". rewrite !big_sepL2_nil. done. }
   wp_for "Hloop_inv". wp_if_destruct.
-  - wp_pure; first word.
-    list_elem interfaces (sint.Z i) as this_interface.
-    wp_apply (wp_load_slice_elem with "[$Hsl]"); [word|eauto| ]. iIntros "Hsl". wp_auto.
+  - assert (∃ this_interface, interfaces !! sint.nat i = Some this_interface) as [this_interface Hthis_interface_lookup].
+    { apply lookup_lt_is_Some_2.
+      rewrite <- (map_length interface.ok interfaces).
+      rewrite Hsl_len1. word. }
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last lia.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| | ].
+    { rewrite list_lookup_fmap Hthis_interface_lookup. done. }
+    iIntros "Hsl". wp_auto.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
-    { apply lookup_lt_is_Some_2. word. }
+    { apply lookup_lt_is_Some_2.
+      rewrite -Hlen_pods.
+      rewrite <- (map_length interface.ok interfaces).
+      rewrite Hsl_len1. word. }
     iPoseProof (big_sepL2_head_tail _ _ _ this_interface this_pod with "Hlist_post") as "[Hthis_i_pod Hother_i_pod]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
     wp_apply (wp_index_of_podController with "[$Hthis_i_pod]").
     iIntros (sl0) "(Hsl0 & Hthis_i_pod)". wp_auto.
-    rewrite bool_decide_true //. wp_auto.
     wp_alloc j_ptr as "Hj_ptr". wp_auto.
     iDestruct (own_slice_len with "Hsl0") as %(Hsl0_len1 & _). simpl in Hsl0_len1.
     set I0 := (∃ (j: w64) (v: go_string) (sl': slice.t),
       "Hj_ptr" ∷ j_ptr ↦ j ∗
       "Hv_ptr" ∷ v_ptr ↦ v ∗
       "Hitems_ptr" ∷ items_ptr ↦ sl' ∗
-      "Hsl'" ∷ sl' ↦* interfaces' ∗
+      "Hsl'" ∷ sl' ↦* (interface.ok <$> interfaces') ∗
       "Hcap_sl'" :: own_slice_cap interface.t sl' (DfracOwn 1) ∗
-      "%Hneg_P" ∷ ⌜ sint.Z j = sint.Z (slice.len_f sl0) → ¬ P this_pod ⌝ ∗
-      "%Hj" ∷ ⌜ 0 ≤ sint.Z j ≤ sint.Z (slice.len_f sl0) ⌝
+      "%Hneg_P" ∷ ⌜ sint.Z j = sint.Z sl0.(slice.len) → ¬ P this_pod ⌝ ∗
+      "%Hj" ∷ ⌜ 0 ≤ sint.Z j ≤ sint.Z sl0.(slice.len) ⌝
     )%I.
     iAssert (I0) with "[Hj_ptr v Hitems_ptr Hsl' Hcap_sl']" as "Hloop_inv0".
-    { iExists (W64 0), (default_val go_string), sl'.
+    { iExists (W64 0), (zero_val go_string), sl'.
       iFrame. iPureIntro. simpl. word. }
     wp_for "Hloop_inv0". wp_if_destruct.
-    + wp_pure; first word.
-      wp_apply (wp_load_slice_elem with "[$Hsl0]"); [word| | ].
+    + destruct (decide (0 ≤ sint.Z j < sint.Z (slice.len sl0))) as [_|Hbounds]; last lia.
+      wp_apply (wp_load_slice_index with "[$Hsl0]"); [word| | ].
       { iPureIntro. assert (sint.nat j = 0%nat) as -> by word. done. }
       iIntros "Hsl0". wp_auto.
       destruct (bool_decide (podController_indexed_value this_pod = indexed_value)) as [|] eqn:Heq; wp_auto.
-      * wp_apply wp_slice_literal. iIntros (sl1) "Hsl1". wp_auto.
+      * wp_apply wp_slice_literal. iSplitR; first done. iIntros (sl1) "[Hsl1 _]". wp_auto.
         wp_apply (wp_slice_append with "[$Hsl' $Hcap_sl' $Hsl1]").
         iIntros (sl'') "(Hsl'' & Hcap_sl'' & Hsl1)". wp_auto.
         wp_for_post.
         wp_for_post.
         iAssert (I) with "[Hi_ptr Hval_ptr Hitems_ptr Hsl'' Hlist_pre Hthis_i_pod Hother_i_pod Hcap_sl'']" as "Hloop_inv".
-        { iExists (word.add i (W64 1)), this_interface, sl'', (interfaces' ++ [this_interface]),
+        { iExists (word.add i (W64 1)), (interface.ok this_interface), sl'', (interfaces' ++ [this_interface]),
             ((filter P (take (sint.nat i) pods)) ++ [this_pod]).
+          rewrite fmap_app /=.
           iFrame.
           rewrite !big_sepL2_nil.
           assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
@@ -476,7 +474,7 @@ Proof.
         iFrame.
     + wp_for_post.
       iAssert (I) with "[Hi_ptr Hval_ptr Hitems_ptr Hsl' Hlist_pre Hthis_i_pod Hother_i_pod Hcap_sl']" as "Hloop_inv".
-      { iExists (word.add i (W64 1)), this_interface, sl'0, interfaces', (filter P (take (sint.nat i) pods)).
+      { iExists (word.add i (W64 1)), (interface.ok this_interface), sl'0, interfaces', (filter P (take (sint.nat i) pods)).
         iFrame.
         assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
         rewrite !drop_drop Nat.add_1_r.
@@ -491,7 +489,10 @@ Proof.
       iFrame.
   - iApply fupd_wp.
     iMod "Hau" as (spec_pods parent_key parent_uid children_keys dq) "H". iNamed "H".
-    assert (sint.nat i = length pods) as -> by word.
+    assert (sint.nat i = length pods) as ->.
+    { rewrite -Hlen_pods.
+      rewrite <- (map_length interface.ok interfaces).
+      rewrite Hsl_len1. word. }
     rewrite take_ge. 1: done.
     iPoseProof (kview.own_meta_list_exists PodV.key PodV.ObjectMeta' spec_pods dq
       with "Hinv_Hown_abs Hown_meta_frags") as "(%Hlook_up & %Huid_in)".
@@ -549,9 +550,9 @@ Lemma wp_State__ByIndex_podController γ l indexed_value pods parent_key parent_
         slash_free parent_key.(KKey.Name') ∧
         slash_free parent_uid ⌝
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "ByIndex" #"Pod"%go #"podController"%go #indexed_value
+    l @! (go.PointerType apimodel.State) @! "ByIndex" #"Pod"%go #"podController"%go #indexed_value
   {{{ sl interfaces pods' dq', RET (#sl, #interface.nil);
-      "Hsl" ∷ sl ↦* interfaces ∗
+      "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
       "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
       "%Hmeta_perm" ∷ ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods) ⌝ ∗
@@ -565,7 +566,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__ByIndex_podController_au.
   iFrame "#". iFrame "%". iFrame.
-  iApply fupd_mask_intro; [set_solver|iIntros "Hmask"].
+  iApply fupd_mask_intro; [timeout 5 set_solver|iIntros "Hmask"].
   iIntros (sl interfaces pods_ret dq') "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.

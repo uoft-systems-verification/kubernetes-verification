@@ -7,54 +7,9 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.golang.theory.
-
 Require Export New.code.controllers.replicaset.
 
 Set Default Proof Using "Type".
 
 Module replicaset.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_replicaset : IsPkgDefinedPure replicaset :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single replicaset ∧
-      is_pkg_defined_pure code.controllers.common.common ∧
-      is_pkg_defined_pure code.k8s_io.api.apps.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.errors.errors ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.kubernetes.pkg.controller.controller;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_replicaset : IsPkgDefined replicaset :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single replicaset ∗
-       is_pkg_defined code.controllers.common.common ∗
-       is_pkg_defined code.k8s_io.api.apps.v1.v1 ∗
-       is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.api.errors.errors ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
-       is_pkg_defined code.k8s_io.kubernetes.pkg.controller.controller)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-Global Instance wp_func_call_manageReplicas :
-  WpFuncCall replicaset.manageReplicas _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_func_call).
-
-Global Instance wp_func_call_syncReplicaSet :
-  WpFuncCall replicaset.syncReplicaSet _ (is_pkg_defined replicaset) :=
-  ltac:(solve_wp_func_call).
-
-End names.
 End replicaset.

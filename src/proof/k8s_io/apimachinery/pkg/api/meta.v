@@ -1,18 +1,24 @@
-From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
-From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export pure_objects.
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {package_sem : meta.Assumptions}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Local Set Default Proof Using "All".
 
 (* FIXME: Accessor should return the same pointer *)
 Lemma wp_Accessor i l o:
-  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.meta ∗
+  {{{ is_pkg_init meta ∗
       ⌜ KObjectV.valid_interface i l o ⌝
   }}}
-    @! meta.Accessor #i
-  {{{ RET (#(interface.mk (ptrT.id v1.ObjectMeta.id) #(KObjectV.objectmeta_ptr l o)), #interface.nil);
+    @! meta.Accessor #(interface.ok i)
+  {{{ RET (#(interface.ok (interface.mk (go.PointerType v1.ObjectMeta) #(KObjectV.objectmeta_ptr l o))), #interface.nil);
     True
   }}}.
 Proof.

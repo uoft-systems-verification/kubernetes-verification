@@ -28,11 +28,14 @@ From New.proof Require Export strconv_init.
 From New.proof Require Export rand_init.
 From New.proof Require Export reflect_init.
 Require Export New.generatedproof.kubernetes_model.apimodel.
+From New.proof Require Import proof_prelude.
 
 Section proof.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _} {go_ctx: GoContext}.
+Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem.
 
-#[global] Instance : IsPkgInit code.kubernetes_model.apimodel.apimodel := define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf code.kubernetes_model.apimodel.apimodel := build_get_is_pkg_init_wf.
+#[global] Instance : IsPkgInit (iProp Σ) apimodel := define_is_pkg_init True%I.
+#[global] Instance : GetIsPkgInitWf (iProp Σ) apimodel := build_get_is_pkg_init_wf.
 
 End proof.

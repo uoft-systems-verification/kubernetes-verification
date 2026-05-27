@@ -1,9 +1,10 @@
-From New.proof Require Export empty_ffi.
+From New.proof Require Export prelude empty_ffi.
 From New.code Require Export fmt.
 From New.proof Require Export fmt strconv_init.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}.
 
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
   {{{ is_pkg_init fmt ∗

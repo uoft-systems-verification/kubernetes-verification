@@ -1,5 +1,6 @@
 From New.proof Require Import prelude.
 From iris.algebra Require Import agree auth gmap.
+From iris.base_logic.lib Require Import own.
 
 Section mono_gmap.
 Context (K V : Type) `{Countable K}.

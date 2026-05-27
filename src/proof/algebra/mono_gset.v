@@ -1,5 +1,6 @@
 From New.proof Require Import prelude.
 From iris.algebra Require Import auth gset.
+From iris.base_logic.lib Require Import own.
 
 Section mono_gset.
 Context (A : Type) `{Countable A}.

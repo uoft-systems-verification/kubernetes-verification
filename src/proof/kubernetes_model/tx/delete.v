@@ -5,8 +5,12 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From iris.bi.lib Require Import atomic.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
+Context `{!go.IntoValInj KKey.t}.
+Local Set Default Proof Using "All".
 
 Definition precondition_uid_mismatch (options : DeleteOptionsV.t) (metadata : ObjectMetaV.t) : bool :=
   match options.(DeleteOptionsV.Preconditions') with
@@ -20,11 +24,11 @@ Definition precondition_uid_mismatch (options : DeleteOptionsV.t) (metadata : Ob
 
 Lemma wp_preconditionUIDMismatch options_c options metadata_i metadata_l metadata dq :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (ptrT.id v1.ObjectMeta.id) #metadata_l ⌝ ∗
+      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options dq ∗
       "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata dq
   }}}
-    @! apimodel.preconditionUIDMismatch #options_c #metadata_i
+    @! apimodel.preconditionUIDMismatch #options_c #(interface.ok metadata_i)
   {{{ mismatch, RET #mismatch;
       "%Hmismatch" ∷ ⌜ mismatch = precondition_uid_mismatch options metadata ⌝ ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options dq ∗
@@ -225,10 +229,10 @@ Qed.
 
 Lemma wp_setPreconditionResourceVersion options_l options metadata_i metadata_l metadata :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (ptrT.id v1.ObjectMeta.id) #metadata_l ⌝ ∗
+      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options 1 ∗
       "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata 1 }}}
-    @! apimodel.setPreconditionResourceVersion #options_l #metadata_i
+    @! apimodel.setPreconditionResourceVersion #options_l #(interface.ok metadata_i)
   {{{ RET #();
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1 ∗
@@ -243,7 +247,7 @@ Proof.
   iIntros "Hdeepown_metadata".
   wp_auto.
   iAssert (⌜ rv_ptr ≠ null ⌝%I) as "%Hrv_ptr_not_null".
-  { iDestruct (typed_pointsto_not_null with "rv") as %H; [done|]. done. }
+  { iDestruct (typed_pointsto_not_null with "rv") as %Hrv_ptr_not_null'. done. }
   destruct options.(DeleteOptionsV.Preconditions') as [preconditions|] eqn:Hpreconditions.
   - iDestruct "Hdeepown_preconditions_some" as (preconditions_c)
       "[Hpreconditions_l Hdeepown_preconditions]".
@@ -342,7 +346,7 @@ Proof.
     wp_auto.
     iClear "Hdeepown_preconditions_some".
     iAssert (⌜ preconditions_ptr ≠ null ⌝%I) as "%Hpreconditions_ptr_not_null".
-    { iDestruct (typed_pointsto_not_null with "Hpreconditions_l") as %H; [done|]. done. }
+    { iDestruct (typed_pointsto_not_null with "Hpreconditions_l") as %Hpreconditions_ptr_not_null'. done. }
     iAssert (PreconditionsV.deepown
       (v1.Preconditions.mk null rv_ptr)
       (delete_tx_preconditions_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
@@ -396,11 +400,11 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
       delete_success_post γ key uid parent_key parent_uid children kmeta',
       COMM ▷ Φ #interface.nil
     }>
-    -∗ WP l @ (ptrT.id apimodel.State.id) @ "deleteTx" #key #options_c {{ Φ }}.
+    -∗ WP l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hkinv & H)".
   iNamed "H".
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__deleteTxⁱᵐᵖˡ. wp_call. wp_auto.
   set I := (∃ options_c_orig,
     "Hoptions_ptr" ∷ options_ptr ↦ options_c_orig ∗
     "Hdeepown_options_orig" ∷ DeleteOptionsV.deepown options_c_orig options 1 ∗
@@ -423,7 +427,6 @@ Proof.
   iIntros (options_copy_ptr) "[(%options_c_copy & Hoptions_copy_ptr & Hdeepown_options_copy)
     (%options_c' & Hoptions_ptr & Hdeepown_options_orig)]".
   wp_auto.
-  iClear "Hoptions_copy_ptr". clear options_copy_ptr.
   wp_apply (wp_State__get_some_au γ l key).
   iFrame "#".
   iMod "Hau" as (uid kmeta parent_key parent_uid children) "[Hau_pre Hclose]".
@@ -441,11 +444,9 @@ Proof.
   { iFrame. iFrame "%". }
   iModIntro. iNext. wp_auto.
   iDestruct "Hdeepown_i" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  rewrite bool_decide_true //. wp_auto.
   wp_apply wp_Accessor. 1: iPureIntro; done.
-  rewrite bool_decide_true //. wp_auto.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
-    "(Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
+    "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   destruct Hmeta_valid as (_ & _ & Huid_kmeta & _).
   assert (Huid_kobj : uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID')).
   { rewrite Huid_kmeta.
@@ -514,7 +515,7 @@ Proof.
     iMod ("Hcommit" $! kmeta'' with "Hpost") as "HΦ".
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_nil with "[]").
+    wp_apply (wp_IsConflict_nil interface.nil with "[]").
     { done. }
     wp_for_post.
     iApply "HΦ".
@@ -524,12 +525,11 @@ Proof.
     { iFrame. iFrame "%". }
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_conflict with "[]").
+    wp_apply (wp_IsConflict_conflict err' with "[]").
     { done. }
     wp_for_post.
     iFrame "s key".
-    iExists options_c'.
-    iFrame "Hoptions_ptr Hdeepown_options_orig Hau".
+    iExists options_c'. iFrame.
 Qed.
 
 Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_uid children :
@@ -542,7 +542,7 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "deleteTx" #key #options_c
+    l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c
   {{{ kmeta', RET #interface.nil;
       delete_success_post γ key uid parent_key parent_uid children kmeta'
   }}}.

@@ -5,10 +5,22 @@ From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export time string.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
+Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
+
+Lemma struct_fields_split `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l (v : V) dq :
+  l ↦{dq} v ⊢@{iProp Σ} typed_pointsto_def l v dq ∗ ⌜l ≠ null⌝.
+Proof. rewrite typed_pointsto_unseal /typed_pointsto_wrap. iIntros "[$ $]". Qed.
+
+Lemma struct_fields_combine `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l (v : V) dq :
+  l ≠ null →
+  typed_pointsto_def l v dq ⊢@{iProp Σ} l ↦{dq} v.
+Proof. intros Hnot_null. iApply (typed_pointsto_combine l v dq Hnot_null). Qed.
 
 Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
@@ -81,6 +93,8 @@ Axiom valid_annotations: option (gmap go_string go_string) → Prop.
 Module OwnerReferenceV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {
   APIVersion' : go_string;
   Kind' : go_string;
@@ -135,6 +149,8 @@ End OwnerReferenceV.
 Module ManagedFieldsEntryV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
@@ -173,6 +189,8 @@ Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
 Module ObjectMetaV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {
   Name' : go_string;
   GenerateName' : go_string;
@@ -458,7 +476,11 @@ End ObjectMetaV.
 Module PodSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
-Record t := mk {}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
 Axiom valid: t → Prop.
 Axiom deepown : v1.PodSpec.t → t → iProp Σ.
 
@@ -471,33 +493,13 @@ End PodSpecV.
 Module PodStatusV.
 Section def.
 Context `{hG: !heapGS Σ}.
-Record t := mk {
-  Phase' : go_string;
-  (* ObservedGeneration' : w64;
-  Phase' : PodPhase.t;
-  Conditions' : slice.t;
-  Message' : go_string;
-  Reason' : go_string;
-  NominatedNodeName' : go_string;
-  HostIP' : go_string;
-  HostIPs' : slice.t;
-  PodIP' : go_string;
-  PodIPs' : slice.t;
-  StartTime' : loc;
-  InitContainerStatuses' : slice.t;
-  ContainerStatuses' : slice.t;
-  QOSClass' : PodQOSClass.t;
-  EphemeralContainerStatuses' : slice.t;
-  Resize' : PodResizeStatus.t;
-  ResourceClaimStatuses' : slice.t;
-  ExtendedResourceClaimStatus' : loc; *)
-}.
-
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
 Axiom valid: t → Prop.
-
-Definition deepown (c: v1.PodStatus.t) (v: t): iProp Σ :=
-  "%Hdeepown_phase" ∷ ⌜ c.(v1.PodStatus.Phase') = v.(Phase') ⌝ ∗
-  "%true" ∷ True.
+Axiom deepown : v1.PodStatus.t → t → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v.
@@ -508,6 +510,10 @@ End PodStatusV.
 Module PodV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {
   TypeMeta' : v1.TypeMeta.t;
   ObjectMeta' : ObjectMetaV.t;
@@ -547,16 +553,16 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition typemeta_ptr l: loc :=
-  struct.field_ref_f v1.Pod "TypeMeta" l.
+  struct_field_ref v1.Pod.t "TypeMeta" l.
 
 Definition objectmeta_ptr l: loc :=
-  struct.field_ref_f v1.Pod "ObjectMeta" l.
+  struct_field_ref v1.Pod.t "ObjectMeta" l.
 
 Definition spec_ptr l: loc :=
-  struct.field_ref_f v1.Pod "Spec" l.
+  struct_field_ref v1.Pod.t "Spec" l.
 
 Definition status_ptr l: loc :=
-  struct.field_ref_f v1.Pod "Status" l.
+  struct_field_ref v1.Pod.t "Status" l.
 
 Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
   v <| ObjectMeta' := m |>.
@@ -567,17 +573,22 @@ Definition deepown_without_meta (c: v1.Pod.t) (v: t): iProp Σ :=
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
-  l ↦s[ v1.Pod :: "Spec" ]{dq} c.(v1.Pod.Spec') ∗
-  l ↦s[ v1.Pod :: "Status" ]{dq} c.(v1.Pod.Status') ∗
+  spec_ptr l ↦{dq} c.(v1.Pod.Spec') ∗
+  status_ptr l ↦{dq} c.(v1.Pod.Status') ∗
   deepown_without_meta c v.
 
 End def.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 Lemma deepown_l_split l v dq:
   deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
     (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
     ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
     PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
@@ -587,8 +598,9 @@ Proof.
   iIntros "H".
   iDestruct "H" as (c) "[Hl Hdeepown]".
   iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
-  iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "Hfields".
-  iNamed "Hfields".
+  iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "[Hfields %Hnot_null]".
+  iNamedPrefix "Hfields" "H".
+  iSplitR; first done.
   rewrite -Htypemeta.
   iFrame "HTypeMeta".
   iSplitL "HObjectMeta Hobjectmeta".
@@ -599,21 +611,26 @@ Proof.
 Qed.
 
 Lemma deepown_l_merge l v vm dq:
+  l ≠ null →
   (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l) vm dq ∗
   PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
   PodStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
     deepown_l l (update_objectmeta v vm) dq.
 Proof.
+  intros Hnot_null.
   destruct v as [v_typemeta v_objectmeta v_spec v_status].
   unfold deepown_l, deepown, update_objectmeta.
+  rewrite /typemeta_ptr /objectmeta_ptr /spec_ptr /status_ptr.
   iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
   iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
   iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
   iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
-  iDestruct (struct_fields_combine
-    (v:= v1.Pod.mk v_typemeta cm cspec cstatus)
-    with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
+  iAssert (typed_pointsto_def l (v1.Pod.mk v_typemeta cm cspec cstatus) dq)
+    with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields".
+  { simpl. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.Pod.t)
+    l (v1.Pod.mk v_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl".
   iExists (v1.Pod.mk v_typemeta cm cspec cstatus).
   iSplitL "Hl"; first iExact "Hl".
   iSplitR "Hobjectmeta Hspec Hstatus"; first done.
@@ -621,14 +638,16 @@ Proof.
 Qed.
 
 Lemma deepown_l_restore l v dq:
+  l ≠ null →
   (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
   PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
   PodStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
     deepown_l l v dq.
 Proof.
+  intros Hnot_null.
   iIntros "H".
-  iPoseProof (deepown_l_merge with "H") as "H".
+  iPoseProof (deepown_l_merge l v v.(ObjectMeta') dq Hnot_null with "H") as "H".
   assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
   { destruct v. done. }
   iFrame.
@@ -640,6 +659,10 @@ End PodV.
 Module PodTemplateSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {
   ObjectMeta' : ObjectMetaV.t;
   Spec' : PodSpecV.t;
@@ -651,9 +674,7 @@ Definition valid (v: t) : Prop :=
   meta_valid v.(ObjectMeta') ∧
   PodSpecV.valid v.(Spec').
 
-Definition deepown (c: v1.PodTemplateSpec.t) (v: t) dq: iProp Σ :=
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec').
+Axiom deepown : v1.PodTemplateSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -664,6 +685,10 @@ End PodTemplateSpecV.
 Module ReplicaSetSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {
   Replicas' : option w32;
   MinReadySeconds' : w32;
@@ -699,6 +724,10 @@ End ReplicaSetSpecV.
 Module ReplicaSetStatusV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
 Axiom valid : t → Prop.
 Axiom deepown : v1.ReplicaSetStatus.t → t → iProp Σ.
@@ -712,6 +741,10 @@ End ReplicaSetStatusV.
 Module ReplicaSetV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {
   TypeMeta' : v1.TypeMeta.t;
   ObjectMeta' : ObjectMetaV.t;
@@ -751,16 +784,16 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition typemeta_ptr l: loc :=
-  struct.field_ref_f v1.ReplicaSet "TypeMeta" l.
+  struct_field_ref v1.ReplicaSet.t "TypeMeta" l.
 
 Definition objectmeta_ptr l: loc :=
-  struct.field_ref_f v1.ReplicaSet "ObjectMeta" l.
+  struct_field_ref v1.ReplicaSet.t "ObjectMeta" l.
 
 Definition spec_ptr l: loc :=
-  struct.field_ref_f v1.ReplicaSet "Spec" l.
+  struct_field_ref v1.ReplicaSet.t "Spec" l.
 
 Definition status_ptr l: loc :=
-  struct.field_ref_f v1.ReplicaSet "Status" l.
+  struct_field_ref v1.ReplicaSet.t "Status" l.
 
 Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
   v <| ObjectMeta' := m |>.
@@ -771,17 +804,22 @@ Definition deepown_without_meta (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
-  l ↦s[ v1.ReplicaSet :: "Spec" ]{dq} c.(v1.ReplicaSet.Spec') ∗
-  l ↦s[ v1.ReplicaSet :: "Status" ]{dq} c.(v1.ReplicaSet.Status') ∗
+  spec_ptr l ↦{dq} c.(v1.ReplicaSet.Spec') ∗
+  status_ptr l ↦{dq} c.(v1.ReplicaSet.Status') ∗
   deepown_without_meta c v dq.
 
 End def.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 Lemma deepown_l_split l v dq:
   deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
     (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
     ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
     ReplicaSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
@@ -791,8 +829,9 @@ Proof.
   iIntros "H".
   iDestruct "H" as (c) "[Hl Hdeepown]".
   iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
-  iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "Hfields".
-  iNamed "Hfields".
+  iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "[Hfields %Hnot_null]".
+  iNamedPrefix "Hfields" "H".
+  iSplitR; first done.
   rewrite -Htypemeta.
   iFrame "HTypeMeta".
   iSplitL "HObjectMeta Hobjectmeta".
@@ -803,21 +842,26 @@ Proof.
 Qed.
 
 Lemma deepown_l_merge l v vm dq:
+  l ≠ null →
   (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l) vm dq ∗
   ReplicaSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
   ReplicaSetStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
     deepown_l l (update_objectmeta v vm) dq.
 Proof.
+  intros Hnot_null.
   destruct v as [v_typemeta v_objectmeta v_spec v_status].
   unfold deepown_l, deepown, update_objectmeta.
+  rewrite /typemeta_ptr /objectmeta_ptr /spec_ptr /status_ptr.
   iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
   iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
   iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
   iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
-  iDestruct (struct_fields_combine
-    (v:= v1.ReplicaSet.mk v_typemeta cm cspec cstatus)
-    with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl".
+  iAssert (typed_pointsto_def l (v1.ReplicaSet.mk v_typemeta cm cspec cstatus) dq)
+    with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields".
+  { simpl. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.ReplicaSet.t)
+    l (v1.ReplicaSet.mk v_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl".
   iExists (v1.ReplicaSet.mk v_typemeta cm cspec cstatus).
   iSplitL "Hl"; first iExact "Hl".
   iSplitR "Hobjectmeta Hspec Hstatus"; first done.
@@ -825,14 +869,16 @@ Proof.
 Qed.
 
 Lemma deepown_l_restore l v dq:
+  l ≠ null →
   (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
   ReplicaSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
   ReplicaSetStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
     deepown_l l v dq.
 Proof.
+  intros Hnot_null.
   iIntros "H".
-  iPoseProof (deepown_l_merge with "H") as "H".
+  iPoseProof (deepown_l_merge l v v.(ObjectMeta') dq Hnot_null with "H") as "H".
   assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
   { destruct v. done. }
   iFrame.
@@ -871,6 +917,10 @@ End KObject.
 Module ObjectSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 Inductive t :=
 | PodSpec (p : PodSpecV.t)
@@ -898,6 +948,10 @@ End ObjectSpecV.
 Module ObjectStatusV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 Inductive t :=
 | PodStatus (p : PodStatusV.t)
@@ -924,6 +978,10 @@ End ObjectStatusV.
 Module KObjectV.
 Section def.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Inductive t :=
 | Pod (p : PodV.t)
 | ReplicaSet (rs : ReplicaSetV.t).
@@ -1058,8 +1116,8 @@ Definition deepown_l_without_meta l v dq: iProp Σ :=
 
 Definition valid_interface i (l: loc) v: Prop :=
   match v with
-  | Pod _ => i = interface.mk (ptrT.id v1.Pod.id) #l
-  | ReplicaSet _ => i = interface.mk (ptrT.id v1.ReplicaSet.id) #l
+  | Pod _ => i = interface.mk (go.PointerType v1.Pod) #l
+  | ReplicaSet _ => i = interface.mk (go.PointerType v1.ReplicaSet) #l
   end.
 
 Definition deepown_i i v dq: iProp Σ :=
@@ -1067,35 +1125,40 @@ Definition deepown_i i v dq: iProp Σ :=
 
 Definition typemeta_ptr l v: loc :=
   match v with
-  | Pod _ => struct.field_ref_f v1.Pod "TypeMeta" l
-  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "TypeMeta" l
+  | Pod _ => struct_field_ref v1.Pod.t "TypeMeta" l
+  | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "TypeMeta" l
   end.
 
 Definition objectmeta_ptr l v: loc :=
   match v with
-  | Pod _ => struct.field_ref_f v1.Pod "ObjectMeta" l
-  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "ObjectMeta" l
+  | Pod _ => struct_field_ref v1.Pod.t "ObjectMeta" l
+  | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "ObjectMeta" l
   end.
 
 Definition spec_ptr l v: loc :=
   match v with
-  | Pod _ => struct.field_ref_f v1.Pod "Spec" l
-  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "Spec" l
+  | Pod _ => struct_field_ref v1.Pod.t "Spec" l
+  | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "Spec" l
   end.
 
 Definition status_ptr l v: loc :=
   match v with
-  | Pod _ => struct.field_ref_f v1.Pod "Status" l
-  | ReplicaSet _ => struct.field_ref_f v1.ReplicaSet "Status" l
+  | Pod _ => struct_field_ref v1.Pod.t "Status" l
+  | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "Status" l
   end.
 
 End def.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 Lemma deepown_l_split l v dq:
   deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
     (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
     ObjectMetaV.deepown_l (objectmeta_ptr l v) (objectmeta v) dq ∗
     ObjectSpecV.deepown_l (spec_ptr l v) (spec v) dq ∗
@@ -1108,9 +1171,10 @@ Proof.
     iDestruct "H" as (c) "[Hl Hdeepown]";
     iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)";
     first
-      [iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "Hfields"
-      |iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "Hfields"];
-    iNamed "Hfields";
+      [iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "[Hfields %Hnot_null]"
+      |iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "[Hfields %Hnot_null]"];
+    iNamedPrefix "Hfields" "H";
+    iSplitR; first done;
     rewrite -Htypemeta;
     iFrame "HTypeMeta";
     iSplitL "HObjectMeta Hobjectmeta";
@@ -1122,12 +1186,14 @@ Qed.
 
 (* TODO: deepown_l_merge is only used for merging updated objectmeta; generalize it later *)
 Lemma deepown_l_merge l v vm dq:
+  l ≠ null →
   (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l v) vm dq ∗
   ObjectSpecV.deepown_l (spec_ptr l v) (spec v) dq ∗
   ObjectStatusV.deepown_l (status_ptr l v) (status v) dq ⊢
     deepown_l l (update_objectmeta v vm) dq.
 Proof.
+  intros Hnot_null.
   destruct v as [p|rs]; simpl;
     [destruct p as [p_typemeta p_objectmeta p_spec p_status];
      unfold ObjectSpecV.deepown_l, ObjectStatusV.deepown_l, PodV.deepown_l, PodV.deepown
@@ -1138,13 +1204,17 @@ Proof.
   all: iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
   all: iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
   all: first
-    [iDestruct (struct_fields_combine
-       (v:= v1.Pod.mk p_typemeta cm cspec cstatus)
-       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl";
+    [iAssert (typed_pointsto_def l (v1.Pod.mk p_typemeta cm cspec cstatus) dq)
+       with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields";
+     [simpl; iFrame|];
+     iDestruct (struct_fields_combine (V:=v1.Pod.t)
+       l (v1.Pod.mk p_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl";
      iExists (v1.Pod.mk p_typemeta cm cspec cstatus)
-    |iDestruct (struct_fields_combine
-       (v:= v1.ReplicaSet.mk rs_typemeta cm cspec cstatus)
-       with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hl";
+    |iAssert (typed_pointsto_def l (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus) dq)
+       with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields";
+     [simpl; iFrame|];
+     iDestruct (struct_fields_combine (V:=v1.ReplicaSet.t)
+       l (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl";
      iExists (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus)].
   all: iSplitL "Hl"; first iExact "Hl".
   all: iSplitR "Hobjectmeta Hspec Hstatus"; first (iPureIntro; done).
@@ -1153,14 +1223,16 @@ Proof.
 Qed.
 
 Lemma deepown_l_restore l v dq:
+  l ≠ null →
   (typemeta_ptr l v) ↦{dq} (typemeta v) ∗
   ObjectMetaV.deepown_l (objectmeta_ptr l v) (objectmeta v) dq ∗
   ObjectSpecV.deepown_l (spec_ptr l v) (spec v) dq ∗
   ObjectStatusV.deepown_l (status_ptr l v) (status v) dq ⊢
     deepown_l l v dq.
 Proof.
+  intros Hnot_null.
   iIntros "H".
-  iPoseProof (deepown_l_merge with "H") as "H".
+  iPoseProof (deepown_l_merge l v (objectmeta v) dq Hnot_null with "H") as "H".
   assert (update_objectmeta v (objectmeta v) = v) as ->.
   { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
   iFrame.
@@ -1183,7 +1255,9 @@ End KObjectV.
 
 Module PreconditionsV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {
   UID' : option types.UID.t;
   ResourceVersion' : option go_string;
@@ -1205,7 +1279,7 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition valid_interface i (l : loc) : Prop :=
-  i = interface.mk (ptrT.id v1.Preconditions.id) #l.
+  i = interface.mk (go.PointerType v1.Preconditions) #l.
 
 Definition deepown_i i v dq: iProp Σ :=
   ∃ l, ⌜ valid_interface i l ⌝ ∗ deepown_l l v dq.
@@ -1214,7 +1288,9 @@ End PreconditionsV.
 
 Module DeleteOptionsV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {
   TypeMeta' : v1.TypeMeta.t;
   GracePeriodSeconds' : option w64;
@@ -1252,7 +1328,7 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition valid_interface i (l : loc) : Prop :=
-  i = interface.mk (ptrT.id v1.DeleteOptions.id) #l.
+  i = interface.mk (go.PointerType v1.DeleteOptions) #l.
 
 Definition deepown_i i v dq: iProp Σ :=
   ∃ l, ⌜ valid_interface i l ⌝ ∗ deepown_l l v dq.

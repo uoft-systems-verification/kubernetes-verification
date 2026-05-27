@@ -2,15 +2,43 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export inv common.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Local Set Default Proof Using "All".
+
+Lemma wp_map_lookup2_KKey elem_type mref (m : gmap KKey.t interface.t) k dq :
+  {{{ mref ↦${dq} m }}}
+    map.lookup2 apimodel.KKey elem_type #mref #k
+  {{{ RET (#(default (zero_val interface.t) (m !! k)), #(bool_decide (is_Some (m !! k)))); mref ↦${dq} m }}}.
+Proof.
+  wp_start as "Hm".
+  rewrite own_map_unseal /own_map_def. iNamed "Hm".
+  iDestruct (heap_pointsto_non_null with "Hown") as "%Hnotnil".
+  replace (bool_decide (apimodel.KKey.Kind' k = apimodel.KKey.Kind' k)) with true by
+    (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  replace (bool_decide (apimodel.KKey.Name' k = apimodel.KKey.Name' k)) with true by
+    (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  replace (bool_decide (apimodel.KKey.Namespace' k = apimodel.KKey.Namespace' k)) with true by
+    (symmetry; apply bool_decide_eq_true_2; done).
+  replace (bool_decide (mref = map.nil)) with false by
+    (symmetry; apply bool_decide_eq_false_2; intros ->; apply Hnotnil; done).
+  wp_auto.
+  wp_apply (_internal_wp_untyped_read with "Hown") as "Hown".
+  erewrite go.map_lookup_pure; last done.
+  pose proof (Hagree k) as Heq. rewrite Heq. destruct (m !! k); wp_auto.
+  - iApply "HΦ". iFrame "∗#%".
+  - iApply "HΦ". iFrame "∗#%".
+Qed.
 
 Lemma wp_State__get γ l key :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "get" #key
-  {{{ i (err: error.t) kobj, RET (#i, #err);
+    l @! (go.PointerType apimodel.State) @! "get" #key
+  {{{ i (err: error.t) kobj, RET (#(interface.ok i), #err);
       ⌜ err = interface.nil ⌝ ∗
       ⌜ KObjectV.valid kobj ⌝ ∗
       ⌜ key = KObjectV.key kobj ⌝ ∗
@@ -27,8 +55,8 @@ Lemma wp_State__get_none γ l key uid :
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Htomb" ∷ own_tombstone_frag γ uid
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "get" #key
-  {{{ i (err: error.t) kobj, RET (#i, #err);
+    l @! (go.PointerType apimodel.State) @! "get" #key
+  {{{ i (err: error.t) kobj, RET (#(interface.ok i), #err);
       ⌜ err = interface.nil ⌝ ∗
       ⌜ KObjectV.valid kobj ⌝ ∗
       ⌜ key = KObjectV.key kobj ⌝ ∗
@@ -67,15 +95,17 @@ Lemma wp_State__get_some_au γ l key :
         | Some kstatus => own_status_frag γ key uid dq kstatus ∗ ⌜ kstatus = KObjectV.status kobj ⌝
         | None => True
         end
-          ={∅,⊤}=∗ ▷ Φ (#i, #interface.nil)%V
+          ={∅,⊤}=∗ ▷ Φ (#(interface.ok i), #interface.nil)%V
       )
-  ) -∗ WP l @ (ptrT.id apimodel.State.id) @ "get" #key {{ Φ }}.
+  ) -∗ WP l @! (go.PointerType apimodel.State) @! "get" #key {{ Φ }}.
 Proof.
-  iIntros (Φ) "(#? & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  wp_method_call. wp_call.
-  wp_apply wp_with_defer. iIntros (defer) "Hdefer". simpl subst. wp_auto.
+  iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
+  wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
+  wp_apply wp_with_defer as "%defer Hdefer".
+  simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
-  wp_apply (wp_map_get with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
+  wp_apply (wp_map_lookup2_KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
+  iIntros "Hinv_Hown_phys". wp_auto.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
   2: {
@@ -101,8 +131,10 @@ Proof.
     eexists. done. }
   iDestruct (big_sepM2_lookup_acc _ _ _ _ _ _ Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep")
   as "(Hdeepown_i & Hother_rep)".
+  destruct i as [i_ok|].
+  2: { simpl. iDestruct "Hdeepown_i" as %[]. }
   rewrite Hlookup_phys. wp_auto.
-  wp_apply (wp_deepCopy with "[$Hdeepown_i]").
+  wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
   iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto.
   iApply fupd_wp.
   iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
@@ -124,13 +156,18 @@ Proof.
   all: iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ";
     [iFrame; iPureIntro; split_and!; done|].
   all: iModIntro.
-  all: iAssert (([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)%I)
+  all: iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
+      match i with
+      | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+      | interface.nil => False%I
+      end)%I)
     with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep";
     [iApply "Hother_rep"; iFrame|].
   all: iCombineNamed "Hinv_*" as "H".
   all: wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]");
     [iNamed "H"; iFrame; iFrame "#"; done|].
   all: iApply "HΦ".
+Unshelve. all: try tc_solve.
 Qed.
 
 Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
@@ -146,8 +183,8 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
       | None => True
       end
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "get" #key
-  {{{ i kobj, RET (#i, #interface.nil);
+    l @! (go.PointerType apimodel.State) @! "get" #key
+  {{{ i kobj, RET (#(interface.ok i), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
@@ -170,7 +207,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__get_some_au.
   iFrame "#". iFrame.
-  iApply fupd_mask_intro; [ set_solver | iIntros "Hmask" ].
+  iApply fupd_mask_intro; [ timeout 5 set_solver | iIntros "Hmask" ].
   iIntros (i kobj) "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.
@@ -189,7 +226,7 @@ Lemma wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus :
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec kspec) ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid dq (ObjectStatusV.PodStatus kstatus)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "PodMutGet" #namespace #name
+    l @! (go.PointerType apimodel.State) @! "PodMutGet" #namespace #name
   {{{ pod_l pod, RET (#pod_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
@@ -203,7 +240,7 @@ Lemma wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodMutGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq kmeta (Some (ObjectSpecV.PodSpec kspec)) (Some (ObjectStatusV.PodStatus kstatus))
@@ -220,16 +257,15 @@ Proof.
   rename Hstatus_eq' into Hstatus_eq.
   iDestruct "Hdeepown_i" as (pod_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  rewrite bool_decide_true //. wp_auto.
   unfold KObjectV.valid_interface in Hi. rewrite Hi.
-  unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
-  { iPureIntro. intros ptr_id. exists pod_l. done. }
-  iIntros (y ok) "%if_ok".
-  assert (ok = true) as ->.
-  { destruct ok; [done|]. intuition. }
+  change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
+  cbn [interface.ty interface.v].
+  replace (if decide (go.PointerType v1.Pod = go.PointerType v1.Pod)
+           then #pod_l else #null)%V with (#pod_l)%V by
+    (rewrite decide_True; done).
+  replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
+    (symmetry; apply bool_decide_eq_true_2; done).
   wp_auto.
-  assert (pod_l = y) as ->.
-  { inversion if_ok. apply (inj to_val). done. }
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -245,7 +281,7 @@ Lemma wp_State__PodGet γ l key namespace name uid dq kmeta kspec kstatus :
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec kspec) ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid dq (ObjectStatusV.PodStatus kstatus)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "PodGet" #namespace #name
+    l @! (go.PointerType apimodel.State) @! "PodGet" #namespace #name
   {{{ pod_l pod, RET (#pod_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
@@ -259,7 +295,7 @@ Lemma wp_State__PodGet γ l key namespace name uid dq kmeta kspec kstatus :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
@@ -279,7 +315,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "ReplicaSetMutGet" #namespace #name
+    l @! (go.PointerType apimodel.State) @! "ReplicaSetMutGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
@@ -291,7 +327,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec)) None
@@ -306,16 +342,15 @@ Proof.
   rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (rs_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  rewrite bool_decide_true //. wp_auto.
   unfold KObjectV.valid_interface in Hi. rewrite Hi.
-  unshelve wp_apply wp_interface_checked_type_assert; try tc_solve.
-  { iPureIntro. intros ptr_id. exists rs_l. done. }
-  iIntros (y ok) "%if_ok".
-  assert (ok = true) as ->.
-  { destruct ok; [done|]. intuition. }
+  change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
+  cbn [interface.ty interface.v].
+  replace (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
+           then #rs_l else #null)%V with (#rs_l)%V by
+    (rewrite decide_True; done).
+  replace (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)) with true by
+    (symmetry; apply bool_decide_eq_true_2; done).
   wp_auto.
-  assert (rs_l = y) as ->.
-  { inversion if_ok. apply (inj to_val). done. }
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -330,7 +365,7 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "ReplicaSetGet" #namespace #name
+    l @! (go.PointerType apimodel.State) @! "ReplicaSetGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
@@ -342,7 +377,7 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. done. }

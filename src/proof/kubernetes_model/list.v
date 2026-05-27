@@ -2,8 +2,10 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export inv common.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Local Set Default Proof Using "All".
 
 Lemma kobject_list_to_pods objs :
   Forall (λ obj, ∃ pod, obj = KObjectV.Pod pod) objs →
@@ -14,51 +16,67 @@ Proof.
   - exists (pod :: pods). done.
 Qed.
 
-Lemma wp_State__objListLocked γ l kind namespace phys_state_l phys_state abs_state used_uid :
+Lemma wp_State__objListLocked γ l (kind namespace : go_string) phys_state_l phys_state abs_state used_uid :
   {{{ is_pkg_init apimodel ∗
-      "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
       "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
-      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "objListLocked" #kind #namespace
+    l @! (go.PointerType apimodel.State) @! "objListLocked" #kind #namespace
   {{{ sl interfaces objs, RET #sl;
-      sl ↦* interfaces ∗
+      sl ↦* (interface.ok <$> interfaces) ∗
       ([∗ list] i;obj ∈ interfaces;objs, KObjectV.deepown_i i obj 1) ∗
       ⌜ objs ≡ₚ (map_to_list (filter
-          (λ kv, kv.1.(KKey.Kind') = kind ∧ v1.namespace_matches namespace kv.1.(KKey.Namespace'))
+          (λ kv, kv.1.(KKey.Kind') = kind ∧ v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')))
           abs_state)).*2 ⌝ ∗
       ⌜ Forall KObjectV.valid objs ⌝ ∗
       ⌜ Forall KObjectV.valid_old objs ⌝ ∗
       ⌜ NoDup (KObjectV.key <$> objs) ⌝ ∗
-      l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       phys_state_l ↦$ phys_state ∗
       own_kview_auth γ abs_state used_uid ∗
-      ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_State__objListLocked_Pod γ l namespace phys_state_l phys_state abs_state used_uid :
+Lemma wp_State__objListLocked_Pod γ l (namespace : go_string) phys_state_l phys_state abs_state used_uid :
   {{{ is_pkg_init apimodel ∗
-      "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
       "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
-      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "objListLocked" #"Pod"%go #namespace
+    l @! (go.PointerType apimodel.State) @! "objListLocked" #"Pod"%go #namespace
   {{{ sl interfaces pods, RET #sl;
-      sl ↦* interfaces ∗
+      sl ↦* (interface.ok <$> interfaces) ∗
       ([∗ list] i;pod ∈ interfaces;pods, KObjectV.deepown_i i (KObjectV.Pod pod) 1) ∗
       ⌜ KObjectV.Pod <$> pods ≡ₚ (map_to_list (filter
-          (λ kv, kv.1.(KKey.Kind') = "Pod"%go ∧ v1.namespace_matches namespace kv.1.(KKey.Namespace'))
+          (λ kv, kv.1.(KKey.Kind') = "Pod"%go ∧ v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')))
           abs_state)).*2 ⌝ ∗
       ⌜ Forall PodV.valid pods ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       phys_state_l ↦$ phys_state ∗
       own_kview_auth γ abs_state used_uid ∗
-      ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
@@ -95,22 +113,30 @@ Qed.
 
 Lemma wp_State__objListLocked_Pod_NamespaceAll γ l phys_state_l phys_state abs_state used_uid :
   {{{ is_pkg_init apimodel ∗
-      "Hstate_m_addr" ∷ l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
       "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
-      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "objListLocked" #"Pod"%go #v1.NamespaceAll
+    l @! (go.PointerType apimodel.State) @! "objListLocked" #"Pod"%go #""%go
   {{{ sl interfaces pods, RET #sl;
-      sl ↦* interfaces ∗
+      sl ↦* (interface.ok <$> interfaces) ∗
       ([∗ list] i;pod ∈ interfaces;pods, KObjectV.deepown_i i (KObjectV.Pod pod) 1) ∗
       ⌜ KObjectV.Pod <$> pods ≡ₚ (map_to_list (filter (λ kv, kv.1.(KKey.Kind') = "Pod"%go) abs_state)).*2 ⌝ ∗
       ⌜ Forall PodV.valid pods ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      l ↦s[apimodel.State :: "m"] phys_state_l ∗
+      l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       phys_state_l ↦$ phys_state ∗
       own_kview_auth γ abs_state used_uid ∗
-      ([∗ map] i; obj ∈ phys_state; abs_state, KObjectV.deepown_i i obj 1)
+      ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
@@ -121,7 +147,7 @@ Proof.
   iPureIntro.
   assert (filter
     (λ kv, kv.1.(KKey.Kind') = "Pod"%go ∧
-      v1.namespace_matches v1.NamespaceAll kv.1.(KKey.Namespace')) abs_state =
+      v1.namespace_matches v1.NamespaceAll #(kv.1.(KKey.Namespace'))) abs_state =
     filter (λ kv, kv.1.(KKey.Kind') = "Pod"%go) abs_state) as Hfilter_eq.
   { apply map_eq. intros k.
     destruct (abs_state !! k) as [obj|] eqn:Hlookup.

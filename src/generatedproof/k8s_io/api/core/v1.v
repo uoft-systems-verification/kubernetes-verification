@@ -3,7585 +3,6172 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.resource.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.api.core.v1.
 
 Set Default Proof Using "Type".
 
 Module v1.
-
-(* type v1.VolumeSource *)
-Module VolumeSource.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End VolumeSource.
-
-Global Instance bounded_size_VolumeSource : BoundedTypeSize v1.VolumeSource.
-Admitted.
-
-Global Instance into_val_VolumeSource `{ffi_syntax} : IntoVal VolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeSource `{ffi_syntax} : IntoValTyped VolumeSource.t v1.VolumeSource.
-Admitted.
-
-(* type v1.Volume *)
 Module Volume.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-  VolumeSource' : VolumeSource.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Volume_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Volume.t). Admitted.
+
+#[global] Instance Volume_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Volume.t) (v1.Volumeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Volume.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.Volume.
-#[local] Typeclasses Transparent v1.Volume.
+Module VolumeSource.
+Section def.
 
-Global Instance Volume_wf : struct.Wf v1.Volume.
-Proof. apply _. Qed.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
 
-Global Instance settable_Volume : Settable Volume.t :=
-  settable! Volume.mk < Volume.Name'; Volume.VolumeSource' >.
-Global Instance into_val_Volume : IntoVal Volume.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.Volume [
-    "Name" ::= #(Volume.Name' v);
-    "VolumeSource" ::= #(Volume.VolumeSource' v)
-    ]%struct
-  |}.
+Local Set Default Proof Using "All".
 
-Global Program Instance into_val_typed_Volume : IntoValTyped Volume.t v1.Volume :=
-{|
-  default_val := Volume.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
+#[global] Instance VolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeSource.t). Admitted.
 
-Global Instance into_val_struct_field_Volume_Name : IntoValStructField "Name" v1.Volume Volume.Name'.
-Proof. solve_into_val_struct_field. Qed.
+#[global] Instance VolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeSource.t) (v1.VolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
 
-Global Instance into_val_struct_field_Volume_VolumeSource : IntoValStructField "VolumeSource" v1.Volume Volume.VolumeSource'.
-Proof. solve_into_val_struct_field. Qed.
+End def.
+End VolumeSource.
 
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Volume Name' VolumeSource':
-  PureWp True
-    (struct.make #v1.Volume (alist_val [
-      "Name" ::= #Name';
-      "VolumeSource" ::= #VolumeSource'
-    ]))%struct
-    #(Volume.mk Name' VolumeSource').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Volume_struct_fields_split dq l (v : Volume.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.Volume :: "Name"]{dq} v.(Volume.Name') ∗
-    "HVolumeSource" ∷ l ↦s[v1.Volume :: "VolumeSource"]{dq} v.(Volume.VolumeSource')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Volume.Name' v)) (v1.Volume) "Name"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PersistentVolumeClaimVolumeSource *)
 Module PersistentVolumeClaimVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimVolumeSource.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimVolumeSource.t) (v1.PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimVolumeSource.
 
-Global Instance bounded_size_PersistentVolumeClaimVolumeSource : BoundedTypeSize v1.PersistentVolumeClaimVolumeSource.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimVolumeSource `{ffi_syntax} : IntoVal PersistentVolumeClaimVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimVolumeSource `{ffi_syntax} : IntoValTyped PersistentVolumeClaimVolumeSource.t v1.PersistentVolumeClaimVolumeSource.
-Admitted.
-
-(* type v1.PersistentVolumeSource *)
 Module PersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeSource.t). Admitted.
+
+#[global] Instance PersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeSource.t) (v1.PersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeSource.
 
-Global Instance bounded_size_PersistentVolumeSource : BoundedTypeSize v1.PersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_PersistentVolumeSource `{ffi_syntax} : IntoVal PersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeSource `{ffi_syntax} : IntoValTyped PersistentVolumeSource.t v1.PersistentVolumeSource.
-Admitted.
-
-(* type v1.PersistentVolume *)
 Module PersistentVolume.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolume_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolume.t). Admitted.
+
+#[global] Instance PersistentVolume_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolume.t) (v1.PersistentVolumeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolume.
 
-Global Instance bounded_size_PersistentVolume : BoundedTypeSize v1.PersistentVolume.
-Admitted.
-
-Global Instance into_val_PersistentVolume `{ffi_syntax} : IntoVal PersistentVolume.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolume `{ffi_syntax} : IntoValTyped PersistentVolume.t v1.PersistentVolume.
-Admitted.
-
-(* type v1.PersistentVolumeSpec *)
 Module PersistentVolumeSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeSpec.t). Admitted.
+
+#[global] Instance PersistentVolumeSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeSpec.t) (v1.PersistentVolumeSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeSpec.
 
-Global Instance bounded_size_PersistentVolumeSpec : BoundedTypeSize v1.PersistentVolumeSpec.
-Admitted.
-
-Global Instance into_val_PersistentVolumeSpec `{ffi_syntax} : IntoVal PersistentVolumeSpec.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeSpec `{ffi_syntax} : IntoValTyped PersistentVolumeSpec.t v1.PersistentVolumeSpec.
-Admitted.
-
-(* type v1.VolumeNodeAffinity *)
 Module VolumeNodeAffinity.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeNodeAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeNodeAffinity.t). Admitted.
+
+#[global] Instance VolumeNodeAffinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeNodeAffinity.t) (v1.VolumeNodeAffinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeNodeAffinity.
 
-Global Instance bounded_size_VolumeNodeAffinity : BoundedTypeSize v1.VolumeNodeAffinity.
-Admitted.
-
-Global Instance into_val_VolumeNodeAffinity `{ffi_syntax} : IntoVal VolumeNodeAffinity.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeNodeAffinity `{ffi_syntax} : IntoValTyped VolumeNodeAffinity.t v1.VolumeNodeAffinity.
-Admitted.
-
-(* type v1.PersistentVolumeReclaimPolicy *)
 Module PersistentVolumeReclaimPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeReclaimPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeReclaimPolicy.t). Admitted.
+
+#[global] Instance PersistentVolumeReclaimPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeReclaimPolicy.t) (v1.PersistentVolumeReclaimPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeReclaimPolicy.
 
-Global Instance bounded_size_PersistentVolumeReclaimPolicy : BoundedTypeSize v1.PersistentVolumeReclaimPolicy.
-Admitted.
-
-Global Instance into_val_PersistentVolumeReclaimPolicy `{ffi_syntax} : IntoVal PersistentVolumeReclaimPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeReclaimPolicy `{ffi_syntax} : IntoValTyped PersistentVolumeReclaimPolicy.t v1.PersistentVolumeReclaimPolicy.
-Admitted.
-
-(* type v1.PersistentVolumeMode *)
 Module PersistentVolumeMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeMode.t). Admitted.
+
+#[global] Instance PersistentVolumeMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeMode.t) (v1.PersistentVolumeModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeMode.
 
-Global Instance bounded_size_PersistentVolumeMode : BoundedTypeSize v1.PersistentVolumeMode.
-Admitted.
-
-Global Instance into_val_PersistentVolumeMode `{ffi_syntax} : IntoVal PersistentVolumeMode.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeMode `{ffi_syntax} : IntoValTyped PersistentVolumeMode.t v1.PersistentVolumeMode.
-Admitted.
-
-(* type v1.PersistentVolumeStatus *)
 Module PersistentVolumeStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeStatus.t). Admitted.
+
+#[global] Instance PersistentVolumeStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeStatus.t) (v1.PersistentVolumeStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeStatus.
 
-Global Instance bounded_size_PersistentVolumeStatus : BoundedTypeSize v1.PersistentVolumeStatus.
-Admitted.
-
-Global Instance into_val_PersistentVolumeStatus `{ffi_syntax} : IntoVal PersistentVolumeStatus.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeStatus `{ffi_syntax} : IntoValTyped PersistentVolumeStatus.t v1.PersistentVolumeStatus.
-Admitted.
-
-(* type v1.PersistentVolumeList *)
 Module PersistentVolumeList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeList.t). Admitted.
+
+#[global] Instance PersistentVolumeList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeList.t) (v1.PersistentVolumeListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeList.
 
-Global Instance bounded_size_PersistentVolumeList : BoundedTypeSize v1.PersistentVolumeList.
-Admitted.
-
-Global Instance into_val_PersistentVolumeList `{ffi_syntax} : IntoVal PersistentVolumeList.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeList `{ffi_syntax} : IntoValTyped PersistentVolumeList.t v1.PersistentVolumeList.
-Admitted.
-
-(* type v1.PersistentVolumeClaim *)
 Module PersistentVolumeClaim.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaim.t). Admitted.
+
+#[global] Instance PersistentVolumeClaim_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaim.t) (v1.PersistentVolumeClaimⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaim.
 
-Global Instance bounded_size_PersistentVolumeClaim : BoundedTypeSize v1.PersistentVolumeClaim.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaim `{ffi_syntax} : IntoVal PersistentVolumeClaim.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaim `{ffi_syntax} : IntoValTyped PersistentVolumeClaim.t v1.PersistentVolumeClaim.
-Admitted.
-
-(* type v1.PersistentVolumeClaimList *)
 Module PersistentVolumeClaimList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimList.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimList.t) (v1.PersistentVolumeClaimListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimList.
 
-Global Instance bounded_size_PersistentVolumeClaimList : BoundedTypeSize v1.PersistentVolumeClaimList.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimList `{ffi_syntax} : IntoVal PersistentVolumeClaimList.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimList `{ffi_syntax} : IntoValTyped PersistentVolumeClaimList.t v1.PersistentVolumeClaimList.
-Admitted.
-
-(* type v1.PersistentVolumeClaimSpec *)
 Module PersistentVolumeClaimSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimSpec.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimSpec.t) (v1.PersistentVolumeClaimSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimSpec.
 
-Global Instance bounded_size_PersistentVolumeClaimSpec : BoundedTypeSize v1.PersistentVolumeClaimSpec.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimSpec `{ffi_syntax} : IntoVal PersistentVolumeClaimSpec.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimSpec `{ffi_syntax} : IntoValTyped PersistentVolumeClaimSpec.t v1.PersistentVolumeClaimSpec.
-Admitted.
-
-(* type v1.TypedObjectReference *)
 Module TypedObjectReference.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TypedObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TypedObjectReference.t). Admitted.
+
+#[global] Instance TypedObjectReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TypedObjectReference.t) (v1.TypedObjectReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TypedObjectReference.
 
-Global Instance bounded_size_TypedObjectReference : BoundedTypeSize v1.TypedObjectReference.
-Admitted.
-
-Global Instance into_val_TypedObjectReference `{ffi_syntax} : IntoVal TypedObjectReference.t.
-Admitted.
-
-Global Instance into_val_typed_TypedObjectReference `{ffi_syntax} : IntoValTyped TypedObjectReference.t v1.TypedObjectReference.
-Admitted.
-
-(* type v1.PersistentVolumeClaimConditionType *)
 Module PersistentVolumeClaimConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimConditionType.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimConditionType.t) (v1.PersistentVolumeClaimConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimConditionType.
 
-Global Instance bounded_size_PersistentVolumeClaimConditionType : BoundedTypeSize v1.PersistentVolumeClaimConditionType.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimConditionType `{ffi_syntax} : IntoVal PersistentVolumeClaimConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimConditionType `{ffi_syntax} : IntoValTyped PersistentVolumeClaimConditionType.t v1.PersistentVolumeClaimConditionType.
-Admitted.
-
-(* type v1.ClaimResourceStatus *)
 Module ClaimResourceStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ClaimResourceStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ClaimResourceStatus.t). Admitted.
+
+#[global] Instance ClaimResourceStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ClaimResourceStatus.t) (v1.ClaimResourceStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ClaimResourceStatus.
 
-Global Instance bounded_size_ClaimResourceStatus : BoundedTypeSize v1.ClaimResourceStatus.
-Admitted.
-
-Global Instance into_val_ClaimResourceStatus `{ffi_syntax} : IntoVal ClaimResourceStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ClaimResourceStatus `{ffi_syntax} : IntoValTyped ClaimResourceStatus.t v1.ClaimResourceStatus.
-Admitted.
-
-(* type v1.PersistentVolumeClaimModifyVolumeStatus *)
 Module PersistentVolumeClaimModifyVolumeStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimModifyVolumeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimModifyVolumeStatus.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimModifyVolumeStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimModifyVolumeStatus.t) (v1.PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimModifyVolumeStatus.
 
-Global Instance bounded_size_PersistentVolumeClaimModifyVolumeStatus : BoundedTypeSize v1.PersistentVolumeClaimModifyVolumeStatus.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimModifyVolumeStatus `{ffi_syntax} : IntoVal PersistentVolumeClaimModifyVolumeStatus.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimModifyVolumeStatus `{ffi_syntax} : IntoValTyped PersistentVolumeClaimModifyVolumeStatus.t v1.PersistentVolumeClaimModifyVolumeStatus.
-Admitted.
-
-(* type v1.ModifyVolumeStatus *)
 Module ModifyVolumeStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ModifyVolumeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ModifyVolumeStatus.t). Admitted.
+
+#[global] Instance ModifyVolumeStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ModifyVolumeStatus.t) (v1.ModifyVolumeStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ModifyVolumeStatus.
 
-Global Instance bounded_size_ModifyVolumeStatus : BoundedTypeSize v1.ModifyVolumeStatus.
-Admitted.
-
-Global Instance into_val_ModifyVolumeStatus `{ffi_syntax} : IntoVal ModifyVolumeStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ModifyVolumeStatus `{ffi_syntax} : IntoValTyped ModifyVolumeStatus.t v1.ModifyVolumeStatus.
-Admitted.
-
-(* type v1.PersistentVolumeClaimCondition *)
 Module PersistentVolumeClaimCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimCondition.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimCondition.t) (v1.PersistentVolumeClaimConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimCondition.
 
-Global Instance bounded_size_PersistentVolumeClaimCondition : BoundedTypeSize v1.PersistentVolumeClaimCondition.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimCondition `{ffi_syntax} : IntoVal PersistentVolumeClaimCondition.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimCondition `{ffi_syntax} : IntoValTyped PersistentVolumeClaimCondition.t v1.PersistentVolumeClaimCondition.
-Admitted.
-
-(* type v1.PersistentVolumeClaimStatus *)
 Module PersistentVolumeClaimStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimStatus.t) (v1.PersistentVolumeClaimStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimStatus.
 
-Global Instance bounded_size_PersistentVolumeClaimStatus : BoundedTypeSize v1.PersistentVolumeClaimStatus.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimStatus `{ffi_syntax} : IntoVal PersistentVolumeClaimStatus.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimStatus `{ffi_syntax} : IntoValTyped PersistentVolumeClaimStatus.t v1.PersistentVolumeClaimStatus.
-Admitted.
-
-(* type v1.PersistentVolumeAccessMode *)
 Module PersistentVolumeAccessMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeAccessMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeAccessMode.t). Admitted.
+
+#[global] Instance PersistentVolumeAccessMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeAccessMode.t) (v1.PersistentVolumeAccessModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeAccessMode.
 
-Global Instance bounded_size_PersistentVolumeAccessMode : BoundedTypeSize v1.PersistentVolumeAccessMode.
-Admitted.
-
-Global Instance into_val_PersistentVolumeAccessMode `{ffi_syntax} : IntoVal PersistentVolumeAccessMode.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeAccessMode `{ffi_syntax} : IntoValTyped PersistentVolumeAccessMode.t v1.PersistentVolumeAccessMode.
-Admitted.
-
-(* type v1.PersistentVolumePhase *)
 Module PersistentVolumePhase.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumePhase_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumePhase.t). Admitted.
+
+#[global] Instance PersistentVolumePhase_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumePhase.t) (v1.PersistentVolumePhaseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumePhase.
 
-Global Instance bounded_size_PersistentVolumePhase : BoundedTypeSize v1.PersistentVolumePhase.
-Admitted.
-
-Global Instance into_val_PersistentVolumePhase `{ffi_syntax} : IntoVal PersistentVolumePhase.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumePhase `{ffi_syntax} : IntoValTyped PersistentVolumePhase.t v1.PersistentVolumePhase.
-Admitted.
-
-(* type v1.PersistentVolumeClaimPhase *)
 Module PersistentVolumeClaimPhase.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimPhase_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimPhase.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimPhase_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimPhase.t) (v1.PersistentVolumeClaimPhaseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimPhase.
 
-Global Instance bounded_size_PersistentVolumeClaimPhase : BoundedTypeSize v1.PersistentVolumeClaimPhase.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimPhase `{ffi_syntax} : IntoVal PersistentVolumeClaimPhase.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimPhase `{ffi_syntax} : IntoValTyped PersistentVolumeClaimPhase.t v1.PersistentVolumeClaimPhase.
-Admitted.
-
-(* type v1.HostPathType *)
 Module HostPathType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HostPathType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostPathType.t). Admitted.
+
+#[global] Instance HostPathType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HostPathType.t) (v1.HostPathTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HostPathType.
 
-Global Instance bounded_size_HostPathType : BoundedTypeSize v1.HostPathType.
-Admitted.
-
-Global Instance into_val_HostPathType `{ffi_syntax} : IntoVal HostPathType.t.
-Admitted.
-
-Global Instance into_val_typed_HostPathType `{ffi_syntax} : IntoValTyped HostPathType.t v1.HostPathType.
-Admitted.
-
-(* type v1.HostPathVolumeSource *)
 Module HostPathVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HostPathVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostPathVolumeSource.t). Admitted.
+
+#[global] Instance HostPathVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HostPathVolumeSource.t) (v1.HostPathVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HostPathVolumeSource.
 
-Global Instance bounded_size_HostPathVolumeSource : BoundedTypeSize v1.HostPathVolumeSource.
-Admitted.
-
-Global Instance into_val_HostPathVolumeSource `{ffi_syntax} : IntoVal HostPathVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_HostPathVolumeSource `{ffi_syntax} : IntoValTyped HostPathVolumeSource.t v1.HostPathVolumeSource.
-Admitted.
-
-(* type v1.EmptyDirVolumeSource *)
 Module EmptyDirVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EmptyDirVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EmptyDirVolumeSource.t). Admitted.
+
+#[global] Instance EmptyDirVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EmptyDirVolumeSource.t) (v1.EmptyDirVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EmptyDirVolumeSource.
 
-Global Instance bounded_size_EmptyDirVolumeSource : BoundedTypeSize v1.EmptyDirVolumeSource.
-Admitted.
-
-Global Instance into_val_EmptyDirVolumeSource `{ffi_syntax} : IntoVal EmptyDirVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_EmptyDirVolumeSource `{ffi_syntax} : IntoValTyped EmptyDirVolumeSource.t v1.EmptyDirVolumeSource.
-Admitted.
-
-(* type v1.GlusterfsVolumeSource *)
 Module GlusterfsVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance GlusterfsVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GlusterfsVolumeSource.t). Admitted.
+
+#[global] Instance GlusterfsVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.GlusterfsVolumeSource.t) (v1.GlusterfsVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End GlusterfsVolumeSource.
 
-Global Instance bounded_size_GlusterfsVolumeSource : BoundedTypeSize v1.GlusterfsVolumeSource.
-Admitted.
-
-Global Instance into_val_GlusterfsVolumeSource `{ffi_syntax} : IntoVal GlusterfsVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_GlusterfsVolumeSource `{ffi_syntax} : IntoValTyped GlusterfsVolumeSource.t v1.GlusterfsVolumeSource.
-Admitted.
-
-(* type v1.GlusterfsPersistentVolumeSource *)
 Module GlusterfsPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance GlusterfsPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GlusterfsPersistentVolumeSource.t). Admitted.
+
+#[global] Instance GlusterfsPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.GlusterfsPersistentVolumeSource.t) (v1.GlusterfsPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End GlusterfsPersistentVolumeSource.
 
-Global Instance bounded_size_GlusterfsPersistentVolumeSource : BoundedTypeSize v1.GlusterfsPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_GlusterfsPersistentVolumeSource `{ffi_syntax} : IntoVal GlusterfsPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_GlusterfsPersistentVolumeSource `{ffi_syntax} : IntoValTyped GlusterfsPersistentVolumeSource.t v1.GlusterfsPersistentVolumeSource.
-Admitted.
-
-(* type v1.RBDVolumeSource *)
 Module RBDVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RBDVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RBDVolumeSource.t). Admitted.
+
+#[global] Instance RBDVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RBDVolumeSource.t) (v1.RBDVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RBDVolumeSource.
 
-Global Instance bounded_size_RBDVolumeSource : BoundedTypeSize v1.RBDVolumeSource.
-Admitted.
-
-Global Instance into_val_RBDVolumeSource `{ffi_syntax} : IntoVal RBDVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_RBDVolumeSource `{ffi_syntax} : IntoValTyped RBDVolumeSource.t v1.RBDVolumeSource.
-Admitted.
-
-(* type v1.RBDPersistentVolumeSource *)
 Module RBDPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RBDPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RBDPersistentVolumeSource.t). Admitted.
+
+#[global] Instance RBDPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RBDPersistentVolumeSource.t) (v1.RBDPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RBDPersistentVolumeSource.
 
-Global Instance bounded_size_RBDPersistentVolumeSource : BoundedTypeSize v1.RBDPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_RBDPersistentVolumeSource `{ffi_syntax} : IntoVal RBDPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_RBDPersistentVolumeSource `{ffi_syntax} : IntoValTyped RBDPersistentVolumeSource.t v1.RBDPersistentVolumeSource.
-Admitted.
-
-(* type v1.CinderVolumeSource *)
 Module CinderVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CinderVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CinderVolumeSource.t). Admitted.
+
+#[global] Instance CinderVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CinderVolumeSource.t) (v1.CinderVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CinderVolumeSource.
 
-Global Instance bounded_size_CinderVolumeSource : BoundedTypeSize v1.CinderVolumeSource.
-Admitted.
-
-Global Instance into_val_CinderVolumeSource `{ffi_syntax} : IntoVal CinderVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CinderVolumeSource `{ffi_syntax} : IntoValTyped CinderVolumeSource.t v1.CinderVolumeSource.
-Admitted.
-
-(* type v1.CinderPersistentVolumeSource *)
 Module CinderPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CinderPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CinderPersistentVolumeSource.t). Admitted.
+
+#[global] Instance CinderPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CinderPersistentVolumeSource.t) (v1.CinderPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CinderPersistentVolumeSource.
 
-Global Instance bounded_size_CinderPersistentVolumeSource : BoundedTypeSize v1.CinderPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_CinderPersistentVolumeSource `{ffi_syntax} : IntoVal CinderPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CinderPersistentVolumeSource `{ffi_syntax} : IntoValTyped CinderPersistentVolumeSource.t v1.CinderPersistentVolumeSource.
-Admitted.
-
-(* type v1.CephFSVolumeSource *)
 Module CephFSVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CephFSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CephFSVolumeSource.t). Admitted.
+
+#[global] Instance CephFSVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CephFSVolumeSource.t) (v1.CephFSVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CephFSVolumeSource.
 
-Global Instance bounded_size_CephFSVolumeSource : BoundedTypeSize v1.CephFSVolumeSource.
-Admitted.
-
-Global Instance into_val_CephFSVolumeSource `{ffi_syntax} : IntoVal CephFSVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CephFSVolumeSource `{ffi_syntax} : IntoValTyped CephFSVolumeSource.t v1.CephFSVolumeSource.
-Admitted.
-
-(* type v1.SecretReference *)
 Module SecretReference.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretReference.t). Admitted.
+
+#[global] Instance SecretReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretReference.t) (v1.SecretReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretReference.
 
-Global Instance bounded_size_SecretReference : BoundedTypeSize v1.SecretReference.
-Admitted.
-
-Global Instance into_val_SecretReference `{ffi_syntax} : IntoVal SecretReference.t.
-Admitted.
-
-Global Instance into_val_typed_SecretReference `{ffi_syntax} : IntoValTyped SecretReference.t v1.SecretReference.
-Admitted.
-
-(* type v1.CephFSPersistentVolumeSource *)
 Module CephFSPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CephFSPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CephFSPersistentVolumeSource.t). Admitted.
+
+#[global] Instance CephFSPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CephFSPersistentVolumeSource.t) (v1.CephFSPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CephFSPersistentVolumeSource.
 
-Global Instance bounded_size_CephFSPersistentVolumeSource : BoundedTypeSize v1.CephFSPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_CephFSPersistentVolumeSource `{ffi_syntax} : IntoVal CephFSPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CephFSPersistentVolumeSource `{ffi_syntax} : IntoValTyped CephFSPersistentVolumeSource.t v1.CephFSPersistentVolumeSource.
-Admitted.
-
-(* type v1.FlockerVolumeSource *)
 Module FlockerVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FlockerVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FlockerVolumeSource.t). Admitted.
+
+#[global] Instance FlockerVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FlockerVolumeSource.t) (v1.FlockerVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FlockerVolumeSource.
 
-Global Instance bounded_size_FlockerVolumeSource : BoundedTypeSize v1.FlockerVolumeSource.
-Admitted.
-
-Global Instance into_val_FlockerVolumeSource `{ffi_syntax} : IntoVal FlockerVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_FlockerVolumeSource `{ffi_syntax} : IntoValTyped FlockerVolumeSource.t v1.FlockerVolumeSource.
-Admitted.
-
-(* type v1.StorageMedium *)
 Module StorageMedium.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StorageMedium_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StorageMedium.t). Admitted.
+
+#[global] Instance StorageMedium_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StorageMedium.t) (v1.StorageMediumⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StorageMedium.
 
-Global Instance bounded_size_StorageMedium : BoundedTypeSize v1.StorageMedium.
-Admitted.
-
-Global Instance into_val_StorageMedium `{ffi_syntax} : IntoVal StorageMedium.t.
-Admitted.
-
-Global Instance into_val_typed_StorageMedium `{ffi_syntax} : IntoValTyped StorageMedium.t v1.StorageMedium.
-Admitted.
-
-(* type v1.Protocol *)
 Module Protocol.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Protocol_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Protocol.t). Admitted.
+
+#[global] Instance Protocol_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Protocol.t) (v1.Protocolⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Protocol.
 
-Global Instance bounded_size_Protocol : BoundedTypeSize v1.Protocol.
-Admitted.
-
-Global Instance into_val_Protocol `{ffi_syntax} : IntoVal Protocol.t.
-Admitted.
-
-Global Instance into_val_typed_Protocol `{ffi_syntax} : IntoValTyped Protocol.t v1.Protocol.
-Admitted.
-
-(* type v1.GCEPersistentDiskVolumeSource *)
 Module GCEPersistentDiskVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance GCEPersistentDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GCEPersistentDiskVolumeSource.t). Admitted.
+
+#[global] Instance GCEPersistentDiskVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.GCEPersistentDiskVolumeSource.t) (v1.GCEPersistentDiskVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End GCEPersistentDiskVolumeSource.
 
-Global Instance bounded_size_GCEPersistentDiskVolumeSource : BoundedTypeSize v1.GCEPersistentDiskVolumeSource.
-Admitted.
-
-Global Instance into_val_GCEPersistentDiskVolumeSource `{ffi_syntax} : IntoVal GCEPersistentDiskVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_GCEPersistentDiskVolumeSource `{ffi_syntax} : IntoValTyped GCEPersistentDiskVolumeSource.t v1.GCEPersistentDiskVolumeSource.
-Admitted.
-
-(* type v1.QuobyteVolumeSource *)
 Module QuobyteVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance QuobyteVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.QuobyteVolumeSource.t). Admitted.
+
+#[global] Instance QuobyteVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.QuobyteVolumeSource.t) (v1.QuobyteVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End QuobyteVolumeSource.
 
-Global Instance bounded_size_QuobyteVolumeSource : BoundedTypeSize v1.QuobyteVolumeSource.
-Admitted.
-
-Global Instance into_val_QuobyteVolumeSource `{ffi_syntax} : IntoVal QuobyteVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_QuobyteVolumeSource `{ffi_syntax} : IntoValTyped QuobyteVolumeSource.t v1.QuobyteVolumeSource.
-Admitted.
-
-(* type v1.FlexPersistentVolumeSource *)
 Module FlexPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FlexPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FlexPersistentVolumeSource.t). Admitted.
+
+#[global] Instance FlexPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FlexPersistentVolumeSource.t) (v1.FlexPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FlexPersistentVolumeSource.
 
-Global Instance bounded_size_FlexPersistentVolumeSource : BoundedTypeSize v1.FlexPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_FlexPersistentVolumeSource `{ffi_syntax} : IntoVal FlexPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_FlexPersistentVolumeSource `{ffi_syntax} : IntoValTyped FlexPersistentVolumeSource.t v1.FlexPersistentVolumeSource.
-Admitted.
-
-(* type v1.FlexVolumeSource *)
 Module FlexVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FlexVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FlexVolumeSource.t). Admitted.
+
+#[global] Instance FlexVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FlexVolumeSource.t) (v1.FlexVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FlexVolumeSource.
 
-Global Instance bounded_size_FlexVolumeSource : BoundedTypeSize v1.FlexVolumeSource.
-Admitted.
-
-Global Instance into_val_FlexVolumeSource `{ffi_syntax} : IntoVal FlexVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_FlexVolumeSource `{ffi_syntax} : IntoValTyped FlexVolumeSource.t v1.FlexVolumeSource.
-Admitted.
-
-(* type v1.AWSElasticBlockStoreVolumeSource *)
 Module AWSElasticBlockStoreVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AWSElasticBlockStoreVolumeSource.t). Admitted.
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AWSElasticBlockStoreVolumeSource.t) (v1.AWSElasticBlockStoreVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AWSElasticBlockStoreVolumeSource.
 
-Global Instance bounded_size_AWSElasticBlockStoreVolumeSource : BoundedTypeSize v1.AWSElasticBlockStoreVolumeSource.
-Admitted.
-
-Global Instance into_val_AWSElasticBlockStoreVolumeSource `{ffi_syntax} : IntoVal AWSElasticBlockStoreVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_AWSElasticBlockStoreVolumeSource `{ffi_syntax} : IntoValTyped AWSElasticBlockStoreVolumeSource.t v1.AWSElasticBlockStoreVolumeSource.
-Admitted.
-
-(* type v1.GitRepoVolumeSource *)
 Module GitRepoVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance GitRepoVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GitRepoVolumeSource.t). Admitted.
+
+#[global] Instance GitRepoVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.GitRepoVolumeSource.t) (v1.GitRepoVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End GitRepoVolumeSource.
 
-Global Instance bounded_size_GitRepoVolumeSource : BoundedTypeSize v1.GitRepoVolumeSource.
-Admitted.
-
-Global Instance into_val_GitRepoVolumeSource `{ffi_syntax} : IntoVal GitRepoVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_GitRepoVolumeSource `{ffi_syntax} : IntoValTyped GitRepoVolumeSource.t v1.GitRepoVolumeSource.
-Admitted.
-
-(* type v1.SecretVolumeSource *)
 Module SecretVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretVolumeSource.t). Admitted.
+
+#[global] Instance SecretVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretVolumeSource.t) (v1.SecretVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretVolumeSource.
 
-Global Instance bounded_size_SecretVolumeSource : BoundedTypeSize v1.SecretVolumeSource.
-Admitted.
-
-Global Instance into_val_SecretVolumeSource `{ffi_syntax} : IntoVal SecretVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_SecretVolumeSource `{ffi_syntax} : IntoValTyped SecretVolumeSource.t v1.SecretVolumeSource.
-Admitted.
-
-(* type v1.SecretProjection *)
 Module SecretProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretProjection.t). Admitted.
+
+#[global] Instance SecretProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretProjection.t) (v1.SecretProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretProjection.
 
-Global Instance bounded_size_SecretProjection : BoundedTypeSize v1.SecretProjection.
-Admitted.
-
-Global Instance into_val_SecretProjection `{ffi_syntax} : IntoVal SecretProjection.t.
-Admitted.
-
-Global Instance into_val_typed_SecretProjection `{ffi_syntax} : IntoValTyped SecretProjection.t v1.SecretProjection.
-Admitted.
-
-(* type v1.NFSVolumeSource *)
 Module NFSVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NFSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NFSVolumeSource.t). Admitted.
+
+#[global] Instance NFSVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NFSVolumeSource.t) (v1.NFSVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NFSVolumeSource.
 
-Global Instance bounded_size_NFSVolumeSource : BoundedTypeSize v1.NFSVolumeSource.
-Admitted.
-
-Global Instance into_val_NFSVolumeSource `{ffi_syntax} : IntoVal NFSVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_NFSVolumeSource `{ffi_syntax} : IntoValTyped NFSVolumeSource.t v1.NFSVolumeSource.
-Admitted.
-
-(* type v1.ISCSIVolumeSource *)
 Module ISCSIVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ISCSIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ISCSIVolumeSource.t). Admitted.
+
+#[global] Instance ISCSIVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ISCSIVolumeSource.t) (v1.ISCSIVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ISCSIVolumeSource.
 
-Global Instance bounded_size_ISCSIVolumeSource : BoundedTypeSize v1.ISCSIVolumeSource.
-Admitted.
-
-Global Instance into_val_ISCSIVolumeSource `{ffi_syntax} : IntoVal ISCSIVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ISCSIVolumeSource `{ffi_syntax} : IntoValTyped ISCSIVolumeSource.t v1.ISCSIVolumeSource.
-Admitted.
-
-(* type v1.ISCSIPersistentVolumeSource *)
 Module ISCSIPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ISCSIPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ISCSIPersistentVolumeSource.t). Admitted.
+
+#[global] Instance ISCSIPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ISCSIPersistentVolumeSource.t) (v1.ISCSIPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ISCSIPersistentVolumeSource.
 
-Global Instance bounded_size_ISCSIPersistentVolumeSource : BoundedTypeSize v1.ISCSIPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_ISCSIPersistentVolumeSource `{ffi_syntax} : IntoVal ISCSIPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ISCSIPersistentVolumeSource `{ffi_syntax} : IntoValTyped ISCSIPersistentVolumeSource.t v1.ISCSIPersistentVolumeSource.
-Admitted.
-
-(* type v1.FCVolumeSource *)
 Module FCVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FCVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FCVolumeSource.t). Admitted.
+
+#[global] Instance FCVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FCVolumeSource.t) (v1.FCVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FCVolumeSource.
 
-Global Instance bounded_size_FCVolumeSource : BoundedTypeSize v1.FCVolumeSource.
-Admitted.
-
-Global Instance into_val_FCVolumeSource `{ffi_syntax} : IntoVal FCVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_FCVolumeSource `{ffi_syntax} : IntoValTyped FCVolumeSource.t v1.FCVolumeSource.
-Admitted.
-
-(* type v1.AzureFileVolumeSource *)
 Module AzureFileVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AzureFileVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureFileVolumeSource.t). Admitted.
+
+#[global] Instance AzureFileVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AzureFileVolumeSource.t) (v1.AzureFileVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AzureFileVolumeSource.
 
-Global Instance bounded_size_AzureFileVolumeSource : BoundedTypeSize v1.AzureFileVolumeSource.
-Admitted.
-
-Global Instance into_val_AzureFileVolumeSource `{ffi_syntax} : IntoVal AzureFileVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_AzureFileVolumeSource `{ffi_syntax} : IntoValTyped AzureFileVolumeSource.t v1.AzureFileVolumeSource.
-Admitted.
-
-(* type v1.AzureFilePersistentVolumeSource *)
 Module AzureFilePersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AzureFilePersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureFilePersistentVolumeSource.t). Admitted.
+
+#[global] Instance AzureFilePersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AzureFilePersistentVolumeSource.t) (v1.AzureFilePersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AzureFilePersistentVolumeSource.
 
-Global Instance bounded_size_AzureFilePersistentVolumeSource : BoundedTypeSize v1.AzureFilePersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_AzureFilePersistentVolumeSource `{ffi_syntax} : IntoVal AzureFilePersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_AzureFilePersistentVolumeSource `{ffi_syntax} : IntoValTyped AzureFilePersistentVolumeSource.t v1.AzureFilePersistentVolumeSource.
-Admitted.
-
-(* type v1.VsphereVirtualDiskVolumeSource *)
 Module VsphereVirtualDiskVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VsphereVirtualDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VsphereVirtualDiskVolumeSource.t). Admitted.
+
+#[global] Instance VsphereVirtualDiskVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VsphereVirtualDiskVolumeSource.t) (v1.VsphereVirtualDiskVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VsphereVirtualDiskVolumeSource.
 
-Global Instance bounded_size_VsphereVirtualDiskVolumeSource : BoundedTypeSize v1.VsphereVirtualDiskVolumeSource.
-Admitted.
-
-Global Instance into_val_VsphereVirtualDiskVolumeSource `{ffi_syntax} : IntoVal VsphereVirtualDiskVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_VsphereVirtualDiskVolumeSource `{ffi_syntax} : IntoValTyped VsphereVirtualDiskVolumeSource.t v1.VsphereVirtualDiskVolumeSource.
-Admitted.
-
-(* type v1.PhotonPersistentDiskVolumeSource *)
 Module PhotonPersistentDiskVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PhotonPersistentDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PhotonPersistentDiskVolumeSource.t). Admitted.
+
+#[global] Instance PhotonPersistentDiskVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PhotonPersistentDiskVolumeSource.t) (v1.PhotonPersistentDiskVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PhotonPersistentDiskVolumeSource.
 
-Global Instance bounded_size_PhotonPersistentDiskVolumeSource : BoundedTypeSize v1.PhotonPersistentDiskVolumeSource.
-Admitted.
-
-Global Instance into_val_PhotonPersistentDiskVolumeSource `{ffi_syntax} : IntoVal PhotonPersistentDiskVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_PhotonPersistentDiskVolumeSource `{ffi_syntax} : IntoValTyped PhotonPersistentDiskVolumeSource.t v1.PhotonPersistentDiskVolumeSource.
-Admitted.
-
-(* type v1.AzureDataDiskCachingMode *)
 Module AzureDataDiskCachingMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AzureDataDiskCachingMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureDataDiskCachingMode.t). Admitted.
+
+#[global] Instance AzureDataDiskCachingMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AzureDataDiskCachingMode.t) (v1.AzureDataDiskCachingModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AzureDataDiskCachingMode.
 
-Global Instance bounded_size_AzureDataDiskCachingMode : BoundedTypeSize v1.AzureDataDiskCachingMode.
-Admitted.
-
-Global Instance into_val_AzureDataDiskCachingMode `{ffi_syntax} : IntoVal AzureDataDiskCachingMode.t.
-Admitted.
-
-Global Instance into_val_typed_AzureDataDiskCachingMode `{ffi_syntax} : IntoValTyped AzureDataDiskCachingMode.t v1.AzureDataDiskCachingMode.
-Admitted.
-
-(* type v1.AzureDataDiskKind *)
 Module AzureDataDiskKind.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AzureDataDiskKind_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureDataDiskKind.t). Admitted.
+
+#[global] Instance AzureDataDiskKind_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AzureDataDiskKind.t) (v1.AzureDataDiskKindⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AzureDataDiskKind.
 
-Global Instance bounded_size_AzureDataDiskKind : BoundedTypeSize v1.AzureDataDiskKind.
-Admitted.
-
-Global Instance into_val_AzureDataDiskKind `{ffi_syntax} : IntoVal AzureDataDiskKind.t.
-Admitted.
-
-Global Instance into_val_typed_AzureDataDiskKind `{ffi_syntax} : IntoValTyped AzureDataDiskKind.t v1.AzureDataDiskKind.
-Admitted.
-
-(* type v1.AzureDiskVolumeSource *)
 Module AzureDiskVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AzureDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureDiskVolumeSource.t). Admitted.
+
+#[global] Instance AzureDiskVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AzureDiskVolumeSource.t) (v1.AzureDiskVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AzureDiskVolumeSource.
 
-Global Instance bounded_size_AzureDiskVolumeSource : BoundedTypeSize v1.AzureDiskVolumeSource.
-Admitted.
-
-Global Instance into_val_AzureDiskVolumeSource `{ffi_syntax} : IntoVal AzureDiskVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_AzureDiskVolumeSource `{ffi_syntax} : IntoValTyped AzureDiskVolumeSource.t v1.AzureDiskVolumeSource.
-Admitted.
-
-(* type v1.PortworxVolumeSource *)
 Module PortworxVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PortworxVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PortworxVolumeSource.t). Admitted.
+
+#[global] Instance PortworxVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PortworxVolumeSource.t) (v1.PortworxVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PortworxVolumeSource.
 
-Global Instance bounded_size_PortworxVolumeSource : BoundedTypeSize v1.PortworxVolumeSource.
-Admitted.
-
-Global Instance into_val_PortworxVolumeSource `{ffi_syntax} : IntoVal PortworxVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_PortworxVolumeSource `{ffi_syntax} : IntoValTyped PortworxVolumeSource.t v1.PortworxVolumeSource.
-Admitted.
-
-(* type v1.ScaleIOVolumeSource *)
 Module ScaleIOVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ScaleIOVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScaleIOVolumeSource.t). Admitted.
+
+#[global] Instance ScaleIOVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ScaleIOVolumeSource.t) (v1.ScaleIOVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ScaleIOVolumeSource.
 
-Global Instance bounded_size_ScaleIOVolumeSource : BoundedTypeSize v1.ScaleIOVolumeSource.
-Admitted.
-
-Global Instance into_val_ScaleIOVolumeSource `{ffi_syntax} : IntoVal ScaleIOVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ScaleIOVolumeSource `{ffi_syntax} : IntoValTyped ScaleIOVolumeSource.t v1.ScaleIOVolumeSource.
-Admitted.
-
-(* type v1.ScaleIOPersistentVolumeSource *)
 Module ScaleIOPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ScaleIOPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScaleIOPersistentVolumeSource.t). Admitted.
+
+#[global] Instance ScaleIOPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ScaleIOPersistentVolumeSource.t) (v1.ScaleIOPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ScaleIOPersistentVolumeSource.
 
-Global Instance bounded_size_ScaleIOPersistentVolumeSource : BoundedTypeSize v1.ScaleIOPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_ScaleIOPersistentVolumeSource `{ffi_syntax} : IntoVal ScaleIOPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ScaleIOPersistentVolumeSource `{ffi_syntax} : IntoValTyped ScaleIOPersistentVolumeSource.t v1.ScaleIOPersistentVolumeSource.
-Admitted.
-
-(* type v1.StorageOSVolumeSource *)
 Module StorageOSVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StorageOSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StorageOSVolumeSource.t). Admitted.
+
+#[global] Instance StorageOSVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StorageOSVolumeSource.t) (v1.StorageOSVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StorageOSVolumeSource.
 
-Global Instance bounded_size_StorageOSVolumeSource : BoundedTypeSize v1.StorageOSVolumeSource.
-Admitted.
-
-Global Instance into_val_StorageOSVolumeSource `{ffi_syntax} : IntoVal StorageOSVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_StorageOSVolumeSource `{ffi_syntax} : IntoValTyped StorageOSVolumeSource.t v1.StorageOSVolumeSource.
-Admitted.
-
-(* type v1.StorageOSPersistentVolumeSource *)
 Module StorageOSPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StorageOSPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StorageOSPersistentVolumeSource.t). Admitted.
+
+#[global] Instance StorageOSPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StorageOSPersistentVolumeSource.t) (v1.StorageOSPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StorageOSPersistentVolumeSource.
 
-Global Instance bounded_size_StorageOSPersistentVolumeSource : BoundedTypeSize v1.StorageOSPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_StorageOSPersistentVolumeSource `{ffi_syntax} : IntoVal StorageOSPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_StorageOSPersistentVolumeSource `{ffi_syntax} : IntoValTyped StorageOSPersistentVolumeSource.t v1.StorageOSPersistentVolumeSource.
-Admitted.
-
-(* type v1.ConfigMapVolumeSource *)
 Module ConfigMapVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapVolumeSource.t). Admitted.
+
+#[global] Instance ConfigMapVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapVolumeSource.t) (v1.ConfigMapVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapVolumeSource.
 
-Global Instance bounded_size_ConfigMapVolumeSource : BoundedTypeSize v1.ConfigMapVolumeSource.
-Admitted.
-
-Global Instance into_val_ConfigMapVolumeSource `{ffi_syntax} : IntoVal ConfigMapVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapVolumeSource `{ffi_syntax} : IntoValTyped ConfigMapVolumeSource.t v1.ConfigMapVolumeSource.
-Admitted.
-
-(* type v1.ConfigMapProjection *)
 Module ConfigMapProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapProjection.t). Admitted.
+
+#[global] Instance ConfigMapProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapProjection.t) (v1.ConfigMapProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapProjection.
 
-Global Instance bounded_size_ConfigMapProjection : BoundedTypeSize v1.ConfigMapProjection.
-Admitted.
-
-Global Instance into_val_ConfigMapProjection `{ffi_syntax} : IntoVal ConfigMapProjection.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapProjection `{ffi_syntax} : IntoValTyped ConfigMapProjection.t v1.ConfigMapProjection.
-Admitted.
-
-(* type v1.ServiceAccountTokenProjection *)
 Module ServiceAccountTokenProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceAccountTokenProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAccountTokenProjection.t). Admitted.
+
+#[global] Instance ServiceAccountTokenProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceAccountTokenProjection.t) (v1.ServiceAccountTokenProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceAccountTokenProjection.
 
-Global Instance bounded_size_ServiceAccountTokenProjection : BoundedTypeSize v1.ServiceAccountTokenProjection.
-Admitted.
-
-Global Instance into_val_ServiceAccountTokenProjection `{ffi_syntax} : IntoVal ServiceAccountTokenProjection.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceAccountTokenProjection `{ffi_syntax} : IntoValTyped ServiceAccountTokenProjection.t v1.ServiceAccountTokenProjection.
-Admitted.
-
-(* type v1.ClusterTrustBundleProjection *)
 Module ClusterTrustBundleProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ClusterTrustBundleProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ClusterTrustBundleProjection.t). Admitted.
+
+#[global] Instance ClusterTrustBundleProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ClusterTrustBundleProjection.t) (v1.ClusterTrustBundleProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ClusterTrustBundleProjection.
 
-Global Instance bounded_size_ClusterTrustBundleProjection : BoundedTypeSize v1.ClusterTrustBundleProjection.
-Admitted.
-
-Global Instance into_val_ClusterTrustBundleProjection `{ffi_syntax} : IntoVal ClusterTrustBundleProjection.t.
-Admitted.
-
-Global Instance into_val_typed_ClusterTrustBundleProjection `{ffi_syntax} : IntoValTyped ClusterTrustBundleProjection.t v1.ClusterTrustBundleProjection.
-Admitted.
-
-(* type v1.PodCertificateProjection *)
 Module PodCertificateProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodCertificateProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodCertificateProjection.t). Admitted.
+
+#[global] Instance PodCertificateProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodCertificateProjection.t) (v1.PodCertificateProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodCertificateProjection.
 
-Global Instance bounded_size_PodCertificateProjection : BoundedTypeSize v1.PodCertificateProjection.
-Admitted.
-
-Global Instance into_val_PodCertificateProjection `{ffi_syntax} : IntoVal PodCertificateProjection.t.
-Admitted.
-
-Global Instance into_val_typed_PodCertificateProjection `{ffi_syntax} : IntoValTyped PodCertificateProjection.t v1.PodCertificateProjection.
-Admitted.
-
-(* type v1.ProjectedVolumeSource *)
 Module ProjectedVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ProjectedVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ProjectedVolumeSource.t). Admitted.
+
+#[global] Instance ProjectedVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ProjectedVolumeSource.t) (v1.ProjectedVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ProjectedVolumeSource.
 
-Global Instance bounded_size_ProjectedVolumeSource : BoundedTypeSize v1.ProjectedVolumeSource.
-Admitted.
-
-Global Instance into_val_ProjectedVolumeSource `{ffi_syntax} : IntoVal ProjectedVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ProjectedVolumeSource `{ffi_syntax} : IntoValTyped ProjectedVolumeSource.t v1.ProjectedVolumeSource.
-Admitted.
-
-(* type v1.VolumeProjection *)
 Module VolumeProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeProjection.t). Admitted.
+
+#[global] Instance VolumeProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeProjection.t) (v1.VolumeProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeProjection.
 
-Global Instance bounded_size_VolumeProjection : BoundedTypeSize v1.VolumeProjection.
-Admitted.
-
-Global Instance into_val_VolumeProjection `{ffi_syntax} : IntoVal VolumeProjection.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeProjection `{ffi_syntax} : IntoValTyped VolumeProjection.t v1.VolumeProjection.
-Admitted.
-
-(* type v1.KeyToPath *)
 Module KeyToPath.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance KeyToPath_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.KeyToPath.t). Admitted.
+
+#[global] Instance KeyToPath_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.KeyToPath.t) (v1.KeyToPathⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End KeyToPath.
 
-Global Instance bounded_size_KeyToPath : BoundedTypeSize v1.KeyToPath.
-Admitted.
-
-Global Instance into_val_KeyToPath `{ffi_syntax} : IntoVal KeyToPath.t.
-Admitted.
-
-Global Instance into_val_typed_KeyToPath `{ffi_syntax} : IntoValTyped KeyToPath.t v1.KeyToPath.
-Admitted.
-
-(* type v1.LocalVolumeSource *)
 Module LocalVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LocalVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LocalVolumeSource.t). Admitted.
+
+#[global] Instance LocalVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LocalVolumeSource.t) (v1.LocalVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LocalVolumeSource.
 
-Global Instance bounded_size_LocalVolumeSource : BoundedTypeSize v1.LocalVolumeSource.
-Admitted.
-
-Global Instance into_val_LocalVolumeSource `{ffi_syntax} : IntoVal LocalVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_LocalVolumeSource `{ffi_syntax} : IntoValTyped LocalVolumeSource.t v1.LocalVolumeSource.
-Admitted.
-
-(* type v1.CSIPersistentVolumeSource *)
 Module CSIPersistentVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CSIPersistentVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CSIPersistentVolumeSource.t). Admitted.
+
+#[global] Instance CSIPersistentVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CSIPersistentVolumeSource.t) (v1.CSIPersistentVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CSIPersistentVolumeSource.
 
-Global Instance bounded_size_CSIPersistentVolumeSource : BoundedTypeSize v1.CSIPersistentVolumeSource.
-Admitted.
-
-Global Instance into_val_CSIPersistentVolumeSource `{ffi_syntax} : IntoVal CSIPersistentVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CSIPersistentVolumeSource `{ffi_syntax} : IntoValTyped CSIPersistentVolumeSource.t v1.CSIPersistentVolumeSource.
-Admitted.
-
-(* type v1.CSIVolumeSource *)
 Module CSIVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance CSIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CSIVolumeSource.t). Admitted.
+
+#[global] Instance CSIVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.CSIVolumeSource.t) (v1.CSIVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End CSIVolumeSource.
 
-Global Instance bounded_size_CSIVolumeSource : BoundedTypeSize v1.CSIVolumeSource.
-Admitted.
-
-Global Instance into_val_CSIVolumeSource `{ffi_syntax} : IntoVal CSIVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_CSIVolumeSource `{ffi_syntax} : IntoValTyped CSIVolumeSource.t v1.CSIVolumeSource.
-Admitted.
-
-(* type v1.EphemeralVolumeSource *)
 Module EphemeralVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EphemeralVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralVolumeSource.t). Admitted.
+
+#[global] Instance EphemeralVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EphemeralVolumeSource.t) (v1.EphemeralVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EphemeralVolumeSource.
 
-Global Instance bounded_size_EphemeralVolumeSource : BoundedTypeSize v1.EphemeralVolumeSource.
-Admitted.
-
-Global Instance into_val_EphemeralVolumeSource `{ffi_syntax} : IntoVal EphemeralVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_EphemeralVolumeSource `{ffi_syntax} : IntoValTyped EphemeralVolumeSource.t v1.EphemeralVolumeSource.
-Admitted.
-
-(* type v1.PersistentVolumeClaimTemplate *)
 Module PersistentVolumeClaimTemplate.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimTemplate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimTemplate.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimTemplate_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimTemplate.t) (v1.PersistentVolumeClaimTemplateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimTemplate.
 
-Global Instance bounded_size_PersistentVolumeClaimTemplate : BoundedTypeSize v1.PersistentVolumeClaimTemplate.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimTemplate `{ffi_syntax} : IntoVal PersistentVolumeClaimTemplate.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimTemplate `{ffi_syntax} : IntoValTyped PersistentVolumeClaimTemplate.t v1.PersistentVolumeClaimTemplate.
-Admitted.
-
-(* type v1.ContainerPort *)
 Module ContainerPort.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerPort_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerPort.t). Admitted.
+
+#[global] Instance ContainerPort_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerPort.t) (v1.ContainerPortⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerPort.
 
-Global Instance bounded_size_ContainerPort : BoundedTypeSize v1.ContainerPort.
-Admitted.
-
-Global Instance into_val_ContainerPort `{ffi_syntax} : IntoVal ContainerPort.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerPort `{ffi_syntax} : IntoValTyped ContainerPort.t v1.ContainerPort.
-Admitted.
-
-(* type v1.VolumeMount *)
 Module VolumeMount.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeMount_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeMount.t). Admitted.
+
+#[global] Instance VolumeMount_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeMount.t) (v1.VolumeMountⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeMount.
 
-Global Instance bounded_size_VolumeMount : BoundedTypeSize v1.VolumeMount.
-Admitted.
-
-Global Instance into_val_VolumeMount `{ffi_syntax} : IntoVal VolumeMount.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeMount `{ffi_syntax} : IntoValTyped VolumeMount.t v1.VolumeMount.
-Admitted.
-
-(* type v1.MountPropagationMode *)
 Module MountPropagationMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance MountPropagationMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.MountPropagationMode.t). Admitted.
+
+#[global] Instance MountPropagationMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.MountPropagationMode.t) (v1.MountPropagationModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End MountPropagationMode.
 
-Global Instance bounded_size_MountPropagationMode : BoundedTypeSize v1.MountPropagationMode.
-Admitted.
-
-Global Instance into_val_MountPropagationMode `{ffi_syntax} : IntoVal MountPropagationMode.t.
-Admitted.
-
-Global Instance into_val_typed_MountPropagationMode `{ffi_syntax} : IntoValTyped MountPropagationMode.t v1.MountPropagationMode.
-Admitted.
-
-(* type v1.RecursiveReadOnlyMode *)
 Module RecursiveReadOnlyMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RecursiveReadOnlyMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RecursiveReadOnlyMode.t). Admitted.
+
+#[global] Instance RecursiveReadOnlyMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RecursiveReadOnlyMode.t) (v1.RecursiveReadOnlyModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RecursiveReadOnlyMode.
 
-Global Instance bounded_size_RecursiveReadOnlyMode : BoundedTypeSize v1.RecursiveReadOnlyMode.
-Admitted.
-
-Global Instance into_val_RecursiveReadOnlyMode `{ffi_syntax} : IntoVal RecursiveReadOnlyMode.t.
-Admitted.
-
-Global Instance into_val_typed_RecursiveReadOnlyMode `{ffi_syntax} : IntoValTyped RecursiveReadOnlyMode.t v1.RecursiveReadOnlyMode.
-Admitted.
-
-(* type v1.VolumeDevice *)
 Module VolumeDevice.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeDevice_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeDevice.t). Admitted.
+
+#[global] Instance VolumeDevice_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeDevice.t) (v1.VolumeDeviceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeDevice.
 
-Global Instance bounded_size_VolumeDevice : BoundedTypeSize v1.VolumeDevice.
-Admitted.
-
-Global Instance into_val_VolumeDevice `{ffi_syntax} : IntoVal VolumeDevice.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeDevice `{ffi_syntax} : IntoValTyped VolumeDevice.t v1.VolumeDevice.
-Admitted.
-
-(* type v1.EnvVar *)
 Module EnvVar.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EnvVar_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvVar.t). Admitted.
+
+#[global] Instance EnvVar_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EnvVar.t) (v1.EnvVarⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EnvVar.
 
-Global Instance bounded_size_EnvVar : BoundedTypeSize v1.EnvVar.
-Admitted.
-
-Global Instance into_val_EnvVar `{ffi_syntax} : IntoVal EnvVar.t.
-Admitted.
-
-Global Instance into_val_typed_EnvVar `{ffi_syntax} : IntoValTyped EnvVar.t v1.EnvVar.
-Admitted.
-
-(* type v1.EnvVarSource *)
 Module EnvVarSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EnvVarSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvVarSource.t). Admitted.
+
+#[global] Instance EnvVarSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EnvVarSource.t) (v1.EnvVarSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EnvVarSource.
 
-Global Instance bounded_size_EnvVarSource : BoundedTypeSize v1.EnvVarSource.
-Admitted.
-
-Global Instance into_val_EnvVarSource `{ffi_syntax} : IntoVal EnvVarSource.t.
-Admitted.
-
-Global Instance into_val_typed_EnvVarSource `{ffi_syntax} : IntoValTyped EnvVarSource.t v1.EnvVarSource.
-Admitted.
-
-(* type v1.FileKeySelector *)
 Module FileKeySelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FileKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FileKeySelector.t). Admitted.
+
+#[global] Instance FileKeySelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FileKeySelector.t) (v1.FileKeySelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FileKeySelector.
 
-Global Instance bounded_size_FileKeySelector : BoundedTypeSize v1.FileKeySelector.
-Admitted.
-
-Global Instance into_val_FileKeySelector `{ffi_syntax} : IntoVal FileKeySelector.t.
-Admitted.
-
-Global Instance into_val_typed_FileKeySelector `{ffi_syntax} : IntoValTyped FileKeySelector.t v1.FileKeySelector.
-Admitted.
-
-(* type v1.ObjectFieldSelector *)
 Module ObjectFieldSelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ObjectFieldSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ObjectFieldSelector.t). Admitted.
+
+#[global] Instance ObjectFieldSelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ObjectFieldSelector.t) (v1.ObjectFieldSelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ObjectFieldSelector.
 
-Global Instance bounded_size_ObjectFieldSelector : BoundedTypeSize v1.ObjectFieldSelector.
-Admitted.
-
-Global Instance into_val_ObjectFieldSelector `{ffi_syntax} : IntoVal ObjectFieldSelector.t.
-Admitted.
-
-Global Instance into_val_typed_ObjectFieldSelector `{ffi_syntax} : IntoValTyped ObjectFieldSelector.t v1.ObjectFieldSelector.
-Admitted.
-
-(* type v1.ResourceFieldSelector *)
 Module ResourceFieldSelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceFieldSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceFieldSelector.t). Admitted.
+
+#[global] Instance ResourceFieldSelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceFieldSelector.t) (v1.ResourceFieldSelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceFieldSelector.
 
-Global Instance bounded_size_ResourceFieldSelector : BoundedTypeSize v1.ResourceFieldSelector.
-Admitted.
-
-Global Instance into_val_ResourceFieldSelector `{ffi_syntax} : IntoVal ResourceFieldSelector.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceFieldSelector `{ffi_syntax} : IntoValTyped ResourceFieldSelector.t v1.ResourceFieldSelector.
-Admitted.
-
-(* type v1.ConfigMapKeySelector *)
 Module ConfigMapKeySelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapKeySelector.t). Admitted.
+
+#[global] Instance ConfigMapKeySelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapKeySelector.t) (v1.ConfigMapKeySelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapKeySelector.
 
-Global Instance bounded_size_ConfigMapKeySelector : BoundedTypeSize v1.ConfigMapKeySelector.
-Admitted.
-
-Global Instance into_val_ConfigMapKeySelector `{ffi_syntax} : IntoVal ConfigMapKeySelector.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapKeySelector `{ffi_syntax} : IntoValTyped ConfigMapKeySelector.t v1.ConfigMapKeySelector.
-Admitted.
-
-(* type v1.SecretKeySelector *)
 Module SecretKeySelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretKeySelector.t). Admitted.
+
+#[global] Instance SecretKeySelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretKeySelector.t) (v1.SecretKeySelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretKeySelector.
 
-Global Instance bounded_size_SecretKeySelector : BoundedTypeSize v1.SecretKeySelector.
-Admitted.
-
-Global Instance into_val_SecretKeySelector `{ffi_syntax} : IntoVal SecretKeySelector.t.
-Admitted.
-
-Global Instance into_val_typed_SecretKeySelector `{ffi_syntax} : IntoValTyped SecretKeySelector.t v1.SecretKeySelector.
-Admitted.
-
-(* type v1.EnvFromSource *)
 Module EnvFromSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EnvFromSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvFromSource.t). Admitted.
+
+#[global] Instance EnvFromSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EnvFromSource.t) (v1.EnvFromSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EnvFromSource.
 
-Global Instance bounded_size_EnvFromSource : BoundedTypeSize v1.EnvFromSource.
-Admitted.
-
-Global Instance into_val_EnvFromSource `{ffi_syntax} : IntoVal EnvFromSource.t.
-Admitted.
-
-Global Instance into_val_typed_EnvFromSource `{ffi_syntax} : IntoValTyped EnvFromSource.t v1.EnvFromSource.
-Admitted.
-
-(* type v1.ConfigMapEnvSource *)
 Module ConfigMapEnvSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapEnvSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapEnvSource.t). Admitted.
+
+#[global] Instance ConfigMapEnvSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapEnvSource.t) (v1.ConfigMapEnvSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapEnvSource.
 
-Global Instance bounded_size_ConfigMapEnvSource : BoundedTypeSize v1.ConfigMapEnvSource.
-Admitted.
-
-Global Instance into_val_ConfigMapEnvSource `{ffi_syntax} : IntoVal ConfigMapEnvSource.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapEnvSource `{ffi_syntax} : IntoValTyped ConfigMapEnvSource.t v1.ConfigMapEnvSource.
-Admitted.
-
-(* type v1.SecretEnvSource *)
 Module SecretEnvSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretEnvSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretEnvSource.t). Admitted.
+
+#[global] Instance SecretEnvSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretEnvSource.t) (v1.SecretEnvSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretEnvSource.
 
-Global Instance bounded_size_SecretEnvSource : BoundedTypeSize v1.SecretEnvSource.
-Admitted.
-
-Global Instance into_val_SecretEnvSource `{ffi_syntax} : IntoVal SecretEnvSource.t.
-Admitted.
-
-Global Instance into_val_typed_SecretEnvSource `{ffi_syntax} : IntoValTyped SecretEnvSource.t v1.SecretEnvSource.
-Admitted.
-
-(* type v1.HTTPHeader *)
 Module HTTPHeader.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HTTPHeader_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HTTPHeader.t). Admitted.
+
+#[global] Instance HTTPHeader_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HTTPHeader.t) (v1.HTTPHeaderⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HTTPHeader.
 
-Global Instance bounded_size_HTTPHeader : BoundedTypeSize v1.HTTPHeader.
-Admitted.
-
-Global Instance into_val_HTTPHeader `{ffi_syntax} : IntoVal HTTPHeader.t.
-Admitted.
-
-Global Instance into_val_typed_HTTPHeader `{ffi_syntax} : IntoValTyped HTTPHeader.t v1.HTTPHeader.
-Admitted.
-
-(* type v1.HTTPGetAction *)
 Module HTTPGetAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HTTPGetAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HTTPGetAction.t). Admitted.
+
+#[global] Instance HTTPGetAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HTTPGetAction.t) (v1.HTTPGetActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HTTPGetAction.
 
-Global Instance bounded_size_HTTPGetAction : BoundedTypeSize v1.HTTPGetAction.
-Admitted.
-
-Global Instance into_val_HTTPGetAction `{ffi_syntax} : IntoVal HTTPGetAction.t.
-Admitted.
-
-Global Instance into_val_typed_HTTPGetAction `{ffi_syntax} : IntoValTyped HTTPGetAction.t v1.HTTPGetAction.
-Admitted.
-
-(* type v1.URIScheme *)
 Module URIScheme.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance URIScheme_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.URIScheme.t). Admitted.
+
+#[global] Instance URIScheme_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.URIScheme.t) (v1.URISchemeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End URIScheme.
 
-Global Instance bounded_size_URIScheme : BoundedTypeSize v1.URIScheme.
-Admitted.
-
-Global Instance into_val_URIScheme `{ffi_syntax} : IntoVal URIScheme.t.
-Admitted.
-
-Global Instance into_val_typed_URIScheme `{ffi_syntax} : IntoValTyped URIScheme.t v1.URIScheme.
-Admitted.
-
-(* type v1.TCPSocketAction *)
 Module TCPSocketAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TCPSocketAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TCPSocketAction.t). Admitted.
+
+#[global] Instance TCPSocketAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TCPSocketAction.t) (v1.TCPSocketActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TCPSocketAction.
 
-Global Instance bounded_size_TCPSocketAction : BoundedTypeSize v1.TCPSocketAction.
-Admitted.
-
-Global Instance into_val_TCPSocketAction `{ffi_syntax} : IntoVal TCPSocketAction.t.
-Admitted.
-
-Global Instance into_val_typed_TCPSocketAction `{ffi_syntax} : IntoValTyped TCPSocketAction.t v1.TCPSocketAction.
-Admitted.
-
-(* type v1.GRPCAction *)
 Module GRPCAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance GRPCAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GRPCAction.t). Admitted.
+
+#[global] Instance GRPCAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.GRPCAction.t) (v1.GRPCActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End GRPCAction.
 
-Global Instance bounded_size_GRPCAction : BoundedTypeSize v1.GRPCAction.
-Admitted.
-
-Global Instance into_val_GRPCAction `{ffi_syntax} : IntoVal GRPCAction.t.
-Admitted.
-
-Global Instance into_val_typed_GRPCAction `{ffi_syntax} : IntoValTyped GRPCAction.t v1.GRPCAction.
-Admitted.
-
-(* type v1.ExecAction *)
 Module ExecAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ExecAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ExecAction.t). Admitted.
+
+#[global] Instance ExecAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ExecAction.t) (v1.ExecActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ExecAction.
 
-Global Instance bounded_size_ExecAction : BoundedTypeSize v1.ExecAction.
-Admitted.
-
-Global Instance into_val_ExecAction `{ffi_syntax} : IntoVal ExecAction.t.
-Admitted.
-
-Global Instance into_val_typed_ExecAction `{ffi_syntax} : IntoValTyped ExecAction.t v1.ExecAction.
-Admitted.
-
-(* type v1.SleepAction *)
 Module SleepAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SleepAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SleepAction.t). Admitted.
+
+#[global] Instance SleepAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SleepAction.t) (v1.SleepActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SleepAction.
 
-Global Instance bounded_size_SleepAction : BoundedTypeSize v1.SleepAction.
-Admitted.
-
-Global Instance into_val_SleepAction `{ffi_syntax} : IntoVal SleepAction.t.
-Admitted.
-
-Global Instance into_val_typed_SleepAction `{ffi_syntax} : IntoValTyped SleepAction.t v1.SleepAction.
-Admitted.
-
-(* type v1.Probe *)
 Module Probe.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Probe_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Probe.t). Admitted.
+
+#[global] Instance Probe_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Probe.t) (v1.Probeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Probe.
 
-Global Instance bounded_size_Probe : BoundedTypeSize v1.Probe.
-Admitted.
-
-Global Instance into_val_Probe `{ffi_syntax} : IntoVal Probe.t.
-Admitted.
-
-Global Instance into_val_typed_Probe `{ffi_syntax} : IntoValTyped Probe.t v1.Probe.
-Admitted.
-
-(* type v1.PullPolicy *)
 Module PullPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PullPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PullPolicy.t). Admitted.
+
+#[global] Instance PullPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PullPolicy.t) (v1.PullPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PullPolicy.
 
-Global Instance bounded_size_PullPolicy : BoundedTypeSize v1.PullPolicy.
-Admitted.
-
-Global Instance into_val_PullPolicy `{ffi_syntax} : IntoVal PullPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_PullPolicy `{ffi_syntax} : IntoValTyped PullPolicy.t v1.PullPolicy.
-Admitted.
-
-(* type v1.ResourceResizeRestartPolicy *)
 Module ResourceResizeRestartPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceResizeRestartPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceResizeRestartPolicy.t). Admitted.
+
+#[global] Instance ResourceResizeRestartPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceResizeRestartPolicy.t) (v1.ResourceResizeRestartPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceResizeRestartPolicy.
 
-Global Instance bounded_size_ResourceResizeRestartPolicy : BoundedTypeSize v1.ResourceResizeRestartPolicy.
-Admitted.
-
-Global Instance into_val_ResourceResizeRestartPolicy `{ffi_syntax} : IntoVal ResourceResizeRestartPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceResizeRestartPolicy `{ffi_syntax} : IntoValTyped ResourceResizeRestartPolicy.t v1.ResourceResizeRestartPolicy.
-Admitted.
-
-(* type v1.ContainerResizePolicy *)
 Module ContainerResizePolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerResizePolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerResizePolicy.t). Admitted.
+
+#[global] Instance ContainerResizePolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerResizePolicy.t) (v1.ContainerResizePolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerResizePolicy.
 
-Global Instance bounded_size_ContainerResizePolicy : BoundedTypeSize v1.ContainerResizePolicy.
-Admitted.
-
-Global Instance into_val_ContainerResizePolicy `{ffi_syntax} : IntoVal ContainerResizePolicy.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerResizePolicy `{ffi_syntax} : IntoValTyped ContainerResizePolicy.t v1.ContainerResizePolicy.
-Admitted.
-
-(* type v1.PreemptionPolicy *)
 Module PreemptionPolicy.
-
-#[global] Transparent v1.PreemptionPolicy.
-#[global] Typeclasses Transparent v1.PreemptionPolicy.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PreemptionPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PreemptionPolicy.t). Admitted.
+
+#[global] Instance PreemptionPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PreemptionPolicy.t) (v1.PreemptionPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PreemptionPolicy.
 
-(* type v1.TerminationMessagePolicy *)
 Module TerminationMessagePolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TerminationMessagePolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TerminationMessagePolicy.t). Admitted.
+
+#[global] Instance TerminationMessagePolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TerminationMessagePolicy.t) (v1.TerminationMessagePolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TerminationMessagePolicy.
 
-Global Instance bounded_size_TerminationMessagePolicy : BoundedTypeSize v1.TerminationMessagePolicy.
-Admitted.
-
-Global Instance into_val_TerminationMessagePolicy `{ffi_syntax} : IntoVal TerminationMessagePolicy.t.
-Admitted.
-
-Global Instance into_val_typed_TerminationMessagePolicy `{ffi_syntax} : IntoValTyped TerminationMessagePolicy.t v1.TerminationMessagePolicy.
-Admitted.
-
-(* type v1.Capability *)
 Module Capability.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Capability_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Capability.t). Admitted.
+
+#[global] Instance Capability_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Capability.t) (v1.Capabilityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Capability.
 
-Global Instance bounded_size_Capability : BoundedTypeSize v1.Capability.
-Admitted.
-
-Global Instance into_val_Capability `{ffi_syntax} : IntoVal Capability.t.
-Admitted.
-
-Global Instance into_val_typed_Capability `{ffi_syntax} : IntoValTyped Capability.t v1.Capability.
-Admitted.
-
-(* type v1.Capabilities *)
 Module Capabilities.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Capabilities_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Capabilities.t). Admitted.
+
+#[global] Instance Capabilities_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Capabilities.t) (v1.Capabilitiesⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Capabilities.
 
-Global Instance bounded_size_Capabilities : BoundedTypeSize v1.Capabilities.
-Admitted.
-
-Global Instance into_val_Capabilities `{ffi_syntax} : IntoVal Capabilities.t.
-Admitted.
-
-Global Instance into_val_typed_Capabilities `{ffi_syntax} : IntoValTyped Capabilities.t v1.Capabilities.
-Admitted.
-
-(* type v1.ResourceList *)
-Module ResourceList.
-
-#[global] Transparent v1.ResourceList.
-#[global] Typeclasses Transparent v1.ResourceList.
-Section def.
-Context `{ffi_syntax}.
-Definition t := loc.
-End def.
-End ResourceList.
-
-(* type v1.ResourceRequirements *)
 Module ResourceRequirements.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Limits' : ResourceList.t;
-  Requests' : ResourceList.t;
-  Claims' : slice.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceRequirements_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceRequirements.t). Admitted.
+
+#[global] Instance ResourceRequirements_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceRequirements.t) (v1.ResourceRequirementsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceRequirements.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ResourceRequirements.
-#[local] Typeclasses Transparent v1.ResourceRequirements.
-
-Global Instance ResourceRequirements_wf : struct.Wf v1.ResourceRequirements.
-Proof. apply _. Qed.
-
-Global Instance settable_ResourceRequirements : Settable ResourceRequirements.t :=
-  settable! ResourceRequirements.mk < ResourceRequirements.Limits'; ResourceRequirements.Requests'; ResourceRequirements.Claims' >.
-Global Instance into_val_ResourceRequirements : IntoVal ResourceRequirements.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ResourceRequirements [
-    "Limits" ::= #(ResourceRequirements.Limits' v);
-    "Requests" ::= #(ResourceRequirements.Requests' v);
-    "Claims" ::= #(ResourceRequirements.Claims' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ResourceRequirements : IntoValTyped ResourceRequirements.t v1.ResourceRequirements :=
-{|
-  default_val := ResourceRequirements.mk (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ResourceRequirements_Limits : IntoValStructField "Limits" v1.ResourceRequirements ResourceRequirements.Limits'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ResourceRequirements_Requests : IntoValStructField "Requests" v1.ResourceRequirements ResourceRequirements.Requests'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ResourceRequirements_Claims : IntoValStructField "Claims" v1.ResourceRequirements ResourceRequirements.Claims'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ResourceRequirements Limits' Requests' Claims':
-  PureWp True
-    (struct.make #v1.ResourceRequirements (alist_val [
-      "Limits" ::= #Limits';
-      "Requests" ::= #Requests';
-      "Claims" ::= #Claims'
-    ]))%struct
-    #(ResourceRequirements.mk Limits' Requests' Claims').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ResourceRequirements_struct_fields_split dq l (v : ResourceRequirements.t) :
-  StructFieldsSplit dq l v (
-    "HLimits" ∷ l ↦s[v1.ResourceRequirements :: "Limits"]{dq} v.(ResourceRequirements.Limits') ∗
-    "HRequests" ∷ l ↦s[v1.ResourceRequirements :: "Requests"]{dq} v.(ResourceRequirements.Requests') ∗
-    "HClaims" ∷ l ↦s[v1.ResourceRequirements :: "Claims"]{dq} v.(ResourceRequirements.Claims')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ResourceRequirements.Limits' v)) (v1.ResourceRequirements) "Limits"%go.
-  simpl_one_flatten_struct (# (ResourceRequirements.Requests' v)) (v1.ResourceRequirements) "Requests"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.VolumeResourceRequirements *)
 Module VolumeResourceRequirements.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeResourceRequirements_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeResourceRequirements.t). Admitted.
+
+#[global] Instance VolumeResourceRequirements_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeResourceRequirements.t) (v1.VolumeResourceRequirementsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeResourceRequirements.
 
-Global Instance bounded_size_VolumeResourceRequirements : BoundedTypeSize v1.VolumeResourceRequirements.
-Admitted.
-
-Global Instance into_val_VolumeResourceRequirements `{ffi_syntax} : IntoVal VolumeResourceRequirements.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeResourceRequirements `{ffi_syntax} : IntoValTyped VolumeResourceRequirements.t v1.VolumeResourceRequirements.
-Admitted.
-
-(* type v1.ResourceClaim *)
 Module ResourceClaim.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceClaim.t). Admitted.
+
+#[global] Instance ResourceClaim_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceClaim.t) (v1.ResourceClaimⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceClaim.
 
-Global Instance bounded_size_ResourceClaim : BoundedTypeSize v1.ResourceClaim.
-Admitted.
-
-Global Instance into_val_ResourceClaim `{ffi_syntax} : IntoVal ResourceClaim.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceClaim `{ffi_syntax} : IntoValTyped ResourceClaim.t v1.ResourceClaim.
-Admitted.
-
-(* type v1.Container *)
 Module Container.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-  Image' : go_string;
-  Command' : slice.t;
-  Args' : slice.t;
-  WorkingDir' : go_string;
-  Ports' : slice.t;
-  EnvFrom' : slice.t;
-  Env' : slice.t;
-  Resources' : ResourceRequirements.t;
-  ResizePolicy' : slice.t;
-  RestartPolicy' : loc;
-  RestartPolicyRules' : slice.t;
-  VolumeMounts' : slice.t;
-  VolumeDevices' : slice.t;
-  LivenessProbe' : loc;
-  ReadinessProbe' : loc;
-  StartupProbe' : loc;
-  Lifecycle' : loc;
-  TerminationMessagePath' : go_string;
-  TerminationMessagePolicy' : TerminationMessagePolicy.t;
-  ImagePullPolicy' : PullPolicy.t;
-  SecurityContext' : loc;
-  Stdin' : bool;
-  StdinOnce' : bool;
-  TTY' : bool;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Container_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Container.t). Admitted.
+
+#[global] Instance Container_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Container.t) (v1.Containerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Container.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.Container.
-#[local] Typeclasses Transparent v1.Container.
-
-Global Instance Container_wf : struct.Wf v1.Container.
-Proof. apply _. Qed.
-
-Global Instance settable_Container : Settable Container.t :=
-  settable! Container.mk < Container.Name'; Container.Image'; Container.Command'; Container.Args'; Container.WorkingDir'; Container.Ports'; Container.EnvFrom'; Container.Env'; Container.Resources'; Container.ResizePolicy'; Container.RestartPolicy'; Container.RestartPolicyRules'; Container.VolumeMounts'; Container.VolumeDevices'; Container.LivenessProbe'; Container.ReadinessProbe'; Container.StartupProbe'; Container.Lifecycle'; Container.TerminationMessagePath'; Container.TerminationMessagePolicy'; Container.ImagePullPolicy'; Container.SecurityContext'; Container.Stdin'; Container.StdinOnce'; Container.TTY' >.
-Global Instance into_val_Container : IntoVal Container.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.Container [
-    "Name" ::= #(Container.Name' v);
-    "Image" ::= #(Container.Image' v);
-    "Command" ::= #(Container.Command' v);
-    "Args" ::= #(Container.Args' v);
-    "WorkingDir" ::= #(Container.WorkingDir' v);
-    "Ports" ::= #(Container.Ports' v);
-    "EnvFrom" ::= #(Container.EnvFrom' v);
-    "Env" ::= #(Container.Env' v);
-    "Resources" ::= #(Container.Resources' v);
-    "ResizePolicy" ::= #(Container.ResizePolicy' v);
-    "RestartPolicy" ::= #(Container.RestartPolicy' v);
-    "RestartPolicyRules" ::= #(Container.RestartPolicyRules' v);
-    "VolumeMounts" ::= #(Container.VolumeMounts' v);
-    "VolumeDevices" ::= #(Container.VolumeDevices' v);
-    "LivenessProbe" ::= #(Container.LivenessProbe' v);
-    "ReadinessProbe" ::= #(Container.ReadinessProbe' v);
-    "StartupProbe" ::= #(Container.StartupProbe' v);
-    "Lifecycle" ::= #(Container.Lifecycle' v);
-    "TerminationMessagePath" ::= #(Container.TerminationMessagePath' v);
-    "TerminationMessagePolicy" ::= #(Container.TerminationMessagePolicy' v);
-    "ImagePullPolicy" ::= #(Container.ImagePullPolicy' v);
-    "SecurityContext" ::= #(Container.SecurityContext' v);
-    "Stdin" ::= #(Container.Stdin' v);
-    "StdinOnce" ::= #(Container.StdinOnce' v);
-    "TTY" ::= #(Container.TTY' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_Container : IntoValTyped Container.t v1.Container :=
-{|
-  default_val := Container.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_Container_Name : IntoValStructField "Name" v1.Container Container.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Image : IntoValStructField "Image" v1.Container Container.Image'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Command : IntoValStructField "Command" v1.Container Container.Command'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Args : IntoValStructField "Args" v1.Container Container.Args'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_WorkingDir : IntoValStructField "WorkingDir" v1.Container Container.WorkingDir'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Ports : IntoValStructField "Ports" v1.Container Container.Ports'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_EnvFrom : IntoValStructField "EnvFrom" v1.Container Container.EnvFrom'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Env : IntoValStructField "Env" v1.Container Container.Env'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Resources : IntoValStructField "Resources" v1.Container Container.Resources'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_ResizePolicy : IntoValStructField "ResizePolicy" v1.Container Container.ResizePolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_RestartPolicy : IntoValStructField "RestartPolicy" v1.Container Container.RestartPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_RestartPolicyRules : IntoValStructField "RestartPolicyRules" v1.Container Container.RestartPolicyRules'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_VolumeMounts : IntoValStructField "VolumeMounts" v1.Container Container.VolumeMounts'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_VolumeDevices : IntoValStructField "VolumeDevices" v1.Container Container.VolumeDevices'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_LivenessProbe : IntoValStructField "LivenessProbe" v1.Container Container.LivenessProbe'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_ReadinessProbe : IntoValStructField "ReadinessProbe" v1.Container Container.ReadinessProbe'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_StartupProbe : IntoValStructField "StartupProbe" v1.Container Container.StartupProbe'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Lifecycle : IntoValStructField "Lifecycle" v1.Container Container.Lifecycle'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_TerminationMessagePath : IntoValStructField "TerminationMessagePath" v1.Container Container.TerminationMessagePath'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_TerminationMessagePolicy : IntoValStructField "TerminationMessagePolicy" v1.Container Container.TerminationMessagePolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_ImagePullPolicy : IntoValStructField "ImagePullPolicy" v1.Container Container.ImagePullPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_SecurityContext : IntoValStructField "SecurityContext" v1.Container Container.SecurityContext'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_Stdin : IntoValStructField "Stdin" v1.Container Container.Stdin'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_StdinOnce : IntoValStructField "StdinOnce" v1.Container Container.StdinOnce'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Container_TTY : IntoValStructField "TTY" v1.Container Container.TTY'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Container Name' Image' Command' Args' WorkingDir' Ports' EnvFrom' Env' Resources' ResizePolicy' RestartPolicy' RestartPolicyRules' VolumeMounts' VolumeDevices' LivenessProbe' ReadinessProbe' StartupProbe' Lifecycle' TerminationMessagePath' TerminationMessagePolicy' ImagePullPolicy' SecurityContext' Stdin' StdinOnce' TTY':
-  PureWp True
-    (struct.make #v1.Container (alist_val [
-      "Name" ::= #Name';
-      "Image" ::= #Image';
-      "Command" ::= #Command';
-      "Args" ::= #Args';
-      "WorkingDir" ::= #WorkingDir';
-      "Ports" ::= #Ports';
-      "EnvFrom" ::= #EnvFrom';
-      "Env" ::= #Env';
-      "Resources" ::= #Resources';
-      "ResizePolicy" ::= #ResizePolicy';
-      "RestartPolicy" ::= #RestartPolicy';
-      "RestartPolicyRules" ::= #RestartPolicyRules';
-      "VolumeMounts" ::= #VolumeMounts';
-      "VolumeDevices" ::= #VolumeDevices';
-      "LivenessProbe" ::= #LivenessProbe';
-      "ReadinessProbe" ::= #ReadinessProbe';
-      "StartupProbe" ::= #StartupProbe';
-      "Lifecycle" ::= #Lifecycle';
-      "TerminationMessagePath" ::= #TerminationMessagePath';
-      "TerminationMessagePolicy" ::= #TerminationMessagePolicy';
-      "ImagePullPolicy" ::= #ImagePullPolicy';
-      "SecurityContext" ::= #SecurityContext';
-      "Stdin" ::= #Stdin';
-      "StdinOnce" ::= #StdinOnce';
-      "TTY" ::= #TTY'
-    ]))%struct
-    #(Container.mk Name' Image' Command' Args' WorkingDir' Ports' EnvFrom' Env' Resources' ResizePolicy' RestartPolicy' RestartPolicyRules' VolumeMounts' VolumeDevices' LivenessProbe' ReadinessProbe' StartupProbe' Lifecycle' TerminationMessagePath' TerminationMessagePolicy' ImagePullPolicy' SecurityContext' Stdin' StdinOnce' TTY').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Container_struct_fields_split dq l (v : Container.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.Container :: "Name"]{dq} v.(Container.Name') ∗
-    "HImage" ∷ l ↦s[v1.Container :: "Image"]{dq} v.(Container.Image') ∗
-    "HCommand" ∷ l ↦s[v1.Container :: "Command"]{dq} v.(Container.Command') ∗
-    "HArgs" ∷ l ↦s[v1.Container :: "Args"]{dq} v.(Container.Args') ∗
-    "HWorkingDir" ∷ l ↦s[v1.Container :: "WorkingDir"]{dq} v.(Container.WorkingDir') ∗
-    "HPorts" ∷ l ↦s[v1.Container :: "Ports"]{dq} v.(Container.Ports') ∗
-    "HEnvFrom" ∷ l ↦s[v1.Container :: "EnvFrom"]{dq} v.(Container.EnvFrom') ∗
-    "HEnv" ∷ l ↦s[v1.Container :: "Env"]{dq} v.(Container.Env') ∗
-    "HResources" ∷ l ↦s[v1.Container :: "Resources"]{dq} v.(Container.Resources') ∗
-    "HResizePolicy" ∷ l ↦s[v1.Container :: "ResizePolicy"]{dq} v.(Container.ResizePolicy') ∗
-    "HRestartPolicy" ∷ l ↦s[v1.Container :: "RestartPolicy"]{dq} v.(Container.RestartPolicy') ∗
-    "HRestartPolicyRules" ∷ l ↦s[v1.Container :: "RestartPolicyRules"]{dq} v.(Container.RestartPolicyRules') ∗
-    "HVolumeMounts" ∷ l ↦s[v1.Container :: "VolumeMounts"]{dq} v.(Container.VolumeMounts') ∗
-    "HVolumeDevices" ∷ l ↦s[v1.Container :: "VolumeDevices"]{dq} v.(Container.VolumeDevices') ∗
-    "HLivenessProbe" ∷ l ↦s[v1.Container :: "LivenessProbe"]{dq} v.(Container.LivenessProbe') ∗
-    "HReadinessProbe" ∷ l ↦s[v1.Container :: "ReadinessProbe"]{dq} v.(Container.ReadinessProbe') ∗
-    "HStartupProbe" ∷ l ↦s[v1.Container :: "StartupProbe"]{dq} v.(Container.StartupProbe') ∗
-    "HLifecycle" ∷ l ↦s[v1.Container :: "Lifecycle"]{dq} v.(Container.Lifecycle') ∗
-    "HTerminationMessagePath" ∷ l ↦s[v1.Container :: "TerminationMessagePath"]{dq} v.(Container.TerminationMessagePath') ∗
-    "HTerminationMessagePolicy" ∷ l ↦s[v1.Container :: "TerminationMessagePolicy"]{dq} v.(Container.TerminationMessagePolicy') ∗
-    "HImagePullPolicy" ∷ l ↦s[v1.Container :: "ImagePullPolicy"]{dq} v.(Container.ImagePullPolicy') ∗
-    "HSecurityContext" ∷ l ↦s[v1.Container :: "SecurityContext"]{dq} v.(Container.SecurityContext') ∗
-    "HStdin" ∷ l ↦s[v1.Container :: "Stdin"]{dq} v.(Container.Stdin') ∗
-    "HStdinOnce" ∷ l ↦s[v1.Container :: "StdinOnce"]{dq} v.(Container.StdinOnce') ∗
-    "HTTY" ∷ l ↦s[v1.Container :: "TTY"]{dq} v.(Container.TTY')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Container.Name' v)) (v1.Container) "Name"%go.
-  simpl_one_flatten_struct (# (Container.Image' v)) (v1.Container) "Image"%go.
-  simpl_one_flatten_struct (# (Container.Command' v)) (v1.Container) "Command"%go.
-  simpl_one_flatten_struct (# (Container.Args' v)) (v1.Container) "Args"%go.
-  simpl_one_flatten_struct (# (Container.WorkingDir' v)) (v1.Container) "WorkingDir"%go.
-  simpl_one_flatten_struct (# (Container.Ports' v)) (v1.Container) "Ports"%go.
-  simpl_one_flatten_struct (# (Container.EnvFrom' v)) (v1.Container) "EnvFrom"%go.
-  simpl_one_flatten_struct (# (Container.Env' v)) (v1.Container) "Env"%go.
-  simpl_one_flatten_struct (# (Container.Resources' v)) (v1.Container) "Resources"%go.
-  simpl_one_flatten_struct (# (Container.ResizePolicy' v)) (v1.Container) "ResizePolicy"%go.
-  simpl_one_flatten_struct (# (Container.RestartPolicy' v)) (v1.Container) "RestartPolicy"%go.
-  simpl_one_flatten_struct (# (Container.RestartPolicyRules' v)) (v1.Container) "RestartPolicyRules"%go.
-  simpl_one_flatten_struct (# (Container.VolumeMounts' v)) (v1.Container) "VolumeMounts"%go.
-  simpl_one_flatten_struct (# (Container.VolumeDevices' v)) (v1.Container) "VolumeDevices"%go.
-  simpl_one_flatten_struct (# (Container.LivenessProbe' v)) (v1.Container) "LivenessProbe"%go.
-  simpl_one_flatten_struct (# (Container.ReadinessProbe' v)) (v1.Container) "ReadinessProbe"%go.
-  simpl_one_flatten_struct (# (Container.StartupProbe' v)) (v1.Container) "StartupProbe"%go.
-  simpl_one_flatten_struct (# (Container.Lifecycle' v)) (v1.Container) "Lifecycle"%go.
-  simpl_one_flatten_struct (# (Container.TerminationMessagePath' v)) (v1.Container) "TerminationMessagePath"%go.
-  simpl_one_flatten_struct (# (Container.TerminationMessagePolicy' v)) (v1.Container) "TerminationMessagePolicy"%go.
-  simpl_one_flatten_struct (# (Container.ImagePullPolicy' v)) (v1.Container) "ImagePullPolicy"%go.
-  simpl_one_flatten_struct (# (Container.SecurityContext' v)) (v1.Container) "SecurityContext"%go.
-  simpl_one_flatten_struct (# (Container.Stdin' v)) (v1.Container) "Stdin"%go.
-  simpl_one_flatten_struct (# (Container.StdinOnce' v)) (v1.Container) "StdinOnce"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ProbeHandler *)
 Module ProbeHandler.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ProbeHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ProbeHandler.t). Admitted.
+
+#[global] Instance ProbeHandler_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ProbeHandler.t) (v1.ProbeHandlerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ProbeHandler.
 
-Global Instance bounded_size_ProbeHandler : BoundedTypeSize v1.ProbeHandler.
-Admitted.
-
-Global Instance into_val_ProbeHandler `{ffi_syntax} : IntoVal ProbeHandler.t.
-Admitted.
-
-Global Instance into_val_typed_ProbeHandler `{ffi_syntax} : IntoValTyped ProbeHandler.t v1.ProbeHandler.
-Admitted.
-
-(* type v1.LifecycleHandler *)
 Module LifecycleHandler.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LifecycleHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LifecycleHandler.t). Admitted.
+
+#[global] Instance LifecycleHandler_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LifecycleHandler.t) (v1.LifecycleHandlerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LifecycleHandler.
 
-Global Instance bounded_size_LifecycleHandler : BoundedTypeSize v1.LifecycleHandler.
-Admitted.
-
-Global Instance into_val_LifecycleHandler `{ffi_syntax} : IntoVal LifecycleHandler.t.
-Admitted.
-
-Global Instance into_val_typed_LifecycleHandler `{ffi_syntax} : IntoValTyped LifecycleHandler.t v1.LifecycleHandler.
-Admitted.
-
-(* type v1.Signal *)
 Module Signal.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Signal_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Signal.t). Admitted.
+
+#[global] Instance Signal_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Signal.t) (v1.Signalⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Signal.
 
-Global Instance bounded_size_Signal : BoundedTypeSize v1.Signal.
-Admitted.
-
-Global Instance into_val_Signal `{ffi_syntax} : IntoVal Signal.t.
-Admitted.
-
-Global Instance into_val_typed_Signal `{ffi_syntax} : IntoValTyped Signal.t v1.Signal.
-Admitted.
-
-(* type v1.Lifecycle *)
 Module Lifecycle.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Lifecycle_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Lifecycle.t). Admitted.
+
+#[global] Instance Lifecycle_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Lifecycle.t) (v1.Lifecycleⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Lifecycle.
 
-Global Instance bounded_size_Lifecycle : BoundedTypeSize v1.Lifecycle.
-Admitted.
-
-Global Instance into_val_Lifecycle `{ffi_syntax} : IntoVal Lifecycle.t.
-Admitted.
-
-Global Instance into_val_typed_Lifecycle `{ffi_syntax} : IntoValTyped Lifecycle.t v1.Lifecycle.
-Admitted.
-
-(* type v1.ConditionStatus *)
 Module ConditionStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConditionStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConditionStatus.t). Admitted.
+
+#[global] Instance ConditionStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConditionStatus.t) (v1.ConditionStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConditionStatus.
 
-Global Instance bounded_size_ConditionStatus : BoundedTypeSize v1.ConditionStatus.
-Admitted.
-
-Global Instance into_val_ConditionStatus `{ffi_syntax} : IntoVal ConditionStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ConditionStatus `{ffi_syntax} : IntoValTyped ConditionStatus.t v1.ConditionStatus.
-Admitted.
-
-(* type v1.ContainerStateWaiting *)
 Module ContainerStateWaiting.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerStateWaiting_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateWaiting.t). Admitted.
+
+#[global] Instance ContainerStateWaiting_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerStateWaiting.t) (v1.ContainerStateWaitingⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerStateWaiting.
 
-Global Instance bounded_size_ContainerStateWaiting : BoundedTypeSize v1.ContainerStateWaiting.
-Admitted.
-
-Global Instance into_val_ContainerStateWaiting `{ffi_syntax} : IntoVal ContainerStateWaiting.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerStateWaiting `{ffi_syntax} : IntoValTyped ContainerStateWaiting.t v1.ContainerStateWaiting.
-Admitted.
-
-(* type v1.ContainerStateRunning *)
 Module ContainerStateRunning.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerStateRunning_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateRunning.t). Admitted.
+
+#[global] Instance ContainerStateRunning_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerStateRunning.t) (v1.ContainerStateRunningⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerStateRunning.
 
-Global Instance bounded_size_ContainerStateRunning : BoundedTypeSize v1.ContainerStateRunning.
-Admitted.
-
-Global Instance into_val_ContainerStateRunning `{ffi_syntax} : IntoVal ContainerStateRunning.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerStateRunning `{ffi_syntax} : IntoValTyped ContainerStateRunning.t v1.ContainerStateRunning.
-Admitted.
-
-(* type v1.ContainerStateTerminated *)
 Module ContainerStateTerminated.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerStateTerminated_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateTerminated.t). Admitted.
+
+#[global] Instance ContainerStateTerminated_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerStateTerminated.t) (v1.ContainerStateTerminatedⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerStateTerminated.
 
-Global Instance bounded_size_ContainerStateTerminated : BoundedTypeSize v1.ContainerStateTerminated.
-Admitted.
-
-Global Instance into_val_ContainerStateTerminated `{ffi_syntax} : IntoVal ContainerStateTerminated.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerStateTerminated `{ffi_syntax} : IntoValTyped ContainerStateTerminated.t v1.ContainerStateTerminated.
-Admitted.
-
-(* type v1.ContainerState *)
 Module ContainerState.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerState_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerState.t). Admitted.
+
+#[global] Instance ContainerState_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerState.t) (v1.ContainerStateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerState.
 
-Global Instance bounded_size_ContainerState : BoundedTypeSize v1.ContainerState.
-Admitted.
-
-Global Instance into_val_ContainerState `{ffi_syntax} : IntoVal ContainerState.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerState `{ffi_syntax} : IntoValTyped ContainerState.t v1.ContainerState.
-Admitted.
-
-(* type v1.ContainerStatus *)
 Module ContainerStatus.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-  State' : ContainerState.t;
-  LastTerminationState' : ContainerState.t;
-  Ready' : bool;
-  RestartCount' : w32;
-  Image' : go_string;
-  ImageID' : go_string;
-  ContainerID' : go_string;
-  Started' : loc;
-  AllocatedResources' : ResourceList.t;
-  Resources' : loc;
-  VolumeMounts' : slice.t;
-  User' : loc;
-  AllocatedResourcesStatus' : slice.t;
-  StopSignal' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStatus.t). Admitted.
+
+#[global] Instance ContainerStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerStatus.t) (v1.ContainerStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerStatus.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ContainerStatus.
-#[local] Typeclasses Transparent v1.ContainerStatus.
-
-Global Instance ContainerStatus_wf : struct.Wf v1.ContainerStatus.
-Proof. apply _. Qed.
-
-Global Instance settable_ContainerStatus : Settable ContainerStatus.t :=
-  settable! ContainerStatus.mk < ContainerStatus.Name'; ContainerStatus.State'; ContainerStatus.LastTerminationState'; ContainerStatus.Ready'; ContainerStatus.RestartCount'; ContainerStatus.Image'; ContainerStatus.ImageID'; ContainerStatus.ContainerID'; ContainerStatus.Started'; ContainerStatus.AllocatedResources'; ContainerStatus.Resources'; ContainerStatus.VolumeMounts'; ContainerStatus.User'; ContainerStatus.AllocatedResourcesStatus'; ContainerStatus.StopSignal' >.
-Global Instance into_val_ContainerStatus : IntoVal ContainerStatus.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ContainerStatus [
-    "Name" ::= #(ContainerStatus.Name' v);
-    "State" ::= #(ContainerStatus.State' v);
-    "LastTerminationState" ::= #(ContainerStatus.LastTerminationState' v);
-    "Ready" ::= #(ContainerStatus.Ready' v);
-    "RestartCount" ::= #(ContainerStatus.RestartCount' v);
-    "Image" ::= #(ContainerStatus.Image' v);
-    "ImageID" ::= #(ContainerStatus.ImageID' v);
-    "ContainerID" ::= #(ContainerStatus.ContainerID' v);
-    "Started" ::= #(ContainerStatus.Started' v);
-    "AllocatedResources" ::= #(ContainerStatus.AllocatedResources' v);
-    "Resources" ::= #(ContainerStatus.Resources' v);
-    "VolumeMounts" ::= #(ContainerStatus.VolumeMounts' v);
-    "User" ::= #(ContainerStatus.User' v);
-    "AllocatedResourcesStatus" ::= #(ContainerStatus.AllocatedResourcesStatus' v);
-    "StopSignal" ::= #(ContainerStatus.StopSignal' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ContainerStatus : IntoValTyped ContainerStatus.t v1.ContainerStatus :=
-{|
-  default_val := ContainerStatus.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_Name : IntoValStructField "Name" v1.ContainerStatus ContainerStatus.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_State : IntoValStructField "State" v1.ContainerStatus ContainerStatus.State'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_LastTerminationState : IntoValStructField "LastTerminationState" v1.ContainerStatus ContainerStatus.LastTerminationState'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_Ready : IntoValStructField "Ready" v1.ContainerStatus ContainerStatus.Ready'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_RestartCount : IntoValStructField "RestartCount" v1.ContainerStatus ContainerStatus.RestartCount'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_Image : IntoValStructField "Image" v1.ContainerStatus ContainerStatus.Image'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_ImageID : IntoValStructField "ImageID" v1.ContainerStatus ContainerStatus.ImageID'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_ContainerID : IntoValStructField "ContainerID" v1.ContainerStatus ContainerStatus.ContainerID'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_Started : IntoValStructField "Started" v1.ContainerStatus ContainerStatus.Started'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_AllocatedResources : IntoValStructField "AllocatedResources" v1.ContainerStatus ContainerStatus.AllocatedResources'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_Resources : IntoValStructField "Resources" v1.ContainerStatus ContainerStatus.Resources'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_VolumeMounts : IntoValStructField "VolumeMounts" v1.ContainerStatus ContainerStatus.VolumeMounts'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_User : IntoValStructField "User" v1.ContainerStatus ContainerStatus.User'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_AllocatedResourcesStatus : IntoValStructField "AllocatedResourcesStatus" v1.ContainerStatus ContainerStatus.AllocatedResourcesStatus'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ContainerStatus_StopSignal : IntoValStructField "StopSignal" v1.ContainerStatus ContainerStatus.StopSignal'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ContainerStatus Name' State' LastTerminationState' Ready' RestartCount' Image' ImageID' ContainerID' Started' AllocatedResources' Resources' VolumeMounts' User' AllocatedResourcesStatus' StopSignal':
-  PureWp True
-    (struct.make #v1.ContainerStatus (alist_val [
-      "Name" ::= #Name';
-      "State" ::= #State';
-      "LastTerminationState" ::= #LastTerminationState';
-      "Ready" ::= #Ready';
-      "RestartCount" ::= #RestartCount';
-      "Image" ::= #Image';
-      "ImageID" ::= #ImageID';
-      "ContainerID" ::= #ContainerID';
-      "Started" ::= #Started';
-      "AllocatedResources" ::= #AllocatedResources';
-      "Resources" ::= #Resources';
-      "VolumeMounts" ::= #VolumeMounts';
-      "User" ::= #User';
-      "AllocatedResourcesStatus" ::= #AllocatedResourcesStatus';
-      "StopSignal" ::= #StopSignal'
-    ]))%struct
-    #(ContainerStatus.mk Name' State' LastTerminationState' Ready' RestartCount' Image' ImageID' ContainerID' Started' AllocatedResources' Resources' VolumeMounts' User' AllocatedResourcesStatus' StopSignal').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ContainerStatus_struct_fields_split dq l (v : ContainerStatus.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.ContainerStatus :: "Name"]{dq} v.(ContainerStatus.Name') ∗
-    "HState" ∷ l ↦s[v1.ContainerStatus :: "State"]{dq} v.(ContainerStatus.State') ∗
-    "HLastTerminationState" ∷ l ↦s[v1.ContainerStatus :: "LastTerminationState"]{dq} v.(ContainerStatus.LastTerminationState') ∗
-    "HReady" ∷ l ↦s[v1.ContainerStatus :: "Ready"]{dq} v.(ContainerStatus.Ready') ∗
-    "HRestartCount" ∷ l ↦s[v1.ContainerStatus :: "RestartCount"]{dq} v.(ContainerStatus.RestartCount') ∗
-    "HImage" ∷ l ↦s[v1.ContainerStatus :: "Image"]{dq} v.(ContainerStatus.Image') ∗
-    "HImageID" ∷ l ↦s[v1.ContainerStatus :: "ImageID"]{dq} v.(ContainerStatus.ImageID') ∗
-    "HContainerID" ∷ l ↦s[v1.ContainerStatus :: "ContainerID"]{dq} v.(ContainerStatus.ContainerID') ∗
-    "HStarted" ∷ l ↦s[v1.ContainerStatus :: "Started"]{dq} v.(ContainerStatus.Started') ∗
-    "HAllocatedResources" ∷ l ↦s[v1.ContainerStatus :: "AllocatedResources"]{dq} v.(ContainerStatus.AllocatedResources') ∗
-    "HResources" ∷ l ↦s[v1.ContainerStatus :: "Resources"]{dq} v.(ContainerStatus.Resources') ∗
-    "HVolumeMounts" ∷ l ↦s[v1.ContainerStatus :: "VolumeMounts"]{dq} v.(ContainerStatus.VolumeMounts') ∗
-    "HUser" ∷ l ↦s[v1.ContainerStatus :: "User"]{dq} v.(ContainerStatus.User') ∗
-    "HAllocatedResourcesStatus" ∷ l ↦s[v1.ContainerStatus :: "AllocatedResourcesStatus"]{dq} v.(ContainerStatus.AllocatedResourcesStatus') ∗
-    "HStopSignal" ∷ l ↦s[v1.ContainerStatus :: "StopSignal"]{dq} v.(ContainerStatus.StopSignal')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ContainerStatus.Name' v)) (v1.ContainerStatus) "Name"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.State' v)) (v1.ContainerStatus) "State"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.LastTerminationState' v)) (v1.ContainerStatus) "LastTerminationState"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.Ready' v)) (v1.ContainerStatus) "Ready"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.RestartCount' v)) (v1.ContainerStatus) "RestartCount"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.Image' v)) (v1.ContainerStatus) "Image"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.ImageID' v)) (v1.ContainerStatus) "ImageID"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.ContainerID' v)) (v1.ContainerStatus) "ContainerID"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.Started' v)) (v1.ContainerStatus) "Started"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.AllocatedResources' v)) (v1.ContainerStatus) "AllocatedResources"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.Resources' v)) (v1.ContainerStatus) "Resources"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.VolumeMounts' v)) (v1.ContainerStatus) "VolumeMounts"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.User' v)) (v1.ContainerStatus) "User"%go.
-  simpl_one_flatten_struct (# (ContainerStatus.AllocatedResourcesStatus' v)) (v1.ContainerStatus) "AllocatedResourcesStatus"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ResourceStatus *)
 Module ResourceStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceStatus.t). Admitted.
+
+#[global] Instance ResourceStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceStatus.t) (v1.ResourceStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceStatus.
 
-Global Instance bounded_size_ResourceStatus : BoundedTypeSize v1.ResourceStatus.
-Admitted.
-
-Global Instance into_val_ResourceStatus `{ffi_syntax} : IntoVal ResourceStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceStatus `{ffi_syntax} : IntoValTyped ResourceStatus.t v1.ResourceStatus.
-Admitted.
-
-(* type v1.ResourceHealthStatus *)
 Module ResourceHealthStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceHealthStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceHealthStatus.t). Admitted.
+
+#[global] Instance ResourceHealthStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceHealthStatus.t) (v1.ResourceHealthStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceHealthStatus.
 
-Global Instance bounded_size_ResourceHealthStatus : BoundedTypeSize v1.ResourceHealthStatus.
-Admitted.
-
-Global Instance into_val_ResourceHealthStatus `{ffi_syntax} : IntoVal ResourceHealthStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceHealthStatus `{ffi_syntax} : IntoValTyped ResourceHealthStatus.t v1.ResourceHealthStatus.
-Admitted.
-
-(* type v1.ResourceID *)
 Module ResourceID.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceID_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceID.t). Admitted.
+
+#[global] Instance ResourceID_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceID.t) (v1.ResourceIDⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceID.
 
-Global Instance bounded_size_ResourceID : BoundedTypeSize v1.ResourceID.
-Admitted.
-
-Global Instance into_val_ResourceID `{ffi_syntax} : IntoVal ResourceID.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceID `{ffi_syntax} : IntoValTyped ResourceID.t v1.ResourceID.
-Admitted.
-
-(* type v1.ResourceHealth *)
 Module ResourceHealth.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceHealth_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceHealth.t). Admitted.
+
+#[global] Instance ResourceHealth_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceHealth.t) (v1.ResourceHealthⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceHealth.
 
-Global Instance bounded_size_ResourceHealth : BoundedTypeSize v1.ResourceHealth.
-Admitted.
-
-Global Instance into_val_ResourceHealth `{ffi_syntax} : IntoVal ResourceHealth.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceHealth `{ffi_syntax} : IntoValTyped ResourceHealth.t v1.ResourceHealth.
-Admitted.
-
-(* type v1.ContainerUser *)
 Module ContainerUser.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerUser_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerUser.t). Admitted.
+
+#[global] Instance ContainerUser_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerUser.t) (v1.ContainerUserⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerUser.
 
-Global Instance bounded_size_ContainerUser : BoundedTypeSize v1.ContainerUser.
-Admitted.
-
-Global Instance into_val_ContainerUser `{ffi_syntax} : IntoVal ContainerUser.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerUser `{ffi_syntax} : IntoValTyped ContainerUser.t v1.ContainerUser.
-Admitted.
-
-(* type v1.LinuxContainerUser *)
 Module LinuxContainerUser.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LinuxContainerUser_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LinuxContainerUser.t). Admitted.
+
+#[global] Instance LinuxContainerUser_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LinuxContainerUser.t) (v1.LinuxContainerUserⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LinuxContainerUser.
 
-Global Instance bounded_size_LinuxContainerUser : BoundedTypeSize v1.LinuxContainerUser.
-Admitted.
-
-Global Instance into_val_LinuxContainerUser `{ffi_syntax} : IntoVal LinuxContainerUser.t.
-Admitted.
-
-Global Instance into_val_typed_LinuxContainerUser `{ffi_syntax} : IntoValTyped LinuxContainerUser.t v1.LinuxContainerUser.
-Admitted.
-
-(* type v1.PodPhase *)
 Module PodPhase.
-
-#[global] Transparent v1.PodPhase.
-#[global] Typeclasses Transparent v1.PodPhase.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodPhase_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodPhase.t). Admitted.
+
+#[global] Instance PodPhase_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodPhase.t) (v1.PodPhaseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodPhase.
 
-(* type v1.PodConditionType *)
 Module PodConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodConditionType.t). Admitted.
+
+#[global] Instance PodConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodConditionType.t) (v1.PodConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodConditionType.
 
-Global Instance bounded_size_PodConditionType : BoundedTypeSize v1.PodConditionType.
-Admitted.
-
-Global Instance into_val_PodConditionType `{ffi_syntax} : IntoVal PodConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_PodConditionType `{ffi_syntax} : IntoValTyped PodConditionType.t v1.PodConditionType.
-Admitted.
-
-(* type v1.PodCondition *)
 Module PodCondition.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Type' : PodConditionType.t;
-  ObservedGeneration' : w64;
-  Status' : ConditionStatus.t;
-  LastProbeTime' : v1.Time.t;
-  LastTransitionTime' : v1.Time.t;
-  Reason' : go_string;
-  Message' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodCondition.t). Admitted.
+
+#[global] Instance PodCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodCondition.t) (v1.PodConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodCondition.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodCondition.
-#[local] Typeclasses Transparent v1.PodCondition.
-
-Global Instance PodCondition_wf : struct.Wf v1.PodCondition.
-Proof. apply _. Qed.
-
-Global Instance settable_PodCondition : Settable PodCondition.t :=
-  settable! PodCondition.mk < PodCondition.Type'; PodCondition.ObservedGeneration'; PodCondition.Status'; PodCondition.LastProbeTime'; PodCondition.LastTransitionTime'; PodCondition.Reason'; PodCondition.Message' >.
-Global Instance into_val_PodCondition : IntoVal PodCondition.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodCondition [
-    "Type" ::= #(PodCondition.Type' v);
-    "ObservedGeneration" ::= #(PodCondition.ObservedGeneration' v);
-    "Status" ::= #(PodCondition.Status' v);
-    "LastProbeTime" ::= #(PodCondition.LastProbeTime' v);
-    "LastTransitionTime" ::= #(PodCondition.LastTransitionTime' v);
-    "Reason" ::= #(PodCondition.Reason' v);
-    "Message" ::= #(PodCondition.Message' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodCondition : IntoValTyped PodCondition.t v1.PodCondition :=
-{|
-  default_val := PodCondition.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodCondition_Type : IntoValStructField "Type" v1.PodCondition PodCondition.Type'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_ObservedGeneration : IntoValStructField "ObservedGeneration" v1.PodCondition PodCondition.ObservedGeneration'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_Status : IntoValStructField "Status" v1.PodCondition PodCondition.Status'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_LastProbeTime : IntoValStructField "LastProbeTime" v1.PodCondition PodCondition.LastProbeTime'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_LastTransitionTime : IntoValStructField "LastTransitionTime" v1.PodCondition PodCondition.LastTransitionTime'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_Reason : IntoValStructField "Reason" v1.PodCondition PodCondition.Reason'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodCondition_Message : IntoValStructField "Message" v1.PodCondition PodCondition.Message'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodCondition Type' ObservedGeneration' Status' LastProbeTime' LastTransitionTime' Reason' Message':
-  PureWp True
-    (struct.make #v1.PodCondition (alist_val [
-      "Type" ::= #Type';
-      "ObservedGeneration" ::= #ObservedGeneration';
-      "Status" ::= #Status';
-      "LastProbeTime" ::= #LastProbeTime';
-      "LastTransitionTime" ::= #LastTransitionTime';
-      "Reason" ::= #Reason';
-      "Message" ::= #Message'
-    ]))%struct
-    #(PodCondition.mk Type' ObservedGeneration' Status' LastProbeTime' LastTransitionTime' Reason' Message').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodCondition_struct_fields_split dq l (v : PodCondition.t) :
-  StructFieldsSplit dq l v (
-    "HType" ∷ l ↦s[v1.PodCondition :: "Type"]{dq} v.(PodCondition.Type') ∗
-    "HObservedGeneration" ∷ l ↦s[v1.PodCondition :: "ObservedGeneration"]{dq} v.(PodCondition.ObservedGeneration') ∗
-    "HStatus" ∷ l ↦s[v1.PodCondition :: "Status"]{dq} v.(PodCondition.Status') ∗
-    "HLastProbeTime" ∷ l ↦s[v1.PodCondition :: "LastProbeTime"]{dq} v.(PodCondition.LastProbeTime') ∗
-    "HLastTransitionTime" ∷ l ↦s[v1.PodCondition :: "LastTransitionTime"]{dq} v.(PodCondition.LastTransitionTime') ∗
-    "HReason" ∷ l ↦s[v1.PodCondition :: "Reason"]{dq} v.(PodCondition.Reason') ∗
-    "HMessage" ∷ l ↦s[v1.PodCondition :: "Message"]{dq} v.(PodCondition.Message')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodCondition.Type' v)) (v1.PodCondition) "Type"%go.
-  simpl_one_flatten_struct (# (PodCondition.ObservedGeneration' v)) (v1.PodCondition) "ObservedGeneration"%go.
-  simpl_one_flatten_struct (# (PodCondition.Status' v)) (v1.PodCondition) "Status"%go.
-  simpl_one_flatten_struct (# (PodCondition.LastProbeTime' v)) (v1.PodCondition) "LastProbeTime"%go.
-  simpl_one_flatten_struct (# (PodCondition.LastTransitionTime' v)) (v1.PodCondition) "LastTransitionTime"%go.
-  simpl_one_flatten_struct (# (PodCondition.Reason' v)) (v1.PodCondition) "Reason"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodResizeStatus *)
 Module PodResizeStatus.
-
-#[global] Transparent v1.PodResizeStatus.
-#[global] Typeclasses Transparent v1.PodResizeStatus.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodResizeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodResizeStatus.t). Admitted.
+
+#[global] Instance PodResizeStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodResizeStatus.t) (v1.PodResizeStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodResizeStatus.
 
-(* type v1.VolumeMountStatus *)
 Module VolumeMountStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance VolumeMountStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeMountStatus.t). Admitted.
+
+#[global] Instance VolumeMountStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeMountStatus.t) (v1.VolumeMountStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End VolumeMountStatus.
 
-Global Instance bounded_size_VolumeMountStatus : BoundedTypeSize v1.VolumeMountStatus.
-Admitted.
-
-Global Instance into_val_VolumeMountStatus `{ffi_syntax} : IntoVal VolumeMountStatus.t.
-Admitted.
-
-Global Instance into_val_typed_VolumeMountStatus `{ffi_syntax} : IntoValTyped VolumeMountStatus.t v1.VolumeMountStatus.
-Admitted.
-
-(* type v1.RestartPolicy *)
 Module RestartPolicy.
-
-#[global] Transparent v1.RestartPolicy.
-#[global] Typeclasses Transparent v1.RestartPolicy.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RestartPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RestartPolicy.t). Admitted.
+
+#[global] Instance RestartPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RestartPolicy.t) (v1.RestartPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RestartPolicy.
 
-(* type v1.ContainerRestartPolicy *)
 Module ContainerRestartPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerRestartPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartPolicy.t). Admitted.
+
+#[global] Instance ContainerRestartPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerRestartPolicy.t) (v1.ContainerRestartPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerRestartPolicy.
 
-Global Instance bounded_size_ContainerRestartPolicy : BoundedTypeSize v1.ContainerRestartPolicy.
-Admitted.
-
-Global Instance into_val_ContainerRestartPolicy `{ffi_syntax} : IntoVal ContainerRestartPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerRestartPolicy `{ffi_syntax} : IntoValTyped ContainerRestartPolicy.t v1.ContainerRestartPolicy.
-Admitted.
-
-(* type v1.ContainerRestartRule *)
 Module ContainerRestartRule.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerRestartRule_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRule.t). Admitted.
+
+#[global] Instance ContainerRestartRule_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerRestartRule.t) (v1.ContainerRestartRuleⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerRestartRule.
 
-Global Instance bounded_size_ContainerRestartRule : BoundedTypeSize v1.ContainerRestartRule.
-Admitted.
-
-Global Instance into_val_ContainerRestartRule `{ffi_syntax} : IntoVal ContainerRestartRule.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerRestartRule `{ffi_syntax} : IntoValTyped ContainerRestartRule.t v1.ContainerRestartRule.
-Admitted.
-
-(* type v1.ContainerRestartRuleAction *)
 Module ContainerRestartRuleAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerRestartRuleAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleAction.t). Admitted.
+
+#[global] Instance ContainerRestartRuleAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerRestartRuleAction.t) (v1.ContainerRestartRuleActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerRestartRuleAction.
 
-Global Instance bounded_size_ContainerRestartRuleAction : BoundedTypeSize v1.ContainerRestartRuleAction.
-Admitted.
-
-Global Instance into_val_ContainerRestartRuleAction `{ffi_syntax} : IntoVal ContainerRestartRuleAction.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerRestartRuleAction `{ffi_syntax} : IntoValTyped ContainerRestartRuleAction.t v1.ContainerRestartRuleAction.
-Admitted.
-
-(* type v1.ContainerRestartRuleOnExitCodes *)
 Module ContainerRestartRuleOnExitCodes.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerRestartRuleOnExitCodes_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleOnExitCodes.t). Admitted.
+
+#[global] Instance ContainerRestartRuleOnExitCodes_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerRestartRuleOnExitCodes.t) (v1.ContainerRestartRuleOnExitCodesⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerRestartRuleOnExitCodes.
 
-Global Instance bounded_size_ContainerRestartRuleOnExitCodes : BoundedTypeSize v1.ContainerRestartRuleOnExitCodes.
-Admitted.
-
-Global Instance into_val_ContainerRestartRuleOnExitCodes `{ffi_syntax} : IntoVal ContainerRestartRuleOnExitCodes.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerRestartRuleOnExitCodes `{ffi_syntax} : IntoValTyped ContainerRestartRuleOnExitCodes.t v1.ContainerRestartRuleOnExitCodes.
-Admitted.
-
-(* type v1.ContainerRestartRuleOnExitCodesOperator *)
 Module ContainerRestartRuleOnExitCodesOperator.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerRestartRuleOnExitCodesOperator_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleOnExitCodesOperator.t). Admitted.
+
+#[global] Instance ContainerRestartRuleOnExitCodesOperator_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerRestartRuleOnExitCodesOperator.t) (v1.ContainerRestartRuleOnExitCodesOperatorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerRestartRuleOnExitCodesOperator.
 
-Global Instance bounded_size_ContainerRestartRuleOnExitCodesOperator : BoundedTypeSize v1.ContainerRestartRuleOnExitCodesOperator.
-Admitted.
-
-Global Instance into_val_ContainerRestartRuleOnExitCodesOperator `{ffi_syntax} : IntoVal ContainerRestartRuleOnExitCodesOperator.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerRestartRuleOnExitCodesOperator `{ffi_syntax} : IntoValTyped ContainerRestartRuleOnExitCodesOperator.t v1.ContainerRestartRuleOnExitCodesOperator.
-Admitted.
-
-(* type v1.DNSPolicy *)
 Module DNSPolicy.
-
-#[global] Transparent v1.DNSPolicy.
-#[global] Typeclasses Transparent v1.DNSPolicy.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DNSPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DNSPolicy.t). Admitted.
+
+#[global] Instance DNSPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DNSPolicy.t) (v1.DNSPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DNSPolicy.
 
-(* type v1.NodeSelector *)
 Module NodeSelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelector.t). Admitted.
+
+#[global] Instance NodeSelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSelector.t) (v1.NodeSelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSelector.
 
-Global Instance bounded_size_NodeSelector : BoundedTypeSize v1.NodeSelector.
-Admitted.
-
-Global Instance into_val_NodeSelector `{ffi_syntax} : IntoVal NodeSelector.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSelector `{ffi_syntax} : IntoValTyped NodeSelector.t v1.NodeSelector.
-Admitted.
-
-(* type v1.NodeSelectorTerm *)
 Module NodeSelectorTerm.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSelectorTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelectorTerm.t). Admitted.
+
+#[global] Instance NodeSelectorTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSelectorTerm.t) (v1.NodeSelectorTermⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSelectorTerm.
 
-Global Instance bounded_size_NodeSelectorTerm : BoundedTypeSize v1.NodeSelectorTerm.
-Admitted.
-
-Global Instance into_val_NodeSelectorTerm `{ffi_syntax} : IntoVal NodeSelectorTerm.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSelectorTerm `{ffi_syntax} : IntoValTyped NodeSelectorTerm.t v1.NodeSelectorTerm.
-Admitted.
-
-(* type v1.NodeSelectorRequirement *)
 Module NodeSelectorRequirement.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSelectorRequirement_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelectorRequirement.t). Admitted.
+
+#[global] Instance NodeSelectorRequirement_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSelectorRequirement.t) (v1.NodeSelectorRequirementⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSelectorRequirement.
 
-Global Instance bounded_size_NodeSelectorRequirement : BoundedTypeSize v1.NodeSelectorRequirement.
-Admitted.
-
-Global Instance into_val_NodeSelectorRequirement `{ffi_syntax} : IntoVal NodeSelectorRequirement.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSelectorRequirement `{ffi_syntax} : IntoValTyped NodeSelectorRequirement.t v1.NodeSelectorRequirement.
-Admitted.
-
-(* type v1.NodeSelectorOperator *)
 Module NodeSelectorOperator.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSelectorOperator_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelectorOperator.t). Admitted.
+
+#[global] Instance NodeSelectorOperator_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSelectorOperator.t) (v1.NodeSelectorOperatorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSelectorOperator.
 
-Global Instance bounded_size_NodeSelectorOperator : BoundedTypeSize v1.NodeSelectorOperator.
-Admitted.
-
-Global Instance into_val_NodeSelectorOperator `{ffi_syntax} : IntoVal NodeSelectorOperator.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSelectorOperator `{ffi_syntax} : IntoValTyped NodeSelectorOperator.t v1.NodeSelectorOperator.
-Admitted.
-
-(* type v1.TopologySelectorTerm *)
 Module TopologySelectorTerm.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TopologySelectorTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TopologySelectorTerm.t). Admitted.
+
+#[global] Instance TopologySelectorTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TopologySelectorTerm.t) (v1.TopologySelectorTermⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TopologySelectorTerm.
 
-Global Instance bounded_size_TopologySelectorTerm : BoundedTypeSize v1.TopologySelectorTerm.
-Admitted.
-
-Global Instance into_val_TopologySelectorTerm `{ffi_syntax} : IntoVal TopologySelectorTerm.t.
-Admitted.
-
-Global Instance into_val_typed_TopologySelectorTerm `{ffi_syntax} : IntoValTyped TopologySelectorTerm.t v1.TopologySelectorTerm.
-Admitted.
-
-(* type v1.TopologySelectorLabelRequirement *)
 Module TopologySelectorLabelRequirement.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TopologySelectorLabelRequirement_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TopologySelectorLabelRequirement.t). Admitted.
+
+#[global] Instance TopologySelectorLabelRequirement_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TopologySelectorLabelRequirement.t) (v1.TopologySelectorLabelRequirementⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TopologySelectorLabelRequirement.
 
-Global Instance bounded_size_TopologySelectorLabelRequirement : BoundedTypeSize v1.TopologySelectorLabelRequirement.
-Admitted.
-
-Global Instance into_val_TopologySelectorLabelRequirement `{ffi_syntax} : IntoVal TopologySelectorLabelRequirement.t.
-Admitted.
-
-Global Instance into_val_typed_TopologySelectorLabelRequirement `{ffi_syntax} : IntoValTyped TopologySelectorLabelRequirement.t v1.TopologySelectorLabelRequirement.
-Admitted.
-
-(* type v1.Affinity *)
 Module Affinity.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  NodeAffinity' : loc;
-  PodAffinity' : loc;
-  PodAntiAffinity' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Affinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Affinity.t). Admitted.
+
+#[global] Instance Affinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Affinity.t) (v1.Affinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Affinity.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.Affinity.
-#[local] Typeclasses Transparent v1.Affinity.
-
-Global Instance Affinity_wf : struct.Wf v1.Affinity.
-Proof. apply _. Qed.
-
-Global Instance settable_Affinity : Settable Affinity.t :=
-  settable! Affinity.mk < Affinity.NodeAffinity'; Affinity.PodAffinity'; Affinity.PodAntiAffinity' >.
-Global Instance into_val_Affinity : IntoVal Affinity.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.Affinity [
-    "NodeAffinity" ::= #(Affinity.NodeAffinity' v);
-    "PodAffinity" ::= #(Affinity.PodAffinity' v);
-    "PodAntiAffinity" ::= #(Affinity.PodAntiAffinity' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_Affinity : IntoValTyped Affinity.t v1.Affinity :=
-{|
-  default_val := Affinity.mk (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_Affinity_NodeAffinity : IntoValStructField "NodeAffinity" v1.Affinity Affinity.NodeAffinity'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Affinity_PodAffinity : IntoValStructField "PodAffinity" v1.Affinity Affinity.PodAffinity'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Affinity_PodAntiAffinity : IntoValStructField "PodAntiAffinity" v1.Affinity Affinity.PodAntiAffinity'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Affinity NodeAffinity' PodAffinity' PodAntiAffinity':
-  PureWp True
-    (struct.make #v1.Affinity (alist_val [
-      "NodeAffinity" ::= #NodeAffinity';
-      "PodAffinity" ::= #PodAffinity';
-      "PodAntiAffinity" ::= #PodAntiAffinity'
-    ]))%struct
-    #(Affinity.mk NodeAffinity' PodAffinity' PodAntiAffinity').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Affinity_struct_fields_split dq l (v : Affinity.t) :
-  StructFieldsSplit dq l v (
-    "HNodeAffinity" ∷ l ↦s[v1.Affinity :: "NodeAffinity"]{dq} v.(Affinity.NodeAffinity') ∗
-    "HPodAffinity" ∷ l ↦s[v1.Affinity :: "PodAffinity"]{dq} v.(Affinity.PodAffinity') ∗
-    "HPodAntiAffinity" ∷ l ↦s[v1.Affinity :: "PodAntiAffinity"]{dq} v.(Affinity.PodAntiAffinity')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Affinity.NodeAffinity' v)) (v1.Affinity) "NodeAffinity"%go.
-  simpl_one_flatten_struct (# (Affinity.PodAffinity' v)) (v1.Affinity) "PodAffinity"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodAffinity *)
 Module PodAffinity.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAffinity.t). Admitted.
+
+#[global] Instance PodAffinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodAffinity.t) (v1.PodAffinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodAffinity.
 
-Global Instance bounded_size_PodAffinity : BoundedTypeSize v1.PodAffinity.
-Admitted.
-
-Global Instance into_val_PodAffinity `{ffi_syntax} : IntoVal PodAffinity.t.
-Admitted.
-
-Global Instance into_val_typed_PodAffinity `{ffi_syntax} : IntoValTyped PodAffinity.t v1.PodAffinity.
-Admitted.
-
-(* type v1.PodAntiAffinity *)
 Module PodAntiAffinity.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodAntiAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAntiAffinity.t). Admitted.
+
+#[global] Instance PodAntiAffinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodAntiAffinity.t) (v1.PodAntiAffinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodAntiAffinity.
 
-Global Instance bounded_size_PodAntiAffinity : BoundedTypeSize v1.PodAntiAffinity.
-Admitted.
-
-Global Instance into_val_PodAntiAffinity `{ffi_syntax} : IntoVal PodAntiAffinity.t.
-Admitted.
-
-Global Instance into_val_typed_PodAntiAffinity `{ffi_syntax} : IntoValTyped PodAntiAffinity.t v1.PodAntiAffinity.
-Admitted.
-
-(* type v1.WeightedPodAffinityTerm *)
 Module WeightedPodAffinityTerm.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance WeightedPodAffinityTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.WeightedPodAffinityTerm.t). Admitted.
+
+#[global] Instance WeightedPodAffinityTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.WeightedPodAffinityTerm.t) (v1.WeightedPodAffinityTermⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End WeightedPodAffinityTerm.
 
-Global Instance bounded_size_WeightedPodAffinityTerm : BoundedTypeSize v1.WeightedPodAffinityTerm.
-Admitted.
-
-Global Instance into_val_WeightedPodAffinityTerm `{ffi_syntax} : IntoVal WeightedPodAffinityTerm.t.
-Admitted.
-
-Global Instance into_val_typed_WeightedPodAffinityTerm `{ffi_syntax} : IntoValTyped WeightedPodAffinityTerm.t v1.WeightedPodAffinityTerm.
-Admitted.
-
-(* type v1.PodAffinityTerm *)
 Module PodAffinityTerm.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodAffinityTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAffinityTerm.t). Admitted.
+
+#[global] Instance PodAffinityTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodAffinityTerm.t) (v1.PodAffinityTermⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodAffinityTerm.
 
-Global Instance bounded_size_PodAffinityTerm : BoundedTypeSize v1.PodAffinityTerm.
-Admitted.
-
-Global Instance into_val_PodAffinityTerm `{ffi_syntax} : IntoVal PodAffinityTerm.t.
-Admitted.
-
-Global Instance into_val_typed_PodAffinityTerm `{ffi_syntax} : IntoValTyped PodAffinityTerm.t v1.PodAffinityTerm.
-Admitted.
-
-(* type v1.NodeAffinity *)
 Module NodeAffinity.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeAffinity.t). Admitted.
+
+#[global] Instance NodeAffinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeAffinity.t) (v1.NodeAffinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeAffinity.
 
-Global Instance bounded_size_NodeAffinity : BoundedTypeSize v1.NodeAffinity.
-Admitted.
-
-Global Instance into_val_NodeAffinity `{ffi_syntax} : IntoVal NodeAffinity.t.
-Admitted.
-
-Global Instance into_val_typed_NodeAffinity `{ffi_syntax} : IntoValTyped NodeAffinity.t v1.NodeAffinity.
-Admitted.
-
-(* type v1.PreferredSchedulingTerm *)
 Module PreferredSchedulingTerm.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PreferredSchedulingTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PreferredSchedulingTerm.t). Admitted.
+
+#[global] Instance PreferredSchedulingTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PreferredSchedulingTerm.t) (v1.PreferredSchedulingTermⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PreferredSchedulingTerm.
 
-Global Instance bounded_size_PreferredSchedulingTerm : BoundedTypeSize v1.PreferredSchedulingTerm.
-Admitted.
-
-Global Instance into_val_PreferredSchedulingTerm `{ffi_syntax} : IntoVal PreferredSchedulingTerm.t.
-Admitted.
-
-Global Instance into_val_typed_PreferredSchedulingTerm `{ffi_syntax} : IntoValTyped PreferredSchedulingTerm.t v1.PreferredSchedulingTerm.
-Admitted.
-
-(* type v1.Taint *)
 Module Taint.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Taint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Taint.t). Admitted.
+
+#[global] Instance Taint_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Taint.t) (v1.Taintⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Taint.
 
-Global Instance bounded_size_Taint : BoundedTypeSize v1.Taint.
-Admitted.
-
-Global Instance into_val_Taint `{ffi_syntax} : IntoVal Taint.t.
-Admitted.
-
-Global Instance into_val_typed_Taint `{ffi_syntax} : IntoValTyped Taint.t v1.Taint.
-Admitted.
-
-(* type v1.TaintEffect *)
 Module TaintEffect.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TaintEffect_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TaintEffect.t). Admitted.
+
+#[global] Instance TaintEffect_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TaintEffect.t) (v1.TaintEffectⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TaintEffect.
 
-Global Instance bounded_size_TaintEffect : BoundedTypeSize v1.TaintEffect.
-Admitted.
-
-Global Instance into_val_TaintEffect `{ffi_syntax} : IntoVal TaintEffect.t.
-Admitted.
-
-Global Instance into_val_typed_TaintEffect `{ffi_syntax} : IntoValTyped TaintEffect.t v1.TaintEffect.
-Admitted.
-
-(* type v1.TolerationOperator *)
-Module TolerationOperator.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End TolerationOperator.
-
-Global Instance bounded_size_TolerationOperator : BoundedTypeSize v1.TolerationOperator.
-Admitted.
-
-Global Instance into_val_TolerationOperator `{ffi_syntax} : IntoVal TolerationOperator.t.
-Admitted.
-
-Global Instance into_val_typed_TolerationOperator `{ffi_syntax} : IntoValTyped TolerationOperator.t v1.TolerationOperator.
-Admitted.
-
-(* type v1.Toleration *)
 Module Toleration.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Key' : go_string;
-  Operator' : TolerationOperator.t;
-  Value' : go_string;
-  Effect' : TaintEffect.t;
-  TolerationSeconds' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Toleration_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Toleration.t). Admitted.
+
+#[global] Instance Toleration_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Toleration.t) (v1.Tolerationⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Toleration.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.Toleration.
-#[local] Typeclasses Transparent v1.Toleration.
+Module TolerationOperator.
+Section def.
 
-Global Instance Toleration_wf : struct.Wf v1.Toleration.
-Proof. apply _. Qed.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
 
-Global Instance settable_Toleration : Settable Toleration.t :=
-  settable! Toleration.mk < Toleration.Key'; Toleration.Operator'; Toleration.Value'; Toleration.Effect'; Toleration.TolerationSeconds' >.
-Global Instance into_val_Toleration : IntoVal Toleration.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.Toleration [
-    "Key" ::= #(Toleration.Key' v);
-    "Operator" ::= #(Toleration.Operator' v);
-    "Value" ::= #(Toleration.Value' v);
-    "Effect" ::= #(Toleration.Effect' v);
-    "TolerationSeconds" ::= #(Toleration.TolerationSeconds' v)
-    ]%struct
-  |}.
+Local Set Default Proof Using "All".
 
-Global Program Instance into_val_typed_Toleration : IntoValTyped Toleration.t v1.Toleration :=
-{|
-  default_val := Toleration.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
+#[global] Instance TolerationOperator_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TolerationOperator.t). Admitted.
 
-Global Instance into_val_struct_field_Toleration_Key : IntoValStructField "Key" v1.Toleration Toleration.Key'.
-Proof. solve_into_val_struct_field. Qed.
+#[global] Instance TolerationOperator_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TolerationOperator.t) (v1.TolerationOperatorⁱᵐᵖˡ).
+Proof. Admitted.
 
-Global Instance into_val_struct_field_Toleration_Operator : IntoValStructField "Operator" v1.Toleration Toleration.Operator'.
-Proof. solve_into_val_struct_field. Qed.
+End def.
+End TolerationOperator.
 
-Global Instance into_val_struct_field_Toleration_Value : IntoValStructField "Value" v1.Toleration Toleration.Value'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Toleration_Effect : IntoValStructField "Effect" v1.Toleration Toleration.Effect'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Toleration_TolerationSeconds : IntoValStructField "TolerationSeconds" v1.Toleration Toleration.TolerationSeconds'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Toleration Key' Operator' Value' Effect' TolerationSeconds':
-  PureWp True
-    (struct.make #v1.Toleration (alist_val [
-      "Key" ::= #Key';
-      "Operator" ::= #Operator';
-      "Value" ::= #Value';
-      "Effect" ::= #Effect';
-      "TolerationSeconds" ::= #TolerationSeconds'
-    ]))%struct
-    #(Toleration.mk Key' Operator' Value' Effect' TolerationSeconds').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Toleration_struct_fields_split dq l (v : Toleration.t) :
-  StructFieldsSplit dq l v (
-    "HKey" ∷ l ↦s[v1.Toleration :: "Key"]{dq} v.(Toleration.Key') ∗
-    "HOperator" ∷ l ↦s[v1.Toleration :: "Operator"]{dq} v.(Toleration.Operator') ∗
-    "HValue" ∷ l ↦s[v1.Toleration :: "Value"]{dq} v.(Toleration.Value') ∗
-    "HEffect" ∷ l ↦s[v1.Toleration :: "Effect"]{dq} v.(Toleration.Effect') ∗
-    "HTolerationSeconds" ∷ l ↦s[v1.Toleration :: "TolerationSeconds"]{dq} v.(Toleration.TolerationSeconds')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Toleration.Key' v)) (v1.Toleration) "Key"%go.
-  simpl_one_flatten_struct (# (Toleration.Operator' v)) (v1.Toleration) "Operator"%go.
-  simpl_one_flatten_struct (# (Toleration.Value' v)) (v1.Toleration) "Value"%go.
-  simpl_one_flatten_struct (# (Toleration.Effect' v)) (v1.Toleration) "Effect"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodReadinessGate *)
 Module PodReadinessGate.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  ConditionType' : PodConditionType.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodReadinessGate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodReadinessGate.t). Admitted.
+
+#[global] Instance PodReadinessGate_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodReadinessGate.t) (v1.PodReadinessGateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodReadinessGate.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodReadinessGate.
-#[local] Typeclasses Transparent v1.PodReadinessGate.
-
-Global Instance PodReadinessGate_wf : struct.Wf v1.PodReadinessGate.
-Proof. apply _. Qed.
-
-Global Instance settable_PodReadinessGate : Settable PodReadinessGate.t :=
-  settable! PodReadinessGate.mk < PodReadinessGate.ConditionType' >.
-Global Instance into_val_PodReadinessGate : IntoVal PodReadinessGate.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodReadinessGate [
-    "ConditionType" ::= #(PodReadinessGate.ConditionType' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodReadinessGate : IntoValTyped PodReadinessGate.t v1.PodReadinessGate :=
-{|
-  default_val := PodReadinessGate.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodReadinessGate_ConditionType : IntoValStructField "ConditionType" v1.PodReadinessGate PodReadinessGate.ConditionType'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodReadinessGate ConditionType':
-  PureWp True
-    (struct.make #v1.PodReadinessGate (alist_val [
-      "ConditionType" ::= #ConditionType'
-    ]))%struct
-    #(PodReadinessGate.mk ConditionType').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodReadinessGate_struct_fields_split dq l (v : PodReadinessGate.t) :
-  StructFieldsSplit dq l v (
-    "HConditionType" ∷ l ↦s[v1.PodReadinessGate :: "ConditionType"]{dq} v.(PodReadinessGate.ConditionType')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodSpec *)
 Module PodSpec.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Volumes' : slice.t;
-  InitContainers' : slice.t;
-  Containers' : slice.t;
-  EphemeralContainers' : slice.t;
-  RestartPolicy' : RestartPolicy.t;
-  TerminationGracePeriodSeconds' : loc;
-  ActiveDeadlineSeconds' : loc;
-  DNSPolicy' : DNSPolicy.t;
-  NodeSelector' : loc;
-  ServiceAccountName' : go_string;
-  DeprecatedServiceAccount' : go_string;
-  AutomountServiceAccountToken' : loc;
-  NodeName' : go_string;
-  HostNetwork' : bool;
-  HostPID' : bool;
-  HostIPC' : bool;
-  ShareProcessNamespace' : loc;
-  SecurityContext' : loc;
-  ImagePullSecrets' : slice.t;
-  Hostname' : go_string;
-  Subdomain' : go_string;
-  Affinity' : loc;
-  SchedulerName' : go_string;
-  Tolerations' : slice.t;
-  HostAliases' : slice.t;
-  PriorityClassName' : go_string;
-  Priority' : loc;
-  DNSConfig' : loc;
-  ReadinessGates' : slice.t;
-  RuntimeClassName' : loc;
-  EnableServiceLinks' : loc;
-  PreemptionPolicy' : loc;
-  Overhead' : ResourceList.t;
-  TopologySpreadConstraints' : slice.t;
-  SetHostnameAsFQDN' : loc;
-  OS' : loc;
-  HostUsers' : loc;
-  SchedulingGates' : slice.t;
-  ResourceClaims' : slice.t;
-  Resources' : loc;
-  HostnameOverride' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSpec.t). Admitted.
+
+#[global] Instance PodSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodSpec.t) (v1.PodSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodSpec.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodSpec.
-#[local] Typeclasses Transparent v1.PodSpec.
-
-Global Instance PodSpec_wf : struct.Wf v1.PodSpec.
-Proof. apply _. Qed.
-
-Global Instance settable_PodSpec : Settable PodSpec.t :=
-  settable! PodSpec.mk < PodSpec.Volumes'; PodSpec.InitContainers'; PodSpec.Containers'; PodSpec.EphemeralContainers'; PodSpec.RestartPolicy'; PodSpec.TerminationGracePeriodSeconds'; PodSpec.ActiveDeadlineSeconds'; PodSpec.DNSPolicy'; PodSpec.NodeSelector'; PodSpec.ServiceAccountName'; PodSpec.DeprecatedServiceAccount'; PodSpec.AutomountServiceAccountToken'; PodSpec.NodeName'; PodSpec.HostNetwork'; PodSpec.HostPID'; PodSpec.HostIPC'; PodSpec.ShareProcessNamespace'; PodSpec.SecurityContext'; PodSpec.ImagePullSecrets'; PodSpec.Hostname'; PodSpec.Subdomain'; PodSpec.Affinity'; PodSpec.SchedulerName'; PodSpec.Tolerations'; PodSpec.HostAliases'; PodSpec.PriorityClassName'; PodSpec.Priority'; PodSpec.DNSConfig'; PodSpec.ReadinessGates'; PodSpec.RuntimeClassName'; PodSpec.EnableServiceLinks'; PodSpec.PreemptionPolicy'; PodSpec.Overhead'; PodSpec.TopologySpreadConstraints'; PodSpec.SetHostnameAsFQDN'; PodSpec.OS'; PodSpec.HostUsers'; PodSpec.SchedulingGates'; PodSpec.ResourceClaims'; PodSpec.Resources'; PodSpec.HostnameOverride' >.
-Global Instance into_val_PodSpec : IntoVal PodSpec.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodSpec [
-    "Volumes" ::= #(PodSpec.Volumes' v);
-    "InitContainers" ::= #(PodSpec.InitContainers' v);
-    "Containers" ::= #(PodSpec.Containers' v);
-    "EphemeralContainers" ::= #(PodSpec.EphemeralContainers' v);
-    "RestartPolicy" ::= #(PodSpec.RestartPolicy' v);
-    "TerminationGracePeriodSeconds" ::= #(PodSpec.TerminationGracePeriodSeconds' v);
-    "ActiveDeadlineSeconds" ::= #(PodSpec.ActiveDeadlineSeconds' v);
-    "DNSPolicy" ::= #(PodSpec.DNSPolicy' v);
-    "NodeSelector" ::= #(PodSpec.NodeSelector' v);
-    "ServiceAccountName" ::= #(PodSpec.ServiceAccountName' v);
-    "DeprecatedServiceAccount" ::= #(PodSpec.DeprecatedServiceAccount' v);
-    "AutomountServiceAccountToken" ::= #(PodSpec.AutomountServiceAccountToken' v);
-    "NodeName" ::= #(PodSpec.NodeName' v);
-    "HostNetwork" ::= #(PodSpec.HostNetwork' v);
-    "HostPID" ::= #(PodSpec.HostPID' v);
-    "HostIPC" ::= #(PodSpec.HostIPC' v);
-    "ShareProcessNamespace" ::= #(PodSpec.ShareProcessNamespace' v);
-    "SecurityContext" ::= #(PodSpec.SecurityContext' v);
-    "ImagePullSecrets" ::= #(PodSpec.ImagePullSecrets' v);
-    "Hostname" ::= #(PodSpec.Hostname' v);
-    "Subdomain" ::= #(PodSpec.Subdomain' v);
-    "Affinity" ::= #(PodSpec.Affinity' v);
-    "SchedulerName" ::= #(PodSpec.SchedulerName' v);
-    "Tolerations" ::= #(PodSpec.Tolerations' v);
-    "HostAliases" ::= #(PodSpec.HostAliases' v);
-    "PriorityClassName" ::= #(PodSpec.PriorityClassName' v);
-    "Priority" ::= #(PodSpec.Priority' v);
-    "DNSConfig" ::= #(PodSpec.DNSConfig' v);
-    "ReadinessGates" ::= #(PodSpec.ReadinessGates' v);
-    "RuntimeClassName" ::= #(PodSpec.RuntimeClassName' v);
-    "EnableServiceLinks" ::= #(PodSpec.EnableServiceLinks' v);
-    "PreemptionPolicy" ::= #(PodSpec.PreemptionPolicy' v);
-    "Overhead" ::= #(PodSpec.Overhead' v);
-    "TopologySpreadConstraints" ::= #(PodSpec.TopologySpreadConstraints' v);
-    "SetHostnameAsFQDN" ::= #(PodSpec.SetHostnameAsFQDN' v);
-    "OS" ::= #(PodSpec.OS' v);
-    "HostUsers" ::= #(PodSpec.HostUsers' v);
-    "SchedulingGates" ::= #(PodSpec.SchedulingGates' v);
-    "ResourceClaims" ::= #(PodSpec.ResourceClaims' v);
-    "Resources" ::= #(PodSpec.Resources' v);
-    "HostnameOverride" ::= #(PodSpec.HostnameOverride' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodSpec : IntoValTyped PodSpec.t v1.PodSpec :=
-{|
-  default_val := PodSpec.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Volumes : IntoValStructField "Volumes" v1.PodSpec PodSpec.Volumes'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_InitContainers : IntoValStructField "InitContainers" v1.PodSpec PodSpec.InitContainers'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Containers : IntoValStructField "Containers" v1.PodSpec PodSpec.Containers'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_EphemeralContainers : IntoValStructField "EphemeralContainers" v1.PodSpec PodSpec.EphemeralContainers'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_RestartPolicy : IntoValStructField "RestartPolicy" v1.PodSpec PodSpec.RestartPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_TerminationGracePeriodSeconds : IntoValStructField "TerminationGracePeriodSeconds" v1.PodSpec PodSpec.TerminationGracePeriodSeconds'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ActiveDeadlineSeconds : IntoValStructField "ActiveDeadlineSeconds" v1.PodSpec PodSpec.ActiveDeadlineSeconds'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_DNSPolicy : IntoValStructField "DNSPolicy" v1.PodSpec PodSpec.DNSPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_NodeSelector : IntoValStructField "NodeSelector" v1.PodSpec PodSpec.NodeSelector'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ServiceAccountName : IntoValStructField "ServiceAccountName" v1.PodSpec PodSpec.ServiceAccountName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_DeprecatedServiceAccount : IntoValStructField "DeprecatedServiceAccount" v1.PodSpec PodSpec.DeprecatedServiceAccount'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_AutomountServiceAccountToken : IntoValStructField "AutomountServiceAccountToken" v1.PodSpec PodSpec.AutomountServiceAccountToken'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_NodeName : IntoValStructField "NodeName" v1.PodSpec PodSpec.NodeName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostNetwork : IntoValStructField "HostNetwork" v1.PodSpec PodSpec.HostNetwork'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostPID : IntoValStructField "HostPID" v1.PodSpec PodSpec.HostPID'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostIPC : IntoValStructField "HostIPC" v1.PodSpec PodSpec.HostIPC'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ShareProcessNamespace : IntoValStructField "ShareProcessNamespace" v1.PodSpec PodSpec.ShareProcessNamespace'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_SecurityContext : IntoValStructField "SecurityContext" v1.PodSpec PodSpec.SecurityContext'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ImagePullSecrets : IntoValStructField "ImagePullSecrets" v1.PodSpec PodSpec.ImagePullSecrets'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Hostname : IntoValStructField "Hostname" v1.PodSpec PodSpec.Hostname'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Subdomain : IntoValStructField "Subdomain" v1.PodSpec PodSpec.Subdomain'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Affinity : IntoValStructField "Affinity" v1.PodSpec PodSpec.Affinity'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_SchedulerName : IntoValStructField "SchedulerName" v1.PodSpec PodSpec.SchedulerName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Tolerations : IntoValStructField "Tolerations" v1.PodSpec PodSpec.Tolerations'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostAliases : IntoValStructField "HostAliases" v1.PodSpec PodSpec.HostAliases'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_PriorityClassName : IntoValStructField "PriorityClassName" v1.PodSpec PodSpec.PriorityClassName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Priority : IntoValStructField "Priority" v1.PodSpec PodSpec.Priority'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_DNSConfig : IntoValStructField "DNSConfig" v1.PodSpec PodSpec.DNSConfig'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ReadinessGates : IntoValStructField "ReadinessGates" v1.PodSpec PodSpec.ReadinessGates'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_RuntimeClassName : IntoValStructField "RuntimeClassName" v1.PodSpec PodSpec.RuntimeClassName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_EnableServiceLinks : IntoValStructField "EnableServiceLinks" v1.PodSpec PodSpec.EnableServiceLinks'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_PreemptionPolicy : IntoValStructField "PreemptionPolicy" v1.PodSpec PodSpec.PreemptionPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Overhead : IntoValStructField "Overhead" v1.PodSpec PodSpec.Overhead'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_TopologySpreadConstraints : IntoValStructField "TopologySpreadConstraints" v1.PodSpec PodSpec.TopologySpreadConstraints'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_SetHostnameAsFQDN : IntoValStructField "SetHostnameAsFQDN" v1.PodSpec PodSpec.SetHostnameAsFQDN'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_OS : IntoValStructField "OS" v1.PodSpec PodSpec.OS'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostUsers : IntoValStructField "HostUsers" v1.PodSpec PodSpec.HostUsers'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_SchedulingGates : IntoValStructField "SchedulingGates" v1.PodSpec PodSpec.SchedulingGates'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_ResourceClaims : IntoValStructField "ResourceClaims" v1.PodSpec PodSpec.ResourceClaims'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_Resources : IntoValStructField "Resources" v1.PodSpec PodSpec.Resources'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSpec_HostnameOverride : IntoValStructField "HostnameOverride" v1.PodSpec PodSpec.HostnameOverride'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodSpec Volumes' InitContainers' Containers' EphemeralContainers' RestartPolicy' TerminationGracePeriodSeconds' ActiveDeadlineSeconds' DNSPolicy' NodeSelector' ServiceAccountName' DeprecatedServiceAccount' AutomountServiceAccountToken' NodeName' HostNetwork' HostPID' HostIPC' ShareProcessNamespace' SecurityContext' ImagePullSecrets' Hostname' Subdomain' Affinity' SchedulerName' Tolerations' HostAliases' PriorityClassName' Priority' DNSConfig' ReadinessGates' RuntimeClassName' EnableServiceLinks' PreemptionPolicy' Overhead' TopologySpreadConstraints' SetHostnameAsFQDN' OS' HostUsers' SchedulingGates' ResourceClaims' Resources' HostnameOverride':
-  PureWp True
-    (struct.make #v1.PodSpec (alist_val [
-      "Volumes" ::= #Volumes';
-      "InitContainers" ::= #InitContainers';
-      "Containers" ::= #Containers';
-      "EphemeralContainers" ::= #EphemeralContainers';
-      "RestartPolicy" ::= #RestartPolicy';
-      "TerminationGracePeriodSeconds" ::= #TerminationGracePeriodSeconds';
-      "ActiveDeadlineSeconds" ::= #ActiveDeadlineSeconds';
-      "DNSPolicy" ::= #DNSPolicy';
-      "NodeSelector" ::= #NodeSelector';
-      "ServiceAccountName" ::= #ServiceAccountName';
-      "DeprecatedServiceAccount" ::= #DeprecatedServiceAccount';
-      "AutomountServiceAccountToken" ::= #AutomountServiceAccountToken';
-      "NodeName" ::= #NodeName';
-      "HostNetwork" ::= #HostNetwork';
-      "HostPID" ::= #HostPID';
-      "HostIPC" ::= #HostIPC';
-      "ShareProcessNamespace" ::= #ShareProcessNamespace';
-      "SecurityContext" ::= #SecurityContext';
-      "ImagePullSecrets" ::= #ImagePullSecrets';
-      "Hostname" ::= #Hostname';
-      "Subdomain" ::= #Subdomain';
-      "Affinity" ::= #Affinity';
-      "SchedulerName" ::= #SchedulerName';
-      "Tolerations" ::= #Tolerations';
-      "HostAliases" ::= #HostAliases';
-      "PriorityClassName" ::= #PriorityClassName';
-      "Priority" ::= #Priority';
-      "DNSConfig" ::= #DNSConfig';
-      "ReadinessGates" ::= #ReadinessGates';
-      "RuntimeClassName" ::= #RuntimeClassName';
-      "EnableServiceLinks" ::= #EnableServiceLinks';
-      "PreemptionPolicy" ::= #PreemptionPolicy';
-      "Overhead" ::= #Overhead';
-      "TopologySpreadConstraints" ::= #TopologySpreadConstraints';
-      "SetHostnameAsFQDN" ::= #SetHostnameAsFQDN';
-      "OS" ::= #OS';
-      "HostUsers" ::= #HostUsers';
-      "SchedulingGates" ::= #SchedulingGates';
-      "ResourceClaims" ::= #ResourceClaims';
-      "Resources" ::= #Resources';
-      "HostnameOverride" ::= #HostnameOverride'
-    ]))%struct
-    #(PodSpec.mk Volumes' InitContainers' Containers' EphemeralContainers' RestartPolicy' TerminationGracePeriodSeconds' ActiveDeadlineSeconds' DNSPolicy' NodeSelector' ServiceAccountName' DeprecatedServiceAccount' AutomountServiceAccountToken' NodeName' HostNetwork' HostPID' HostIPC' ShareProcessNamespace' SecurityContext' ImagePullSecrets' Hostname' Subdomain' Affinity' SchedulerName' Tolerations' HostAliases' PriorityClassName' Priority' DNSConfig' ReadinessGates' RuntimeClassName' EnableServiceLinks' PreemptionPolicy' Overhead' TopologySpreadConstraints' SetHostnameAsFQDN' OS' HostUsers' SchedulingGates' ResourceClaims' Resources' HostnameOverride').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodSpec_struct_fields_split dq l (v : PodSpec.t) :
-  StructFieldsSplit dq l v (
-    "HVolumes" ∷ l ↦s[v1.PodSpec :: "Volumes"]{dq} v.(PodSpec.Volumes') ∗
-    "HInitContainers" ∷ l ↦s[v1.PodSpec :: "InitContainers"]{dq} v.(PodSpec.InitContainers') ∗
-    "HContainers" ∷ l ↦s[v1.PodSpec :: "Containers"]{dq} v.(PodSpec.Containers') ∗
-    "HEphemeralContainers" ∷ l ↦s[v1.PodSpec :: "EphemeralContainers"]{dq} v.(PodSpec.EphemeralContainers') ∗
-    "HRestartPolicy" ∷ l ↦s[v1.PodSpec :: "RestartPolicy"]{dq} v.(PodSpec.RestartPolicy') ∗
-    "HTerminationGracePeriodSeconds" ∷ l ↦s[v1.PodSpec :: "TerminationGracePeriodSeconds"]{dq} v.(PodSpec.TerminationGracePeriodSeconds') ∗
-    "HActiveDeadlineSeconds" ∷ l ↦s[v1.PodSpec :: "ActiveDeadlineSeconds"]{dq} v.(PodSpec.ActiveDeadlineSeconds') ∗
-    "HDNSPolicy" ∷ l ↦s[v1.PodSpec :: "DNSPolicy"]{dq} v.(PodSpec.DNSPolicy') ∗
-    "HNodeSelector" ∷ l ↦s[v1.PodSpec :: "NodeSelector"]{dq} v.(PodSpec.NodeSelector') ∗
-    "HServiceAccountName" ∷ l ↦s[v1.PodSpec :: "ServiceAccountName"]{dq} v.(PodSpec.ServiceAccountName') ∗
-    "HDeprecatedServiceAccount" ∷ l ↦s[v1.PodSpec :: "DeprecatedServiceAccount"]{dq} v.(PodSpec.DeprecatedServiceAccount') ∗
-    "HAutomountServiceAccountToken" ∷ l ↦s[v1.PodSpec :: "AutomountServiceAccountToken"]{dq} v.(PodSpec.AutomountServiceAccountToken') ∗
-    "HNodeName" ∷ l ↦s[v1.PodSpec :: "NodeName"]{dq} v.(PodSpec.NodeName') ∗
-    "HHostNetwork" ∷ l ↦s[v1.PodSpec :: "HostNetwork"]{dq} v.(PodSpec.HostNetwork') ∗
-    "HHostPID" ∷ l ↦s[v1.PodSpec :: "HostPID"]{dq} v.(PodSpec.HostPID') ∗
-    "HHostIPC" ∷ l ↦s[v1.PodSpec :: "HostIPC"]{dq} v.(PodSpec.HostIPC') ∗
-    "HShareProcessNamespace" ∷ l ↦s[v1.PodSpec :: "ShareProcessNamespace"]{dq} v.(PodSpec.ShareProcessNamespace') ∗
-    "HSecurityContext" ∷ l ↦s[v1.PodSpec :: "SecurityContext"]{dq} v.(PodSpec.SecurityContext') ∗
-    "HImagePullSecrets" ∷ l ↦s[v1.PodSpec :: "ImagePullSecrets"]{dq} v.(PodSpec.ImagePullSecrets') ∗
-    "HHostname" ∷ l ↦s[v1.PodSpec :: "Hostname"]{dq} v.(PodSpec.Hostname') ∗
-    "HSubdomain" ∷ l ↦s[v1.PodSpec :: "Subdomain"]{dq} v.(PodSpec.Subdomain') ∗
-    "HAffinity" ∷ l ↦s[v1.PodSpec :: "Affinity"]{dq} v.(PodSpec.Affinity') ∗
-    "HSchedulerName" ∷ l ↦s[v1.PodSpec :: "SchedulerName"]{dq} v.(PodSpec.SchedulerName') ∗
-    "HTolerations" ∷ l ↦s[v1.PodSpec :: "Tolerations"]{dq} v.(PodSpec.Tolerations') ∗
-    "HHostAliases" ∷ l ↦s[v1.PodSpec :: "HostAliases"]{dq} v.(PodSpec.HostAliases') ∗
-    "HPriorityClassName" ∷ l ↦s[v1.PodSpec :: "PriorityClassName"]{dq} v.(PodSpec.PriorityClassName') ∗
-    "HPriority" ∷ l ↦s[v1.PodSpec :: "Priority"]{dq} v.(PodSpec.Priority') ∗
-    "HDNSConfig" ∷ l ↦s[v1.PodSpec :: "DNSConfig"]{dq} v.(PodSpec.DNSConfig') ∗
-    "HReadinessGates" ∷ l ↦s[v1.PodSpec :: "ReadinessGates"]{dq} v.(PodSpec.ReadinessGates') ∗
-    "HRuntimeClassName" ∷ l ↦s[v1.PodSpec :: "RuntimeClassName"]{dq} v.(PodSpec.RuntimeClassName') ∗
-    "HEnableServiceLinks" ∷ l ↦s[v1.PodSpec :: "EnableServiceLinks"]{dq} v.(PodSpec.EnableServiceLinks') ∗
-    "HPreemptionPolicy" ∷ l ↦s[v1.PodSpec :: "PreemptionPolicy"]{dq} v.(PodSpec.PreemptionPolicy') ∗
-    "HOverhead" ∷ l ↦s[v1.PodSpec :: "Overhead"]{dq} v.(PodSpec.Overhead') ∗
-    "HTopologySpreadConstraints" ∷ l ↦s[v1.PodSpec :: "TopologySpreadConstraints"]{dq} v.(PodSpec.TopologySpreadConstraints') ∗
-    "HSetHostnameAsFQDN" ∷ l ↦s[v1.PodSpec :: "SetHostnameAsFQDN"]{dq} v.(PodSpec.SetHostnameAsFQDN') ∗
-    "HOS" ∷ l ↦s[v1.PodSpec :: "OS"]{dq} v.(PodSpec.OS') ∗
-    "HHostUsers" ∷ l ↦s[v1.PodSpec :: "HostUsers"]{dq} v.(PodSpec.HostUsers') ∗
-    "HSchedulingGates" ∷ l ↦s[v1.PodSpec :: "SchedulingGates"]{dq} v.(PodSpec.SchedulingGates') ∗
-    "HResourceClaims" ∷ l ↦s[v1.PodSpec :: "ResourceClaims"]{dq} v.(PodSpec.ResourceClaims') ∗
-    "HResources" ∷ l ↦s[v1.PodSpec :: "Resources"]{dq} v.(PodSpec.Resources') ∗
-    "HHostnameOverride" ∷ l ↦s[v1.PodSpec :: "HostnameOverride"]{dq} v.(PodSpec.HostnameOverride')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodSpec.Volumes' v)) (v1.PodSpec) "Volumes"%go.
-  simpl_one_flatten_struct (# (PodSpec.InitContainers' v)) (v1.PodSpec) "InitContainers"%go.
-  simpl_one_flatten_struct (# (PodSpec.Containers' v)) (v1.PodSpec) "Containers"%go.
-  simpl_one_flatten_struct (# (PodSpec.EphemeralContainers' v)) (v1.PodSpec) "EphemeralContainers"%go.
-  simpl_one_flatten_struct (# (PodSpec.RestartPolicy' v)) (v1.PodSpec) "RestartPolicy"%go.
-  simpl_one_flatten_struct (# (PodSpec.TerminationGracePeriodSeconds' v)) (v1.PodSpec) "TerminationGracePeriodSeconds"%go.
-  simpl_one_flatten_struct (# (PodSpec.ActiveDeadlineSeconds' v)) (v1.PodSpec) "ActiveDeadlineSeconds"%go.
-  simpl_one_flatten_struct (# (PodSpec.DNSPolicy' v)) (v1.PodSpec) "DNSPolicy"%go.
-  simpl_one_flatten_struct (# (PodSpec.NodeSelector' v)) (v1.PodSpec) "NodeSelector"%go.
-  simpl_one_flatten_struct (# (PodSpec.ServiceAccountName' v)) (v1.PodSpec) "ServiceAccountName"%go.
-  simpl_one_flatten_struct (# (PodSpec.DeprecatedServiceAccount' v)) (v1.PodSpec) "DeprecatedServiceAccount"%go.
-  simpl_one_flatten_struct (# (PodSpec.AutomountServiceAccountToken' v)) (v1.PodSpec) "AutomountServiceAccountToken"%go.
-  simpl_one_flatten_struct (# (PodSpec.NodeName' v)) (v1.PodSpec) "NodeName"%go.
-  simpl_one_flatten_struct (# (PodSpec.HostNetwork' v)) (v1.PodSpec) "HostNetwork"%go.
-  simpl_one_flatten_struct (# (PodSpec.HostPID' v)) (v1.PodSpec) "HostPID"%go.
-  simpl_one_flatten_struct (# (PodSpec.HostIPC' v)) (v1.PodSpec) "HostIPC"%go.
-  simpl_one_flatten_struct (# (PodSpec.ShareProcessNamespace' v)) (v1.PodSpec) "ShareProcessNamespace"%go.
-  simpl_one_flatten_struct (# (PodSpec.SecurityContext' v)) (v1.PodSpec) "SecurityContext"%go.
-  simpl_one_flatten_struct (# (PodSpec.ImagePullSecrets' v)) (v1.PodSpec) "ImagePullSecrets"%go.
-  simpl_one_flatten_struct (# (PodSpec.Hostname' v)) (v1.PodSpec) "Hostname"%go.
-  simpl_one_flatten_struct (# (PodSpec.Subdomain' v)) (v1.PodSpec) "Subdomain"%go.
-  simpl_one_flatten_struct (# (PodSpec.Affinity' v)) (v1.PodSpec) "Affinity"%go.
-  simpl_one_flatten_struct (# (PodSpec.SchedulerName' v)) (v1.PodSpec) "SchedulerName"%go.
-  simpl_one_flatten_struct (# (PodSpec.Tolerations' v)) (v1.PodSpec) "Tolerations"%go.
-  simpl_one_flatten_struct (# (PodSpec.HostAliases' v)) (v1.PodSpec) "HostAliases"%go.
-  simpl_one_flatten_struct (# (PodSpec.PriorityClassName' v)) (v1.PodSpec) "PriorityClassName"%go.
-  simpl_one_flatten_struct (# (PodSpec.Priority' v)) (v1.PodSpec) "Priority"%go.
-  simpl_one_flatten_struct (# (PodSpec.DNSConfig' v)) (v1.PodSpec) "DNSConfig"%go.
-  simpl_one_flatten_struct (# (PodSpec.ReadinessGates' v)) (v1.PodSpec) "ReadinessGates"%go.
-  simpl_one_flatten_struct (# (PodSpec.RuntimeClassName' v)) (v1.PodSpec) "RuntimeClassName"%go.
-  simpl_one_flatten_struct (# (PodSpec.EnableServiceLinks' v)) (v1.PodSpec) "EnableServiceLinks"%go.
-  simpl_one_flatten_struct (# (PodSpec.PreemptionPolicy' v)) (v1.PodSpec) "PreemptionPolicy"%go.
-  simpl_one_flatten_struct (# (PodSpec.Overhead' v)) (v1.PodSpec) "Overhead"%go.
-  simpl_one_flatten_struct (# (PodSpec.TopologySpreadConstraints' v)) (v1.PodSpec) "TopologySpreadConstraints"%go.
-  simpl_one_flatten_struct (# (PodSpec.SetHostnameAsFQDN' v)) (v1.PodSpec) "SetHostnameAsFQDN"%go.
-  simpl_one_flatten_struct (# (PodSpec.OS' v)) (v1.PodSpec) "OS"%go.
-  simpl_one_flatten_struct (# (PodSpec.HostUsers' v)) (v1.PodSpec) "HostUsers"%go.
-  simpl_one_flatten_struct (# (PodSpec.SchedulingGates' v)) (v1.PodSpec) "SchedulingGates"%go.
-  simpl_one_flatten_struct (# (PodSpec.ResourceClaims' v)) (v1.PodSpec) "ResourceClaims"%go.
-  simpl_one_flatten_struct (# (PodSpec.Resources' v)) (v1.PodSpec) "Resources"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodResourceClaim *)
 Module PodResourceClaim.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-  ResourceClaimName' : loc;
-  ResourceClaimTemplateName' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodResourceClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodResourceClaim.t). Admitted.
+
+#[global] Instance PodResourceClaim_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodResourceClaim.t) (v1.PodResourceClaimⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodResourceClaim.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodResourceClaim.
-#[local] Typeclasses Transparent v1.PodResourceClaim.
-
-Global Instance PodResourceClaim_wf : struct.Wf v1.PodResourceClaim.
-Proof. apply _. Qed.
-
-Global Instance settable_PodResourceClaim : Settable PodResourceClaim.t :=
-  settable! PodResourceClaim.mk < PodResourceClaim.Name'; PodResourceClaim.ResourceClaimName'; PodResourceClaim.ResourceClaimTemplateName' >.
-Global Instance into_val_PodResourceClaim : IntoVal PodResourceClaim.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodResourceClaim [
-    "Name" ::= #(PodResourceClaim.Name' v);
-    "ResourceClaimName" ::= #(PodResourceClaim.ResourceClaimName' v);
-    "ResourceClaimTemplateName" ::= #(PodResourceClaim.ResourceClaimTemplateName' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodResourceClaim : IntoValTyped PodResourceClaim.t v1.PodResourceClaim :=
-{|
-  default_val := PodResourceClaim.mk (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodResourceClaim_Name : IntoValStructField "Name" v1.PodResourceClaim PodResourceClaim.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodResourceClaim_ResourceClaimName : IntoValStructField "ResourceClaimName" v1.PodResourceClaim PodResourceClaim.ResourceClaimName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodResourceClaim_ResourceClaimTemplateName : IntoValStructField "ResourceClaimTemplateName" v1.PodResourceClaim PodResourceClaim.ResourceClaimTemplateName'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodResourceClaim Name' ResourceClaimName' ResourceClaimTemplateName':
-  PureWp True
-    (struct.make #v1.PodResourceClaim (alist_val [
-      "Name" ::= #Name';
-      "ResourceClaimName" ::= #ResourceClaimName';
-      "ResourceClaimTemplateName" ::= #ResourceClaimTemplateName'
-    ]))%struct
-    #(PodResourceClaim.mk Name' ResourceClaimName' ResourceClaimTemplateName').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodResourceClaim_struct_fields_split dq l (v : PodResourceClaim.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.PodResourceClaim :: "Name"]{dq} v.(PodResourceClaim.Name') ∗
-    "HResourceClaimName" ∷ l ↦s[v1.PodResourceClaim :: "ResourceClaimName"]{dq} v.(PodResourceClaim.ResourceClaimName') ∗
-    "HResourceClaimTemplateName" ∷ l ↦s[v1.PodResourceClaim :: "ResourceClaimTemplateName"]{dq} v.(PodResourceClaim.ResourceClaimTemplateName')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodResourceClaim.Name' v)) (v1.PodResourceClaim) "Name"%go.
-  simpl_one_flatten_struct (# (PodResourceClaim.ResourceClaimName' v)) (v1.PodResourceClaim) "ResourceClaimName"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodResourceClaimStatus *)
 Module PodResourceClaimStatus.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-  ResourceClaimName' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodResourceClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodResourceClaimStatus.t). Admitted.
+
+#[global] Instance PodResourceClaimStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodResourceClaimStatus.t) (v1.PodResourceClaimStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodResourceClaimStatus.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodResourceClaimStatus.
-#[local] Typeclasses Transparent v1.PodResourceClaimStatus.
-
-Global Instance PodResourceClaimStatus_wf : struct.Wf v1.PodResourceClaimStatus.
-Proof. apply _. Qed.
-
-Global Instance settable_PodResourceClaimStatus : Settable PodResourceClaimStatus.t :=
-  settable! PodResourceClaimStatus.mk < PodResourceClaimStatus.Name'; PodResourceClaimStatus.ResourceClaimName' >.
-Global Instance into_val_PodResourceClaimStatus : IntoVal PodResourceClaimStatus.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodResourceClaimStatus [
-    "Name" ::= #(PodResourceClaimStatus.Name' v);
-    "ResourceClaimName" ::= #(PodResourceClaimStatus.ResourceClaimName' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodResourceClaimStatus : IntoValTyped PodResourceClaimStatus.t v1.PodResourceClaimStatus :=
-{|
-  default_val := PodResourceClaimStatus.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodResourceClaimStatus_Name : IntoValStructField "Name" v1.PodResourceClaimStatus PodResourceClaimStatus.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodResourceClaimStatus_ResourceClaimName : IntoValStructField "ResourceClaimName" v1.PodResourceClaimStatus PodResourceClaimStatus.ResourceClaimName'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodResourceClaimStatus Name' ResourceClaimName':
-  PureWp True
-    (struct.make #v1.PodResourceClaimStatus (alist_val [
-      "Name" ::= #Name';
-      "ResourceClaimName" ::= #ResourceClaimName'
-    ]))%struct
-    #(PodResourceClaimStatus.mk Name' ResourceClaimName').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodResourceClaimStatus_struct_fields_split dq l (v : PodResourceClaimStatus.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.PodResourceClaimStatus :: "Name"]{dq} v.(PodResourceClaimStatus.Name') ∗
-    "HResourceClaimName" ∷ l ↦s[v1.PodResourceClaimStatus :: "ResourceClaimName"]{dq} v.(PodResourceClaimStatus.ResourceClaimName')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodResourceClaimStatus.Name' v)) (v1.PodResourceClaimStatus) "Name"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodExtendedResourceClaimStatus *)
 Module PodExtendedResourceClaimStatus.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  RequestMappings' : slice.t;
-  ResourceClaimName' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodExtendedResourceClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodExtendedResourceClaimStatus.t). Admitted.
+
+#[global] Instance PodExtendedResourceClaimStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodExtendedResourceClaimStatus.t) (v1.PodExtendedResourceClaimStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodExtendedResourceClaimStatus.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodExtendedResourceClaimStatus.
-#[local] Typeclasses Transparent v1.PodExtendedResourceClaimStatus.
-
-Global Instance PodExtendedResourceClaimStatus_wf : struct.Wf v1.PodExtendedResourceClaimStatus.
-Proof. apply _. Qed.
-
-Global Instance settable_PodExtendedResourceClaimStatus : Settable PodExtendedResourceClaimStatus.t :=
-  settable! PodExtendedResourceClaimStatus.mk < PodExtendedResourceClaimStatus.RequestMappings'; PodExtendedResourceClaimStatus.ResourceClaimName' >.
-Global Instance into_val_PodExtendedResourceClaimStatus : IntoVal PodExtendedResourceClaimStatus.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodExtendedResourceClaimStatus [
-    "RequestMappings" ::= #(PodExtendedResourceClaimStatus.RequestMappings' v);
-    "ResourceClaimName" ::= #(PodExtendedResourceClaimStatus.ResourceClaimName' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodExtendedResourceClaimStatus : IntoValTyped PodExtendedResourceClaimStatus.t v1.PodExtendedResourceClaimStatus :=
-{|
-  default_val := PodExtendedResourceClaimStatus.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodExtendedResourceClaimStatus_RequestMappings : IntoValStructField "RequestMappings" v1.PodExtendedResourceClaimStatus PodExtendedResourceClaimStatus.RequestMappings'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodExtendedResourceClaimStatus_ResourceClaimName : IntoValStructField "ResourceClaimName" v1.PodExtendedResourceClaimStatus PodExtendedResourceClaimStatus.ResourceClaimName'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodExtendedResourceClaimStatus RequestMappings' ResourceClaimName':
-  PureWp True
-    (struct.make #v1.PodExtendedResourceClaimStatus (alist_val [
-      "RequestMappings" ::= #RequestMappings';
-      "ResourceClaimName" ::= #ResourceClaimName'
-    ]))%struct
-    #(PodExtendedResourceClaimStatus.mk RequestMappings' ResourceClaimName').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodExtendedResourceClaimStatus_struct_fields_split dq l (v : PodExtendedResourceClaimStatus.t) :
-  StructFieldsSplit dq l v (
-    "HRequestMappings" ∷ l ↦s[v1.PodExtendedResourceClaimStatus :: "RequestMappings"]{dq} v.(PodExtendedResourceClaimStatus.RequestMappings') ∗
-    "HResourceClaimName" ∷ l ↦s[v1.PodExtendedResourceClaimStatus :: "ResourceClaimName"]{dq} v.(PodExtendedResourceClaimStatus.ResourceClaimName')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodExtendedResourceClaimStatus.RequestMappings' v)) (v1.PodExtendedResourceClaimStatus) "RequestMappings"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ContainerExtendedResourceRequest *)
 Module ContainerExtendedResourceRequest.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerExtendedResourceRequest_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerExtendedResourceRequest.t). Admitted.
+
+#[global] Instance ContainerExtendedResourceRequest_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerExtendedResourceRequest.t) (v1.ContainerExtendedResourceRequestⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerExtendedResourceRequest.
 
-Global Instance bounded_size_ContainerExtendedResourceRequest : BoundedTypeSize v1.ContainerExtendedResourceRequest.
-Admitted.
-
-Global Instance into_val_ContainerExtendedResourceRequest `{ffi_syntax} : IntoVal ContainerExtendedResourceRequest.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerExtendedResourceRequest `{ffi_syntax} : IntoValTyped ContainerExtendedResourceRequest.t v1.ContainerExtendedResourceRequest.
-Admitted.
-
-(* type v1.OSName *)
 Module OSName.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance OSName_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.OSName.t). Admitted.
+
+#[global] Instance OSName_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.OSName.t) (v1.OSNameⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End OSName.
 
-Global Instance bounded_size_OSName : BoundedTypeSize v1.OSName.
-Admitted.
-
-Global Instance into_val_OSName `{ffi_syntax} : IntoVal OSName.t.
-Admitted.
-
-Global Instance into_val_typed_OSName `{ffi_syntax} : IntoValTyped OSName.t v1.OSName.
-Admitted.
-
-(* type v1.PodOS *)
 Module PodOS.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : OSName.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodOS_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodOS.t). Admitted.
+
+#[global] Instance PodOS_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodOS.t) (v1.PodOSⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodOS.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodOS.
-#[local] Typeclasses Transparent v1.PodOS.
-
-Global Instance PodOS_wf : struct.Wf v1.PodOS.
-Proof. apply _. Qed.
-
-Global Instance settable_PodOS : Settable PodOS.t :=
-  settable! PodOS.mk < PodOS.Name' >.
-Global Instance into_val_PodOS : IntoVal PodOS.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodOS [
-    "Name" ::= #(PodOS.Name' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodOS : IntoValTyped PodOS.t v1.PodOS :=
-{|
-  default_val := PodOS.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodOS_Name : IntoValStructField "Name" v1.PodOS PodOS.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodOS Name':
-  PureWp True
-    (struct.make #v1.PodOS (alist_val [
-      "Name" ::= #Name'
-    ]))%struct
-    #(PodOS.mk Name').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodOS_struct_fields_split dq l (v : PodOS.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.PodOS :: "Name"]{dq} v.(PodOS.Name')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodSchedulingGate *)
 Module PodSchedulingGate.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodSchedulingGate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSchedulingGate.t). Admitted.
+
+#[global] Instance PodSchedulingGate_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodSchedulingGate.t) (v1.PodSchedulingGateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodSchedulingGate.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodSchedulingGate.
-#[local] Typeclasses Transparent v1.PodSchedulingGate.
-
-Global Instance PodSchedulingGate_wf : struct.Wf v1.PodSchedulingGate.
-Proof. apply _. Qed.
-
-Global Instance settable_PodSchedulingGate : Settable PodSchedulingGate.t :=
-  settable! PodSchedulingGate.mk < PodSchedulingGate.Name' >.
-Global Instance into_val_PodSchedulingGate : IntoVal PodSchedulingGate.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodSchedulingGate [
-    "Name" ::= #(PodSchedulingGate.Name' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodSchedulingGate : IntoValTyped PodSchedulingGate.t v1.PodSchedulingGate :=
-{|
-  default_val := PodSchedulingGate.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodSchedulingGate_Name : IntoValStructField "Name" v1.PodSchedulingGate PodSchedulingGate.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodSchedulingGate Name':
-  PureWp True
-    (struct.make #v1.PodSchedulingGate (alist_val [
-      "Name" ::= #Name'
-    ]))%struct
-    #(PodSchedulingGate.mk Name').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodSchedulingGate_struct_fields_split dq l (v : PodSchedulingGate.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.PodSchedulingGate :: "Name"]{dq} v.(PodSchedulingGate.Name')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.UnsatisfiableConstraintAction *)
 Module UnsatisfiableConstraintAction.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance UnsatisfiableConstraintAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.UnsatisfiableConstraintAction.t). Admitted.
+
+#[global] Instance UnsatisfiableConstraintAction_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.UnsatisfiableConstraintAction.t) (v1.UnsatisfiableConstraintActionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End UnsatisfiableConstraintAction.
 
-Global Instance bounded_size_UnsatisfiableConstraintAction : BoundedTypeSize v1.UnsatisfiableConstraintAction.
-Admitted.
-
-Global Instance into_val_UnsatisfiableConstraintAction `{ffi_syntax} : IntoVal UnsatisfiableConstraintAction.t.
-Admitted.
-
-Global Instance into_val_typed_UnsatisfiableConstraintAction `{ffi_syntax} : IntoValTyped UnsatisfiableConstraintAction.t v1.UnsatisfiableConstraintAction.
-Admitted.
-
-(* type v1.NodeInclusionPolicy *)
 Module NodeInclusionPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeInclusionPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeInclusionPolicy.t). Admitted.
+
+#[global] Instance NodeInclusionPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeInclusionPolicy.t) (v1.NodeInclusionPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeInclusionPolicy.
 
-Global Instance bounded_size_NodeInclusionPolicy : BoundedTypeSize v1.NodeInclusionPolicy.
-Admitted.
-
-Global Instance into_val_NodeInclusionPolicy `{ffi_syntax} : IntoVal NodeInclusionPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_NodeInclusionPolicy `{ffi_syntax} : IntoValTyped NodeInclusionPolicy.t v1.NodeInclusionPolicy.
-Admitted.
-
-(* type v1.TopologySpreadConstraint *)
 Module TopologySpreadConstraint.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  MaxSkew' : w32;
-  TopologyKey' : go_string;
-  WhenUnsatisfiable' : UnsatisfiableConstraintAction.t;
-  LabelSelector' : loc;
-  MinDomains' : loc;
-  NodeAffinityPolicy' : loc;
-  NodeTaintsPolicy' : loc;
-  MatchLabelKeys' : slice.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TopologySpreadConstraint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TopologySpreadConstraint.t). Admitted.
+
+#[global] Instance TopologySpreadConstraint_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TopologySpreadConstraint.t) (v1.TopologySpreadConstraintⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TopologySpreadConstraint.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.TopologySpreadConstraint.
-#[local] Typeclasses Transparent v1.TopologySpreadConstraint.
-
-Global Instance TopologySpreadConstraint_wf : struct.Wf v1.TopologySpreadConstraint.
-Proof. apply _. Qed.
-
-Global Instance settable_TopologySpreadConstraint : Settable TopologySpreadConstraint.t :=
-  settable! TopologySpreadConstraint.mk < TopologySpreadConstraint.MaxSkew'; TopologySpreadConstraint.TopologyKey'; TopologySpreadConstraint.WhenUnsatisfiable'; TopologySpreadConstraint.LabelSelector'; TopologySpreadConstraint.MinDomains'; TopologySpreadConstraint.NodeAffinityPolicy'; TopologySpreadConstraint.NodeTaintsPolicy'; TopologySpreadConstraint.MatchLabelKeys' >.
-Global Instance into_val_TopologySpreadConstraint : IntoVal TopologySpreadConstraint.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.TopologySpreadConstraint [
-    "MaxSkew" ::= #(TopologySpreadConstraint.MaxSkew' v);
-    "TopologyKey" ::= #(TopologySpreadConstraint.TopologyKey' v);
-    "WhenUnsatisfiable" ::= #(TopologySpreadConstraint.WhenUnsatisfiable' v);
-    "LabelSelector" ::= #(TopologySpreadConstraint.LabelSelector' v);
-    "MinDomains" ::= #(TopologySpreadConstraint.MinDomains' v);
-    "NodeAffinityPolicy" ::= #(TopologySpreadConstraint.NodeAffinityPolicy' v);
-    "NodeTaintsPolicy" ::= #(TopologySpreadConstraint.NodeTaintsPolicy' v);
-    "MatchLabelKeys" ::= #(TopologySpreadConstraint.MatchLabelKeys' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_TopologySpreadConstraint : IntoValTyped TopologySpreadConstraint.t v1.TopologySpreadConstraint :=
-{|
-  default_val := TopologySpreadConstraint.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_MaxSkew : IntoValStructField "MaxSkew" v1.TopologySpreadConstraint TopologySpreadConstraint.MaxSkew'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_TopologyKey : IntoValStructField "TopologyKey" v1.TopologySpreadConstraint TopologySpreadConstraint.TopologyKey'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_WhenUnsatisfiable : IntoValStructField "WhenUnsatisfiable" v1.TopologySpreadConstraint TopologySpreadConstraint.WhenUnsatisfiable'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_LabelSelector : IntoValStructField "LabelSelector" v1.TopologySpreadConstraint TopologySpreadConstraint.LabelSelector'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_MinDomains : IntoValStructField "MinDomains" v1.TopologySpreadConstraint TopologySpreadConstraint.MinDomains'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_NodeAffinityPolicy : IntoValStructField "NodeAffinityPolicy" v1.TopologySpreadConstraint TopologySpreadConstraint.NodeAffinityPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_NodeTaintsPolicy : IntoValStructField "NodeTaintsPolicy" v1.TopologySpreadConstraint TopologySpreadConstraint.NodeTaintsPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_TopologySpreadConstraint_MatchLabelKeys : IntoValStructField "MatchLabelKeys" v1.TopologySpreadConstraint TopologySpreadConstraint.MatchLabelKeys'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_TopologySpreadConstraint MaxSkew' TopologyKey' WhenUnsatisfiable' LabelSelector' MinDomains' NodeAffinityPolicy' NodeTaintsPolicy' MatchLabelKeys':
-  PureWp True
-    (struct.make #v1.TopologySpreadConstraint (alist_val [
-      "MaxSkew" ::= #MaxSkew';
-      "TopologyKey" ::= #TopologyKey';
-      "WhenUnsatisfiable" ::= #WhenUnsatisfiable';
-      "LabelSelector" ::= #LabelSelector';
-      "MinDomains" ::= #MinDomains';
-      "NodeAffinityPolicy" ::= #NodeAffinityPolicy';
-      "NodeTaintsPolicy" ::= #NodeTaintsPolicy';
-      "MatchLabelKeys" ::= #MatchLabelKeys'
-    ]))%struct
-    #(TopologySpreadConstraint.mk MaxSkew' TopologyKey' WhenUnsatisfiable' LabelSelector' MinDomains' NodeAffinityPolicy' NodeTaintsPolicy' MatchLabelKeys').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance TopologySpreadConstraint_struct_fields_split dq l (v : TopologySpreadConstraint.t) :
-  StructFieldsSplit dq l v (
-    "HMaxSkew" ∷ l ↦s[v1.TopologySpreadConstraint :: "MaxSkew"]{dq} v.(TopologySpreadConstraint.MaxSkew') ∗
-    "HTopologyKey" ∷ l ↦s[v1.TopologySpreadConstraint :: "TopologyKey"]{dq} v.(TopologySpreadConstraint.TopologyKey') ∗
-    "HWhenUnsatisfiable" ∷ l ↦s[v1.TopologySpreadConstraint :: "WhenUnsatisfiable"]{dq} v.(TopologySpreadConstraint.WhenUnsatisfiable') ∗
-    "HLabelSelector" ∷ l ↦s[v1.TopologySpreadConstraint :: "LabelSelector"]{dq} v.(TopologySpreadConstraint.LabelSelector') ∗
-    "HMinDomains" ∷ l ↦s[v1.TopologySpreadConstraint :: "MinDomains"]{dq} v.(TopologySpreadConstraint.MinDomains') ∗
-    "HNodeAffinityPolicy" ∷ l ↦s[v1.TopologySpreadConstraint :: "NodeAffinityPolicy"]{dq} v.(TopologySpreadConstraint.NodeAffinityPolicy') ∗
-    "HNodeTaintsPolicy" ∷ l ↦s[v1.TopologySpreadConstraint :: "NodeTaintsPolicy"]{dq} v.(TopologySpreadConstraint.NodeTaintsPolicy') ∗
-    "HMatchLabelKeys" ∷ l ↦s[v1.TopologySpreadConstraint :: "MatchLabelKeys"]{dq} v.(TopologySpreadConstraint.MatchLabelKeys')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.MaxSkew' v)) (v1.TopologySpreadConstraint) "MaxSkew"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.TopologyKey' v)) (v1.TopologySpreadConstraint) "TopologyKey"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.WhenUnsatisfiable' v)) (v1.TopologySpreadConstraint) "WhenUnsatisfiable"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.LabelSelector' v)) (v1.TopologySpreadConstraint) "LabelSelector"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.MinDomains' v)) (v1.TopologySpreadConstraint) "MinDomains"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.NodeAffinityPolicy' v)) (v1.TopologySpreadConstraint) "NodeAffinityPolicy"%go.
-  simpl_one_flatten_struct (# (TopologySpreadConstraint.NodeTaintsPolicy' v)) (v1.TopologySpreadConstraint) "NodeTaintsPolicy"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.HostAlias *)
 Module HostAlias.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  IP' : go_string;
-  Hostnames' : slice.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HostAlias_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostAlias.t). Admitted.
+
+#[global] Instance HostAlias_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HostAlias.t) (v1.HostAliasⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HostAlias.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.HostAlias.
-#[local] Typeclasses Transparent v1.HostAlias.
-
-Global Instance HostAlias_wf : struct.Wf v1.HostAlias.
-Proof. apply _. Qed.
-
-Global Instance settable_HostAlias : Settable HostAlias.t :=
-  settable! HostAlias.mk < HostAlias.IP'; HostAlias.Hostnames' >.
-Global Instance into_val_HostAlias : IntoVal HostAlias.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.HostAlias [
-    "IP" ::= #(HostAlias.IP' v);
-    "Hostnames" ::= #(HostAlias.Hostnames' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_HostAlias : IntoValTyped HostAlias.t v1.HostAlias :=
-{|
-  default_val := HostAlias.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_HostAlias_IP : IntoValStructField "IP" v1.HostAlias HostAlias.IP'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_HostAlias_Hostnames : IntoValStructField "Hostnames" v1.HostAlias HostAlias.Hostnames'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_HostAlias IP' Hostnames':
-  PureWp True
-    (struct.make #v1.HostAlias (alist_val [
-      "IP" ::= #IP';
-      "Hostnames" ::= #Hostnames'
-    ]))%struct
-    #(HostAlias.mk IP' Hostnames').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance HostAlias_struct_fields_split dq l (v : HostAlias.t) :
-  StructFieldsSplit dq l v (
-    "HIP" ∷ l ↦s[v1.HostAlias :: "IP"]{dq} v.(HostAlias.IP') ∗
-    "HHostnames" ∷ l ↦s[v1.HostAlias :: "Hostnames"]{dq} v.(HostAlias.Hostnames')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (HostAlias.IP' v)) (v1.HostAlias) "IP"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodFSGroupChangePolicy *)
 Module PodFSGroupChangePolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodFSGroupChangePolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodFSGroupChangePolicy.t). Admitted.
+
+#[global] Instance PodFSGroupChangePolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodFSGroupChangePolicy.t) (v1.PodFSGroupChangePolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodFSGroupChangePolicy.
 
-Global Instance bounded_size_PodFSGroupChangePolicy : BoundedTypeSize v1.PodFSGroupChangePolicy.
-Admitted.
-
-Global Instance into_val_PodFSGroupChangePolicy `{ffi_syntax} : IntoVal PodFSGroupChangePolicy.t.
-Admitted.
-
-Global Instance into_val_typed_PodFSGroupChangePolicy `{ffi_syntax} : IntoValTyped PodFSGroupChangePolicy.t v1.PodFSGroupChangePolicy.
-Admitted.
-
-(* type v1.SupplementalGroupsPolicy *)
 Module SupplementalGroupsPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SupplementalGroupsPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SupplementalGroupsPolicy.t). Admitted.
+
+#[global] Instance SupplementalGroupsPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SupplementalGroupsPolicy.t) (v1.SupplementalGroupsPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SupplementalGroupsPolicy.
 
-Global Instance bounded_size_SupplementalGroupsPolicy : BoundedTypeSize v1.SupplementalGroupsPolicy.
-Admitted.
-
-Global Instance into_val_SupplementalGroupsPolicy `{ffi_syntax} : IntoVal SupplementalGroupsPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_SupplementalGroupsPolicy `{ffi_syntax} : IntoValTyped SupplementalGroupsPolicy.t v1.SupplementalGroupsPolicy.
-Admitted.
-
-(* type v1.PodSELinuxChangePolicy *)
 Module PodSELinuxChangePolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodSELinuxChangePolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSELinuxChangePolicy.t). Admitted.
+
+#[global] Instance PodSELinuxChangePolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodSELinuxChangePolicy.t) (v1.PodSELinuxChangePolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodSELinuxChangePolicy.
 
-Global Instance bounded_size_PodSELinuxChangePolicy : BoundedTypeSize v1.PodSELinuxChangePolicy.
-Admitted.
-
-Global Instance into_val_PodSELinuxChangePolicy `{ffi_syntax} : IntoVal PodSELinuxChangePolicy.t.
-Admitted.
-
-Global Instance into_val_typed_PodSELinuxChangePolicy `{ffi_syntax} : IntoValTyped PodSELinuxChangePolicy.t v1.PodSELinuxChangePolicy.
-Admitted.
-
-(* type v1.PodSecurityContext *)
 Module PodSecurityContext.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  SELinuxOptions' : loc;
-  WindowsOptions' : loc;
-  RunAsUser' : loc;
-  RunAsGroup' : loc;
-  RunAsNonRoot' : loc;
-  SupplementalGroups' : slice.t;
-  SupplementalGroupsPolicy' : loc;
-  FSGroup' : loc;
-  Sysctls' : slice.t;
-  FSGroupChangePolicy' : loc;
-  SeccompProfile' : loc;
-  AppArmorProfile' : loc;
-  SELinuxChangePolicy' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodSecurityContext_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSecurityContext.t). Admitted.
+
+#[global] Instance PodSecurityContext_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodSecurityContext.t) (v1.PodSecurityContextⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodSecurityContext.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodSecurityContext.
-#[local] Typeclasses Transparent v1.PodSecurityContext.
-
-Global Instance PodSecurityContext_wf : struct.Wf v1.PodSecurityContext.
-Proof. apply _. Qed.
-
-Global Instance settable_PodSecurityContext : Settable PodSecurityContext.t :=
-  settable! PodSecurityContext.mk < PodSecurityContext.SELinuxOptions'; PodSecurityContext.WindowsOptions'; PodSecurityContext.RunAsUser'; PodSecurityContext.RunAsGroup'; PodSecurityContext.RunAsNonRoot'; PodSecurityContext.SupplementalGroups'; PodSecurityContext.SupplementalGroupsPolicy'; PodSecurityContext.FSGroup'; PodSecurityContext.Sysctls'; PodSecurityContext.FSGroupChangePolicy'; PodSecurityContext.SeccompProfile'; PodSecurityContext.AppArmorProfile'; PodSecurityContext.SELinuxChangePolicy' >.
-Global Instance into_val_PodSecurityContext : IntoVal PodSecurityContext.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodSecurityContext [
-    "SELinuxOptions" ::= #(PodSecurityContext.SELinuxOptions' v);
-    "WindowsOptions" ::= #(PodSecurityContext.WindowsOptions' v);
-    "RunAsUser" ::= #(PodSecurityContext.RunAsUser' v);
-    "RunAsGroup" ::= #(PodSecurityContext.RunAsGroup' v);
-    "RunAsNonRoot" ::= #(PodSecurityContext.RunAsNonRoot' v);
-    "SupplementalGroups" ::= #(PodSecurityContext.SupplementalGroups' v);
-    "SupplementalGroupsPolicy" ::= #(PodSecurityContext.SupplementalGroupsPolicy' v);
-    "FSGroup" ::= #(PodSecurityContext.FSGroup' v);
-    "Sysctls" ::= #(PodSecurityContext.Sysctls' v);
-    "FSGroupChangePolicy" ::= #(PodSecurityContext.FSGroupChangePolicy' v);
-    "SeccompProfile" ::= #(PodSecurityContext.SeccompProfile' v);
-    "AppArmorProfile" ::= #(PodSecurityContext.AppArmorProfile' v);
-    "SELinuxChangePolicy" ::= #(PodSecurityContext.SELinuxChangePolicy' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodSecurityContext : IntoValTyped PodSecurityContext.t v1.PodSecurityContext :=
-{|
-  default_val := PodSecurityContext.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_SELinuxOptions : IntoValStructField "SELinuxOptions" v1.PodSecurityContext PodSecurityContext.SELinuxOptions'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_WindowsOptions : IntoValStructField "WindowsOptions" v1.PodSecurityContext PodSecurityContext.WindowsOptions'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_RunAsUser : IntoValStructField "RunAsUser" v1.PodSecurityContext PodSecurityContext.RunAsUser'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_RunAsGroup : IntoValStructField "RunAsGroup" v1.PodSecurityContext PodSecurityContext.RunAsGroup'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_RunAsNonRoot : IntoValStructField "RunAsNonRoot" v1.PodSecurityContext PodSecurityContext.RunAsNonRoot'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_SupplementalGroups : IntoValStructField "SupplementalGroups" v1.PodSecurityContext PodSecurityContext.SupplementalGroups'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_SupplementalGroupsPolicy : IntoValStructField "SupplementalGroupsPolicy" v1.PodSecurityContext PodSecurityContext.SupplementalGroupsPolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_FSGroup : IntoValStructField "FSGroup" v1.PodSecurityContext PodSecurityContext.FSGroup'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_Sysctls : IntoValStructField "Sysctls" v1.PodSecurityContext PodSecurityContext.Sysctls'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_FSGroupChangePolicy : IntoValStructField "FSGroupChangePolicy" v1.PodSecurityContext PodSecurityContext.FSGroupChangePolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_SeccompProfile : IntoValStructField "SeccompProfile" v1.PodSecurityContext PodSecurityContext.SeccompProfile'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_AppArmorProfile : IntoValStructField "AppArmorProfile" v1.PodSecurityContext PodSecurityContext.AppArmorProfile'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodSecurityContext_SELinuxChangePolicy : IntoValStructField "SELinuxChangePolicy" v1.PodSecurityContext PodSecurityContext.SELinuxChangePolicy'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodSecurityContext SELinuxOptions' WindowsOptions' RunAsUser' RunAsGroup' RunAsNonRoot' SupplementalGroups' SupplementalGroupsPolicy' FSGroup' Sysctls' FSGroupChangePolicy' SeccompProfile' AppArmorProfile' SELinuxChangePolicy':
-  PureWp True
-    (struct.make #v1.PodSecurityContext (alist_val [
-      "SELinuxOptions" ::= #SELinuxOptions';
-      "WindowsOptions" ::= #WindowsOptions';
-      "RunAsUser" ::= #RunAsUser';
-      "RunAsGroup" ::= #RunAsGroup';
-      "RunAsNonRoot" ::= #RunAsNonRoot';
-      "SupplementalGroups" ::= #SupplementalGroups';
-      "SupplementalGroupsPolicy" ::= #SupplementalGroupsPolicy';
-      "FSGroup" ::= #FSGroup';
-      "Sysctls" ::= #Sysctls';
-      "FSGroupChangePolicy" ::= #FSGroupChangePolicy';
-      "SeccompProfile" ::= #SeccompProfile';
-      "AppArmorProfile" ::= #AppArmorProfile';
-      "SELinuxChangePolicy" ::= #SELinuxChangePolicy'
-    ]))%struct
-    #(PodSecurityContext.mk SELinuxOptions' WindowsOptions' RunAsUser' RunAsGroup' RunAsNonRoot' SupplementalGroups' SupplementalGroupsPolicy' FSGroup' Sysctls' FSGroupChangePolicy' SeccompProfile' AppArmorProfile' SELinuxChangePolicy').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodSecurityContext_struct_fields_split dq l (v : PodSecurityContext.t) :
-  StructFieldsSplit dq l v (
-    "HSELinuxOptions" ∷ l ↦s[v1.PodSecurityContext :: "SELinuxOptions"]{dq} v.(PodSecurityContext.SELinuxOptions') ∗
-    "HWindowsOptions" ∷ l ↦s[v1.PodSecurityContext :: "WindowsOptions"]{dq} v.(PodSecurityContext.WindowsOptions') ∗
-    "HRunAsUser" ∷ l ↦s[v1.PodSecurityContext :: "RunAsUser"]{dq} v.(PodSecurityContext.RunAsUser') ∗
-    "HRunAsGroup" ∷ l ↦s[v1.PodSecurityContext :: "RunAsGroup"]{dq} v.(PodSecurityContext.RunAsGroup') ∗
-    "HRunAsNonRoot" ∷ l ↦s[v1.PodSecurityContext :: "RunAsNonRoot"]{dq} v.(PodSecurityContext.RunAsNonRoot') ∗
-    "HSupplementalGroups" ∷ l ↦s[v1.PodSecurityContext :: "SupplementalGroups"]{dq} v.(PodSecurityContext.SupplementalGroups') ∗
-    "HSupplementalGroupsPolicy" ∷ l ↦s[v1.PodSecurityContext :: "SupplementalGroupsPolicy"]{dq} v.(PodSecurityContext.SupplementalGroupsPolicy') ∗
-    "HFSGroup" ∷ l ↦s[v1.PodSecurityContext :: "FSGroup"]{dq} v.(PodSecurityContext.FSGroup') ∗
-    "HSysctls" ∷ l ↦s[v1.PodSecurityContext :: "Sysctls"]{dq} v.(PodSecurityContext.Sysctls') ∗
-    "HFSGroupChangePolicy" ∷ l ↦s[v1.PodSecurityContext :: "FSGroupChangePolicy"]{dq} v.(PodSecurityContext.FSGroupChangePolicy') ∗
-    "HSeccompProfile" ∷ l ↦s[v1.PodSecurityContext :: "SeccompProfile"]{dq} v.(PodSecurityContext.SeccompProfile') ∗
-    "HAppArmorProfile" ∷ l ↦s[v1.PodSecurityContext :: "AppArmorProfile"]{dq} v.(PodSecurityContext.AppArmorProfile') ∗
-    "HSELinuxChangePolicy" ∷ l ↦s[v1.PodSecurityContext :: "SELinuxChangePolicy"]{dq} v.(PodSecurityContext.SELinuxChangePolicy')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodSecurityContext.SELinuxOptions' v)) (v1.PodSecurityContext) "SELinuxOptions"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.WindowsOptions' v)) (v1.PodSecurityContext) "WindowsOptions"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.RunAsUser' v)) (v1.PodSecurityContext) "RunAsUser"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.RunAsGroup' v)) (v1.PodSecurityContext) "RunAsGroup"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.RunAsNonRoot' v)) (v1.PodSecurityContext) "RunAsNonRoot"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.SupplementalGroups' v)) (v1.PodSecurityContext) "SupplementalGroups"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.SupplementalGroupsPolicy' v)) (v1.PodSecurityContext) "SupplementalGroupsPolicy"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.FSGroup' v)) (v1.PodSecurityContext) "FSGroup"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.Sysctls' v)) (v1.PodSecurityContext) "Sysctls"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.FSGroupChangePolicy' v)) (v1.PodSecurityContext) "FSGroupChangePolicy"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.SeccompProfile' v)) (v1.PodSecurityContext) "SeccompProfile"%go.
-  simpl_one_flatten_struct (# (PodSecurityContext.AppArmorProfile' v)) (v1.PodSecurityContext) "AppArmorProfile"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.SeccompProfile *)
 Module SeccompProfile.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SeccompProfile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SeccompProfile.t). Admitted.
+
+#[global] Instance SeccompProfile_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SeccompProfile.t) (v1.SeccompProfileⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SeccompProfile.
 
-Global Instance bounded_size_SeccompProfile : BoundedTypeSize v1.SeccompProfile.
-Admitted.
-
-Global Instance into_val_SeccompProfile `{ffi_syntax} : IntoVal SeccompProfile.t.
-Admitted.
-
-Global Instance into_val_typed_SeccompProfile `{ffi_syntax} : IntoValTyped SeccompProfile.t v1.SeccompProfile.
-Admitted.
-
-(* type v1.SeccompProfileType *)
 Module SeccompProfileType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SeccompProfileType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SeccompProfileType.t). Admitted.
+
+#[global] Instance SeccompProfileType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SeccompProfileType.t) (v1.SeccompProfileTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SeccompProfileType.
 
-Global Instance bounded_size_SeccompProfileType : BoundedTypeSize v1.SeccompProfileType.
-Admitted.
-
-Global Instance into_val_SeccompProfileType `{ffi_syntax} : IntoVal SeccompProfileType.t.
-Admitted.
-
-Global Instance into_val_typed_SeccompProfileType `{ffi_syntax} : IntoValTyped SeccompProfileType.t v1.SeccompProfileType.
-Admitted.
-
-(* type v1.AppArmorProfile *)
 Module AppArmorProfile.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AppArmorProfile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AppArmorProfile.t). Admitted.
+
+#[global] Instance AppArmorProfile_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AppArmorProfile.t) (v1.AppArmorProfileⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AppArmorProfile.
 
-Global Instance bounded_size_AppArmorProfile : BoundedTypeSize v1.AppArmorProfile.
-Admitted.
-
-Global Instance into_val_AppArmorProfile `{ffi_syntax} : IntoVal AppArmorProfile.t.
-Admitted.
-
-Global Instance into_val_typed_AppArmorProfile `{ffi_syntax} : IntoValTyped AppArmorProfile.t v1.AppArmorProfile.
-Admitted.
-
-(* type v1.AppArmorProfileType *)
 Module AppArmorProfileType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AppArmorProfileType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AppArmorProfileType.t). Admitted.
+
+#[global] Instance AppArmorProfileType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AppArmorProfileType.t) (v1.AppArmorProfileTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AppArmorProfileType.
 
-Global Instance bounded_size_AppArmorProfileType : BoundedTypeSize v1.AppArmorProfileType.
-Admitted.
-
-Global Instance into_val_AppArmorProfileType `{ffi_syntax} : IntoVal AppArmorProfileType.t.
-Admitted.
-
-Global Instance into_val_typed_AppArmorProfileType `{ffi_syntax} : IntoValTyped AppArmorProfileType.t v1.AppArmorProfileType.
-Admitted.
-
-(* type v1.PodQOSClass *)
 Module PodQOSClass.
-
-#[global] Transparent v1.PodQOSClass.
-#[global] Typeclasses Transparent v1.PodQOSClass.
 Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodQOSClass_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodQOSClass.t). Admitted.
+
+#[global] Instance PodQOSClass_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodQOSClass.t) (v1.PodQOSClassⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodQOSClass.
 
-(* type v1.PodDNSConfig *)
 Module PodDNSConfig.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Nameservers' : slice.t;
-  Searches' : slice.t;
-  Options' : slice.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodDNSConfig_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodDNSConfig.t). Admitted.
+
+#[global] Instance PodDNSConfig_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodDNSConfig.t) (v1.PodDNSConfigⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodDNSConfig.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodDNSConfig.
-#[local] Typeclasses Transparent v1.PodDNSConfig.
-
-Global Instance PodDNSConfig_wf : struct.Wf v1.PodDNSConfig.
-Proof. apply _. Qed.
-
-Global Instance settable_PodDNSConfig : Settable PodDNSConfig.t :=
-  settable! PodDNSConfig.mk < PodDNSConfig.Nameservers'; PodDNSConfig.Searches'; PodDNSConfig.Options' >.
-Global Instance into_val_PodDNSConfig : IntoVal PodDNSConfig.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodDNSConfig [
-    "Nameservers" ::= #(PodDNSConfig.Nameservers' v);
-    "Searches" ::= #(PodDNSConfig.Searches' v);
-    "Options" ::= #(PodDNSConfig.Options' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodDNSConfig : IntoValTyped PodDNSConfig.t v1.PodDNSConfig :=
-{|
-  default_val := PodDNSConfig.mk (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodDNSConfig_Nameservers : IntoValStructField "Nameservers" v1.PodDNSConfig PodDNSConfig.Nameservers'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodDNSConfig_Searches : IntoValStructField "Searches" v1.PodDNSConfig PodDNSConfig.Searches'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodDNSConfig_Options : IntoValStructField "Options" v1.PodDNSConfig PodDNSConfig.Options'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodDNSConfig Nameservers' Searches' Options':
-  PureWp True
-    (struct.make #v1.PodDNSConfig (alist_val [
-      "Nameservers" ::= #Nameservers';
-      "Searches" ::= #Searches';
-      "Options" ::= #Options'
-    ]))%struct
-    #(PodDNSConfig.mk Nameservers' Searches' Options').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodDNSConfig_struct_fields_split dq l (v : PodDNSConfig.t) :
-  StructFieldsSplit dq l v (
-    "HNameservers" ∷ l ↦s[v1.PodDNSConfig :: "Nameservers"]{dq} v.(PodDNSConfig.Nameservers') ∗
-    "HSearches" ∷ l ↦s[v1.PodDNSConfig :: "Searches"]{dq} v.(PodDNSConfig.Searches') ∗
-    "HOptions" ∷ l ↦s[v1.PodDNSConfig :: "Options"]{dq} v.(PodDNSConfig.Options')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodDNSConfig.Nameservers' v)) (v1.PodDNSConfig) "Nameservers"%go.
-  simpl_one_flatten_struct (# (PodDNSConfig.Searches' v)) (v1.PodDNSConfig) "Searches"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodDNSConfigOption *)
 Module PodDNSConfigOption.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodDNSConfigOption_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodDNSConfigOption.t). Admitted.
+
+#[global] Instance PodDNSConfigOption_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodDNSConfigOption.t) (v1.PodDNSConfigOptionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodDNSConfigOption.
 
-Global Instance bounded_size_PodDNSConfigOption : BoundedTypeSize v1.PodDNSConfigOption.
-Admitted.
-
-Global Instance into_val_PodDNSConfigOption `{ffi_syntax} : IntoVal PodDNSConfigOption.t.
-Admitted.
-
-Global Instance into_val_typed_PodDNSConfigOption `{ffi_syntax} : IntoValTyped PodDNSConfigOption.t v1.PodDNSConfigOption.
-Admitted.
-
-(* type v1.PodIP *)
 Module PodIP.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  IP' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodIP_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodIP.t). Admitted.
+
+#[global] Instance PodIP_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodIP.t) (v1.PodIPⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodIP.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodIP.
-#[local] Typeclasses Transparent v1.PodIP.
-
-Global Instance PodIP_wf : struct.Wf v1.PodIP.
-Proof. apply _. Qed.
-
-Global Instance settable_PodIP : Settable PodIP.t :=
-  settable! PodIP.mk < PodIP.IP' >.
-Global Instance into_val_PodIP : IntoVal PodIP.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodIP [
-    "IP" ::= #(PodIP.IP' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodIP : IntoValTyped PodIP.t v1.PodIP :=
-{|
-  default_val := PodIP.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodIP_IP : IntoValStructField "IP" v1.PodIP PodIP.IP'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodIP IP':
-  PureWp True
-    (struct.make #v1.PodIP (alist_val [
-      "IP" ::= #IP'
-    ]))%struct
-    #(PodIP.mk IP').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodIP_struct_fields_split dq l (v : PodIP.t) :
-  StructFieldsSplit dq l v (
-    "HIP" ∷ l ↦s[v1.PodIP :: "IP"]{dq} v.(PodIP.IP')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.HostIP *)
 Module HostIP.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  IP' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance HostIP_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostIP.t). Admitted.
+
+#[global] Instance HostIP_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.HostIP.t) (v1.HostIPⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End HostIP.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.HostIP.
-#[local] Typeclasses Transparent v1.HostIP.
-
-Global Instance HostIP_wf : struct.Wf v1.HostIP.
-Proof. apply _. Qed.
-
-Global Instance settable_HostIP : Settable HostIP.t :=
-  settable! HostIP.mk < HostIP.IP' >.
-Global Instance into_val_HostIP : IntoVal HostIP.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.HostIP [
-    "IP" ::= #(HostIP.IP' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_HostIP : IntoValTyped HostIP.t v1.HostIP :=
-{|
-  default_val := HostIP.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_HostIP_IP : IntoValStructField "IP" v1.HostIP HostIP.IP'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_HostIP IP':
-  PureWp True
-    (struct.make #v1.HostIP (alist_val [
-      "IP" ::= #IP'
-    ]))%struct
-    #(HostIP.mk IP').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance HostIP_struct_fields_split dq l (v : HostIP.t) :
-  StructFieldsSplit dq l v (
-    "HIP" ∷ l ↦s[v1.HostIP :: "IP"]{dq} v.(HostIP.IP')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.EphemeralContainerCommon *)
 Module EphemeralContainerCommon.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EphemeralContainerCommon_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralContainerCommon.t). Admitted.
+
+#[global] Instance EphemeralContainerCommon_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EphemeralContainerCommon.t) (v1.EphemeralContainerCommonⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EphemeralContainerCommon.
 
-Global Instance bounded_size_EphemeralContainerCommon : BoundedTypeSize v1.EphemeralContainerCommon.
-Admitted.
-
-Global Instance into_val_EphemeralContainerCommon `{ffi_syntax} : IntoVal EphemeralContainerCommon.t.
-Admitted.
-
-Global Instance into_val_typed_EphemeralContainerCommon `{ffi_syntax} : IntoValTyped EphemeralContainerCommon.t v1.EphemeralContainerCommon.
-Admitted.
-
-(* type v1.EphemeralContainer *)
 Module EphemeralContainer.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  EphemeralContainerCommon' : EphemeralContainerCommon.t;
-  TargetContainerName' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EphemeralContainer_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralContainer.t). Admitted.
+
+#[global] Instance EphemeralContainer_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EphemeralContainer.t) (v1.EphemeralContainerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EphemeralContainer.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.EphemeralContainer.
-#[local] Typeclasses Transparent v1.EphemeralContainer.
-
-Global Instance EphemeralContainer_wf : struct.Wf v1.EphemeralContainer.
-Proof. apply _. Qed.
-
-Global Instance settable_EphemeralContainer : Settable EphemeralContainer.t :=
-  settable! EphemeralContainer.mk < EphemeralContainer.EphemeralContainerCommon'; EphemeralContainer.TargetContainerName' >.
-Global Instance into_val_EphemeralContainer : IntoVal EphemeralContainer.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.EphemeralContainer [
-    "EphemeralContainerCommon" ::= #(EphemeralContainer.EphemeralContainerCommon' v);
-    "TargetContainerName" ::= #(EphemeralContainer.TargetContainerName' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_EphemeralContainer : IntoValTyped EphemeralContainer.t v1.EphemeralContainer :=
-{|
-  default_val := EphemeralContainer.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_EphemeralContainer_EphemeralContainerCommon : IntoValStructField "EphemeralContainerCommon" v1.EphemeralContainer EphemeralContainer.EphemeralContainerCommon'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_EphemeralContainer_TargetContainerName : IntoValStructField "TargetContainerName" v1.EphemeralContainer EphemeralContainer.TargetContainerName'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_EphemeralContainer EphemeralContainerCommon' TargetContainerName':
-  PureWp True
-    (struct.make #v1.EphemeralContainer (alist_val [
-      "EphemeralContainerCommon" ::= #EphemeralContainerCommon';
-      "TargetContainerName" ::= #TargetContainerName'
-    ]))%struct
-    #(EphemeralContainer.mk EphemeralContainerCommon' TargetContainerName').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance EphemeralContainer_struct_fields_split dq l (v : EphemeralContainer.t) :
-  StructFieldsSplit dq l v (
-    "HEphemeralContainerCommon" ∷ l ↦s[v1.EphemeralContainer :: "EphemeralContainerCommon"]{dq} v.(EphemeralContainer.EphemeralContainerCommon') ∗
-    "HTargetContainerName" ∷ l ↦s[v1.EphemeralContainer :: "TargetContainerName"]{dq} v.(EphemeralContainer.TargetContainerName')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (EphemeralContainer.EphemeralContainerCommon' v)) (v1.EphemeralContainer) "EphemeralContainerCommon"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodStatus *)
 Module PodStatus.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  ObservedGeneration' : w64;
-  Phase' : PodPhase.t;
-  Conditions' : slice.t;
-  Message' : go_string;
-  Reason' : go_string;
-  NominatedNodeName' : go_string;
-  HostIP' : go_string;
-  HostIPs' : slice.t;
-  PodIP' : go_string;
-  PodIPs' : slice.t;
-  StartTime' : loc;
-  InitContainerStatuses' : slice.t;
-  ContainerStatuses' : slice.t;
-  QOSClass' : PodQOSClass.t;
-  EphemeralContainerStatuses' : slice.t;
-  Resize' : PodResizeStatus.t;
-  ResourceClaimStatuses' : slice.t;
-  ExtendedResourceClaimStatus' : loc;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodStatus.t). Admitted.
+
+#[global] Instance PodStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodStatus.t) (v1.PodStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodStatus.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodStatus.
-#[local] Typeclasses Transparent v1.PodStatus.
-
-Global Instance PodStatus_wf : struct.Wf v1.PodStatus.
-Proof. apply _. Qed.
-
-Global Instance settable_PodStatus : Settable PodStatus.t :=
-  settable! PodStatus.mk < PodStatus.ObservedGeneration'; PodStatus.Phase'; PodStatus.Conditions'; PodStatus.Message'; PodStatus.Reason'; PodStatus.NominatedNodeName'; PodStatus.HostIP'; PodStatus.HostIPs'; PodStatus.PodIP'; PodStatus.PodIPs'; PodStatus.StartTime'; PodStatus.InitContainerStatuses'; PodStatus.ContainerStatuses'; PodStatus.QOSClass'; PodStatus.EphemeralContainerStatuses'; PodStatus.Resize'; PodStatus.ResourceClaimStatuses'; PodStatus.ExtendedResourceClaimStatus' >.
-Global Instance into_val_PodStatus : IntoVal PodStatus.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodStatus [
-    "ObservedGeneration" ::= #(PodStatus.ObservedGeneration' v);
-    "Phase" ::= #(PodStatus.Phase' v);
-    "Conditions" ::= #(PodStatus.Conditions' v);
-    "Message" ::= #(PodStatus.Message' v);
-    "Reason" ::= #(PodStatus.Reason' v);
-    "NominatedNodeName" ::= #(PodStatus.NominatedNodeName' v);
-    "HostIP" ::= #(PodStatus.HostIP' v);
-    "HostIPs" ::= #(PodStatus.HostIPs' v);
-    "PodIP" ::= #(PodStatus.PodIP' v);
-    "PodIPs" ::= #(PodStatus.PodIPs' v);
-    "StartTime" ::= #(PodStatus.StartTime' v);
-    "InitContainerStatuses" ::= #(PodStatus.InitContainerStatuses' v);
-    "ContainerStatuses" ::= #(PodStatus.ContainerStatuses' v);
-    "QOSClass" ::= #(PodStatus.QOSClass' v);
-    "EphemeralContainerStatuses" ::= #(PodStatus.EphemeralContainerStatuses' v);
-    "Resize" ::= #(PodStatus.Resize' v);
-    "ResourceClaimStatuses" ::= #(PodStatus.ResourceClaimStatuses' v);
-    "ExtendedResourceClaimStatus" ::= #(PodStatus.ExtendedResourceClaimStatus' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodStatus : IntoValTyped PodStatus.t v1.PodStatus :=
-{|
-  default_val := PodStatus.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodStatus_ObservedGeneration : IntoValStructField "ObservedGeneration" v1.PodStatus PodStatus.ObservedGeneration'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_Phase : IntoValStructField "Phase" v1.PodStatus PodStatus.Phase'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_Conditions : IntoValStructField "Conditions" v1.PodStatus PodStatus.Conditions'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_Message : IntoValStructField "Message" v1.PodStatus PodStatus.Message'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_Reason : IntoValStructField "Reason" v1.PodStatus PodStatus.Reason'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_NominatedNodeName : IntoValStructField "NominatedNodeName" v1.PodStatus PodStatus.NominatedNodeName'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_HostIP : IntoValStructField "HostIP" v1.PodStatus PodStatus.HostIP'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_HostIPs : IntoValStructField "HostIPs" v1.PodStatus PodStatus.HostIPs'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_PodIP : IntoValStructField "PodIP" v1.PodStatus PodStatus.PodIP'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_PodIPs : IntoValStructField "PodIPs" v1.PodStatus PodStatus.PodIPs'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_StartTime : IntoValStructField "StartTime" v1.PodStatus PodStatus.StartTime'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_InitContainerStatuses : IntoValStructField "InitContainerStatuses" v1.PodStatus PodStatus.InitContainerStatuses'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_ContainerStatuses : IntoValStructField "ContainerStatuses" v1.PodStatus PodStatus.ContainerStatuses'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_QOSClass : IntoValStructField "QOSClass" v1.PodStatus PodStatus.QOSClass'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_EphemeralContainerStatuses : IntoValStructField "EphemeralContainerStatuses" v1.PodStatus PodStatus.EphemeralContainerStatuses'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_Resize : IntoValStructField "Resize" v1.PodStatus PodStatus.Resize'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_ResourceClaimStatuses : IntoValStructField "ResourceClaimStatuses" v1.PodStatus PodStatus.ResourceClaimStatuses'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodStatus_ExtendedResourceClaimStatus : IntoValStructField "ExtendedResourceClaimStatus" v1.PodStatus PodStatus.ExtendedResourceClaimStatus'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodStatus ObservedGeneration' Phase' Conditions' Message' Reason' NominatedNodeName' HostIP' HostIPs' PodIP' PodIPs' StartTime' InitContainerStatuses' ContainerStatuses' QOSClass' EphemeralContainerStatuses' Resize' ResourceClaimStatuses' ExtendedResourceClaimStatus':
-  PureWp True
-    (struct.make #v1.PodStatus (alist_val [
-      "ObservedGeneration" ::= #ObservedGeneration';
-      "Phase" ::= #Phase';
-      "Conditions" ::= #Conditions';
-      "Message" ::= #Message';
-      "Reason" ::= #Reason';
-      "NominatedNodeName" ::= #NominatedNodeName';
-      "HostIP" ::= #HostIP';
-      "HostIPs" ::= #HostIPs';
-      "PodIP" ::= #PodIP';
-      "PodIPs" ::= #PodIPs';
-      "StartTime" ::= #StartTime';
-      "InitContainerStatuses" ::= #InitContainerStatuses';
-      "ContainerStatuses" ::= #ContainerStatuses';
-      "QOSClass" ::= #QOSClass';
-      "EphemeralContainerStatuses" ::= #EphemeralContainerStatuses';
-      "Resize" ::= #Resize';
-      "ResourceClaimStatuses" ::= #ResourceClaimStatuses';
-      "ExtendedResourceClaimStatus" ::= #ExtendedResourceClaimStatus'
-    ]))%struct
-    #(PodStatus.mk ObservedGeneration' Phase' Conditions' Message' Reason' NominatedNodeName' HostIP' HostIPs' PodIP' PodIPs' StartTime' InitContainerStatuses' ContainerStatuses' QOSClass' EphemeralContainerStatuses' Resize' ResourceClaimStatuses' ExtendedResourceClaimStatus').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodStatus_struct_fields_split dq l (v : PodStatus.t) :
-  StructFieldsSplit dq l v (
-    "HObservedGeneration" ∷ l ↦s[v1.PodStatus :: "ObservedGeneration"]{dq} v.(PodStatus.ObservedGeneration') ∗
-    "HPhase" ∷ l ↦s[v1.PodStatus :: "Phase"]{dq} v.(PodStatus.Phase') ∗
-    "HConditions" ∷ l ↦s[v1.PodStatus :: "Conditions"]{dq} v.(PodStatus.Conditions') ∗
-    "HMessage" ∷ l ↦s[v1.PodStatus :: "Message"]{dq} v.(PodStatus.Message') ∗
-    "HReason" ∷ l ↦s[v1.PodStatus :: "Reason"]{dq} v.(PodStatus.Reason') ∗
-    "HNominatedNodeName" ∷ l ↦s[v1.PodStatus :: "NominatedNodeName"]{dq} v.(PodStatus.NominatedNodeName') ∗
-    "HHostIP" ∷ l ↦s[v1.PodStatus :: "HostIP"]{dq} v.(PodStatus.HostIP') ∗
-    "HHostIPs" ∷ l ↦s[v1.PodStatus :: "HostIPs"]{dq} v.(PodStatus.HostIPs') ∗
-    "HPodIP" ∷ l ↦s[v1.PodStatus :: "PodIP"]{dq} v.(PodStatus.PodIP') ∗
-    "HPodIPs" ∷ l ↦s[v1.PodStatus :: "PodIPs"]{dq} v.(PodStatus.PodIPs') ∗
-    "HStartTime" ∷ l ↦s[v1.PodStatus :: "StartTime"]{dq} v.(PodStatus.StartTime') ∗
-    "HInitContainerStatuses" ∷ l ↦s[v1.PodStatus :: "InitContainerStatuses"]{dq} v.(PodStatus.InitContainerStatuses') ∗
-    "HContainerStatuses" ∷ l ↦s[v1.PodStatus :: "ContainerStatuses"]{dq} v.(PodStatus.ContainerStatuses') ∗
-    "HQOSClass" ∷ l ↦s[v1.PodStatus :: "QOSClass"]{dq} v.(PodStatus.QOSClass') ∗
-    "HEphemeralContainerStatuses" ∷ l ↦s[v1.PodStatus :: "EphemeralContainerStatuses"]{dq} v.(PodStatus.EphemeralContainerStatuses') ∗
-    "HResize" ∷ l ↦s[v1.PodStatus :: "Resize"]{dq} v.(PodStatus.Resize') ∗
-    "HResourceClaimStatuses" ∷ l ↦s[v1.PodStatus :: "ResourceClaimStatuses"]{dq} v.(PodStatus.ResourceClaimStatuses') ∗
-    "HExtendedResourceClaimStatus" ∷ l ↦s[v1.PodStatus :: "ExtendedResourceClaimStatus"]{dq} v.(PodStatus.ExtendedResourceClaimStatus')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodStatus.ObservedGeneration' v)) (v1.PodStatus) "ObservedGeneration"%go.
-  simpl_one_flatten_struct (# (PodStatus.Phase' v)) (v1.PodStatus) "Phase"%go.
-  simpl_one_flatten_struct (# (PodStatus.Conditions' v)) (v1.PodStatus) "Conditions"%go.
-  simpl_one_flatten_struct (# (PodStatus.Message' v)) (v1.PodStatus) "Message"%go.
-  simpl_one_flatten_struct (# (PodStatus.Reason' v)) (v1.PodStatus) "Reason"%go.
-  simpl_one_flatten_struct (# (PodStatus.NominatedNodeName' v)) (v1.PodStatus) "NominatedNodeName"%go.
-  simpl_one_flatten_struct (# (PodStatus.HostIP' v)) (v1.PodStatus) "HostIP"%go.
-  simpl_one_flatten_struct (# (PodStatus.HostIPs' v)) (v1.PodStatus) "HostIPs"%go.
-  simpl_one_flatten_struct (# (PodStatus.PodIP' v)) (v1.PodStatus) "PodIP"%go.
-  simpl_one_flatten_struct (# (PodStatus.PodIPs' v)) (v1.PodStatus) "PodIPs"%go.
-  simpl_one_flatten_struct (# (PodStatus.StartTime' v)) (v1.PodStatus) "StartTime"%go.
-  simpl_one_flatten_struct (# (PodStatus.InitContainerStatuses' v)) (v1.PodStatus) "InitContainerStatuses"%go.
-  simpl_one_flatten_struct (# (PodStatus.ContainerStatuses' v)) (v1.PodStatus) "ContainerStatuses"%go.
-  simpl_one_flatten_struct (# (PodStatus.QOSClass' v)) (v1.PodStatus) "QOSClass"%go.
-  simpl_one_flatten_struct (# (PodStatus.EphemeralContainerStatuses' v)) (v1.PodStatus) "EphemeralContainerStatuses"%go.
-  simpl_one_flatten_struct (# (PodStatus.Resize' v)) (v1.PodStatus) "Resize"%go.
-  simpl_one_flatten_struct (# (PodStatus.ResourceClaimStatuses' v)) (v1.PodStatus) "ResourceClaimStatuses"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodStatusResult *)
 Module PodStatusResult.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodStatusResult_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodStatusResult.t). Admitted.
+
+#[global] Instance PodStatusResult_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodStatusResult.t) (v1.PodStatusResultⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodStatusResult.
 
-Global Instance bounded_size_PodStatusResult : BoundedTypeSize v1.PodStatusResult.
-Admitted.
-
-Global Instance into_val_PodStatusResult `{ffi_syntax} : IntoVal PodStatusResult.t.
-Admitted.
-
-Global Instance into_val_typed_PodStatusResult `{ffi_syntax} : IntoValTyped PodStatusResult.t v1.PodStatusResult.
-Admitted.
-
-(* type v1.Pod *)
 Module Pod.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : v1.ObjectMeta.t;
-  Spec' : PodSpec.t;
-  Status' : PodStatus.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance Pod_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Pod.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.Pod.t), "TypeMeta"] ↦{dq} v.(v1.Pod.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.Pod.t), "ObjectMeta"] ↦{dq} v.(v1.Pod.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.Pod.t), "Spec"] ↦{dq} v.(v1.Pod.Spec') ∗
+      "Status" ∷ l.[(v1.Pod.t), "Status"] ↦{dq} v.(v1.Pod.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance Pod_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Pod.t) (v1.Podⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Pod_access_load_TypeMeta l (v : (v1.Pod.t)) dq :
+  AccessStrict
+    (l.[(v1.Pod.t), "TypeMeta"] ↦{dq} (v.(v1.Pod.TypeMeta')))
+    (l.[(v1.Pod.t), "TypeMeta"] ↦{dq} (v.(v1.Pod.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Pod_access_store_TypeMeta l (v : (v1.Pod.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.Pod.t), "TypeMeta"] ↦ (v.(v1.Pod.TypeMeta')))
+    (l.[(v1.Pod.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Pod.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Pod_access_load_ObjectMeta l (v : (v1.Pod.t)) dq :
+  AccessStrict
+    (l.[(v1.Pod.t), "ObjectMeta"] ↦{dq} (v.(v1.Pod.ObjectMeta')))
+    (l.[(v1.Pod.t), "ObjectMeta"] ↦{dq} (v.(v1.Pod.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Pod_access_store_ObjectMeta l (v : (v1.Pod.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.Pod.t), "ObjectMeta"] ↦ (v.(v1.Pod.ObjectMeta')))
+    (l.[(v1.Pod.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Pod.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Pod_access_load_Spec l (v : (v1.Pod.t)) dq :
+  AccessStrict
+    (l.[(v1.Pod.t), "Spec"] ↦{dq} (v.(v1.Pod.Spec')))
+    (l.[(v1.Pod.t), "Spec"] ↦{dq} (v.(v1.Pod.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Pod_access_store_Spec l (v : (v1.Pod.t)) Spec' :
+  AccessStrict
+    (l.[(v1.Pod.t), "Spec"] ↦ (v.(v1.Pod.Spec')))
+    (l.[(v1.Pod.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.Pod.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Pod_access_load_Status l (v : (v1.Pod.t)) dq :
+  AccessStrict
+    (l.[(v1.Pod.t), "Status"] ↦{dq} (v.(v1.Pod.Status')))
+    (l.[(v1.Pod.t), "Status"] ↦{dq} (v.(v1.Pod.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Pod_access_store_Status l (v : (v1.Pod.t)) Status' :
+  AccessStrict
+    (l.[(v1.Pod.t), "Status"] ↦ (v.(v1.Pod.Status')))
+    (l.[(v1.Pod.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.Pod.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End Pod.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.Pod.
-#[local] Typeclasses Transparent v1.Pod.
-
-Global Instance Pod_wf : struct.Wf v1.Pod.
-Proof. apply _. Qed.
-
-Global Instance settable_Pod : Settable Pod.t :=
-  settable! Pod.mk < Pod.TypeMeta'; Pod.ObjectMeta'; Pod.Spec'; Pod.Status' >.
-Global Instance into_val_Pod : IntoVal Pod.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.Pod [
-    "TypeMeta" ::= #(Pod.TypeMeta' v);
-    "ObjectMeta" ::= #(Pod.ObjectMeta' v);
-    "Spec" ::= #(Pod.Spec' v);
-    "Status" ::= #(Pod.Status' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_Pod : IntoValTyped Pod.t v1.Pod :=
-{|
-  default_val := Pod.mk (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_Pod_TypeMeta : IntoValStructField "TypeMeta" v1.Pod Pod.TypeMeta'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Pod_ObjectMeta : IntoValStructField "ObjectMeta" v1.Pod Pod.ObjectMeta'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Pod_Spec : IntoValStructField "Spec" v1.Pod Pod.Spec'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_Pod_Status : IntoValStructField "Status" v1.Pod Pod.Status'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_Pod TypeMeta' ObjectMeta' Spec' Status':
-  PureWp True
-    (struct.make #v1.Pod (alist_val [
-      "TypeMeta" ::= #TypeMeta';
-      "ObjectMeta" ::= #ObjectMeta';
-      "Spec" ::= #Spec';
-      "Status" ::= #Status'
-    ]))%struct
-    #(Pod.mk TypeMeta' ObjectMeta' Spec' Status').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance Pod_struct_fields_split dq l (v : Pod.t) :
-  StructFieldsSplit dq l v (
-    "HTypeMeta" ∷ l ↦s[v1.Pod :: "TypeMeta"]{dq} v.(Pod.TypeMeta') ∗
-    "HObjectMeta" ∷ l ↦s[v1.Pod :: "ObjectMeta"]{dq} v.(Pod.ObjectMeta') ∗
-    "HSpec" ∷ l ↦s[v1.Pod :: "Spec"]{dq} v.(Pod.Spec') ∗
-    "HStatus" ∷ l ↦s[v1.Pod :: "Status"]{dq} v.(Pod.Status')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (Pod.TypeMeta' v)) (v1.Pod) "TypeMeta"%go.
-  simpl_one_flatten_struct (# (Pod.ObjectMeta' v)) (v1.Pod) "ObjectMeta"%go.
-  simpl_one_flatten_struct (# (Pod.Spec' v)) (v1.Pod) "Spec"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodList *)
 Module PodList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodList.t). Admitted.
+
+#[global] Instance PodList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodList.t) (v1.PodListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodList.
 
-Global Instance bounded_size_PodList : BoundedTypeSize v1.PodList.
-Admitted.
-
-Global Instance into_val_PodList `{ffi_syntax} : IntoVal PodList.t.
-Admitted.
-
-Global Instance into_val_typed_PodList `{ffi_syntax} : IntoValTyped PodList.t v1.PodList.
-Admitted.
-
-(* type v1.PodTemplateSpec *)
 Module PodTemplateSpec.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  ObjectMeta' : v1.ObjectMeta.t;
-  Spec' : PodSpec.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodTemplateSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodTemplateSpec.t). Admitted.
+
+#[global] Instance PodTemplateSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodTemplateSpec.t) (v1.PodTemplateSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodTemplateSpec.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.PodTemplateSpec.
-#[local] Typeclasses Transparent v1.PodTemplateSpec.
-
-Global Instance PodTemplateSpec_wf : struct.Wf v1.PodTemplateSpec.
-Proof. apply _. Qed.
-
-Global Instance settable_PodTemplateSpec : Settable PodTemplateSpec.t :=
-  settable! PodTemplateSpec.mk < PodTemplateSpec.ObjectMeta'; PodTemplateSpec.Spec' >.
-Global Instance into_val_PodTemplateSpec : IntoVal PodTemplateSpec.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.PodTemplateSpec [
-    "ObjectMeta" ::= #(PodTemplateSpec.ObjectMeta' v);
-    "Spec" ::= #(PodTemplateSpec.Spec' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_PodTemplateSpec : IntoValTyped PodTemplateSpec.t v1.PodTemplateSpec :=
-{|
-  default_val := PodTemplateSpec.mk (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_PodTemplateSpec_ObjectMeta : IntoValStructField "ObjectMeta" v1.PodTemplateSpec PodTemplateSpec.ObjectMeta'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_PodTemplateSpec_Spec : IntoValStructField "Spec" v1.PodTemplateSpec PodTemplateSpec.Spec'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_PodTemplateSpec ObjectMeta' Spec':
-  PureWp True
-    (struct.make #v1.PodTemplateSpec (alist_val [
-      "ObjectMeta" ::= #ObjectMeta';
-      "Spec" ::= #Spec'
-    ]))%struct
-    #(PodTemplateSpec.mk ObjectMeta' Spec').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance PodTemplateSpec_struct_fields_split dq l (v : PodTemplateSpec.t) :
-  StructFieldsSplit dq l v (
-    "HObjectMeta" ∷ l ↦s[v1.PodTemplateSpec :: "ObjectMeta"]{dq} v.(PodTemplateSpec.ObjectMeta') ∗
-    "HSpec" ∷ l ↦s[v1.PodTemplateSpec :: "Spec"]{dq} v.(PodTemplateSpec.Spec')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (PodTemplateSpec.ObjectMeta' v)) (v1.PodTemplateSpec) "ObjectMeta"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.PodTemplate *)
 Module PodTemplate.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodTemplate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodTemplate.t). Admitted.
+
+#[global] Instance PodTemplate_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodTemplate.t) (v1.PodTemplateⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodTemplate.
 
-Global Instance bounded_size_PodTemplate : BoundedTypeSize v1.PodTemplate.
-Admitted.
-
-Global Instance into_val_PodTemplate `{ffi_syntax} : IntoVal PodTemplate.t.
-Admitted.
-
-Global Instance into_val_typed_PodTemplate `{ffi_syntax} : IntoValTyped PodTemplate.t v1.PodTemplate.
-Admitted.
-
-(* type v1.PodTemplateList *)
 Module PodTemplateList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodTemplateList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodTemplateList.t). Admitted.
+
+#[global] Instance PodTemplateList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodTemplateList.t) (v1.PodTemplateListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodTemplateList.
 
-Global Instance bounded_size_PodTemplateList : BoundedTypeSize v1.PodTemplateList.
-Admitted.
-
-Global Instance into_val_PodTemplateList `{ffi_syntax} : IntoVal PodTemplateList.t.
-Admitted.
-
-Global Instance into_val_typed_PodTemplateList `{ffi_syntax} : IntoValTyped PodTemplateList.t v1.PodTemplateList.
-Admitted.
-
-(* type v1.ReplicationControllerSpec *)
 Module ReplicationControllerSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationControllerSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationControllerSpec.t). Admitted.
+
+#[global] Instance ReplicationControllerSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationControllerSpec.t) (v1.ReplicationControllerSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationControllerSpec.
 
-Global Instance bounded_size_ReplicationControllerSpec : BoundedTypeSize v1.ReplicationControllerSpec.
-Admitted.
-
-Global Instance into_val_ReplicationControllerSpec `{ffi_syntax} : IntoVal ReplicationControllerSpec.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationControllerSpec `{ffi_syntax} : IntoValTyped ReplicationControllerSpec.t v1.ReplicationControllerSpec.
-Admitted.
-
-(* type v1.ReplicationControllerStatus *)
 Module ReplicationControllerStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationControllerStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationControllerStatus.t). Admitted.
+
+#[global] Instance ReplicationControllerStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationControllerStatus.t) (v1.ReplicationControllerStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationControllerStatus.
 
-Global Instance bounded_size_ReplicationControllerStatus : BoundedTypeSize v1.ReplicationControllerStatus.
-Admitted.
-
-Global Instance into_val_ReplicationControllerStatus `{ffi_syntax} : IntoVal ReplicationControllerStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationControllerStatus `{ffi_syntax} : IntoValTyped ReplicationControllerStatus.t v1.ReplicationControllerStatus.
-Admitted.
-
-(* type v1.ReplicationControllerConditionType *)
 Module ReplicationControllerConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationControllerConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationControllerConditionType.t). Admitted.
+
+#[global] Instance ReplicationControllerConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationControllerConditionType.t) (v1.ReplicationControllerConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationControllerConditionType.
 
-Global Instance bounded_size_ReplicationControllerConditionType : BoundedTypeSize v1.ReplicationControllerConditionType.
-Admitted.
-
-Global Instance into_val_ReplicationControllerConditionType `{ffi_syntax} : IntoVal ReplicationControllerConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationControllerConditionType `{ffi_syntax} : IntoValTyped ReplicationControllerConditionType.t v1.ReplicationControllerConditionType.
-Admitted.
-
-(* type v1.ReplicationControllerCondition *)
 Module ReplicationControllerCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationControllerCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationControllerCondition.t). Admitted.
+
+#[global] Instance ReplicationControllerCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationControllerCondition.t) (v1.ReplicationControllerConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationControllerCondition.
 
-Global Instance bounded_size_ReplicationControllerCondition : BoundedTypeSize v1.ReplicationControllerCondition.
-Admitted.
-
-Global Instance into_val_ReplicationControllerCondition `{ffi_syntax} : IntoVal ReplicationControllerCondition.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationControllerCondition `{ffi_syntax} : IntoValTyped ReplicationControllerCondition.t v1.ReplicationControllerCondition.
-Admitted.
-
-(* type v1.ReplicationController *)
 Module ReplicationController.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationController_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationController.t). Admitted.
+
+#[global] Instance ReplicationController_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationController.t) (v1.ReplicationControllerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationController.
 
-Global Instance bounded_size_ReplicationController : BoundedTypeSize v1.ReplicationController.
-Admitted.
-
-Global Instance into_val_ReplicationController `{ffi_syntax} : IntoVal ReplicationController.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationController `{ffi_syntax} : IntoValTyped ReplicationController.t v1.ReplicationController.
-Admitted.
-
-(* type v1.ReplicationControllerList *)
 Module ReplicationControllerList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicationControllerList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicationControllerList.t). Admitted.
+
+#[global] Instance ReplicationControllerList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicationControllerList.t) (v1.ReplicationControllerListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicationControllerList.
 
-Global Instance bounded_size_ReplicationControllerList : BoundedTypeSize v1.ReplicationControllerList.
-Admitted.
-
-Global Instance into_val_ReplicationControllerList `{ffi_syntax} : IntoVal ReplicationControllerList.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicationControllerList `{ffi_syntax} : IntoValTyped ReplicationControllerList.t v1.ReplicationControllerList.
-Admitted.
-
-(* type v1.ServiceAffinity *)
 Module ServiceAffinity.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAffinity.t). Admitted.
+
+#[global] Instance ServiceAffinity_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceAffinity.t) (v1.ServiceAffinityⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceAffinity.
 
-Global Instance bounded_size_ServiceAffinity : BoundedTypeSize v1.ServiceAffinity.
-Admitted.
-
-Global Instance into_val_ServiceAffinity `{ffi_syntax} : IntoVal ServiceAffinity.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceAffinity `{ffi_syntax} : IntoValTyped ServiceAffinity.t v1.ServiceAffinity.
-Admitted.
-
-(* type v1.SessionAffinityConfig *)
 Module SessionAffinityConfig.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SessionAffinityConfig_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SessionAffinityConfig.t). Admitted.
+
+#[global] Instance SessionAffinityConfig_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SessionAffinityConfig.t) (v1.SessionAffinityConfigⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SessionAffinityConfig.
 
-Global Instance bounded_size_SessionAffinityConfig : BoundedTypeSize v1.SessionAffinityConfig.
-Admitted.
-
-Global Instance into_val_SessionAffinityConfig `{ffi_syntax} : IntoVal SessionAffinityConfig.t.
-Admitted.
-
-Global Instance into_val_typed_SessionAffinityConfig `{ffi_syntax} : IntoValTyped SessionAffinityConfig.t v1.SessionAffinityConfig.
-Admitted.
-
-(* type v1.ClientIPConfig *)
 Module ClientIPConfig.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ClientIPConfig_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ClientIPConfig.t). Admitted.
+
+#[global] Instance ClientIPConfig_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ClientIPConfig.t) (v1.ClientIPConfigⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ClientIPConfig.
 
-Global Instance bounded_size_ClientIPConfig : BoundedTypeSize v1.ClientIPConfig.
-Admitted.
-
-Global Instance into_val_ClientIPConfig `{ffi_syntax} : IntoVal ClientIPConfig.t.
-Admitted.
-
-Global Instance into_val_typed_ClientIPConfig `{ffi_syntax} : IntoValTyped ClientIPConfig.t v1.ClientIPConfig.
-Admitted.
-
-(* type v1.ServiceType *)
 Module ServiceType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceType.t). Admitted.
+
+#[global] Instance ServiceType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceType.t) (v1.ServiceTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceType.
 
-Global Instance bounded_size_ServiceType : BoundedTypeSize v1.ServiceType.
-Admitted.
-
-Global Instance into_val_ServiceType `{ffi_syntax} : IntoVal ServiceType.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceType `{ffi_syntax} : IntoValTyped ServiceType.t v1.ServiceType.
-Admitted.
-
-(* type v1.ServiceInternalTrafficPolicy *)
 Module ServiceInternalTrafficPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceInternalTrafficPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceInternalTrafficPolicy.t). Admitted.
+
+#[global] Instance ServiceInternalTrafficPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceInternalTrafficPolicy.t) (v1.ServiceInternalTrafficPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceInternalTrafficPolicy.
 
-Global Instance bounded_size_ServiceInternalTrafficPolicy : BoundedTypeSize v1.ServiceInternalTrafficPolicy.
-Admitted.
-
-Global Instance into_val_ServiceInternalTrafficPolicy `{ffi_syntax} : IntoVal ServiceInternalTrafficPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceInternalTrafficPolicy `{ffi_syntax} : IntoValTyped ServiceInternalTrafficPolicy.t v1.ServiceInternalTrafficPolicy.
-Admitted.
-
-(* type v1.ServiceInternalTrafficPolicyType *)
-Module ServiceInternalTrafficPolicyType.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End ServiceInternalTrafficPolicyType.
-
-Global Instance bounded_size_ServiceInternalTrafficPolicyType : BoundedTypeSize v1.ServiceInternalTrafficPolicyType.
-Admitted.
-
-Global Instance into_val_ServiceInternalTrafficPolicyType `{ffi_syntax} : IntoVal ServiceInternalTrafficPolicyType.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceInternalTrafficPolicyType `{ffi_syntax} : IntoValTyped ServiceInternalTrafficPolicyType.t v1.ServiceInternalTrafficPolicyType.
-Admitted.
-
-(* type v1.ServiceExternalTrafficPolicy *)
 Module ServiceExternalTrafficPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceExternalTrafficPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceExternalTrafficPolicy.t). Admitted.
+
+#[global] Instance ServiceExternalTrafficPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceExternalTrafficPolicy.t) (v1.ServiceExternalTrafficPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceExternalTrafficPolicy.
 
-Global Instance bounded_size_ServiceExternalTrafficPolicy : BoundedTypeSize v1.ServiceExternalTrafficPolicy.
-Admitted.
-
-Global Instance into_val_ServiceExternalTrafficPolicy `{ffi_syntax} : IntoVal ServiceExternalTrafficPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceExternalTrafficPolicy `{ffi_syntax} : IntoValTyped ServiceExternalTrafficPolicy.t v1.ServiceExternalTrafficPolicy.
-Admitted.
-
-(* type v1.ServiceExternalTrafficPolicyType *)
-Module ServiceExternalTrafficPolicyType.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End ServiceExternalTrafficPolicyType.
-
-Global Instance bounded_size_ServiceExternalTrafficPolicyType : BoundedTypeSize v1.ServiceExternalTrafficPolicyType.
-Admitted.
-
-Global Instance into_val_ServiceExternalTrafficPolicyType `{ffi_syntax} : IntoVal ServiceExternalTrafficPolicyType.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceExternalTrafficPolicyType `{ffi_syntax} : IntoValTyped ServiceExternalTrafficPolicyType.t v1.ServiceExternalTrafficPolicyType.
-Admitted.
-
-(* type v1.ServiceStatus *)
 Module ServiceStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceStatus.t). Admitted.
+
+#[global] Instance ServiceStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceStatus.t) (v1.ServiceStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceStatus.
 
-Global Instance bounded_size_ServiceStatus : BoundedTypeSize v1.ServiceStatus.
-Admitted.
-
-Global Instance into_val_ServiceStatus `{ffi_syntax} : IntoVal ServiceStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceStatus `{ffi_syntax} : IntoValTyped ServiceStatus.t v1.ServiceStatus.
-Admitted.
-
-(* type v1.LoadBalancerStatus *)
 Module LoadBalancerStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LoadBalancerStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LoadBalancerStatus.t). Admitted.
+
+#[global] Instance LoadBalancerStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LoadBalancerStatus.t) (v1.LoadBalancerStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LoadBalancerStatus.
 
-Global Instance bounded_size_LoadBalancerStatus : BoundedTypeSize v1.LoadBalancerStatus.
-Admitted.
-
-Global Instance into_val_LoadBalancerStatus `{ffi_syntax} : IntoVal LoadBalancerStatus.t.
-Admitted.
-
-Global Instance into_val_typed_LoadBalancerStatus `{ffi_syntax} : IntoValTyped LoadBalancerStatus.t v1.LoadBalancerStatus.
-Admitted.
-
-(* type v1.LoadBalancerIngress *)
 Module LoadBalancerIngress.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LoadBalancerIngress_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LoadBalancerIngress.t). Admitted.
+
+#[global] Instance LoadBalancerIngress_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LoadBalancerIngress.t) (v1.LoadBalancerIngressⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LoadBalancerIngress.
 
-Global Instance bounded_size_LoadBalancerIngress : BoundedTypeSize v1.LoadBalancerIngress.
-Admitted.
-
-Global Instance into_val_LoadBalancerIngress `{ffi_syntax} : IntoVal LoadBalancerIngress.t.
-Admitted.
-
-Global Instance into_val_typed_LoadBalancerIngress `{ffi_syntax} : IntoValTyped LoadBalancerIngress.t v1.LoadBalancerIngress.
-Admitted.
-
-(* type v1.IPFamily *)
 Module IPFamily.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance IPFamily_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.IPFamily.t). Admitted.
+
+#[global] Instance IPFamily_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.IPFamily.t) (v1.IPFamilyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End IPFamily.
 
-Global Instance bounded_size_IPFamily : BoundedTypeSize v1.IPFamily.
-Admitted.
-
-Global Instance into_val_IPFamily `{ffi_syntax} : IntoVal IPFamily.t.
-Admitted.
-
-Global Instance into_val_typed_IPFamily `{ffi_syntax} : IntoValTyped IPFamily.t v1.IPFamily.
-Admitted.
-
-(* type v1.IPFamilyPolicy *)
 Module IPFamilyPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance IPFamilyPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.IPFamilyPolicy.t). Admitted.
+
+#[global] Instance IPFamilyPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.IPFamilyPolicy.t) (v1.IPFamilyPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End IPFamilyPolicy.
 
-Global Instance bounded_size_IPFamilyPolicy : BoundedTypeSize v1.IPFamilyPolicy.
-Admitted.
-
-Global Instance into_val_IPFamilyPolicy `{ffi_syntax} : IntoVal IPFamilyPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_IPFamilyPolicy `{ffi_syntax} : IntoValTyped IPFamilyPolicy.t v1.IPFamilyPolicy.
-Admitted.
-
-(* type v1.IPFamilyPolicyType *)
-Module IPFamilyPolicyType.
-Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
-End def.
-End IPFamilyPolicyType.
-
-Global Instance bounded_size_IPFamilyPolicyType : BoundedTypeSize v1.IPFamilyPolicyType.
-Admitted.
-
-Global Instance into_val_IPFamilyPolicyType `{ffi_syntax} : IntoVal IPFamilyPolicyType.t.
-Admitted.
-
-Global Instance into_val_typed_IPFamilyPolicyType `{ffi_syntax} : IntoValTyped IPFamilyPolicyType.t v1.IPFamilyPolicyType.
-Admitted.
-
-(* type v1.ServiceSpec *)
 Module ServiceSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceSpec.t). Admitted.
+
+#[global] Instance ServiceSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceSpec.t) (v1.ServiceSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceSpec.
 
-Global Instance bounded_size_ServiceSpec : BoundedTypeSize v1.ServiceSpec.
-Admitted.
-
-Global Instance into_val_ServiceSpec `{ffi_syntax} : IntoVal ServiceSpec.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceSpec `{ffi_syntax} : IntoValTyped ServiceSpec.t v1.ServiceSpec.
-Admitted.
-
-(* type v1.ServicePort *)
 Module ServicePort.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServicePort_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServicePort.t). Admitted.
+
+#[global] Instance ServicePort_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServicePort.t) (v1.ServicePortⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServicePort.
 
-Global Instance bounded_size_ServicePort : BoundedTypeSize v1.ServicePort.
-Admitted.
-
-Global Instance into_val_ServicePort `{ffi_syntax} : IntoVal ServicePort.t.
-Admitted.
-
-Global Instance into_val_typed_ServicePort `{ffi_syntax} : IntoValTyped ServicePort.t v1.ServicePort.
-Admitted.
-
-(* type v1.Service *)
 Module Service.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Service_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Service.t). Admitted.
+
+#[global] Instance Service_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Service.t) (v1.Serviceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Service.
 
-Global Instance bounded_size_Service : BoundedTypeSize v1.Service.
-Admitted.
-
-Global Instance into_val_Service `{ffi_syntax} : IntoVal Service.t.
-Admitted.
-
-Global Instance into_val_typed_Service `{ffi_syntax} : IntoValTyped Service.t v1.Service.
-Admitted.
-
-(* type v1.ServiceList *)
 Module ServiceList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceList.t). Admitted.
+
+#[global] Instance ServiceList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceList.t) (v1.ServiceListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceList.
 
-Global Instance bounded_size_ServiceList : BoundedTypeSize v1.ServiceList.
-Admitted.
-
-Global Instance into_val_ServiceList `{ffi_syntax} : IntoVal ServiceList.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceList `{ffi_syntax} : IntoValTyped ServiceList.t v1.ServiceList.
-Admitted.
-
-(* type v1.ServiceAccount *)
 Module ServiceAccount.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceAccount_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAccount.t). Admitted.
+
+#[global] Instance ServiceAccount_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceAccount.t) (v1.ServiceAccountⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceAccount.
 
-Global Instance bounded_size_ServiceAccount : BoundedTypeSize v1.ServiceAccount.
-Admitted.
-
-Global Instance into_val_ServiceAccount `{ffi_syntax} : IntoVal ServiceAccount.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceAccount `{ffi_syntax} : IntoValTyped ServiceAccount.t v1.ServiceAccount.
-Admitted.
-
-(* type v1.ServiceAccountList *)
 Module ServiceAccountList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceAccountList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAccountList.t). Admitted.
+
+#[global] Instance ServiceAccountList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceAccountList.t) (v1.ServiceAccountListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceAccountList.
 
-Global Instance bounded_size_ServiceAccountList : BoundedTypeSize v1.ServiceAccountList.
-Admitted.
-
-Global Instance into_val_ServiceAccountList `{ffi_syntax} : IntoVal ServiceAccountList.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceAccountList `{ffi_syntax} : IntoValTyped ServiceAccountList.t v1.ServiceAccountList.
-Admitted.
-
-(* type v1.Endpoints *)
 Module Endpoints.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Endpoints_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Endpoints.t). Admitted.
+
+#[global] Instance Endpoints_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Endpoints.t) (v1.Endpointsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Endpoints.
 
-Global Instance bounded_size_Endpoints : BoundedTypeSize v1.Endpoints.
-Admitted.
-
-Global Instance into_val_Endpoints `{ffi_syntax} : IntoVal Endpoints.t.
-Admitted.
-
-Global Instance into_val_typed_Endpoints `{ffi_syntax} : IntoValTyped Endpoints.t v1.Endpoints.
-Admitted.
-
-(* type v1.EndpointSubset *)
 Module EndpointSubset.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EndpointSubset_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EndpointSubset.t). Admitted.
+
+#[global] Instance EndpointSubset_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EndpointSubset.t) (v1.EndpointSubsetⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EndpointSubset.
 
-Global Instance bounded_size_EndpointSubset : BoundedTypeSize v1.EndpointSubset.
-Admitted.
-
-Global Instance into_val_EndpointSubset `{ffi_syntax} : IntoVal EndpointSubset.t.
-Admitted.
-
-Global Instance into_val_typed_EndpointSubset `{ffi_syntax} : IntoValTyped EndpointSubset.t v1.EndpointSubset.
-Admitted.
-
-(* type v1.EndpointAddress *)
 Module EndpointAddress.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EndpointAddress_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EndpointAddress.t). Admitted.
+
+#[global] Instance EndpointAddress_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EndpointAddress.t) (v1.EndpointAddressⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EndpointAddress.
 
-Global Instance bounded_size_EndpointAddress : BoundedTypeSize v1.EndpointAddress.
-Admitted.
-
-Global Instance into_val_EndpointAddress `{ffi_syntax} : IntoVal EndpointAddress.t.
-Admitted.
-
-Global Instance into_val_typed_EndpointAddress `{ffi_syntax} : IntoValTyped EndpointAddress.t v1.EndpointAddress.
-Admitted.
-
-(* type v1.EndpointPort *)
 Module EndpointPort.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EndpointPort_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EndpointPort.t). Admitted.
+
+#[global] Instance EndpointPort_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EndpointPort.t) (v1.EndpointPortⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EndpointPort.
 
-Global Instance bounded_size_EndpointPort : BoundedTypeSize v1.EndpointPort.
-Admitted.
-
-Global Instance into_val_EndpointPort `{ffi_syntax} : IntoVal EndpointPort.t.
-Admitted.
-
-Global Instance into_val_typed_EndpointPort `{ffi_syntax} : IntoValTyped EndpointPort.t v1.EndpointPort.
-Admitted.
-
-(* type v1.EndpointsList *)
 Module EndpointsList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EndpointsList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EndpointsList.t). Admitted.
+
+#[global] Instance EndpointsList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EndpointsList.t) (v1.EndpointsListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EndpointsList.
 
-Global Instance bounded_size_EndpointsList : BoundedTypeSize v1.EndpointsList.
-Admitted.
-
-Global Instance into_val_EndpointsList `{ffi_syntax} : IntoVal EndpointsList.t.
-Admitted.
-
-Global Instance into_val_typed_EndpointsList `{ffi_syntax} : IntoValTyped EndpointsList.t v1.EndpointsList.
-Admitted.
-
-(* type v1.NodeSpec *)
 Module NodeSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSpec.t). Admitted.
+
+#[global] Instance NodeSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSpec.t) (v1.NodeSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSpec.
 
-Global Instance bounded_size_NodeSpec : BoundedTypeSize v1.NodeSpec.
-Admitted.
-
-Global Instance into_val_NodeSpec `{ffi_syntax} : IntoVal NodeSpec.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSpec `{ffi_syntax} : IntoValTyped NodeSpec.t v1.NodeSpec.
-Admitted.
-
-(* type v1.NodeConfigSource *)
 Module NodeConfigSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeConfigSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeConfigSource.t). Admitted.
+
+#[global] Instance NodeConfigSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeConfigSource.t) (v1.NodeConfigSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeConfigSource.
 
-Global Instance bounded_size_NodeConfigSource : BoundedTypeSize v1.NodeConfigSource.
-Admitted.
-
-Global Instance into_val_NodeConfigSource `{ffi_syntax} : IntoVal NodeConfigSource.t.
-Admitted.
-
-Global Instance into_val_typed_NodeConfigSource `{ffi_syntax} : IntoValTyped NodeConfigSource.t v1.NodeConfigSource.
-Admitted.
-
-(* type v1.ConfigMapNodeConfigSource *)
 Module ConfigMapNodeConfigSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapNodeConfigSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapNodeConfigSource.t). Admitted.
+
+#[global] Instance ConfigMapNodeConfigSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapNodeConfigSource.t) (v1.ConfigMapNodeConfigSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapNodeConfigSource.
 
-Global Instance bounded_size_ConfigMapNodeConfigSource : BoundedTypeSize v1.ConfigMapNodeConfigSource.
-Admitted.
-
-Global Instance into_val_ConfigMapNodeConfigSource `{ffi_syntax} : IntoVal ConfigMapNodeConfigSource.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapNodeConfigSource `{ffi_syntax} : IntoValTyped ConfigMapNodeConfigSource.t v1.ConfigMapNodeConfigSource.
-Admitted.
-
-(* type v1.DaemonEndpoint *)
 Module DaemonEndpoint.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonEndpoint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonEndpoint.t). Admitted.
+
+#[global] Instance DaemonEndpoint_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonEndpoint.t) (v1.DaemonEndpointⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonEndpoint.
 
-Global Instance bounded_size_DaemonEndpoint : BoundedTypeSize v1.DaemonEndpoint.
-Admitted.
-
-Global Instance into_val_DaemonEndpoint `{ffi_syntax} : IntoVal DaemonEndpoint.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonEndpoint `{ffi_syntax} : IntoValTyped DaemonEndpoint.t v1.DaemonEndpoint.
-Admitted.
-
-(* type v1.NodeDaemonEndpoints *)
 Module NodeDaemonEndpoints.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeDaemonEndpoints_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeDaemonEndpoints.t). Admitted.
+
+#[global] Instance NodeDaemonEndpoints_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeDaemonEndpoints.t) (v1.NodeDaemonEndpointsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeDaemonEndpoints.
 
-Global Instance bounded_size_NodeDaemonEndpoints : BoundedTypeSize v1.NodeDaemonEndpoints.
-Admitted.
-
-Global Instance into_val_NodeDaemonEndpoints `{ffi_syntax} : IntoVal NodeDaemonEndpoints.t.
-Admitted.
-
-Global Instance into_val_typed_NodeDaemonEndpoints `{ffi_syntax} : IntoValTyped NodeDaemonEndpoints.t v1.NodeDaemonEndpoints.
-Admitted.
-
-(* type v1.NodeRuntimeHandlerFeatures *)
 Module NodeRuntimeHandlerFeatures.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeRuntimeHandlerFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandlerFeatures.t). Admitted.
+
+#[global] Instance NodeRuntimeHandlerFeatures_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeRuntimeHandlerFeatures.t) (v1.NodeRuntimeHandlerFeaturesⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeRuntimeHandlerFeatures.
 
-Global Instance bounded_size_NodeRuntimeHandlerFeatures : BoundedTypeSize v1.NodeRuntimeHandlerFeatures.
-Admitted.
-
-Global Instance into_val_NodeRuntimeHandlerFeatures `{ffi_syntax} : IntoVal NodeRuntimeHandlerFeatures.t.
-Admitted.
-
-Global Instance into_val_typed_NodeRuntimeHandlerFeatures `{ffi_syntax} : IntoValTyped NodeRuntimeHandlerFeatures.t v1.NodeRuntimeHandlerFeatures.
-Admitted.
-
-(* type v1.NodeRuntimeHandler *)
 Module NodeRuntimeHandler.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeRuntimeHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandler.t). Admitted.
+
+#[global] Instance NodeRuntimeHandler_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeRuntimeHandler.t) (v1.NodeRuntimeHandlerⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeRuntimeHandler.
 
-Global Instance bounded_size_NodeRuntimeHandler : BoundedTypeSize v1.NodeRuntimeHandler.
-Admitted.
-
-Global Instance into_val_NodeRuntimeHandler `{ffi_syntax} : IntoVal NodeRuntimeHandler.t.
-Admitted.
-
-Global Instance into_val_typed_NodeRuntimeHandler `{ffi_syntax} : IntoValTyped NodeRuntimeHandler.t v1.NodeRuntimeHandler.
-Admitted.
-
-(* type v1.NodeFeatures *)
 Module NodeFeatures.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeFeatures.t). Admitted.
+
+#[global] Instance NodeFeatures_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeFeatures.t) (v1.NodeFeaturesⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeFeatures.
 
-Global Instance bounded_size_NodeFeatures : BoundedTypeSize v1.NodeFeatures.
-Admitted.
-
-Global Instance into_val_NodeFeatures `{ffi_syntax} : IntoVal NodeFeatures.t.
-Admitted.
-
-Global Instance into_val_typed_NodeFeatures `{ffi_syntax} : IntoValTyped NodeFeatures.t v1.NodeFeatures.
-Admitted.
-
-(* type v1.NodeSystemInfo *)
 Module NodeSystemInfo.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSystemInfo_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSystemInfo.t). Admitted.
+
+#[global] Instance NodeSystemInfo_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSystemInfo.t) (v1.NodeSystemInfoⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSystemInfo.
 
-Global Instance bounded_size_NodeSystemInfo : BoundedTypeSize v1.NodeSystemInfo.
-Admitted.
-
-Global Instance into_val_NodeSystemInfo `{ffi_syntax} : IntoVal NodeSystemInfo.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSystemInfo `{ffi_syntax} : IntoValTyped NodeSystemInfo.t v1.NodeSystemInfo.
-Admitted.
-
-(* type v1.NodeSwapStatus *)
 Module NodeSwapStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeSwapStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSwapStatus.t). Admitted.
+
+#[global] Instance NodeSwapStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeSwapStatus.t) (v1.NodeSwapStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeSwapStatus.
 
-Global Instance bounded_size_NodeSwapStatus : BoundedTypeSize v1.NodeSwapStatus.
-Admitted.
-
-Global Instance into_val_NodeSwapStatus `{ffi_syntax} : IntoVal NodeSwapStatus.t.
-Admitted.
-
-Global Instance into_val_typed_NodeSwapStatus `{ffi_syntax} : IntoValTyped NodeSwapStatus.t v1.NodeSwapStatus.
-Admitted.
-
-(* type v1.NodeConfigStatus *)
 Module NodeConfigStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeConfigStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeConfigStatus.t). Admitted.
+
+#[global] Instance NodeConfigStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeConfigStatus.t) (v1.NodeConfigStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeConfigStatus.
 
-Global Instance bounded_size_NodeConfigStatus : BoundedTypeSize v1.NodeConfigStatus.
-Admitted.
-
-Global Instance into_val_NodeConfigStatus `{ffi_syntax} : IntoVal NodeConfigStatus.t.
-Admitted.
-
-Global Instance into_val_typed_NodeConfigStatus `{ffi_syntax} : IntoValTyped NodeConfigStatus.t v1.NodeConfigStatus.
-Admitted.
-
-(* type v1.NodeStatus *)
 Module NodeStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeStatus.t). Admitted.
+
+#[global] Instance NodeStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeStatus.t) (v1.NodeStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeStatus.
 
-Global Instance bounded_size_NodeStatus : BoundedTypeSize v1.NodeStatus.
-Admitted.
-
-Global Instance into_val_NodeStatus `{ffi_syntax} : IntoVal NodeStatus.t.
-Admitted.
-
-Global Instance into_val_typed_NodeStatus `{ffi_syntax} : IntoValTyped NodeStatus.t v1.NodeStatus.
-Admitted.
-
-(* type v1.UniqueVolumeName *)
 Module UniqueVolumeName.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance UniqueVolumeName_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.UniqueVolumeName.t). Admitted.
+
+#[global] Instance UniqueVolumeName_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.UniqueVolumeName.t) (v1.UniqueVolumeNameⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End UniqueVolumeName.
 
-Global Instance bounded_size_UniqueVolumeName : BoundedTypeSize v1.UniqueVolumeName.
-Admitted.
-
-Global Instance into_val_UniqueVolumeName `{ffi_syntax} : IntoVal UniqueVolumeName.t.
-Admitted.
-
-Global Instance into_val_typed_UniqueVolumeName `{ffi_syntax} : IntoValTyped UniqueVolumeName.t v1.UniqueVolumeName.
-Admitted.
-
-(* type v1.AttachedVolume *)
 Module AttachedVolume.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AttachedVolume_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AttachedVolume.t). Admitted.
+
+#[global] Instance AttachedVolume_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AttachedVolume.t) (v1.AttachedVolumeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AttachedVolume.
 
-Global Instance bounded_size_AttachedVolume : BoundedTypeSize v1.AttachedVolume.
-Admitted.
-
-Global Instance into_val_AttachedVolume `{ffi_syntax} : IntoVal AttachedVolume.t.
-Admitted.
-
-Global Instance into_val_typed_AttachedVolume `{ffi_syntax} : IntoValTyped AttachedVolume.t v1.AttachedVolume.
-Admitted.
-
-(* type v1.AvoidPods *)
 Module AvoidPods.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance AvoidPods_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AvoidPods.t). Admitted.
+
+#[global] Instance AvoidPods_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.AvoidPods.t) (v1.AvoidPodsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End AvoidPods.
 
-Global Instance bounded_size_AvoidPods : BoundedTypeSize v1.AvoidPods.
-Admitted.
-
-Global Instance into_val_AvoidPods `{ffi_syntax} : IntoVal AvoidPods.t.
-Admitted.
-
-Global Instance into_val_typed_AvoidPods `{ffi_syntax} : IntoValTyped AvoidPods.t v1.AvoidPods.
-Admitted.
-
-(* type v1.PreferAvoidPodsEntry *)
 Module PreferAvoidPodsEntry.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PreferAvoidPodsEntry_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PreferAvoidPodsEntry.t). Admitted.
+
+#[global] Instance PreferAvoidPodsEntry_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PreferAvoidPodsEntry.t) (v1.PreferAvoidPodsEntryⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PreferAvoidPodsEntry.
 
-Global Instance bounded_size_PreferAvoidPodsEntry : BoundedTypeSize v1.PreferAvoidPodsEntry.
-Admitted.
-
-Global Instance into_val_PreferAvoidPodsEntry `{ffi_syntax} : IntoVal PreferAvoidPodsEntry.t.
-Admitted.
-
-Global Instance into_val_typed_PreferAvoidPodsEntry `{ffi_syntax} : IntoValTyped PreferAvoidPodsEntry.t v1.PreferAvoidPodsEntry.
-Admitted.
-
-(* type v1.PodSignature *)
 Module PodSignature.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodSignature_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSignature.t). Admitted.
+
+#[global] Instance PodSignature_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodSignature.t) (v1.PodSignatureⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodSignature.
 
-Global Instance bounded_size_PodSignature : BoundedTypeSize v1.PodSignature.
-Admitted.
-
-Global Instance into_val_PodSignature `{ffi_syntax} : IntoVal PodSignature.t.
-Admitted.
-
-Global Instance into_val_typed_PodSignature `{ffi_syntax} : IntoValTyped PodSignature.t v1.PodSignature.
-Admitted.
-
-(* type v1.ContainerImage *)
 Module ContainerImage.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ContainerImage_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerImage.t). Admitted.
+
+#[global] Instance ContainerImage_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ContainerImage.t) (v1.ContainerImageⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ContainerImage.
 
-Global Instance bounded_size_ContainerImage : BoundedTypeSize v1.ContainerImage.
-Admitted.
-
-Global Instance into_val_ContainerImage `{ffi_syntax} : IntoVal ContainerImage.t.
-Admitted.
-
-Global Instance into_val_typed_ContainerImage `{ffi_syntax} : IntoValTyped ContainerImage.t v1.ContainerImage.
-Admitted.
-
-(* type v1.NodePhase *)
 Module NodePhase.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodePhase_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodePhase.t). Admitted.
+
+#[global] Instance NodePhase_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodePhase.t) (v1.NodePhaseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodePhase.
 
-Global Instance bounded_size_NodePhase : BoundedTypeSize v1.NodePhase.
-Admitted.
-
-Global Instance into_val_NodePhase `{ffi_syntax} : IntoVal NodePhase.t.
-Admitted.
-
-Global Instance into_val_typed_NodePhase `{ffi_syntax} : IntoValTyped NodePhase.t v1.NodePhase.
-Admitted.
-
-(* type v1.NodeConditionType *)
 Module NodeConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeConditionType.t). Admitted.
+
+#[global] Instance NodeConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeConditionType.t) (v1.NodeConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeConditionType.
 
-Global Instance bounded_size_NodeConditionType : BoundedTypeSize v1.NodeConditionType.
-Admitted.
-
-Global Instance into_val_NodeConditionType `{ffi_syntax} : IntoVal NodeConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_NodeConditionType `{ffi_syntax} : IntoValTyped NodeConditionType.t v1.NodeConditionType.
-Admitted.
-
-(* type v1.NodeCondition *)
 Module NodeCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeCondition.t). Admitted.
+
+#[global] Instance NodeCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeCondition.t) (v1.NodeConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeCondition.
 
-Global Instance bounded_size_NodeCondition : BoundedTypeSize v1.NodeCondition.
-Admitted.
-
-Global Instance into_val_NodeCondition `{ffi_syntax} : IntoVal NodeCondition.t.
-Admitted.
-
-Global Instance into_val_typed_NodeCondition `{ffi_syntax} : IntoValTyped NodeCondition.t v1.NodeCondition.
-Admitted.
-
-(* type v1.NodeAddressType *)
 Module NodeAddressType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeAddressType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeAddressType.t). Admitted.
+
+#[global] Instance NodeAddressType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeAddressType.t) (v1.NodeAddressTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeAddressType.
 
-Global Instance bounded_size_NodeAddressType : BoundedTypeSize v1.NodeAddressType.
-Admitted.
-
-Global Instance into_val_NodeAddressType `{ffi_syntax} : IntoVal NodeAddressType.t.
-Admitted.
-
-Global Instance into_val_typed_NodeAddressType `{ffi_syntax} : IntoValTyped NodeAddressType.t v1.NodeAddressType.
-Admitted.
-
-(* type v1.NodeAddress *)
 Module NodeAddress.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeAddress_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeAddress.t). Admitted.
+
+#[global] Instance NodeAddress_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeAddress.t) (v1.NodeAddressⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeAddress.
 
-Global Instance bounded_size_NodeAddress : BoundedTypeSize v1.NodeAddress.
-Admitted.
-
-Global Instance into_val_NodeAddress `{ffi_syntax} : IntoVal NodeAddress.t.
-Admitted.
-
-Global Instance into_val_typed_NodeAddress `{ffi_syntax} : IntoValTyped NodeAddress.t v1.NodeAddress.
-Admitted.
-
-(* type v1.ResourceName *)
 Module ResourceName.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceName_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceName.t). Admitted.
+
+#[global] Instance ResourceName_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceName.t) (v1.ResourceNameⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceName.
 
-Global Instance bounded_size_ResourceName : BoundedTypeSize v1.ResourceName.
-Admitted.
+Module ResourceList.
+Section def.
 
-Global Instance into_val_ResourceName `{ffi_syntax} : IntoVal ResourceName.t.
-Admitted.
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
 
-Global Instance into_val_typed_ResourceName `{ffi_syntax} : IntoValTyped ResourceName.t v1.ResourceName.
-Admitted.
+Local Set Default Proof Using "All".
 
-(* type v1.Node *)
+#[global] Instance ResourceList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceList.t). Admitted.
+
+#[global] Instance ResourceList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceList.t) (v1.ResourceListⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End ResourceList.
+
 Module Node.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Node_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Node.t). Admitted.
+
+#[global] Instance Node_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Node.t) (v1.Nodeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Node.
 
-Global Instance bounded_size_Node : BoundedTypeSize v1.Node.
-Admitted.
-
-Global Instance into_val_Node `{ffi_syntax} : IntoVal Node.t.
-Admitted.
-
-Global Instance into_val_typed_Node `{ffi_syntax} : IntoValTyped Node.t v1.Node.
-Admitted.
-
-(* type v1.NodeList *)
 Module NodeList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeList.t). Admitted.
+
+#[global] Instance NodeList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeList.t) (v1.NodeListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeList.
 
-Global Instance bounded_size_NodeList : BoundedTypeSize v1.NodeList.
-Admitted.
-
-Global Instance into_val_NodeList `{ffi_syntax} : IntoVal NodeList.t.
-Admitted.
-
-Global Instance into_val_typed_NodeList `{ffi_syntax} : IntoValTyped NodeList.t v1.NodeList.
-Admitted.
-
-(* type v1.FinalizerName *)
 Module FinalizerName.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance FinalizerName_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FinalizerName.t). Admitted.
+
+#[global] Instance FinalizerName_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.FinalizerName.t) (v1.FinalizerNameⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End FinalizerName.
 
-Global Instance bounded_size_FinalizerName : BoundedTypeSize v1.FinalizerName.
-Admitted.
-
-Global Instance into_val_FinalizerName `{ffi_syntax} : IntoVal FinalizerName.t.
-Admitted.
-
-Global Instance into_val_typed_FinalizerName `{ffi_syntax} : IntoValTyped FinalizerName.t v1.FinalizerName.
-Admitted.
-
-(* type v1.NamespaceSpec *)
 Module NamespaceSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespaceSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespaceSpec.t). Admitted.
+
+#[global] Instance NamespaceSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespaceSpec.t) (v1.NamespaceSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespaceSpec.
 
-Global Instance bounded_size_NamespaceSpec : BoundedTypeSize v1.NamespaceSpec.
-Admitted.
-
-Global Instance into_val_NamespaceSpec `{ffi_syntax} : IntoVal NamespaceSpec.t.
-Admitted.
-
-Global Instance into_val_typed_NamespaceSpec `{ffi_syntax} : IntoValTyped NamespaceSpec.t v1.NamespaceSpec.
-Admitted.
-
-(* type v1.NamespaceStatus *)
 Module NamespaceStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespaceStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespaceStatus.t). Admitted.
+
+#[global] Instance NamespaceStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespaceStatus.t) (v1.NamespaceStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespaceStatus.
 
-Global Instance bounded_size_NamespaceStatus : BoundedTypeSize v1.NamespaceStatus.
-Admitted.
-
-Global Instance into_val_NamespaceStatus `{ffi_syntax} : IntoVal NamespaceStatus.t.
-Admitted.
-
-Global Instance into_val_typed_NamespaceStatus `{ffi_syntax} : IntoValTyped NamespaceStatus.t v1.NamespaceStatus.
-Admitted.
-
-(* type v1.NamespacePhase *)
 Module NamespacePhase.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespacePhase_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespacePhase.t). Admitted.
+
+#[global] Instance NamespacePhase_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespacePhase.t) (v1.NamespacePhaseⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespacePhase.
 
-Global Instance bounded_size_NamespacePhase : BoundedTypeSize v1.NamespacePhase.
-Admitted.
-
-Global Instance into_val_NamespacePhase `{ffi_syntax} : IntoVal NamespacePhase.t.
-Admitted.
-
-Global Instance into_val_typed_NamespacePhase `{ffi_syntax} : IntoValTyped NamespacePhase.t v1.NamespacePhase.
-Admitted.
-
-(* type v1.NamespaceConditionType *)
 Module NamespaceConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespaceConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespaceConditionType.t). Admitted.
+
+#[global] Instance NamespaceConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespaceConditionType.t) (v1.NamespaceConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespaceConditionType.
 
-Global Instance bounded_size_NamespaceConditionType : BoundedTypeSize v1.NamespaceConditionType.
-Admitted.
-
-Global Instance into_val_NamespaceConditionType `{ffi_syntax} : IntoVal NamespaceConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_NamespaceConditionType `{ffi_syntax} : IntoValTyped NamespaceConditionType.t v1.NamespaceConditionType.
-Admitted.
-
-(* type v1.NamespaceCondition *)
 Module NamespaceCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespaceCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespaceCondition.t). Admitted.
+
+#[global] Instance NamespaceCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespaceCondition.t) (v1.NamespaceConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespaceCondition.
 
-Global Instance bounded_size_NamespaceCondition : BoundedTypeSize v1.NamespaceCondition.
-Admitted.
-
-Global Instance into_val_NamespaceCondition `{ffi_syntax} : IntoVal NamespaceCondition.t.
-Admitted.
-
-Global Instance into_val_typed_NamespaceCondition `{ffi_syntax} : IntoValTyped NamespaceCondition.t v1.NamespaceCondition.
-Admitted.
-
-(* type v1.Namespace *)
 Module Namespace.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Namespace_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Namespace.t). Admitted.
+
+#[global] Instance Namespace_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Namespace.t) (v1.Namespaceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Namespace.
 
-Global Instance bounded_size_Namespace : BoundedTypeSize v1.Namespace.
-Admitted.
-
-Global Instance into_val_Namespace `{ffi_syntax} : IntoVal Namespace.t.
-Admitted.
-
-Global Instance into_val_typed_Namespace `{ffi_syntax} : IntoValTyped Namespace.t v1.Namespace.
-Admitted.
-
-(* type v1.NamespaceList *)
 Module NamespaceList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NamespaceList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NamespaceList.t). Admitted.
+
+#[global] Instance NamespaceList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NamespaceList.t) (v1.NamespaceListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NamespaceList.
 
-Global Instance bounded_size_NamespaceList : BoundedTypeSize v1.NamespaceList.
-Admitted.
-
-Global Instance into_val_NamespaceList `{ffi_syntax} : IntoVal NamespaceList.t.
-Admitted.
-
-Global Instance into_val_typed_NamespaceList `{ffi_syntax} : IntoValTyped NamespaceList.t v1.NamespaceList.
-Admitted.
-
-(* type v1.Binding *)
 Module Binding.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Binding_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Binding.t). Admitted.
+
+#[global] Instance Binding_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Binding.t) (v1.Bindingⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Binding.
 
-Global Instance bounded_size_Binding : BoundedTypeSize v1.Binding.
-Admitted.
-
-Global Instance into_val_Binding `{ffi_syntax} : IntoVal Binding.t.
-Admitted.
-
-Global Instance into_val_typed_Binding `{ffi_syntax} : IntoValTyped Binding.t v1.Binding.
-Admitted.
-
-(* type v1.Preconditions *)
 Module Preconditions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Preconditions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Preconditions.t). Admitted.
+
+#[global] Instance Preconditions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Preconditions.t) (v1.Preconditionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Preconditions.
 
-Global Instance bounded_size_Preconditions : BoundedTypeSize v1.Preconditions.
-Admitted.
-
-Global Instance into_val_Preconditions `{ffi_syntax} : IntoVal Preconditions.t.
-Admitted.
-
-Global Instance into_val_typed_Preconditions `{ffi_syntax} : IntoValTyped Preconditions.t v1.Preconditions.
-Admitted.
-
-(* type v1.PodLogOptions *)
 Module PodLogOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodLogOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodLogOptions.t). Admitted.
+
+#[global] Instance PodLogOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodLogOptions.t) (v1.PodLogOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodLogOptions.
 
-Global Instance bounded_size_PodLogOptions : BoundedTypeSize v1.PodLogOptions.
-Admitted.
-
-Global Instance into_val_PodLogOptions `{ffi_syntax} : IntoVal PodLogOptions.t.
-Admitted.
-
-Global Instance into_val_typed_PodLogOptions `{ffi_syntax} : IntoValTyped PodLogOptions.t v1.PodLogOptions.
-Admitted.
-
-(* type v1.PodAttachOptions *)
 Module PodAttachOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodAttachOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAttachOptions.t). Admitted.
+
+#[global] Instance PodAttachOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodAttachOptions.t) (v1.PodAttachOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodAttachOptions.
 
-Global Instance bounded_size_PodAttachOptions : BoundedTypeSize v1.PodAttachOptions.
-Admitted.
-
-Global Instance into_val_PodAttachOptions `{ffi_syntax} : IntoVal PodAttachOptions.t.
-Admitted.
-
-Global Instance into_val_typed_PodAttachOptions `{ffi_syntax} : IntoValTyped PodAttachOptions.t v1.PodAttachOptions.
-Admitted.
-
-(* type v1.PodExecOptions *)
 Module PodExecOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodExecOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodExecOptions.t). Admitted.
+
+#[global] Instance PodExecOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodExecOptions.t) (v1.PodExecOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodExecOptions.
 
-Global Instance bounded_size_PodExecOptions : BoundedTypeSize v1.PodExecOptions.
-Admitted.
-
-Global Instance into_val_PodExecOptions `{ffi_syntax} : IntoVal PodExecOptions.t.
-Admitted.
-
-Global Instance into_val_typed_PodExecOptions `{ffi_syntax} : IntoValTyped PodExecOptions.t v1.PodExecOptions.
-Admitted.
-
-(* type v1.PodPortForwardOptions *)
 Module PodPortForwardOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodPortForwardOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodPortForwardOptions.t). Admitted.
+
+#[global] Instance PodPortForwardOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodPortForwardOptions.t) (v1.PodPortForwardOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodPortForwardOptions.
 
-Global Instance bounded_size_PodPortForwardOptions : BoundedTypeSize v1.PodPortForwardOptions.
-Admitted.
-
-Global Instance into_val_PodPortForwardOptions `{ffi_syntax} : IntoVal PodPortForwardOptions.t.
-Admitted.
-
-Global Instance into_val_typed_PodPortForwardOptions `{ffi_syntax} : IntoValTyped PodPortForwardOptions.t v1.PodPortForwardOptions.
-Admitted.
-
-(* type v1.PodProxyOptions *)
 Module PodProxyOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodProxyOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodProxyOptions.t). Admitted.
+
+#[global] Instance PodProxyOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodProxyOptions.t) (v1.PodProxyOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodProxyOptions.
 
-Global Instance bounded_size_PodProxyOptions : BoundedTypeSize v1.PodProxyOptions.
-Admitted.
-
-Global Instance into_val_PodProxyOptions `{ffi_syntax} : IntoVal PodProxyOptions.t.
-Admitted.
-
-Global Instance into_val_typed_PodProxyOptions `{ffi_syntax} : IntoValTyped PodProxyOptions.t v1.PodProxyOptions.
-Admitted.
-
-(* type v1.NodeProxyOptions *)
 Module NodeProxyOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance NodeProxyOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeProxyOptions.t). Admitted.
+
+#[global] Instance NodeProxyOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.NodeProxyOptions.t) (v1.NodeProxyOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End NodeProxyOptions.
 
-Global Instance bounded_size_NodeProxyOptions : BoundedTypeSize v1.NodeProxyOptions.
-Admitted.
-
-Global Instance into_val_NodeProxyOptions `{ffi_syntax} : IntoVal NodeProxyOptions.t.
-Admitted.
-
-Global Instance into_val_typed_NodeProxyOptions `{ffi_syntax} : IntoValTyped NodeProxyOptions.t v1.NodeProxyOptions.
-Admitted.
-
-(* type v1.ServiceProxyOptions *)
 Module ServiceProxyOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ServiceProxyOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceProxyOptions.t). Admitted.
+
+#[global] Instance ServiceProxyOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ServiceProxyOptions.t) (v1.ServiceProxyOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ServiceProxyOptions.
 
-Global Instance bounded_size_ServiceProxyOptions : BoundedTypeSize v1.ServiceProxyOptions.
-Admitted.
-
-Global Instance into_val_ServiceProxyOptions `{ffi_syntax} : IntoVal ServiceProxyOptions.t.
-Admitted.
-
-Global Instance into_val_typed_ServiceProxyOptions `{ffi_syntax} : IntoValTyped ServiceProxyOptions.t v1.ServiceProxyOptions.
-Admitted.
-
-(* type v1.ObjectReference *)
 Module ObjectReference.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ObjectReference.t). Admitted.
+
+#[global] Instance ObjectReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ObjectReference.t) (v1.ObjectReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ObjectReference.
 
-Global Instance bounded_size_ObjectReference : BoundedTypeSize v1.ObjectReference.
-Admitted.
-
-Global Instance into_val_ObjectReference `{ffi_syntax} : IntoVal ObjectReference.t.
-Admitted.
-
-Global Instance into_val_typed_ObjectReference `{ffi_syntax} : IntoValTyped ObjectReference.t v1.ObjectReference.
-Admitted.
-
-(* type v1.LocalObjectReference *)
 Module LocalObjectReference.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Name' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LocalObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LocalObjectReference.t). Admitted.
+
+#[global] Instance LocalObjectReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LocalObjectReference.t) (v1.LocalObjectReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LocalObjectReference.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.LocalObjectReference.
-#[local] Typeclasses Transparent v1.LocalObjectReference.
-
-Global Instance LocalObjectReference_wf : struct.Wf v1.LocalObjectReference.
-Proof. apply _. Qed.
-
-Global Instance settable_LocalObjectReference : Settable LocalObjectReference.t :=
-  settable! LocalObjectReference.mk < LocalObjectReference.Name' >.
-Global Instance into_val_LocalObjectReference : IntoVal LocalObjectReference.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.LocalObjectReference [
-    "Name" ::= #(LocalObjectReference.Name' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_LocalObjectReference : IntoValTyped LocalObjectReference.t v1.LocalObjectReference :=
-{|
-  default_val := LocalObjectReference.mk (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_LocalObjectReference_Name : IntoValStructField "Name" v1.LocalObjectReference LocalObjectReference.Name'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_LocalObjectReference Name':
-  PureWp True
-    (struct.make #v1.LocalObjectReference (alist_val [
-      "Name" ::= #Name'
-    ]))%struct
-    #(LocalObjectReference.mk Name').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance LocalObjectReference_struct_fields_split dq l (v : LocalObjectReference.t) :
-  StructFieldsSplit dq l v (
-    "HName" ∷ l ↦s[v1.LocalObjectReference :: "Name"]{dq} v.(LocalObjectReference.Name')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.TypedLocalObjectReference *)
 Module TypedLocalObjectReference.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance TypedLocalObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TypedLocalObjectReference.t). Admitted.
+
+#[global] Instance TypedLocalObjectReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.TypedLocalObjectReference.t) (v1.TypedLocalObjectReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End TypedLocalObjectReference.
 
-Global Instance bounded_size_TypedLocalObjectReference : BoundedTypeSize v1.TypedLocalObjectReference.
-Admitted.
-
-Global Instance into_val_TypedLocalObjectReference `{ffi_syntax} : IntoVal TypedLocalObjectReference.t.
-Admitted.
-
-Global Instance into_val_typed_TypedLocalObjectReference `{ffi_syntax} : IntoValTyped TypedLocalObjectReference.t v1.TypedLocalObjectReference.
-Admitted.
-
-(* type v1.SerializedReference *)
 Module SerializedReference.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SerializedReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SerializedReference.t). Admitted.
+
+#[global] Instance SerializedReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SerializedReference.t) (v1.SerializedReferenceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SerializedReference.
 
-Global Instance bounded_size_SerializedReference : BoundedTypeSize v1.SerializedReference.
-Admitted.
-
-Global Instance into_val_SerializedReference `{ffi_syntax} : IntoVal SerializedReference.t.
-Admitted.
-
-Global Instance into_val_typed_SerializedReference `{ffi_syntax} : IntoValTyped SerializedReference.t v1.SerializedReference.
-Admitted.
-
-(* type v1.EventSource *)
 Module EventSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EventSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EventSource.t). Admitted.
+
+#[global] Instance EventSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EventSource.t) (v1.EventSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EventSource.
 
-Global Instance bounded_size_EventSource : BoundedTypeSize v1.EventSource.
-Admitted.
-
-Global Instance into_val_EventSource `{ffi_syntax} : IntoVal EventSource.t.
-Admitted.
-
-Global Instance into_val_typed_EventSource `{ffi_syntax} : IntoValTyped EventSource.t v1.EventSource.
-Admitted.
-
-(* type v1.Event *)
 Module Event.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Event_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Event.t). Admitted.
+
+#[global] Instance Event_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Event.t) (v1.Eventⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Event.
 
-Global Instance bounded_size_Event : BoundedTypeSize v1.Event.
-Admitted.
-
-Global Instance into_val_Event `{ffi_syntax} : IntoVal Event.t.
-Admitted.
-
-Global Instance into_val_typed_Event `{ffi_syntax} : IntoValTyped Event.t v1.Event.
-Admitted.
-
-(* type v1.EventSeries *)
 Module EventSeries.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EventSeries_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EventSeries.t). Admitted.
+
+#[global] Instance EventSeries_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EventSeries.t) (v1.EventSeriesⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EventSeries.
 
-Global Instance bounded_size_EventSeries : BoundedTypeSize v1.EventSeries.
-Admitted.
-
-Global Instance into_val_EventSeries `{ffi_syntax} : IntoVal EventSeries.t.
-Admitted.
-
-Global Instance into_val_typed_EventSeries `{ffi_syntax} : IntoValTyped EventSeries.t v1.EventSeries.
-Admitted.
-
-(* type v1.EventList *)
 Module EventList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance EventList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EventList.t). Admitted.
+
+#[global] Instance EventList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.EventList.t) (v1.EventListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End EventList.
 
-Global Instance bounded_size_EventList : BoundedTypeSize v1.EventList.
-Admitted.
-
-Global Instance into_val_EventList `{ffi_syntax} : IntoVal EventList.t.
-Admitted.
-
-Global Instance into_val_typed_EventList `{ffi_syntax} : IntoValTyped EventList.t v1.EventList.
-Admitted.
-
-(* type v1.List *)
 Module List.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance List_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.List.t). Admitted.
+
+#[global] Instance List_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.List.t) (v1.Listⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End List.
 
-Global Instance bounded_size_List : BoundedTypeSize v1.List.
-Admitted.
-
-Global Instance into_val_List `{ffi_syntax} : IntoVal List.t.
-Admitted.
-
-Global Instance into_val_typed_List `{ffi_syntax} : IntoValTyped List.t v1.List.
-Admitted.
-
-(* type v1.LimitType *)
 Module LimitType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LimitType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LimitType.t). Admitted.
+
+#[global] Instance LimitType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LimitType.t) (v1.LimitTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LimitType.
 
-Global Instance bounded_size_LimitType : BoundedTypeSize v1.LimitType.
-Admitted.
-
-Global Instance into_val_LimitType `{ffi_syntax} : IntoVal LimitType.t.
-Admitted.
-
-Global Instance into_val_typed_LimitType `{ffi_syntax} : IntoValTyped LimitType.t v1.LimitType.
-Admitted.
-
-(* type v1.LimitRangeItem *)
 Module LimitRangeItem.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LimitRangeItem_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LimitRangeItem.t). Admitted.
+
+#[global] Instance LimitRangeItem_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LimitRangeItem.t) (v1.LimitRangeItemⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LimitRangeItem.
 
-Global Instance bounded_size_LimitRangeItem : BoundedTypeSize v1.LimitRangeItem.
-Admitted.
-
-Global Instance into_val_LimitRangeItem `{ffi_syntax} : IntoVal LimitRangeItem.t.
-Admitted.
-
-Global Instance into_val_typed_LimitRangeItem `{ffi_syntax} : IntoValTyped LimitRangeItem.t v1.LimitRangeItem.
-Admitted.
-
-(* type v1.LimitRangeSpec *)
 Module LimitRangeSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LimitRangeSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LimitRangeSpec.t). Admitted.
+
+#[global] Instance LimitRangeSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LimitRangeSpec.t) (v1.LimitRangeSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LimitRangeSpec.
 
-Global Instance bounded_size_LimitRangeSpec : BoundedTypeSize v1.LimitRangeSpec.
-Admitted.
-
-Global Instance into_val_LimitRangeSpec `{ffi_syntax} : IntoVal LimitRangeSpec.t.
-Admitted.
-
-Global Instance into_val_typed_LimitRangeSpec `{ffi_syntax} : IntoValTyped LimitRangeSpec.t v1.LimitRangeSpec.
-Admitted.
-
-(* type v1.LimitRange *)
 Module LimitRange.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LimitRange_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LimitRange.t). Admitted.
+
+#[global] Instance LimitRange_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LimitRange.t) (v1.LimitRangeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LimitRange.
 
-Global Instance bounded_size_LimitRange : BoundedTypeSize v1.LimitRange.
-Admitted.
-
-Global Instance into_val_LimitRange `{ffi_syntax} : IntoVal LimitRange.t.
-Admitted.
-
-Global Instance into_val_typed_LimitRange `{ffi_syntax} : IntoValTyped LimitRange.t v1.LimitRange.
-Admitted.
-
-(* type v1.LimitRangeList *)
 Module LimitRangeList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LimitRangeList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LimitRangeList.t). Admitted.
+
+#[global] Instance LimitRangeList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LimitRangeList.t) (v1.LimitRangeListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LimitRangeList.
 
-Global Instance bounded_size_LimitRangeList : BoundedTypeSize v1.LimitRangeList.
-Admitted.
-
-Global Instance into_val_LimitRangeList `{ffi_syntax} : IntoVal LimitRangeList.t.
-Admitted.
-
-Global Instance into_val_typed_LimitRangeList `{ffi_syntax} : IntoValTyped LimitRangeList.t v1.LimitRangeList.
-Admitted.
-
-(* type v1.ResourceQuotaScope *)
 Module ResourceQuotaScope.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceQuotaScope_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceQuotaScope.t). Admitted.
+
+#[global] Instance ResourceQuotaScope_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceQuotaScope.t) (v1.ResourceQuotaScopeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceQuotaScope.
 
-Global Instance bounded_size_ResourceQuotaScope : BoundedTypeSize v1.ResourceQuotaScope.
-Admitted.
-
-Global Instance into_val_ResourceQuotaScope `{ffi_syntax} : IntoVal ResourceQuotaScope.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceQuotaScope `{ffi_syntax} : IntoValTyped ResourceQuotaScope.t v1.ResourceQuotaScope.
-Admitted.
-
-(* type v1.ResourceQuotaSpec *)
 Module ResourceQuotaSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceQuotaSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceQuotaSpec.t). Admitted.
+
+#[global] Instance ResourceQuotaSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceQuotaSpec.t) (v1.ResourceQuotaSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceQuotaSpec.
 
-Global Instance bounded_size_ResourceQuotaSpec : BoundedTypeSize v1.ResourceQuotaSpec.
-Admitted.
-
-Global Instance into_val_ResourceQuotaSpec `{ffi_syntax} : IntoVal ResourceQuotaSpec.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceQuotaSpec `{ffi_syntax} : IntoValTyped ResourceQuotaSpec.t v1.ResourceQuotaSpec.
-Admitted.
-
-(* type v1.ScopeSelector *)
 Module ScopeSelector.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ScopeSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScopeSelector.t). Admitted.
+
+#[global] Instance ScopeSelector_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ScopeSelector.t) (v1.ScopeSelectorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ScopeSelector.
 
-Global Instance bounded_size_ScopeSelector : BoundedTypeSize v1.ScopeSelector.
-Admitted.
-
-Global Instance into_val_ScopeSelector `{ffi_syntax} : IntoVal ScopeSelector.t.
-Admitted.
-
-Global Instance into_val_typed_ScopeSelector `{ffi_syntax} : IntoValTyped ScopeSelector.t v1.ScopeSelector.
-Admitted.
-
-(* type v1.ScopedResourceSelectorRequirement *)
 Module ScopedResourceSelectorRequirement.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ScopedResourceSelectorRequirement_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScopedResourceSelectorRequirement.t). Admitted.
+
+#[global] Instance ScopedResourceSelectorRequirement_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ScopedResourceSelectorRequirement.t) (v1.ScopedResourceSelectorRequirementⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ScopedResourceSelectorRequirement.
 
-Global Instance bounded_size_ScopedResourceSelectorRequirement : BoundedTypeSize v1.ScopedResourceSelectorRequirement.
-Admitted.
-
-Global Instance into_val_ScopedResourceSelectorRequirement `{ffi_syntax} : IntoVal ScopedResourceSelectorRequirement.t.
-Admitted.
-
-Global Instance into_val_typed_ScopedResourceSelectorRequirement `{ffi_syntax} : IntoValTyped ScopedResourceSelectorRequirement.t v1.ScopedResourceSelectorRequirement.
-Admitted.
-
-(* type v1.ScopeSelectorOperator *)
 Module ScopeSelectorOperator.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ScopeSelectorOperator_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScopeSelectorOperator.t). Admitted.
+
+#[global] Instance ScopeSelectorOperator_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ScopeSelectorOperator.t) (v1.ScopeSelectorOperatorⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ScopeSelectorOperator.
 
-Global Instance bounded_size_ScopeSelectorOperator : BoundedTypeSize v1.ScopeSelectorOperator.
-Admitted.
-
-Global Instance into_val_ScopeSelectorOperator `{ffi_syntax} : IntoVal ScopeSelectorOperator.t.
-Admitted.
-
-Global Instance into_val_typed_ScopeSelectorOperator `{ffi_syntax} : IntoValTyped ScopeSelectorOperator.t v1.ScopeSelectorOperator.
-Admitted.
-
-(* type v1.ResourceQuotaStatus *)
 Module ResourceQuotaStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceQuotaStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceQuotaStatus.t). Admitted.
+
+#[global] Instance ResourceQuotaStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceQuotaStatus.t) (v1.ResourceQuotaStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceQuotaStatus.
 
-Global Instance bounded_size_ResourceQuotaStatus : BoundedTypeSize v1.ResourceQuotaStatus.
-Admitted.
-
-Global Instance into_val_ResourceQuotaStatus `{ffi_syntax} : IntoVal ResourceQuotaStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceQuotaStatus `{ffi_syntax} : IntoValTyped ResourceQuotaStatus.t v1.ResourceQuotaStatus.
-Admitted.
-
-(* type v1.ResourceQuota *)
 Module ResourceQuota.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceQuota_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceQuota.t). Admitted.
+
+#[global] Instance ResourceQuota_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceQuota.t) (v1.ResourceQuotaⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceQuota.
 
-Global Instance bounded_size_ResourceQuota : BoundedTypeSize v1.ResourceQuota.
-Admitted.
-
-Global Instance into_val_ResourceQuota `{ffi_syntax} : IntoVal ResourceQuota.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceQuota `{ffi_syntax} : IntoValTyped ResourceQuota.t v1.ResourceQuota.
-Admitted.
-
-(* type v1.ResourceQuotaList *)
 Module ResourceQuotaList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ResourceQuotaList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceQuotaList.t). Admitted.
+
+#[global] Instance ResourceQuotaList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ResourceQuotaList.t) (v1.ResourceQuotaListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ResourceQuotaList.
 
-Global Instance bounded_size_ResourceQuotaList : BoundedTypeSize v1.ResourceQuotaList.
-Admitted.
-
-Global Instance into_val_ResourceQuotaList `{ffi_syntax} : IntoVal ResourceQuotaList.t.
-Admitted.
-
-Global Instance into_val_typed_ResourceQuotaList `{ffi_syntax} : IntoValTyped ResourceQuotaList.t v1.ResourceQuotaList.
-Admitted.
-
-(* type v1.Secret *)
 Module Secret.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Secret_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Secret.t). Admitted.
+
+#[global] Instance Secret_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Secret.t) (v1.Secretⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Secret.
 
-Global Instance bounded_size_Secret : BoundedTypeSize v1.Secret.
-Admitted.
-
-Global Instance into_val_Secret `{ffi_syntax} : IntoVal Secret.t.
-Admitted.
-
-Global Instance into_val_typed_Secret `{ffi_syntax} : IntoValTyped Secret.t v1.Secret.
-Admitted.
-
-(* type v1.SecretType *)
 Module SecretType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretType.t). Admitted.
+
+#[global] Instance SecretType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretType.t) (v1.SecretTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretType.
 
-Global Instance bounded_size_SecretType : BoundedTypeSize v1.SecretType.
-Admitted.
-
-Global Instance into_val_SecretType `{ffi_syntax} : IntoVal SecretType.t.
-Admitted.
-
-Global Instance into_val_typed_SecretType `{ffi_syntax} : IntoValTyped SecretType.t v1.SecretType.
-Admitted.
-
-(* type v1.SecretList *)
 Module SecretList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecretList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretList.t). Admitted.
+
+#[global] Instance SecretList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecretList.t) (v1.SecretListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecretList.
 
-Global Instance bounded_size_SecretList : BoundedTypeSize v1.SecretList.
-Admitted.
-
-Global Instance into_val_SecretList `{ffi_syntax} : IntoVal SecretList.t.
-Admitted.
-
-Global Instance into_val_typed_SecretList `{ffi_syntax} : IntoValTyped SecretList.t v1.SecretList.
-Admitted.
-
-(* type v1.ConfigMap *)
 Module ConfigMap.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMap_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMap.t). Admitted.
+
+#[global] Instance ConfigMap_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMap.t) (v1.ConfigMapⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMap.
 
-Global Instance bounded_size_ConfigMap : BoundedTypeSize v1.ConfigMap.
-Admitted.
-
-Global Instance into_val_ConfigMap `{ffi_syntax} : IntoVal ConfigMap.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMap `{ffi_syntax} : IntoValTyped ConfigMap.t v1.ConfigMap.
-Admitted.
-
-(* type v1.ConfigMapList *)
 Module ConfigMapList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ConfigMapList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapList.t). Admitted.
+
+#[global] Instance ConfigMapList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ConfigMapList.t) (v1.ConfigMapListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ConfigMapList.
 
-Global Instance bounded_size_ConfigMapList : BoundedTypeSize v1.ConfigMapList.
-Admitted.
-
-Global Instance into_val_ConfigMapList `{ffi_syntax} : IntoVal ConfigMapList.t.
-Admitted.
-
-Global Instance into_val_typed_ConfigMapList `{ffi_syntax} : IntoValTyped ConfigMapList.t v1.ConfigMapList.
-Admitted.
-
-(* type v1.ComponentConditionType *)
 Module ComponentConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ComponentConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ComponentConditionType.t). Admitted.
+
+#[global] Instance ComponentConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ComponentConditionType.t) (v1.ComponentConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ComponentConditionType.
 
-Global Instance bounded_size_ComponentConditionType : BoundedTypeSize v1.ComponentConditionType.
-Admitted.
-
-Global Instance into_val_ComponentConditionType `{ffi_syntax} : IntoVal ComponentConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_ComponentConditionType `{ffi_syntax} : IntoValTyped ComponentConditionType.t v1.ComponentConditionType.
-Admitted.
-
-(* type v1.ComponentCondition *)
 Module ComponentCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ComponentCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ComponentCondition.t). Admitted.
+
+#[global] Instance ComponentCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ComponentCondition.t) (v1.ComponentConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ComponentCondition.
 
-Global Instance bounded_size_ComponentCondition : BoundedTypeSize v1.ComponentCondition.
-Admitted.
-
-Global Instance into_val_ComponentCondition `{ffi_syntax} : IntoVal ComponentCondition.t.
-Admitted.
-
-Global Instance into_val_typed_ComponentCondition `{ffi_syntax} : IntoValTyped ComponentCondition.t v1.ComponentCondition.
-Admitted.
-
-(* type v1.ComponentStatus *)
 Module ComponentStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ComponentStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ComponentStatus.t). Admitted.
+
+#[global] Instance ComponentStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ComponentStatus.t) (v1.ComponentStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ComponentStatus.
 
-Global Instance bounded_size_ComponentStatus : BoundedTypeSize v1.ComponentStatus.
-Admitted.
-
-Global Instance into_val_ComponentStatus `{ffi_syntax} : IntoVal ComponentStatus.t.
-Admitted.
-
-Global Instance into_val_typed_ComponentStatus `{ffi_syntax} : IntoValTyped ComponentStatus.t v1.ComponentStatus.
-Admitted.
-
-(* type v1.ComponentStatusList *)
 Module ComponentStatusList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ComponentStatusList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ComponentStatusList.t). Admitted.
+
+#[global] Instance ComponentStatusList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ComponentStatusList.t) (v1.ComponentStatusListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ComponentStatusList.
 
-Global Instance bounded_size_ComponentStatusList : BoundedTypeSize v1.ComponentStatusList.
-Admitted.
-
-Global Instance into_val_ComponentStatusList `{ffi_syntax} : IntoVal ComponentStatusList.t.
-Admitted.
-
-Global Instance into_val_typed_ComponentStatusList `{ffi_syntax} : IntoValTyped ComponentStatusList.t v1.ComponentStatusList.
-Admitted.
-
-(* type v1.DownwardAPIVolumeSource *)
 Module DownwardAPIVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DownwardAPIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeSource.t). Admitted.
+
+#[global] Instance DownwardAPIVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DownwardAPIVolumeSource.t) (v1.DownwardAPIVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DownwardAPIVolumeSource.
 
-Global Instance bounded_size_DownwardAPIVolumeSource : BoundedTypeSize v1.DownwardAPIVolumeSource.
-Admitted.
-
-Global Instance into_val_DownwardAPIVolumeSource `{ffi_syntax} : IntoVal DownwardAPIVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_DownwardAPIVolumeSource `{ffi_syntax} : IntoValTyped DownwardAPIVolumeSource.t v1.DownwardAPIVolumeSource.
-Admitted.
-
-(* type v1.DownwardAPIVolumeFile *)
 Module DownwardAPIVolumeFile.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DownwardAPIVolumeFile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeFile.t). Admitted.
+
+#[global] Instance DownwardAPIVolumeFile_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DownwardAPIVolumeFile.t) (v1.DownwardAPIVolumeFileⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DownwardAPIVolumeFile.
 
-Global Instance bounded_size_DownwardAPIVolumeFile : BoundedTypeSize v1.DownwardAPIVolumeFile.
-Admitted.
-
-Global Instance into_val_DownwardAPIVolumeFile `{ffi_syntax} : IntoVal DownwardAPIVolumeFile.t.
-Admitted.
-
-Global Instance into_val_typed_DownwardAPIVolumeFile `{ffi_syntax} : IntoValTyped DownwardAPIVolumeFile.t v1.DownwardAPIVolumeFile.
-Admitted.
-
-(* type v1.DownwardAPIProjection *)
 Module DownwardAPIProjection.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DownwardAPIProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIProjection.t). Admitted.
+
+#[global] Instance DownwardAPIProjection_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DownwardAPIProjection.t) (v1.DownwardAPIProjectionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DownwardAPIProjection.
 
-Global Instance bounded_size_DownwardAPIProjection : BoundedTypeSize v1.DownwardAPIProjection.
-Admitted.
-
-Global Instance into_val_DownwardAPIProjection `{ffi_syntax} : IntoVal DownwardAPIProjection.t.
-Admitted.
-
-Global Instance into_val_typed_DownwardAPIProjection `{ffi_syntax} : IntoValTyped DownwardAPIProjection.t v1.DownwardAPIProjection.
-Admitted.
-
-(* type v1.SecurityContext *)
 Module SecurityContext.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SecurityContext_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecurityContext.t). Admitted.
+
+#[global] Instance SecurityContext_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SecurityContext.t) (v1.SecurityContextⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SecurityContext.
 
-Global Instance bounded_size_SecurityContext : BoundedTypeSize v1.SecurityContext.
-Admitted.
-
-Global Instance into_val_SecurityContext `{ffi_syntax} : IntoVal SecurityContext.t.
-Admitted.
-
-Global Instance into_val_typed_SecurityContext `{ffi_syntax} : IntoValTyped SecurityContext.t v1.SecurityContext.
-Admitted.
-
-(* type v1.ProcMountType *)
 Module ProcMountType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ProcMountType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ProcMountType.t). Admitted.
+
+#[global] Instance ProcMountType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ProcMountType.t) (v1.ProcMountTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ProcMountType.
 
-Global Instance bounded_size_ProcMountType : BoundedTypeSize v1.ProcMountType.
-Admitted.
-
-Global Instance into_val_ProcMountType `{ffi_syntax} : IntoVal ProcMountType.t.
-Admitted.
-
-Global Instance into_val_typed_ProcMountType `{ffi_syntax} : IntoValTyped ProcMountType.t v1.ProcMountType.
-Admitted.
-
-(* type v1.SELinuxOptions *)
 Module SELinuxOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance SELinuxOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SELinuxOptions.t). Admitted.
+
+#[global] Instance SELinuxOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.SELinuxOptions.t) (v1.SELinuxOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End SELinuxOptions.
 
-Global Instance bounded_size_SELinuxOptions : BoundedTypeSize v1.SELinuxOptions.
-Admitted.
-
-Global Instance into_val_SELinuxOptions `{ffi_syntax} : IntoVal SELinuxOptions.t.
-Admitted.
-
-Global Instance into_val_typed_SELinuxOptions `{ffi_syntax} : IntoValTyped SELinuxOptions.t v1.SELinuxOptions.
-Admitted.
-
-(* type v1.WindowsSecurityContextOptions *)
 Module WindowsSecurityContextOptions.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance WindowsSecurityContextOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.WindowsSecurityContextOptions.t). Admitted.
+
+#[global] Instance WindowsSecurityContextOptions_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.WindowsSecurityContextOptions.t) (v1.WindowsSecurityContextOptionsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End WindowsSecurityContextOptions.
 
-Global Instance bounded_size_WindowsSecurityContextOptions : BoundedTypeSize v1.WindowsSecurityContextOptions.
-Admitted.
-
-Global Instance into_val_WindowsSecurityContextOptions `{ffi_syntax} : IntoVal WindowsSecurityContextOptions.t.
-Admitted.
-
-Global Instance into_val_typed_WindowsSecurityContextOptions `{ffi_syntax} : IntoValTyped WindowsSecurityContextOptions.t v1.WindowsSecurityContextOptions.
-Admitted.
-
-(* type v1.RangeAllocation *)
 Module RangeAllocation.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RangeAllocation_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RangeAllocation.t). Admitted.
+
+#[global] Instance RangeAllocation_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RangeAllocation.t) (v1.RangeAllocationⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RangeAllocation.
 
-Global Instance bounded_size_RangeAllocation : BoundedTypeSize v1.RangeAllocation.
-Admitted.
-
-Global Instance into_val_RangeAllocation `{ffi_syntax} : IntoVal RangeAllocation.t.
-Admitted.
-
-Global Instance into_val_typed_RangeAllocation `{ffi_syntax} : IntoValTyped RangeAllocation.t v1.RangeAllocation.
-Admitted.
-
-(* type v1.Sysctl *)
 Module Sysctl.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Sysctl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Sysctl.t). Admitted.
+
+#[global] Instance Sysctl_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Sysctl.t) (v1.Sysctlⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Sysctl.
 
-Global Instance bounded_size_Sysctl : BoundedTypeSize v1.Sysctl.
-Admitted.
-
-Global Instance into_val_Sysctl `{ffi_syntax} : IntoVal Sysctl.t.
-Admitted.
-
-Global Instance into_val_typed_Sysctl `{ffi_syntax} : IntoValTyped Sysctl.t v1.Sysctl.
-Admitted.
-
-(* type v1.PortStatus *)
 Module PortStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PortStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PortStatus.t). Admitted.
+
+#[global] Instance PortStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PortStatus.t) (v1.PortStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PortStatus.
 
-Global Instance bounded_size_PortStatus : BoundedTypeSize v1.PortStatus.
-Admitted.
-
-Global Instance into_val_PortStatus `{ffi_syntax} : IntoVal PortStatus.t.
-Admitted.
-
-Global Instance into_val_typed_PortStatus `{ffi_syntax} : IntoValTyped PortStatus.t v1.PortStatus.
-Admitted.
-
-(* type v1.LoadBalancerIPMode *)
 Module LoadBalancerIPMode.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance LoadBalancerIPMode_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LoadBalancerIPMode.t). Admitted.
+
+#[global] Instance LoadBalancerIPMode_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LoadBalancerIPMode.t) (v1.LoadBalancerIPModeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End LoadBalancerIPMode.
 
-Global Instance bounded_size_LoadBalancerIPMode : BoundedTypeSize v1.LoadBalancerIPMode.
-Admitted.
-
-Global Instance into_val_LoadBalancerIPMode `{ffi_syntax} : IntoVal LoadBalancerIPMode.t.
-Admitted.
-
-Global Instance into_val_typed_LoadBalancerIPMode `{ffi_syntax} : IntoValTyped LoadBalancerIPMode.t v1.LoadBalancerIPMode.
-Admitted.
-
-(* type v1.ImageVolumeSource *)
 Module ImageVolumeSource.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ImageVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ImageVolumeSource.t). Admitted.
+
+#[global] Instance ImageVolumeSource_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ImageVolumeSource.t) (v1.ImageVolumeSourceⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ImageVolumeSource.
 
-Global Instance bounded_size_ImageVolumeSource : BoundedTypeSize v1.ImageVolumeSource.
-Admitted.
-
-Global Instance into_val_ImageVolumeSource `{ffi_syntax} : IntoVal ImageVolumeSource.t.
-Admitted.
-
-Global Instance into_val_typed_ImageVolumeSource `{ffi_syntax} : IntoValTyped ImageVolumeSource.t v1.ImageVolumeSource.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_v1 : IsPkgDefinedPure v1 :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.api.resource.resource ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_v1 : IsPkgDefined v1 :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.api.resource.resource ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-End names.
 End v1.

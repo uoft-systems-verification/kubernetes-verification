@@ -2,6 +2,7 @@ From New.proof Require Import prelude.
 From New.proof Require Export pure_objects.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From iris.algebra Require Import cmra gset gmap.
+From iris.base_logic.lib Require Import own.
 
 
 Section kview.

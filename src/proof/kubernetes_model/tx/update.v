@@ -5,8 +5,11 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From iris.bi.lib Require Import atomic.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Context `{!go.IntoValInj KKey.t}.
+Local Set Default Proof Using "All".
 
 Lemma valid_simple_update_set_resource_version m_old m rv :
   ObjectMetaV.valid_simple_update m_old m →
@@ -47,15 +50,15 @@ Lemma wp_State__updateTx_au γ l kind namespace i kobj :
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj'),
-      COMM ▷ Φ (#i', #interface.nil)%V
+      COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
-    -∗ WP l @ (ptrT.id apimodel.State.id) @ "updateTx" #kind #namespace #i {{ Φ }}.
+    -∗ WP l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hkinv & H)".
   iNamed "H".
-  wp_method_call. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ. wp_call. wp_auto.
   set I := (∃ i_orig,
-    "Hobj_ptr" ∷ obj_ptr ↦ i_orig ∗
+    "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
     "Hdeepown_i_orig" ∷ KObjectV.deepown_i i_orig kobj 1 ∗
     "Hau" ∷ AU <{ ∃∃ key uid kmeta kspec,
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
@@ -75,23 +78,22 @@ Proof.
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj'),
-      COMM ▷ Φ (#i', #interface.nil)%V
+      COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
   )%I.
   iAssert I with "[obj Hdeepown_i Hau]" as "Hloop_inv".
   { iExists i. iFrame. }
   wp_for "Hloop_inv".
-  wp_apply (wp_deepCopy with "[$Hinit $Hdeepown_i_orig]").
+  wp_apply (wp_deepCopy i_orig kobj with "[Hdeepown_i_orig]").
+  { iFrame "#". iExact "Hdeepown_i_orig". }
   iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
   iDestruct "Hdeepown_i_copy" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
   wp_apply wp_Accessor. 1: iPureIntro; done.
-  rewrite bool_decide_true //. wp_auto.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
-    "(Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
+    "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
   { iPureIntro. split. 1: done. right. done. }
   iIntros "Hdeepown_metadata". wp_auto.
-  rewrite bool_decide_true //. wp_auto.
   wp_apply (wp_GetName_deepown with "[$Hdeepown_metadata]").
   iIntros "Hdeepown_metadata". wp_auto.
   assert (ObjectMetaV.Name' (KObjectV.objectmeta kobj) ≠ ""%go) as Hname_not_empty.
@@ -124,12 +126,10 @@ Proof.
   iModIntro. iNext. wp_auto.
   clear uid kmeta kspec Hkey_eq Huid_eq Hvalid_meta_update
     Hvalid_spec_update Hno_deletion_timestamp Hmeta_eq Hspec_eq.
-  rewrite bool_decide_true //. wp_auto.
   iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
   wp_apply wp_Accessor. 1: iPureIntro; done.
-  rewrite bool_decide_true //. wp_auto.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
-    "(Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
+    "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
       Hdeepown_existing_status)".
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_existing_metadata]").
   iIntros "Hdeepown_existing_metadata". wp_auto.
@@ -142,7 +142,7 @@ Proof.
   set kmeta_rv := (KObjectV.objectmeta kobj <| ObjectMetaV.ResourceVersion' :=
     ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>).
   set kobj_rv := KObjectV.update_objectmeta kobj kmeta_rv.
-  iPoseProof (KObjectV.deepown_l_merge with
+  iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hkobj_l_not_null with
     "[$Htypemeta $Hdeepown_metadata $Hdeepown_spec $Hdeepown_status]") as
     "Hdeepown_l".
   iAssert (KObjectV.deepown_i i_copy kobj_rv 1) with "[Hdeepown_l]" as
@@ -205,7 +205,12 @@ Proof.
       iFrame. }
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_nil with "[]").
+    replace (if decide (interface.nil = interface.nil)
+             then #(interface.ok i') else #interface.nil)%V
+      with (#(interface.ok i'))%V
+      by (destruct (decide (interface.nil = interface.nil)); [done|congruence]).
+    wp_auto.
+    wp_apply (wp_IsConflict_nil interface.nil with "[]").
     { done. }
     wp_for_post.
     iApply "HΦ".
@@ -216,12 +221,16 @@ Proof.
     { iFrame. iFrame "%". }
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_conflict with "[]").
+    replace (if decide (err = interface.nil)
+             then #(interface.ok i') else #interface.nil)%V
+      with (#interface.nil)%V
+      by (destruct (decide (err = interface.nil)); [congruence|done]).
+    wp_auto.
+    wp_apply (wp_IsConflict_conflict err with "[]").
     { done. }
     wp_for_post.
     iFrame "s kind namespace".
-    iExists i_orig.
-    iFrame "Hobj_ptr Hdeepown_i_orig Hau".
+    iExists i_orig. iFrame.
 Qed.
 
 Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
@@ -239,8 +248,8 @@ Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
   }}}
-    l @ (ptrT.id apimodel.State.id) @ "updateTx" #kind #namespace #i
-  {{{ i' kobj', RET (#i', #interface.nil);
+    l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
+  {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
       "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
       "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗

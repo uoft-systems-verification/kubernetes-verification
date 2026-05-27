@@ -4,1021 +4,1077 @@ Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.golang.theory.
-
 Require Export New.code.k8s_io.api.apps.v1.
 
 Set Default Proof Using "Type".
 
 Module v1.
-
-(* type v1.StatefulSet *)
 Module StatefulSet.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSet.t). Admitted.
+
+#[global] Instance StatefulSet_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSet.t) (v1.StatefulSetⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSet.
 
-Global Instance bounded_size_StatefulSet : BoundedTypeSize v1.StatefulSet.
-Admitted.
-
-Global Instance into_val_StatefulSet `{ffi_syntax} : IntoVal StatefulSet.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSet `{ffi_syntax} : IntoValTyped StatefulSet.t v1.StatefulSet.
-Admitted.
-
-(* type v1.PodManagementPolicyType *)
 Module PodManagementPolicyType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodManagementPolicyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodManagementPolicyType.t). Admitted.
+
+#[global] Instance PodManagementPolicyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodManagementPolicyType.t) (v1.PodManagementPolicyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PodManagementPolicyType.
 
-Global Instance bounded_size_PodManagementPolicyType : BoundedTypeSize v1.PodManagementPolicyType.
-Admitted.
-
-Global Instance into_val_PodManagementPolicyType `{ffi_syntax} : IntoVal PodManagementPolicyType.t.
-Admitted.
-
-Global Instance into_val_typed_PodManagementPolicyType `{ffi_syntax} : IntoValTyped PodManagementPolicyType.t v1.PodManagementPolicyType.
-Admitted.
-
-(* type v1.StatefulSetUpdateStrategy *)
 Module StatefulSetUpdateStrategy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetUpdateStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetUpdateStrategy.t). Admitted.
+
+#[global] Instance StatefulSetUpdateStrategy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetUpdateStrategy.t) (v1.StatefulSetUpdateStrategyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetUpdateStrategy.
 
-Global Instance bounded_size_StatefulSetUpdateStrategy : BoundedTypeSize v1.StatefulSetUpdateStrategy.
-Admitted.
-
-Global Instance into_val_StatefulSetUpdateStrategy `{ffi_syntax} : IntoVal StatefulSetUpdateStrategy.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetUpdateStrategy `{ffi_syntax} : IntoValTyped StatefulSetUpdateStrategy.t v1.StatefulSetUpdateStrategy.
-Admitted.
-
-(* type v1.StatefulSetUpdateStrategyType *)
 Module StatefulSetUpdateStrategyType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetUpdateStrategyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetUpdateStrategyType.t). Admitted.
+
+#[global] Instance StatefulSetUpdateStrategyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetUpdateStrategyType.t) (v1.StatefulSetUpdateStrategyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetUpdateStrategyType.
 
-Global Instance bounded_size_StatefulSetUpdateStrategyType : BoundedTypeSize v1.StatefulSetUpdateStrategyType.
-Admitted.
-
-Global Instance into_val_StatefulSetUpdateStrategyType `{ffi_syntax} : IntoVal StatefulSetUpdateStrategyType.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetUpdateStrategyType `{ffi_syntax} : IntoValTyped StatefulSetUpdateStrategyType.t v1.StatefulSetUpdateStrategyType.
-Admitted.
-
-(* type v1.RollingUpdateStatefulSetStrategy *)
 Module RollingUpdateStatefulSetStrategy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RollingUpdateStatefulSetStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RollingUpdateStatefulSetStrategy.t). Admitted.
+
+#[global] Instance RollingUpdateStatefulSetStrategy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RollingUpdateStatefulSetStrategy.t) (v1.RollingUpdateStatefulSetStrategyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RollingUpdateStatefulSetStrategy.
 
-Global Instance bounded_size_RollingUpdateStatefulSetStrategy : BoundedTypeSize v1.RollingUpdateStatefulSetStrategy.
-Admitted.
-
-Global Instance into_val_RollingUpdateStatefulSetStrategy `{ffi_syntax} : IntoVal RollingUpdateStatefulSetStrategy.t.
-Admitted.
-
-Global Instance into_val_typed_RollingUpdateStatefulSetStrategy `{ffi_syntax} : IntoValTyped RollingUpdateStatefulSetStrategy.t v1.RollingUpdateStatefulSetStrategy.
-Admitted.
-
-(* type v1.PersistentVolumeClaimRetentionPolicyType *)
 Module PersistentVolumeClaimRetentionPolicyType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimRetentionPolicyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimRetentionPolicyType.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimRetentionPolicyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimRetentionPolicyType.t) (v1.PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End PersistentVolumeClaimRetentionPolicyType.
 
-Global Instance bounded_size_PersistentVolumeClaimRetentionPolicyType : BoundedTypeSize v1.PersistentVolumeClaimRetentionPolicyType.
-Admitted.
-
-Global Instance into_val_PersistentVolumeClaimRetentionPolicyType `{ffi_syntax} : IntoVal PersistentVolumeClaimRetentionPolicyType.t.
-Admitted.
-
-Global Instance into_val_typed_PersistentVolumeClaimRetentionPolicyType `{ffi_syntax} : IntoValTyped PersistentVolumeClaimRetentionPolicyType.t v1.PersistentVolumeClaimRetentionPolicyType.
-Admitted.
-
-(* type v1.StatefulSetPersistentVolumeClaimRetentionPolicy *)
 Module StatefulSetPersistentVolumeClaimRetentionPolicy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetPersistentVolumeClaimRetentionPolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetPersistentVolumeClaimRetentionPolicy.t). Admitted.
+
+#[global] Instance StatefulSetPersistentVolumeClaimRetentionPolicy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetPersistentVolumeClaimRetentionPolicy.t) (v1.StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetPersistentVolumeClaimRetentionPolicy.
 
-Global Instance bounded_size_StatefulSetPersistentVolumeClaimRetentionPolicy : BoundedTypeSize v1.StatefulSetPersistentVolumeClaimRetentionPolicy.
-Admitted.
-
-Global Instance into_val_StatefulSetPersistentVolumeClaimRetentionPolicy `{ffi_syntax} : IntoVal StatefulSetPersistentVolumeClaimRetentionPolicy.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetPersistentVolumeClaimRetentionPolicy `{ffi_syntax} : IntoValTyped StatefulSetPersistentVolumeClaimRetentionPolicy.t v1.StatefulSetPersistentVolumeClaimRetentionPolicy.
-Admitted.
-
-(* type v1.StatefulSetOrdinals *)
 Module StatefulSetOrdinals.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetOrdinals_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetOrdinals.t). Admitted.
+
+#[global] Instance StatefulSetOrdinals_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetOrdinals.t) (v1.StatefulSetOrdinalsⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetOrdinals.
 
-Global Instance bounded_size_StatefulSetOrdinals : BoundedTypeSize v1.StatefulSetOrdinals.
-Admitted.
-
-Global Instance into_val_StatefulSetOrdinals `{ffi_syntax} : IntoVal StatefulSetOrdinals.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetOrdinals `{ffi_syntax} : IntoValTyped StatefulSetOrdinals.t v1.StatefulSetOrdinals.
-Admitted.
-
-(* type v1.StatefulSetSpec *)
 Module StatefulSetSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetSpec.t). Admitted.
+
+#[global] Instance StatefulSetSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetSpec.t) (v1.StatefulSetSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetSpec.
 
-Global Instance bounded_size_StatefulSetSpec : BoundedTypeSize v1.StatefulSetSpec.
-Admitted.
-
-Global Instance into_val_StatefulSetSpec `{ffi_syntax} : IntoVal StatefulSetSpec.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetSpec `{ffi_syntax} : IntoValTyped StatefulSetSpec.t v1.StatefulSetSpec.
-Admitted.
-
-(* type v1.StatefulSetStatus *)
 Module StatefulSetStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetStatus.t). Admitted.
+
+#[global] Instance StatefulSetStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetStatus.t) (v1.StatefulSetStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetStatus.
 
-Global Instance bounded_size_StatefulSetStatus : BoundedTypeSize v1.StatefulSetStatus.
-Admitted.
-
-Global Instance into_val_StatefulSetStatus `{ffi_syntax} : IntoVal StatefulSetStatus.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetStatus `{ffi_syntax} : IntoValTyped StatefulSetStatus.t v1.StatefulSetStatus.
-Admitted.
-
-(* type v1.StatefulSetConditionType *)
 Module StatefulSetConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetConditionType.t). Admitted.
+
+#[global] Instance StatefulSetConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetConditionType.t) (v1.StatefulSetConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetConditionType.
 
-Global Instance bounded_size_StatefulSetConditionType : BoundedTypeSize v1.StatefulSetConditionType.
-Admitted.
-
-Global Instance into_val_StatefulSetConditionType `{ffi_syntax} : IntoVal StatefulSetConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetConditionType `{ffi_syntax} : IntoValTyped StatefulSetConditionType.t v1.StatefulSetConditionType.
-Admitted.
-
-(* type v1.StatefulSetCondition *)
 Module StatefulSetCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetCondition.t). Admitted.
+
+#[global] Instance StatefulSetCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetCondition.t) (v1.StatefulSetConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetCondition.
 
-Global Instance bounded_size_StatefulSetCondition : BoundedTypeSize v1.StatefulSetCondition.
-Admitted.
-
-Global Instance into_val_StatefulSetCondition `{ffi_syntax} : IntoVal StatefulSetCondition.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetCondition `{ffi_syntax} : IntoValTyped StatefulSetCondition.t v1.StatefulSetCondition.
-Admitted.
-
-(* type v1.StatefulSetList *)
 Module StatefulSetList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetList.t). Admitted.
+
+#[global] Instance StatefulSetList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetList.t) (v1.StatefulSetListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End StatefulSetList.
 
-Global Instance bounded_size_StatefulSetList : BoundedTypeSize v1.StatefulSetList.
-Admitted.
-
-Global Instance into_val_StatefulSetList `{ffi_syntax} : IntoVal StatefulSetList.t.
-Admitted.
-
-Global Instance into_val_typed_StatefulSetList `{ffi_syntax} : IntoValTyped StatefulSetList.t v1.StatefulSetList.
-Admitted.
-
-(* type v1.Deployment *)
 Module Deployment.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance Deployment_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Deployment.t). Admitted.
+
+#[global] Instance Deployment_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Deployment.t) (v1.Deploymentⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End Deployment.
 
-Global Instance bounded_size_Deployment : BoundedTypeSize v1.Deployment.
-Admitted.
-
-Global Instance into_val_Deployment `{ffi_syntax} : IntoVal Deployment.t.
-Admitted.
-
-Global Instance into_val_typed_Deployment `{ffi_syntax} : IntoValTyped Deployment.t v1.Deployment.
-Admitted.
-
-(* type v1.DeploymentSpec *)
 Module DeploymentSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentSpec.t). Admitted.
+
+#[global] Instance DeploymentSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentSpec.t) (v1.DeploymentSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentSpec.
 
-Global Instance bounded_size_DeploymentSpec : BoundedTypeSize v1.DeploymentSpec.
-Admitted.
-
-Global Instance into_val_DeploymentSpec `{ffi_syntax} : IntoVal DeploymentSpec.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentSpec `{ffi_syntax} : IntoValTyped DeploymentSpec.t v1.DeploymentSpec.
-Admitted.
-
-(* type v1.DeploymentStrategy *)
 Module DeploymentStrategy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentStrategy.t). Admitted.
+
+#[global] Instance DeploymentStrategy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentStrategy.t) (v1.DeploymentStrategyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentStrategy.
 
-Global Instance bounded_size_DeploymentStrategy : BoundedTypeSize v1.DeploymentStrategy.
-Admitted.
-
-Global Instance into_val_DeploymentStrategy `{ffi_syntax} : IntoVal DeploymentStrategy.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentStrategy `{ffi_syntax} : IntoValTyped DeploymentStrategy.t v1.DeploymentStrategy.
-Admitted.
-
-(* type v1.DeploymentStrategyType *)
 Module DeploymentStrategyType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentStrategyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentStrategyType.t). Admitted.
+
+#[global] Instance DeploymentStrategyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentStrategyType.t) (v1.DeploymentStrategyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentStrategyType.
 
-Global Instance bounded_size_DeploymentStrategyType : BoundedTypeSize v1.DeploymentStrategyType.
-Admitted.
-
-Global Instance into_val_DeploymentStrategyType `{ffi_syntax} : IntoVal DeploymentStrategyType.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentStrategyType `{ffi_syntax} : IntoValTyped DeploymentStrategyType.t v1.DeploymentStrategyType.
-Admitted.
-
-(* type v1.RollingUpdateDeployment *)
 Module RollingUpdateDeployment.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RollingUpdateDeployment_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDeployment.t). Admitted.
+
+#[global] Instance RollingUpdateDeployment_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RollingUpdateDeployment.t) (v1.RollingUpdateDeploymentⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RollingUpdateDeployment.
 
-Global Instance bounded_size_RollingUpdateDeployment : BoundedTypeSize v1.RollingUpdateDeployment.
-Admitted.
-
-Global Instance into_val_RollingUpdateDeployment `{ffi_syntax} : IntoVal RollingUpdateDeployment.t.
-Admitted.
-
-Global Instance into_val_typed_RollingUpdateDeployment `{ffi_syntax} : IntoValTyped RollingUpdateDeployment.t v1.RollingUpdateDeployment.
-Admitted.
-
-(* type v1.DeploymentStatus *)
 Module DeploymentStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentStatus.t). Admitted.
+
+#[global] Instance DeploymentStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentStatus.t) (v1.DeploymentStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentStatus.
 
-Global Instance bounded_size_DeploymentStatus : BoundedTypeSize v1.DeploymentStatus.
-Admitted.
-
-Global Instance into_val_DeploymentStatus `{ffi_syntax} : IntoVal DeploymentStatus.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentStatus `{ffi_syntax} : IntoValTyped DeploymentStatus.t v1.DeploymentStatus.
-Admitted.
-
-(* type v1.DeploymentConditionType *)
 Module DeploymentConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentConditionType.t). Admitted.
+
+#[global] Instance DeploymentConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentConditionType.t) (v1.DeploymentConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentConditionType.
 
-Global Instance bounded_size_DeploymentConditionType : BoundedTypeSize v1.DeploymentConditionType.
-Admitted.
-
-Global Instance into_val_DeploymentConditionType `{ffi_syntax} : IntoVal DeploymentConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentConditionType `{ffi_syntax} : IntoValTyped DeploymentConditionType.t v1.DeploymentConditionType.
-Admitted.
-
-(* type v1.DeploymentCondition *)
 Module DeploymentCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentCondition.t). Admitted.
+
+#[global] Instance DeploymentCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentCondition.t) (v1.DeploymentConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentCondition.
 
-Global Instance bounded_size_DeploymentCondition : BoundedTypeSize v1.DeploymentCondition.
-Admitted.
-
-Global Instance into_val_DeploymentCondition `{ffi_syntax} : IntoVal DeploymentCondition.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentCondition `{ffi_syntax} : IntoValTyped DeploymentCondition.t v1.DeploymentCondition.
-Admitted.
-
-(* type v1.DeploymentList *)
 Module DeploymentList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DeploymentList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentList.t). Admitted.
+
+#[global] Instance DeploymentList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DeploymentList.t) (v1.DeploymentListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DeploymentList.
 
-Global Instance bounded_size_DeploymentList : BoundedTypeSize v1.DeploymentList.
-Admitted.
-
-Global Instance into_val_DeploymentList `{ffi_syntax} : IntoVal DeploymentList.t.
-Admitted.
-
-Global Instance into_val_typed_DeploymentList `{ffi_syntax} : IntoValTyped DeploymentList.t v1.DeploymentList.
-Admitted.
-
-(* type v1.DaemonSetUpdateStrategy *)
 Module DaemonSetUpdateStrategy.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetUpdateStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetUpdateStrategy.t). Admitted.
+
+#[global] Instance DaemonSetUpdateStrategy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetUpdateStrategy.t) (v1.DaemonSetUpdateStrategyⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetUpdateStrategy.
 
-Global Instance bounded_size_DaemonSetUpdateStrategy : BoundedTypeSize v1.DaemonSetUpdateStrategy.
-Admitted.
-
-Global Instance into_val_DaemonSetUpdateStrategy `{ffi_syntax} : IntoVal DaemonSetUpdateStrategy.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetUpdateStrategy `{ffi_syntax} : IntoValTyped DaemonSetUpdateStrategy.t v1.DaemonSetUpdateStrategy.
-Admitted.
-
-(* type v1.DaemonSetUpdateStrategyType *)
 Module DaemonSetUpdateStrategyType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetUpdateStrategyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetUpdateStrategyType.t). Admitted.
+
+#[global] Instance DaemonSetUpdateStrategyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetUpdateStrategyType.t) (v1.DaemonSetUpdateStrategyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetUpdateStrategyType.
 
-Global Instance bounded_size_DaemonSetUpdateStrategyType : BoundedTypeSize v1.DaemonSetUpdateStrategyType.
-Admitted.
-
-Global Instance into_val_DaemonSetUpdateStrategyType `{ffi_syntax} : IntoVal DaemonSetUpdateStrategyType.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetUpdateStrategyType `{ffi_syntax} : IntoValTyped DaemonSetUpdateStrategyType.t v1.DaemonSetUpdateStrategyType.
-Admitted.
-
-(* type v1.RollingUpdateDaemonSet *)
 Module RollingUpdateDaemonSet.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance RollingUpdateDaemonSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDaemonSet.t). Admitted.
+
+#[global] Instance RollingUpdateDaemonSet_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RollingUpdateDaemonSet.t) (v1.RollingUpdateDaemonSetⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End RollingUpdateDaemonSet.
 
-Global Instance bounded_size_RollingUpdateDaemonSet : BoundedTypeSize v1.RollingUpdateDaemonSet.
-Admitted.
-
-Global Instance into_val_RollingUpdateDaemonSet `{ffi_syntax} : IntoVal RollingUpdateDaemonSet.t.
-Admitted.
-
-Global Instance into_val_typed_RollingUpdateDaemonSet `{ffi_syntax} : IntoValTyped RollingUpdateDaemonSet.t v1.RollingUpdateDaemonSet.
-Admitted.
-
-(* type v1.DaemonSetSpec *)
 Module DaemonSetSpec.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetSpec.t). Admitted.
+
+#[global] Instance DaemonSetSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetSpec.t) (v1.DaemonSetSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetSpec.
 
-Global Instance bounded_size_DaemonSetSpec : BoundedTypeSize v1.DaemonSetSpec.
-Admitted.
-
-Global Instance into_val_DaemonSetSpec `{ffi_syntax} : IntoVal DaemonSetSpec.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetSpec `{ffi_syntax} : IntoValTyped DaemonSetSpec.t v1.DaemonSetSpec.
-Admitted.
-
-(* type v1.DaemonSetStatus *)
 Module DaemonSetStatus.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetStatus.t). Admitted.
+
+#[global] Instance DaemonSetStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetStatus.t) (v1.DaemonSetStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetStatus.
 
-Global Instance bounded_size_DaemonSetStatus : BoundedTypeSize v1.DaemonSetStatus.
-Admitted.
-
-Global Instance into_val_DaemonSetStatus `{ffi_syntax} : IntoVal DaemonSetStatus.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetStatus `{ffi_syntax} : IntoValTyped DaemonSetStatus.t v1.DaemonSetStatus.
-Admitted.
-
-(* type v1.DaemonSetConditionType *)
 Module DaemonSetConditionType.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetConditionType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetConditionType.t). Admitted.
+
+#[global] Instance DaemonSetConditionType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetConditionType.t) (v1.DaemonSetConditionTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetConditionType.
 
-Global Instance bounded_size_DaemonSetConditionType : BoundedTypeSize v1.DaemonSetConditionType.
-Admitted.
-
-Global Instance into_val_DaemonSetConditionType `{ffi_syntax} : IntoVal DaemonSetConditionType.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetConditionType `{ffi_syntax} : IntoValTyped DaemonSetConditionType.t v1.DaemonSetConditionType.
-Admitted.
-
-(* type v1.DaemonSetCondition *)
 Module DaemonSetCondition.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetCondition.t). Admitted.
+
+#[global] Instance DaemonSetCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetCondition.t) (v1.DaemonSetConditionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetCondition.
 
-Global Instance bounded_size_DaemonSetCondition : BoundedTypeSize v1.DaemonSetCondition.
-Admitted.
-
-Global Instance into_val_DaemonSetCondition `{ffi_syntax} : IntoVal DaemonSetCondition.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetCondition `{ffi_syntax} : IntoValTyped DaemonSetCondition.t v1.DaemonSetCondition.
-Admitted.
-
-(* type v1.DaemonSet *)
 Module DaemonSet.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSet.t). Admitted.
+
+#[global] Instance DaemonSet_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSet.t) (v1.DaemonSetⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSet.
 
-Global Instance bounded_size_DaemonSet : BoundedTypeSize v1.DaemonSet.
-Admitted.
-
-Global Instance into_val_DaemonSet `{ffi_syntax} : IntoVal DaemonSet.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSet `{ffi_syntax} : IntoValTyped DaemonSet.t v1.DaemonSet.
-Admitted.
-
-(* type v1.DaemonSetList *)
 Module DaemonSetList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance DaemonSetList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetList.t). Admitted.
+
+#[global] Instance DaemonSetList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.DaemonSetList.t) (v1.DaemonSetListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End DaemonSetList.
 
-Global Instance bounded_size_DaemonSetList : BoundedTypeSize v1.DaemonSetList.
-Admitted.
-
-Global Instance into_val_DaemonSetList `{ffi_syntax} : IntoVal DaemonSetList.t.
-Admitted.
-
-Global Instance into_val_typed_DaemonSetList `{ffi_syntax} : IntoValTyped DaemonSetList.t v1.DaemonSetList.
-Admitted.
-
-(* type v1.ReplicaSetSpec *)
 Module ReplicaSetSpec.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Replicas' : loc;
-  MinReadySeconds' : w32;
-  Selector' : loc;
-  Template' : v1.PodTemplateSpec.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ReplicaSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicaSetSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Replicas" ∷ l.[(v1.ReplicaSetSpec.t), "Replicas"] ↦{dq} v.(v1.ReplicaSetSpec.Replicas') ∗
+      "MinReadySeconds" ∷ l.[(v1.ReplicaSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.ReplicaSetSpec.MinReadySeconds') ∗
+      "Selector" ∷ l.[(v1.ReplicaSetSpec.t), "Selector"] ↦{dq} v.(v1.ReplicaSetSpec.Selector') ∗
+      "Template" ∷ l.[(v1.ReplicaSetSpec.t), "Template"] ↦{dq} v.(v1.ReplicaSetSpec.Template') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ReplicaSetSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicaSetSpec.t) (v1.ReplicaSetSpecⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSetSpec_access_load_Replicas l (v : (v1.ReplicaSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Replicas"] ↦{dq} (v.(v1.ReplicaSetSpec.Replicas')))
+    (l.[(v1.ReplicaSetSpec.t), "Replicas"] ↦{dq} (v.(v1.ReplicaSetSpec.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetSpec_access_store_Replicas l (v : (v1.ReplicaSetSpec.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Replicas"] ↦ (v.(v1.ReplicaSetSpec.Replicas')))
+    (l.[(v1.ReplicaSetSpec.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetSpec.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetSpec_access_load_MinReadySeconds l (v : (v1.ReplicaSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.ReplicaSetSpec.MinReadySeconds')))
+    (l.[(v1.ReplicaSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.ReplicaSetSpec.MinReadySeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetSpec_access_store_MinReadySeconds l (v : (v1.ReplicaSetSpec.t)) MinReadySeconds' :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "MinReadySeconds"] ↦ (v.(v1.ReplicaSetSpec.MinReadySeconds')))
+    (l.[(v1.ReplicaSetSpec.t), "MinReadySeconds"] ↦ MinReadySeconds')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetSpec.MinReadySeconds') := MinReadySeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetSpec_access_load_Selector l (v : (v1.ReplicaSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Selector"] ↦{dq} (v.(v1.ReplicaSetSpec.Selector')))
+    (l.[(v1.ReplicaSetSpec.t), "Selector"] ↦{dq} (v.(v1.ReplicaSetSpec.Selector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetSpec_access_store_Selector l (v : (v1.ReplicaSetSpec.t)) Selector' :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Selector"] ↦ (v.(v1.ReplicaSetSpec.Selector')))
+    (l.[(v1.ReplicaSetSpec.t), "Selector"] ↦ Selector')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetSpec.Selector') := Selector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetSpec_access_load_Template l (v : (v1.ReplicaSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Template"] ↦{dq} (v.(v1.ReplicaSetSpec.Template')))
+    (l.[(v1.ReplicaSetSpec.t), "Template"] ↦{dq} (v.(v1.ReplicaSetSpec.Template')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetSpec_access_store_Template l (v : (v1.ReplicaSetSpec.t)) Template' :
+  AccessStrict
+    (l.[(v1.ReplicaSetSpec.t), "Template"] ↦ (v.(v1.ReplicaSetSpec.Template')))
+    (l.[(v1.ReplicaSetSpec.t), "Template"] ↦ Template')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetSpec.Template') := Template'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End ReplicaSetSpec.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ReplicaSetSpec.
-#[local] Typeclasses Transparent v1.ReplicaSetSpec.
-
-Global Instance ReplicaSetSpec_wf : struct.Wf v1.ReplicaSetSpec.
-Proof. apply _. Qed.
-
-Global Instance settable_ReplicaSetSpec : Settable ReplicaSetSpec.t :=
-  settable! ReplicaSetSpec.mk < ReplicaSetSpec.Replicas'; ReplicaSetSpec.MinReadySeconds'; ReplicaSetSpec.Selector'; ReplicaSetSpec.Template' >.
-Global Instance into_val_ReplicaSetSpec : IntoVal ReplicaSetSpec.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ReplicaSetSpec [
-    "Replicas" ::= #(ReplicaSetSpec.Replicas' v);
-    "MinReadySeconds" ::= #(ReplicaSetSpec.MinReadySeconds' v);
-    "Selector" ::= #(ReplicaSetSpec.Selector' v);
-    "Template" ::= #(ReplicaSetSpec.Template' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ReplicaSetSpec : IntoValTyped ReplicaSetSpec.t v1.ReplicaSetSpec :=
-{|
-  default_val := ReplicaSetSpec.mk (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetSpec_Replicas : IntoValStructField "Replicas" v1.ReplicaSetSpec ReplicaSetSpec.Replicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetSpec_MinReadySeconds : IntoValStructField "MinReadySeconds" v1.ReplicaSetSpec ReplicaSetSpec.MinReadySeconds'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetSpec_Selector : IntoValStructField "Selector" v1.ReplicaSetSpec ReplicaSetSpec.Selector'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetSpec_Template : IntoValStructField "Template" v1.ReplicaSetSpec ReplicaSetSpec.Template'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSetSpec Replicas' MinReadySeconds' Selector' Template':
-  PureWp True
-    (struct.make #v1.ReplicaSetSpec (alist_val [
-      "Replicas" ::= #Replicas';
-      "MinReadySeconds" ::= #MinReadySeconds';
-      "Selector" ::= #Selector';
-      "Template" ::= #Template'
-    ]))%struct
-    #(ReplicaSetSpec.mk Replicas' MinReadySeconds' Selector' Template').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ReplicaSetSpec_struct_fields_split dq l (v : ReplicaSetSpec.t) :
-  StructFieldsSplit dq l v (
-    "HReplicas" ∷ l ↦s[v1.ReplicaSetSpec :: "Replicas"]{dq} v.(ReplicaSetSpec.Replicas') ∗
-    "HMinReadySeconds" ∷ l ↦s[v1.ReplicaSetSpec :: "MinReadySeconds"]{dq} v.(ReplicaSetSpec.MinReadySeconds') ∗
-    "HSelector" ∷ l ↦s[v1.ReplicaSetSpec :: "Selector"]{dq} v.(ReplicaSetSpec.Selector') ∗
-    "HTemplate" ∷ l ↦s[v1.ReplicaSetSpec :: "Template"]{dq} v.(ReplicaSetSpec.Template')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ReplicaSetSpec.Replicas' v)) (v1.ReplicaSetSpec) "Replicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetSpec.MinReadySeconds' v)) (v1.ReplicaSetSpec) "MinReadySeconds"%go.
-  simpl_one_flatten_struct (# (ReplicaSetSpec.Selector' v)) (v1.ReplicaSetSpec) "Selector"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ReplicaSetStatus *)
 Module ReplicaSetStatus.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Replicas' : w32;
-  FullyLabeledReplicas' : w32;
-  ReadyReplicas' : w32;
-  AvailableReplicas' : w32;
-  TerminatingReplicas' : loc;
-  ObservedGeneration' : w64;
-  Conditions' : slice.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ReplicaSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicaSetStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Replicas" ∷ l.[(v1.ReplicaSetStatus.t), "Replicas"] ↦{dq} v.(v1.ReplicaSetStatus.Replicas') ∗
+      "FullyLabeledReplicas" ∷ l.[(v1.ReplicaSetStatus.t), "FullyLabeledReplicas"] ↦{dq} v.(v1.ReplicaSetStatus.FullyLabeledReplicas') ∗
+      "ReadyReplicas" ∷ l.[(v1.ReplicaSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.ReplicaSetStatus.ReadyReplicas') ∗
+      "AvailableReplicas" ∷ l.[(v1.ReplicaSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.ReplicaSetStatus.AvailableReplicas') ∗
+      "TerminatingReplicas" ∷ l.[(v1.ReplicaSetStatus.t), "TerminatingReplicas"] ↦{dq} v.(v1.ReplicaSetStatus.TerminatingReplicas') ∗
+      "ObservedGeneration" ∷ l.[(v1.ReplicaSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.ReplicaSetStatus.ObservedGeneration') ∗
+      "Conditions" ∷ l.[(v1.ReplicaSetStatus.t), "Conditions"] ↦{dq} v.(v1.ReplicaSetStatus.Conditions') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ReplicaSetStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicaSetStatus.t) (v1.ReplicaSetStatusⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_Replicas l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "Replicas"] ↦{dq} (v.(v1.ReplicaSetStatus.Replicas')))
+    (l.[(v1.ReplicaSetStatus.t), "Replicas"] ↦{dq} (v.(v1.ReplicaSetStatus.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_Replicas l (v : (v1.ReplicaSetStatus.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "Replicas"] ↦ (v.(v1.ReplicaSetStatus.Replicas')))
+    (l.[(v1.ReplicaSetStatus.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_FullyLabeledReplicas l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "FullyLabeledReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.FullyLabeledReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "FullyLabeledReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.FullyLabeledReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_FullyLabeledReplicas l (v : (v1.ReplicaSetStatus.t)) FullyLabeledReplicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "FullyLabeledReplicas"] ↦ (v.(v1.ReplicaSetStatus.FullyLabeledReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "FullyLabeledReplicas"] ↦ FullyLabeledReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.FullyLabeledReplicas') := FullyLabeledReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_ReadyReplicas l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.ReadyReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.ReadyReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_ReadyReplicas l (v : (v1.ReplicaSetStatus.t)) ReadyReplicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "ReadyReplicas"] ↦ (v.(v1.ReplicaSetStatus.ReadyReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "ReadyReplicas"] ↦ ReadyReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.ReadyReplicas') := ReadyReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_AvailableReplicas l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.AvailableReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.AvailableReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_AvailableReplicas l (v : (v1.ReplicaSetStatus.t)) AvailableReplicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "AvailableReplicas"] ↦ (v.(v1.ReplicaSetStatus.AvailableReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "AvailableReplicas"] ↦ AvailableReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.AvailableReplicas') := AvailableReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_TerminatingReplicas l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "TerminatingReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.TerminatingReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "TerminatingReplicas"] ↦{dq} (v.(v1.ReplicaSetStatus.TerminatingReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_TerminatingReplicas l (v : (v1.ReplicaSetStatus.t)) TerminatingReplicas' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "TerminatingReplicas"] ↦ (v.(v1.ReplicaSetStatus.TerminatingReplicas')))
+    (l.[(v1.ReplicaSetStatus.t), "TerminatingReplicas"] ↦ TerminatingReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.TerminatingReplicas') := TerminatingReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_ObservedGeneration l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.ReplicaSetStatus.ObservedGeneration')))
+    (l.[(v1.ReplicaSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.ReplicaSetStatus.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_ObservedGeneration l (v : (v1.ReplicaSetStatus.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "ObservedGeneration"] ↦ (v.(v1.ReplicaSetStatus.ObservedGeneration')))
+    (l.[(v1.ReplicaSetStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetStatus_access_load_Conditions l (v : (v1.ReplicaSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "Conditions"] ↦{dq} (v.(v1.ReplicaSetStatus.Conditions')))
+    (l.[(v1.ReplicaSetStatus.t), "Conditions"] ↦{dq} (v.(v1.ReplicaSetStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetStatus_access_store_Conditions l (v : (v1.ReplicaSetStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.ReplicaSetStatus.t), "Conditions"] ↦ (v.(v1.ReplicaSetStatus.Conditions')))
+    (l.[(v1.ReplicaSetStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End ReplicaSetStatus.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ReplicaSetStatus.
-#[local] Typeclasses Transparent v1.ReplicaSetStatus.
-
-Global Instance ReplicaSetStatus_wf : struct.Wf v1.ReplicaSetStatus.
-Proof. apply _. Qed.
-
-Global Instance settable_ReplicaSetStatus : Settable ReplicaSetStatus.t :=
-  settable! ReplicaSetStatus.mk < ReplicaSetStatus.Replicas'; ReplicaSetStatus.FullyLabeledReplicas'; ReplicaSetStatus.ReadyReplicas'; ReplicaSetStatus.AvailableReplicas'; ReplicaSetStatus.TerminatingReplicas'; ReplicaSetStatus.ObservedGeneration'; ReplicaSetStatus.Conditions' >.
-Global Instance into_val_ReplicaSetStatus : IntoVal ReplicaSetStatus.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ReplicaSetStatus [
-    "Replicas" ::= #(ReplicaSetStatus.Replicas' v);
-    "FullyLabeledReplicas" ::= #(ReplicaSetStatus.FullyLabeledReplicas' v);
-    "ReadyReplicas" ::= #(ReplicaSetStatus.ReadyReplicas' v);
-    "AvailableReplicas" ::= #(ReplicaSetStatus.AvailableReplicas' v);
-    "TerminatingReplicas" ::= #(ReplicaSetStatus.TerminatingReplicas' v);
-    "ObservedGeneration" ::= #(ReplicaSetStatus.ObservedGeneration' v);
-    "Conditions" ::= #(ReplicaSetStatus.Conditions' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ReplicaSetStatus : IntoValTyped ReplicaSetStatus.t v1.ReplicaSetStatus :=
-{|
-  default_val := ReplicaSetStatus.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_Replicas : IntoValStructField "Replicas" v1.ReplicaSetStatus ReplicaSetStatus.Replicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_FullyLabeledReplicas : IntoValStructField "FullyLabeledReplicas" v1.ReplicaSetStatus ReplicaSetStatus.FullyLabeledReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_ReadyReplicas : IntoValStructField "ReadyReplicas" v1.ReplicaSetStatus ReplicaSetStatus.ReadyReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_AvailableReplicas : IntoValStructField "AvailableReplicas" v1.ReplicaSetStatus ReplicaSetStatus.AvailableReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_TerminatingReplicas : IntoValStructField "TerminatingReplicas" v1.ReplicaSetStatus ReplicaSetStatus.TerminatingReplicas'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_ObservedGeneration : IntoValStructField "ObservedGeneration" v1.ReplicaSetStatus ReplicaSetStatus.ObservedGeneration'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetStatus_Conditions : IntoValStructField "Conditions" v1.ReplicaSetStatus ReplicaSetStatus.Conditions'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSetStatus Replicas' FullyLabeledReplicas' ReadyReplicas' AvailableReplicas' TerminatingReplicas' ObservedGeneration' Conditions':
-  PureWp True
-    (struct.make #v1.ReplicaSetStatus (alist_val [
-      "Replicas" ::= #Replicas';
-      "FullyLabeledReplicas" ::= #FullyLabeledReplicas';
-      "ReadyReplicas" ::= #ReadyReplicas';
-      "AvailableReplicas" ::= #AvailableReplicas';
-      "TerminatingReplicas" ::= #TerminatingReplicas';
-      "ObservedGeneration" ::= #ObservedGeneration';
-      "Conditions" ::= #Conditions'
-    ]))%struct
-    #(ReplicaSetStatus.mk Replicas' FullyLabeledReplicas' ReadyReplicas' AvailableReplicas' TerminatingReplicas' ObservedGeneration' Conditions').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ReplicaSetStatus_struct_fields_split dq l (v : ReplicaSetStatus.t) :
-  StructFieldsSplit dq l v (
-    "HReplicas" ∷ l ↦s[v1.ReplicaSetStatus :: "Replicas"]{dq} v.(ReplicaSetStatus.Replicas') ∗
-    "HFullyLabeledReplicas" ∷ l ↦s[v1.ReplicaSetStatus :: "FullyLabeledReplicas"]{dq} v.(ReplicaSetStatus.FullyLabeledReplicas') ∗
-    "HReadyReplicas" ∷ l ↦s[v1.ReplicaSetStatus :: "ReadyReplicas"]{dq} v.(ReplicaSetStatus.ReadyReplicas') ∗
-    "HAvailableReplicas" ∷ l ↦s[v1.ReplicaSetStatus :: "AvailableReplicas"]{dq} v.(ReplicaSetStatus.AvailableReplicas') ∗
-    "HTerminatingReplicas" ∷ l ↦s[v1.ReplicaSetStatus :: "TerminatingReplicas"]{dq} v.(ReplicaSetStatus.TerminatingReplicas') ∗
-    "HObservedGeneration" ∷ l ↦s[v1.ReplicaSetStatus :: "ObservedGeneration"]{dq} v.(ReplicaSetStatus.ObservedGeneration') ∗
-    "HConditions" ∷ l ↦s[v1.ReplicaSetStatus :: "Conditions"]{dq} v.(ReplicaSetStatus.Conditions')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.Replicas' v)) (v1.ReplicaSetStatus) "Replicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.FullyLabeledReplicas' v)) (v1.ReplicaSetStatus) "FullyLabeledReplicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.ReadyReplicas' v)) (v1.ReplicaSetStatus) "ReadyReplicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.AvailableReplicas' v)) (v1.ReplicaSetStatus) "AvailableReplicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.TerminatingReplicas' v)) (v1.ReplicaSetStatus) "TerminatingReplicas"%go.
-  simpl_one_flatten_struct (# (ReplicaSetStatus.ObservedGeneration' v)) (v1.ReplicaSetStatus) "ObservedGeneration"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ReplicaSet *)
 Module ReplicaSet.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : v1.ObjectMeta.t;
-  Spec' : ReplicaSetSpec.t;
-  Status' : ReplicaSetStatus.t;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ReplicaSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicaSet.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.ReplicaSet.t), "TypeMeta"] ↦{dq} v.(v1.ReplicaSet.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.ReplicaSet.t), "ObjectMeta"] ↦{dq} v.(v1.ReplicaSet.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.ReplicaSet.t), "Spec"] ↦{dq} v.(v1.ReplicaSet.Spec') ∗
+      "Status" ∷ l.[(v1.ReplicaSet.t), "Status"] ↦{dq} v.(v1.ReplicaSet.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ReplicaSet_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicaSet.t) (v1.ReplicaSetⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSet_access_load_TypeMeta l (v : (v1.ReplicaSet.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "TypeMeta"] ↦{dq} (v.(v1.ReplicaSet.TypeMeta')))
+    (l.[(v1.ReplicaSet.t), "TypeMeta"] ↦{dq} (v.(v1.ReplicaSet.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSet_access_store_TypeMeta l (v : (v1.ReplicaSet.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "TypeMeta"] ↦ (v.(v1.ReplicaSet.TypeMeta')))
+    (l.[(v1.ReplicaSet.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSet.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSet_access_load_ObjectMeta l (v : (v1.ReplicaSet.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "ObjectMeta"] ↦{dq} (v.(v1.ReplicaSet.ObjectMeta')))
+    (l.[(v1.ReplicaSet.t), "ObjectMeta"] ↦{dq} (v.(v1.ReplicaSet.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSet_access_store_ObjectMeta l (v : (v1.ReplicaSet.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "ObjectMeta"] ↦ (v.(v1.ReplicaSet.ObjectMeta')))
+    (l.[(v1.ReplicaSet.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSet.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSet_access_load_Spec l (v : (v1.ReplicaSet.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "Spec"] ↦{dq} (v.(v1.ReplicaSet.Spec')))
+    (l.[(v1.ReplicaSet.t), "Spec"] ↦{dq} (v.(v1.ReplicaSet.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSet_access_store_Spec l (v : (v1.ReplicaSet.t)) Spec' :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "Spec"] ↦ (v.(v1.ReplicaSet.Spec')))
+    (l.[(v1.ReplicaSet.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSet.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSet_access_load_Status l (v : (v1.ReplicaSet.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "Status"] ↦{dq} (v.(v1.ReplicaSet.Status')))
+    (l.[(v1.ReplicaSet.t), "Status"] ↦{dq} (v.(v1.ReplicaSet.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSet_access_store_Status l (v : (v1.ReplicaSet.t)) Status' :
+  AccessStrict
+    (l.[(v1.ReplicaSet.t), "Status"] ↦ (v.(v1.ReplicaSet.Status')))
+    (l.[(v1.ReplicaSet.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSet.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End ReplicaSet.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ReplicaSet.
-#[local] Typeclasses Transparent v1.ReplicaSet.
-
-Global Instance ReplicaSet_wf : struct.Wf v1.ReplicaSet.
-Proof. apply _. Qed.
-
-Global Instance settable_ReplicaSet : Settable ReplicaSet.t :=
-  settable! ReplicaSet.mk < ReplicaSet.TypeMeta'; ReplicaSet.ObjectMeta'; ReplicaSet.Spec'; ReplicaSet.Status' >.
-Global Instance into_val_ReplicaSet : IntoVal ReplicaSet.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ReplicaSet [
-    "TypeMeta" ::= #(ReplicaSet.TypeMeta' v);
-    "ObjectMeta" ::= #(ReplicaSet.ObjectMeta' v);
-    "Spec" ::= #(ReplicaSet.Spec' v);
-    "Status" ::= #(ReplicaSet.Status' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ReplicaSet : IntoValTyped ReplicaSet.t v1.ReplicaSet :=
-{|
-  default_val := ReplicaSet.mk (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ReplicaSet_TypeMeta : IntoValStructField "TypeMeta" v1.ReplicaSet ReplicaSet.TypeMeta'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSet_ObjectMeta : IntoValStructField "ObjectMeta" v1.ReplicaSet ReplicaSet.ObjectMeta'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSet_Spec : IntoValStructField "Spec" v1.ReplicaSet ReplicaSet.Spec'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSet_Status : IntoValStructField "Status" v1.ReplicaSet ReplicaSet.Status'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSet TypeMeta' ObjectMeta' Spec' Status':
-  PureWp True
-    (struct.make #v1.ReplicaSet (alist_val [
-      "TypeMeta" ::= #TypeMeta';
-      "ObjectMeta" ::= #ObjectMeta';
-      "Spec" ::= #Spec';
-      "Status" ::= #Status'
-    ]))%struct
-    #(ReplicaSet.mk TypeMeta' ObjectMeta' Spec' Status').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ReplicaSet_struct_fields_split dq l (v : ReplicaSet.t) :
-  StructFieldsSplit dq l v (
-    "HTypeMeta" ∷ l ↦s[v1.ReplicaSet :: "TypeMeta"]{dq} v.(ReplicaSet.TypeMeta') ∗
-    "HObjectMeta" ∷ l ↦s[v1.ReplicaSet :: "ObjectMeta"]{dq} v.(ReplicaSet.ObjectMeta') ∗
-    "HSpec" ∷ l ↦s[v1.ReplicaSet :: "Spec"]{dq} v.(ReplicaSet.Spec') ∗
-    "HStatus" ∷ l ↦s[v1.ReplicaSet :: "Status"]{dq} v.(ReplicaSet.Status')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ReplicaSet.TypeMeta' v)) (v1.ReplicaSet) "TypeMeta"%go.
-  simpl_one_flatten_struct (# (ReplicaSet.ObjectMeta' v)) (v1.ReplicaSet) "ObjectMeta"%go.
-  simpl_one_flatten_struct (# (ReplicaSet.Spec' v)) (v1.ReplicaSet) "Spec"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ReplicaSetList *)
 Module ReplicaSetList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ReplicaSetList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicaSetList.t). Admitted.
+
+#[global] Instance ReplicaSetList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicaSetList.t) (v1.ReplicaSetListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ReplicaSetList.
 
-Global Instance bounded_size_ReplicaSetList : BoundedTypeSize v1.ReplicaSetList.
-Admitted.
-
-Global Instance into_val_ReplicaSetList `{ffi_syntax} : IntoVal ReplicaSetList.t.
-Admitted.
-
-Global Instance into_val_typed_ReplicaSetList `{ffi_syntax} : IntoValTyped ReplicaSetList.t v1.ReplicaSetList.
-Admitted.
-
-(* type v1.ReplicaSetConditionType *)
-Module ReplicaSetConditionType.
-
-#[global] Transparent v1.ReplicaSetConditionType.
-#[global] Typeclasses Transparent v1.ReplicaSetConditionType.
-Section def.
-Context `{ffi_syntax}.
-Definition t := go_string.
-End def.
-End ReplicaSetConditionType.
-
-(* type v1.ReplicaSetCondition *)
 Module ReplicaSetCondition.
 Section def.
-Context `{ffi_syntax}.
-Record t := mk {
-  Type' : ReplicaSetConditionType.t;
-  Status' : v1.ConditionStatus.t;
-  LastTransitionTime' : v1.Time.t;
-  Reason' : go_string;
-  Message' : go_string;
-}.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ReplicaSetCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ReplicaSetCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.ReplicaSetCondition.t), "Type"] ↦{dq} v.(v1.ReplicaSetCondition.Type') ∗
+      "Status" ∷ l.[(v1.ReplicaSetCondition.t), "Status"] ↦{dq} v.(v1.ReplicaSetCondition.Status') ∗
+      "LastTransitionTime" ∷ l.[(v1.ReplicaSetCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.ReplicaSetCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.ReplicaSetCondition.t), "Reason"] ↦{dq} v.(v1.ReplicaSetCondition.Reason') ∗
+      "Message" ∷ l.[(v1.ReplicaSetCondition.t), "Message"] ↦{dq} v.(v1.ReplicaSetCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ReplicaSetCondition_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ReplicaSetCondition.t) (v1.ReplicaSetConditionⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSetCondition_access_load_Type l (v : (v1.ReplicaSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Type"] ↦{dq} (v.(v1.ReplicaSetCondition.Type')))
+    (l.[(v1.ReplicaSetCondition.t), "Type"] ↦{dq} (v.(v1.ReplicaSetCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetCondition_access_store_Type l (v : (v1.ReplicaSetCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Type"] ↦ (v.(v1.ReplicaSetCondition.Type')))
+    (l.[(v1.ReplicaSetCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetCondition_access_load_Status l (v : (v1.ReplicaSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Status"] ↦{dq} (v.(v1.ReplicaSetCondition.Status')))
+    (l.[(v1.ReplicaSetCondition.t), "Status"] ↦{dq} (v.(v1.ReplicaSetCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetCondition_access_store_Status l (v : (v1.ReplicaSetCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Status"] ↦ (v.(v1.ReplicaSetCondition.Status')))
+    (l.[(v1.ReplicaSetCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetCondition_access_load_LastTransitionTime l (v : (v1.ReplicaSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.ReplicaSetCondition.LastTransitionTime')))
+    (l.[(v1.ReplicaSetCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.ReplicaSetCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetCondition_access_store_LastTransitionTime l (v : (v1.ReplicaSetCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "LastTransitionTime"] ↦ (v.(v1.ReplicaSetCondition.LastTransitionTime')))
+    (l.[(v1.ReplicaSetCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetCondition_access_load_Reason l (v : (v1.ReplicaSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Reason"] ↦{dq} (v.(v1.ReplicaSetCondition.Reason')))
+    (l.[(v1.ReplicaSetCondition.t), "Reason"] ↦{dq} (v.(v1.ReplicaSetCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetCondition_access_store_Reason l (v : (v1.ReplicaSetCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Reason"] ↦ (v.(v1.ReplicaSetCondition.Reason')))
+    (l.[(v1.ReplicaSetCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ReplicaSetCondition_access_load_Message l (v : (v1.ReplicaSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Message"] ↦{dq} (v.(v1.ReplicaSetCondition.Message')))
+    (l.[(v1.ReplicaSetCondition.t), "Message"] ↦{dq} (v.(v1.ReplicaSetCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetCondition_access_store_Message l (v : (v1.ReplicaSetCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.ReplicaSetCondition.t), "Message"] ↦ (v.(v1.ReplicaSetCondition.Message')))
+    (l.[(v1.ReplicaSetCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.ReplicaSetCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
 End def.
 End ReplicaSetCondition.
 
-Section instances.
-Context `{ffi_syntax}.
-#[local] Transparent v1.ReplicaSetCondition.
-#[local] Typeclasses Transparent v1.ReplicaSetCondition.
-
-Global Instance ReplicaSetCondition_wf : struct.Wf v1.ReplicaSetCondition.
-Proof. apply _. Qed.
-
-Global Instance settable_ReplicaSetCondition : Settable ReplicaSetCondition.t :=
-  settable! ReplicaSetCondition.mk < ReplicaSetCondition.Type'; ReplicaSetCondition.Status'; ReplicaSetCondition.LastTransitionTime'; ReplicaSetCondition.Reason'; ReplicaSetCondition.Message' >.
-Global Instance into_val_ReplicaSetCondition : IntoVal ReplicaSetCondition.t :=
-  {| to_val_def v :=
-    struct.val_aux v1.ReplicaSetCondition [
-    "Type" ::= #(ReplicaSetCondition.Type' v);
-    "Status" ::= #(ReplicaSetCondition.Status' v);
-    "LastTransitionTime" ::= #(ReplicaSetCondition.LastTransitionTime' v);
-    "Reason" ::= #(ReplicaSetCondition.Reason' v);
-    "Message" ::= #(ReplicaSetCondition.Message' v)
-    ]%struct
-  |}.
-
-Global Program Instance into_val_typed_ReplicaSetCondition : IntoValTyped ReplicaSetCondition.t v1.ReplicaSetCondition :=
-{|
-  default_val := ReplicaSetCondition.mk (default_val _) (default_val _) (default_val _) (default_val _) (default_val _);
-|}.
-Next Obligation. solve_to_val_type. Qed.
-Next Obligation. solve_zero_val. Qed.
-Next Obligation. solve_to_val_inj. Qed.
-Final Obligation. solve_decision. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetCondition_Type : IntoValStructField "Type" v1.ReplicaSetCondition ReplicaSetCondition.Type'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetCondition_Status : IntoValStructField "Status" v1.ReplicaSetCondition ReplicaSetCondition.Status'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetCondition_LastTransitionTime : IntoValStructField "LastTransitionTime" v1.ReplicaSetCondition ReplicaSetCondition.LastTransitionTime'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetCondition_Reason : IntoValStructField "Reason" v1.ReplicaSetCondition ReplicaSetCondition.Reason'.
-Proof. solve_into_val_struct_field. Qed.
-
-Global Instance into_val_struct_field_ReplicaSetCondition_Message : IntoValStructField "Message" v1.ReplicaSetCondition ReplicaSetCondition.Message'.
-Proof. solve_into_val_struct_field. Qed.
-
-
-Context `{!ffi_model, !ffi_semantics _ _, !ffi_interp _, !heapGS Σ}.
-Global Instance wp_struct_make_ReplicaSetCondition Type' Status' LastTransitionTime' Reason' Message':
-  PureWp True
-    (struct.make #v1.ReplicaSetCondition (alist_val [
-      "Type" ::= #Type';
-      "Status" ::= #Status';
-      "LastTransitionTime" ::= #LastTransitionTime';
-      "Reason" ::= #Reason';
-      "Message" ::= #Message'
-    ]))%struct
-    #(ReplicaSetCondition.mk Type' Status' LastTransitionTime' Reason' Message').
-Proof. solve_struct_make_pure_wp. Qed.
-
-
-Global Instance ReplicaSetCondition_struct_fields_split dq l (v : ReplicaSetCondition.t) :
-  StructFieldsSplit dq l v (
-    "HType" ∷ l ↦s[v1.ReplicaSetCondition :: "Type"]{dq} v.(ReplicaSetCondition.Type') ∗
-    "HStatus" ∷ l ↦s[v1.ReplicaSetCondition :: "Status"]{dq} v.(ReplicaSetCondition.Status') ∗
-    "HLastTransitionTime" ∷ l ↦s[v1.ReplicaSetCondition :: "LastTransitionTime"]{dq} v.(ReplicaSetCondition.LastTransitionTime') ∗
-    "HReason" ∷ l ↦s[v1.ReplicaSetCondition :: "Reason"]{dq} v.(ReplicaSetCondition.Reason') ∗
-    "HMessage" ∷ l ↦s[v1.ReplicaSetCondition :: "Message"]{dq} v.(ReplicaSetCondition.Message')
-  ).
-Proof.
-  rewrite /named.
-  apply struct_fields_split_intro.
-  unfold_typed_pointsto; split_pointsto_app.
-
-  rewrite -!/(typed_pointsto_def _ _ _) -!typed_pointsto_unseal.
-  simpl_one_flatten_struct (# (ReplicaSetCondition.Type' v)) (v1.ReplicaSetCondition) "Type"%go.
-  simpl_one_flatten_struct (# (ReplicaSetCondition.Status' v)) (v1.ReplicaSetCondition) "Status"%go.
-  simpl_one_flatten_struct (# (ReplicaSetCondition.LastTransitionTime' v)) (v1.ReplicaSetCondition) "LastTransitionTime"%go.
-  simpl_one_flatten_struct (# (ReplicaSetCondition.Reason' v)) (v1.ReplicaSetCondition) "Reason"%go.
-
-  solve_field_ref_f.
-Qed.
-
-End instances.
-
-(* type v1.ControllerRevision *)
 Module ControllerRevision.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerRevision_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ControllerRevision.t). Admitted.
+
+#[global] Instance ControllerRevision_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ControllerRevision.t) (v1.ControllerRevisionⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerRevision.
 
-Global Instance bounded_size_ControllerRevision : BoundedTypeSize v1.ControllerRevision.
-Admitted.
-
-Global Instance into_val_ControllerRevision `{ffi_syntax} : IntoVal ControllerRevision.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerRevision `{ffi_syntax} : IntoValTyped ControllerRevision.t v1.ControllerRevision.
-Admitted.
-
-(* type v1.ControllerRevisionList *)
 Module ControllerRevisionList.
 Section def.
-Context `{ffi_syntax}.
-Axiom t : Type.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance ControllerRevisionList_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ControllerRevisionList.t). Admitted.
+
+#[global] Instance ControllerRevisionList_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ControllerRevisionList.t) (v1.ControllerRevisionListⁱᵐᵖˡ).
+Proof. Admitted.
+
 End def.
 End ControllerRevisionList.
 
-Global Instance bounded_size_ControllerRevisionList : BoundedTypeSize v1.ControllerRevisionList.
-Admitted.
-
-Global Instance into_val_ControllerRevisionList `{ffi_syntax} : IntoVal ControllerRevisionList.t.
-Admitted.
-
-Global Instance into_val_typed_ControllerRevisionList `{ffi_syntax} : IntoValTyped ControllerRevisionList.t v1.ControllerRevisionList.
-Admitted.
-
-Section names.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context `{!globalsGS Σ}.
-Context {go_ctx : GoContext}.
-#[local] Transparent is_pkg_defined is_pkg_defined_pure.
-
-Global Instance is_pkg_defined_pure_v1 : IsPkgDefinedPure v1 :=
-  {|
-    is_pkg_defined_pure_def go_ctx :=
-      is_pkg_defined_pure_single v1 ∧
-      is_pkg_defined_pure code.k8s_io.api.core.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∧
-      is_pkg_defined_pure code.k8s_io.apimachinery.pkg.runtime.schema.schema;
-  |}.
-
-#[local] Transparent is_pkg_defined_single is_pkg_defined_pure_single.
-Global Program Instance is_pkg_defined_v1 : IsPkgDefined v1 :=
-  {|
-    is_pkg_defined_def go_ctx :=
-      (is_pkg_defined_single v1 ∗
-       is_pkg_defined code.k8s_io.api.core.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.apis.meta.v1.v1 ∗
-       is_pkg_defined code.k8s_io.apimachinery.pkg.runtime.schema.schema)%I
-  |}.
-Final Obligation. iIntros. iFrame "#%". Qed.
-#[local] Opaque is_pkg_defined_single is_pkg_defined_pure_single.
-
-End names.
 End v1.

@@ -4,7 +4,13 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {package_sem : controller.Assumptions}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Local Set Default Proof Using "All".
 
 Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
   {{{ is_pkg_init controller ∗
@@ -20,60 +26,15 @@ Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
 Proof.
 Admitted.
 
-Definition is_pod_active (pod: v1.Pod.t): Prop :=
-  "Succeeded"%go ≠ pod.(v1.Pod.Status').(v1.PodStatus.Phase') ∧
-  "Failed"%go ≠ pod.(v1.Pod.Status').(v1.PodStatus.Phase') ∧
-	pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null.
-
-Lemma wp_IsPodActive p pod dq:
-  {{{ is_pkg_init controller ∗
-      p↦{dq}pod
-  }}}
-  @! controller.IsPodActive #p
-  {{{ RET #(bool_decide (is_pod_active pod));
-      p↦{dq}pod
-  }}}.
-Proof.
-  wp_start as "Hp".
-  wp_alloc p' as "Hp'".
-  unfold v1.PodSucceeded, v1.PodFailed. wp_auto.
-  iDestruct (struct_fields_split with "Hp") as "Hp". iNamed "Hp". wp_auto.
-  destruct (bool_decide ("Succeeded"%go = pod.(v1.Pod.Status').(v1.PodStatus.Phase'))) eqn:HPhase1. all: rewrite HPhase1; wp_auto.
-  - assert (bool_decide (is_pod_active pod) = false) as ->.
-    { apply bool_decide_eq_false_2. unfold is_pod_active.
-      apply bool_decide_eq_true in HPhase1. naive_solver. }
-    shelve.
-  - destruct (bool_decide ("Failed"%go = pod.(v1.Pod.Status').(v1.PodStatus.Phase'))) eqn:HPhase2. all: rewrite HPhase2; wp_auto.
-    + assert (bool_decide (is_pod_active pod) = false) as ->.
-      { apply bool_decide_eq_false_2. unfold is_pod_active.
-        apply bool_decide_eq_true in HPhase2. naive_solver. }
-      shelve.
-    + destruct (bool_decide (pod.(v1.Pod.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp') = null)) eqn:Hdt.
-      * assert (bool_decide (is_pod_active pod) = true) as ->.
-        { apply bool_decide_eq_true. unfold is_pod_active.
-          apply bool_decide_eq_false in HPhase1.
-          apply bool_decide_eq_false in HPhase2.
-          apply bool_decide_eq_true in Hdt. naive_solver. }
-        shelve.
-      * assert (bool_decide (is_pod_active pod) = false) as ->.
-        { apply bool_decide_eq_false_2. unfold is_pod_active.
-          apply bool_decide_eq_false in Hdt. naive_solver. }
-        shelve.
-    Unshelve.
-    all: iApply "HΦ";
-        iDestruct (struct_fields_combine (v:=pod) with "[$HTypeMeta $HObjectMeta $HSpec $HStatus]") as "Hp";
-        iFrame.
-Qed.
-
 Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
-  dq template_c template rs_l meta controller_ref:
+  dq (template_c : v1.core_v1.PodTemplateSpec.t) template rs_l meta controller_ref:
   {{{ is_pkg_init controller ∗
       template_l ↦{dq} template_c ∗
       PodTemplateSpecV.deepown template_c template dq ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq ∗
       OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
       ⌜ PodTemplateSpecV.valid template ⌝ ∗
-      ⌜ obj = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
+      ⌜ obj = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
       ⌜ ObjectMetaV.valid meta ⌝ ∗
       ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref "ReplicaSet"%go
@@ -89,19 +50,5 @@ Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq
   }}}.
 Proof. Admitted.
-
-Definition is_pure_pod_active (pure_pod: PodV.t): Prop :=
-  "Succeeded"%go ≠ pure_pod.(PodV.Status').(PodStatusV.Phase') ∧
-  "Failed"%go ≠ pure_pod.(PodV.Status').(PodStatusV.Phase') ∧
-	pure_pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
-
-Lemma deepown_preserves_activeness pod pure_pod dq:
-  PodV.deepown pod pure_pod dq -∗
-    ⌜ is_pod_active pod ↔ is_pure_pod_active pure_pod ⌝.
-Proof.
-  iIntros "H". iNamed "H". iNamed "Hdeepown_objectmeta". iNamed "Hdeepown_podstatus".
-  iPureIntro. unfold is_pod_active. unfold is_pure_pod_active. split.
-  all: rewrite Hdeepown_deletiontimestamp_none; rewrite Hdeepown_phase; done.
-Qed.
 
 End proof.

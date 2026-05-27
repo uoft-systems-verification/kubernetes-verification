@@ -2,7 +2,10 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof Require Import prelude empty_ffi pure_objects.
 
 Section proof.
-Context `{hG: !heapGS Σ} {go_ctx: GoContext}.
+Context `{hG: !heapGS Σ}.
+Context `{!ffi_semantics _ _}.
+Context {sem : go.Semantics} {package_sem : v1.Assumptions}.
+Local Set Default Proof Using "All".
 
 Lemma wp_Now :
   {{{ is_pkg_init v1 }}}
@@ -16,7 +19,7 @@ Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetName" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetName" #()
   {{{ RET #m.(v1.ObjectMeta.Name');
       l ↦{dq} m
   }}}.
@@ -26,7 +29,7 @@ Lemma wp_GetName_deepown l m dq:
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetName" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetName" #()
   {{{ RET #m.(ObjectMetaV.Name');
       ObjectMetaV.deepown_l l m dq
   }}}.
@@ -48,7 +51,7 @@ Lemma wp_SetName l m name :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetName" #name
+    l @! (go.PointerType v1.ObjectMeta) @! "SetName" #name
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.Name' := name |>
   }}}.
@@ -58,7 +61,7 @@ Lemma wp_SetName_deepown l m name :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetName" #name
+    l @! (go.PointerType v1.ObjectMeta) @! "SetName" #name
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Name' := name |>) 1
   }}}.
@@ -79,7 +82,7 @@ Lemma wp_GetGenerateName l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetGenerateName" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetGenerateName" #()
   {{{ RET #m.(v1.ObjectMeta.GenerateName');
       l ↦{dq} m
   }}}.
@@ -89,7 +92,7 @@ Lemma wp_GetGenerateName_deepown l m dq :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetGenerateName" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetGenerateName" #()
   {{{ RET #m.(ObjectMetaV.GenerateName');
       ObjectMetaV.deepown_l l m dq
   }}}.
@@ -111,7 +114,7 @@ Lemma wp_GetUID l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetUID" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetUID" #()
   {{{ RET #m.(v1.ObjectMeta.UID');
       l ↦{dq} m
   }}}.
@@ -121,7 +124,7 @@ Lemma wp_GetUID_deepown l m dq :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetUID" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetUID" #()
   {{{ RET #m.(ObjectMetaV.UID');
       ObjectMetaV.deepown_l l m dq
   }}}.
@@ -143,7 +146,7 @@ Lemma wp_GetResourceVersion l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetResourceVersion" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetResourceVersion" #()
   {{{ RET #m.(v1.ObjectMeta.ResourceVersion');
       l ↦{dq} m
   }}}.
@@ -153,7 +156,7 @@ Lemma wp_GetResourceVersion_deepown l m dq :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetResourceVersion" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetResourceVersion" #()
   {{{ RET #m.(ObjectMetaV.ResourceVersion');
       ObjectMetaV.deepown_l l m dq
   }}}.
@@ -175,7 +178,7 @@ Lemma wp_GetGeneration l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetGeneration" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetGeneration" #()
   {{{ RET #m.(v1.ObjectMeta.Generation');
       l ↦{dq} m
   }}}.
@@ -185,7 +188,7 @@ Lemma wp_SetGeneration l m generation :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetGeneration" #generation
+    l @! (go.PointerType v1.ObjectMeta) @! "SetGeneration" #generation
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.Generation' := generation |>
   }}}.
@@ -195,7 +198,7 @@ Lemma wp_GetNamespace l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetNamespace" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetNamespace" #()
   {{{ RET #m.(v1.ObjectMeta.Namespace');
       l ↦{dq} m
   }}}.
@@ -205,7 +208,7 @@ Lemma wp_GetNamespace_deepown l m dq:
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetNamespace" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetNamespace" #()
   {{{ RET #m.(ObjectMetaV.Namespace');
       ObjectMetaV.deepown_l l m dq
   }}}.
@@ -227,7 +230,7 @@ Lemma wp_SetNamespace l m namespace :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetNamespace" #namespace
+    l @! (go.PointerType v1.ObjectMeta) @! "SetNamespace" #namespace
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.Namespace' := namespace |>
   }}}.
@@ -237,7 +240,7 @@ Lemma wp_SetNamespace_deepown l m namespace :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetNamespace" #namespace
+    l @! (go.PointerType v1.ObjectMeta) @! "SetNamespace" #namespace
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Namespace' := namespace |>) 1
   }}}.
@@ -258,7 +261,7 @@ Lemma wp_SetCreationTimestamp l m creation_timestamp :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetCreationTimestamp" #creation_timestamp
+    l @! (go.PointerType v1.ObjectMeta) @! "SetCreationTimestamp" #creation_timestamp
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.CreationTimestamp' := creation_timestamp |>
   }}}.
@@ -269,7 +272,7 @@ Lemma wp_SetCreationTimestamp_deepown l m creation_timestamp pure_creation_times
       ObjectMetaV.deepown_l l m 1 ∗
       TimeV.deepown creation_timestamp pure_creation_timestamp
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetCreationTimestamp" #creation_timestamp
+    l @! (go.PointerType v1.ObjectMeta) @! "SetCreationTimestamp" #creation_timestamp
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.CreationTimestamp' := pure_creation_timestamp |>) 1
   }}}.
@@ -290,7 +293,7 @@ Lemma wp_GetDeletionTimestamp l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetDeletionTimestamp" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetDeletionTimestamp" #()
   {{{ RET #m.(v1.ObjectMeta.DeletionTimestamp');
       l ↦{dq} m
   }}}.
@@ -300,7 +303,7 @@ Lemma wp_SetDeletionTimestamp l m deletion_timestamp :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionTimestamp" #deletion_timestamp
+    l @! (go.PointerType v1.ObjectMeta) @! "SetDeletionTimestamp" #deletion_timestamp
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.DeletionTimestamp' := deletion_timestamp |>
   }}}.
@@ -315,7 +318,7 @@ Lemma wp_SetDeletionTimestamp_deepown l m deletion_timestamp pure_deletion_times
        | None => True
        end)
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionTimestamp" #deletion_timestamp
+    l @! (go.PointerType v1.ObjectMeta) @! "SetDeletionTimestamp" #deletion_timestamp
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionTimestamp' := pure_deletion_timestamp |>) 1
   }}}.
@@ -336,7 +339,7 @@ Lemma wp_GetDeletionGracePeriodSeconds l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetDeletionGracePeriodSeconds" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetDeletionGracePeriodSeconds" #()
   {{{ RET #m.(v1.ObjectMeta.DeletionGracePeriodSeconds');
       l ↦{dq} m
   }}}.
@@ -346,7 +349,7 @@ Lemma wp_SetDeletionGracePeriodSeconds l m dgps :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #dgps
+    l @! (go.PointerType v1.ObjectMeta) @! "SetDeletionGracePeriodSeconds" #dgps
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps |>
   }}}.
@@ -361,7 +364,7 @@ Lemma wp_SetDeletionGracePeriodSeconds_deepown l m dgps pure_dgps :
        | None => True
        end)
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetDeletionGracePeriodSeconds" #dgps
+    l @! (go.PointerType v1.ObjectMeta) @! "SetDeletionGracePeriodSeconds" #dgps
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionGracePeriodSeconds' := pure_dgps |>) 1
   }}}.
@@ -382,7 +385,7 @@ Lemma wp_SetSelfLink l m self_link :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetSelfLink" #self_link
+    l @! (go.PointerType v1.ObjectMeta) @! "SetSelfLink" #self_link
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.SelfLink' := self_link |>
   }}}.
@@ -392,7 +395,7 @@ Lemma wp_SetSelfLink_deepown l m self_link :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetSelfLink" #self_link
+    l @! (go.PointerType v1.ObjectMeta) @! "SetSelfLink" #self_link
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.SelfLink' := self_link |>) 1
   }}}.
@@ -413,7 +416,7 @@ Lemma wp_SetResourceVersion l m resource_version :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetResourceVersion" #resource_version
+    l @! (go.PointerType v1.ObjectMeta) @! "SetResourceVersion" #resource_version
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.ResourceVersion' := resource_version |>
   }}}.
@@ -423,7 +426,7 @@ Lemma wp_SetResourceVersion_deepown l m resource_version :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetResourceVersion" #resource_version
+    l @! (go.PointerType v1.ObjectMeta) @! "SetResourceVersion" #resource_version
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.ResourceVersion' := resource_version |>) 1
   }}}.
@@ -444,7 +447,7 @@ Lemma wp_GetFinalizers l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetFinalizers" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetFinalizers" #()
   {{{ RET #m.(v1.ObjectMeta.Finalizers');
       l ↦{dq} m
   }}}.
@@ -454,7 +457,7 @@ Lemma wp_GetFinalizers_deepown l m dq :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m dq
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "GetFinalizers" #()
+    l @! (go.PointerType v1.ObjectMeta) @! "GetFinalizers" #()
   {{{ sl, RET #sl;
       ⌜ sl = slice.nil ↔ m.(ObjectMetaV.Finalizers') = None ⌝ ∗
       match m.(ObjectMetaV.Finalizers') with
@@ -492,7 +495,7 @@ Lemma wp_SetFinalizers l m fs :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetFinalizers" #fs
+    l @! (go.PointerType v1.ObjectMeta) @! "SetFinalizers" #fs
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.Finalizers' := fs |>
   }}}.
@@ -507,7 +510,7 @@ Lemma wp_SetFinalizers_deepown l m fs pure_fs :
        | None => True
        end)
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetFinalizers" #fs
+    l @! (go.PointerType v1.ObjectMeta) @! "SetFinalizers" #fs
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Finalizers' := pure_fs |>) 1
   }}}.
@@ -528,7 +531,7 @@ Lemma wp_SetUID l m uid :
   {{{ is_pkg_init v1 ∗
       l ↦ m
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetUID" #uid
+    l @! (go.PointerType v1.ObjectMeta) @! "SetUID" #uid
   {{{ RET #();
       l ↦ m <| v1.ObjectMeta.UID' := uid |>
   }}}.
@@ -538,7 +541,7 @@ Lemma wp_SetUID_deepown l m uid :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1
   }}}
-    l @ (ptrT.id v1.ObjectMeta.id) @ "SetUID" #uid
+    l @! (go.PointerType v1.ObjectMeta) @! "SetUID" #uid
   {{{ RET #();
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.UID' := uid |>) 1
   }}}.
@@ -559,7 +562,7 @@ Lemma wp_DeleteOptions__DeepCopy l options :
   {{{ is_pkg_init v1 ∗
       DeleteOptionsV.deepown_l l options 1
   }}}
-    l @ (ptrT.id v1.DeleteOptions.id) @ "DeepCopy" #()
+    l @! (go.PointerType v1.DeleteOptions) @! "DeepCopy" #()
   {{{ l', RET #l';
       DeleteOptionsV.deepown_l l' options 1 ∗
       DeleteOptionsV.deepown_l l options 1
@@ -568,7 +571,7 @@ Proof. Admitted.
 
 Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
   {{{ is_pkg_init v1 ∗
-      ⌜ owner = interface.mk (ptrT.id v1.ReplicaSet.id) (# rs_l) ⌝ ∗
+      ⌜ owner = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}
     @! v1.NewControllerRef #owner #gvk

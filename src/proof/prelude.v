@@ -2,6 +2,7 @@
 (* slightly extend Perennial's proof setup *)
 From iris_named_props Require Import named_props.
 From New.proof Require Export proof_prelude.
+From New.golang Require Export theory.
 From New.proof Require Export option.
 From Coq Require Import Strings.Ascii.
 
