@@ -22,8 +22,8 @@ independent proofs compile in parallel, for example
 ## Solver Timeouts
 
 To avoid endless waits from inappropriate solver use, never call `set_solver`
-or `naive_solver` directly. Every use must be wrapped in a 5 second timeout:
-`Timeout 5 set_solver.` or `Timeout 5 naive_solver.`. If the timeout fires,
+or `naive_solver` directly. Every use must be wrapped in a 10 second timeout:
+`Timeout 10 set_solver.` or `Timeout 10 naive_solver.`. If the timeout fires,
 choose a more explicit proof step instead of increasing the timeout.
 
 ## Fast Rocq Proof Checks
