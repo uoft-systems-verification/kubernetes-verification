@@ -190,12 +190,11 @@ Proof.
   { iPureIntro. subst kobj_rv.
     rewrite KObjectV.status_update_objectmeta. done. }
   iSplit; first done.
-  iIntros (i' err kobj') "Hupdate_post".
-  iDestruct "Hupdate_post" as "[Hsuccess|Hconflict]".
-  - iDestruct "Hsuccess" as "(%Herr & %Hvalid_updated & %Hsame_kind &
+  iSplit.
+  - iIntros (i' kobj') "Hsuccess".
+    iDestruct "Hsuccess" as "(%Hvalid_updated & %Hsame_kind &
       %Hmeta_updated & %Hstatus_updated & Hdeepown_i &
       Hown_meta_frag & Hown_status_frag)".
-    subst err.
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! i' kobj' with
       "[Hdeepown_i Hown_meta_frag Hown_status_frag]") as "HΦ".
@@ -210,29 +209,20 @@ Proof.
       iSplit.
       { iPureIntro. subst kobj_rv.
         rewrite KObjectV.status_update_objectmeta in Hstatus_updated. done. }
-    iFrame. }
+      iFrame. }
     iModIntro. iNext.
-    wp_auto.
-    replace (if decide (interface.nil = interface.nil)
-             then #(interface.ok i') else #interface.nil)%V
-      with (#(interface.ok i'))%V
-      by (destruct (decide (interface.nil = interface.nil)); [done|congruence]).
     wp_auto.
     wp_apply (wp_IsConflict_nil interface.nil with "[]").
     { done. }
     wp_for_post.
     iApply "HΦ".
-  - iDestruct "Hconflict" as "(%Herr_ne & %Hconflict &
+  - iIntros (err) "Hconflict".
+    iDestruct "Hconflict" as "(%Herr_ne & %Hconflict &
       Hown_meta_frag & Hown_status_frag)".
     iDestruct "Hclose" as "[Habort _]".
     iMod ("Habort" with "[Hown_meta_frag Hown_status_frag]") as "Hau".
     { iFrame. iFrame "%". }
     iModIntro. iNext.
-    wp_auto.
-    replace (if decide (err = interface.nil)
-             then #(interface.ok i') else #interface.nil)%V
-      with (#interface.nil)%V
-      by (destruct (decide (err = interface.nil)); [congruence|done]).
     wp_auto.
     wp_apply (wp_IsConflict_conflict err with "[]").
     { done. }
