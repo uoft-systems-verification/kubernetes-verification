@@ -230,7 +230,6 @@ Definition delete_success_post
   )%I.
 
 (* TODO: specifies in which case the object is deleted from the state map *)
-(* TODO: finish all the shelved goals once wp_if_join is available *)
 Lemma wp_State__delete_au γ l key options_c options:
   ∀ Φ,
     is_pkg_init apimodel ∗
