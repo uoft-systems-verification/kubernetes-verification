@@ -1,3 +1,7 @@
-translate = ["!*"]
+translate = [
+    "Clientset.CoreV1",
+]
 
-imports = ["!*"]
+imports = [
+    "k8s.io/client-go/kubernetes/typed/core/v1",
+]

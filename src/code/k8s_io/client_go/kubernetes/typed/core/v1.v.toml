@@ -1,0 +1,5 @@
+translate = [
+    "CoreV1Client.Pods",
+]
+
+imports = ["!*"]

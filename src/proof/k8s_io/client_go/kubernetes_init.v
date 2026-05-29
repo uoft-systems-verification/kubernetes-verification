@@ -1,3 +1,4 @@
+From New.proof.k8s_io.client_go.kubernetes.typed.core Require Export v1_init.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.
 From New.proof Require Import proof_prelude.
 
