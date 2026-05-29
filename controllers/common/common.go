@@ -9,12 +9,6 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 )
 
-var State *apimodel.State
-
-func init() {
-	State = apimodel.NewState()
-}
-
 func NewDeleteOptionsWithUID(uid types.UID) metav1.DeleteOptions {
 	return metav1.DeleteOptions{
 		Preconditions: &metav1.Preconditions{UID: &uid},
@@ -34,7 +28,7 @@ func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
 	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})
-	pods, err := State.ByIndex("Pod", controller.PodControllerIndex, key)
+	pods, err := apimodel.ModelState.ByIndex("Pod", controller.PodControllerIndex, key)
 	if err != nil {
 		return nil, err
 	}

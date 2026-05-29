@@ -183,7 +183,7 @@ Definition owner_ref_key (owner_kind : go_string) (owner_meta : ObjectMetaV.t) :
 Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1 dq2 pods children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr common.State) ↦□ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2 pod.(PodV.ObjectMeta')) ∗

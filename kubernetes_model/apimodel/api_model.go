@@ -67,6 +67,8 @@ type State struct {
 	mu                     *sync.Mutex
 }
 
+var ModelState = NewState()
+
 type KKey struct {
 	Kind      string
 	Name      string

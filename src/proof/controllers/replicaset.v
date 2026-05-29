@@ -223,7 +223,7 @@ Qed.
 Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pods inactive_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr common.State) ↦□ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hsl" ∷ sl ↦* ptrs ∗
       "Hdeepown_l_active_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;active_pods, PodV.deepown_l ptr pod dq1) ∗
@@ -580,7 +580,7 @@ Qed.
 Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs dq pods :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr common.State) ↦□ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         rs.(ReplicaSetV.ObjectMeta') ∗

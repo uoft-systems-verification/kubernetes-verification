@@ -2,6 +2,7 @@ package replicaset
 
 import (
 	"controllers/common"
+	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 			if err != nil {
 				return err
 			}
-			_, err = common.State.PodCreate(rs.ObjectMeta.GetNamespace(), pod)
+			_, err = apimodel.ModelState.PodCreate(rs.ObjectMeta.GetNamespace(), pod)
 			if err != nil {
 				return err
 			}
@@ -34,7 +35,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 		podsToDelete := activePods[:diff]
 		for _, pod := range podsToDelete {
 			uid := pod.ObjectMeta.GetUID()
-			if err := common.State.PodDelete(pod.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
+			if err := apimodel.ModelState.PodDelete(pod.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}
@@ -46,7 +47,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 }
 
 func syncReplicaSet(namespace, name string) error {
-	rs, err := common.State.ReplicaSetGet(namespace, name)
+	rs, err := apimodel.ModelState.ReplicaSetGet(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}

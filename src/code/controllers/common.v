@@ -14,15 +14,13 @@ End pkg_id.
 Export pkg_id.
 Module common.
 
-Definition State {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/common.State"%go.
-
 Definition NewDeleteOptionsWithUID {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/common.NewDeleteOptionsWithUID"%go.
 
 Definition FilterActivePods {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/common.FilterActivePods"%go.
 
 Definition FilterPodsByOwner {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/common.FilterPodsByOwner"%go.
 
-(* go: common.go:18:6 *)
+(* go: common.go:12:6 *)
 Definition NewDeleteOptionsWithUIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "uid",
     exception_do (let: "uid" := (GoAlloc types.UID "uid") in
@@ -30,7 +28,7 @@ Definition NewDeleteOptionsWithUIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
      CompositeLiteral meta_v1.Preconditions (LiteralValue [KeyedElement (Some (KeyField "UID"%go)) (ElementExpression (go.PointerType types.UID) "$v0")]))) in
      CompositeLiteral meta_v1.DeleteOptions (LiteralValue [KeyedElement (Some (KeyField "Preconditions"%go)) (ElementExpression (go.PointerType meta_v1.Preconditions) "$v0")]))).
 
-(* go: common.go:24:6 *)
+(* go: common.go:18:6 *)
 Definition FilterActivePodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -50,7 +48,7 @@ Definition FilterActivePodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType core_v1.Pod)] "result")).
 
-(* go: common.go:34:6 *)
+(* go: common.go:28:6 *)
 Definition FilterPodsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "owner" "ownerKind",
     exception_do (let: "ownerKind" := (GoAlloc go.string "ownerKind") in
@@ -71,7 +69,7 @@ Definition FilterPodsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (Convert go.untyped_string go.string controller.PodControllerIndex) in
     let: "$a2" := (![go.string] "key") in
-    (MethodResolve (go.PointerType apimodel.State) "ByIndex"%go (![go.PointerType apimodel.State] (GlobalVarAddr State #()))) "$a0" "$a1" "$a2") in
+    (MethodResolve (go.PointerType apimodel.State) "ByIndex"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("pods" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
@@ -109,17 +107,11 @@ Definition FilterPodsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.common (λ: <>,
-      exception_do (do:  (go.GlobalAlloc State (go.PointerType apimodel.State) #());;;
-      do:  (controller.initialize' #());;;
+      exception_do (do:  (controller.initialize' #());;;
       do:  (types.initialize' #());;;
       do:  (meta_v1.initialize' #());;;
       do:  (core_v1.initialize' #());;;
-      do:  (apimodel.initialize' #());;;
-      do:  ((λ: <>,
-        exception_do (let: "$r0" := ((FuncResolve apimodel.NewState [] #()) #()) in
-        do:  ((GlobalVarAddr State #()) <-[go.PointerType apimodel.State] "$r0");;;
-        return: #())
-        ) #()))
+      do:  (apimodel.initialize' #()))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
