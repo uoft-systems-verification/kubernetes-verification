@@ -3,14 +3,54 @@ From New.proof.algebra Require Export reversed_reference.
 
 Section cview.
 
+Definition obj_parent_ref_set (obj : KObjectV.t) : gset (KKey.t * types.UID.t) :=
+  match obj_parent_ref obj with
+  | Some r => {[r]}
+  | None => ∅
+  end.
+
+Lemma obj_parent_ref_set_elem obj r :
+  r ∈ obj_parent_ref_set obj ↔ obj_parent_ref obj = Some r.
+Proof.
+  unfold obj_parent_ref_set.
+  destruct (obj_parent_ref obj) as [r'|] eqn:Hparent; simpl.
+  - split.
+    + intros Hr. apply elem_of_singleton in Hr. subst. done.
+    + intros Hsome. inversion Hsome. subst. apply elem_of_singleton. done.
+  - split.
+    + intros Hr. Timeout 10 set_solver.
+    + intros Hsome. discriminate.
+Qed.
+
+Lemma obj_parent_ref_set_singleton obj r :
+  r ∈ obj_parent_ref_set obj →
+  obj_parent_ref_set obj = {[r]}.
+Proof.
+  intros Hr.
+  apply obj_parent_ref_set_elem in Hr.
+  unfold obj_parent_ref_set. rewrite Hr. done.
+Qed.
+
+Lemma obj_parent_ref_set_filter_dom
+    (state : gmap KKey.t KObjectV.t) (r : KKey.t * types.UID.t) :
+  dom (filter (λ '(_, v), r ∈ obj_parent_ref_set v) state) =
+  dom (filter (λ '(_, v), obj_parent_ref v = Some r) state).
+Proof.
+  f_equal.
+  apply map_filter_ext. intros k v _. simpl.
+  apply obj_parent_ref_set_elem.
+Qed.
+
 Class cviewG Σ :=
   { #[global] cview_reversed_referenceG ::
       @reversed_reference.reversed_referenceG
-        KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ; }.
+        KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
+        obj_parent_ref_set obj_ref Σ; }.
 
 Definition cviewΣ :=
   @reversed_reference.reversed_referenceΣ
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
+    obj_parent_ref_set obj_ref.
 
 #[global]
 Instance subG_cviewG Σ :
@@ -19,7 +59,8 @@ Proof.
   intros Hsub.
   constructor.
   exact (@reversed_reference.subG_reversed_referenceG
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ Hsub).
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
+    obj_parent_ref_set obj_ref Σ Hsub).
 Qed.
 
 Context `{!cviewG Σ}.
@@ -27,7 +68,7 @@ Context `{!cviewG Σ}.
 Definition own_auth γ (state: gmap KKey.t KObjectV.t)
     (used_reference: gset (KKey.t * types.UID.t)) : iProp Σ :=
   @reversed_reference.own_auth
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
     γ state used_reference.
 
 Definition mk_frag (key: KKey.t) (uid: types.UID.t) (dq: dfrac) (ks: gset KKey.t) :=
@@ -37,7 +78,7 @@ Definition mk_frag (key: KKey.t) (uid: types.UID.t) (dq: dfrac) (ks: gset KKey.t
 
 Definition own_frag γ (key: KKey.t) (uid: types.UID.t) dq (ks: gset KKey.t) : iProp Σ :=
   @reversed_reference.own_frag
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
     γ (key, uid) dq ks.
 
 Global Instance own_auth_timeless γ state used_reference :
@@ -55,9 +96,16 @@ Lemma own_auth_frag_valid {γ state used_reference pk puid dq ks}:
   ⌜ (pk, puid) ∈ used_reference ⌝.
 Proof.
   unfold own_auth, own_frag.
-  apply (@reversed_reference.own_auth_frag_valid
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference (pk, puid) dq ks).
+  iIntros "Hauth Hfrag".
+  iDestruct (@reversed_reference.own_auth_frag_valid
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference (pk, puid) dq ks with "Hauth Hfrag") as "[%Hks %Hr]".
+  iPureIntro. split; [|done].
+  rewrite Hks.
+  unfold reversed_reference.map_reverse_index.
+  f_equal.
+  apply map_filter_ext. intros k v _. simpl.
+  apply obj_parent_ref_set_elem.
 Qed.
 
 Lemma own_auth_frag_valid2 {γ state used_reference pk puid dq ks}:
@@ -121,13 +169,15 @@ Proof.
   }
   unfold own_auth, own_frag.
   iMod (@reversed_reference.create_reference_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
     γ state used_reference (pk, puid) ks k v cks
     with "Hauth Hfrag") as "(Hauth & Hfrag & Hchildfrag)".
   - exact Hak.
-  - exact Hparent.
+  - unfold obj_parent_ref_set. rewrite Hparent. done.
   - exact Hself.
-  - unfold obj_ref. exact Hcks.
+  - unfold reversed_reference.map_reverse_index.
+    rewrite obj_parent_ref_set_filter_dom.
+    unfold obj_ref. exact Hcks.
   - exact Hpairfresh.
   - iModIntro. iFrame.
 Qed.
@@ -202,8 +252,12 @@ Proof.
   }
   unfold own_auth, own_frag.
   eapply (@reversed_reference.set_reference_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference (pk, puid) ks); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference (pk, puid) ks).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hnone. Timeout 10 set_solver.
+  - unfold obj_parent_ref_set. rewrite Hnone Hparent. Timeout 10 set_solver.
+  - exact Hg.
 Qed.
 
 Lemma release_child_vs {γ state used_reference pk puid ks} k v v':
@@ -225,8 +279,12 @@ Proof.
   }
   unfold own_auth, own_frag.
   eapply (@reversed_reference.unset_reference_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference (pk, puid) ks); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference (pk, puid) ks).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hparent. Timeout 10 set_solver.
+  - unfold obj_parent_ref_set. rewrite Hparent Hnone. Timeout 10 set_solver.
+  - exact Hobj_ref.
 Qed.
 
 Lemma delete_child_vs {γ state used_reference pk puid ks} k v:
@@ -240,8 +298,10 @@ Proof.
   intros Hak Hparent.
   unfold own_auth, own_frag.
   eapply (@reversed_reference.delete_reference_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference (pk, puid) ks); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference (pk, puid) ks).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hparent. done.
 Qed.
 
 Lemma delete_child_vs2 {γ state used_reference pk puid ks} k:
@@ -254,8 +314,10 @@ Proof.
   intros Hk.
   unfold own_auth, own_frag.
   eapply (@reversed_reference.delete_reference_vs2
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference (pk, puid) ks); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference (pk, puid) ks).
+  - exact Hk.
+  - intros obj Hr. apply obj_parent_ref_set_singleton. exact Hr.
 Qed.
 
 Lemma simple_update_vs {γ state used_reference} k v v':
@@ -274,8 +336,11 @@ Proof.
   }
   unfold own_auth.
   eapply (@reversed_reference.simple_update_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hparent. done.
+  - exact Hobj_ref.
 Qed.
 
 Lemma create_orphan_vs {γ state used_reference} k uid v cks:
@@ -300,8 +365,13 @@ Proof.
   }
   unfold own_auth, own_frag.
   eapply (@reversed_reference.simple_create_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hnone. done.
+  - unfold reversed_reference.map_reverse_index.
+    rewrite obj_parent_ref_set_filter_dom. exact Hcks.
+  - exact Hpairfresh.
 Qed.
 
 Lemma create_orphan_vs2 {γ state used_reference} k uid v:
@@ -361,8 +431,10 @@ Proof.
   intros Hak Hnone.
   unfold own_auth.
   eapply (@reversed_reference.simple_delete_vs
-    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref obj_ref Σ _
-    γ state used_reference); eauto.
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t obj_parent_ref_set obj_ref Σ _
+    γ state used_reference).
+  - exact Hak.
+  - unfold obj_parent_ref_set. rewrite Hnone. done.
 Qed.
 
 End cview.

@@ -1,0 +1,3 @@
+rocq = "src"
+go_path = "./iam_model/"
+packages = [".", "./example"]

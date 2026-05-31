@@ -8,4 +8,5 @@ cd "$DIR/.."
 go tool perennial-cli goose --config goose-kubernetes.toml
 go tool perennial-cli goose --config goose-kubernetes-model.toml
 go tool perennial-cli goose --config goose-controllers.toml
+go tool perennial-cli goose --config goose-iam.toml
 go tool perennial-cli goose --config goose-benchmark.toml
