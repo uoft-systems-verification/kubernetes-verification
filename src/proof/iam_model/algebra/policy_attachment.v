@@ -996,6 +996,18 @@ Proof.
   eapply attachment_resource_ref_observed. exact Hused.
 Qed.
 
+Lemma own_attachments_frag_lookup_positive {γ resource dq attachments identity n} :
+  own_attachments_frag γ resource dq attachments -∗
+  ⌜ attachments !! identity = Some n → (1 ≤ n)%nat ⌝.
+Proof.
+  unfold own_attachments_frag.
+  iIntros "Hfrag".
+  iDestruct (counted_reversed_reference.own_frag_lookup_positive with "Hfrag")
+    as "%Hpositive".
+  iPureIntro. intros Hlookup.
+  specialize (Hpositive Hlookup). lia.
+Qed.
+
 Local Lemma update_identity_policy_vs
     {γ identities policies observed_resources identity policy_ids policy_ids'
       resource attachments attachments'} :

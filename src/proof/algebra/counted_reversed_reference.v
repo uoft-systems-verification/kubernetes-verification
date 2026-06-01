@@ -627,6 +627,35 @@ Proof.
   rewrite option_guard_True; done.
 Qed.
 
+Lemma own_frag_lookup_positive {γ r dq ks k n} :
+  own_frag γ r dq ks -∗
+  ⌜ ks !! k = Some n → (0 < n)%nat ⌝.
+Proof.
+  iIntros "Hfrag".
+  iDestruct (own_valid with "Hfrag") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid.
+  iPureIntro. intros Hlookup.
+  rewrite /own_frag in Hvalid.
+  pose proof (proj1 (view_frag_validN view_rel 0%nat (mk_frag r dq ks)) Hvalid)
+    as [a Hrel].
+  destruct Hrel as [_ [_ [Hchildren _]]].
+  assert (Hfrag_lookup : mk_frag r dq ks !! r = Some (dq, to_agree ks)).
+  { rewrite /mk_frag lookup_singleton_eq //. }
+  destruct (map_Forall_lookup_1 _ _ _ _ Hchildren Hfrag_lookup)
+    as (ks' & Hagree & Hks').
+  assert (Hks_eqv : ks ≡ ks').
+  { apply (inj to_agree). exact Hagree. }
+  apply leibniz_equiv in Hks_eqv. rewrite Hks_eqv in Hlookup.
+  rewrite Hks' in Hlookup.
+  unfold reverse_index in Hlookup.
+  rewrite map_lookup_imap in Hlookup.
+  destruct (proj_state a !! k) as [v|] eqn:Hlookup_state; simpl in Hlookup; [|done].
+  unfold reference_count in Hlookup.
+  destruct (decide (0 < default 0 (extract_reference_count v !! r))%nat)
+    as [Hpositive|Hnot_positive]; simpl in Hlookup; [|done].
+  inversion Hlookup. subst n. done.
+Qed.
+
 Lemma own_auth_frag_normalize {γ a r dq ks} :
   own_auth γ a -∗
   own_frag γ r dq ks -∗
