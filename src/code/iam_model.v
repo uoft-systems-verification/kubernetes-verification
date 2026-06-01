@@ -23,6 +23,10 @@ Definition PolicyID {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := 
 
 #[global] Opaque PolicyID.
 
+Definition IdentityPolicyAttachment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "iam_model.IdentityPolicyAttachment"%go [].
+
+#[global] Opaque IdentityPolicyAttachment.
+
 Definition IdentityPolicy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "iam_model.IdentityPolicy"%go [].
 
 #[global] Opaque IdentityPolicy.
@@ -41,26 +45,31 @@ Definition ModelState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string
 
 Definition NewState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.NewState"%go.
 
-(* go: state.go:51:6 *)
+(* go: state.go:57:6 *)
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: (GoAlloc State (let: "$v0" := ((FuncResolve go.make1 [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-      ]))] #()) #()) in
-     let: "$v1" := ((FuncResolve go.make1 [go.MapType PolicyID IdentityPolicy] #()) #()) in
-     let: "$v2" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
+    exception_do (return: (GoAlloc State (let: "$v0" := ((FuncResolve go.make1 [go.MapType IdentityID (go.StructType [
 
       ])] #()) #()) in
-     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+     let: "$v1" := ((FuncResolve go.make1 [go.MapType PolicyID IdentityPolicy] #()) #()) in
+     let: "$v2" := ((FuncResolve go.make1 [go.MapType IdentityPolicyAttachment (go.StructType [
 
-      ]))) "$v0"); KeyedElement (Some (KeyField "policies"%go)) (ElementExpression (go.MapType PolicyID IdentityPolicy) "$v1"); KeyedElement (Some (KeyField "usedPolicyIds"%go)) (ElementExpression (go.MapType PolicyID (go.StructType [
+      ])] #()) #()) in
+     let: "$v3" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
 
-      ])) "$v2")])))).
+      ])] #()) #()) in
+     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.StructType [
+
+      ])) "$v0"); KeyedElement (Some (KeyField "policies"%go)) (ElementExpression (go.MapType PolicyID IdentityPolicy) "$v1"); KeyedElement (Some (KeyField "attachments"%go)) (ElementExpression (go.MapType IdentityPolicyAttachment (go.StructType [
+
+      ])) "$v2"); KeyedElement (Some (KeyField "usedPolicyIds"%go)) (ElementExpression (go.MapType PolicyID (go.StructType [
+
+      ])) "$v3")])))).
 
 (* CreateIdentity adds an IAM identity.
    AWS SDK analogue: CreateUser; this model collapses all identity kinds.
 
-   go: state.go:61:17 *)
+   go: state.go:68:17 *)
 Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -80,11 +89,11 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       "$oldf" #()
       )));;;
     (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.MapType PolicyID (go.StructType [
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.StructType [
 
-    ])) (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityID (go.StructType [
 
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "id")) in
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "id")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -97,18 +106,18 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
-    let: "$r0" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
+    let: "$r0" := (CompositeLiteral (go.StructType [
 
-     ])] #()) #()) in
-    do:  (map.insert IdentityID (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    ]) (LiteralValue [])) in
+    do:  (map.insert IdentityID (![go.MapType IdentityID (go.StructType [
 
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "id") "$r0");;;
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "id") "$r0");;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* ListIdentities returns every identity known to this model.
    AWS SDK analogue: ListUsers; this model has only one identity kind.
 
-   go: state.go:78:17 *)
+   go: state.go:85:17 *)
 Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -120,20 +129,20 @@ Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       "$oldf" #()
       )));;;
     let: "identities" := (GoAlloc (go.SliceType IdentityID) (GoZeroVal (go.SliceType IdentityID) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType IdentityID] #()) #(W64 0) (let: "$a0" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType IdentityID] #()) #(W64 0) (let: "$a0" := (![go.MapType IdentityID (go.StructType [
 
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
-    (FuncResolve go.len [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
+    (FuncResolve go.len [go.MapType IdentityID (go.StructType [
 
-     ]))] #()) "$a0")) in
+     ])] #()) "$a0")) in
     do:  ("identities" <-[go.SliceType IdentityID] "$r0");;;
-    let: "$range" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    let: "$range" := (![go.MapType IdentityID (go.StructType [
 
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
     (let: "identity" := (GoAlloc IdentityID (GoZeroVal IdentityID #())) in
-    map.for_range IdentityID (go.MapType PolicyID (go.StructType [
+    map.for_range IdentityID (go.StructType [
 
-    ])) "$range" (λ: "$key" "value",
+    ]) "$range" (λ: "$key" "value",
       do:  ("identity" <-[IdentityID] "$key");;;
       let: "$r0" := (let: "$a0" := (![go.SliceType IdentityID] "identities") in
       let: "$a1" := ((let: "$sl0" := (![IdentityID] "identity") in
@@ -145,7 +154,7 @@ Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 (* CreatePolicy creates a standalone identity-based Allow policy document.
    AWS SDK analogue: CreatePolicy.
 
-   go: state.go:91:17 *)
+   go: state.go:98:17 *)
 Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "resource",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -173,7 +182,7 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  (map.insert PolicyID (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "id") "$r0");;;
     return: (![PolicyID] "id", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: state.go:107:17 *)
+(* go: state.go:114:17 *)
 Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -208,7 +217,7 @@ Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go
 (* AttachIdentityPolicy attaches an existing policy to an identity.
    AWS SDK analogue: AttachUserPolicy.
 
-   go: state.go:119:17 *)
+   go: state.go:126:17 *)
 Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -221,22 +230,15 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
       "$f" #();;
       "$oldf" #()
       )));;;
-    let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "policyIDs" := (GoAlloc (go.MapType PolicyID (go.StructType [
+    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.StructType [
 
-    ])) (GoZeroVal (go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityID (go.StructType [
 
-    ])) #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.MapType PolicyID (go.StructType [
-
-    ])) (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("policyIDs" <-[go.MapType PolicyID (go.StructType [
-
-    ])] "$r0");;;
+    do:  "$r0";;;
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
@@ -245,7 +247,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
-    else do:  #());;;
+    else do:  #()));;;
     (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
@@ -260,12 +262,17 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
+    let: "attachment" := (GoAlloc IdentityPolicyAttachment (GoZeroVal IdentityPolicyAttachment #())) in
+    let: "$r0" := (let: "$v0" := (![IdentityID] "identity") in
+    let: "$v1" := (![PolicyID] "policyID") in
+    CompositeLiteral IdentityPolicyAttachment (LiteralValue [KeyedElement (Some (KeyField "Identity"%go)) (ElementExpression IdentityID "$v0"); KeyedElement (Some (KeyField "Policy"%go)) (ElementExpression PolicyID "$v1")])) in
+    do:  ("attachment" <-[IdentityPolicyAttachment] "$r0");;;
     (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityPolicyAttachment (go.StructType [
 
-    ]) (![go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityPolicyAttachment (go.StructType [
 
-    ])] "policyIDs") (![PolicyID] "policyID")) in
+    ])] (StructFieldRef State "attachments"%go (![go.PointerType State] "s"))) (![IdentityPolicyAttachment] "attachment")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -276,15 +283,15 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     let: "$r0" := (CompositeLiteral (go.StructType [
 
     ]) (LiteralValue [])) in
-    do:  (map.insert PolicyID (![go.MapType PolicyID (go.StructType [
+    do:  (map.insert IdentityPolicyAttachment (![go.MapType IdentityPolicyAttachment (go.StructType [
 
-    ])] "policyIDs") (![PolicyID] "policyID") "$r0");;;
+    ])] (StructFieldRef State "attachments"%go (![go.PointerType State] "s"))) (![IdentityPolicyAttachment] "attachment") "$r0");;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* ListIdentityPolicies returns policy IDs attached directly to identity.
    AWS SDK analogue: ListAttachedUserPolicies.
 
-   go: state.go:140:17 *)
+   go: state.go:147:17 *)
 Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -296,22 +303,15 @@ Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
       "$f" #();;
       "$oldf" #()
       )));;;
-    let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "policyIDs" := (GoAlloc (go.MapType PolicyID (go.StructType [
+    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.StructType [
 
-    ])) (GoZeroVal (go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityID (go.StructType [
 
-    ])) #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.MapType PolicyID (go.StructType [
-
-    ])) (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("policyIDs" <-[go.MapType PolicyID (go.StructType [
-
-    ])] "$r0");;;
+    do:  "$r0";;;
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
@@ -320,29 +320,32 @@ Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
-    else do:  #());;;
+    else do:  #()));;;
     let: "policies" := (GoAlloc (go.SliceType PolicyID) (GoZeroVal (go.SliceType PolicyID) #())) in
     let: "$r0" := ((FuncResolve go.make2 [go.SliceType PolicyID] #()) #(W64 0)) in
     do:  ("policies" <-[go.SliceType PolicyID] "$r0");;;
-    let: "$range" := (![go.MapType PolicyID (go.StructType [
+    let: "$range" := (![go.MapType IdentityPolicyAttachment (go.StructType [
 
-    ])] "policyIDs") in
-    (let: "policyID" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
-    map.for_range PolicyID (go.StructType [
+    ])] (StructFieldRef State "attachments"%go (![go.PointerType State] "s"))) in
+    (let: "attachment" := (GoAlloc IdentityPolicyAttachment (GoZeroVal IdentityPolicyAttachment #())) in
+    map.for_range IdentityPolicyAttachment (go.StructType [
 
     ]) "$range" (λ: "$key" "value",
-      do:  ("policyID" <-[PolicyID] "$key");;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType PolicyID] "policies") in
-      let: "$a1" := ((let: "$sl0" := (![PolicyID] "policyID") in
-      CompositeLiteral (go.SliceType PolicyID) (LiteralValue [KeyedElement None (ElementExpression PolicyID "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType PolicyID] #()) "$a0" "$a1") in
-      do:  ("policies" <-[go.SliceType PolicyID] "$r0")));;;
+      do:  ("attachment" <-[IdentityPolicyAttachment] "$key");;;
+      (if: Convert go.untyped_bool go.bool ((![IdentityID] (StructFieldRef IdentityPolicyAttachment "Identity"%go "attachment")) =⟨IdentityID⟩ (![IdentityID] "identity"))
+      then
+        let: "$r0" := (let: "$a0" := (![go.SliceType PolicyID] "policies") in
+        let: "$a1" := ((let: "$sl0" := (![PolicyID] (StructFieldRef IdentityPolicyAttachment "Policy"%go "attachment")) in
+        CompositeLiteral (go.SliceType PolicyID) (LiteralValue [KeyedElement None (ElementExpression PolicyID "$sl0")]))) in
+        (FuncResolve go.append [go.SliceType PolicyID] #()) "$a0" "$a1") in
+        do:  ("policies" <-[go.SliceType PolicyID] "$r0")
+      else do:  #())));;;
     return: (![go.SliceType PolicyID] "policies", Convert go.untyped_nil go.error UntypedNil)).
 
 (* GetIdentityPolicy returns the simplified attached policy object for id.
    AWS SDK analogue: GetPolicy followed by GetPolicyVersion.
 
-   go: state.go:158:17 *)
+   go: state.go:166:17 *)
 Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -374,7 +377,7 @@ Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 (* DetachIdentityPolicy detaches a policy from an identity without deleting the policy.
    AWS SDK analogue: DetachUserPolicy.
 
-   go: state.go:171:17 *)
+   go: state.go:179:17 *)
 Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -387,22 +390,15 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
       "$f" #();;
       "$oldf" #()
       )));;;
-    let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "policyIDs" := (GoAlloc (go.MapType PolicyID (go.StructType [
+    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.StructType [
 
-    ])) (GoZeroVal (go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityID (go.StructType [
 
-    ])) #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 IdentityID (go.MapType PolicyID (go.StructType [
-
-    ])) (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
+    ])] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) (![IdentityID] "identity")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("policyIDs" <-[go.MapType PolicyID (go.StructType [
-
-    ])] "$r0");;;
+    do:  "$r0";;;
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
@@ -411,7 +407,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
-    else do:  #());;;
+    else do:  #()));;;
     (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
@@ -426,12 +422,17 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
+    let: "attachment" := (GoAlloc IdentityPolicyAttachment (GoZeroVal IdentityPolicyAttachment #())) in
+    let: "$r0" := (let: "$v0" := (![IdentityID] "identity") in
+    let: "$v1" := (![PolicyID] "policyID") in
+    CompositeLiteral IdentityPolicyAttachment (LiteralValue [KeyedElement (Some (KeyField "Identity"%go)) (ElementExpression IdentityID "$v0"); KeyedElement (Some (KeyField "Policy"%go)) (ElementExpression PolicyID "$v1")])) in
+    do:  ("attachment" <-[IdentityPolicyAttachment] "$r0");;;
     (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
+    let: ("$ret0", "$ret1") := (map.lookup2 IdentityPolicyAttachment (go.StructType [
 
-    ]) (![go.MapType PolicyID (go.StructType [
+    ]) (![go.MapType IdentityPolicyAttachment (go.StructType [
 
-    ])] "policyIDs") (![PolicyID] "policyID")) in
+    ])] (StructFieldRef State "attachments"%go (![go.PointerType State] "s"))) (![IdentityPolicyAttachment] "attachment")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -445,11 +446,11 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1"); KeyedElement None (ElementExpression go.any "$sl2")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
-    do:  (let: "$a0" := (![go.MapType PolicyID (go.StructType [
+    do:  (let: "$a0" := (![go.MapType IdentityPolicyAttachment (go.StructType [
 
-    ])] "policyIDs") in
-    let: "$a1" := (![PolicyID] "policyID") in
-    (FuncResolve go.delete [go.MapType PolicyID (go.StructType [
+    ])] (StructFieldRef State "attachments"%go (![go.PointerType State] "s"))) in
+    let: "$a1" := (![IdentityPolicyAttachment] "attachment") in
+    (FuncResolve go.delete [go.MapType IdentityPolicyAttachment (go.StructType [
 
      ])] #()) "$a0" "$a1");;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
@@ -528,6 +529,41 @@ Class PolicyID_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCont
   #[global] PolicyID_underlying :: (PolicyID) <u (PolicyIDⁱᵐᵖˡ);
 }.
 
+Module IdentityPolicyAttachment.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Identity' : iammodel.IdentityID.t;
+  Policy' : iammodel.PolicyID.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+End IdentityPolicyAttachment.
+
+Definition IdentityPolicyAttachment'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Identity"%go IdentityID);
+  (go.FieldDecl "Policy"%go PolicyID)
+].
+Program Definition IdentityPolicyAttachment'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (IdentityPolicyAttachment'fds_unsealed).
+Global Instance equals_unfold_IdentityPolicyAttachment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : IdentityPolicyAttachment'fds =→ IdentityPolicyAttachment'fds_unsealed.
+Proof. rewrite /IdentityPolicyAttachment'fds seal_eq //. Qed.
+
+Definition IdentityPolicyAttachmentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (IdentityPolicyAttachment'fds).
+
+Class IdentityPolicyAttachment_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] IdentityPolicyAttachment_type_repr  :: go.TypeReprUnderlying IdentityPolicyAttachmentⁱᵐᵖˡ IdentityPolicyAttachment.t;
+  #[global] IdentityPolicyAttachment_underlying :: (IdentityPolicyAttachment) <u (IdentityPolicyAttachmentⁱᵐᵖˡ);
+  #[global] IdentityPolicyAttachment_get_Identity (x : IdentityPolicyAttachment.t) :: ⟦StructFieldGet (IdentityPolicyAttachmentⁱᵐᵖˡ) "Identity", #x⟧ ⤳[under] #x.(IdentityPolicyAttachment.Identity');
+  #[global] IdentityPolicyAttachment_set_Identity (x : IdentityPolicyAttachment.t) y :: ⟦StructFieldSet (IdentityPolicyAttachmentⁱᵐᵖˡ) "Identity", (#x, #y)⟧ ⤳[under] #(x <|IdentityPolicyAttachment.Identity' := y|>);
+  #[global] IdentityPolicyAttachment_get_Policy (x : IdentityPolicyAttachment.t) :: ⟦StructFieldGet (IdentityPolicyAttachmentⁱᵐᵖˡ) "Policy", #x⟧ ⤳[under] #x.(IdentityPolicyAttachment.Policy');
+  #[global] IdentityPolicyAttachment_set_Policy (x : IdentityPolicyAttachment.t) y :: ⟦StructFieldSet (IdentityPolicyAttachmentⁱᵐᵖˡ) "Policy", (#x, #y)⟧ ⤳[under] #(x <|IdentityPolicyAttachment.Policy' := y|>);
+}.
+
 Module IdentityPolicy.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
@@ -571,10 +607,11 @@ mk {
   mu' : sync.Mutex.t;
   identities' : map.t;
   policies' : map.t;
+  attachments' : map.t;
   usedPolicyIds' : map.t;
 }.
 
-#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
 #[global] Arguments mk : clear implicits.
 #[global] Arguments t : clear implicits.
 End def.
@@ -582,10 +619,13 @@ End State.
 
 Definition State'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "mu"%go sync.Mutex);
-  (go.FieldDecl "identities"%go (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+  (go.FieldDecl "identities"%go (go.MapType IdentityID (go.StructType [
 
-  ]))));
+  ])));
   (go.FieldDecl "policies"%go (go.MapType PolicyID IdentityPolicy));
+  (go.FieldDecl "attachments"%go (go.MapType IdentityPolicyAttachment (go.StructType [
+
+  ])));
   (go.FieldDecl "usedPolicyIds"%go (go.MapType PolicyID (go.StructType [
 
   ])))
@@ -606,6 +646,8 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State_set_identities (x : State.t) y :: ⟦StructFieldSet (Stateⁱᵐᵖˡ) "identities", (#x, #y)⟧ ⤳[under] #(x <|State.identities' := y|>);
   #[global] State_get_policies (x : State.t) :: ⟦StructFieldGet (Stateⁱᵐᵖˡ) "policies", #x⟧ ⤳[under] #x.(State.policies');
   #[global] State_set_policies (x : State.t) y :: ⟦StructFieldSet (Stateⁱᵐᵖˡ) "policies", (#x, #y)⟧ ⤳[under] #(x <|State.policies' := y|>);
+  #[global] State_get_attachments (x : State.t) :: ⟦StructFieldGet (Stateⁱᵐᵖˡ) "attachments", #x⟧ ⤳[under] #x.(State.attachments');
+  #[global] State_set_attachments (x : State.t) y :: ⟦StructFieldSet (Stateⁱᵐᵖˡ) "attachments", (#x, #y)⟧ ⤳[under] #(x <|State.attachments' := y|>);
   #[global] State_get_usedPolicyIds (x : State.t) :: ⟦StructFieldGet (Stateⁱᵐᵖˡ) "usedPolicyIds", #x⟧ ⤳[under] #x.(State.usedPolicyIds');
   #[global] State_set_usedPolicyIds (x : State.t) y :: ⟦StructFieldSet (Stateⁱᵐᵖˡ) "usedPolicyIds", (#x, #y)⟧ ⤳[under] #(x <|State.usedPolicyIds' := y|>);
   #[global] State'ptr_AttachIdentityPolicy_unfold :: MethodUnfold (go.PointerType (State)) "AttachIdentityPolicy" (State__AttachIdentityPolicyⁱᵐᵖˡ);
@@ -623,6 +665,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] IdentityID_instance :: IdentityID_Assumptions;
   #[global] ResourceName_instance :: ResourceName_Assumptions;
   #[global] PolicyID_instance :: PolicyID_Assumptions;
+  #[global] IdentityPolicyAttachment_instance :: IdentityPolicyAttachment_Assumptions;
   #[global] IdentityPolicy_instance :: IdentityPolicy_Assumptions;
   #[global] State_instance :: State_Assumptions;
   #[global] NewState_unfold :: FuncUnfold NewState [] (NewStateⁱᵐᵖˡ);

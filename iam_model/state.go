@@ -18,6 +18,11 @@ type IdentityID string
 type ResourceName string
 type PolicyID string
 
+type IdentityPolicyAttachment struct {
+	Identity IdentityID
+	Policy   PolicyID
+}
+
 // IdentityPolicy is a simplified identity-based Allow policy.
 //
 // The real IAM policy document is collapsed to one resource name. All policies
@@ -35,8 +40,9 @@ type IdentityPolicy struct {
 // are never reused.
 type State struct {
 	mu            sync.Mutex
-	identities    map[IdentityID]map[PolicyID]struct{}
+	identities    map[IdentityID]struct{}
 	policies      map[PolicyID]IdentityPolicy
+	attachments   map[IdentityPolicyAttachment]struct{}
 	usedPolicyIds map[PolicyID]struct{}
 }
 
@@ -50,8 +56,9 @@ var ModelState = NewState()
 
 func NewState() *State {
 	return &State{
-		identities:    make(map[IdentityID]map[PolicyID]struct{}),
+		identities:    make(map[IdentityID]struct{}),
 		policies:      make(map[PolicyID]IdentityPolicy),
+		attachments:   make(map[IdentityPolicyAttachment]struct{}),
 		usedPolicyIds: make(map[PolicyID]struct{}),
 	}
 }
@@ -69,7 +76,7 @@ func (s *State) CreateIdentity(id IdentityID) error {
 	if _, exists := s.identities[id]; exists {
 		return fmt.Errorf("%w: identity %q", ErrAlreadyExists, id)
 	}
-	s.identities[id] = make(map[PolicyID]struct{})
+	s.identities[id] = struct{}{}
 	return nil
 }
 
@@ -120,18 +127,18 @@ func (s *State) AttachIdentityPolicy(identity IdentityID, policyID PolicyID) err
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	policyIDs, exists := s.identities[identity]
-	if !exists {
+	if _, exists := s.identities[identity]; !exists {
 		return fmt.Errorf("%w: identity %q", ErrNotFound, identity)
 	}
 	if _, exists := s.policies[policyID]; !exists {
 		return fmt.Errorf("%w: policy %q", ErrNotFound, policyID)
 	}
 
-	if _, exists := policyIDs[policyID]; exists {
+	attachment := IdentityPolicyAttachment{Identity: identity, Policy: policyID}
+	if _, exists := s.attachments[attachment]; exists {
 		return nil
 	}
-	policyIDs[policyID] = struct{}{}
+	s.attachments[attachment] = struct{}{}
 	return nil
 }
 
@@ -141,14 +148,15 @@ func (s *State) ListIdentityPolicies(identity IdentityID) ([]PolicyID, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	policyIDs, exists := s.identities[identity]
-	if !exists {
+	if _, exists := s.identities[identity]; !exists {
 		return nil, fmt.Errorf("%w: identity %q", ErrNotFound, identity)
 	}
 
 	policies := make([]PolicyID, 0)
-	for policyID := range policyIDs {
-		policies = append(policies, policyID)
+	for attachment := range s.attachments {
+		if attachment.Identity == identity {
+			policies = append(policies, attachment.Policy)
+		}
 	}
 	return policies, nil
 }
@@ -172,17 +180,17 @@ func (s *State) DetachIdentityPolicy(identity IdentityID, policyID PolicyID) err
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	policyIDs, exists := s.identities[identity]
-	if !exists {
+	if _, exists := s.identities[identity]; !exists {
 		return fmt.Errorf("%w: identity %q", ErrNotFound, identity)
 	}
 	if _, exists := s.policies[policyID]; !exists {
 		return fmt.Errorf("%w: policy %q", ErrNotFound, policyID)
 	}
 
-	if _, exists := policyIDs[policyID]; !exists {
+	attachment := IdentityPolicyAttachment{Identity: identity, Policy: policyID}
+	if _, exists := s.attachments[attachment]; !exists {
 		return fmt.Errorf("%w: identity policy attachment %q -> %q", ErrNotFound, identity, policyID)
 	}
-	delete(policyIDs, policyID)
+	delete(s.attachments, attachment)
 	return nil
 }

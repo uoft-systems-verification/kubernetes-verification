@@ -45,39 +45,48 @@ Definition identity_ref
   IamRef.IdentityRef identity.
 
 Definition policy_matches_resource
-    (policies : policy_map) (resource : iammodel.ResourceName.t) (policy_id : iammodel.PolicyID.t) : bool :=
+    (policies : policy_map) (resource : iammodel.ResourceName.t)
+    (policy_id : iammodel.PolicyID.t) : bool :=
   match policies !! policy_id with
   | Some policy => bool_decide (policy.(iammodel.IdentityPolicy.Resource') = resource)
   | None => false
   end.
 
+Definition attachment_matches_resource
+    (policies : policy_map) (identity : iammodel.IdentityID.t)
+    (resource : iammodel.ResourceName.t) (a : attachment) : bool :=
+  bool_decide (fst a = identity) &&
+  policy_matches_resource policies resource (snd a).
+
 Definition attached_policies_for_resource
-    (policies : policy_map) (policy_ids : gmap iammodel.PolicyID.t unit)
-    (resource : iammodel.ResourceName.t) : gset iammodel.PolicyID.t :=
-  dom (filter (λ '(policy_id, _),
-    policy_matches_resource policies resource policy_id = true) policy_ids).
+    (policies : policy_map) (attachments : attachment_set)
+    (identity : iammodel.IdentityID.t) (resource : iammodel.ResourceName.t)
+    : gset iammodel.PolicyID.t :=
+  set_map snd (filter (λ a,
+    attachment_matches_resource policies identity resource a = true) attachments).
 
 Definition policy_resources (policies : policy_map) : gset iammodel.ResourceName.t :=
   list_to_set (C:=gset iammodel.ResourceName.t)
     ((λ policy, policy.(iammodel.IdentityPolicy.Resource')) <$> (map_to_list policies).*2).
 
 Definition resources_for_identity_counts
-    (policies : policy_map) (policy_ids : gmap iammodel.PolicyID.t unit)
-    : gmap iammodel.ResourceName.t nat :=
+    (policies : policy_map) (attachments : attachment_set)
+    (identity : iammodel.IdentityID.t) : gmap iammodel.ResourceName.t nat :=
   list_to_map ((λ resource,
-    (resource, size (attached_policies_for_resource policies policy_ids resource))) <$>
+    (resource, size (attached_policies_for_resource policies attachments identity resource))) <$>
     elements (policy_resources policies)).
 
 Definition reversed_identity_policy_state
-    (identities : identity_map) (policies : policy_map) :
+    (identities : identity_set) (attachments : attachment_set)
+    (policies : policy_map) :
     gmap iammodel.IdentityID.t (gmap iammodel.ResourceName.t nat) :=
-  map_imap (λ _ policy_ids, Some (resources_for_identity_counts policies policy_ids))
-    identities.
+  map_imap (λ identity _, Some (resources_for_identity_counts policies attachments identity))
+    (gset_to_gmap tt identities).
 
 Definition reversed_identity_policy_used_reference_set
-    (identities : identity_map) (policies : policy_map)
-    (observed_resources : gset iammodel.ResourceName.t) : gset IamRef.t :=
-  set_map IamRef.IdentityRef (dom identities) ∪
+    (identities : identity_set) (observed_resources : gset iammodel.ResourceName.t)
+    : gset IamRef.t :=
+  set_map IamRef.IdentityRef identities ∪
   set_map IamRef.ResourceRef observed_resources.
 
 Definition resource_count_refs
@@ -86,20 +95,21 @@ Definition resource_count_refs
     IamRef.ResourceRef resources.
 
 Definition reversed_identity_policy_ref_counts
-    (identities : identity_map) (policies : policy_map)
-    (ref : IamRef.t) : gmap iammodel.IdentityID.t nat :=
+    (identities : identity_set) (attachments : attachment_set)
+    (policies : policy_map) (ref : IamRef.t) : gmap iammodel.IdentityID.t nat :=
   @counted_reversed_reference.reverse_index
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
     resource_count_refs
-    (reversed_identity_policy_state identities policies) ref.
+    (reversed_identity_policy_state identities attachments policies) ref.
 
 Definition reversed_identity_policy_counts
-    (identities : identity_map) (policies : policy_map)
-    (resource : iammodel.ResourceName.t) : gmap iammodel.IdentityID.t nat :=
-  reversed_identity_policy_ref_counts identities policies (IamRef.ResourceRef resource).
+    (identities : identity_set) (attachments : attachment_set)
+    (policies : policy_map) (resource : iammodel.ResourceName.t)
+    : gmap iammodel.IdentityID.t nat :=
+  reversed_identity_policy_ref_counts identities attachments policies
+    (IamRef.ResourceRef resource).
 
-Local Lemma policy_matches_resource_other
-    policies policy_id policy resource resource' :
+Local Lemma policy_matches_resource_other policies policy_id policy resource resource' :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
   resource' ≠ resource →
@@ -112,104 +122,226 @@ Proof.
   intros Heq. apply Hneq. symmetry. done.
 Qed.
 
-Local Lemma attached_policies_for_resource_insert_other
-    policies policy_ids policy_id policy resource resource' :
+Local Lemma attachment_matches_resource_other
+    policies identity identity' policy_id policy resource resource' :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
   resource' ≠ resource →
-  attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource' =
-  attached_policies_for_resource policies policy_ids resource'.
+  attachment_matches_resource policies identity' resource' (identity, policy_id) = false.
 Proof.
   intros Hpolicy Hresource Hneq.
+  unfold attachment_matches_resource. simpl.
+  destruct (bool_decide (identity = identity')); simpl; [|done].
+  apply (policy_matches_resource_other policies policy_id policy resource resource');
+    done.
+Qed.
+
+Local Lemma attachment_matches_resource_identity_other
+    policies identity identity' policy_id resource :
+  identity' ≠ identity →
+  attachment_matches_resource policies identity' resource (identity, policy_id) = false.
+Proof.
+  intros Hneq.
+  unfold attachment_matches_resource. simpl.
+  destruct (bool_decide (identity = identity')) eqn:Heq; simpl; [|done].
+  apply bool_decide_eq_true_1 in Heq.
+  exfalso. apply Hneq. symmetry. done.
+Qed.
+
+Local Lemma attached_policies_for_resource_attach_other
+    policies attachments identity identity' policy_id policy resource resource' :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  resource' ≠ resource →
+  attached_policies_for_resource policies
+    (attachments ∪ {[(identity, policy_id)]}) identity' resource' =
+  attached_policies_for_resource policies attachments identity' resource'.
+Proof.
+  intros Hpolicy Hresource Hneq.
+  apply set_eq. intros policy_id'.
   unfold attached_policies_for_resource.
-  f_equal.
-  apply map_eq. intros policy_id'.
-  destruct (decide (policy_id' = policy_id)) as [->|Hne_policy].
-  - pose proof (policy_matches_resource_other
-      policies policy_id policy resource resource' Hpolicy Hresource Hneq) as Hmatch.
-    assert (Hnew_none :
-      filter
-        (λ '(policy_id0, _),
-          policy_matches_resource policies resource' policy_id0 = true)
-        (<[policy_id:=tt]> policy_ids) !! policy_id = None).
-    { apply map_lookup_filter_None_2. right.
-      intros [] _ Hmatches. rewrite Hmatch in Hmatches. done. }
-    assert (Hold_none :
-      filter
-        (λ '(policy_id0, _),
-          policy_matches_resource policies resource' policy_id0 = true)
-        policy_ids !! policy_id = None).
-    { apply map_lookup_filter_None_2.
-      destruct (policy_ids !! policy_id) as [[]|] eqn:Hlookup; [right|left; done].
-      intros [] Hlookup' Hmatches.
-      inversion Hlookup'. subst.
-      rewrite Hmatch in Hmatches. done. }
-    rewrite Hnew_none Hold_none. done.
-  - rewrite !map_lookup_filter.
-    rewrite lookup_insert_ne; done.
+  rewrite !elem_of_map. split.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    apply elem_of_union in Ha as [Ha|Ha].
+    + exists a. split; [done|].
+      apply elem_of_filter. split; done.
+    + apply elem_of_singleton in Ha. subst a.
+      rewrite (attachment_matches_resource_other
+        policies identity identity' policy_id policy resource resource')
+        in Hmatch; done.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    exists a. split; [done|].
+    apply elem_of_filter. split; [done|].
+    apply elem_of_union_l. done.
 Qed.
 
-Local Lemma resources_for_identity_counts_entries_nodup policies policy_ids :
-  NoDup (((λ resource,
-    (resource, size (attached_policies_for_resource policies policy_ids resource))) <$>
-    elements (policy_resources policies)).*1).
+Local Lemma attached_policies_for_resource_attach_identity_other
+    policies attachments identity identity' policy_id resource :
+  identity' ≠ identity →
+  attached_policies_for_resource policies
+    (attachments ∪ {[(identity, policy_id)]}) identity' resource =
+  attached_policies_for_resource policies attachments identity' resource.
 Proof.
-  rewrite -list_fmap_compose /=.
-  rewrite list_fmap_id.
-  apply NoDup_elements.
+  intros Hneq.
+  apply set_eq. intros policy_id'.
+  unfold attached_policies_for_resource.
+  rewrite !elem_of_map. split.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    apply elem_of_union in Ha as [Ha|Ha].
+    + exists a. split; [done|].
+      apply elem_of_filter. split; done.
+    + apply elem_of_singleton in Ha. subst a.
+      rewrite (attachment_matches_resource_identity_other
+        policies identity identity' policy_id resource) in Hmatch; done.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    exists a. split; [done|].
+    apply elem_of_filter. split; [done|].
+    apply elem_of_union_l. done.
 Qed.
 
-Local Lemma resources_for_identity_counts_insert_other
-    policies policy_ids policy_id policy resource resource' :
+Local Lemma attached_policies_for_resource_detach_other
+    policies attachments identity identity' policy_id policy resource resource' :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
   resource' ≠ resource →
-  resources_for_identity_counts policies (<[policy_id := tt]> policy_ids) !! resource' =
-  resources_for_identity_counts policies policy_ids !! resource'.
+  attached_policies_for_resource policies
+    (attachments ∖ {[(identity, policy_id)]}) identity' resource' =
+  attached_policies_for_resource policies attachments identity' resource'.
 Proof.
   intros Hpolicy Hresource Hneq.
-  unfold resources_for_identity_counts.
-  destruct (list_to_map
-    ((λ resource0,
-      (resource0,
-       size (attached_policies_for_resource policies (<[policy_id:=tt]> policy_ids) resource0)))
-      <$> elements (policy_resources policies)) !! resource') as [n|] eqn:Hnew.
-  - apply elem_of_list_to_map_2 in Hnew as Hin.
-    apply list_elem_of_fmap in Hin as (resource0 & Hpair & Hin).
-    inversion Hpair. subst resource0 n.
-    symmetry.
-    apply elem_of_list_to_map_1.
-    + apply resources_for_identity_counts_entries_nodup.
-    + apply list_elem_of_fmap.
-      exists resource'. split; [|done].
-      simpl. f_equal.
-      pose proof (attached_policies_for_resource_insert_other
-        policies policy_ids policy_id policy resource resource'
-        Hpolicy Hresource Hneq) as Hattached.
-      rewrite Hattached.
-      done.
-  - destruct (list_to_map
-      ((λ resource0,
-        (resource0, size (attached_policies_for_resource policies policy_ids resource0)))
-        <$> elements (policy_resources policies)) !! resource') as [n|] eqn:Hold; [|done].
-    exfalso.
-    apply elem_of_list_to_map_2 in Hold as Hin.
-    apply list_elem_of_fmap in Hin as (resource0 & Hpair & Hin).
-    inversion Hpair. subst resource0 n.
-    assert (Hnew_some :
-      (list_to_map
-        ((λ resource0,
-          (resource0,
-           size (attached_policies_for_resource policies
-             (<[policy_id:=tt]> policy_ids) resource0)))
-          <$> elements (policy_resources policies)) : gmap iammodel.ResourceName.t nat) !! resource' =
-      Some (size (attached_policies_for_resource policies
-        (<[policy_id:=tt]> policy_ids) resource'))).
-    { apply elem_of_list_to_map_1.
-      - apply resources_for_identity_counts_entries_nodup.
-      - apply list_elem_of_fmap.
-        exists resource'. split; [done|done]. }
-    rewrite Hnew in Hnew_some. discriminate.
+  apply set_eq. intros policy_id'.
+  unfold attached_policies_for_resource.
+  rewrite !elem_of_map. split.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    apply elem_of_difference in Ha as [Ha _].
+    exists a. split; [done|].
+    apply elem_of_filter. split; done.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    exists a. split; [done|].
+    apply elem_of_filter. split; [done|].
+    apply elem_of_difference. split; [done|].
+    intros Hsingle.
+    apply elem_of_singleton in Hsingle. subst a.
+    rewrite (attachment_matches_resource_other
+      policies identity identity' policy_id policy resource resource')
+      in Hmatch; done.
+Qed.
+
+Local Lemma attached_policies_for_resource_detach_identity_other
+    policies attachments identity identity' policy_id resource :
+  identity' ≠ identity →
+  attached_policies_for_resource policies
+    (attachments ∖ {[(identity, policy_id)]}) identity' resource =
+  attached_policies_for_resource policies attachments identity' resource.
+Proof.
+  intros Hneq.
+  apply set_eq. intros policy_id'.
+  unfold attached_policies_for_resource.
+  rewrite !elem_of_map. split.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    apply elem_of_difference in Ha as [Ha _].
+    exists a. split; [done|].
+    apply elem_of_filter. split; done.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    exists a. split; [done|].
+    apply elem_of_filter. split; [done|].
+    apply elem_of_difference. split; [done|].
+    intros Hsingle.
+    apply elem_of_singleton in Hsingle. subst a.
+    rewrite (attachment_matches_resource_identity_other
+      policies identity identity' policy_id resource) in Hmatch; done.
+Qed.
+
+Local Lemma attached_policies_for_resource_contains
+    policies attachments identity policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  (identity, policy_id) ∈ attachments →
+  policy_id ∈ attached_policies_for_resource policies attachments identity resource.
+Proof.
+  intros Hpolicy Hresource Hattachment.
+  unfold attached_policies_for_resource.
+  apply elem_of_map.
+  exists (identity, policy_id). split; [done|].
+  apply elem_of_filter. split.
+  - unfold attachment_matches_resource, policy_matches_resource. simpl.
+    replace (bool_decide (identity = identity)) with true by
+      (symmetry; apply bool_decide_eq_true_2; done).
+    rewrite Hpolicy Hresource.
+    replace (bool_decide (resource = resource)) with true by
+      (symmetry; apply bool_decide_eq_true_2; done).
+    done.
+  - done.
+Qed.
+
+Local Lemma attached_policies_for_resource_detach_same
+    policies attachments identity policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  (identity, policy_id) ∈ attachments →
+  attached_policies_for_resource policies
+    (attachments ∖ {[(identity, policy_id)]}) identity resource =
+  attached_policies_for_resource policies attachments identity resource ∖ {[policy_id]}.
+Proof.
+  intros Hpolicy Hresource Hattachment.
+  apply set_eq. intros policy_id'.
+  unfold attached_policies_for_resource.
+  rewrite elem_of_difference elem_of_singleton !elem_of_map. split.
+  - intros (a & -> & Ha).
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    apply elem_of_difference in Ha as [Ha Hnot_single].
+    split.
+    + exists a. split; [done|].
+      apply elem_of_filter. split; done.
+    + intros Hsnd.
+      apply Hnot_single.
+      apply elem_of_singleton.
+      destruct a as [attached_identity attached_policy]; simpl in *.
+      subst attached_policy.
+      unfold attachment_matches_resource in Hmatch. simpl in Hmatch.
+      destruct (bool_decide (attached_identity = identity)) eqn:Hattached_identity;
+        simpl in Hmatch; [|done].
+      apply bool_decide_eq_true_1 in Hattached_identity.
+      subst attached_identity. done.
+  - intros [(a & -> & Ha) Hpolicy_id_ne].
+    apply elem_of_filter in Ha as [Hmatch Ha].
+    exists a. split; [done|].
+    apply elem_of_filter. split; [done|].
+    apply elem_of_difference. split; [done|].
+    intros Hsingle.
+    apply elem_of_singleton in Hsingle.
+    subst a. simpl in Hpolicy_id_ne. done.
+Qed.
+
+Local Lemma attached_policies_for_resource_attach_same_contains
+    policies attachments identity policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  policy_id ∈ attached_policies_for_resource policies
+    (attachments ∪ {[(identity, policy_id)]}) identity resource.
+Proof.
+  intros Hpolicy Hresource.
+  unfold attached_policies_for_resource.
+  apply elem_of_map.
+  exists (identity, policy_id). split; [done|].
+  apply elem_of_filter. split.
+  - unfold attachment_matches_resource, policy_matches_resource. simpl.
+    replace (bool_decide (identity = identity)) with true by
+      (symmetry; apply bool_decide_eq_true_2; done).
+    rewrite Hpolicy Hresource.
+    replace (bool_decide (resource = resource)) with true by
+      (symmetry; apply bool_decide_eq_true_2; done).
+    done.
+  - apply elem_of_union_r.
+    apply elem_of_singleton. done.
 Qed.
 
 Local Lemma policy_resource_elem policies policy_id policy :
@@ -218,17 +350,28 @@ Local Lemma policy_resource_elem policies policy_id policy :
 Proof.
   intros Hpolicy.
   unfold policy_resources.
-  apply elem_of_list_to_set, list_elem_of_fmap.
+  apply elem_of_list_to_set.
+  apply list_elem_of_fmap.
   exists policy. split; [done|].
   apply list_elem_of_fmap.
   exists (policy_id, policy). split; [done|].
-  rewrite elem_of_map_to_list. exact Hpolicy.
+  rewrite elem_of_map_to_list. done.
 Qed.
 
-Local Lemma resources_for_identity_counts_lookup policies policy_ids resource :
+Local Lemma resources_for_identity_counts_entries_nodup policies attachments identity :
+  NoDup (((λ resource,
+    (resource, size (attached_policies_for_resource policies attachments identity resource))) <$>
+    elements (policy_resources policies)).*1).
+Proof.
+  rewrite -list_fmap_compose /=.
+  rewrite list_fmap_id.
+  apply NoDup_elements.
+Qed.
+
+Local Lemma resources_for_identity_counts_lookup policies attachments identity resource :
   resource ∈ policy_resources policies →
-  resources_for_identity_counts policies policy_ids !! resource =
-  Some (size (attached_policies_for_resource policies policy_ids resource)).
+  resources_for_identity_counts policies attachments identity !! resource =
+  Some (size (attached_policies_for_resource policies attachments identity resource)).
 Proof.
   intros Hresource.
   unfold resources_for_identity_counts.
@@ -236,641 +379,478 @@ Proof.
   - apply resources_for_identity_counts_entries_nodup.
   - apply list_elem_of_fmap.
     exists resource. split; [done|].
-    apply elem_of_elements. exact Hresource.
+    apply elem_of_elements. done.
 Qed.
 
-Local Lemma attached_policies_for_resource_not_elem
-    policies policy_ids resource policy_id :
-  policy_ids !! policy_id = None →
-  policy_id ∉ attached_policies_for_resource policies policy_ids resource.
+Local Lemma resources_for_identity_counts_lookup_None policies attachments identity resource :
+  resource ∉ policy_resources policies →
+  resources_for_identity_counts policies attachments identity !! resource = None.
 Proof.
-  intros Hlookup Hin.
-  unfold attached_policies_for_resource in Hin.
-  apply elem_of_dom in Hin as [[] Hfilter].
-  apply map_lookup_filter_Some in Hfilter as [Hlookup' _].
-  rewrite Hlookup in Hlookup'. done.
+  intros Hresource.
+  unfold resources_for_identity_counts.
+  apply not_elem_of_list_to_map_1.
+  rewrite -list_fmap_compose /=.
+  rewrite list_fmap_id.
+  rewrite elem_of_elements. done.
 Qed.
 
-Local Lemma attached_policies_for_resource_insert_same
-    policies policy_ids policy_id policy resource :
+Local Lemma resources_for_identity_counts_attach_other
+    policies attachments identity identity' policy_id policy resource resource' :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource =
-  attached_policies_for_resource policies policy_ids resource ∪ {[policy_id]}.
+  resource' ≠ resource →
+  resources_for_identity_counts policies
+    (attachments ∪ {[(identity, policy_id)]}) identity' !! resource' =
+  resources_for_identity_counts policies attachments identity' !! resource'.
+Proof.
+  intros Hpolicy Hresource Hneq.
+  destruct (decide (resource' ∈ policy_resources policies)) as [Hin|Hnotin].
+  - rewrite (resources_for_identity_counts_lookup
+      policies (attachments ∪ {[(identity, policy_id)]}) identity' resource' Hin).
+    rewrite (resources_for_identity_counts_lookup
+      policies attachments identity' resource' Hin).
+    rewrite (attached_policies_for_resource_attach_other
+      policies attachments identity identity' policy_id policy resource resource');
+      done.
+  - rewrite !resources_for_identity_counts_lookup_None; done.
+Qed.
+
+Local Lemma resources_for_identity_counts_detach_other
+    policies attachments identity identity' policy_id policy resource resource' :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  resource' ≠ resource →
+  resources_for_identity_counts policies
+    (attachments ∖ {[(identity, policy_id)]}) identity' !! resource' =
+  resources_for_identity_counts policies attachments identity' !! resource'.
+Proof.
+  intros Hpolicy Hresource Hneq.
+  destruct (decide (resource' ∈ policy_resources policies)) as [Hin|Hnotin].
+  - rewrite (resources_for_identity_counts_lookup
+      policies (attachments ∖ {[(identity, policy_id)]}) identity' resource' Hin).
+    rewrite (resources_for_identity_counts_lookup
+      policies attachments identity' resource' Hin).
+    rewrite (attached_policies_for_resource_detach_other
+      policies attachments identity identity' policy_id policy resource resource');
+      done.
+  - rewrite !resources_for_identity_counts_lookup_None; done.
+Qed.
+
+Local Lemma resources_for_identity_counts_detach_identity_other
+    policies attachments identity identity' policy_id resource :
+  identity' ≠ identity →
+  resources_for_identity_counts policies
+    (attachments ∖ {[(identity, policy_id)]}) identity' !! resource =
+  resources_for_identity_counts policies attachments identity' !! resource.
+Proof.
+  intros Hneq.
+  destruct (decide (resource ∈ policy_resources policies)) as [Hin|Hnotin].
+  - rewrite (resources_for_identity_counts_lookup
+      policies (attachments ∖ {[(identity, policy_id)]}) identity' resource Hin).
+    rewrite (resources_for_identity_counts_lookup
+      policies attachments identity' resource Hin).
+    rewrite (attached_policies_for_resource_detach_identity_other
+      policies attachments identity identity' policy_id resource); done.
+  - rewrite !resources_for_identity_counts_lookup_None; done.
+Qed.
+
+Local Lemma resources_for_identity_counts_attach_identity_other
+    policies attachments identity identity' policy_id resource :
+  identity' ≠ identity →
+  resources_for_identity_counts policies
+    (attachments ∪ {[(identity, policy_id)]}) identity' !! resource =
+  resources_for_identity_counts policies attachments identity' !! resource.
+Proof.
+  intros Hneq.
+  destruct (decide (resource ∈ policy_resources policies)) as [Hin|Hnotin].
+  - rewrite (resources_for_identity_counts_lookup
+      policies (attachments ∪ {[(identity, policy_id)]}) identity' resource Hin).
+    rewrite (resources_for_identity_counts_lookup
+      policies attachments identity' resource Hin).
+    rewrite (attached_policies_for_resource_attach_identity_other
+      policies attachments identity identity' policy_id resource); done.
+  - rewrite !resources_for_identity_counts_lookup_None; done.
+Qed.
+
+Local Lemma resources_for_identity_counts_attach_same_positive
+    policies attachments identity policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  ∃ n,
+    resources_for_identity_counts policies
+      (attachments ∪ {[(identity, policy_id)]}) identity !! resource = Some n ∧
+    (1 ≤ n)%nat.
 Proof.
   intros Hpolicy Hresource.
-  unfold attached_policies_for_resource.
-  rewrite map_filter_insert_True.
-  - simpl. unfold policy_matches_resource.
-    rewrite Hpolicy Hresource.
-    apply bool_decide_eq_true_2. done.
-  - rewrite dom_insert_L. Timeout 10 set_solver.
+  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hpolicy_resource.
+  rewrite Hresource in Hpolicy_resource.
+  rewrite (resources_for_identity_counts_lookup
+    policies (attachments ∪ {[(identity, policy_id)]}) identity resource Hpolicy_resource).
+  exists (size (attached_policies_for_resource policies
+    (attachments ∪ {[(identity, policy_id)]}) identity resource)).
+  split; [done|].
+  pose proof (attached_policies_for_resource_attach_same_contains
+    policies attachments identity policy_id policy resource Hpolicy Hresource) as Hin.
+  assert (attached_policies_for_resource policies
+    (attachments ∪ {[(identity, policy_id)]}) identity resource ≢ ∅) as Hnonempty.
+  { intros Hempty.
+    rewrite Hempty in Hin.
+    apply elem_of_empty in Hin. done. }
+  apply size_non_empty_iff in Hnonempty.
+  lia.
 Qed.
 
-Local Lemma attached_policies_for_resource_insert_same_size
-    policies policy_ids policy_id policy resource :
+Local Lemma resources_for_identity_counts_detach_same
+    policies attachments identity policy_id policy resource :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = None →
-  size (attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource) =
-  S (size (attached_policies_for_resource policies policy_ids resource)).
+  (identity, policy_id) ∈ attachments →
+  resources_for_identity_counts policies
+    (attachments ∖ {[(identity, policy_id)]}) identity !! resource =
+  Some (size (attached_policies_for_resource policies attachments identity resource) - 1)%nat.
 Proof.
-  intros Hpolicy Hresource Hlookup.
-  rewrite (attached_policies_for_resource_insert_same
-    policies policy_ids policy_id policy resource Hpolicy Hresource).
-  rewrite size_union.
-  - rewrite disjoint_singleton_r.
-    apply attached_policies_for_resource_not_elem. exact Hlookup.
-  - rewrite size_singleton. lia.
-Qed.
-
-Local Lemma resources_for_identity_counts_insert_same_lookup
-    policies policy_ids policy_id policy resource :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = None →
-  resources_for_identity_counts policies (<[policy_id := tt]> policy_ids) !! resource =
-  Some (S (size (attached_policies_for_resource policies policy_ids resource))).
-Proof.
-  intros Hpolicy Hresource Hlookup.
-  rewrite resources_for_identity_counts_lookup.
-  - rewrite -Hresource. apply policy_resource_elem with policy_id. exact Hpolicy.
-  - rewrite (attached_policies_for_resource_insert_same_size
-      policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup).
-    done.
+  intros Hpolicy Hresource Hattachment.
+  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hpolicy_resource.
+  rewrite Hresource in Hpolicy_resource.
+  rewrite (resources_for_identity_counts_lookup
+    policies (attachments ∖ {[(identity, policy_id)]}) identity resource Hpolicy_resource).
+  rewrite (attached_policies_for_resource_detach_same
+    policies attachments identity policy_id policy resource Hpolicy Hresource Hattachment).
+  rewrite size_difference.
+  - intros detached_policy Hdetached_policy.
+    apply elem_of_singleton in Hdetached_policy. subst detached_policy.
+    apply (attached_policies_for_resource_contains
+      policies attachments identity policy_id policy resource); done.
+  - rewrite size_singleton. done.
 Qed.
 
 Local Lemma resource_count_refs_identity_ref_none resources identity :
   resource_count_refs resources !! IamRef.IdentityRef identity = None.
 Proof.
   unfold resource_count_refs.
-  apply lookup_kmap_None.
-  - apply _.
-  - intros resource Heq.
-    discriminate Heq.
+  apply eq_None_not_Some.
+  intros [n Hlookup].
+  destruct (lookup_kmap_Some
+    (M1:=gmap iammodel.ResourceName.t) (M2:=gmap IamRef.t)
+    IamRef.ResourceRef resources (IamRef.IdentityRef identity) n) as [Hsome _].
+  specialize (Hsome Hlookup) as (resource & Heq & _).
+  inversion Heq.
 Qed.
 
-Local Lemma resource_count_refs_insert_policy_other
-    policies policy_ids policy_id policy resource ref :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  ref ≠ IamRef.ResourceRef resource →
-  resource_count_refs
-    (resources_for_identity_counts policies (<[policy_id := tt]> policy_ids)) !! ref =
-  resource_count_refs
-    (resources_for_identity_counts policies policy_ids) !! ref.
+Local Lemma reversed_identity_policy_identity_ref_counts
+    identities attachments policies identity_ref' :
+  reversed_identity_policy_ref_counts identities attachments policies
+    (IamRef.IdentityRef identity_ref') = ∅.
 Proof.
-  intros Hpolicy Hresource Hneq.
-  destruct ref as [identity|resource'].
-  - rewrite !resource_count_refs_identity_ref_none. done.
-  - rewrite /resource_count_refs !lookup_kmap.
-    apply (resources_for_identity_counts_insert_other
-      policies policy_ids policy_id policy resource resource'); [done|done|].
-    intros Heq. apply Hneq. subst resource'. done.
-Qed.
-
-Local Lemma attach_identity_policy_other_refs
-    identities policies identity policy_ids policy_id policy resource ref :
-  identities !! identity = Some policy_ids →
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  ref ≠ IamRef.ResourceRef resource →
-  reversed_identity_policy_ref_counts
-    (<[identity := <[policy_id := tt]> policy_ids]> identities) policies ref =
-  reversed_identity_policy_ref_counts identities policies ref.
-Proof.
-  intros Hidentity Hpolicy Hresource Hneq.
-  apply map_eq. intros identity'.
+  apply map_eq. intros identity.
   unfold reversed_identity_policy_ref_counts,
     counted_reversed_reference.reverse_index,
     reversed_identity_policy_state.
-  rewrite !map_lookup_imap.
-  destruct (decide (identity' = identity)) as [->|Hne_identity].
-  - rewrite lookup_insert_eq Hidentity /=.
-    unfold counted_reversed_reference.reference_count.
-    pose proof (resource_count_refs_insert_policy_other
-      policies policy_ids policy_id policy resource ref
-      Hpolicy Hresource Hneq) as Hrefs.
-    rewrite Hrefs.
-    done.
-  - rewrite lookup_insert_ne; [|done].
-    destruct (identities !! identity'); done.
+  rewrite map_lookup_imap.
+  destruct (gset_to_gmap tt identities !! identity) as [[]|] eqn:Hidentity.
+  - rewrite map_lookup_imap Hidentity /=.
+    replace (@counted_reversed_reference.reference_count
+      IamRef.t _ _ (gmap iammodel.ResourceName.t nat) resource_count_refs
+      (resources_for_identity_counts policies attachments identity)
+      (IamRef.IdentityRef identity_ref')) with 0%nat.
+    2:{ unfold counted_reversed_reference.reference_count.
+        rewrite resource_count_refs_identity_ref_none. done. }
+    destruct (decide (0 < 0)%nat); [lia|done].
+  - rewrite map_lookup_imap Hidentity /=.
+    rewrite lookup_empty. done.
 Qed.
 
-Local Lemma attach_identity_policy_counts_lookup_same
-    identities policies identity policy_ids policy_id policy resource :
-  identities !! identity = Some policy_ids →
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = None →
-  reversed_identity_policy_counts
-    (<[identity := <[policy_id := tt]> policy_ids]> identities) policies resource
-    !! identity =
-  Some (S (default 0%nat
-    (reversed_identity_policy_counts identities policies resource !! identity))).
-Proof.
-  intros Hidentity Hpolicy Hresource Hlookup.
-  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hresource_elem.
-  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index, reversed_identity_policy_state.
-  rewrite !map_lookup_imap lookup_insert_eq /=.
-  unfold counted_reversed_reference.reference_count.
-  rewrite /resource_count_refs lookup_kmap.
-  rewrite (resources_for_identity_counts_insert_same_lookup
-    policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup).
-  rewrite Hidentity /=.
-  unfold counted_reversed_reference.reference_count.
-  rewrite /resource_count_refs lookup_kmap.
-  rewrite resources_for_identity_counts_lookup.
-  - rewrite -Hresource. exact Hresource_elem.
-  - destruct (decide (0 <
-      S (size (attached_policies_for_resource policies policy_ids resource)))%nat)
-      as [_|Hnew]; [|lia].
-    destruct (decide (0 <
-      size (attached_policies_for_resource policies policy_ids resource))%nat)
-      as [Hold|Hold]; simpl.
-    + destruct (decide (0 <
-        size (attached_policies_for_resource policies policy_ids resource))%nat)
-        as [_|Hcontra]; [done|contradiction].
-    + destruct (decide (0 <
-        size (attached_policies_for_resource policies policy_ids resource))%nat)
-        as [Hcontra|_]; [contradiction|simpl; f_equal; lia].
-Qed.
-
-Local Lemma attach_identity_policy_counts_lookup_other
-    identities policies identity policy_ids policy_id resource identity' :
+Local Lemma reversed_identity_policy_attach_counts_lookup_other_identity
+    identities attachments policies identity identity' policy_id resource :
   identity' ≠ identity →
-  reversed_identity_policy_counts
-    (<[identity := <[policy_id := tt]> policy_ids]> identities) policies resource
-    !! identity' =
-  reversed_identity_policy_counts identities policies resource !! identity'.
+  reversed_identity_policy_counts identities
+    (attachments ∪ {[(identity, policy_id)]}) policies resource !! identity' =
+  reversed_identity_policy_counts identities attachments policies resource !! identity'.
 Proof.
-  intros Hne.
+  intros Hneq.
   unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
     counted_reversed_reference.reverse_index, reversed_identity_policy_state.
   rewrite !map_lookup_imap.
-  rewrite lookup_insert_ne; [|done].
-  destruct (identities !! identity'); done.
+  destruct (gset_to_gmap tt identities !! identity') as [[]|] eqn:Hidentity';
+    simpl; [|done].
+  unfold counted_reversed_reference.reference_count, resource_count_refs.
+  rewrite !lookup_kmap.
+  rewrite (resources_for_identity_counts_attach_identity_other
+    policies attachments identity identity' policy_id resource Hneq).
+  done.
 Qed.
 
-Local Lemma attached_policies_for_resource_insert_elem
-    policies policy_ids policy_id policy resource :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_id ∈
-    attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource.
+Local Lemma reversed_identity_policy_counts_lookup
+    identities attachments policies identity resource :
+  identity ∈ identities →
+  resource ∈ policy_resources policies →
+  reversed_identity_policy_counts identities attachments policies resource !! identity =
+    if decide (0 <
+      size (attached_policies_for_resource policies attachments identity resource))%nat
+    then Some (size (attached_policies_for_resource policies attachments identity resource))
+    else None.
 Proof.
-  intros Hpolicy Hresource.
-  unfold attached_policies_for_resource.
-  apply elem_of_dom. exists tt.
-  apply map_lookup_filter_Some. split.
-  - rewrite lookup_insert_eq. done.
-  - simpl. unfold policy_matches_resource.
-    rewrite Hpolicy Hresource.
-    apply bool_decide_eq_true_2. done.
+  intros Hidentity Hresource.
+  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
+    counted_reversed_reference.reverse_index, reversed_identity_policy_state.
+  rewrite !map_lookup_imap lookup_gset_to_gmap.
+  destruct (decide (identity ∈ identities)) as [_|Hnot_identity]; [|done].
+  simpl.
+  unfold counted_reversed_reference.reference_count, resource_count_refs.
+  rewrite (@option_guard_True unit (identity ∈ identities) _ (Some ()%V)
+    Hidentity).
+  simpl.
+  rewrite (lookup_kmap
+    (M1:=gmap iammodel.ResourceName.t) (M2:=gmap IamRef.t)
+    IamRef.ResourceRef
+    (resources_for_identity_counts policies attachments identity)
+    resource).
+  rewrite (resources_for_identity_counts_lookup
+    policies attachments identity resource Hresource).
+  done.
 Qed.
 
-Local Lemma attached_policies_for_resource_insert_size_pos
-    policies policy_ids policy_id policy resource :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  (0 < size
-    (attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource))%nat.
-Proof.
-  intros Hpolicy Hresource.
-  pose proof (attached_policies_for_resource_insert_elem
-    policies policy_ids policy_id policy resource Hpolicy Hresource) as Hin.
-  destruct (decide (size
-    (attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource)
-    = 0%nat)) as [Hempty|Hnonempty].
-  - apply size_empty_inv in Hempty.
-    rewrite Hempty in Hin. set_solver.
-  - lia.
-Qed.
-
-Local Lemma resources_for_identity_counts_insert_lookup_positive
-    policies policy_ids policy_id policy resource :
+Local Lemma reversed_identity_policy_attach_counts_lookup_positive
+    identities attachments policies identity policy_id policy resource :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
   ∃ n,
-    resources_for_identity_counts policies (<[policy_id := tt]> policy_ids) !! resource =
-      Some n ∧
-    (1 ≤ n)%nat.
-Proof.
-  intros Hpolicy Hresource.
-  exists (size
-    (attached_policies_for_resource policies (<[policy_id := tt]> policy_ids) resource)).
-  split.
-  - apply resources_for_identity_counts_lookup.
-    rewrite -Hresource. apply policy_resource_elem with policy_id. exact Hpolicy.
-  - pose proof (attached_policies_for_resource_insert_size_pos
-      policies policy_ids policy_id policy resource Hpolicy Hresource).
-    lia.
-Qed.
-
-Local Lemma attach_identity_policy_counts_lookup_positive
-    identities policies identity policy_ids policy_id policy resource :
-  identities !! identity = Some policy_ids →
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  ∃ n,
-    reversed_identity_policy_counts
-      (<[identity := <[policy_id := tt]> policy_ids]> identities) policies resource
-      !! identity = Some n ∧
+    reversed_identity_policy_counts identities
+      (attachments ∪ {[(identity, policy_id)]}) policies resource !! identity = Some n ∧
     (1 ≤ n)%nat.
 Proof.
   intros Hidentity Hpolicy Hresource.
-  destruct (resources_for_identity_counts_insert_lookup_positive
-    policies policy_ids policy_id policy resource Hpolicy Hresource)
-    as (n & Hlookup & Hpositive).
-  exists n. split; [|done].
   unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
     counted_reversed_reference.reverse_index, reversed_identity_policy_state.
-  rewrite !map_lookup_imap lookup_insert_eq /=.
-  unfold counted_reversed_reference.reference_count.
-  rewrite /resource_count_refs lookup_kmap Hlookup /=.
-  destruct (decide (0 < n)%nat) as [_|Hnot_positive]; [done|lia].
+  rewrite !map_lookup_imap lookup_gset_to_gmap.
+  destruct (decide (identity ∈ identities)) as [_|Hnot_identity]; [|done].
+  simpl.
+  unfold counted_reversed_reference.reference_count, resource_count_refs.
+  rewrite (@option_guard_True unit (identity ∈ identities) _ (Some ()%V)
+    Hidentity).
+  simpl.
+  rewrite (lookup_kmap
+    (M1:=gmap iammodel.ResourceName.t) (M2:=gmap IamRef.t)
+    IamRef.ResourceRef
+    (resources_for_identity_counts policies
+      (attachments ∪ {[(identity, policy_id)]}) identity)
+    resource).
+  destruct (resources_for_identity_counts_attach_same_positive
+    policies attachments identity policy_id policy resource Hpolicy Hresource)
+    as (n & Hlookup & Hn).
+  rewrite Hlookup /=.
+  destruct (decide (0 < n)%nat); [|lia].
+  exists n. split; done.
 Qed.
 
-Local Lemma attach_identity_policy_counts_insert
-    identities policies identity policy_ids policy_id policy resource :
-  identities !! identity = Some policy_ids →
+Local Lemma reversed_identity_policy_detach_counts_lookup_positive
+    identities attachments policies identity policy_id policy resource :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = None →
-  reversed_identity_policy_counts
-    (<[identity := <[policy_id := tt]> policy_ids]> identities) policies resource =
-  <[identity := S (default 0%nat
-    (reversed_identity_policy_counts identities policies resource !! identity))]>
-    (reversed_identity_policy_counts identities policies resource).
+  (identity, policy_id) ∈ attachments →
+  ∃ n,
+    reversed_identity_policy_counts identities attachments policies resource !! identity =
+      Some n ∧
+    (0 < n)%nat.
 Proof.
-  intros Hidentity Hpolicy Hresource Hlookup.
-  apply map_eq. intros identity'.
-  destruct (decide (identity' = identity)) as [->|Hne].
-  - rewrite lookup_insert_eq.
-    apply (attach_identity_policy_counts_lookup_same
-      identities policies identity policy_ids policy_id policy resource); done.
-  - rewrite (attach_identity_policy_counts_lookup_other
-      identities policies identity policy_ids policy_id resource identity' Hne).
-    symmetry. apply lookup_insert_ne.
-    intros Heq. apply Hne. symmetry. exact Heq.
+  intros Hidentity Hpolicy Hresource Hattachment.
+  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hpolicy_resource.
+  rewrite Hresource in Hpolicy_resource.
+  rewrite (reversed_identity_policy_counts_lookup
+    identities attachments policies identity resource Hidentity Hpolicy_resource).
+  pose proof (attached_policies_for_resource_contains
+    policies attachments identity policy_id policy resource Hpolicy Hresource Hattachment)
+    as Hcontains.
+  assert (attached_policies_for_resource policies attachments identity resource ≢ ∅)
+    as Hnonempty.
+  { intros Hempty.
+    rewrite Hempty in Hcontains.
+    apply elem_of_empty in Hcontains. done. }
+  apply size_non_empty_iff in Hnonempty.
+  destruct (decide (0 <
+    size (attached_policies_for_resource policies attachments identity resource))%nat)
+    as [Hpositive|Hnot_positive]; [|lia].
+  exists (size (attached_policies_for_resource policies attachments identity resource)).
+  split; done.
 Qed.
 
-Local Lemma attached_policies_for_resource_delete_other
-    policies policy_ids policy_id policy resource resource' :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  resource' ≠ resource →
-  attached_policies_for_resource policies (delete policy_id policy_ids) resource' =
-  attached_policies_for_resource policies policy_ids resource'.
-Proof.
-  intros Hpolicy Hresource Hneq.
-  unfold attached_policies_for_resource.
-  f_equal.
-  apply map_eq. intros policy_id'.
-  destruct (decide (policy_id' = policy_id)) as [->|Hne_policy].
-  - pose proof (policy_matches_resource_other
-      policies policy_id policy resource resource' Hpolicy Hresource Hneq) as Hmatch.
-    assert (Hdelete_none :
-      filter
-        (λ '(policy_id0, _),
-          policy_matches_resource policies resource' policy_id0 = true)
-        (delete policy_id policy_ids) !! policy_id = None).
-    { apply map_lookup_filter_None_2. left. rewrite lookup_delete_eq. done. }
-    assert (Hold_none :
-      filter
-        (λ '(policy_id0, _),
-          policy_matches_resource policies resource' policy_id0 = true)
-        policy_ids !! policy_id = None).
-    { apply map_lookup_filter_None_2.
-      destruct (policy_ids !! policy_id) as [[]|] eqn:Hlookup; [right|left; done].
-      intros [] Hlookup' Hmatches.
-      inversion Hlookup'. subst.
-      rewrite Hmatch in Hmatches. done. }
-    rewrite Hdelete_none Hold_none. done.
-  - rewrite !map_lookup_filter.
-    rewrite lookup_delete_ne; done.
-Qed.
-
-Local Lemma resources_for_identity_counts_delete_other
-    policies policy_ids policy_id policy resource resource' :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  resource' ≠ resource →
-  resources_for_identity_counts policies (delete policy_id policy_ids) !! resource' =
-  resources_for_identity_counts policies policy_ids !! resource'.
-Proof.
-  intros Hpolicy Hresource Hneq.
-  unfold resources_for_identity_counts.
-  destruct (list_to_map
-    ((λ resource0,
-      (resource0,
-       size (attached_policies_for_resource policies (delete policy_id policy_ids) resource0)))
-      <$> elements (policy_resources policies)) !! resource') as [n|] eqn:Hnew.
-  - apply elem_of_list_to_map_2 in Hnew as Hin.
-    apply list_elem_of_fmap in Hin as (resource0 & Hpair & Hin).
-    inversion Hpair. subst resource0 n.
-    symmetry.
-    apply elem_of_list_to_map_1.
-    + apply resources_for_identity_counts_entries_nodup.
-    + apply list_elem_of_fmap.
-      exists resource'. split; [|done].
-      simpl. f_equal.
-      pose proof (attached_policies_for_resource_delete_other
-        policies policy_ids policy_id policy resource resource'
-        Hpolicy Hresource Hneq) as Hattached.
-      rewrite Hattached. done.
-  - destruct (list_to_map
-      ((λ resource0,
-        (resource0, size (attached_policies_for_resource policies policy_ids resource0)))
-        <$> elements (policy_resources policies)) !! resource') as [n|] eqn:Hold; [|done].
-    exfalso.
-    apply elem_of_list_to_map_2 in Hold as Hin.
-    apply list_elem_of_fmap in Hin as (resource0 & Hpair & Hin).
-    inversion Hpair. subst resource0 n.
-    assert (Hnew_some :
-      (list_to_map
-        ((λ resource0,
-          (resource0,
-           size (attached_policies_for_resource policies
-             (delete policy_id policy_ids) resource0)))
-          <$> elements (policy_resources policies)) : gmap iammodel.ResourceName.t nat) !! resource' =
-      Some (size (attached_policies_for_resource policies
-        (delete policy_id policy_ids) resource'))).
-    { apply elem_of_list_to_map_1.
-      - apply resources_for_identity_counts_entries_nodup.
-      - apply list_elem_of_fmap.
-        exists resource'. split; [done|done]. }
-    rewrite Hnew in Hnew_some. discriminate.
-Qed.
-
-Local Lemma resource_count_refs_delete_policy_other
-    policies policy_ids policy_id policy resource ref :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  ref ≠ IamRef.ResourceRef resource →
-  resource_count_refs
-    (resources_for_identity_counts policies (delete policy_id policy_ids)) !! ref =
-  resource_count_refs
-    (resources_for_identity_counts policies policy_ids) !! ref.
-Proof.
-  intros Hpolicy Hresource Hneq.
-  destruct ref as [identity|resource'].
-  - rewrite !resource_count_refs_identity_ref_none. done.
-  - rewrite /resource_count_refs !lookup_kmap.
-    apply (resources_for_identity_counts_delete_other
-      policies policy_ids policy_id policy resource resource'); [done|done|].
-    intros Heq. apply Hneq. subst resource'. done.
-Qed.
-
-Local Lemma detach_identity_policy_other_refs
-    identities policies identity policy_ids policy_id policy resource ref :
-  identities !! identity = Some policy_ids →
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  ref ≠ IamRef.ResourceRef resource →
-  reversed_identity_policy_ref_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies ref =
-  reversed_identity_policy_ref_counts identities policies ref.
-Proof.
-  intros Hidentity Hpolicy Hresource Hneq.
-  apply map_eq. intros identity'.
-  unfold reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index,
-    reversed_identity_policy_state.
-  rewrite !map_lookup_imap.
-  destruct (decide (identity' = identity)) as [->|Hne_identity].
-  - rewrite lookup_insert_eq Hidentity /=.
-    unfold counted_reversed_reference.reference_count.
-    pose proof (resource_count_refs_delete_policy_other
-      policies policy_ids policy_id policy resource ref
-      Hpolicy Hresource Hneq) as Hrefs.
-    rewrite Hrefs.
-    done.
-  - rewrite lookup_insert_ne; [|done].
-    destruct (identities !! identity'); done.
-Qed.
-
-Local Lemma detach_identity_policy_counts_lookup_other
-    identities policies identity policy_ids policy_id resource identity' :
+Local Lemma reversed_identity_policy_detach_counts_lookup_other_identity
+    identities attachments policies identity identity' policy_id resource :
   identity' ≠ identity →
-  reversed_identity_policy_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies resource
-    !! identity' =
-  reversed_identity_policy_counts identities policies resource !! identity'.
+  reversed_identity_policy_counts identities
+    (attachments ∖ {[(identity, policy_id)]}) policies resource !! identity' =
+  reversed_identity_policy_counts identities attachments policies resource !! identity'.
 Proof.
-  intros Hne.
+  intros Hneq.
   unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
     counted_reversed_reference.reverse_index, reversed_identity_policy_state.
   rewrite !map_lookup_imap.
-  rewrite lookup_insert_ne; [|done].
-  destruct (identities !! identity'); done.
+  destruct (gset_to_gmap tt identities !! identity') as [[]|] eqn:Hidentity';
+    simpl; [|done].
+  unfold counted_reversed_reference.reference_count, resource_count_refs.
+  rewrite !lookup_kmap.
+  rewrite (resources_for_identity_counts_detach_identity_other
+    policies attachments identity identity' policy_id resource Hneq).
+  done.
 Qed.
 
-Local Lemma attached_policies_for_resource_elem
-    policies policy_ids policy_id policy resource :
+Local Lemma reversed_identity_policy_detach_counts_lookup_decrease
+    identities attachments policies identity policy_id policy resource n :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  policy_id ∈ attached_policies_for_resource policies policy_ids resource.
+  (identity, policy_id) ∈ attachments →
+  reversed_identity_policy_counts identities attachments policies resource !! identity =
+    Some n →
+  (1 < n)%nat →
+  reversed_identity_policy_counts identities
+    (attachments ∖ {[(identity, policy_id)]}) policies resource !! identity =
+    Some (n - 1)%nat.
 Proof.
-  intros Hpolicy Hresource Hlookup.
-  unfold attached_policies_for_resource.
-  apply elem_of_dom. exists tt.
-  apply map_lookup_filter_Some. split; [done|].
-  unfold policy_matches_resource.
-  rewrite Hpolicy Hresource.
-  apply bool_decide_eq_true_2. done.
-Qed.
-
-Local Lemma attached_policies_for_resource_delete_same
-    policies policy_ids policy_id resource :
-  attached_policies_for_resource policies (delete policy_id policy_ids) resource =
-  attached_policies_for_resource policies policy_ids resource ∖ {[policy_id]}.
-Proof.
-  unfold attached_policies_for_resource.
-  rewrite map_filter_delete.
-  rewrite dom_delete_L. done.
-Qed.
-
-Local Lemma attached_policies_for_resource_delete_same_size
-    policies policy_ids policy_id policy resource :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  size (attached_policies_for_resource policies (delete policy_id policy_ids) resource) =
-  (size (attached_policies_for_resource policies policy_ids resource) - 1)%nat.
-Proof.
-  intros Hpolicy Hresource Hlookup.
-  rewrite attached_policies_for_resource_delete_same.
+  intros Hidentity Hpolicy Hresource Hattachment Hold_lookup Hn.
+  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hpolicy_resource.
+  rewrite Hresource in Hpolicy_resource.
+  rewrite (reversed_identity_policy_counts_lookup
+    identities attachments policies identity resource Hidentity Hpolicy_resource)
+    in Hold_lookup.
+  destruct (decide (0 <
+    size (attached_policies_for_resource policies attachments identity resource))%nat)
+    as [Hold_positive|Hold_zero]; [|done].
+  inversion Hold_lookup. subst n. clear Hold_lookup.
+  rewrite (reversed_identity_policy_counts_lookup
+    identities (attachments ∖ {[(identity, policy_id)]}) policies identity resource
+    Hidentity Hpolicy_resource).
+  rewrite (attached_policies_for_resource_detach_same
+    policies attachments identity policy_id policy resource Hpolicy Hresource Hattachment).
   rewrite size_difference.
-  - pose proof (attached_policies_for_resource_elem
-      policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup).
-    Timeout 10 set_solver.
-  - rewrite size_singleton. lia.
+  - intros detached_policy Hdetached_policy.
+    apply elem_of_singleton in Hdetached_policy. subst detached_policy.
+    apply (attached_policies_for_resource_contains
+      policies attachments identity policy_id policy resource); done.
+  - rewrite size_singleton.
+    destruct (decide (0 <
+      size (attached_policies_for_resource policies attachments identity resource) - 1)%nat)
+      as [Hnew_positive|Hnew_zero]; [done|lia].
 Qed.
 
-Local Lemma detach_identity_policy_counts_lookup_same_decrement
-    identities policies identity policy_ids policy_id policy resource n :
-  identities !! identity = Some policy_ids →
+Local Lemma reversed_identity_policy_detach_counts_lookup_remove
+    identities attachments policies identity policy_id policy resource :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  reversed_identity_policy_counts identities policies resource !! identity = Some n →
-  (2 ≤ n)%nat →
-  reversed_identity_policy_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies resource
-    !! identity = Some (n - 1)%nat.
+  (identity, policy_id) ∈ attachments →
+  reversed_identity_policy_counts identities attachments policies resource !! identity =
+    Some 1%nat →
+  reversed_identity_policy_counts identities
+    (attachments ∖ {[(identity, policy_id)]}) policies resource !! identity = None.
 Proof.
-  intros Hidentity Hpolicy Hresource Hpolicy_id Hcount Hn.
-  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hresource_elem.
-  assert (Hold_lookup :
-    resources_for_identity_counts policies policy_ids !! resource =
-    Some (size (attached_policies_for_resource policies policy_ids resource))).
-  { apply resources_for_identity_counts_lookup.
-    rewrite -Hresource. exact Hresource_elem. }
-  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index, reversed_identity_policy_state in Hcount.
-  rewrite !map_lookup_imap Hidentity /= in Hcount.
-  unfold counted_reversed_reference.reference_count in Hcount.
-  rewrite /resource_count_refs lookup_kmap Hold_lookup /= in Hcount.
+  intros Hidentity Hpolicy Hresource Hattachment Hold_lookup.
+  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hpolicy_resource.
+  rewrite Hresource in Hpolicy_resource.
+  rewrite (reversed_identity_policy_counts_lookup
+    identities attachments policies identity resource Hidentity Hpolicy_resource)
+    in Hold_lookup.
   destruct (decide (0 <
-    size (attached_policies_for_resource policies policy_ids resource))%nat)
-    as [Hold_positive|Hold_not_positive]; [|discriminate].
-  inversion Hcount. subst n.
-  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index, reversed_identity_policy_state.
-  rewrite !map_lookup_imap lookup_insert_eq /=.
-  unfold counted_reversed_reference.reference_count.
-  rewrite /resource_count_refs lookup_kmap.
-  rewrite resources_for_identity_counts_lookup.
-  - rewrite -Hresource. exact Hresource_elem.
-  - rewrite (attached_policies_for_resource_delete_same_size
-      policies policy_ids policy_id policy resource Hpolicy Hresource Hpolicy_id).
-    destruct (decide
-      (0 <
-       (size (attached_policies_for_resource policies policy_ids resource) - 1)%nat)%nat)
-      as [Hnew_positive|Hnew_not_positive].
-    + rewrite decide_True.
-      * exact Hnew_positive.
-      * done.
-    + lia.
+    size (attached_policies_for_resource policies attachments identity resource))%nat)
+    as [Hold_positive|Hold_zero]; [|done].
+  inversion Hold_lookup as [Hsize]. clear Hold_lookup.
+  rewrite (reversed_identity_policy_counts_lookup
+    identities (attachments ∖ {[(identity, policy_id)]}) policies identity resource
+    Hidentity Hpolicy_resource).
+  rewrite (attached_policies_for_resource_detach_same
+    policies attachments identity policy_id policy resource Hpolicy Hresource Hattachment).
+  rewrite size_difference.
+  - intros detached_policy Hdetached_policy.
+    apply elem_of_singleton in Hdetached_policy. subst detached_policy.
+    apply (attached_policies_for_resource_contains
+      policies attachments identity policy_id policy resource); done.
+  - rewrite size_singleton Hsize.
+    destruct (decide (0 < 1 - 1)%nat); [lia|done].
 Qed.
 
-Local Lemma detach_identity_policy_counts_lookup_same_delete
-    identities policies identity policy_ids policy_id policy resource :
-  identities !! identity = Some policy_ids →
+Local Lemma reversed_identity_policy_attach_other_refs
+    identities attachments policies identity policy_id policy resource ref :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  reversed_identity_policy_counts identities policies resource !! identity = Some 1%nat →
-  reversed_identity_policy_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies resource
-    !! identity = None.
+  ref ≠ IamRef.ResourceRef resource →
+  reversed_identity_policy_ref_counts identities
+    (attachments ∪ {[(identity, policy_id)]}) policies ref =
+  reversed_identity_policy_ref_counts identities attachments policies ref.
 Proof.
-  intros Hidentity Hpolicy Hresource Hpolicy_id Hcount.
-  pose proof (policy_resource_elem policies policy_id policy Hpolicy) as Hresource_elem.
-  assert (Hold_lookup :
-    resources_for_identity_counts policies policy_ids !! resource =
-    Some (size (attached_policies_for_resource policies policy_ids resource))).
-  { apply resources_for_identity_counts_lookup.
-    rewrite -Hresource. exact Hresource_elem. }
-  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index, reversed_identity_policy_state in Hcount.
-  rewrite !map_lookup_imap Hidentity /= in Hcount.
-  unfold counted_reversed_reference.reference_count in Hcount.
-  rewrite /resource_count_refs lookup_kmap Hold_lookup /= in Hcount.
-  destruct (decide (0 <
-    size (attached_policies_for_resource policies policy_ids resource))%nat)
-    as [Hold_positive|Hold_not_positive]; [|discriminate].
-  inversion Hcount as [Hsize]. clear Hcount.
-  unfold reversed_identity_policy_counts, reversed_identity_policy_ref_counts,
-    counted_reversed_reference.reverse_index, reversed_identity_policy_state.
-  rewrite !map_lookup_imap lookup_insert_eq /=.
-  unfold counted_reversed_reference.reference_count.
-  rewrite /resource_count_refs lookup_kmap.
-  rewrite resources_for_identity_counts_lookup.
-  - rewrite -Hresource. exact Hresource_elem.
-  - rewrite (attached_policies_for_resource_delete_same_size
-      policies policy_ids policy_id policy resource Hpolicy Hresource Hpolicy_id).
-    rewrite Hsize.
-    simpl.
-    destruct (decide (0 < 0)%nat) as [Hfalse|_]; [lia|done].
+  intros Hpolicy Hresource Hneq.
+  destruct ref as [identity_ref'|resource'].
+  - rewrite !reversed_identity_policy_identity_ref_counts. done.
+  - apply map_eq. intros identity'.
+    unfold reversed_identity_policy_ref_counts,
+      counted_reversed_reference.reverse_index,
+      reversed_identity_policy_state.
+    rewrite !map_lookup_imap.
+    destruct (gset_to_gmap tt identities !! identity') as [[]|] eqn:Hidentity;
+      simpl; [|done].
+    unfold counted_reversed_reference.reference_count, resource_count_refs.
+    rewrite !lookup_kmap.
+    assert (Hresource_ne : resource' ≠ resource).
+    { intros Heq. apply Hneq. subst. done. }
+    rewrite (resources_for_identity_counts_attach_other
+      policies attachments identity identity' policy_id policy resource resource');
+      done.
 Qed.
 
-Local Lemma detach_identity_policy_counts_decrement
-    identities policies identity policy_ids policy_id policy resource n :
-  identities !! identity = Some policy_ids →
+Local Lemma reversed_identity_policy_detach_other_refs
+    identities attachments policies identity policy_id policy resource ref :
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  reversed_identity_policy_counts identities policies resource !! identity = Some n →
-  (2 ≤ n)%nat →
-  reversed_identity_policy_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies resource =
-  <[identity := (n - 1)%nat]>
-    (reversed_identity_policy_counts identities policies resource).
+  ref ≠ IamRef.ResourceRef resource →
+  reversed_identity_policy_ref_counts identities
+    (attachments ∖ {[(identity, policy_id)]}) policies ref =
+  reversed_identity_policy_ref_counts identities attachments policies ref.
 Proof.
-  intros Hidentity Hpolicy Hresource Hpolicy_id Hcount Hn.
-  apply map_eq. intros identity'.
-  destruct (decide (identity' = identity)) as [->|Hne].
-  - rewrite lookup_insert_eq.
-    apply (detach_identity_policy_counts_lookup_same_decrement
-      identities policies identity policy_ids policy_id policy resource n); done.
-  - rewrite (detach_identity_policy_counts_lookup_other
-      identities policies identity policy_ids policy_id resource identity' Hne).
-    symmetry. apply lookup_insert_ne.
-    intros Heq. apply Hne. symmetry. exact Heq.
+  intros Hpolicy Hresource Hneq.
+  destruct ref as [identity_ref'|resource'].
+  - rewrite !reversed_identity_policy_identity_ref_counts. done.
+  - apply map_eq. intros identity'.
+    unfold reversed_identity_policy_ref_counts,
+      counted_reversed_reference.reverse_index,
+      reversed_identity_policy_state.
+    rewrite !map_lookup_imap.
+    destruct (gset_to_gmap tt identities !! identity') as [[]|] eqn:Hidentity;
+      simpl; [|done].
+    unfold counted_reversed_reference.reference_count, resource_count_refs.
+    rewrite !lookup_kmap.
+    assert (Hresource_ne : resource' ≠ resource).
+    { intros Heq. apply Hneq. subst. done. }
+    rewrite (resources_for_identity_counts_detach_other
+      policies attachments identity identity' policy_id policy resource resource');
+      done.
 Qed.
 
-Local Lemma detach_identity_policy_counts_delete
-    identities policies identity policy_ids policy_id policy resource :
-  identities !! identity = Some policy_ids →
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  policy_ids !! policy_id = Some tt →
-  reversed_identity_policy_counts identities policies resource !! identity = Some 1%nat →
-  reversed_identity_policy_counts
-    (<[identity := delete policy_id policy_ids]> identities) policies resource =
-  delete identity (reversed_identity_policy_counts identities policies resource).
-Proof.
-  intros Hidentity Hpolicy Hresource Hpolicy_id Hcount.
-  apply map_eq. intros identity'.
-  destruct (decide (identity' = identity)) as [->|Hne].
-  - rewrite lookup_delete_eq.
-    apply (detach_identity_policy_counts_lookup_same_delete
-      identities policies identity policy_ids policy_id policy resource); done.
-  - rewrite (detach_identity_policy_counts_lookup_other
-      identities policies identity policy_ids policy_id resource identity' Hne).
-    symmetry. apply lookup_delete_ne.
-    intros Heq. apply Hne. symmetry. exact Heq.
-Qed.
-
-Local Lemma reversed_identity_policy_state_identity_refs identities policies observed_resources :
+Local Lemma reversed_identity_policy_state_identity_refs
+    identities attachments policies observed_resources :
   map_Forall (λ identity resources,
     identity_ref identity resources ∈
-      reversed_identity_policy_used_reference_set identities policies observed_resources)
-    (reversed_identity_policy_state identities policies).
+      reversed_identity_policy_used_reference_set identities observed_resources)
+    (reversed_identity_policy_state identities attachments policies).
 Proof.
   rewrite map_Forall_lookup.
   intros identity resources Hlookup.
   unfold reversed_identity_policy_state in Hlookup.
   rewrite map_lookup_imap in Hlookup.
-  destruct (identities !! identity) as [policy_ids|] eqn:Hidentity.
-  2:{ rewrite Hidentity in Hlookup. simpl in Hlookup. inversion Hlookup. }
-  rewrite Hidentity in Hlookup. simpl in Hlookup.
-  inversion Hlookup. subst resources.
-  unfold identity_ref, reversed_identity_policy_used_reference_set.
-  apply elem_of_union_l.
-  apply elem_of_map.
-  exists identity. split; [done|].
-  apply elem_of_dom. eexists. exact Hidentity.
+  destruct (gset_to_gmap tt identities !! identity) as [[]|] eqn:Hidentity_lookup.
+  - simpl in Hlookup. inversion Hlookup. subst resources.
+    apply lookup_gset_to_gmap_Some in Hidentity_lookup as [Hidentity _].
+    unfold identity_ref, reversed_identity_policy_used_reference_set.
+    apply elem_of_union_l.
+    apply elem_of_map.
+    exists identity. split; done.
+  - simpl in Hlookup. inversion Hlookup.
 Qed.
 
-Local Lemma reversed_identity_policy_resource_ref_used identities policies observed_resources resource :
+Local Lemma reversed_identity_policy_resource_ref_used identities observed_resources resource :
   resource ∈ observed_resources →
   IamRef.ResourceRef resource ∈
-    reversed_identity_policy_used_reference_set identities policies observed_resources.
+    reversed_identity_policy_used_reference_set identities observed_resources.
 Proof.
   intros Hresource.
   unfold reversed_identity_policy_used_reference_set.
@@ -880,9 +860,9 @@ Proof.
 Qed.
 
 Local Lemma reversed_identity_policy_resource_ref_observed
-    identities policies observed_resources resource :
+    identities observed_resources resource :
   IamRef.ResourceRef resource ∈
-    reversed_identity_policy_used_reference_set identities policies observed_resources →
+    reversed_identity_policy_used_reference_set identities observed_resources →
   resource ∈ observed_resources.
 Proof.
   unfold reversed_identity_policy_used_reference_set.
@@ -920,17 +900,19 @@ Section reversed_identity_policy.
 Context `{!iamResourceAccessG Σ}.
 
 Definition own_reversed_identity_policy_auth
-    γ (identities : identity_map) (policies : policy_map)
-    (observed_resources : gset iammodel.ResourceName.t) : iProp Σ :=
+    γ (identities : identity_set) (attachments : attachment_set)
+    (policies : policy_map) (observed_resources : gset iammodel.ResourceName.t)
+    : iProp Σ :=
   @counted_reversed_reference.own_auth
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
     resource_count_refs identity_ref
     Σ _ γ
-    (reversed_identity_policy_state identities policies,
-     reversed_identity_policy_used_reference_set identities policies observed_resources).
+    (reversed_identity_policy_state identities attachments policies,
+     reversed_identity_policy_used_reference_set identities observed_resources).
 
 Definition own_reversed_identity_policy_frag
-    γ (resource : iammodel.ResourceName.t) dq (identities : gmap iammodel.IdentityID.t nat) : iProp Σ :=
+    γ (resource : iammodel.ResourceName.t) dq
+    (identities : gmap iammodel.IdentityID.t nat) : iProp Σ :=
   @counted_reversed_reference.own_frag
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
     resource_count_refs identity_ref
@@ -938,8 +920,8 @@ Definition own_reversed_identity_policy_frag
     γ (IamRef.ResourceRef resource) dq identities.
 
 Global Instance own_reversed_identity_policy_auth_timeless
-    γ identities policies observed_resources :
-  Timeless (own_reversed_identity_policy_auth γ identities policies observed_resources).
+    γ identities attachments policies observed_resources :
+  Timeless (own_reversed_identity_policy_auth γ identities attachments policies observed_resources).
 Proof. unfold own_reversed_identity_policy_auth. apply _. Qed.
 
 Global Instance own_reversed_identity_policy_frag_timeless γ resource dq identities :
@@ -947,35 +929,36 @@ Global Instance own_reversed_identity_policy_frag_timeless γ resource dq identi
 Proof. unfold own_reversed_identity_policy_frag. apply _. Qed.
 
 Lemma own_reversed_identity_policy_frag_valid
-    {γ identities policies observed_resources resource dq resource_identities} :
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+    {γ identities attachments policies observed_resources resource dq resource_identities} :
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource dq resource_identities -∗
   ⌜ resource_identities =
-      reversed_identity_policy_counts identities policies resource ⌝ ∗
+      reversed_identity_policy_counts identities attachments policies resource ⌝ ∗
   ⌜ IamRef.ResourceRef resource ∈
-      reversed_identity_policy_used_reference_set identities policies observed_resources ⌝.
+      reversed_identity_policy_used_reference_set identities observed_resources ⌝.
 Proof.
-  unfold own_reversed_identity_policy_auth, own_reversed_identity_policy_frag, reversed_identity_policy_counts.
+  unfold own_reversed_identity_policy_auth, own_reversed_identity_policy_frag,
+    reversed_identity_policy_counts.
   iIntros "Hauth Hfrag".
   iDestruct (@counted_reversed_reference.own_auth_frag_valid
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
     resource_count_refs identity_ref
     Σ _
-    γ (reversed_identity_policy_state identities policies,
-       reversed_identity_policy_used_reference_set identities policies observed_resources)
+    γ (reversed_identity_policy_state identities attachments policies,
+       reversed_identity_policy_used_reference_set identities observed_resources)
     (IamRef.ResourceRef resource) dq resource_identities
     with "Hauth Hfrag") as "[%Hidentities %Hused]".
   iPureIntro. split; done.
 Qed.
 
 Lemma own_reversed_identity_policy_frag_valid_pure
-    {γ identities policies observed_resources resource dq resource_identities} :
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+    {γ identities attachments policies observed_resources resource dq resource_identities} :
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource dq resource_identities -∗
   ⌜ resource_identities =
-      reversed_identity_policy_counts identities policies resource ∧
+      reversed_identity_policy_counts identities attachments policies resource ∧
     IamRef.ResourceRef resource ∈
-      reversed_identity_policy_used_reference_set identities policies observed_resources ⌝.
+      reversed_identity_policy_used_reference_set identities observed_resources ⌝.
 Proof.
   iIntros "Hauth Hfrag".
   iDestruct (own_reversed_identity_policy_frag_valid with "Hauth Hfrag")
@@ -984,8 +967,8 @@ Proof.
 Qed.
 
 Lemma own_reversed_identity_policy_frag_observed
-    {γ identities policies observed_resources resource dq resource_identities} :
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+    {γ identities attachments policies observed_resources resource dq resource_identities} :
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource dq resource_identities -∗
   ⌜ resource ∈ observed_resources ⌝.
 Proof.
@@ -996,25 +979,49 @@ Proof.
   eapply reversed_identity_policy_resource_ref_observed. exact Hused.
 Qed.
 
-Local Lemma update_identity_policy_vs
-    {γ identities policies observed_resources identity policy_ids policy_ids'
-      resource resource_identities resource_identities'} :
-  identities !! identity = Some policy_ids →
+Lemma own_reversed_identity_policy_frag_lookup_positive
+    {γ identities attachments policies observed_resources resource dq
+      resource_identities identity policy_id policy} :
+  identity ∈ identities →
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  (identity, policy_id) ∈ attachments →
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
+  own_reversed_identity_policy_frag γ resource dq resource_identities -∗
+  ⌜ ∃ n, resource_identities !! identity = Some n ∧ (0 < n)%nat ⌝.
+Proof.
+  iIntros (Hidentity Hpolicy Hpolicy_resource Hattachment) "Hauth Hfrag".
+  iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
+    as "%Hvalid".
+  destruct Hvalid as [Hresource_identities _].
+  destruct (reversed_identity_policy_detach_counts_lookup_positive
+    identities attachments policies identity policy_id policy resource
+    Hidentity Hpolicy Hpolicy_resource Hattachment) as (n & Hlookup & Hpositive).
+  iPureIntro.
+  exists n. split; [|done].
+  rewrite Hresource_identities. done.
+Qed.
+
+Local Lemma reversed_identity_policy_update_vs
+    {γ identities attachments policies identities' attachments' policies'
+      observed_resources resource resource_identities resource_identities'} :
   resource_identities' =
-    reversed_identity_policy_counts
-      (<[identity := policy_ids']> identities) policies resource →
+    reversed_identity_policy_counts identities' attachments' policies' resource →
   (∀ ref,
     ref ≠ IamRef.ResourceRef resource →
-    reversed_identity_policy_ref_counts
-      (<[identity := policy_ids']> identities) policies ref =
-      reversed_identity_policy_ref_counts identities policies ref) →
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+    ref ∈ reversed_identity_policy_used_reference_set identities observed_resources →
+    ref ∈ reversed_identity_policy_used_reference_set identities' observed_resources) →
+  (∀ ref,
+    ref ≠ IamRef.ResourceRef resource →
+    ref ∈ reversed_identity_policy_used_reference_set identities observed_resources →
+    reversed_identity_policy_ref_counts identities' attachments' policies' ref =
+      reversed_identity_policy_ref_counts identities attachments policies ref) →
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
-    own_reversed_identity_policy_auth γ
-      (<[identity := policy_ids']> identities) policies observed_resources ∗
+    own_reversed_identity_policy_auth γ identities' attachments' policies' observed_resources ∗
     own_reversed_identity_policy_frag γ resource 1 resource_identities'.
 Proof.
-  iIntros (Hidentity Hidentities Hother_refs) "Hauth Hfrag".
+  iIntros (Hresource_identities Hused_preserve Hindex_preserve) "Hauth Hfrag".
   iPoseProof (own_reversed_identity_policy_frag_observed with "Hauth Hfrag")
     as "%Hresource".
   unfold own_reversed_identity_policy_auth, own_reversed_identity_policy_frag.
@@ -1022,205 +1029,203 @@ Proof.
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
     resource_count_refs identity_ref
     Σ _
-    γ (reversed_identity_policy_state identities policies,
-       reversed_identity_policy_used_reference_set identities policies observed_resources)
-    (reversed_identity_policy_state (<[identity := policy_ids']> identities) policies,
-       reversed_identity_policy_used_reference_set
-         (<[identity := policy_ids']> identities) policies observed_resources)
+    γ (reversed_identity_policy_state identities attachments policies,
+       reversed_identity_policy_used_reference_set identities observed_resources)
+    (reversed_identity_policy_state identities' attachments' policies',
+       reversed_identity_policy_used_reference_set identities' observed_resources)
     (IamRef.ResourceRef resource) resource_identities resource_identities'
     with "Hauth Hfrag") as "[Hauth Hfrag]".
   - apply reversed_identity_policy_state_identity_refs.
   - apply reversed_identity_policy_resource_ref_used. exact Hresource.
-  - symmetry. exact Hidentities.
-  - intros ref _ Href.
-    assert (Hidentity_dom : identity ∈ dom identities).
-    { apply elem_of_dom. eexists. exact Hidentity. }
-    assert (Hdom :
-      dom (<[identity:=policy_ids']> identities) = dom identities).
-    { rewrite dom_insert_L. Timeout 10 set_solver. }
-    unfold reversed_identity_policy_used_reference_set in *.
-    rewrite Hdom. exact Href.
-  - intros ref Hneq _.
-    apply Hother_refs. exact Hneq.
+  - symmetry. exact Hresource_identities.
+  - exact Hused_preserve.
+  - exact Hindex_preserve.
   - iModIntro. iFrame.
 Qed.
 
-Lemma attach_new_identity_policy_vs
-    {γ identities identities' policies observed_resources identity policy_ids policy_id policy
-      resource resource_identities} :
-  policies !! policy_id = Some policy →
-  policy.(iammodel.IdentityPolicy.Resource') = resource →
-  identities !! identity = Some policy_ids →
-  policy_ids !! policy_id = None →
-  identities' = <[identity := <[policy_id := tt]> policy_ids]> identities →
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
-  own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
-    own_reversed_identity_policy_auth γ identities' policies observed_resources ∗
-    own_reversed_identity_policy_frag γ resource 1
-      (<[identity := S (default 0%nat (resource_identities !! identity))]>
-        resource_identities).
-Proof.
-  iIntros (Hpolicy Hpolicy_resource Hidentity Hfresh Hidentity_update)
-    "Hauth Hfrag".
-  iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
-    as "%Hvalid".
-  destruct Hvalid as [Hresource_identities _].
-  subst identities'.
-  assert (Hidentities :
-    <[identity := S (default 0%nat (resource_identities !! identity))]>
-      resource_identities =
-    reversed_identity_policy_counts
-      (<[identity := <[policy_id := tt]> policy_ids]> identities)
-      policies resource).
-  { rewrite Hresource_identities.
-    symmetry.
-    apply (attach_identity_policy_counts_insert
-      identities policies identity policy_ids policy_id policy resource); done. }
-  iMod (update_identity_policy_vs with "Hauth Hfrag")
-    as "[Hauth Hfrag]".
-  - exact Hidentity.
-  - exact Hidentities.
-  - intros ref Hneq.
-    apply (attach_identity_policy_other_refs
-      identities policies identity policy_ids policy_id policy resource ref); done.
-  - iModIntro.
-    iFrame.
-Qed.
-
 Lemma attach_identity_policy_vs
-    {γ identities identities' policies observed_resources identity policy_ids policy_id policy
-      resource resource_identities} :
+    {γ identities attachments attachments' policies observed_resources
+      identity policy_id policy resource resource_identities} :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  identities !! identity = Some policy_ids →
-  identities' = <[identity := <[policy_id := tt]> policy_ids]> identities →
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+  attachments' = attachments ∪ {[(identity, policy_id)]} →
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
     ∃ resource_identities',
-    own_reversed_identity_policy_auth γ identities' policies observed_resources ∗
+    own_reversed_identity_policy_auth γ identities attachments' policies observed_resources ∗
     own_reversed_identity_policy_frag γ resource 1 resource_identities' ∗
     ⌜ (∀ identity',
         identity' ≠ identity →
         resource_identities' !! identity' = resource_identities !! identity') ∧
       ∃ n, resource_identities' !! identity = Some n ∧ (1 ≤ n)%nat ⌝.
 Proof.
-  iIntros (Hpolicy Hpolicy_resource Hidentity Hidentity_update)
-    "Hauth Hfrag".
+  iIntros (Hidentity Hpolicy Hpolicy_resource Hattachments) "Hauth Hfrag".
   iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
     as "%Hvalid".
   destruct Hvalid as [Hresource_identities _].
-  subst identities'.
-  iMod (update_identity_policy_vs with "Hauth Hfrag")
+  subst attachments'.
+  set (resource_identities' :=
+    reversed_identity_policy_counts identities
+      (attachments ∪ {[(identity, policy_id)]}) policies resource).
+  iMod (reversed_identity_policy_update_vs with "Hauth Hfrag")
     as "[Hauth Hfrag]".
-  - exact Hidentity.
   - reflexivity.
-  - intros ref Hneq.
-    apply (attach_identity_policy_other_refs
-      identities policies identity policy_ids policy_id policy resource ref); done.
+  - intros ref _ Href. exact Href.
+  - intros ref Hneq _.
+    apply (reversed_identity_policy_attach_other_refs
+      identities attachments policies identity policy_id policy resource ref);
+      done.
   - iModIntro.
-    iExists (reversed_identity_policy_counts
-      (<[identity := <[policy_id := tt]> policy_ids]> identities)
-      policies resource).
+    iExists resource_identities'.
     iFrame.
     iPureIntro.
     split.
     + intros identity' Hne.
-      rewrite (attach_identity_policy_counts_lookup_other
-        identities policies identity policy_ids policy_id resource identity' Hne).
+      unfold resource_identities'.
+      rewrite (reversed_identity_policy_attach_counts_lookup_other_identity
+        identities attachments policies identity identity' policy_id resource Hne).
       rewrite Hresource_identities. done.
-    + destruct (attach_identity_policy_counts_lookup_positive
-        identities policies identity policy_ids policy_id policy resource
-        Hidentity Hpolicy Hpolicy_resource) as (n & Hlookup & Hpositive).
-      exists n. split; done.
+    + unfold resource_identities'.
+      apply (reversed_identity_policy_attach_counts_lookup_positive
+        identities attachments policies identity policy_id policy resource);
+        done.
 Qed.
 
-Lemma detach_identity_policy_decrement_vs
-    {γ identities identities' policies observed_resources identity policy_ids policy_id policy
-      resource resource_identities n} :
+Lemma detach_identity_policy_vs
+    {γ identities attachments attachments' policies observed_resources
+      identity policy_id policy resource resource_identities} :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  identities !! identity = Some policy_ids →
-  policy_ids !! policy_id = Some tt →
-  resource_identities !! identity = Some n →
-  (2 ≤ n)%nat →
-  identities' = <[identity := delete policy_id policy_ids]> identities →
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+  (identity, policy_id) ∈ attachments →
+  attachments' = attachments ∖ {[(identity, policy_id)]} →
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
-    own_reversed_identity_policy_auth γ identities' policies observed_resources ∗
+    ∃ n,
+    ⌜ resource_identities !! identity = Some n ∧ (0 < n)%nat ⌝ ∗
+    own_reversed_identity_policy_auth γ identities attachments' policies observed_resources ∗
+    own_reversed_identity_policy_frag γ resource 1
+      (if decide (1 < n)%nat
+       then <[identity := (n - 1)%nat]> resource_identities
+       else delete identity resource_identities).
+Proof.
+  iIntros (Hidentity Hpolicy Hpolicy_resource Hattachment Hattachments) "Hauth Hfrag".
+  iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
+    as "%Hvalid".
+  destruct Hvalid as [Hresource_identities _].
+  iPoseProof (own_reversed_identity_policy_frag_lookup_positive
+    (identity:=identity) (policy_id:=policy_id) (policy:=policy)
+    with "Hauth Hfrag") as "%Hlookup_positive"; [done|done|done|done|].
+  destruct Hlookup_positive as (n & Hfrag_lookup & Hpositive).
+  subst attachments'.
+  destruct (decide (1 < n)%nat) as [Hgt|Hle].
+  - iMod (reversed_identity_policy_update_vs
+      (resource_identities':= if decide (1 < n)%nat
+        then <[identity := (n - 1)%nat]> resource_identities
+        else delete identity resource_identities)
+      with "Hauth Hfrag")
+      as "[Hauth Hfrag]".
+    + apply map_eq. intros identity'.
+      destruct (decide (1 < n)%nat) as [Hgt'|Hle']; [|lia].
+      destruct (decide (identity' = identity)) as [->|Hne].
+      * rewrite lookup_insert_eq.
+        symmetry.
+        eapply reversed_identity_policy_detach_counts_lookup_decrease; try done.
+        rewrite -Hresource_identities. done.
+      * rewrite lookup_insert.
+        destruct (decide (identity = identity')) as [Heq|_].
+        { exfalso. apply Hne. symmetry. done. }
+        symmetry.
+        rewrite (reversed_identity_policy_detach_counts_lookup_other_identity
+          identities attachments policies identity identity' policy_id resource Hne).
+        rewrite Hresource_identities. done.
+    + intros ref _ Href. exact Href.
+    + intros ref Hneq _.
+      apply (reversed_identity_policy_detach_other_refs
+        identities attachments policies identity policy_id policy resource ref);
+        done.
+    + iModIntro.
+      iExists n. iFrame.
+      iPureIntro. split; done.
+  - assert (Hn_eq : n = 1%nat) by lia. subst n.
+    iMod (reversed_identity_policy_update_vs
+      (resource_identities':= if decide (1 < 1)%nat
+        then <[identity := (1 - 1)%nat]> resource_identities
+        else delete identity resource_identities)
+      with "Hauth Hfrag")
+      as "[Hauth Hfrag]".
+    + apply map_eq. intros identity'.
+      destruct (decide (1 < 1)%nat) as [Hgt'|Hle']; [lia|].
+      destruct (decide (identity' = identity)) as [->|Hne].
+      * rewrite lookup_delete_eq.
+        symmetry.
+        eapply reversed_identity_policy_detach_counts_lookup_remove; try done.
+        rewrite -Hresource_identities. done.
+      * rewrite lookup_delete.
+        destruct (decide (identity = identity')) as [Heq|_].
+        { exfalso. apply Hne. symmetry. done. }
+        symmetry.
+        rewrite (reversed_identity_policy_detach_counts_lookup_other_identity
+          identities attachments policies identity identity' policy_id resource Hne).
+        rewrite Hresource_identities. done.
+    + intros ref _ Href. exact Href.
+    + intros ref Hneq _.
+      apply (reversed_identity_policy_detach_other_refs
+        identities attachments policies identity policy_id policy resource ref);
+        done.
+    + iModIntro.
+      iExists 1%nat. iFrame.
+      iPureIntro. split; done.
+Qed.
+
+Lemma detach_identity_policy_gt_1_vs
+    {γ identities attachments attachments' policies observed_resources
+      identity policy_id policy resource resource_identities n} :
+  identity ∈ identities →
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  (identity, policy_id) ∈ attachments →
+  attachments' = attachments ∖ {[(identity, policy_id)]} →
+  resource_identities !! identity = Some n →
+  (1 < n)%nat →
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
+  own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
+    own_reversed_identity_policy_auth γ identities attachments' policies observed_resources ∗
     own_reversed_identity_policy_frag γ resource 1
       (<[identity := (n - 1)%nat]> resource_identities).
 Proof.
-  iIntros (Hpolicy Hpolicy_resource Hidentity Hpolicy_id Hcount Hn Hidentity_update)
+  iIntros (Hidentity Hpolicy Hpolicy_resource Hattachment Hattachments Hlookup Hn)
     "Hauth Hfrag".
-  iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
-    as "%Hvalid".
-  destruct Hvalid as [Hresource_identities _].
-  subst identities'.
-  assert (Hidentities :
-    <[identity := (n - 1)%nat]> resource_identities =
-    reversed_identity_policy_counts
-      (<[identity := delete policy_id policy_ids]> identities)
-      policies resource).
-  { rewrite Hresource_identities.
-    symmetry.
-    apply (detach_identity_policy_counts_decrement
-      identities policies identity policy_ids policy_id policy resource n).
-    - exact Hidentity.
-    - exact Hpolicy.
-    - exact Hpolicy_resource.
-    - exact Hpolicy_id.
-    - rewrite -Hresource_identities. exact Hcount.
-    - exact Hn. }
-  iMod (update_identity_policy_vs with "Hauth Hfrag")
-    as "[Hauth Hfrag]".
-  - exact Hidentity.
-  - exact Hidentities.
-  - intros ref Hneq.
-    apply (detach_identity_policy_other_refs
-      identities policies identity policy_ids policy_id policy resource ref); done.
-  - iModIntro.
-    iFrame.
+  iMod (detach_identity_policy_vs with "Hauth Hfrag") as (n') "(%Hn' & Hauth & Hfrag)";
+    [done|done|done|done|done|].
+  destruct Hn' as [Hlookup' Hpositive].
+  assert (n' = n) as -> by congruence.
+  destruct (decide (1 < n)%nat); [iModIntro; iFrame|lia].
 Qed.
 
-Lemma detach_last_identity_policy_vs
-    {γ identities identities' policies observed_resources identity policy_ids policy_id policy
-      resource resource_identities} :
+Lemma detach_identity_policy_eq_1_vs
+    {γ identities attachments attachments' policies observed_resources
+      identity policy_id policy resource resource_identities} :
+  identity ∈ identities →
   policies !! policy_id = Some policy →
   policy.(iammodel.IdentityPolicy.Resource') = resource →
-  identities !! identity = Some policy_ids →
-  policy_ids !! policy_id = Some tt →
+  (identity, policy_id) ∈ attachments →
+  attachments' = attachments ∖ {[(identity, policy_id)]} →
   resource_identities !! identity = Some 1%nat →
-  identities' = <[identity := delete policy_id policy_ids]> identities →
-  own_reversed_identity_policy_auth γ identities policies observed_resources -∗
+  own_reversed_identity_policy_auth γ identities attachments policies observed_resources -∗
   own_reversed_identity_policy_frag γ resource 1 resource_identities ==∗
-    own_reversed_identity_policy_auth γ identities' policies observed_resources ∗
-    own_reversed_identity_policy_frag γ resource 1 (delete identity resource_identities).
+    own_reversed_identity_policy_auth γ identities attachments' policies observed_resources ∗
+    own_reversed_identity_policy_frag γ resource 1
+      (delete identity resource_identities).
 Proof.
-  iIntros (Hpolicy Hpolicy_resource Hidentity Hpolicy_id Hcount Hidentity_update)
+  iIntros (Hidentity Hpolicy Hpolicy_resource Hattachment Hattachments Hlookup)
     "Hauth Hfrag".
-  iPoseProof (own_reversed_identity_policy_frag_valid_pure with "Hauth Hfrag")
-    as "%Hvalid".
-  destruct Hvalid as [Hresource_identities _].
-  subst identities'.
-  assert (Hidentities :
-    delete identity resource_identities =
-    reversed_identity_policy_counts
-      (<[identity := delete policy_id policy_ids]> identities)
-      policies resource).
-  { rewrite Hresource_identities.
-    symmetry.
-    apply (detach_identity_policy_counts_delete
-      identities policies identity policy_ids policy_id policy resource); [done..|].
-    rewrite -Hresource_identities. exact Hcount. }
-  iMod (update_identity_policy_vs with "Hauth Hfrag")
-    as "[Hauth Hfrag]".
-  - exact Hidentity.
-  - exact Hidentities.
-  - intros ref Hneq.
-    apply (detach_identity_policy_other_refs
-      identities policies identity policy_ids policy_id policy resource ref); done.
-  - iModIntro.
-    iFrame.
+  iMod (detach_identity_policy_vs with "Hauth Hfrag") as (n') "(%Hn' & Hauth & Hfrag)";
+    [done|done|done|done|done|].
+  destruct Hn' as [Hlookup' Hpositive].
+  assert (n' = 1%nat) as -> by congruence.
+  destruct (decide (1 < 1)%nat); [lia|iModIntro; iFrame].
 Qed.
 
 End reversed_identity_policy.

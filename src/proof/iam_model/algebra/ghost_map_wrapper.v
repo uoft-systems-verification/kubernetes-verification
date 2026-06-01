@@ -6,13 +6,14 @@ Section ghost_map_wrapper.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Context `{!allG Σ}.
 
-Definition own_identity_auth γ (identities : identity_map) : iProp Σ :=
-  ghost_map_auth (K:=iammodel.IdentityID.t) (V:=gmap iammodel.PolicyID.t unit) γ 1 identities.
+Definition own_identity_auth γ (identities : identity_set) : iProp Σ :=
+  ghost_map_auth (K:=iammodel.IdentityID.t) (V:=unit)
+    γ 1 (gset_to_gmap tt identities).
 
 Definition own_identity_frag
-    γ (identity : iammodel.IdentityID.t) (policy_ids : gmap iammodel.PolicyID.t unit) : iProp Σ :=
-  ghost_map_elem (K:=iammodel.IdentityID.t) (V:=gmap iammodel.PolicyID.t unit)
-    γ identity DfracDiscarded policy_ids.
+    γ (identity : iammodel.IdentityID.t) : iProp Σ :=
+  ghost_map_elem (K:=iammodel.IdentityID.t) (V:=unit)
+    γ identity DfracDiscarded tt.
 
 Definition own_policy_auth γ (policies : policy_map) : iProp Σ :=
   ghost_map_auth (K:=iammodel.PolicyID.t) (V:=iammodel.IdentityPolicy.t) γ 1 policies.
@@ -26,12 +27,12 @@ Global Instance own_identity_auth_timeless γ identities :
   Timeless (own_identity_auth γ identities).
 Proof. unfold own_identity_auth. apply _. Qed.
 
-Global Instance own_identity_frag_timeless γ identity policy_ids :
-  Timeless (own_identity_frag γ identity policy_ids).
+Global Instance own_identity_frag_timeless γ identity :
+  Timeless (own_identity_frag γ identity).
 Proof. unfold own_identity_frag. apply _. Qed.
 
-Global Instance own_identity_frag_persistent γ identity policy_ids :
-  Persistent (own_identity_frag γ identity policy_ids).
+Global Instance own_identity_frag_persistent γ identity :
+  Persistent (own_identity_frag γ identity).
 Proof. unfold own_identity_frag. apply _. Qed.
 
 Global Instance own_policy_auth_timeless γ policies :
@@ -46,15 +47,17 @@ Global Instance own_policy_frag_persistent γ policy_id policy :
   Persistent (own_policy_frag γ policy_id policy).
 Proof. unfold own_policy_frag. apply _. Qed.
 
-Lemma own_identity_auth_frag_lookup {γ identities identity policy_ids} :
+Lemma own_identity_auth_frag_lookup {γ identities identity} :
   own_identity_auth γ identities -∗
-  own_identity_frag γ identity policy_ids -∗
-  ⌜ identities !! identity = Some policy_ids ⌝.
+  own_identity_frag γ identity -∗
+  ⌜ identity ∈ identities ⌝.
 Proof.
   unfold own_identity_auth, own_identity_frag.
   iIntros "Hauth Hfrag".
   iDestruct (ghost_map_lookup with "Hauth Hfrag") as %Hlookup.
-  done.
+  iPureIntro.
+  apply lookup_gset_to_gmap_Some in Hlookup as [Hidentity _].
+  exact Hidentity.
 Qed.
 
 Lemma own_policy_auth_frag_lookup {γ policies policy_id policy} :

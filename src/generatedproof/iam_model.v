@@ -10,6 +10,61 @@ Require Export New.code.iam_model.
 Set Default Proof Using "Type".
 
 Module iammodel.
+Module IdentityPolicyAttachment.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : iammodel.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance IdentityPolicyAttachment_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (iammodel.IdentityPolicyAttachment.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Identity" ∷ l.[(iammodel.IdentityPolicyAttachment.t), "Identity"] ↦{dq} v.(iammodel.IdentityPolicyAttachment.Identity') ∗
+      "Policy" ∷ l.[(iammodel.IdentityPolicyAttachment.t), "Policy"] ↦{dq} v.(iammodel.IdentityPolicyAttachment.Policy') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance IdentityPolicyAttachment_into_val_typed
+   :
+  IntoValTypedUnderlying (iammodel.IdentityPolicyAttachment.t) (iammodel.IdentityPolicyAttachmentⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance IdentityPolicyAttachment_access_load_Identity l (v : (iammodel.IdentityPolicyAttachment.t)) dq :
+  AccessStrict
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Identity"] ↦{dq} (v.(iammodel.IdentityPolicyAttachment.Identity')))
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Identity"] ↦{dq} (v.(iammodel.IdentityPolicyAttachment.Identity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance IdentityPolicyAttachment_access_store_Identity l (v : (iammodel.IdentityPolicyAttachment.t)) Identity' :
+  AccessStrict
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Identity"] ↦ (v.(iammodel.IdentityPolicyAttachment.Identity')))
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Identity"] ↦ Identity')
+    (l ↦ v) (l ↦ (v <|(iammodel.IdentityPolicyAttachment.Identity') := Identity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance IdentityPolicyAttachment_access_load_Policy l (v : (iammodel.IdentityPolicyAttachment.t)) dq :
+  AccessStrict
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Policy"] ↦{dq} (v.(iammodel.IdentityPolicyAttachment.Policy')))
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Policy"] ↦{dq} (v.(iammodel.IdentityPolicyAttachment.Policy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance IdentityPolicyAttachment_access_store_Policy l (v : (iammodel.IdentityPolicyAttachment.t)) Policy' :
+  AccessStrict
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Policy"] ↦ (v.(iammodel.IdentityPolicyAttachment.Policy')))
+    (l.[(iammodel.IdentityPolicyAttachment.t), "Policy"] ↦ Policy')
+    (l ↦ v) (l ↦ (v <|(iammodel.IdentityPolicyAttachment.Policy') := Policy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End IdentityPolicyAttachment.
+
 Module IdentityPolicy.
 Section def.
 
@@ -82,6 +137,7 @@ Local Set Default Proof Using "All".
       "mu" ∷ l.[(iammodel.State.t), "mu"] ↦{dq} v.(iammodel.State.mu') ∗
       "identities" ∷ l.[(iammodel.State.t), "identities"] ↦{dq} v.(iammodel.State.identities') ∗
       "policies" ∷ l.[(iammodel.State.t), "policies"] ↦{dq} v.(iammodel.State.policies') ∗
+      "attachments" ∷ l.[(iammodel.State.t), "attachments"] ↦{dq} v.(iammodel.State.attachments') ∗
       "usedPolicyIds" ∷ l.[(iammodel.State.t), "usedPolicyIds"] ↦{dq} v.(iammodel.State.usedPolicyIds') ∗
       "_" ∷ True
       )%I
@@ -130,6 +186,19 @@ Proof. solve_pointsto_access_struct. Qed.
     (l.[(iammodel.State.t), "policies"] ↦ (v.(iammodel.State.policies')))
     (l.[(iammodel.State.t), "policies"] ↦ policies')
     (l ↦ v) (l ↦ (v <|(iammodel.State.policies') := policies'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance State_access_load_attachments l (v : (iammodel.State.t)) dq :
+  AccessStrict
+    (l.[(iammodel.State.t), "attachments"] ↦{dq} (v.(iammodel.State.attachments')))
+    (l.[(iammodel.State.t), "attachments"] ↦{dq} (v.(iammodel.State.attachments')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance State_access_store_attachments l (v : (iammodel.State.t)) attachments' :
+  AccessStrict
+    (l.[(iammodel.State.t), "attachments"] ↦ (v.(iammodel.State.attachments')))
+    (l.[(iammodel.State.t), "attachments"] ↦ attachments')
+    (l ↦ v) (l ↦ (v <|(iammodel.State.attachments') := attachments'|>))%I.
 Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance State_access_load_usedPolicyIds l (v : (iammodel.State.t)) dq :
   AccessStrict
