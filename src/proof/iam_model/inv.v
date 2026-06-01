@@ -1,5 +1,6 @@
 Require Export New.proof.sync.
 From New.code Require Export iam_model.
+Require Export New.generatedproof.iam_model.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.iam_model.algebra Require Export ghost_map_wrapper.
 From New.proof.iam_model.algebra Require Export policy_attachment.

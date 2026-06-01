@@ -34,7 +34,7 @@ type IdentityPolicy struct {
 // usedPolicyIds remembers every generated policy ID, so generated policy IDs
 // are never reused.
 type State struct {
-	mu            sync.Mutex
+	mu            *sync.Mutex
 	identities    map[IdentityID]map[PolicyID]struct{}
 	policies      map[PolicyID]IdentityPolicy
 	usedPolicyIds map[PolicyID]struct{}
@@ -50,6 +50,7 @@ var ModelState = NewState()
 
 func NewState() *State {
 	return &State{
+		mu:            new(sync.Mutex),
 		identities:    make(map[IdentityID]map[PolicyID]struct{}),
 		policies:      make(map[PolicyID]IdentityPolicy),
 		usedPolicyIds: make(map[PolicyID]struct{}),

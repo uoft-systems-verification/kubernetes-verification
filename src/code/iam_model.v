@@ -44,23 +44,24 @@ Definition NewState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string :
 (* go: state.go:51:6 *)
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: (GoAlloc State (let: "$v0" := ((FuncResolve go.make1 [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+    exception_do (return: (GoAlloc State (let: "$v0" := (GoAlloc sync.Mutex (GoZeroVal sync.Mutex #())) in
+     let: "$v1" := ((FuncResolve go.make1 [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
       ]))] #()) #()) in
-     let: "$v1" := ((FuncResolve go.make1 [go.MapType PolicyID IdentityPolicy] #()) #()) in
-     let: "$v2" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
+     let: "$v2" := ((FuncResolve go.make1 [go.MapType PolicyID IdentityPolicy] #()) #()) in
+     let: "$v3" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
 
       ])] #()) #()) in
-     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType sync.Mutex) "$v0"); KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
-      ]))) "$v0"); KeyedElement (Some (KeyField "policies"%go)) (ElementExpression (go.MapType PolicyID IdentityPolicy) "$v1"); KeyedElement (Some (KeyField "usedPolicyIds"%go)) (ElementExpression (go.MapType PolicyID (go.StructType [
+      ]))) "$v1"); KeyedElement (Some (KeyField "policies"%go)) (ElementExpression (go.MapType PolicyID IdentityPolicy) "$v2"); KeyedElement (Some (KeyField "usedPolicyIds"%go)) (ElementExpression (go.MapType PolicyID (go.StructType [
 
-      ])) "$v2")])))).
+      ])) "$v3")])))).
 
 (* CreateIdentity adds an IAM identity.
    AWS SDK analogue: CreateUser; this model collapses all identity kinds.
 
-   go: state.go:61:17 *)
+   go: state.go:62:17 *)
 Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -72,8 +73,8 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -108,12 +109,12 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 (* ListIdentities returns every identity known to this model.
    AWS SDK analogue: ListUsers; this model has only one identity kind.
 
-   go: state.go:78:17 *)
+   go: state.go:79:17 *)
 Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -145,7 +146,7 @@ Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 (* CreatePolicy creates a standalone identity-based Allow policy document.
    AWS SDK analogue: CreatePolicy.
 
-   go: state.go:91:17 *)
+   go: state.go:92:17 *)
 Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "resource",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -157,8 +158,8 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -173,7 +174,7 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  (map.insert PolicyID (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "id") "$r0");;;
     return: (![PolicyID] "id", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: state.go:107:17 *)
+(* go: state.go:108:17 *)
 Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -208,14 +209,14 @@ Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go
 (* AttachIdentityPolicy attaches an existing policy to an identity.
    AWS SDK analogue: AttachUserPolicy.
 
-   go: state.go:119:17 *)
+   go: state.go:120:17 *)
 Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "policyID" := (GoAlloc PolicyID "policyID") in
     let: "identity" := (GoAlloc IdentityID "identity") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -284,13 +285,13 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* ListIdentityPolicies returns policy IDs attached directly to identity.
    AWS SDK analogue: ListAttachedUserPolicies.
 
-   go: state.go:140:17 *)
+   go: state.go:141:17 *)
 Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "identity" := (GoAlloc IdentityID "identity") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -342,13 +343,13 @@ Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* GetIdentityPolicy returns the simplified attached policy object for id.
    AWS SDK analogue: GetPolicy followed by GetPolicyVersion.
 
-   go: state.go:158:17 *)
+   go: state.go:159:17 *)
 Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "id" := (GoAlloc PolicyID "id") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -374,14 +375,14 @@ Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 (* DetachIdentityPolicy detaches a policy from an identity without deleting the policy.
    AWS SDK analogue: DetachUserPolicy.
 
-   go: state.go:171:17 *)
+   go: state.go:172:17 *)
 Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "policyID" := (GoAlloc PolicyID "policyID") in
     let: "identity" := (GoAlloc IdentityID "identity") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (StructFieldRef State "mu"%go (![go.PointerType State] "s"))) in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -568,7 +569,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  mu' : sync.Mutex.t;
+  mu' : loc;
   identities' : map.t;
   policies' : map.t;
   usedPolicyIds' : map.t;
@@ -581,7 +582,7 @@ End def.
 End State.
 
 Definition State'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "mu"%go sync.Mutex);
+  (go.FieldDecl "mu"%go (go.PointerType sync.Mutex));
   (go.FieldDecl "identities"%go (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
   ]))));
