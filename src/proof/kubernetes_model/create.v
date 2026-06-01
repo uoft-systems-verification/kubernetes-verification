@@ -6,7 +6,6 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_uid :

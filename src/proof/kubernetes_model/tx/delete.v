@@ -9,7 +9,6 @@ Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Definition precondition_uid_mismatch (options : DeleteOptionsV.t) (metadata : ObjectMetaV.t) : bool :=

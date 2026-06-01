@@ -6,7 +6,6 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Lemma storage_object_normalize_status_eq obj1 obj2 :
@@ -382,6 +381,7 @@ Proof.
   }
   iExact "HΦ".
 Unshelve.
+all: try apply _.
 all: try done.
 Qed.
 

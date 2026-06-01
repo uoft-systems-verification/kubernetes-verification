@@ -5,7 +5,6 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Lemma tombed_uid_delete_eq_used_uid_sub
@@ -800,7 +799,7 @@ Proof.
     destruct kobj; done.
   }
   iApply "HΦ".
-  Unshelve. all: done.
+  Unshelve. all: try apply _. all: done.
 Qed.
 
 Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_uid children :

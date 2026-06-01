@@ -6,7 +6,6 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Lemma update_own_meta_frag_equiv_except_resource_version {γ k uid dq meta1 meta2} :

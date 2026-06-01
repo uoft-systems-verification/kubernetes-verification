@@ -54,7 +54,6 @@ Proof using package_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Context `{!go.IntoValInj KKey.t}.
 Local Set Default Proof Using "All".
 
 Definition current_state_matches rs pods : Prop :=

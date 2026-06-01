@@ -9,6 +9,69 @@ Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Local Set Default Proof Using "All".
 
+#[global] Instance KKey_into_val_inj : go.IntoValInj KKey.t.
+Proof.
+  constructor. intros k1 k2 Heq.
+  assert (k1.(KKey.Kind') = k2.(KKey.Kind')) as Hkind.
+  {
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Kind"%go) (#k1)
+      (#k1.(KKey.Kind')) _) as Hstep1.
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Kind"%go) (#k2)
+      (#k2.(KKey.Kind')) _) as Hstep2.
+    assert (is_go_step_pure (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Kind"%go)
+      (#k1) (#k1.(KKey.Kind'))) as Hpure.
+    { rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep1)). done. }
+    rewrite Heq in Hpure.
+    rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep2)) in Hpure.
+    symmetry in Hpure.
+    injection Hpure as Hpure.
+    destruct go.into_val_inj_string as [Hinj].
+    specialize (Hinj k1.(KKey.Kind') k2.(KKey.Kind')).
+    exact (Hinj Hpure).
+  }
+  assert (k1.(KKey.Name') = k2.(KKey.Name')) as Hname.
+  {
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Name"%go) (#k1)
+      (#k1.(KKey.Name')) _) as Hstep1.
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Name"%go) (#k2)
+      (#k2.(KKey.Name')) _) as Hstep2.
+    assert (is_go_step_pure (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Name"%go)
+      (#k1) (#k1.(KKey.Name'))) as Hpure.
+    { rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep1)). done. }
+    rewrite Heq in Hpure.
+    rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep2)) in Hpure.
+    symmetry in Hpure.
+    injection Hpure as Hpure.
+    destruct go.into_val_inj_string as [Hinj].
+    specialize (Hinj k1.(KKey.Name') k2.(KKey.Name')).
+    exact (Hinj Hpure).
+  }
+  assert (k1.(KKey.Namespace') = k2.(KKey.Namespace')) as Hnamespace.
+  {
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Namespace"%go) (#k1)
+      (#k1.(KKey.Namespace')) _) as Hstep1.
+    pose proof (go.tagged_steps under
+      (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Namespace"%go) (#k2)
+      (#k2.(KKey.Namespace')) _) as Hstep2.
+    assert (is_go_step_pure (StructFieldGet apimodel.KKeyⁱᵐᵖˡ "Namespace"%go)
+      (#k1) (#k1.(KKey.Namespace'))) as Hpure.
+    { rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep1)). done. }
+    rewrite Heq in Hpure.
+    rewrite (go.is_go_step_pure_det (IsGoStepPureDet:=Hstep2)) in Hpure.
+    symmetry in Hpure.
+    injection Hpure as Hpure.
+    destruct go.into_val_inj_string as [Hinj].
+    specialize (Hinj k1.(KKey.Namespace') k2.(KKey.Namespace')).
+    exact (Hinj Hpure).
+  }
+  destruct k1, k2; simpl in *; congruence.
+Qed.
+
 #[global] Instance KKey_safe_map_key key :
   SafeMapKey (K:=KKey.t) apimodel.KKey key.
 Proof.
