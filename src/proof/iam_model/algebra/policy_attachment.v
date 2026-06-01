@@ -239,6 +239,52 @@ Proof.
     apply elem_of_elements. exact Hresource.
 Qed.
 
+Local Lemma attached_policies_for_resource_not_policy_resource
+    policies policy_ids resource :
+  resource ∉ policy_resources policies →
+  attached_policies_for_resource policies policy_ids resource = ∅.
+Proof.
+  intros Hresource.
+  apply elem_of_equiv_empty_L. intros policy_id Hin.
+  unfold attached_policies_for_resource in Hin.
+  apply elem_of_dom in Hin as [[] Hlookup].
+  apply map_lookup_filter_Some in Hlookup as [Hpolicy_id Hmatches].
+  unfold policy_matches_resource in Hmatches.
+  destruct (policies !! policy_id) as [policy|] eqn:Hpolicy; [|done].
+  apply bool_decide_eq_true in Hmatches.
+  apply Hresource.
+  rewrite -Hmatches.
+  apply policy_resource_elem with policy_id. exact Hpolicy.
+Qed.
+
+Local Lemma resources_for_identity_counts_lookup_default
+    policies policy_ids resource :
+  default 0%nat (resources_for_identity_counts policies policy_ids !! resource) =
+  size (attached_policies_for_resource policies policy_ids resource).
+Proof.
+  destruct (decide (resource ∈ policy_resources policies)) as [Hresource|Hresource].
+  - rewrite resources_for_identity_counts_lookup; done.
+  - assert (Hlookup_none :
+      resources_for_identity_counts policies policy_ids !! resource = None).
+    { unfold resources_for_identity_counts.
+      destruct (list_to_map
+        ((λ resource0,
+          (resource0,
+           size (attached_policies_for_resource policies policy_ids resource0)))
+          <$> elements (policy_resources policies)) !! resource) as [n|] eqn:Hlookup;
+        [|done].
+      exfalso.
+      apply Hresource.
+      apply elem_of_list_to_map_2 in Hlookup as Hin.
+      apply list_elem_of_fmap in Hin as (resource0 & Hpair & Hin).
+      inversion Hpair. subst resource0.
+      apply elem_of_elements. done. }
+    rewrite Hlookup_none /=.
+    rewrite (attached_policies_for_resource_not_policy_resource
+      policies policy_ids resource Hresource).
+    rewrite size_empty. done.
+Qed.
+
 Local Lemma attached_policies_for_resource_not_elem
     policies policy_ids resource policy_id :
   policy_ids !! policy_id = None →
@@ -249,6 +295,80 @@ Proof.
   apply elem_of_dom in Hin as [[] Hfilter].
   apply map_lookup_filter_Some in Hfilter as [Hlookup' _].
   rewrite Hlookup in Hlookup'. done.
+Qed.
+
+Local Lemma attached_policies_for_resource_insert_policy_unattached
+    policies policy_ids policy_id policy resource :
+  policy_ids !! policy_id = None →
+  attached_policies_for_resource (<[policy_id := policy]> policies) policy_ids resource =
+  attached_policies_for_resource policies policy_ids resource.
+Proof.
+  intros Hfresh.
+  unfold attached_policies_for_resource.
+  f_equal.
+  apply map_eq. intros policy_id'.
+  rewrite !map_lookup_filter.
+  destruct (policy_ids !! policy_id') as [[]|] eqn:Hpolicy_id'; simpl; [|done].
+  destruct (decide (policy_id' = policy_id)) as [->|Hne].
+  - rewrite Hfresh in Hpolicy_id'. done.
+  - unfold policy_matches_resource.
+    rewrite lookup_insert_ne; done.
+Qed.
+
+Local Lemma resources_for_identity_counts_insert_policy_reference_count
+    policies policy_ids policy_id policy ref :
+  policy_ids !! policy_id = None →
+  @counted_reversed_reference.reference_count
+    IamRef.t _ _ (gmap iammodel.ResourceName.t nat) resource_count_refs
+    (resources_for_identity_counts (<[policy_id := policy]> policies) policy_ids) ref =
+  @counted_reversed_reference.reference_count
+    IamRef.t _ _ (gmap iammodel.ResourceName.t nat) resource_count_refs
+    (resources_for_identity_counts policies policy_ids) ref.
+Proof.
+  intros Hfresh.
+  destruct ref as [identity|resource].
+  - unfold counted_reversed_reference.reference_count.
+    assert (Hnew_none :
+      resource_count_refs
+        (resources_for_identity_counts (<[policy_id:=policy]> policies) policy_ids)
+        !! IamRef.IdentityRef identity = None).
+    { unfold resource_count_refs. apply lookup_kmap_None.
+      - apply _.
+      - intros resource Href. discriminate Href. }
+    assert (Hold_none :
+      resource_count_refs
+        (resources_for_identity_counts policies policy_ids)
+        !! IamRef.IdentityRef identity = None).
+    { unfold resource_count_refs. apply lookup_kmap_None.
+      - apply _.
+      - intros resource Href. discriminate Href. }
+    rewrite Hnew_none Hold_none. done.
+  - unfold counted_reversed_reference.reference_count, resource_count_refs.
+    rewrite !lookup_kmap.
+    rewrite !resources_for_identity_counts_lookup_default.
+    rewrite attached_policies_for_resource_insert_policy_unattached; done.
+Qed.
+
+Local Lemma attachment_ref_counts_insert_policy_unattached
+    identities policies policy_id policy ref :
+  (∀ identity policy_ids,
+    identities !! identity = Some policy_ids →
+    policy_ids !! policy_id = None) →
+  attachment_ref_counts identities (<[policy_id := policy]> policies) ref =
+  attachment_ref_counts identities policies ref.
+Proof.
+  intros Hunattached.
+  apply map_eq. intros identity.
+  unfold attachment_ref_counts, counted_reversed_reference.reverse_index,
+    attachment_state.
+  rewrite !map_lookup_imap.
+  destruct (identities !! identity) as [policy_ids|] eqn:Hidentity.
+  2:{ rewrite Hidentity. done. }
+  rewrite Hidentity /=.
+  rewrite !(resources_for_identity_counts_insert_policy_reference_count
+    policies policy_ids policy_id policy ref).
+  - apply Hunattached with identity. done.
+  - done.
 Qed.
 
 Local Lemma attached_policies_for_resource_insert_same
@@ -1006,6 +1126,35 @@ Proof.
     as "%Hpositive".
   iPureIntro. intros Hlookup.
   specialize (Hpositive Hlookup). lia.
+Qed.
+
+Lemma insert_unattached_policy_vs
+    {γ identities policies observed_resources policy_id policy} :
+  (∀ identity policy_ids,
+    identities !! identity = Some policy_ids →
+    policy_ids !! policy_id = None) →
+  own_attachments_auth γ identities policies observed_resources ==∗
+    own_attachments_auth γ identities
+      (<[policy_id := policy]> policies) observed_resources.
+Proof.
+  iIntros (Hunattached) "Hauth".
+  unfold own_attachments_auth.
+  iMod (@counted_reversed_reference.generic_update_vs
+    iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
+    resource_count_refs identity_ref
+    Σ _
+    γ (attachment_state identities policies,
+       attachment_used_reference_set identities policies observed_resources)
+    (attachment_state identities (<[policy_id := policy]> policies),
+       attachment_used_reference_set identities
+         (<[policy_id := policy]> policies) observed_resources)
+    with "Hauth") as "Hauth".
+  - apply attachment_state_identity_refs.
+  - intros ref Href. exact Href.
+  - intros ref _.
+    apply attachment_ref_counts_insert_policy_unattached.
+    exact Hunattached.
+  - iModIntro. iExact "Hauth".
 Qed.
 
 Local Lemma update_identity_policy_vs
