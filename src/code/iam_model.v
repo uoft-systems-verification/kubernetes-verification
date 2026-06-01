@@ -41,6 +41,8 @@ Definition ModelState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string
 
 Definition NewState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.NewState"%go.
 
+Definition generatePolicyID {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.generatePolicyID"%go.
+
 (* go: state.go:51:6 *)
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
@@ -174,16 +176,21 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  (map.insert PolicyID (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "id") "$r0");;;
     return: (![PolicyID] "id", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: state.go:108:17 *)
+(* go: state.go:108:6 *)
+Definition generatePolicyIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: <>,
+    exception_do (return: (let: "$a0" := #"policy-%d"%go in
+     let: "$a1" := ((let: "$sl0" := (Convert go.int64 go.any ((FuncResolve rand.Int63 [] #()) #())) in
+     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+     (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")).
+
+(* go: state.go:112:17 *)
 Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
       let: "id" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
-      let: "$r0" := (let: "$a0" := #"policy-%d"%go in
-      let: "$a1" := ((let: "$sl0" := (Convert go.int64 go.any ((FuncResolve rand.Int63 [] #()) #())) in
-      CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-      (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
+      let: "$r0" := ((FuncResolve generatePolicyID [] #()) #()) in
       do:  ("id" <-[PolicyID] "$r0");;;
       (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
@@ -209,7 +216,7 @@ Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go
 (* AttachIdentityPolicy attaches an existing policy to an identity.
    AWS SDK analogue: AttachUserPolicy.
 
-   go: state.go:120:17 *)
+   go: state.go:124:17 *)
 Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -285,7 +292,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* ListIdentityPolicies returns policy IDs attached directly to identity.
    AWS SDK analogue: ListAttachedUserPolicies.
 
-   go: state.go:141:17 *)
+   go: state.go:145:17 *)
 Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -343,7 +350,7 @@ Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* GetIdentityPolicy returns the simplified attached policy object for id.
    AWS SDK analogue: GetPolicy followed by GetPolicyVersion.
 
-   go: state.go:159:17 *)
+   go: state.go:163:17 *)
 Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -375,7 +382,7 @@ Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 (* DetachIdentityPolicy detaches a policy from an identity without deleting the policy.
    AWS SDK analogue: DetachUserPolicy.
 
-   go: state.go:172:17 *)
+   go: state.go:176:17 *)
 Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -627,6 +634,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] IdentityPolicy_instance :: IdentityPolicy_Assumptions;
   #[global] State_instance :: State_Assumptions;
   #[global] NewState_unfold :: FuncUnfold NewState [] (NewStateⁱᵐᵖˡ);
+  #[global] generatePolicyID_unfold :: FuncUnfold generatePolicyID [] (generatePolicyIDⁱᵐᵖˡ);
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_fmt_Assumption :: fmt.Assumptions;
   #[global] import_rand_Assumption :: rand.Assumptions;

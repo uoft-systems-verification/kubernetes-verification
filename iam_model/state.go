@@ -105,9 +105,13 @@ func (s *State) CreatePolicy(resource ResourceName) (PolicyID, error) {
 	return id, nil
 }
 
+func generatePolicyID() PolicyID {
+	return PolicyID(fmt.Sprintf("policy-%d", rand.Int63()))
+}
+
 func (s *State) generateNewPolicyIDAndUpdate() PolicyID {
 	for {
-		id := PolicyID(fmt.Sprintf("policy-%d", rand.Int63()))
+		id := generatePolicyID()
 		if _, exists := s.usedPolicyIds[id]; !exists {
 			s.usedPolicyIds[id] = struct{}{}
 			return id
