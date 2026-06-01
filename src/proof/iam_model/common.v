@@ -35,7 +35,7 @@ Proof.
 Admitted.
 
 Lemma wp_State__generateNewPolicyIDAndUpdate
-    l used_policy_ids_l (used_policy_ids : policy_id_set) :
+    l used_policy_ids_l (used_policy_ids : gmap iammodel.PolicyID.t unit) :
   {{{ l.[(iammodel.State.t), "usedPolicyIds"] ↦ used_policy_ids_l ∗
       used_policy_ids_l ↦$ used_policy_ids
   }}}
@@ -62,9 +62,9 @@ Proof.
     "[$Hused_policy_ids]").
   iIntros "Hused_policy_ids".
   destruct (used_policy_ids !! policy_id) as [[]|] eqn:Hlookup.
-  - rewrite Hlookup /=. wp_auto.
+  - wp_auto.
     wp_for_post. iFrame.
-  - rewrite Hlookup /=. wp_auto.
+  - wp_auto.
     wp_apply (wp_map_insert iammodel.PolicyID with "[$Hused_policy_ids]").
     iIntros "Hused_policy_ids". wp_auto.
     iApply wp_for_post_return.

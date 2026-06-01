@@ -1,13 +1,15 @@
 From New.proof Require Import prelude.
 From New.ghost Require Import ghost_map.
-From New.proof.iam_model Require Export aliases.
+From New.code Require Export iam_model.
+From iris.algebra Require Import gmap.
 From iris.bi.lib Require Import fractional.
 
 Section ghost_map_wrapper.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Context `{!allG Σ}.
 
-Definition own_identities_auth γ (identities : identity_map) : iProp Σ :=
+Definition own_identities_auth
+    γ (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit)) : iProp Σ :=
   ghost_map_auth (K:=iammodel.IdentityID.t) (V:=gmap iammodel.PolicyID.t unit) γ 1 identities.
 
 Definition own_identity_frag
@@ -15,7 +17,8 @@ Definition own_identity_frag
   ghost_map_elem (K:=iammodel.IdentityID.t) (V:=gmap iammodel.PolicyID.t unit)
     γ identity (DfracOwn q) policy_ids.
 
-Definition own_policies_auth γ (policies : policy_map) : iProp Σ :=
+Definition own_policies_auth
+    γ (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t) : iProp Σ :=
   ghost_map_auth (K:=iammodel.PolicyID.t) (V:=iammodel.IdentityPolicy.t) γ 1 policies.
 
 Definition own_policy_frag

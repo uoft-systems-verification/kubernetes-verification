@@ -1,6 +1,6 @@
 From New.proof Require Import prelude.
 From iris.algebra Require Import gmap gset.
-From New.proof.iam_model Require Export aliases.
+From New.code Require Export iam_model.
 From New.proof.algebra Require Export counted_reversed_reference.
 
 Module IamRef.
@@ -45,37 +45,44 @@ Definition identity_ref
   IamRef.IdentityRef identity.
 
 Definition policy_matches_resource
-    (policies : policy_map) (resource : iammodel.ResourceName.t) (policy_id : iammodel.PolicyID.t) : bool :=
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
+    (resource : iammodel.ResourceName.t) (policy_id : iammodel.PolicyID.t) : bool :=
   match policies !! policy_id with
   | Some policy => bool_decide (policy.(iammodel.IdentityPolicy.Resource') = resource)
   | None => false
   end.
 
 Definition attached_policies_for_resource
-    (policies : policy_map) (policy_ids : gmap iammodel.PolicyID.t unit)
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
+    (policy_ids : gmap iammodel.PolicyID.t unit)
     (resource : iammodel.ResourceName.t) : gset iammodel.PolicyID.t :=
   dom (filter (λ '(policy_id, _),
     policy_matches_resource policies resource policy_id = true) policy_ids).
 
-Definition policy_resources (policies : policy_map) : gset iammodel.ResourceName.t :=
+Definition policy_resources
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t) :
+    gset iammodel.ResourceName.t :=
   list_to_set (C:=gset iammodel.ResourceName.t)
     ((λ policy, policy.(iammodel.IdentityPolicy.Resource')) <$> (map_to_list policies).*2).
 
 Definition resources_for_identity_counts
-    (policies : policy_map) (policy_ids : gmap iammodel.PolicyID.t unit)
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
+    (policy_ids : gmap iammodel.PolicyID.t unit)
     : gmap iammodel.ResourceName.t nat :=
   list_to_map ((λ resource,
     (resource, size (attached_policies_for_resource policies policy_ids resource))) <$>
     elements (policy_resources policies)).
 
 Definition attachment_state
-    (identities : identity_map) (policies : policy_map) :
+    (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t) :
     gmap iammodel.IdentityID.t (gmap iammodel.ResourceName.t nat) :=
   map_imap (λ _ policy_ids, Some (resources_for_identity_counts policies policy_ids))
     identities.
 
 Definition attachment_used_reference_set
-    (identities : identity_map) (policies : policy_map)
+    (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
     (observed_resources : gset iammodel.ResourceName.t) : gset IamRef.t :=
   set_map IamRef.IdentityRef (dom identities) ∪
   set_map IamRef.ResourceRef observed_resources.
@@ -86,7 +93,8 @@ Definition resource_count_refs
     IamRef.ResourceRef resources.
 
 Definition attachment_ref_counts
-    (identities : identity_map) (policies : policy_map)
+    (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
     (ref : IamRef.t) : gmap iammodel.IdentityID.t nat :=
   @counted_reversed_reference.reverse_index
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)
@@ -94,7 +102,8 @@ Definition attachment_ref_counts
     (attachment_state identities policies) ref.
 
 Definition attachment_counts
-    (identities : identity_map) (policies : policy_map)
+    (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
     (resource : iammodel.ResourceName.t) : gmap iammodel.IdentityID.t nat :=
   attachment_ref_counts identities policies (IamRef.ResourceRef resource).
 
@@ -363,8 +372,8 @@ Proof.
     attachment_state.
   rewrite !map_lookup_imap.
   destruct (identities !! identity) as [policy_ids|] eqn:Hidentity.
-  2:{ rewrite Hidentity. done. }
-  rewrite Hidentity /=.
+  2:{ done. }
+  simpl.
   rewrite !(resources_for_identity_counts_insert_policy_reference_count
     policies policy_ids policy_id policy ref).
   - apply Hunattached with identity. done.
@@ -977,8 +986,8 @@ Proof.
   unfold attachment_state in Hlookup.
   rewrite map_lookup_imap in Hlookup.
   destruct (identities !! identity) as [policy_ids|] eqn:Hidentity.
-  2:{ rewrite Hidentity in Hlookup. simpl in Hlookup. inversion Hlookup. }
-  rewrite Hidentity in Hlookup. simpl in Hlookup.
+  2:{ simpl in Hlookup. inversion Hlookup. }
+  simpl in Hlookup.
   inversion Hlookup. subst resources.
   unfold identity_ref, attachment_used_reference_set.
   apply elem_of_union_l.
@@ -1040,7 +1049,8 @@ Section attachment.
 Context `{!iamResourceAccessG Σ}.
 
 Definition own_attachments_auth
-    γ (identities : identity_map) (policies : policy_map)
+    γ (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
     (observed_resources : gset iammodel.ResourceName.t) : iProp Σ :=
   @counted_reversed_reference.own_auth
     iammodel.IdentityID.t _ _ IamRef.t _ _ (gmap iammodel.ResourceName.t nat)

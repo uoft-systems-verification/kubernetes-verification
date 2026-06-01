@@ -24,17 +24,19 @@ Context `{!iamModelG Σ}.
 Local Set Default Proof Using "All".
 
 #[local]
-Instance policy_id_set_zero_val : ZeroVal policy_id_set :=
+Instance policy_ids_map_zero_val : ZeroVal (gmap iammodel.PolicyID.t unit) :=
   {| zero_val := ∅ |}.
 
-Definition own_iam_identities_auth γ (identities : identity_map) : iProp Σ :=
+Definition own_iam_identities_auth
+    γ (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit)) : iProp Σ :=
   own_identities_auth γ.(γ_identities) identities.
 
 Definition own_iam_identity_frag
     γ (identity : iammodel.IdentityID.t) q (policy_ids : gmap iammodel.PolicyID.t unit) : iProp Σ :=
   own_identity_frag γ.(γ_identities) identity q policy_ids.
 
-Definition own_iam_policies_auth γ (policies : policy_map) : iProp Σ :=
+Definition own_iam_policies_auth
+    γ (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t) : iProp Σ :=
   own_policies_auth γ.(γ_policies) policies.
 
 Definition own_iam_policy_frag
@@ -42,7 +44,8 @@ Definition own_iam_policy_frag
   own_policy_frag γ.(γ_policies) policy_id q policy.
 
 Definition own_iam_attachments_auth γ
-    (identities : identity_map) (policies : policy_map)
+    (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
     (observed_resources : gset iammodel.ResourceName.t) : iProp Σ :=
   own_attachments_auth γ.(γ_resource_access)
     identities policies observed_resources.
@@ -56,9 +59,9 @@ Definition iam_inv γ l : iProp Σ :=
   ∃ (phys_identities_l : loc) (phys_policies_l : loc)
     (phys_used_policy_ids_l : loc)
     (phys_identities : gmap iammodel.IdentityID.t map.t)
-    (abs_identities : identity_map)
-    (phys_policies : policy_map)
-    (phys_used_policy_ids : policy_id_set)
+    (abs_identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    (phys_policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
+    (phys_used_policy_ids : gmap iammodel.PolicyID.t unit)
     (observed_resources : gset iammodel.ResourceName.t),
     "Hstate_identities_addr" ∷ l.[(iammodel.State.t), "identities"] ↦ phys_identities_l ∗
     "Hstate_policies_addr" ∷ l.[(iammodel.State.t), "policies"] ↦ phys_policies_l ∗
