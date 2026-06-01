@@ -39,7 +39,7 @@ Proof.
     pose proof (Hinv_Hexisting_policy_used policy_id old_policy Hlookup) as Hused.
     rewrite Hpolicy_id_fresh in Hused. done. }
   assert (∀ identity policy_ids,
-    phys_identities !! identity = Some policy_ids →
+    abs_identities !! identity = Some policy_ids →
     policy_ids !! policy_id = None) as Hpolicy_unattached.
   { intros identity policy_ids Hidentity.
     destruct (policy_ids !! policy_id) as [[]|] eqn:Hattached; [|done].
@@ -57,7 +57,7 @@ Proof.
     Hpolicy_fresh with "Hinv_Hown_policies_auth")
     as "[Hinv_Hown_policies_auth Hpolicy]".
   iMod (insert_unattached_policy_vs
-    (γ:=γ.(γ_resource_access)) (identities:=phys_identities)
+    (γ:=γ.(γ_resource_access)) (identities:=abs_identities)
     (policies:=phys_policies) (observed_resources:=observed_resources)
     (policy_id:=policy_id)
     (policy:=iammodel.IdentityPolicy.mk policy_id resource)

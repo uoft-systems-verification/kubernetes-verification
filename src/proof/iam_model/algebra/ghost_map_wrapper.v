@@ -79,6 +79,18 @@ Proof.
   done.
 Qed.
 
+Lemma own_identity_update_vs {γ identities identity policy_ids policy_ids'} :
+  own_identities_auth γ identities -∗
+  own_identity_frag γ identity 1 policy_ids ==∗
+    own_identities_auth γ (<[identity := policy_ids']> identities) ∗
+    own_identity_frag γ identity 1 policy_ids'.
+Proof.
+  unfold own_identities_auth, own_identity_frag.
+  iIntros "Hauth Hfrag".
+  iMod (ghost_map_update policy_ids' with "Hauth Hfrag") as "[$ $]".
+  done.
+Qed.
+
 Lemma own_policy_insert_vs {γ policies policy_id policy} :
   policies !! policy_id = None →
   own_policies_auth γ policies ==∗

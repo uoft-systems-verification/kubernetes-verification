@@ -55,7 +55,8 @@ Definition own_iam_attachments_frag
 Definition iam_inv γ l : iProp Σ :=
   ∃ (phys_identities_l : loc) (phys_policies_l : loc)
     (phys_used_policy_ids_l : loc)
-    (phys_identities : identity_map)
+    (phys_identities : gmap iammodel.IdentityID.t map.t)
+    (abs_identities : identity_map)
     (phys_policies : policy_map)
     (phys_used_policy_ids : policy_id_set)
     (observed_resources : gset iammodel.ResourceName.t),
@@ -64,14 +65,16 @@ Definition iam_inv γ l : iProp Σ :=
     "Hstate_used_policy_ids_addr" ∷
       l.[(iammodel.State.t), "usedPolicyIds"] ↦ phys_used_policy_ids_l ∗
     "Hown_phys_identities" ∷ phys_identities_l ↦$ phys_identities ∗
+    "Hown_phys_identities_inner" ∷ ([∗ map] policy_ids_l; policy_ids ∈
+      phys_identities; abs_identities, policy_ids_l ↦$ policy_ids) ∗
     "Hown_phys_policies" ∷ phys_policies_l ↦$ phys_policies ∗
     "Hown_phys_used_policy_ids" ∷ phys_used_policy_ids_l ↦$ phys_used_policy_ids ∗
-    "Hown_identities_auth" ∷ own_iam_identities_auth γ phys_identities ∗
+    "Hown_identities_auth" ∷ own_iam_identities_auth γ abs_identities ∗
     "Hown_policies_auth" ∷ own_iam_policies_auth γ phys_policies ∗
     "Hown_attachments_auth" ∷
-      own_iam_attachments_auth γ phys_identities phys_policies observed_resources ∗
+      own_iam_attachments_auth γ abs_identities phys_policies observed_resources ∗
     "%Hattached_policy_exists" ∷ ⌜ ∀ identity policy_ids policy_id,
-      phys_identities !! identity = Some policy_ids →
+      abs_identities !! identity = Some policy_ids →
       policy_ids !! policy_id = Some tt →
       ∃ policy, phys_policies !! policy_id = Some policy ⌝ ∗
     "%Hexisting_policy_used" ∷ ⌜ ∀ policy_id policy,

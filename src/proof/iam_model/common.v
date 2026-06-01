@@ -9,10 +9,20 @@ Local Set Default Proof Using "All".
 
 #[global] Instance PolicyID_zero_val : ZeroVal iammodel.PolicyID.t := _.
 
+#[global] Instance IdentityID_zero_val : ZeroVal iammodel.IdentityID.t := _.
+
 #[global] Instance PolicyID_into_val_inj : go.IntoValInj iammodel.PolicyID.t := _.
+
+#[global] Instance IdentityID_into_val_inj : go.IntoValInj iammodel.IdentityID.t := _.
 
 #[global] Instance PolicyID_safe_map_key policy_id :
   SafeMapKey (K:=iammodel.PolicyID.t) iammodel.PolicyID policy_id.
+Proof.
+  constructor. iIntros (stk E Ψ) "HΨ". wp_auto. done.
+Qed.
+
+#[global] Instance IdentityID_safe_map_key identity :
+  SafeMapKey (K:=iammodel.IdentityID.t) iammodel.IdentityID identity.
 Proof.
   constructor. iIntros (stk E Ψ) "HΨ". wp_auto. done.
 Qed.
