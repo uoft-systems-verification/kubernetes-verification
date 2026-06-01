@@ -812,6 +812,66 @@ Proof.
   apply bool_decide_eq_true_2. done.
 Qed.
 
+Local Lemma attached_policies_for_resource_size_pos
+    policies policy_ids policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  policy_ids !! policy_id = Some tt →
+  (0 < size (attached_policies_for_resource policies policy_ids resource))%nat.
+Proof.
+  intros Hpolicy Hresource Hlookup.
+  pose proof (attached_policies_for_resource_elem
+    policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup) as Hin.
+  destruct (decide (size
+    (attached_policies_for_resource policies policy_ids resource) = 0%nat))
+    as [Hempty|Hnonempty].
+  - apply size_empty_inv in Hempty.
+    rewrite Hempty in Hin. set_solver.
+  - lia.
+Qed.
+
+Local Lemma resources_for_identity_counts_attached_lookup_positive
+    policies policy_ids policy_id policy resource :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  policy_ids !! policy_id = Some tt →
+  ∃ n,
+    resources_for_identity_counts policies policy_ids !! resource = Some n ∧
+    (1 ≤ n)%nat.
+Proof.
+  intros Hpolicy Hresource Hlookup.
+  exists (size (attached_policies_for_resource policies policy_ids resource)).
+  split.
+  - apply resources_for_identity_counts_lookup.
+    rewrite -Hresource. apply policy_resource_elem with policy_id. exact Hpolicy.
+  - pose proof (attached_policies_for_resource_size_pos
+      policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup).
+    lia.
+Qed.
+
+Local Lemma detach_identity_policy_counts_lookup_positive
+    identities policies identity policy_ids policy_id policy resource :
+  identities !! identity = Some policy_ids →
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  policy_ids !! policy_id = Some tt →
+  ∃ n,
+    attachment_counts identities policies resource !! identity = Some n ∧
+    (1 ≤ n)%nat.
+Proof.
+  intros Hidentity Hpolicy Hresource Hlookup.
+  destruct (resources_for_identity_counts_attached_lookup_positive
+    policies policy_ids policy_id policy resource Hpolicy Hresource Hlookup)
+    as (n & Hcount & Hpositive).
+  exists n. split; [|done].
+  unfold attachment_counts, attachment_ref_counts,
+    counted_reversed_reference.reverse_index, attachment_state.
+  rewrite !map_lookup_imap Hidentity /=.
+  unfold counted_reversed_reference.reference_count.
+  rewrite /resource_count_refs lookup_kmap Hcount /=.
+  destruct (decide (0 < n)%nat) as [_|Hnot_positive]; [done|lia].
+Qed.
+
 Local Lemma attached_policies_for_resource_delete_same
     policies policy_ids policy_id resource :
   attached_policies_for_resource policies (delete policy_id policy_ids) resource =
@@ -1395,6 +1455,48 @@ Proof.
       identities policies identity policy_ids policy_id policy resource ref); done.
   - iModIntro.
     iFrame.
+Qed.
+
+Lemma detach_identity_policy_vs
+    {γ identities identities' policies observed_resources identity policy_ids policy_id policy
+      resource attachments} :
+  policies !! policy_id = Some policy →
+  policy.(iammodel.IdentityPolicy.Resource') = resource →
+  identities !! identity = Some policy_ids →
+  policy_ids !! policy_id = Some tt →
+  identities' = <[identity := delete policy_id policy_ids]> identities →
+  own_attachments_auth γ identities policies observed_resources -∗
+  own_attachments_frag γ resource 1 attachments ==∗
+    ∃ attachments',
+    own_attachments_auth γ identities' policies observed_resources ∗
+    own_attachments_frag γ resource 1 attachments' ∗
+    ⌜ (attachments !! identity = Some 1%nat ∧
+        attachments' = delete identity attachments) ∨
+      ∃ n, attachments !! identity = Some n ∧
+        (2 ≤ n)%nat ∧
+        attachments' = <[identity := (n - 1)%nat]> attachments ⌝.
+Proof.
+  iIntros (Hpolicy Hpolicy_resource Hidentity Hpolicy_id Hidentity_update)
+    "Hauth Hfrag".
+  iPoseProof (own_attachments_frag_valid_pure with "Hauth Hfrag")
+    as "%Hvalid".
+  destruct Hvalid as [Hattachments _].
+  destruct (detach_identity_policy_counts_lookup_positive
+    identities policies identity policy_ids policy_id policy resource
+    Hidentity Hpolicy Hpolicy_resource Hpolicy_id)
+    as (n & Hcount & Hpositive).
+  rewrite -Hattachments in Hcount.
+  destruct n as [|n']; [lia|].
+  destruct n' as [|n''].
+  - iMod (detach_last_identity_policy_vs with "Hauth Hfrag")
+      as "[Hauth Hfrag]"; [done..|exact Hcount|exact Hidentity_update|].
+    iModIntro. iExists (delete identity attachments). iFrame.
+    iPureIntro. left. done.
+  - assert ((2 ≤ S (S n''))%nat) as Hn by lia.
+    iMod (detach_identity_policy_decrement_vs with "Hauth Hfrag")
+      as "[Hauth Hfrag]"; [done..|exact Hcount|exact Hn|exact Hidentity_update|].
+    iModIntro. iExists (<[identity := (S (S n'') - 1)%nat]> attachments). iFrame.
+    iPureIntro. right. eexists. done.
 Qed.
 
 End attachment.
