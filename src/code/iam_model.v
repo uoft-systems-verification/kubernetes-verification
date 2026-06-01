@@ -254,8 +254,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
+    (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -268,8 +267,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
-    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
+    (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
 
     ]) (![go.MapType PolicyID (go.StructType [
 
@@ -420,8 +418,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
+    (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -434,8 +431,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
-    (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
+    (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
 
     ]) (![go.MapType PolicyID (go.StructType [
 

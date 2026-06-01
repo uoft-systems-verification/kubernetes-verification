@@ -129,11 +129,11 @@ func (s *State) AttachIdentityPolicy(identity IdentityID, policyID PolicyID) err
 	if !exists {
 		return fmt.Errorf("%w: identity %q", ErrNotFound, identity)
 	}
-	if _, exists := s.policies[policyID]; !exists {
+	if _, exists = s.policies[policyID]; !exists {
 		return fmt.Errorf("%w: policy %q", ErrNotFound, policyID)
 	}
 
-	if _, exists := policyIDs[policyID]; exists {
+	if _, exists = policyIDs[policyID]; exists {
 		return nil
 	}
 	policyIDs[policyID] = struct{}{}
@@ -181,11 +181,11 @@ func (s *State) DetachIdentityPolicy(identity IdentityID, policyID PolicyID) err
 	if !exists {
 		return fmt.Errorf("%w: identity %q", ErrNotFound, identity)
 	}
-	if _, exists := s.policies[policyID]; !exists {
+	if _, exists = s.policies[policyID]; !exists {
 		return fmt.Errorf("%w: policy %q", ErrNotFound, policyID)
 	}
 
-	if _, exists := policyIDs[policyID]; !exists {
+	if _, exists = policyIDs[policyID]; !exists {
 		return fmt.Errorf("%w: identity policy attachment %q -> %q", ErrNotFound, identity, policyID)
 	}
 	delete(policyIDs, policyID)
