@@ -16,15 +16,11 @@ Lemma wp_State__AttachIdentityPolicy
       "%Hresource_eq" ∷ ⌜ resource = policy.(iammodel.IdentityPolicy.Resource') ⌝
   }}}
     l @! (go.PointerType iammodel.State) @! "AttachIdentityPolicy" #identity #policy_id
-  {{{ attachments', RET #interface.nil;
+  {{{ n, RET #interface.nil;
       "Hidentity" ∷ own_iam_identity_frag γ identity 1 (<[policy_id := tt]> policy_ids) ∗
       "Hpolicy" ∷ own_iam_policy_frag γ policy_id q policy ∗
-      "Hattachments" ∷ own_iam_attachments_frag γ resource 1 attachments' ∗
-      "%Hattachments_other" ∷ ⌜ ∀ identity',
-        identity' ≠ identity →
-        attachments' !! identity' = attachments !! identity' ⌝ ∗
-      "%Hattachments_identity" ∷ ⌜ ∃ n,
-        attachments' !! identity = Some n ∧ (1 ≤ n)%nat ⌝
+      "Hattachments" ∷ own_iam_attachments_frag γ resource 1 (<[identity := n]> attachments) ∗
+      "%Hn_positive" ∷ ⌜ (1 ≤ n)%nat ⌝
   }}}.
 Proof. Admitted.
 

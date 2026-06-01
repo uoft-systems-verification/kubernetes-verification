@@ -1257,13 +1257,10 @@ Lemma attach_identity_policy_vs
   identities' = <[identity := <[policy_id := tt]> policy_ids]> identities →
   own_attachments_auth γ identities policies observed_resources -∗
   own_attachments_frag γ resource 1 attachments ==∗
-    ∃ attachments',
+    ∃ n,
     own_attachments_auth γ identities' policies observed_resources ∗
-    own_attachments_frag γ resource 1 attachments' ∗
-    ⌜ (∀ identity',
-        identity' ≠ identity →
-        attachments' !! identity' = attachments !! identity') ∧
-      ∃ n, attachments' !! identity = Some n ∧ (1 ≤ n)%nat ⌝.
+    own_attachments_frag γ resource 1 (<[identity := n]> attachments) ∗
+    ⌜ (1 ≤ n)%nat ⌝.
 Proof.
   iIntros (Hpolicy Hpolicy_resource Hidentity Hidentity_update)
     "Hauth Hfrag".
@@ -1271,28 +1268,34 @@ Proof.
     as "%Hvalid".
   destruct Hvalid as [Hattachments _].
   subst identities'.
+  destruct (attach_identity_policy_counts_lookup_positive
+    identities policies identity policy_ids policy_id policy resource
+    Hidentity Hpolicy Hpolicy_resource) as (n & Hlookup & Hpositive).
+  assert (Hidentities :
+    <[identity := n]> attachments =
+    attachment_counts
+      (<[identity := <[policy_id := tt]> policy_ids]> identities)
+      policies resource).
+  { rewrite Hattachments.
+    apply map_eq. intros identity'.
+    destruct (decide (identity' = identity)) as [->|Hne].
+    - rewrite lookup_insert_eq. done.
+    - assert ((<[identity:=n]> (attachment_counts identities policies resource)) !! identity' =
+        attachment_counts identities policies resource !! identity') as Hinsert_lookup.
+      { apply lookup_insert_ne. intros Heq. apply Hne. symmetry. exact Heq. }
+      rewrite Hinsert_lookup.
+      rewrite (attach_identity_policy_counts_lookup_other
+        identities policies identity policy_ids policy_id resource identity' Hne).
+      done. }
   iMod (update_identity_policy_vs with "Hauth Hfrag")
     as "[Hauth Hfrag]".
   - exact Hidentity.
-  - reflexivity.
+  - exact Hidentities.
   - intros ref Hneq.
     apply (attach_identity_policy_other_refs
       identities policies identity policy_ids policy_id policy resource ref); done.
   - iModIntro.
-    iExists (attachment_counts
-      (<[identity := <[policy_id := tt]> policy_ids]> identities)
-      policies resource).
-    iFrame.
-    iPureIntro.
-    split.
-    + intros identity' Hne.
-      rewrite (attach_identity_policy_counts_lookup_other
-        identities policies identity policy_ids policy_id resource identity' Hne).
-      rewrite Hattachments. done.
-    + destruct (attach_identity_policy_counts_lookup_positive
-        identities policies identity policy_ids policy_id policy resource
-        Hidentity Hpolicy Hpolicy_resource) as (n & Hlookup & Hpositive).
-      exists n. split; done.
+    iExists n. iFrame. done.
 Qed.
 
 Lemma detach_identity_policy_decrement_vs
