@@ -2,7 +2,8 @@ Require Export New.proof.sync.
 From New.code Require Export iam_model.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.iam_model.algebra Require Export ghost_map_wrapper.
-From New.proof.iam_model.algebra Require Export reversed_identity_policy.
+From New.proof.iam_model.algebra Require Export policy_attachment.
+From iris.bi.lib Require Import fractional.
 
 Class iamModelG Σ := {
   #[global] iam_model_allG :: allG Σ;
@@ -25,23 +26,30 @@ Local Set Default Proof Using "All".
 Instance policy_id_set_zero_val : ZeroVal policy_id_set :=
   {| zero_val := ∅ |}.
 
-Definition own_identities_auth γ (identities : identity_map) : iProp Σ :=
-  own_identity_auth γ.(γ_identities) identities.
+Definition own_iam_identities_auth γ (identities : identity_map) : iProp Σ :=
+  own_identities_auth γ.(γ_identities) identities.
 
-Definition own_identity γ (identity : iammodel.IdentityID.t) : iProp Σ :=
-  ∃ policy_ids, own_identity_frag γ.(γ_identities) identity policy_ids.
+Definition own_iam_identity_frag
+    γ (identity : iammodel.IdentityID.t) q (policy_ids : gmap iammodel.PolicyID.t unit) : iProp Σ :=
+  own_identity_frag γ.(γ_identities) identity q policy_ids.
 
-Definition own_policies_auth γ (policies : policy_map) : iProp Σ :=
-  own_policy_auth γ.(γ_policies) policies.
+Definition own_iam_policies_auth γ (policies : policy_map) : iProp Σ :=
+  own_policies_auth γ.(γ_policies) policies.
 
-Definition own_policy γ (policy_id : iammodel.PolicyID.t) : iProp Σ :=
-  ∃ policy, own_policy_frag γ.(γ_policies) policy_id policy.
+Definition own_iam_policy_frag
+    γ (policy_id : iammodel.PolicyID.t) q (policy : iammodel.IdentityPolicy.t) : iProp Σ :=
+  own_policy_frag γ.(γ_policies) policy_id q policy.
 
-Definition own_resource_access_auth γ
+Definition own_iam_attachments_auth γ
     (identities : identity_map) (policies : policy_map)
     (observed_resources : gset iammodel.ResourceName.t) : iProp Σ :=
-  own_reversed_identity_policy_auth γ.(γ_resource_access)
+  own_attachments_auth γ.(γ_resource_access)
     identities policies observed_resources.
+
+Definition own_iam_attachments_frag
+    γ (resource : iammodel.ResourceName.t) dq
+    (resource_identities : gmap iammodel.IdentityID.t nat) : iProp Σ :=
+  own_attachments_frag γ.(γ_resource_access) resource dq resource_identities.
 
 Definition iam_inv γ l : iProp Σ :=
   ∃ (phys_identities_l : loc) (phys_policies_l : loc)
@@ -57,10 +65,10 @@ Definition iam_inv γ l : iProp Σ :=
     "Hown_phys_identities" ∷ phys_identities_l ↦$ phys_identities ∗
     "Hown_phys_policies" ∷ phys_policies_l ↦$ phys_policies ∗
     "Hown_phys_used_policy_ids" ∷ phys_used_policy_ids_l ↦$ phys_used_policy_ids ∗
-    "Hidentities" ∷ own_identities_auth γ phys_identities ∗
-    "Hpolicies" ∷ own_policies_auth γ phys_policies ∗
-    "Hresource_access" ∷
-      own_resource_access_auth γ phys_identities phys_policies observed_resources ∗
+    "Hown_identities_auth" ∷ own_iam_identities_auth γ phys_identities ∗
+    "Hown_policies_auth" ∷ own_iam_policies_auth γ phys_policies ∗
+    "Hown_attachments_auth" ∷
+      own_iam_attachments_auth γ phys_identities phys_policies observed_resources ∗
     "%Hattached_policy_exists" ∷ ⌜ ∀ identity policy_ids policy_id,
       phys_identities !! identity = Some policy_ids →
       policy_ids !! policy_id = Some tt →
@@ -74,32 +82,46 @@ Definition is_iam γ l : iProp Σ :=
     "Hmu" ∷ l.[(iammodel.State.t), "mu"] ↦□ mu_l ∗
     "Hiam_inv" ∷ is_Mutex mu_l (iam_inv γ l).
 
-Global Instance own_identities_auth_timeless γ identities :
-  Timeless (own_identities_auth γ identities).
-Proof. unfold own_identities_auth. apply _. Qed.
+Global Instance own_iam_identities_auth_timeless γ identities :
+  Timeless (own_iam_identities_auth γ identities).
+Proof. unfold own_iam_identities_auth. apply _. Qed.
 
-Global Instance own_identity_timeless γ identity :
-  Timeless (own_identity γ identity).
-Proof. unfold own_identity. apply _. Qed.
+Global Instance own_iam_identity_frag_timeless γ identity q policy_ids :
+  Timeless (own_iam_identity_frag γ identity q policy_ids).
+Proof. unfold own_iam_identity_frag. apply _. Qed.
 
-Global Instance own_identity_persistent γ identity :
-  Persistent (own_identity γ identity).
-Proof. unfold own_identity. apply _. Qed.
+Global Instance own_iam_identity_frag_fractional γ identity policy_ids :
+  Fractional (λ q, own_iam_identity_frag γ identity q policy_ids)%I.
+Proof. unfold own_iam_identity_frag. apply _. Qed.
 
-Global Instance own_policies_auth_timeless γ policies :
-  Timeless (own_policies_auth γ policies).
-Proof. unfold own_policies_auth. apply _. Qed.
+Global Instance own_iam_identity_frag_as_fractional γ identity q policy_ids :
+  AsFractional (own_iam_identity_frag γ identity q policy_ids)
+    (λ q, own_iam_identity_frag γ identity q policy_ids)%I q.
+Proof. split; [done|apply _]. Qed.
 
-Global Instance own_policy_timeless γ policy_id :
-  Timeless (own_policy γ policy_id).
-Proof. unfold own_policy. apply _. Qed.
+Global Instance own_iam_policies_auth_timeless γ policies :
+  Timeless (own_iam_policies_auth γ policies).
+Proof. unfold own_iam_policies_auth. apply _. Qed.
 
-Global Instance own_policy_persistent γ policy_id :
-  Persistent (own_policy γ policy_id).
-Proof. unfold own_policy. apply _. Qed.
+Global Instance own_iam_policy_frag_timeless γ policy_id q policy :
+  Timeless (own_iam_policy_frag γ policy_id q policy).
+Proof. unfold own_iam_policy_frag. apply _. Qed.
 
-Global Instance own_resource_access_auth_timeless γ identities policies observed_resources :
-  Timeless (own_resource_access_auth γ identities policies observed_resources).
-Proof. unfold own_resource_access_auth. apply _. Qed.
+Global Instance own_iam_policy_frag_fractional γ policy_id policy :
+  Fractional (λ q, own_iam_policy_frag γ policy_id q policy)%I.
+Proof. unfold own_iam_policy_frag. apply _. Qed.
+
+Global Instance own_iam_policy_frag_as_fractional γ policy_id q policy :
+  AsFractional (own_iam_policy_frag γ policy_id q policy)
+    (λ q, own_iam_policy_frag γ policy_id q policy)%I q.
+Proof. split; [done|apply _]. Qed.
+
+Global Instance own_iam_attachments_auth_timeless γ identities policies observed_resources :
+  Timeless (own_iam_attachments_auth γ identities policies observed_resources).
+Proof. unfold own_iam_attachments_auth. apply _. Qed.
+
+Global Instance own_iam_attachments_frag_timeless γ resource dq resource_identities :
+  Timeless (own_iam_attachments_frag γ resource dq resource_identities).
+Proof. unfold own_iam_attachments_frag. apply _. Qed.
 
 End inv.
