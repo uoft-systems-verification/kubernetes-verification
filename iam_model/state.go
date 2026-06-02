@@ -74,19 +74,6 @@ func (s *State) CreateIdentity(id IdentityID) error {
 	return nil
 }
 
-// ListIdentities returns every identity known to this model.
-// AWS SDK analogue: ListUsers; this model has only one identity kind.
-func (s *State) ListIdentities() []IdentityID {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	identities := make([]IdentityID, 0)
-	for identity := range s.identities {
-		identities = append(identities, identity)
-	}
-	return identities
-}
-
 // Snapshot returns copies of the identity attachment map and the policy
 // document map.
 func (s *State) Snapshot() (map[IdentityID]map[PolicyID]struct{}, map[PolicyID]IdentityPolicy) {
@@ -167,37 +154,6 @@ func (s *State) AttachIdentityPolicy(identity IdentityID, policyID PolicyID) err
 	}
 	policyIDs[policyID] = struct{}{}
 	return nil
-}
-
-// ListIdentityPolicies returns policy IDs attached directly to identity.
-// AWS SDK analogue: ListAttachedUserPolicies.
-func (s *State) ListIdentityPolicies(identity IdentityID) ([]PolicyID, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	policyIDs, exists := s.identities[identity]
-	if !exists {
-		return nil, fmt.Errorf("%w: identity %q", ErrNotFound, identity)
-	}
-
-	policies := make([]PolicyID, 0)
-	for policyID := range policyIDs {
-		policies = append(policies, policyID)
-	}
-	return policies, nil
-}
-
-// GetIdentityPolicy returns the simplified attached policy object for id.
-// AWS SDK analogue: GetPolicy followed by GetPolicyVersion.
-func (s *State) GetIdentityPolicy(id PolicyID) (IdentityPolicy, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	policy, exists := s.policies[id]
-	if !exists {
-		return IdentityPolicy{}, fmt.Errorf("%w: policy %q", ErrNotFound, id)
-	}
-	return policy, nil
 }
 
 // DetachIdentityPolicy detaches a policy from an identity without deleting the policy.

@@ -16,6 +16,8 @@ Definition hasPolicyForResource {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
 
 Definition policiesForResource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model/example.policiesForResource"%go.
 
+Definition missingIdentities {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model/example.missingIdentities"%go.
+
 Definition containsIdentity {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model/example.containsIdentity"%go.
 
 (* ReconcileIdentityAccess ensures that the identity-based policies for resource
@@ -90,26 +92,12 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
         then return: (![go.error] "err")
         else do:  #()))))));;;
     let: "missing" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
-    let: "$r0" := ((FuncResolve go.make2 [go.SliceType iammodel.IdentityID] #()) #(W64 0)) in
-    do:  ("missing" <-[go.SliceType iammodel.IdentityID] "$r0");;;
-    let: "$range" := (![go.MapType iammodel.IdentityID (go.StructType [
+    let: "$r0" := (let: "$a0" := (![go.MapType iammodel.IdentityID (go.StructType [
 
     ])] "desired") in
-    (let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
-    map.for_range iammodel.IdentityID (go.StructType [
-
-    ]) "$range" (λ: "$key" "value",
-      do:  ("identity" <-[iammodel.IdentityID] "$key");;;
-      (if: let: "$a0" := (![go.SliceType iammodel.IdentityID] "current") in
-      let: "$a1" := (![iammodel.IdentityID] "identity") in
-      (FuncResolve containsIdentity [] #()) "$a0" "$a1"
-      then continue: #()
-      else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType iammodel.IdentityID] "missing") in
-      let: "$a1" := ((let: "$sl0" := (![iammodel.IdentityID] "identity") in
-      CompositeLiteral (go.SliceType iammodel.IdentityID) (LiteralValue [KeyedElement None (ElementExpression iammodel.IdentityID "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType iammodel.IdentityID] #()) "$a0" "$a1") in
-      do:  ("missing" <-[go.SliceType iammodel.IdentityID] "$r0")));;;
+    let: "$a1" := (![go.SliceType iammodel.IdentityID] "current") in
+    (FuncResolve missingIdentities [] #()) "$a0" "$a1") in
+    do:  ("missing" <-[go.SliceType iammodel.IdentityID] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType iammodel.IdentityID] "missing") in
     (FuncResolve go.len [go.SliceType iammodel.IdentityID] #()) "$a0") =⟨go.int⟩ #(W64 0))
     then return: (Convert go.untyped_nil go.error UntypedNil)
@@ -140,7 +128,7 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: example.go:48:6 *)
+(* go: example.go:42:6 *)
 Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identities" "policies" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -182,7 +170,7 @@ Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
       else do:  #())));;;
     return: (![go.SliceType iammodel.IdentityID] "matchingIdentities")).
 
-(* go: example.go:62:6 *)
+(* go: example.go:56:6 *)
 Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "policyIDs" "policies" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -210,7 +198,7 @@ Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       else do:  #())));;;
     return: (#false)).
 
-(* go: example.go:76:6 *)
+(* go: example.go:70:6 *)
 Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identities" "policies" "identity" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -249,7 +237,37 @@ Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       else do:  #())));;;
     return: (![go.SliceType iammodel.PolicyID] "matchingPolicyIDs")).
 
-(* go: example.go:92:6 *)
+(* go: example.go:86:6 *)
+Definition missingIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "desired" "current",
+    exception_do (let: "current" := (GoAlloc (go.SliceType iammodel.IdentityID) "current") in
+    let: "desired" := (GoAlloc (go.MapType iammodel.IdentityID (go.StructType [
+
+    ])) "desired") in
+    let: "missing" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
+    let: "$r0" := ((FuncResolve go.make2 [go.SliceType iammodel.IdentityID] #()) #(W64 0)) in
+    do:  ("missing" <-[go.SliceType iammodel.IdentityID] "$r0");;;
+    let: "$range" := (![go.MapType iammodel.IdentityID (go.StructType [
+
+    ])] "desired") in
+    (let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
+    map.for_range iammodel.IdentityID (go.StructType [
+
+    ]) "$range" (λ: "$key" "value",
+      do:  ("identity" <-[iammodel.IdentityID] "$key");;;
+      (if: let: "$a0" := (![go.SliceType iammodel.IdentityID] "current") in
+      let: "$a1" := (![iammodel.IdentityID] "identity") in
+      (FuncResolve containsIdentity [] #()) "$a0" "$a1"
+      then continue: #()
+      else do:  #());;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType iammodel.IdentityID] "missing") in
+      let: "$a1" := ((let: "$sl0" := (![iammodel.IdentityID] "identity") in
+      CompositeLiteral (go.SliceType iammodel.IdentityID) (LiteralValue [KeyedElement None (ElementExpression iammodel.IdentityID "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType iammodel.IdentityID] #()) "$a0" "$a1") in
+      do:  ("missing" <-[go.SliceType iammodel.IdentityID] "$r0")));;;
+    return: (![go.SliceType iammodel.IdentityID] "missing")).
+
+(* go: example.go:100:6 *)
 Definition containsIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identities" "target",
     exception_do (let: "target" := (GoAlloc iammodel.IdentityID "target") in
@@ -281,6 +299,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] identitiesWithPolicyForResource_unfold :: FuncUnfold identitiesWithPolicyForResource [] (identitiesWithPolicyForResourceⁱᵐᵖˡ);
   #[global] hasPolicyForResource_unfold :: FuncUnfold hasPolicyForResource [] (hasPolicyForResourceⁱᵐᵖˡ);
   #[global] policiesForResource_unfold :: FuncUnfold policiesForResource [] (policiesForResourceⁱᵐᵖˡ);
+  #[global] missingIdentities_unfold :: FuncUnfold missingIdentities [] (missingIdentitiesⁱᵐᵖˡ);
   #[global] containsIdentity_unfold :: FuncUnfold containsIdentity [] (containsIdentityⁱᵐᵖˡ);
   #[global] import_iammodel_Assumption :: iammodel.Assumptions;
 }.

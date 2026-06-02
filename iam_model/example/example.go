@@ -20,13 +20,7 @@ func ReconcileIdentityAccess(desired map[iammodel.IdentityID]struct{}, resource 
 		}
 	}
 
-	missing := make([]iammodel.IdentityID, 0)
-	for identity := range desired {
-		if containsIdentity(current, identity) {
-			continue
-		}
-		missing = append(missing, identity)
-	}
+	missing := missingIdentities(desired, current)
 
 	if len(missing) == 0 {
 		return nil
@@ -87,6 +81,20 @@ func policiesForResource(
 		}
 	}
 	return matchingPolicyIDs
+}
+
+func missingIdentities(
+	desired map[iammodel.IdentityID]struct{},
+	current []iammodel.IdentityID,
+) []iammodel.IdentityID {
+	missing := make([]iammodel.IdentityID, 0)
+	for identity := range desired {
+		if containsIdentity(current, identity) {
+			continue
+		}
+		missing = append(missing, identity)
+	}
+	return missing
 }
 
 func containsIdentity(identities []iammodel.IdentityID, target iammodel.IdentityID) bool {
