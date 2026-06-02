@@ -217,6 +217,8 @@ Lemma wp_identitiesWithPolicyForResource
           attached_policies_for_resource policies policy_ids resource ≠ ∅)
           abs_identities) ⌝
   }}}.
+(* FIXME: Proving this needs reusable map.for_range support, including nested
+   map iteration through hasPolicyForResource. *)
 Proof. Admitted.
 
 Lemma wp_policiesForResource
@@ -245,6 +247,8 @@ Lemma wp_policiesForResource
         attached_policies_for_resource policies
           (policy_ids_for_identity abs_identities identity) resource ⌝
   }}}.
+(* FIXME: Proving this needs reusable map.for_range support for enumerating
+   the selected identity's policy-id map. *)
 Proof. Admitted.
 
 Lemma wp_missingIdentities
@@ -266,6 +270,8 @@ Lemma wp_missingIdentities
         list_to_set (C:=gset iammodel.IdentityID.t) missing =
         dom desired ∖ list_to_set (C:=gset iammodel.IdentityID.t) current ⌝
   }}}.
+(* FIXME: Proving this needs reusable map.for_range support for enumerating
+   the desired-identity map while preserving key-set and NoDup facts. *)
 Proof. Admitted.
 
 Lemma wp_ReconcileIdentityAccess
