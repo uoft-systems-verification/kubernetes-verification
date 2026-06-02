@@ -123,12 +123,7 @@ Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       "$oldf" #()
       )));;;
     let: "identities" := (GoAlloc (go.SliceType IdentityID) (GoZeroVal (go.SliceType IdentityID) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType IdentityID] #()) #(W64 0) (let: "$a0" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-    ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
-    (FuncResolve go.len [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
-
-     ]))] #()) "$a0")) in
+    let: "$r0" := ((FuncResolve go.make2 [go.SliceType IdentityID] #()) #(W64 0)) in
     do:  ("identities" <-[go.SliceType IdentityID] "$r0");;;
     let: "$range" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 

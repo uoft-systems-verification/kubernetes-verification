@@ -80,7 +80,7 @@ func (s *State) ListIdentities() []IdentityID {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	identities := make([]IdentityID, 0, len(s.identities))
+	identities := make([]IdentityID, 0)
 	for identity := range s.identities {
 		identities = append(identities, identity)
 	}

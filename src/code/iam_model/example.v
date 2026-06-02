@@ -21,7 +21,7 @@ Definition containsIdentity {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_
 (* ReconcileIdentityAccess ensures that the identity-based policies for resource
    grant access to exactly the identities in desired.
 
-   go: identity_access.go:7:6 *)
+   go: example.go:7:6 *)
 Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "desired" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -132,7 +132,7 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: identity_access.go:53:6 *)
+(* go: example.go:53:6 *)
 Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -166,7 +166,7 @@ Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
       else do:  #())));;;
     return: (![go.SliceType iammodel.IdentityID] "identities", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: identity_access.go:67:6 *)
+(* go: example.go:67:6 *)
 Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identity" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -186,7 +186,7 @@ Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     return: ((let: "$a0" := (![go.SliceType iammodel.PolicyID] "policyIDs") in
      (FuncResolve go.len [go.SliceType iammodel.PolicyID] #()) "$a0") ≠⟨go.int⟩ #(W64 0), Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: identity_access.go:75:6 *)
+(* go: example.go:75:6 *)
 Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identity" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
@@ -231,7 +231,7 @@ Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       else do:  #())));;;
     return: (![go.SliceType iammodel.PolicyID] "matchingPolicyIDs", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: identity_access.go:93:6 *)
+(* go: example.go:93:6 *)
 Definition containsIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identities" "target",
     exception_do (let: "target" := (GoAlloc iammodel.IdentityID "target") in

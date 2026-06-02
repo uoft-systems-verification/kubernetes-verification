@@ -15,6 +15,18 @@ Local Set Default Proof Using "All".
 
 #[global] Instance IdentityID_into_val_inj : go.IntoValInj iammodel.IdentityID.t := _.
 
+#[global] Instance PolicyID_into_val_typed :
+  IntoValTypedUnderlying iammodel.PolicyID.t iammodel.PolicyIDⁱᵐᵖˡ := _.
+
+#[global] Instance IdentityID_into_val_typed :
+  IntoValTypedUnderlying iammodel.IdentityID.t iammodel.IdentityIDⁱᵐᵖˡ := _.
+
+#[global] Instance PolicyID_into_val_typed_named :
+  IntoValTyped iammodel.PolicyID.t iammodel.PolicyID := _.
+
+#[global] Instance IdentityID_into_val_typed_named :
+  IntoValTyped iammodel.IdentityID.t iammodel.IdentityID := _.
+
 #[global] Instance PolicyID_safe_map_key policy_id :
   SafeMapKey (K:=iammodel.PolicyID.t) iammodel.PolicyID policy_id.
 Proof.

@@ -92,6 +92,13 @@ Definition resource_count_refs
   kmap (M1:=gmap iammodel.ResourceName.t) (M2:=gmap IamRef.t)
     IamRef.ResourceRef resources.
 
+Lemma resource_count_refs_lookup resources resource :
+  resource_count_refs resources !! IamRef.ResourceRef resource =
+  resources !! resource.
+Proof.
+  unfold resource_count_refs. rewrite lookup_kmap. done.
+Qed.
+
 Definition attachment_ref_counts
     (identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
     (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t)
@@ -266,7 +273,7 @@ Proof.
   apply policy_resource_elem with policy_id. exact Hpolicy.
 Qed.
 
-Local Lemma resources_for_identity_counts_lookup_default
+Lemma resources_for_identity_counts_lookup_default
     policies policy_ids resource :
   default 0%nat (resources_for_identity_counts policies policy_ids !! resource) =
   size (attached_policies_for_resource policies policy_ids resource).
