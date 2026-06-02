@@ -87,6 +87,35 @@ func (s *State) ListIdentities() []IdentityID {
 	return identities
 }
 
+// Snapshot returns copies of the identity attachment map and the policy
+// document map.
+func (s *State) Snapshot() (map[IdentityID]map[PolicyID]struct{}, map[PolicyID]IdentityPolicy) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return copyIdentities(s.identities), copyPolicies(s.policies)
+}
+
+func copyIdentities(src map[IdentityID]map[PolicyID]struct{}) map[IdentityID]map[PolicyID]struct{} {
+	identities := make(map[IdentityID]map[PolicyID]struct{})
+	for identity, policyIDs := range src {
+		policyIDsCopy := make(map[PolicyID]struct{})
+		for policyID := range policyIDs {
+			policyIDsCopy[policyID] = struct{}{}
+		}
+		identities[identity] = policyIDsCopy
+	}
+	return identities
+}
+
+func copyPolicies(src map[PolicyID]IdentityPolicy) map[PolicyID]IdentityPolicy {
+	policies := make(map[PolicyID]IdentityPolicy)
+	for policyID, policy := range src {
+		policies[policyID] = policy
+	}
+	return policies
+}
+
 // CreatePolicy creates a standalone identity-based Allow policy document.
 // AWS SDK analogue: CreatePolicy.
 func (s *State) CreatePolicy(resource ResourceName) (PolicyID, error) {

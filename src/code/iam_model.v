@@ -41,6 +41,10 @@ Definition ModelState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string
 
 Definition NewState {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.NewState"%go.
 
+Definition copyIdentities {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.copyIdentities"%go.
+
+Definition copyPolicies {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.copyPolicies"%go.
+
 Definition generatePolicyID {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "iam_model.generatePolicyID"%go.
 
 (* go: state.go:51:6 *)
@@ -140,10 +144,115 @@ Definition State__ListIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       do:  ("identities" <-[go.SliceType IdentityID] "$r0")));;;
     return: (![go.SliceType IdentityID] "identities")).
 
+(* Snapshot returns copies of the identity attachment map and the policy
+   document map.
+
+   go: state.go:92:17 *)
+Definition State__Snapshotⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" <>,
+    with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
+    (λ: <>,
+      "$f" #();;
+      "$oldf" #()
+      )));;;
+    return: (let: "$a0" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+     ]))] (StructFieldRef State "identities"%go (![go.PointerType State] "s"))) in
+     (FuncResolve copyIdentities [] #()) "$a0", let: "$a0" := (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) in
+     (FuncResolve copyPolicies [] #()) "$a0")).
+
+(* go: state.go:99:6 *)
+Definition copyIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "src",
+    exception_do (let: "src" := (GoAlloc (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+    ]))) "src") in
+    let: "identities" := (GoAlloc (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+    ]))) (GoZeroVal (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+    ]))) #())) in
+    let: "$r0" := ((FuncResolve go.make1 [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+     ]))] #()) #()) in
+    do:  ("identities" <-[go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+    ]))] "$r0");;;
+    let: "$range" := (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+    ]))] "src") in
+    (let: "policyIDs" := (GoAlloc (go.MapType PolicyID (go.StructType [
+
+    ])) (GoZeroVal (go.MapType PolicyID (go.StructType [
+
+    ])) #())) in
+    let: "identity" := (GoAlloc IdentityID (GoZeroVal IdentityID #())) in
+    map.for_range IdentityID (go.MapType PolicyID (go.StructType [
+
+    ])) "$range" (λ: "$key" "value",
+      do:  ("policyIDs" <-[go.MapType PolicyID (go.StructType [
+
+      ])] "$value");;;
+      do:  ("identity" <-[IdentityID] "$key");;;
+      let: "policyIDsCopy" := (GoAlloc (go.MapType PolicyID (go.StructType [
+
+      ])) (GoZeroVal (go.MapType PolicyID (go.StructType [
+
+      ])) #())) in
+      let: "$r0" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
+
+       ])] #()) #()) in
+      do:  ("policyIDsCopy" <-[go.MapType PolicyID (go.StructType [
+
+      ])] "$r0");;;
+      let: "$range" := (![go.MapType PolicyID (go.StructType [
+
+      ])] "policyIDs") in
+      (let: "policyID" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
+      map.for_range PolicyID (go.StructType [
+
+      ]) "$range" (λ: "$key" "value",
+        do:  ("policyID" <-[PolicyID] "$key");;;
+        let: "$r0" := (CompositeLiteral (go.StructType [
+
+        ]) (LiteralValue [])) in
+        do:  (map.insert PolicyID (![go.MapType PolicyID (go.StructType [
+
+        ])] "policyIDsCopy") (![PolicyID] "policyID") "$r0")));;;
+      let: "$r0" := (![go.MapType PolicyID (go.StructType [
+
+      ])] "policyIDsCopy") in
+      do:  (map.insert IdentityID (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+      ]))] "identities") (![IdentityID] "identity") "$r0")));;;
+    return: (![go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+
+     ]))] "identities")).
+
+(* go: state.go:111:6 *)
+Definition copyPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "src",
+    exception_do (let: "src" := (GoAlloc (go.MapType PolicyID IdentityPolicy) "src") in
+    let: "policies" := (GoAlloc (go.MapType PolicyID IdentityPolicy) (GoZeroVal (go.MapType PolicyID IdentityPolicy) #())) in
+    let: "$r0" := ((FuncResolve go.make1 [go.MapType PolicyID IdentityPolicy] #()) #()) in
+    do:  ("policies" <-[go.MapType PolicyID IdentityPolicy] "$r0");;;
+    let: "$range" := (![go.MapType PolicyID IdentityPolicy] "src") in
+    (let: "policy" := (GoAlloc IdentityPolicy (GoZeroVal IdentityPolicy #())) in
+    let: "policyID" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
+    map.for_range PolicyID IdentityPolicy "$range" (λ: "$key" "value",
+      do:  ("policy" <-[IdentityPolicy] "$value");;;
+      do:  ("policyID" <-[PolicyID] "$key");;;
+      let: "$r0" := (![IdentityPolicy] "policy") in
+      do:  (map.insert PolicyID (![go.MapType PolicyID IdentityPolicy] "policies") (![PolicyID] "policyID") "$r0")));;;
+    return: (![go.MapType PolicyID IdentityPolicy] "policies")).
+
 (* CreatePolicy creates a standalone identity-based Allow policy document.
    AWS SDK analogue: CreatePolicy.
 
-   go: state.go:92:17 *)
+   go: state.go:121:17 *)
 Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "resource",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -171,7 +280,7 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  (map.insert PolicyID (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "id") "$r0");;;
     return: (![PolicyID] "id", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: state.go:108:6 *)
+(* go: state.go:137:6 *)
 Definition generatePolicyIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     exception_do (return: (let: "$a0" := #"policy-%d"%go in
@@ -179,7 +288,7 @@ Definition generatePolicyIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
      CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
      (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")).
 
-(* go: state.go:112:17 *)
+(* go: state.go:141:17 *)
 Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -211,7 +320,7 @@ Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go
 (* AttachIdentityPolicy attaches an existing policy to an identity.
    AWS SDK analogue: AttachUserPolicy.
 
-   go: state.go:124:17 *)
+   go: state.go:153:17 *)
 Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -285,7 +394,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* ListIdentityPolicies returns policy IDs attached directly to identity.
    AWS SDK analogue: ListAttachedUserPolicies.
 
-   go: state.go:145:17 *)
+   go: state.go:174:17 *)
 Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -343,7 +452,7 @@ Definition State__ListIdentityPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 (* GetIdentityPolicy returns the simplified attached policy object for id.
    AWS SDK analogue: GetPolicy followed by GetPolicyVersion.
 
-   go: state.go:163:17 *)
+   go: state.go:192:17 *)
 Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "id",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -375,7 +484,7 @@ Definition State__GetIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 (* DetachIdentityPolicy detaches a policy from an identity without deleting the policy.
    AWS SDK analogue: DetachUserPolicy.
 
-   go: state.go:176:17 *)
+   go: state.go:205:17 *)
 Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "identity" "policyID",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -614,6 +723,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_GetIdentityPolicy_unfold :: MethodUnfold (go.PointerType (State)) "GetIdentityPolicy" (State__GetIdentityPolicyⁱᵐᵖˡ);
   #[global] State'ptr_ListIdentities_unfold :: MethodUnfold (go.PointerType (State)) "ListIdentities" (State__ListIdentitiesⁱᵐᵖˡ);
   #[global] State'ptr_ListIdentityPolicies_unfold :: MethodUnfold (go.PointerType (State)) "ListIdentityPolicies" (State__ListIdentityPoliciesⁱᵐᵖˡ);
+  #[global] State'ptr_Snapshot_unfold :: MethodUnfold (go.PointerType (State)) "Snapshot" (State__Snapshotⁱᵐᵖˡ);
   #[global] State'ptr_generateNewPolicyIDAndUpdate_unfold :: MethodUnfold (go.PointerType (State)) "generateNewPolicyIDAndUpdate" (State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ);
 }.
 
@@ -625,6 +735,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] IdentityPolicy_instance :: IdentityPolicy_Assumptions;
   #[global] State_instance :: State_Assumptions;
   #[global] NewState_unfold :: FuncUnfold NewState [] (NewStateⁱᵐᵖˡ);
+  #[global] copyIdentities_unfold :: FuncUnfold copyIdentities [] (copyIdentitiesⁱᵐᵖˡ);
+  #[global] copyPolicies_unfold :: FuncUnfold copyPolicies [] (copyPoliciesⁱᵐᵖˡ);
   #[global] generatePolicyID_unfold :: FuncUnfold generatePolicyID [] (generatePolicyIDⁱᵐᵖˡ);
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_fmt_Assumption :: fmt.Assumptions;

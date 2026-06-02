@@ -39,6 +39,43 @@ Proof.
   constructor. iIntros (stk E Ψ) "HΨ". wp_auto. done.
 Qed.
 
+Lemma wp_copyIdentities
+    (src : map.t)
+    (phys_identities : gmap iammodel.IdentityID.t map.t)
+    (abs_identities : gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
+    dq_src dq_inner :
+  {{{ "Hsrc" ∷ src ↦${dq_src} phys_identities ∗
+      "Hinner" ∷ ([∗ map] policy_ids_l; policy_ids ∈
+        phys_identities; abs_identities,
+        policy_ids_l ↦${dq_inner} policy_ids)
+  }}}
+    @! iammodel.copyIdentities #src
+  {{{ dst phys_identities_copy, RET #dst;
+      "Hsrc" ∷ src ↦${dq_src} phys_identities ∗
+      "Hinner" ∷ ([∗ map] policy_ids_l; policy_ids ∈
+        phys_identities; abs_identities,
+        policy_ids_l ↦${dq_inner} policy_ids) ∗
+      "Hdst" ∷ dst ↦$ phys_identities_copy ∗
+      "Hdst_inner" ∷ ([∗ map] policy_ids_l; policy_ids ∈
+        phys_identities_copy; abs_identities,
+        policy_ids_l ↦$ policy_ids)
+  }}}.
+(* FIXME: proving this requires map.for_range support for callbacks that use
+   the ranged-over map value. *)
+Proof. Admitted.
+
+Lemma wp_copyPolicies
+    (src : map.t) (policies : gmap iammodel.PolicyID.t iammodel.IdentityPolicy.t) dq :
+  {{{ "Hsrc" ∷ src ↦${dq} policies }}}
+    @! iammodel.copyPolicies #src
+  {{{ dst, RET #dst;
+      "Hsrc" ∷ src ↦${dq} policies ∗
+      "Hdst" ∷ dst ↦$ policies
+  }}}.
+(* FIXME: proving this requires map.for_range support for callbacks that use
+   the ranged-over map value. *)
+Proof. Admitted.
+
 Lemma wp_generatePolicyID :
   {{{ True }}}
     @! iammodel.generatePolicyID #()

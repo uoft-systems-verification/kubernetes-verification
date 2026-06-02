@@ -28,17 +28,27 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     let: "desired" := (GoAlloc (go.MapType iammodel.IdentityID (go.StructType [
 
     ])) "desired") in
-    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "current" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.ResourceName] "resource") in
-    (FuncResolve identitiesWithPolicyForResource [] #()) "$a0") in
+    let: "policies" := (GoAlloc (go.MapType iammodel.PolicyID iammodel.IdentityPolicy) (GoZeroVal (go.MapType iammodel.PolicyID iammodel.IdentityPolicy) #())) in
+    let: "identities" := (GoAlloc (go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))) (GoZeroVal (go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))) #())) in
+    let: ("$ret0", "$ret1") := ((MethodResolve (go.PointerType iammodel.State) "Snapshot"%go (![go.PointerType iammodel.State] (GlobalVarAddr iammodel.ModelState #()))) #()) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
+    do:  ("identities" <-[go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))] "$r0");;;
+    do:  ("policies" <-[go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "$r1");;;
+    let: "current" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
+    let: "$r0" := (let: "$a0" := (![go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))] "identities") in
+    let: "$a1" := (![go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "policies") in
+    let: "$a2" := (![iammodel.ResourceName] "resource") in
+    (FuncResolve identitiesWithPolicyForResource [] #()) "$a0" "$a1" "$a2") in
     do:  ("current" <-[go.SliceType iammodel.IdentityID] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (![go.error] "err")
-    else do:  #());;;
     let: "$range" := (![go.SliceType iammodel.IdentityID] "current") in
     (let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
     slice.for_range iammodel.IdentityID "$range" (λ: "$key" "$value",
@@ -57,18 +67,15 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       (if: ![go.bool] "keep"
       then continue: #()
       else do:  #()));;;
-      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "policyIDs" := (GoAlloc (go.SliceType iammodel.PolicyID) (GoZeroVal (go.SliceType iammodel.PolicyID) #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.IdentityID] "identity") in
-      let: "$a1" := (![iammodel.ResourceName] "resource") in
-      (FuncResolve policiesForResource [] #()) "$a0" "$a1") in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
+      let: "$r0" := (let: "$a0" := (![go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+      ]))] "identities") in
+      let: "$a1" := (![go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "policies") in
+      let: "$a2" := (![iammodel.IdentityID] "identity") in
+      let: "$a3" := (![iammodel.ResourceName] "resource") in
+      (FuncResolve policiesForResource [] #()) "$a0" "$a1" "$a2" "$a3") in
       do:  ("policyIDs" <-[go.SliceType iammodel.PolicyID] "$r0");;;
-      do:  ("err" <-[go.error] "$r1");;;
-      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (![go.error] "err")
-      else do:  #());;;
       let: "$range" := (![go.SliceType iammodel.PolicyID] "policyIDs") in
       (let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
       slice.for_range iammodel.PolicyID "$range" (λ: "$key" "$value",
@@ -107,6 +114,7 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     (FuncResolve go.len [go.SliceType iammodel.IdentityID] #()) "$a0") =⟨go.int⟩ #(W64 0))
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.ResourceName] "resource") in
     (MethodResolve (go.PointerType iammodel.State) "CreatePolicy"%go (![go.PointerType iammodel.State] (GlobalVarAddr iammodel.ModelState #()))) "$a0") in
@@ -132,96 +140,106 @@ Definition ReconcileIdentityAccessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: example.go:53:6 *)
+(* go: example.go:48:6 *)
 Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "resource",
+  λ: "identities" "policies" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
-    let: "identities" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
+    let: "policies" := (GoAlloc (go.MapType iammodel.PolicyID iammodel.IdentityPolicy) "policies") in
+    let: "identities" := (GoAlloc (go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))) "identities") in
+    let: "matchingIdentities" := (GoAlloc (go.SliceType iammodel.IdentityID) (GoZeroVal (go.SliceType iammodel.IdentityID) #())) in
     let: "$r0" := ((FuncResolve go.make2 [go.SliceType iammodel.IdentityID] #()) #(W64 0)) in
-    do:  ("identities" <-[go.SliceType iammodel.IdentityID] "$r0");;;
-    let: "$range" := ((MethodResolve (go.PointerType iammodel.State) "ListIdentities"%go (![go.PointerType iammodel.State] (GlobalVarAddr iammodel.ModelState #()))) #()) in
-    (let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
-    slice.for_range iammodel.IdentityID "$range" (λ: "$key" "$value",
-      do:  ("identity" <-[iammodel.IdentityID] "$value");;;
-      do:  "$key";;;
-      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "hasPolicy" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.IdentityID] "identity") in
-      let: "$a1" := (![iammodel.ResourceName] "resource") in
-      (FuncResolve hasPolicyForResource [] #()) "$a0" "$a1") in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  ("hasPolicy" <-[go.bool] "$r0");;;
-      do:  ("err" <-[go.error] "$r1");;;
-      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (Convert go.untyped_nil (go.SliceType iammodel.IdentityID) UntypedNil, ![go.error] "err")
-      else do:  #());;;
-      (if: ![go.bool] "hasPolicy"
+    do:  ("matchingIdentities" <-[go.SliceType iammodel.IdentityID] "$r0");;;
+    let: "$range" := (![go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))] "identities") in
+    (let: "policyIDs" := (GoAlloc (go.MapType iammodel.PolicyID (go.StructType [
+
+    ])) (GoZeroVal (go.MapType iammodel.PolicyID (go.StructType [
+
+    ])) #())) in
+    let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
+    map.for_range iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ])) "$range" (λ: "$key" "value",
+      do:  ("policyIDs" <-[go.MapType iammodel.PolicyID (go.StructType [
+
+      ])] "$value");;;
+      do:  ("identity" <-[iammodel.IdentityID] "$key");;;
+      (if: let: "$a0" := (![go.MapType iammodel.PolicyID (go.StructType [
+
+      ])] "policyIDs") in
+      let: "$a1" := (![go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "policies") in
+      let: "$a2" := (![iammodel.ResourceName] "resource") in
+      (FuncResolve hasPolicyForResource [] #()) "$a0" "$a1" "$a2"
       then
-        let: "$r0" := (let: "$a0" := (![go.SliceType iammodel.IdentityID] "identities") in
+        let: "$r0" := (let: "$a0" := (![go.SliceType iammodel.IdentityID] "matchingIdentities") in
         let: "$a1" := ((let: "$sl0" := (![iammodel.IdentityID] "identity") in
         CompositeLiteral (go.SliceType iammodel.IdentityID) (LiteralValue [KeyedElement None (ElementExpression iammodel.IdentityID "$sl0")]))) in
         (FuncResolve go.append [go.SliceType iammodel.IdentityID] #()) "$a0" "$a1") in
-        do:  ("identities" <-[go.SliceType iammodel.IdentityID] "$r0")
+        do:  ("matchingIdentities" <-[go.SliceType iammodel.IdentityID] "$r0")
       else do:  #())));;;
-    return: (![go.SliceType iammodel.IdentityID] "identities", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.SliceType iammodel.IdentityID] "matchingIdentities")).
 
-(* go: example.go:67:6 *)
+(* go: example.go:62:6 *)
 Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "identity" "resource",
+  λ: "policyIDs" "policies" "resource",
     exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
-    let: "identity" := (GoAlloc iammodel.IdentityID "identity") in
-    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "policyIDs" := (GoAlloc (go.SliceType iammodel.PolicyID) (GoZeroVal (go.SliceType iammodel.PolicyID) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.IdentityID] "identity") in
-    let: "$a1" := (![iammodel.ResourceName] "resource") in
-    (FuncResolve policiesForResource [] #()) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("policyIDs" <-[go.SliceType iammodel.PolicyID] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (#false, ![go.error] "err")
-    else do:  #());;;
-    return: ((let: "$a0" := (![go.SliceType iammodel.PolicyID] "policyIDs") in
-     (FuncResolve go.len [go.SliceType iammodel.PolicyID] #()) "$a0") ≠⟨go.int⟩ #(W64 0), Convert go.untyped_nil go.error UntypedNil)).
+    let: "policies" := (GoAlloc (go.MapType iammodel.PolicyID iammodel.IdentityPolicy) "policies") in
+    let: "policyIDs" := (GoAlloc (go.MapType iammodel.PolicyID (go.StructType [
 
-(* go: example.go:75:6 *)
-Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "identity" "resource",
-    exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
-    let: "identity" := (GoAlloc iammodel.IdentityID "identity") in
-    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "policyIDs" := (GoAlloc (go.SliceType iammodel.PolicyID) (GoZeroVal (go.SliceType iammodel.PolicyID) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.IdentityID] "identity") in
-    (MethodResolve (go.PointerType iammodel.State) "ListIdentityPolicies"%go (![go.PointerType iammodel.State] (GlobalVarAddr iammodel.ModelState #()))) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("policyIDs" <-[go.SliceType iammodel.PolicyID] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType iammodel.PolicyID) UntypedNil, ![go.error] "err")
-    else do:  #());;;
-    let: "matchingPolicyIDs" := (GoAlloc (go.SliceType iammodel.PolicyID) (GoZeroVal (go.SliceType iammodel.PolicyID) #())) in
-    let: "$r0" := ((FuncResolve go.make2 [go.SliceType iammodel.PolicyID] #()) #(W64 0)) in
-    do:  ("matchingPolicyIDs" <-[go.SliceType iammodel.PolicyID] "$r0");;;
-    let: "$range" := (![go.SliceType iammodel.PolicyID] "policyIDs") in
+    ])) "policyIDs") in
+    let: "$range" := (![go.MapType iammodel.PolicyID (go.StructType [
+
+    ])] "policyIDs") in
     (let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
-    slice.for_range iammodel.PolicyID "$range" (λ: "$key" "$value",
-      do:  ("policyID" <-[iammodel.PolicyID] "$value");;;
-      do:  "$key";;;
-      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    map.for_range iammodel.PolicyID (go.StructType [
+
+    ]) "$range" (λ: "$key" "value",
+      do:  ("policyID" <-[iammodel.PolicyID] "$key");;;
+      let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: "policy" := (GoAlloc iammodel.IdentityPolicy (GoZeroVal iammodel.IdentityPolicy #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![iammodel.PolicyID] "policyID") in
-      (MethodResolve (go.PointerType iammodel.State) "GetIdentityPolicy"%go (![go.PointerType iammodel.State] (GlobalVarAddr iammodel.ModelState #()))) "$a0") in
+      let: ("$ret0", "$ret1") := (map.lookup2 iammodel.PolicyID iammodel.IdentityPolicy (![go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "policies") (![iammodel.PolicyID] "policyID")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  ("policy" <-[iammodel.IdentityPolicy] "$r0");;;
-      do:  ("err" <-[go.error] "$r1");;;
-      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (Convert go.untyped_nil (go.SliceType iammodel.PolicyID) UntypedNil, ![go.error] "err")
-      else do:  #());;;
-      (if: Convert go.untyped_bool go.bool ((![iammodel.ResourceName] (StructFieldRef iammodel.IdentityPolicy "Resource"%go "policy")) =⟨iammodel.ResourceName⟩ (![iammodel.ResourceName] "resource"))
+      do:  ("exists" <-[go.bool] "$r1");;;
+      (if: (![go.bool] "exists") && ((![iammodel.ResourceName] (StructFieldRef iammodel.IdentityPolicy "Resource"%go "policy")) =⟨iammodel.ResourceName⟩ (![iammodel.ResourceName] "resource"))
+      then return: (#true)
+      else do:  #())));;;
+    return: (#false)).
+
+(* go: example.go:76:6 *)
+Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "identities" "policies" "identity" "resource",
+    exception_do (let: "resource" := (GoAlloc iammodel.ResourceName "resource") in
+    let: "identity" := (GoAlloc iammodel.IdentityID "identity") in
+    let: "policies" := (GoAlloc (go.MapType iammodel.PolicyID iammodel.IdentityPolicy) "policies") in
+    let: "identities" := (GoAlloc (go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))) "identities") in
+    let: "matchingPolicyIDs" := (GoAlloc (go.SliceType iammodel.PolicyID) (GoZeroVal (go.SliceType iammodel.PolicyID) #())) in
+    let: "$r0" := ((FuncResolve go.make2 [go.SliceType iammodel.PolicyID] #()) #(W64 0)) in
+    do:  ("matchingPolicyIDs" <-[go.SliceType iammodel.PolicyID] "$r0");;;
+    let: "$range" := (map.lookup1 iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ])) (![go.MapType iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
+
+    ]))] "identities") (![iammodel.IdentityID] "identity")) in
+    (let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
+    map.for_range iammodel.PolicyID (go.StructType [
+
+    ]) "$range" (λ: "$key" "value",
+      do:  ("policyID" <-[iammodel.PolicyID] "$key");;;
+      let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+      let: "policy" := (GoAlloc iammodel.IdentityPolicy (GoZeroVal iammodel.IdentityPolicy #())) in
+      let: ("$ret0", "$ret1") := (map.lookup2 iammodel.PolicyID iammodel.IdentityPolicy (![go.MapType iammodel.PolicyID iammodel.IdentityPolicy] "policies") (![iammodel.PolicyID] "policyID")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("policy" <-[iammodel.IdentityPolicy] "$r0");;;
+      do:  ("exists" <-[go.bool] "$r1");;;
+      (if: (![go.bool] "exists") && ((![iammodel.ResourceName] (StructFieldRef iammodel.IdentityPolicy "Resource"%go "policy")) =⟨iammodel.ResourceName⟩ (![iammodel.ResourceName] "resource"))
       then
         let: "$r0" := (let: "$a0" := (![go.SliceType iammodel.PolicyID] "matchingPolicyIDs") in
         let: "$a1" := ((let: "$sl0" := (![iammodel.PolicyID] "policyID") in
@@ -229,9 +247,9 @@ Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
         (FuncResolve go.append [go.SliceType iammodel.PolicyID] #()) "$a0" "$a1") in
         do:  ("matchingPolicyIDs" <-[go.SliceType iammodel.PolicyID] "$r0")
       else do:  #())));;;
-    return: (![go.SliceType iammodel.PolicyID] "matchingPolicyIDs", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.SliceType iammodel.PolicyID] "matchingPolicyIDs")).
 
-(* go: example.go:93:6 *)
+(* go: example.go:92:6 *)
 Definition containsIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "identities" "target",
     exception_do (let: "target" := (GoAlloc iammodel.IdentityID "target") in

@@ -5,19 +5,14 @@ import iammodel "iam_model"
 // ReconcileIdentityAccess ensures that the identity-based policies for resource
 // grant access to exactly the identities in desired.
 func ReconcileIdentityAccess(desired map[iammodel.IdentityID]struct{}, resource iammodel.ResourceName) error {
-	current, err := identitiesWithPolicyForResource(resource)
-	if err != nil {
-		return err
-	}
+	identities, policies := iammodel.ModelState.Snapshot()
+	current := identitiesWithPolicyForResource(identities, policies, resource)
 
 	for _, identity := range current {
 		if _, keep := desired[identity]; keep {
 			continue
 		}
-		policyIDs, err := policiesForResource(identity, resource)
-		if err != nil {
-			return err
-		}
+		policyIDs := policiesForResource(identities, policies, identity, resource)
 		for _, policyID := range policyIDs {
 			if err := iammodel.ModelState.DetachIdentityPolicy(identity, policyID); err != nil {
 				return err
@@ -50,44 +45,48 @@ func ReconcileIdentityAccess(desired map[iammodel.IdentityID]struct{}, resource 
 	return nil
 }
 
-func identitiesWithPolicyForResource(resource iammodel.ResourceName) ([]iammodel.IdentityID, error) {
-	identities := make([]iammodel.IdentityID, 0)
-	for _, identity := range iammodel.ModelState.ListIdentities() {
-		hasPolicy, err := hasPolicyForResource(identity, resource)
-		if err != nil {
-			return nil, err
-		}
-		if hasPolicy {
-			identities = append(identities, identity)
+func identitiesWithPolicyForResource(
+	identities map[iammodel.IdentityID]map[iammodel.PolicyID]struct{},
+	policies map[iammodel.PolicyID]iammodel.IdentityPolicy,
+	resource iammodel.ResourceName,
+) []iammodel.IdentityID {
+	matchingIdentities := make([]iammodel.IdentityID, 0)
+	for identity, policyIDs := range identities {
+		if hasPolicyForResource(policyIDs, policies, resource) {
+			matchingIdentities = append(matchingIdentities, identity)
 		}
 	}
-	return identities, nil
+	return matchingIdentities
 }
 
-func hasPolicyForResource(identity iammodel.IdentityID, resource iammodel.ResourceName) (bool, error) {
-	policyIDs, err := policiesForResource(identity, resource)
-	if err != nil {
-		return false, err
+func hasPolicyForResource(
+	policyIDs map[iammodel.PolicyID]struct{},
+	policies map[iammodel.PolicyID]iammodel.IdentityPolicy,
+	resource iammodel.ResourceName,
+) bool {
+	for policyID := range policyIDs {
+		policy, exists := policies[policyID]
+		if exists && policy.Resource == resource {
+			return true
+		}
 	}
-	return len(policyIDs) != 0, nil
+	return false
 }
 
-func policiesForResource(identity iammodel.IdentityID, resource iammodel.ResourceName) ([]iammodel.PolicyID, error) {
-	policyIDs, err := iammodel.ModelState.ListIdentityPolicies(identity)
-	if err != nil {
-		return nil, err
-	}
+func policiesForResource(
+	identities map[iammodel.IdentityID]map[iammodel.PolicyID]struct{},
+	policies map[iammodel.PolicyID]iammodel.IdentityPolicy,
+	identity iammodel.IdentityID,
+	resource iammodel.ResourceName,
+) []iammodel.PolicyID {
 	matchingPolicyIDs := make([]iammodel.PolicyID, 0)
-	for _, policyID := range policyIDs {
-		policy, err := iammodel.ModelState.GetIdentityPolicy(policyID)
-		if err != nil {
-			return nil, err
-		}
-		if policy.Resource == resource {
+	for policyID := range identities[identity] {
+		policy, exists := policies[policyID]
+		if exists && policy.Resource == resource {
 			matchingPolicyIDs = append(matchingPolicyIDs, policyID)
 		}
 	}
-	return matchingPolicyIDs, nil
+	return matchingPolicyIDs
 }
 
 func containsIdentity(identities []iammodel.IdentityID, target iammodel.IdentityID) bool {
