@@ -247,22 +247,9 @@ Proof.
       (abs_identities_i :
         gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
       (last_identity : iammodel.IdentityID.t),
-      "Hdesired" ∷ desired_l ↦$ desired ∗
       "Hattachments" ∷ own_iam_attachments_frag γ resource 1 attachments_i ∗
       "Hidentities" ∷ ([∗ map] identity ↦ policy_ids ∈ abs_identities_i,
         own_iam_identity_frag γ identity 1 policy_ids) ∗
-      "Hpolicies" ∷ ([∗ map] policy_id ↦ policy ∈ policies,
-        own_iam_policy_frag γ policy_id q_policy policy) ∗
-      "resource" ∷ resource_ptr ↦ resource ∗
-      "desired" ∷ desired_ptr ↦ desired_l ∗
-      "policies" ∷ policies_ptr ↦ policies_l ∗
-      "identities" ∷ identities_ptr ↦ identities_l ∗
-      "current" ∷ current_ptr ↦ current_sl ∗
-      "Hsnapshot_identities" ∷ identities_l ↦$ phys_identities ∗
-      "Hsnapshot_identities_inner" ∷ ([∗ map] policy_ids_l; policy_ids ∈
-        phys_identities; snap_abs_identities, policy_ids_l ↦$ policy_ids) ∗
-      "Hsnapshot_policies" ∷ policies_l ↦$ snap_policies ∗
-      "Hcurrent" ∷ current_sl ↦* current ∗
       "identity" ∷ identity_ptr ↦ last_identity ∗
       "i" ∷ i_ptr ↦ i ∗
       "%Hi_bounds" ∷ ⌜
@@ -284,9 +271,7 @@ Proof.
           (drop (Z.to_nat (sint.Z i)) current) →
         attachments_i !! identity = attachments !! identity ⌝
   )%I with
-    "[Hdesired Hattachments Hidentities Hpolicies resource desired
-      policies identities current Hsnapshot_identities
-      Hsnapshot_identities_inner Hsnapshot_policies Hcurrent identity i]"
+    "[Hattachments Hidentities identity i]"
     as "HI".
   { iExists (W64 0), attachments, abs_identities, ""%go.
     iFrame.
@@ -324,6 +309,8 @@ Proof.
     + wp_auto.
       wp_for_post.
       iFrame "HΦ".
+      iFrame "Hdesired resource desired policies identities Hpolicies current
+        Hsnapshot_identities Hsnapshot_identities_inner Hsnapshot_policies Hcurrent".
       iExists (word.add i (W64 1)), attachments_i, abs_identities_i,
         current_identity.
       iFrame.
@@ -443,15 +430,9 @@ Proof.
           (policy_ids_j : gmap iammodel.PolicyID.t unit)
           (last_policy_id : iammodel.PolicyID.t),
         "inner_i" ∷ inner_i_ptr ↦ j ∗
-        "Hpolicy_ids_sl" ∷ policy_ids_sl ↦* policy_id_list ∗
         "policyID" ∷ policyID_ptr ↦ last_policy_id ∗
         "Hattachments" ∷ own_iam_attachments_frag γ resource 1 attachments_j ∗
         "Hidentity" ∷ own_iam_identity_frag γ current_identity 1 policy_ids_j ∗
-        "Hidentities_rest" ∷ ([∗ map] identity↦policy_ids ∈
-          delete current_identity abs_identities_i,
-          own_iam_identity_frag γ identity 1 policy_ids) ∗
-        "Hpolicies" ∷ ([∗ map] policy_id↦policy ∈ policies,
-          own_iam_policy_frag γ policy_id q_policy policy) ∗
         "%Hinner_bounds" ∷ ⌜
           (0 ≤ sint.Z j ≤ Z.of_nat (length policy_id_list))%Z ⌝ ∗
         "%Hpolicy_ids_j" ∷ ⌜ policy_ids_j =
@@ -467,8 +448,7 @@ Proof.
           identity ≠ current_identity →
           attachments_j !! identity = attachments_i !! identity ⌝
       )%I with
-        "[inner_i Hpolicy_ids_sl policyID Hattachments Hidentity
-          Hidentities_rest Hpolicies]" as "Hinner".
+        "[inner_i policyID Hattachments Hidentity]" as "Hinner".
       { iExists (W64 0), attachments_i, current_policy_ids, ""%go.
         iFrame.
         iPureIntro. split_and!.
@@ -561,7 +541,7 @@ Proof.
             as [_|Hnot_lt]; [exact Hattachments_j_current|].
           exfalso. lia. }
         wp_for_post.
-        iFrame "HΦ".
+        iFrame "HΦ Hpolicy_ids_sl Hidentities_rest Hpolicies".
         iFrame.
         iPureIntro. split_and!.
         -- word.
@@ -648,6 +628,8 @@ Proof.
           symmetry. apply take_ge. apply Nat.le_refl. }
         wp_for_post.
         iFrame "HΦ".
+        iFrame "Hdesired resource desired policies identities Hpolicies current
+          Hsnapshot_identities Hsnapshot_identities_inner Hsnapshot_policies Hcurrent".
         iExists (word.add i (W64 1)), attachments_j,
           (<[current_identity:=policy_ids_done]> abs_identities_i),
           current_identity.
@@ -799,12 +781,9 @@ Proof.
           (abs_identities_j :
             gmap iammodel.IdentityID.t (gmap iammodel.PolicyID.t unit))
           (last_identity : iammodel.IdentityID.t),
-        "Hdesired" ∷ desired_l ↦$ desired ∗
         "Hattachments" ∷ own_iam_attachments_frag γ resource 1 attachments_j ∗
         "Hidentities" ∷ ([∗ map] identity↦policy_ids ∈ abs_identities_j,
           own_iam_identity_frag γ identity 1 policy_ids) ∗
-        "Hpolicies" ∷ ([∗ map] policy_id0↦policy ∈ policies,
-          own_iam_policy_frag γ policy_id0 q_policy policy) ∗
         "Hpolicy_new" ∷ own_iam_policy_frag γ policy_id 1
           (iammodel.IdentityPolicy.mk policy_id resource) ∗
         "Hmissing" ∷ missing_sl ↦* missing ∗
@@ -820,7 +799,7 @@ Proof.
         "%Habs_identities_dom_j" ∷ ⌜
           dom abs_identities_j = dom abs_identities ⌝
       )%I with
-        "[Hdesired Hattachments Hidentities Hpolicies Hpolicy_new Hmissing
+        "[Hattachments Hidentities Hpolicy_new Hmissing
           identity i]" as "Hattach".
       { iExists (W64 0), attachments_i, abs_identities_i, ""%go.
         iFrame. iPureIntro. split_and!.
@@ -885,8 +864,8 @@ Proof.
           { apply lookup_delete_eq. }
           iFrame. }
         wp_for_post.
-        iFrame "HΦ Hsnapshot_identities Hsnapshot_identities_inner
-          Hsnapshot_policies Hcurrent policyID".
+        iFrame "HΦ Hdesired Hpolicies Hsnapshot_identities
+          Hsnapshot_identities_inner Hsnapshot_policies Hcurrent policyID".
         iExists (word.add j (W64 1)),
           (<[current_identity:=n_att]> attachments_j),
           (<[current_identity:=<[policy_id:=tt]> policy_ids]> abs_identities_j),
