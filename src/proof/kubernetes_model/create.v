@@ -395,11 +395,11 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
-      "Hown_status" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
-      "Hown_grandchildren" ∷ own_children_frag γ key uid 1 ∅
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -433,11 +433,11 @@ Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_ui
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
-      "Hown_meta" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
-      "Hown_spec" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
-      "Hown_status" ∷ own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
-      "Hown_grandchildren" ∷ own_children_frag γ key uid 1 ∅
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".

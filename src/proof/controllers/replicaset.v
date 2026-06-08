@@ -334,11 +334,11 @@ Proof.
 	      iExact "Hown_children_frag". }
       iIntros (pod_l' pod' key uid) "H". iNamedPrefix "H" "Hcreate_". subst key. subst uid. wp_auto.
 	      iApply wp_for_post_do. wp_auto.
-      iAssert (I) with "[Hi_ptr Hown_pod_meta_frags Hcreate_Hown_meta Hcreate_Hown_children]" as "loop_inv".
+      iAssert (I) with "[Hi_ptr Hown_pod_meta_frags Hcreate_Hown_meta_frag Hcreate_Hown_children_frag]" as "loop_inv".
       { iExists (word.add i (W64 1)), (active_pods' ++ [pod']). iFrame "Hi_ptr".
-        iSplitL "Hown_pod_meta_frags Hcreate_Hown_meta".
+        iSplitL "Hown_pod_meta_frags Hcreate_Hown_meta_frag".
         - rewrite big_sepL_app. simpl. iFrame.
-        - iSplitL "Hcreate_Hown_children".
+        - iSplitL "Hcreate_Hown_children_frag".
             + assert (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods)) ∪ {[PodV.key pod']} =
                 list_to_set (PodV.key <$> ((active_pods' ++ [pod']) ++ inactive_pods)))
                 as ->.

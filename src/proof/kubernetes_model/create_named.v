@@ -22,7 +22,7 @@ Lemma wp_State__create_named_au γ l kind namespace key i kobj parent_key parent
     |} ⌝ ∗
     "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-    "Hown_reserved" ∷ own_reserved_frag γ key ∗
+    "Hown_reserved_frag" ∷ own_reserved_frag γ key ∗
     |={⊤,∅}=> ∃ children,
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ i' kobj' uid,
@@ -95,7 +95,7 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
-  iPoseProof (reserved_keys.frag_elem_of_auth key with "[$Hinv_Hown_reserved] [$Hown_reserved]") as "%Hkey_reserved".
+  iPoseProof (reserved_keys.frag_elem_of_auth key with "[$Hinv_Hown_reserved] [$Hown_reserved_frag]") as "%Hkey_reserved".
   assert (Hkey_not_in_abs : abs_state !! key = None).
   { apply not_elem_of_dom.
     Timeout 10 set_solver.
@@ -241,7 +241,7 @@ Proof.
     apply Huid_fresh. rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     done.
   }
-  iMod (reserved_keys.consume_reserved_key_vs key with "[$Hinv_Hown_reserved] [$Hown_reserved]")
+  iMod (reserved_keys.consume_reserved_key_vs key with "[$Hinv_Hown_reserved] [$Hown_reserved_frag]")
     as "Hinv_Hown_reserved".
   iMod ("Hclose" $! i2 kobj2 generated_uid with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
   { iPureIntro. split_and!.
@@ -364,7 +364,7 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
       |} ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_reserved" ∷ own_reserved_frag γ key ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
@@ -378,16 +378,16 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
-      "Hown_status" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
-      "Hown_grandchildren" ∷ own_children_frag γ key uid 1 ∅
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__create_named_au.
-  iFrame "#". iFrame "%". iFrame "Hdeepown Hown_reserved".
+  iFrame "#". iFrame "%". iFrame "Hdeepown Hown_reserved_frag".
   iApply fupd_mask_intro; [ timeout 10 set_solver | iIntros "Hmask" ].
   iExists children.
   iFrame "Hown_children_frag".
