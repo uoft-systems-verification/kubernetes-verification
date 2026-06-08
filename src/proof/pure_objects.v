@@ -246,8 +246,30 @@ Definition valid_nameless_create ns (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
+Definition valid_named_create ns (m: t) : Prop :=
+  (m.(GenerateName') ≠ ""%go → valid_generate_name m.(GenerateName')) ∧
+  m.(Name') ≠ ""%go ∧
+  valid_name m.(Name') ∧
+  (* The namespace in the meta is either empty or equal to the provided ns *)
+  (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
+  valid_labels m.(Labels') ∧
+  valid_annotations m.(Annotations') ∧
+  valid_owner_references m.(OwnerReferences') ∧
+  valid_finalizers m.(Finalizers') ∧
+  valid_managed_fields m.(ManagedFields').
+
 Definition nameless_created ns m m' : Prop :=
   m'.(Namespace') = ns ∧
+  m'.(GenerateName') = m.(GenerateName') ∧
+  m'.(DeletionTimestamp') = None ∧
+  m'.(Annotations') = m.(Annotations') ∧
+  m'.(Labels') = m.(Labels') ∧
+  m'.(OwnerReferences') = m.(OwnerReferences') ∧
+  m'.(Finalizers') = m.(Finalizers').
+
+Definition named_created ns m m' : Prop :=
+  m'.(Namespace') = ns ∧
+  m'.(Name') = m.(Name') ∧
   m'.(GenerateName') = m.(GenerateName') ∧
   m'.(DeletionTimestamp') = None ∧
   m'.(Annotations') = m.(Annotations') ∧
@@ -1070,6 +1092,13 @@ Definition valid_nameless_create knd ns o : Prop :=
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).
 
+Definition valid_named_create knd ns o : Prop :=
+  knd = kind o ∧
+  valid_typemeta (kind o) (typemeta o) ∧
+  ObjectMetaV.valid_named_create ns (objectmeta o) ∧
+  ObjectSpecV.valid_create (spec o) ∧
+  ObjectStatusV.valid_create (status o).
+
 Definition same_kind (o1 o2 : t) : Prop :=
   match o1, o2 with
   | Pod _, Pod _ => True
@@ -1087,6 +1116,13 @@ Definition nameless_created ns o o' : Prop :=
   same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
   typemeta o = typemeta o' ∧
   ObjectMetaV.nameless_created ns (objectmeta o) (objectmeta o') ∧
+  ObjectSpecV.created (spec o) (spec o') ∧
+  ObjectStatusV.created (status o) (status o').
+
+Definition named_created ns o o' : Prop :=
+  same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
+  typemeta o = typemeta o' ∧
+  ObjectMetaV.named_created ns (objectmeta o) (objectmeta o') ∧
   ObjectSpecV.created (spec o) (spec o') ∧
   ObjectStatusV.created (status o) (status o').
 

@@ -2,7 +2,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.proof Require Export pure_objects.
-From New.proof.kubernetes_model Require Export errors.
+From New.proof.kubernetes_model Require Export inv errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -231,6 +231,10 @@ Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state
       ⌜ new_name ≠ ""%go ⌝ ∗
       ⌜ valid_name new_name ⌝ ∗
       ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
+      ⌜ ∀ kind namespace,
+          ¬ reserved_key_pred {| KKey.Kind' := kind;
+                             KKey.Namespace' := namespace;
+                             KKey.Name' := new_name |} ⌝ ∗
       l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
       m_ptr ↦$ phys_state
   }}}.

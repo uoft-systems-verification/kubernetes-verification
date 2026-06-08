@@ -510,9 +510,11 @@ Proof.
           Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep") as "[_ H]". done.
       }
       iPureIntro. split_and!. all: try done.
-      rewrite <-Huid_obj.
-      eapply tombed_uid_delete_eq_used_uid_sub; [done|done| |done].
-      rewrite Huid_obj. exact Huid_in.
+      - rewrite <-Huid_obj.
+        eapply tombed_uid_delete_eq_used_uid_sub; [done|done| |done].
+        rewrite Huid_obj. exact Huid_in.
+      - rewrite dom_delete_L.
+        Timeout 10 set_solver.
     }
     iApply "HΦ".
   }
@@ -793,10 +795,14 @@ Proof.
   { iNamed "H".
     iFrame "#". iFrame. iPureIntro. split_and!.
     all: try done.
-    eapply tombed_uid_update_eq_used_uid_sub; [done|done|].
-    unfold new_kobj, new_kmeta1, new_kmeta.
-    rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
-    destruct kobj; done.
+    - eapply tombed_uid_update_eq_used_uid_sub; [done|done|].
+      unfold new_kobj, new_kmeta1, new_kmeta.
+      rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
+      destruct kobj; done.
+    - rewrite dom_insert_L.
+      assert (KObjectV.key kobj ∈ dom abs_state) as Hkey_in_abs.
+      { apply elem_of_dom. eexists. exact Hlookup_abs. }
+      Timeout 10 set_solver.
   }
   iApply "HΦ".
   Unshelve. all: try apply _. all: done.
