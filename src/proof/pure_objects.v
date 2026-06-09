@@ -7,6 +7,11 @@ From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
 
+(* This predicate is intentionally axiomatized. The concrete definition is
+   irrelevant here; the model only relies on API-server generated names never
+   forming keys that satisfy it. *)
+Axiom reserved_key_pred : KKey.t → Prop.
+
 Lemma struct_fields_split `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l (v : V) dq :
   l ↦{dq} v ⊢@{iProp Σ} typed_pointsto_def l v dq ∗ ⌜l ≠ null⌝.
 Proof. rewrite typed_pointsto_unseal /typed_pointsto_wrap. iIntros "[$ $]". Qed.

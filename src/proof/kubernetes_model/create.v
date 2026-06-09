@@ -156,6 +156,7 @@ Proof.
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
+  iPoseProof (reserved_keys.auth_set_Forall with "Hinv_Hown_reserved") as "%Hinv_Hreserved_key_pred".
   assert (key ∉ reserved_keys) as Hkey_not_reserved.
   { subst key.
     intros Hin.
@@ -367,7 +368,6 @@ Proof.
       + rewrite disjoint_singleton_r.
         exact Hkey_not_reserved.
       + exact Hinv_Hreserved_disjoint_abs.
-    - exact Hinv_Hreserved_key_pred.
   }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem. all: try done.

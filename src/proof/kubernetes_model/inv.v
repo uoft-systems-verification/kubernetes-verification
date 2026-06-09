@@ -7,16 +7,11 @@ From New.proof Require Export pure_objects string.
 From New.proof.big_op Require Export big_sepL big_sepM.
 From New.proof.algebra Require Export kview cview tombstone reserved_keys.
 
-(* This predicate is intentionally axiomatized. The concrete definition is
-   irrelevant here; the model only relies on API-server generated names never
-   forming keys that satisfy it. *)
-Axiom reserved_key_pred : KKey.t → Prop.
-
 Class kubernetesModelG Σ := {
-  #[global] kubernetes_model_allG :: allG Σ;
   #[global] kubernetes_model_kviewG :: kviewG Σ;
   #[global] kubernetes_model_cviewG :: cviewG Σ;
   #[global] kubernetes_model_tombstoneG :: tombstoneG Σ;
+  #[global] kubernetes_model_reserved_keysG :: reserved_keysG Σ;
 }.
 
 Section spec.
@@ -85,8 +80,7 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "%Hused_uid_eq_dom_phys_used_uid" ∷ ⌜ used_uid = dom phys_used_uid ⌝ ∗ 
     "%Hused_uid_eq_set_map_used_reference" ∷ ⌜ used_uid = (set_map (λ v, snd v) used_reference) ⌝ ∗
     "%Htombed_uid_eq_used_uid_sub" ∷ ⌜ tombed_uid = used_uid ∖ map_to_set (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID')) abs_state ⌝ ∗
-    "%Hreserved_disjoint_abs" ∷ ⌜ reserved_keys ## dom abs_state ⌝ ∗
-    "%Hreserved_key_pred" ∷ ⌜ set_Forall reserved_key_pred reserved_keys ⌝.
+    "%Hreserved_disjoint_abs" ∷ ⌜ reserved_keys ## dom abs_state ⌝.
 
 Definition is_kubernetes γ l : iProp Σ :=
   ∃ (mu_l: loc),

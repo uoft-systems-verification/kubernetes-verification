@@ -342,9 +342,6 @@ Proof.
     - exact Htombed_uid_new.
     - rewrite dom_insert_L.
       Timeout 10 set_solver.
-    - intros k Hk.
-      apply Hinv_Hreserved_key_pred.
-      Timeout 10 set_solver.
   }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem. all: try done.

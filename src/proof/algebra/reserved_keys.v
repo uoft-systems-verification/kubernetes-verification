@@ -1,15 +1,30 @@
 From New.proof Require Import prelude.
 From New.proof Require Export pure_objects.
-From New.ghost Require Import auth_set.
+From New.proof.algebra Require Import constrained_gset.
+
+Class reserved_keysG Σ :=
+  { #[global] reserved_keys_constrained_gsetG ::
+      constrained_gset.constrained_gsetG reserved_key_pred Σ; }.
+
+Definition reserved_keysΣ :=
+  constrained_gset.constrained_gsetΣ reserved_key_pred.
+
+#[global]
+Instance subG_reserved_keysG Σ :
+  subG reserved_keysΣ Σ → reserved_keysG Σ.
+Proof.
+  intros Hsub. constructor.
+  exact (constrained_gset.subG_constrained_gsetG reserved_key_pred Σ Hsub).
+Qed.
 
 Section reserved_keys.
-Context `{!allG Σ}.
+Context `{!reserved_keysG Σ}.
 
 Definition own_auth γ (reserved_keys : gset KKey.t) : iProp Σ :=
-  auth_set_auth γ reserved_keys.
+  constrained_gset.own_auth reserved_key_pred γ reserved_keys.
 
 Definition own_frag γ (key : KKey.t) : iProp Σ :=
-  auth_set_frag γ key.
+  constrained_gset.own_frag reserved_key_pred γ key.
 
 Global Instance own_auth_timeless γ reserved_keys :
   Timeless (own_auth γ reserved_keys).
@@ -23,7 +38,15 @@ Lemma init :
   ⊢ |==> ∃ γ, own_auth γ (∅ : gset KKey.t).
 Proof.
   unfold own_auth.
-  apply auth_set_init.
+  apply (constrained_gset.init reserved_key_pred).
+Qed.
+
+Lemma auth_set_Forall {γ reserved_keys} :
+  own_auth γ reserved_keys -∗
+  ⌜ set_Forall reserved_key_pred reserved_keys ⌝.
+Proof.
+  unfold own_auth.
+  apply (constrained_gset.auth_set_Forall reserved_key_pred).
 Qed.
 
 Lemma frag_elem_of_auth {γ reserved_keys} key :
@@ -32,17 +55,26 @@ Lemma frag_elem_of_auth {γ reserved_keys} key :
   ⌜ key ∈ reserved_keys ⌝.
 Proof.
   unfold own_auth, own_frag.
-  apply auth_set_elem.
+  apply (constrained_gset.frag_elem_of_auth reserved_key_pred key).
+Qed.
+
+Lemma frag_pred {γ} key :
+  own_frag γ key -∗
+  ⌜ reserved_key_pred key ⌝.
+Proof.
+  unfold own_frag.
+  apply (constrained_gset.frag_pred reserved_key_pred key).
 Qed.
 
 Lemma reserve_key_vs {γ reserved_keys} key :
   key ∉ reserved_keys →
+  reserved_key_pred key →
   own_auth γ reserved_keys ==∗
     own_auth γ ({[key]} ∪ reserved_keys) ∗
     own_frag γ key.
 Proof.
   unfold own_auth, own_frag.
-  apply auth_set_alloc.
+  apply (constrained_gset.reserve_key_vs reserved_key_pred key).
 Qed.
 
 Lemma consume_reserved_key_vs {γ reserved_keys} key :
@@ -51,8 +83,7 @@ Lemma consume_reserved_key_vs {γ reserved_keys} key :
     own_auth γ (reserved_keys ∖ {[key]}).
 Proof.
   unfold own_auth, own_frag.
-  iIntros "Hauth Hfrag".
-  iApply (auth_set_dealloc with "[$Hauth $Hfrag]").
+  apply (constrained_gset.consume_key_vs reserved_key_pred key).
 Qed.
 
 End reserved_keys.
