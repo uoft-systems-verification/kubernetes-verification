@@ -160,7 +160,7 @@ Definition copyIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "identity" := (GoAlloc IdentityID (GoZeroVal IdentityID #())) in
     map.for_range IdentityID (go.MapType PolicyID (go.StructType [
 
-    ])) "$range" (λ: "$key" "value",
+    ])) "$range" (λ: "$key" "$value",
       do:  ("policyIDs" <-[go.MapType PolicyID (go.StructType [
 
       ])] "$value");;;
@@ -182,7 +182,7 @@ Definition copyIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       (let: "policyID" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
       map.for_range PolicyID (go.StructType [
 
-      ]) "$range" (λ: "$key" "value",
+      ]) "$range" (λ: "$key" "$value",
         do:  ("policyID" <-[PolicyID] "$key");;;
         let: "$r0" := (CompositeLiteral (go.StructType [
 
@@ -210,7 +210,7 @@ Definition copyPoliciesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     let: "$range" := (![go.MapType PolicyID IdentityPolicy] "src") in
     (let: "policy" := (GoAlloc IdentityPolicy (GoZeroVal IdentityPolicy #())) in
     let: "policyID" := (GoAlloc PolicyID (GoZeroVal PolicyID #())) in
-    map.for_range PolicyID IdentityPolicy "$range" (λ: "$key" "value",
+    map.for_range PolicyID IdentityPolicy "$range" (λ: "$key" "$value",
       do:  ("policy" <-[IdentityPolicy] "$value");;;
       do:  ("policyID" <-[PolicyID] "$key");;;
       let: "$r0" := (![IdentityPolicy] "policy") in

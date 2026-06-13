@@ -184,7 +184,7 @@ Definition mergeCountsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
     let: "$range" := (![go.MapType go.string go.int] "left") in
     (let: "value" := (GoAlloc go.int (GoZeroVal go.int #())) in
     let: "key" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    map.for_range go.string go.int "$range" (λ: "$key" "value",
+    map.for_range go.string go.int "$range" (λ: "$key" "$value",
       do:  ("value" <-[go.int] "$value");;;
       do:  ("key" <-[go.string] "$key");;;
       let: "$r0" := (![go.int] "value") in
@@ -192,7 +192,7 @@ Definition mergeCountsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
     let: "$range" := (![go.MapType go.string go.int] "right") in
     (let: "value" := (GoAlloc go.int (GoZeroVal go.int #())) in
     let: "key" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    map.for_range go.string go.int "$range" (λ: "$key" "value",
+    map.for_range go.string go.int "$range" (λ: "$key" "$value",
       do:  ("value" <-[go.int] "$value");;;
       do:  ("key" <-[go.string] "$key");;;
       do:  (map.insert go.string (![go.MapType go.string go.int] "result") (![go.string] "key") ((map.lookup1 go.string go.int (![go.MapType go.string go.int] "result") (![go.string] "key")) +⟨go.int⟩ (![go.int] "value")))));;;

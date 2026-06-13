@@ -150,7 +150,7 @@ Definition identitiesWithPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
     let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
     map.for_range iammodel.IdentityID (go.MapType iammodel.PolicyID (go.StructType [
 
-    ])) "$range" (λ: "$key" "value",
+    ])) "$range" (λ: "$key" "$value",
       do:  ("policyIDs" <-[go.MapType iammodel.PolicyID (go.StructType [
 
       ])] "$value");;;
@@ -184,7 +184,7 @@ Definition hasPolicyForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     (let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
     map.for_range iammodel.PolicyID (go.StructType [
 
-    ]) "$range" (λ: "$key" "value",
+    ]) "$range" (λ: "$key" "$value",
       do:  ("policyID" <-[iammodel.PolicyID] "$key");;;
       let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: "policy" := (GoAlloc iammodel.IdentityPolicy (GoZeroVal iammodel.IdentityPolicy #())) in
@@ -218,7 +218,7 @@ Definition policiesForResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     (let: "policyID" := (GoAlloc iammodel.PolicyID (GoZeroVal iammodel.PolicyID #())) in
     map.for_range iammodel.PolicyID (go.StructType [
 
-    ]) "$range" (λ: "$key" "value",
+    ]) "$range" (λ: "$key" "$value",
       do:  ("policyID" <-[iammodel.PolicyID] "$key");;;
       let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: "policy" := (GoAlloc iammodel.IdentityPolicy (GoZeroVal iammodel.IdentityPolicy #())) in
@@ -253,7 +253,7 @@ Definition missingIdentitiesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     (let: "identity" := (GoAlloc iammodel.IdentityID (GoZeroVal iammodel.IdentityID #())) in
     map.for_range iammodel.IdentityID (go.StructType [
 
-    ]) "$range" (λ: "$key" "value",
+    ]) "$range" (λ: "$key" "$value",
       do:  ("identity" <-[iammodel.IdentityID] "$key");;;
       (if: let: "$a0" := (![go.SliceType iammodel.IdentityID] "current") in
       let: "$a1" := (![iammodel.IdentityID] "identity") in

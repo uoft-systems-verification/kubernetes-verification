@@ -185,7 +185,7 @@ Definition State__objListLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     let: "$range" := (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) in
     (let: "val" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
-    map.for_range KKey (go.InterfaceType []) "$range" (λ: "$key" "value",
+    map.for_range KKey (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("val" <-[go.InterfaceType []] "$value");;;
       do:  ("key" <-[KKey] "$key");;;
       (if: Convert go.untyped_bool go.bool ((![go.string] "kind") =⟨go.string⟩ (![go.string] (StructFieldRef KKey "Kind"%go "key")))
