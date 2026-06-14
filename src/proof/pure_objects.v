@@ -952,7 +952,13 @@ Context {sem : go.Semantics}
 Inductive t :=
 | PodSpec (p : PodSpecV.t)
 | ReplicaSetSpec (rs : ReplicaSetSpecV.t).
-Axiom valid: t → Prop.
+
+Definition valid (v : t) : Prop :=
+  match v with
+  | PodSpec p => PodSpecV.valid p
+  | ReplicaSetSpec rs => ReplicaSetSpecV.valid rs
+  end.
+
 Axiom valid_create: t → Prop.
 Axiom valid_update: t → t → Prop.
 Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
@@ -983,7 +989,13 @@ Context {sem : go.Semantics}
 Inductive t :=
 | PodStatus (p : PodStatusV.t)
 | ReplicaSetStatus (rs : ReplicaSetStatusV.t).
-Axiom valid: t → Prop.
+
+Definition valid (v : t) : Prop :=
+  match v with
+  | PodStatus p => PodStatusV.valid p
+  | ReplicaSetStatus rs => ReplicaSetStatusV.valid rs
+  end.
+
 Axiom valid_create: t → Prop.
 Axiom valid_update: t → t → Prop.
 Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
