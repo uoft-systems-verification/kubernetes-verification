@@ -1,9 +1,10 @@
 From New.proof Require Export prelude empty_ffi.
 From New.code Require Export fmt.
-From New.proof Require Export fmt strconv_init.
+From New.proof Require Export fmt strconv_init rand_init.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
+Context `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
@@ -14,6 +15,13 @@ Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interfa
   {{{ (v: go_string), RET #v;
       True
   }}}.
+Proof.
+Admitted.
+
+Lemma wp_rand_Int63 :
+  {{{ is_pkg_init rand }}}
+    @! rand.Int63 #()
+  {{{ (v: w64), RET #v; True }}}.
 Proof.
 Admitted.
 
