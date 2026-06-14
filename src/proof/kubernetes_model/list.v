@@ -518,11 +518,8 @@ Proof.
     apply Forall_forall.
     intros pod Hpod_in.
     specialize (Hvalid pod Hpod_in).
-    destruct pod as [tm meta spec status].
-    rewrite /KObjectV.valid /PodV.valid
-      /ObjectSpecV.valid /ObjectStatusV.valid /= in Hvalid |- *.
-    destruct Hvalid as (_ & _ & Hmeta & Hspec & Hstatus).
-    split; [exact Hmeta|]. split; [exact Hspec|exact Hstatus].
+    change (KObjectV.valid2 (KObjectV.Pod pod)).
+    rewrite -KObjectV.valid_eq_valid2. exact Hvalid.
   - assert (KObjectV.key <$> (KObjectV.Pod <$> pods) = PodV.key <$> pods) as Hkeys_eq.
     { rewrite -list_fmap_compose.
       apply list_fmap_ext. intros i pod Hlookup.

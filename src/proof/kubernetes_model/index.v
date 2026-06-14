@@ -48,7 +48,7 @@ Proof.
       clear IH Hpods_valid Hparent.
       unfold podController_indexed_value, meta_parent_ref in Hindexed.
       unfold obj_parent_ref, meta_parent_ref.
-      destruct Hpod_valid as [Hmeta_valid _].
+      destruct Hpod_valid as (_ & _ & Hmeta_valid & _).
       assert (Hpod_ns_sf : slash_free pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')).
       { eapply valid_namespace_slash_free.
         eapply ObjectMetaV.valid_namespace_of_valid; exact Hmeta_valid. }

@@ -35,6 +35,10 @@ End TimeV.
 
 Axiom valid_kind: go_string → Prop.
 
+(* TODO: this definition is incomplete but for now we only care about kind *)
+Definition valid_typemeta kind tm : Prop :=
+  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
+
 (* Upstream reference: Kubernetes validates CRD `spec.names.kind` by
    lowercasing it and checking it as a DNS-1035 label, which excludes `/`.
    See:
@@ -215,6 +219,9 @@ Record t := mk {
 }.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155 *)
+(* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
+   because kview's meta frag needs to be ObjectMetaV.valid and the frag doesn't
+   carry the resource version. *)
 Definition valid (m: t) : Prop :=
   (m.(GenerateName') ≠ ""%go → valid_generate_name m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
@@ -562,6 +569,8 @@ Definition key (v: t) : KKey.t :=
   meta_key v.(ObjectMeta').
 
 Definition valid (pod: t) : Prop :=
+  valid_typemeta kind pod.(TypeMeta') ∧
+  valid_resource_version pod.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid pod.(ObjectMeta') ∧
   PodSpecV.valid pod.(Spec') ∧
   PodStatusV.valid pod.(Status').
@@ -793,6 +802,8 @@ Definition key (v: t) : KKey.t :=
   meta_key v.(ObjectMeta').
 
 Definition valid (rs: t) : Prop :=
+  valid_typemeta kind rs.(TypeMeta') ∧
+  valid_resource_version rs.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid rs.(ObjectMeta') ∧
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
@@ -1088,15 +1099,8 @@ Axiom valid_create: go_string → go_string → t → Prop.
 
 Axiom valid_update_status: go_string → go_string → t → t → Prop.
 
-(* TODO: this definition is incomplete but for now we only care about kind *)
-Definition valid_typemeta kind tm : Prop :=
-  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
-
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
-  (* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
-     because kview's meta frag needs to be ObjectMetaV.valid and the frag doesn't
-     carry the resource version. *)
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid (objectmeta o) ∧
   ObjectSpecV.valid (spec o) ∧
@@ -1143,11 +1147,19 @@ Definition named_created ns o o' : Prop :=
   ObjectSpecV.created (spec o) (spec o') ∧
   ObjectStatusV.created (status o) (status o').
 
-Definition valid_old o : Prop :=
+Definition valid2 o : Prop :=
   match o with
   | Pod p => PodV.valid p
   | ReplicaSet rs => ReplicaSetV.valid rs
   end.
+
+Lemma valid_eq_valid2 o :
+  valid o = valid2 o.
+Proof.
+  destruct o as [[tm meta spec status]|[tm meta spec status]];
+    rewrite /valid /valid2 /PodV.valid /ReplicaSetV.valid
+      /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
+Qed.
 
 Definition valid_without_meta o : Prop :=
   match o with
@@ -1497,12 +1509,15 @@ Proof.
 Qed.
 
 Lemma valid_object_has_valid_objectmeta obj:
-  KObjectV.valid_old obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
-Proof. destruct obj; simpl; intros [H _]; done. Qed.
+  KObjectV.valid2 obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
+Proof.
+  rewrite -KObjectV.valid_eq_valid2.
+  intros (_ & _ & Hmeta & _ & _). exact Hmeta.
+Qed.
 
 Lemma valid_object_has_valid_key key obj:
   key = KObjectV.key obj →
-  KObjectV.valid_old obj →
+  KObjectV.valid2 obj →
     key.(KKey.Name') ≠ ""%go ∧
     valid_name key.(KKey.Name') ∧
     key.(KKey.Namespace') ≠ ""%go ∧
@@ -1546,7 +1561,7 @@ Proof.
 Qed.
 
 Lemma valid_obj_has_at_most_one_controller_parent obj:
-  KObjectV.valid_old obj →
+  KObjectV.valid2 obj →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       obj_has_controller_parent_of obj kind1 name1 uid1 →
         obj_has_controller_parent_of obj kind2 name2 uid2 →
