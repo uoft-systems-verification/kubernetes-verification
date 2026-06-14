@@ -129,22 +129,6 @@ Definition obj_list_match (kind namespace : go_string) (kv : KKey.t * KObjectV.t
   kv.1.(KKey.Kind') = kind ∧
   v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')).
 
-Lemma KObjectV_valid_valid_old :
-  ∀ obj, KObjectV.valid obj → KObjectV.valid_old obj.
-Proof.
-  intros [pod|rs] Hvalid.
-  - destruct pod as [tm meta spec status].
-    rewrite /KObjectV.valid /KObjectV.valid_old /PodV.valid
-      /ObjectSpecV.valid /ObjectStatusV.valid /= in Hvalid |- *.
-    destruct Hvalid as (_ & _ & Hmeta & Hspec & Hstatus).
-    split; [exact Hmeta|]. split; [exact Hspec|exact Hstatus].
-  - destruct rs as [tm meta spec status].
-    rewrite /KObjectV.valid /KObjectV.valid_old /ReplicaSetV.valid
-      /ObjectSpecV.valid /ObjectStatusV.valid /= in Hvalid |- *.
-    destruct Hvalid as (_ & _ & Hmeta & Hspec & Hstatus).
-    split; [exact Hmeta|]. split; [exact Hspec|exact Hstatus].
-Qed.
-
 Lemma filtered_processed_map_insert_true kind namespace keys i key abs_state obj :
   NoDup keys →
   (0 ≤ i)%Z →
@@ -196,24 +180,6 @@ Proof.
   apply elem_of_map_to_list in Hkv_in.
   apply map_lookup_filter_Some in Hkv_in as [Hlookup _].
   exact (proj1 (proj2 (Hvalid k obj Hlookup))).
-Qed.
-
-Lemma filtered_map_values_valid_old kind namespace
-    (abs_state : gmap KKey.t KObjectV.t) (used_uid : gset types.UID.t) :
-  (∀ k obj, abs_state !! k = Some obj →
-    k = KObjectV.key obj ∧ KObjectV.valid obj ∧
-    (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∈ used_uid ∧
-    no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid ∧
-    map_Forall (λ k' obj',
-      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
-        (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k') abs_state) →
-  Forall KObjectV.valid_old
-    (map_to_list (filter (obj_list_match kind namespace) abs_state)).*2.
-Proof.
-  intros Hvalid.
-  eapply Forall_impl.
-  - intros obj. apply KObjectV_valid_valid_old.
-  - exact (filtered_map_values_valid kind namespace abs_state used_uid Hvalid).
 Qed.
 
 Lemma filtered_map_values_key_eq kind namespace
@@ -282,7 +248,6 @@ Lemma wp_State__objListLocked γ l (kind namespace : go_string) phys_state_l phy
           (λ kv, kv.1.(KKey.Kind') = kind ∧ v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')))
           abs_state)).*2 ⌝ ∗
       ⌜ Forall KObjectV.valid objs ⌝ ∗
-      ⌜ Forall KObjectV.valid_old objs ⌝ ∗
       ⌜ NoDup (KObjectV.key <$> objs) ⌝ ∗
       l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       phys_state_l ↦$ phys_state ∗
@@ -487,8 +452,6 @@ Proof.
   - exact Hperm.
   - eapply Permutation_Forall; [symmetry; exact Hperm|].
     exact (filtered_map_values_valid kind namespace abs_state used_uid Habs_valid).
-  - eapply Permutation_Forall; [symmetry; exact Hperm|].
-    exact (filtered_map_values_valid_old kind namespace abs_state used_uid Habs_valid).
   - rewrite (list_fmap_map KObjectV.key objs).
     rewrite (Permutation_map KObjectV.key Hperm).
     rewrite -(list_fmap_map KObjectV.key
@@ -529,7 +492,7 @@ Proof.
   iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
   wp_apply (wp_State__objListLocked with "[$Hstate_m_addr $Hown_phys $Hown_abs $Hphys_abs_rep]").
   iIntros (sl interfaces objs)
-    "(Hsl & Hlist & %Hperm & %Hvalid & %Hvalid_old & %Hnodup & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
+    "(Hsl & Hlist & %Hperm & %Hvalid & %Hnodup & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
   iPoseProof (kview.own_auth_valid_forall with "Hown_abs") as "%Habs_valid".
   assert (Forall (λ obj, ∃ pod, obj = KObjectV.Pod pod) objs) as Hobjs_are_pods.
   { rewrite Forall_forall.
@@ -550,7 +513,16 @@ Proof.
   iApply "HΦ". iFrame.
   iPureIntro. split_and!.
   - exact Hperm.
-  - rewrite Forall_fmap in Hvalid_old. exact Hvalid_old.
+  - rewrite Forall_fmap in Hvalid.
+    rewrite Forall_forall in Hvalid.
+    apply Forall_forall.
+    intros pod Hpod_in.
+    specialize (Hvalid pod Hpod_in).
+    destruct pod as [tm meta spec status].
+    rewrite /KObjectV.valid /PodV.valid
+      /ObjectSpecV.valid /ObjectStatusV.valid /= in Hvalid |- *.
+    destruct Hvalid as (_ & _ & Hmeta & Hspec & Hstatus).
+    split; [exact Hmeta|]. split; [exact Hspec|exact Hstatus].
   - assert (KObjectV.key <$> (KObjectV.Pod <$> pods) = PodV.key <$> pods) as Hkeys_eq.
     { rewrite -list_fmap_compose.
       apply list_fmap_ext. intros i pod Hlookup.
