@@ -15,6 +15,8 @@ packages = [
     # "./pkg/controller/replicaset/metrics",
     "./pkg/features",
     "./pkg/registry/apps/replicaset",
+    "./pkg/registry/apps/statefulset",
+    "./pkg/registry/core/persistentvolumeclaim",
     "./pkg/registry/core/pod",
     "./staging/src/k8s.io/api/core/v1",
     "./staging/src/k8s.io/api/apps/v1",

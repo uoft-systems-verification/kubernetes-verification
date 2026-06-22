@@ -168,8 +168,6 @@ Definition ControllerRevisionList {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 #[global] Opaque ControllerRevisionList.
 
-Axiom StatefulSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PodManagementPolicyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom StatefulSetUpdateStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -566,20 +564,79 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (map_StatefulSetUpdateStrategy'init #()))
       ).
 
-Module StatefulSet.
+Module StatefulSetSpec.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Axiom t : Type.
 Axiom zero_val : ZeroVal t.
 #[global] Existing Instance zero_val.
 End def.
+End StatefulSetSpec.
+
+Class StatefulSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetSpec_type_repr  :: go.TypeReprUnderlying StatefulSetSpecⁱᵐᵖˡ StatefulSetSpec.t;
+  #[global] StatefulSetSpec_underlying :: (StatefulSetSpec) <u (StatefulSetSpecⁱᵐᵖˡ);
+  #[global] StatefulSetSpecⁱᵐᵖˡ_underlying :: (StatefulSetSpecⁱᵐᵖˡ) ↓u (StatefulSetSpecⁱᵐᵖˡ);
+}.
+
+Module StatefulSetStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetStatus.
+
+Class StatefulSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetStatus_type_repr  :: go.TypeReprUnderlying StatefulSetStatusⁱᵐᵖˡ StatefulSetStatus.t;
+  #[global] StatefulSetStatus_underlying :: (StatefulSetStatus) <u (StatefulSetStatusⁱᵐᵖˡ);
+  #[global] StatefulSetStatusⁱᵐᵖˡ_underlying :: (StatefulSetStatusⁱᵐᵖˡ) ↓u (StatefulSetStatusⁱᵐᵖˡ);
+}.
+
+Module StatefulSet.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  TypeMeta' : meta_v1.TypeMeta.t;
+  ObjectMeta' : meta_v1.ObjectMeta.t;
+  Spec' : v1.StatefulSetSpec.t;
+  Status' : v1.StatefulSetStatus.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
 End StatefulSet.
+
+Definition StatefulSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go meta_v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go meta_v1.ObjectMeta);
+  (go.FieldDecl "Spec"%go StatefulSetSpec);
+  (go.FieldDecl "Status"%go StatefulSetStatus)
+].
+Program Definition StatefulSet'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSet'fds_unsealed).
+Global Instance equals_unfold_StatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSet'fds =→ StatefulSet'fds_unsealed.
+Proof. rewrite /StatefulSet'fds seal_eq //. Qed.
+
+Definition StatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSet'fds).
 
 Class StatefulSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSet_type_repr  :: go.TypeReprUnderlying StatefulSetⁱᵐᵖˡ StatefulSet.t;
   #[global] StatefulSet_underlying :: (StatefulSet) <u (StatefulSetⁱᵐᵖˡ);
-  #[global] StatefulSetⁱᵐᵖˡ_underlying :: (StatefulSetⁱᵐᵖˡ) ↓u (StatefulSetⁱᵐᵖˡ);
+  #[global] StatefulSet_get_TypeMeta (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(StatefulSet.TypeMeta');
+  #[global] StatefulSet_set_TypeMeta (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.TypeMeta' := y|>);
+  #[global] StatefulSet_get_ObjectMeta (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(StatefulSet.ObjectMeta');
+  #[global] StatefulSet_set_ObjectMeta (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.ObjectMeta' := y|>);
+  #[global] StatefulSet_get_Spec (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "Spec", #x⟧ ⤳[under] #x.(StatefulSet.Spec');
+  #[global] StatefulSet_set_Spec (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Spec' := y|>);
+  #[global] StatefulSet_get_Status (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(StatefulSet.Status');
+  #[global] StatefulSet_set_Status (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Status' := y|>);
 }.
 
 Module PodManagementPolicyType.
@@ -692,38 +749,6 @@ Class StatefulSetOrdinals_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!
   #[global] StatefulSetOrdinals_type_repr  :: go.TypeReprUnderlying StatefulSetOrdinalsⁱᵐᵖˡ StatefulSetOrdinals.t;
   #[global] StatefulSetOrdinals_underlying :: (StatefulSetOrdinals) <u (StatefulSetOrdinalsⁱᵐᵖˡ);
   #[global] StatefulSetOrdinalsⁱᵐᵖˡ_underlying :: (StatefulSetOrdinalsⁱᵐᵖˡ) ↓u (StatefulSetOrdinalsⁱᵐᵖˡ);
-}.
-
-Module StatefulSetSpec.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatefulSetSpec.
-
-Class StatefulSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatefulSetSpec_type_repr  :: go.TypeReprUnderlying StatefulSetSpecⁱᵐᵖˡ StatefulSetSpec.t;
-  #[global] StatefulSetSpec_underlying :: (StatefulSetSpec) <u (StatefulSetSpecⁱᵐᵖˡ);
-  #[global] StatefulSetSpecⁱᵐᵖˡ_underlying :: (StatefulSetSpecⁱᵐᵖˡ) ↓u (StatefulSetSpecⁱᵐᵖˡ);
-}.
-
-Module StatefulSetStatus.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatefulSetStatus.
-
-Class StatefulSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatefulSetStatus_type_repr  :: go.TypeReprUnderlying StatefulSetStatusⁱᵐᵖˡ StatefulSetStatus.t;
-  #[global] StatefulSetStatus_underlying :: (StatefulSetStatus) <u (StatefulSetStatusⁱᵐᵖˡ);
-  #[global] StatefulSetStatusⁱᵐᵖˡ_underlying :: (StatefulSetStatusⁱᵐᵖˡ) ↓u (StatefulSetStatusⁱᵐᵖˡ);
 }.
 
 Module StatefulSetConditionType.

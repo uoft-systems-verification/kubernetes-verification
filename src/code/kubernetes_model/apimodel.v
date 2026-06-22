@@ -29,6 +29,8 @@ Require Export New.code.k8s_io.kubernetes.pkg.apis.core.
 Require Export New.code.k8s_io.kubernetes.pkg.apis.core.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
 Require Export New.code.k8s_io.kubernetes.pkg.registry.apps.replicaset.
+Require Export New.code.k8s_io.kubernetes.pkg.registry.apps.statefulset.
+Require Export New.code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.
 Require Export New.code.k8s_io.kubernetes.pkg.registry.core.pod.
 Require Export New.code.k8s_io.kubernetes.pkg.apis.apps.install.
 Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.
@@ -134,7 +136,7 @@ Definition preconditionUIDMismatch {ext : ffi_syntax} {go_gctx : GoGlobalContext
 
 Definition setPreconditionResourceVersion {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.setPreconditionResourceVersion"%go.
 
-(* go: api_model.go:78:6 *)
+(* go: api_model.go:80:6 *)
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     exception_do (return: (GoAlloc State (let: "$v0" := ((FuncResolve go.make1 [go.MapType KKey (go.InterfaceType [])] #()) #()) in
@@ -152,7 +154,7 @@ Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
 
       ])) "$v2"); KeyedElement (Some (KeyField "resourceVersionCounter"%go)) (ElementExpression go.int64 "$v3"); KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType sync.Mutex) "$v4")])))).
 
-(* go: api_model.go:88:6 *)
+(* go: api_model.go:90:6 *)
 Definition deepCopyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -163,19 +165,31 @@ Definition deepCopyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
       let: "o" := (GoAlloc (go.PointerType api_core_v1.Pod) "$x") in
       return: (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.Pod) "DeepCopy"%go (![go.PointerType api_core_v1.Pod] "o")) #()))
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "o" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-        return: (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.ReplicaSet) "DeepCopy"%go (![go.PointerType api_apps_v1.ReplicaSet] "o")) #()))
+        let: "o" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
+        return: (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.PersistentVolumeClaim) "DeepCopy"%go (![go.PointerType api_core_v1.PersistentVolumeClaim] "o")) #()))
       else
-        do:  (let: "$a0" := (Convert go.string (go.InterfaceType []) (let: "$a0" := #"copyObject: unsupported type %T"%go in
-        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-        (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")) in
-        (FuncResolve go.panic [] #()) "$a0")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "o" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
+          return: (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.ReplicaSet) "DeepCopy"%go (![go.PointerType api_apps_v1.ReplicaSet] "o")) #()))
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "o" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
+            return: (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.StatefulSet) "DeepCopy"%go (![go.PointerType api_apps_v1.StatefulSet] "o")) #()))
+          else
+            do:  (let: "$a0" := (Convert go.string (go.InterfaceType []) (let: "$a0" := #"copyObject: unsupported type %T"%go in
+            let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+            CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+            (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")) in
+            (FuncResolve go.panic [] #()) "$a0")))))).
 
-(* go: api_model.go:99:17 *)
+(* go: api_model.go:105:17 *)
 Definition State__objListLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace",
     exception_do (let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
@@ -202,7 +216,7 @@ Definition State__objListLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       else do:  #())));;;
     return: (![go.SliceType (go.InterfaceType [])] "items")).
 
-(* go: api_model.go:110:17 *)
+(* go: api_model.go:116:17 *)
 Definition State__objListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace",
     with_defer: (let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
@@ -220,7 +234,7 @@ Definition State__objListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
      let: "$a1" := (![go.string] "namespace") in
      (MethodResolve (go.PointerType State) "objListLocked"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
-(* go: api_model.go:117:6 *)
+(* go: api_model.go:123:6 *)
 Definition filterByLabelSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "items" "selector",
     exception_do (let: "selector" := (GoAlloc labels.Selector "selector") in
@@ -253,7 +267,7 @@ Definition filterByLabelSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       else do:  #())));;;
     return: (![go.SliceType (go.InterfaceType [])] "filtered_items", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:131:17 *)
+(* go: api_model.go:137:17 *)
 Definition State__objListBySelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -267,7 +281,7 @@ Definition State__objListBySelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     (FuncResolve filterByLabelSelector [] #()) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:135:6 *)
+(* go: api_model.go:141:6 *)
 Definition index_ofⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "indexName" "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -297,7 +311,7 @@ Definition index_ofⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:150:17 *)
+   go: api_model.go:156:17 *)
 Definition State__Indexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "indexName" "obj",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -398,7 +412,7 @@ Definition State__Indexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:185:17 *)
+   go: api_model.go:191:17 *)
 Definition State__ByIndexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "indexName" "indexedValue",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -451,7 +465,7 @@ Definition State__ByIndexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
         else do:  #())))));;;
     return: (![go.SliceType (go.InterfaceType [])] "items", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:206:17 *)
+(* go: api_model.go:212:17 *)
 Definition State__getⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -480,7 +494,7 @@ Definition State__getⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
        let: "$a1" := (![go.string] (StructFieldRef KKey "Name"%go "key")) in
        (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1")))).
 
-(* go: api_model.go:218:6 *)
+(* go: api_model.go:224:6 *)
 Definition randomSuffixⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "n",
     exception_do (let: "n" := (GoAlloc go.int "n") in
@@ -505,7 +519,7 @@ Definition randomSuffixⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
       do:  ((IndexRef (go.SliceType go.byte) (![go.SliceType go.byte] "b", ![go.int] "i")) <-[go.byte] "$r0")));;;
     return: (Convert (go.SliceType go.byte) go.string (![go.SliceType go.byte] "b"))).
 
-(* go: api_model.go:228:17 *)
+(* go: api_model.go:234:17 *)
 Definition State__generateNewNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "generateName",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -533,7 +547,7 @@ Definition State__generateNewNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
       then return: (![go.string] "name")
       else do:  #())))).
 
-(* go: api_model.go:242:17 *)
+(* go: api_model.go:248:17 *)
 Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -562,7 +576,7 @@ Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
         return: (![types.UID] "uid")
       else do:  #())))).
 
-(* go: api_model.go:252:17 *)
+(* go: api_model.go:258:17 *)
 Definition State__generateNewRVAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -596,7 +610,7 @@ Definition State__generateNewRVAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
 (* validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
    This matches the API server's generic metadata validation that happens in BeforeCreate.
 
-   go: api_model.go:264:6 *)
+   go: api_model.go:270:6 *)
 Definition validateObjectMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
@@ -629,7 +643,7 @@ Definition validateObjectMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
    node.kubernetes.io/unreachable:NoExecute with 300s toleration seconds.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go
 
-   go: api_model.go:291:6 *)
+   go: api_model.go:297:6 *)
 Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core.Pod) "pod") in
@@ -707,7 +721,7 @@ Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
    - If PriorityClassName is specified, we cannot look it up (not implemented), so we skip
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go
 
-   go: api_model.go:345:6 *)
+   go: api_model.go:351:6 *)
 Definition applyPriorityAdmissionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core.Pod) "pod") in
@@ -730,7 +744,7 @@ Definition applyPriorityAdmissionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 (* convertVersionedToLegacy converts supported external/versioned API objects
    to their internal Kubernetes representations.
 
-   go: api_model.go:366:6 *)
+   go: api_model.go:372:6 *)
 Definition convertVersionedToLegacyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -758,39 +772,85 @@ Definition convertVersionedToLegacyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #()));;;
       return: (Convert (go.PointerType core.Pod) (go.InterfaceType []) (![go.PointerType core.Pod] "internalPod"), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-        let: "internalRS" := (GoAlloc (go.PointerType apps.ReplicaSet) (GoZeroVal (go.PointerType apps.ReplicaSet) #())) in
-        let: "$r0" := (GoAlloc apps.ReplicaSet (CompositeLiteral apps.ReplicaSet (LiteralValue []))) in
-        do:  ("internalRS" <-[go.PointerType apps.ReplicaSet] "$r0");;;
+        let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
+        let: "internalPVC" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) (GoZeroVal (go.PointerType core.PersistentVolumeClaim) #())) in
+        let: "$r0" := (GoAlloc core.PersistentVolumeClaim (CompositeLiteral core.PersistentVolumeClaim (LiteralValue []))) in
+        do:  ("internalPVC" <-[go.PointerType core.PersistentVolumeClaim] "$r0");;;
         (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-        let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "typed")) in
-        let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS")) in
+        let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "typed")) in
+        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType core.PersistentVolumeClaim] "internalPVC")) in
         let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
         (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
         do:  ("err" <-[go.error] "$r0");;;
         (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
         then
-          return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v"%go in
+          return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.PersistentVolumeClaim to internal PersistentVolumeClaim: %v"%go in
            let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
            CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
            (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
            (FuncResolve errors.NewBadRequest [] #()) "$a0"))
         else do:  #()));;;
-        return: (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS"), Convert go.untyped_nil go.error UntypedNil)
+        return: (Convert (go.PointerType core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType core.PersistentVolumeClaim] "internalPVC"), Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"unsupported versioned object type for conversion: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
+          let: "internalRS" := (GoAlloc (go.PointerType apps.ReplicaSet) (GoZeroVal (go.PointerType apps.ReplicaSet) #())) in
+          let: "$r0" := (GoAlloc apps.ReplicaSet (CompositeLiteral apps.ReplicaSet (LiteralValue []))) in
+          do:  ("internalRS" <-[go.PointerType apps.ReplicaSet] "$r0");;;
+          (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+          let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "typed")) in
+          let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS")) in
+          let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
+          (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+          do:  ("err" <-[go.error] "$r0");;;
+          (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+          then
+            return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v"%go in
+             let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
+             (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+          else do:  #()));;;
+          return: (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS"), Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
+            let: "internalSTS" := (GoAlloc (go.PointerType apps.StatefulSet) (GoZeroVal (go.PointerType apps.StatefulSet) #())) in
+            let: "$r0" := (GoAlloc apps.StatefulSet (CompositeLiteral apps.StatefulSet (LiteralValue []))) in
+            do:  ("internalSTS" <-[go.PointerType apps.StatefulSet] "$r0");;;
+            (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+            let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "typed")) in
+            let: "$a1" := (Convert (go.PointerType apps.StatefulSet) (go.InterfaceType []) (![go.PointerType apps.StatefulSet] "internalSTS")) in
+            let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
+            (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+            do:  ("err" <-[go.error] "$r0");;;
+            (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+            then
+              return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.StatefulSet to internal StatefulSet: %v"%go in
+               let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
+               CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+               (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
+               (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+            else do:  #()));;;
+            return: (Convert (go.PointerType apps.StatefulSet) (go.InterfaceType []) (![go.PointerType apps.StatefulSet] "internalSTS"), Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"unsupported versioned object type for conversion: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))).
 
 (* applySchemaDefaults applies schema-based defaults to the object.
    This matches the API server's defaulting behavior that happens during decoding.
    These defaults are applied BEFORE PrepareForCreate and validation.
 
-   go: api_model.go:388:6 *)
+   go: api_model.go:406:6 *)
 Definition applySchemaDefaultsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -802,20 +862,34 @@ Definition applySchemaDefaultsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       do:  (let: "$a0" := (![go.PointerType api_core_v1.Pod] "typed") in
       (FuncResolve apis_core_v1.SetObjectDefaults_Pod [] #()) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-        do:  (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "typed") in
-        (FuncResolve apis_apps_v1.SetObjectDefaults_ReplicaSet [] #()) "$a0")
+        let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (![go.PointerType api_core_v1.PersistentVolumeClaim] "typed") in
+        (FuncResolve apis_core_v1.SetObjectDefaults_PersistentVolumeClaim [] #()) "$a0")
       else
-        return: (let: "$a0" := #"unsupported object type for schema defaults: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
+          do:  (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "typed") in
+          (FuncResolve apis_apps_v1.SetObjectDefaults_ReplicaSet [] #()) "$a0")
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
+            do:  (let: "$a0" := (![go.PointerType api_apps_v1.StatefulSet] "typed") in
+            (FuncResolve apis_apps_v1.SetObjectDefaults_StatefulSet [] #()) "$a0")
+          else
+            return: (let: "$a0" := #"unsupported object type for schema defaults: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:407:6 *)
+(* go: api_model.go:429:6 *)
 Definition applyStrategyPrepareForCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -831,21 +905,37 @@ Definition applyStrategyPrepareForCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
       let: "$a1" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "typed")) in
       (MethodResolve (go.PointerType pod.podStrategy) "PrepareForCreate"%go (GlobalVarAddr pod.Strategy #())) "$a0" "$a1")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
         do:  (let: "$a0" := (![context.Context] "ctx") in
-        let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-        (MethodResolve (go.PointerType replicaset.rsStrategy) "PrepareForCreate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1")
+        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "PrepareForCreate"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0" "$a1")
       else
-        return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          do:  (let: "$a0" := (![context.Context] "ctx") in
+          let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
+          (MethodResolve (go.PointerType replicaset.rsStrategy) "PrepareForCreate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1")
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            do:  (let: "$a0" := (![context.Context] "ctx") in
+            let: "$a1" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
+            (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "PrepareForCreate"%go (GlobalVarAddr statefulset.Strategy #())) "$a0" "$a1")
+          else
+            return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:420:6 *)
+(* go: api_model.go:446:6 *)
 Definition applyAdmissionMutateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -859,16 +949,28 @@ Definition applyAdmissionMutateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       do:  (let: "$a0" := (![go.PointerType core.Pod] "typed") in
       (FuncResolve applyPriorityAdmission [] #()) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
         return: (Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          return: (Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            return: (Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* applyAdmissionMutateForUpdate mirrors the mutating admission plugins that affect the
@@ -878,7 +980,7 @@ Definition applyAdmissionMutateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/defaulttolerationseconds/admission.go#L107-L145
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/priority/admission.go#L136-L158
 
-   go: api_model.go:442:6 *)
+   go: api_model.go:472:6 *)
 Definition applyAdmissionMutateForUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "oldObj",
     exception_do (let: "oldObj" := (GoAlloc (go.InterfaceType []) "oldObj") in
@@ -921,19 +1023,31 @@ Definition applyAdmissionMutateForUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
         do:  ((StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "typed"))) <-[go.PointerType core.PreemptionPolicy] "$r0")
       else do:  #())
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
         return: (Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (let: "$a0" := #"unsupported object type for update admission mutation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          return: (Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            return: (Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (let: "$a0" := #"unsupported object type for update admission mutation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:469:6 *)
+(* go: api_model.go:503:6 *)
 Definition applyAdmissionValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -942,21 +1056,29 @@ Definition applyAdmissionValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     (if: "$ok"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then return: (Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (let: "$a0" := #"unsupported object type for admission validation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then return: (Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then return: (Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (let: "$a0" := #"unsupported object type for admission validation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))).
 
-(* go: api_model.go:485:6 *)
+(* go: api_model.go:525:6 *)
 Definition allowUnconditionalUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
     let: "$sw" := (![go.string] "kind") in
-    (if: ("$sw" =⟨go.string⟩ #"ReplicaSet"%go) || ("$sw" =⟨go.string⟩ #"Pod"%go)
+    (if: ("$sw" =⟨go.string⟩ #"StatefulSet"%go) || (("$sw" =⟨go.string⟩ #"ReplicaSet"%go) || (("$sw" =⟨go.string⟩ #"PersistentVolumeClaim"%go) || ("$sw" =⟨go.string⟩ #"Pod"%go)))
     then return: (#true, Convert go.untyped_nil go.error UntypedNil)
     else
       return: (#false, let: "$a0" := #"unsupported kind for update: %s"%go in
@@ -964,7 +1086,7 @@ Definition allowUnconditionalUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
        (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))).
 
-(* go: api_model.go:498:6 *)
+(* go: api_model.go:540:6 *)
 Definition malformedUpdateResourceVersionErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "err",
     exception_do (let: "err" := (GoAlloc go.error "err") in
@@ -974,7 +1096,7 @@ Definition malformedUpdateResourceVersionErrorⁱᵐᵖˡ {ext : ffi_syntax} {go
      CompositeLiteral apis_meta_v1.Status (LiteralValue [KeyedElement (Some (KeyField "Status"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Code"%go)) (ElementExpression go.int32 "$v1"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v2")])) in
      CompositeLiteral errors.StatusError (LiteralValue [KeyedElement (Some (KeyField "ErrStatus"%go)) (ElementExpression apis_meta_v1.Status "$v0")]))))).
 
-(* go: api_model.go:506:6 *)
+(* go: api_model.go:548:6 *)
 Definition parseResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "resourceVersion",
     exception_do (let: "resourceVersion" := (GoAlloc go.string "resourceVersion") in
@@ -984,7 +1106,7 @@ Definition parseResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     (FuncResolve strconv.ParseUint [] #()) "$a0" "$a1" "$a2")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:510:6 *)
+(* go: api_model.go:552:6 *)
 Definition updateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -993,16 +1115,24 @@ Definition updateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     (if: "$ok"
     then return: (Convert pod.podStrategy rest.RESTUpdateStrategy (![pod.podStrategy] (GlobalVarAddr pod.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
-      then return: (Convert replicaset.rsStrategy rest.RESTUpdateStrategy (![replicaset.rsStrategy] (GlobalVarAddr replicaset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+      then return: (Convert persistentvolumeclaim.persistentvolumeclaimStrategy rest.RESTUpdateStrategy (![persistentvolumeclaim.persistentvolumeclaimStrategy] (GlobalVarAddr persistentvolumeclaim.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for update strategy: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then return: (Convert replicaset.rsStrategy rest.RESTUpdateStrategy (![replicaset.rsStrategy] (GlobalVarAddr replicaset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then return: (Convert statefulset.statefulSetStrategy rest.RESTUpdateStrategy (![statefulset.statefulSetStrategy] (GlobalVarAddr statefulset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for update strategy: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))).
 
-(* go: api_model.go:521:6 *)
+(* go: api_model.go:567:6 *)
 Definition statusUpdateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -1011,16 +1141,24 @@ Definition statusUpdateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go
     (if: "$ok"
     then return: (Convert pod.podStatusStrategy rest.RESTUpdateStrategy (![pod.podStatusStrategy] (GlobalVarAddr pod.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
-      then return: (Convert replicaset.rsStatusStrategy rest.RESTUpdateStrategy (![replicaset.rsStatusStrategy] (GlobalVarAddr replicaset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+      then return: (Convert persistentvolumeclaim.persistentvolumeclaimStatusStrategy rest.RESTUpdateStrategy (![persistentvolumeclaim.persistentvolumeclaimStatusStrategy] (GlobalVarAddr persistentvolumeclaim.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for status update strategy: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then return: (Convert replicaset.rsStatusStrategy rest.RESTUpdateStrategy (![replicaset.rsStatusStrategy] (GlobalVarAddr replicaset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then return: (Convert statefulset.statefulSetStatusStrategy rest.RESTUpdateStrategy (![statefulset.statefulSetStatusStrategy] (GlobalVarAddr statefulset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for status update strategy: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))).
 
-(* go: api_model.go:532:6 *)
+(* go: api_model.go:582:6 *)
 Definition applyStrategyValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -1049,33 +1187,73 @@ Definition applyStrategyValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
          (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
       else do:  #()))
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
         (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
         let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-        let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-        (MethodResolve (go.PointerType replicaset.rsStrategy) "Validate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1") in
+        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "Validate"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0" "$a1") in
         do:  ("errs" <-[field.ErrorList] "$r0");;;
         (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
         (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
         then
-          return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
-           let: "$v1" := #"ReplicaSet"%go in
+          return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
+           let: "$v1" := #"PersistentVolumeClaim"%go in
            CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
            let: "$a1" := (![go.string] "name") in
            let: "$a2" := (![field.ErrorList] "errs") in
            (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
         else do:  #()))
       else
-        return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
+          let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
+          let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
+          (MethodResolve (go.PointerType replicaset.rsStrategy) "Validate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1") in
+          do:  ("errs" <-[field.ErrorList] "$r0");;;
+          (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
+          (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+          then
+            return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
+             let: "$v1" := #"ReplicaSet"%go in
+             CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+             let: "$a1" := (![go.string] "name") in
+             let: "$a2" := (![field.ErrorList] "errs") in
+             (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+          else do:  #()))
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
+            let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
+            let: "$a1" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
+            (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "Validate"%go (GlobalVarAddr statefulset.Strategy #())) "$a0" "$a1") in
+            do:  ("errs" <-[field.ErrorList] "$r0");;;
+            (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
+            (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+            then
+              return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
+               let: "$v1" := #"StatefulSet"%go in
+               CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+               let: "$a1" := (![go.string] "name") in
+               let: "$a2" := (![field.ErrorList] "errs") in
+               (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+            else do:  #()))
+          else
+            return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:549:6 *)
+(* go: api_model.go:607:6 *)
 Definition applyStrategyCanonicalizeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
@@ -1087,17 +1265,31 @@ Definition applyStrategyCanonicalizeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
       do:  (let: "$a0" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "typed")) in
       (MethodResolve (go.PointerType pod.podStrategy) "Canonicalize"%go (GlobalVarAddr pod.Strategy #())) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
-        do:  (let: "$a0" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-        (MethodResolve (go.PointerType replicaset.rsStrategy) "Canonicalize"%go (GlobalVarAddr replicaset.Strategy #())) "$a0")
+        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "Canonicalize"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0")
       else
-        return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")));;;
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          do:  (let: "$a0" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
+          (MethodResolve (go.PointerType replicaset.rsStrategy) "Canonicalize"%go (GlobalVarAddr replicaset.Strategy #())) "$a0")
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            do:  (let: "$a0" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
+            (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "Canonicalize"%go (GlobalVarAddr statefulset.Strategy #())) "$a0")
+          else
+            return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* applyValidationAndDefaultingOnUpdate models the decode/defaulting/admission/storage
@@ -1107,7 +1299,7 @@ Definition applyStrategyCanonicalizeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go#L107-L165
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L753-L770
 
-   go: api_model.go:567:6 *)
+   go: api_model.go:629:6 *)
 Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newObj" "oldObj" "namespace",
     exception_do (let: "namespace" := (GoAlloc go.string "namespace") in
@@ -1232,7 +1424,7 @@ Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ {ext : ffi_syntax} {g
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/storage/storage.go#L107-L109
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go#L107-L165
 
-   go: api_model.go:623:6 *)
+   go: api_model.go:685:6 *)
 Definition applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newObj" "oldObj" "namespace",
     exception_do (let: "namespace" := (GoAlloc go.string "namespace") in
@@ -1341,7 +1533,7 @@ Definition applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ {ext : ffi_synt
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:666:6 *)
+(* go: api_model.go:728:6 *)
 Definition applyValidationAndDefaultingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -1416,7 +1608,7 @@ Definition applyValidationAndDefaultingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:720:17 *)
+(* go: api_model.go:782:17 *)
 Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -1531,7 +1723,7 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L652-L777
    - https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L233-L260
 
-   go: api_model.go:786:17 *)
+   go: api_model.go:848:17 *)
 Definition State__updateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -1719,7 +1911,7 @@ Definition State__updateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     return: (let: "$a0" := (![go.InterfaceType []] "objCopy") in
      (FuncResolve deepCopy [] #()) "$a0", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:886:17 *)
+(* go: api_model.go:948:17 *)
 Definition State__updateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -1910,7 +2102,7 @@ Definition State__updateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
 (* shouldOrphanDependents determines if the orphan finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L888-L925
 
-   go: api_model.go:975:6 *)
+   go: api_model.go:1037:6 *)
 Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -1948,7 +2140,7 @@ Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 (* shouldDeleteDependents determines if the foreground deletion finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L927-L966
 
-   go: api_model.go:1009:6 *)
+   go: api_model.go:1071:6 *)
 Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -1987,7 +2179,7 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
    It returns whether the finalizer list needs updating and the new finalizer list.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L976-L1005
 
-   go: api_model.go:1044:6 *)
+   go: api_model.go:1106:6 *)
 Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2062,7 +2254,7 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} 
       else do:  #())));;;
     return: (#false, ![go.SliceType go.string] "oldFinalizers")).
 
-(* go: api_model.go:1088:6 *)
+(* go: api_model.go:1150:6 *)
 Definition newPreconditionUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "kind" "name" "preconditionUID" "uid",
     exception_do (let: "uid" := (GoAlloc go.string "uid") in
@@ -2079,7 +2271,7 @@ Definition newPreconditionUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
      (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
      (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
 
-(* go: api_model.go:1096:6 *)
+(* go: api_model.go:1158:6 *)
 Definition newUpdateUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "kind" "name" "existingUID" "uid",
     exception_do (let: "uid" := (GoAlloc types.UID "uid") in
@@ -2096,7 +2288,7 @@ Definition newUpdateUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
      (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
      (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
 
-(* go: api_model.go:1104:6 *)
+(* go: api_model.go:1166:6 *)
 Definition newUpdateResourceVersionConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "kind" "name" "existingResourceVersion" "resourceVersion",
     exception_do (let: "resourceVersion" := (GoAlloc go.string "resourceVersion") in
@@ -2113,7 +2305,7 @@ Definition newUpdateResourceVersionConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {
      (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
      (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
 
-(* go: api_model.go:1112:6 *)
+(* go: api_model.go:1174:6 *)
 Definition newPreconditionRVConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "kind" "name" "preconditionRV" "rv",
     exception_do (let: "rv" := (GoAlloc go.string "rv") in
@@ -2133,7 +2325,7 @@ Definition newPreconditionRVConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
 (* validateDeleteOptions checks structural DeleteOptions validation that upstream performs in BeforeDelete.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L80-L81
 
-   go: api_model.go:1122:6 *)
+   go: api_model.go:1184:6 *)
 Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2157,7 +2349,7 @@ Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
    Returns a Conflict error if preconditions don't match.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
 
-   go: api_model.go:1136:6 *)
+   go: api_model.go:1198:6 *)
 Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
@@ -2194,7 +2386,7 @@ Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
    Returns (graceful, pendingGraceful, error).
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
 
-   go: api_model.go:1163:6 *)
+   go: api_model.go:1225:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2325,10 +2517,22 @@ Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
         let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
         return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
       else
-        return: (#false, #false, let: "$a0" := #"unsupported object type for graceful delete: %T"%go in
-         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
-         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
+        (if: "$ok"
+        then
+          let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
+          return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
+        else
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+          (if: "$ok"
+          then
+            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
+            return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
+          else
+            return: (#false, #false, let: "$a0" := #"unsupported object type for graceful delete: %T"%go in
+             let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+             CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+             (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))).
 
 (* storageObjectDeepEqual approximates upstream's "did the storage operation actually change the
    stored object?" check, but it is not exactly the same logic.
@@ -2343,7 +2547,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
    selfLink differences. This can still diverge from upstream in edge cases where storage
    normalization or Go representation details affect equality.
 
-   go: api_model.go:1263:6 *)
+   go: api_model.go:1331:6 *)
 Definition storageObjectDeepEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj1" "obj2",
     exception_do (let: "obj2" := (GoAlloc (go.InterfaceType []) "obj2") in
@@ -2382,7 +2586,7 @@ Definition storageObjectDeepEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
      let: "$a1" := (![go.InterfaceType []] "obj2Copy") in
      (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")).
 
-(* go: api_model.go:1279:6 *)
+(* go: api_model.go:1347:6 *)
 Definition shouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "objCopy" "existingObjCopy",
     exception_do (let: "existingObjCopy" := (GoAlloc (go.InterfaceType []) "existingObjCopy") in
@@ -2399,7 +2603,7 @@ Definition shouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L163-L165
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1022-L1028
 
-   go: api_model.go:1288:6 *)
+   go: api_model.go:1356:6 *)
 Definition deletionTimestampForDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "graceful" "gracePeriod",
     exception_do (let: "gracePeriod" := (GoAlloc go.int64 "gracePeriod") in
@@ -2418,7 +2622,7 @@ Definition deletionTimestampForDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     do:  ("now" <-[apis_meta_v1.Time] "$r0");;;
     return: ("now")).
 
-(* go: api_model.go:1300:17 *)
+(* go: api_model.go:1368:17 *)
 Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2561,7 +2765,7 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1399:17 *)
+   go: api_model.go:1467:17 *)
 Definition State__PodGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2572,7 +2776,7 @@ Definition State__PodGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (MethodResolve (go.PointerType State) "PodMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1403:17 *)
+(* go: api_model.go:1471:17 *)
 Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2618,7 +2822,7 @@ Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1425:17 *)
+   go: api_model.go:1493:17 *)
 Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2629,7 +2833,7 @@ Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     (MethodResolve (go.PointerType State) "PodMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1429:17 *)
+(* go: api_model.go:1497:17 *)
 Definition State__PodMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2677,7 +2881,7 @@ Definition State__PodMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       do:  ("pods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "pods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1447:17 *)
+(* go: api_model.go:1515:17 *)
 Definition State__PodCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2712,7 +2916,7 @@ Definition State__PodCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "createdPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1461:17 *)
+(* go: api_model.go:1529:17 *)
 Definition State__PodUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2747,7 +2951,7 @@ Definition State__PodUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1475:17 *)
+(* go: api_model.go:1543:17 *)
 Definition State__PodUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2782,7 +2986,7 @@ Definition State__PodUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1489:17 *)
+(* go: api_model.go:1557:17 *)
 Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2801,7 +3005,7 @@ Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1500:17 *)
+   go: api_model.go:1568:17 *)
 Definition State__ReplicaSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2812,7 +3016,7 @@ Definition State__ReplicaSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     (MethodResolve (go.PointerType State) "ReplicaSetMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1504:17 *)
+(* go: api_model.go:1572:17 *)
 Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2856,7 +3060,7 @@ Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "rs", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1525:17 *)
+(* go: api_model.go:1593:17 *)
 Definition State__ReplicaSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2891,7 +3095,7 @@ Definition State__ReplicaSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "createdRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1539:17 *)
+(* go: api_model.go:1607:17 *)
 Definition State__ReplicaSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2926,7 +3130,7 @@ Definition State__ReplicaSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1553:17 *)
+(* go: api_model.go:1621:17 *)
 Definition State__ReplicaSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2961,7 +3165,7 @@ Definition State__ReplicaSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1567:17 *)
+(* go: api_model.go:1635:17 *)
 Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2970,6 +3174,486 @@ Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
     let: "$r0" := (let: "$v0" := #"ReplicaSet"%go in
+    let: "$v1" := (![go.string] "namespace") in
+    let: "$v2" := (![go.string] "name") in
+    CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
+    do:  ("key" <-[KKey] "$r0");;;
+    return: (let: "$a0" := (![KKey] "key") in
+     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
+
+(* Returned value must be treated as read-only.
+
+   go: api_model.go:1641:17 *)
+Definition State__PersistentVolumeClaimGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![go.string] "name") in
+    (MethodResolve (go.PointerType State) "PersistentVolumeClaimMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
+    return: ("$ret0", "$ret1")).
+
+(* go: api_model.go:1645:17 *)
+Definition State__PersistentVolumeClaimMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
+    let: "$r0" := (let: "$v0" := #"PersistentVolumeClaim"%go in
+    let: "$v1" := (![go.string] "namespace") in
+    let: "$v2" := (![go.string] "name") in
+    CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
+    do:  ("key" <-[KKey] "$r0");;;
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![KKey] "key") in
+    (MethodResolve (go.PointerType State) "get"%go (![go.PointerType State] "s")) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"persistentvolumeclaim"%go in
+       (FuncResolve api_core_v1.Resource [] #()) "$a0") in
+       let: "$a1" := (![go.string] "name") in
+       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("pvc" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"state entry for persistentvolumeclaim %s/%s is not a *v1.PersistentVolumeClaim"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
+       let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc", Convert go.untyped_nil go.error UntypedNil)).
+
+(* Returned value must be treated as read-only.
+
+   go: api_model.go:1667:17 *)
+Definition State__PersistentVolumeClaimListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "selector",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![labels.Selector] "selector") in
+    (MethodResolve (go.PointerType State) "PersistentVolumeClaimMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
+    return: ("$ret0", "$ret1")).
+
+(* go: api_model.go:1671:17 *)
+Definition State__PersistentVolumeClaimMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "selector",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![labels.Selector] "selector") in
+    (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "claims" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
+    do:  ("claims" <-[go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "$r0");;;
+    let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
+      do:  ("obj" <-[go.InterfaceType []] "$value");;;
+      do:  "$key";;;
+      let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+      let: "claim" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("claim" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+      do:  ("ok" <-[go.bool] "$r1");;;
+      (if: (⟨go.bool⟩! (![go.bool] "ok"))
+      then
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) UntypedNil, let: "$a0" := #"state entry is not a *v1.PersistentVolumeClaim"%go in
+         let: "$a1" := #slice.nil in
+         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+      else do:  #());;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "claims") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_core_v1.PersistentVolumeClaim] "claim") in
+      CompositeLiteral (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_core_v1.PersistentVolumeClaim) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] #()) "$a0" "$a1") in
+      do:  ("claims" <-[go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "claims", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1689:17 *)
+Definition State__PersistentVolumeClaimCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "pvc",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "createdPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("createdPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "createdPVC", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1703:17 *)
+Definition State__PersistentVolumeClaimUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "pvc",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1717:17 *)
+Definition State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "pvc",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1731:17 *)
+Definition State__PersistentVolumeClaimDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "options",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
+    let: "$r0" := (let: "$v0" := #"PersistentVolumeClaim"%go in
+    let: "$v1" := (![go.string] "namespace") in
+    let: "$v2" := (![go.string] "name") in
+    CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
+    do:  ("key" <-[KKey] "$r0");;;
+    return: (let: "$a0" := (![KKey] "key") in
+     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
+
+(* Returned value must be treated as read-only.
+
+   go: api_model.go:1737:17 *)
+Definition State__StatefulSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![go.string] "name") in
+    (MethodResolve (go.PointerType State) "StatefulSetMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
+    return: ("$ret0", "$ret1")).
+
+(* go: api_model.go:1741:17 *)
+Definition State__StatefulSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
+    let: "$r0" := (let: "$v0" := #"StatefulSet"%go in
+    let: "$v1" := (![go.string] "namespace") in
+    let: "$v2" := (![go.string] "name") in
+    CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
+    do:  ("key" <-[KKey] "$r0");;;
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![KKey] "key") in
+    (MethodResolve (go.PointerType State) "get"%go (![go.PointerType State] "s")) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"statefulset"%go in
+       (FuncResolve api_apps_v1.Resource [] #()) "$a0") in
+       let: "$a1" := (![go.string] "name") in
+       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("ss" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"state entry for statefulset %s/%s is not a *v1.StatefulSet"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
+       let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.StatefulSet] "ss", Convert go.untyped_nil go.error UntypedNil)).
+
+(* Returned value must be treated as read-only.
+
+   go: api_model.go:1763:17 *)
+Definition State__StatefulSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "selector",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![labels.Selector] "selector") in
+    (MethodResolve (go.PointerType State) "StatefulSetMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
+    return: ("$ret0", "$ret1")).
+
+(* go: api_model.go:1767:17 *)
+Definition State__StatefulSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "selector",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![labels.Selector] "selector") in
+    (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "sets" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.StatefulSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
+    do:  ("sets" <-[go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "$r0");;;
+    let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
+      do:  ("obj" <-[go.InterfaceType []] "$value");;;
+      do:  "$key";;;
+      let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+      let: "set" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("set" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+      do:  ("ok" <-[go.bool] "$r1");;;
+      (if: (⟨go.bool⟩! (![go.bool] "ok"))
+      then
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) UntypedNil, let: "$a0" := #"state entry is not a *v1.StatefulSet"%go in
+         let: "$a1" := #slice.nil in
+         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+      else do:  #());;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "sets") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_apps_v1.StatefulSet] "set") in
+      CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.StatefulSet) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.StatefulSet)] #()) "$a0" "$a1") in
+      do:  ("sets" <-[go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "sets", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1785:17 *)
+Definition State__StatefulSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "ss",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "createdSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("createdSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.StatefulSet] "createdSS", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1799:17 *)
+Definition State__StatefulSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "ss",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1813:17 *)
+Definition State__StatefulSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "ss",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: api_model.go:1827:17 *)
+Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "options",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
+    let: "$r0" := (let: "$v0" := #"StatefulSet"%go in
     let: "$v1" := (![go.string] "namespace") in
     let: "$v2" := (![go.string] "name") in
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
@@ -3246,7 +3930,7 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 
 #[global] Instance info' : PkgInfo pkg_id.apimodel :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.fmt.pkg_id.fmt; code.math.rand.pkg_id.rand; code.reflect.pkg_id.reflect; code.strconv.pkg_id.strconv; code.sync.pkg_id.sync; code.time.pkg_id.time; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.api.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.util.uuid.pkg_id.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.k8s_io.apiserver.pkg.endpoints.request.pkg_id.request; code.k8s_io.apiserver.pkg.registry.generic.registry.pkg_id.registry; code.k8s_io.apiserver.pkg.registry.rest.pkg_id.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.pkg_id.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.pkg_id.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.core.pkg_id.core; code.k8s_io.kubernetes.pkg.apis.core.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.registry.core.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.pkg_id.install]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.fmt.pkg_id.fmt; code.math.rand.pkg_id.rand; code.reflect.pkg_id.reflect; code.strconv.pkg_id.strconv; code.sync.pkg_id.sync; code.time.pkg_id.time; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.api.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.util.uuid.pkg_id.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.k8s_io.apiserver.pkg.endpoints.request.pkg_id.request; code.k8s_io.apiserver.pkg.registry.generic.registry.pkg_id.registry; code.k8s_io.apiserver.pkg.registry.rest.pkg_id.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.pkg_id.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.pkg_id.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.core.pkg_id.core; code.k8s_io.kubernetes.pkg.apis.core.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.registry.apps.statefulset.pkg_id.statefulset; code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.pkg_id.persistentvolumeclaim; code.k8s_io.kubernetes.pkg.registry.core.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.apis.apps.install.pkg_id.install]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -3255,6 +3939,8 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       exception_do (do:  (go.GlobalAlloc ModelState (go.PointerType State) #());;;
       do:  (install.initialize' #());;;
       do:  (pod.initialize' #());;;
+      do:  (persistentvolumeclaim.initialize' #());;;
+      do:  (statefulset.initialize' #());;;
       do:  (replicaset.initialize' #());;;
       do:  (controller.initialize' #());;;
       do:  (apis_core_v1.initialize' #());;;
@@ -3340,6 +4026,14 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State_set_mu (x : State.t) y :: ⟦StructFieldSet (Stateⁱᵐᵖˡ) "mu", (#x, #y)⟧ ⤳[under] #(x <|State.mu' := y|>);
   #[global] State'ptr_ByIndex_unfold :: MethodUnfold (go.PointerType (State)) "ByIndex" (State__ByIndexⁱᵐᵖˡ);
   #[global] State'ptr_Index_unfold :: MethodUnfold (go.PointerType (State)) "Index" (State__Indexⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimCreate_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimCreate" (State__PersistentVolumeClaimCreateⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimDelete_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimDelete" (State__PersistentVolumeClaimDeleteⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimGet_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimGet" (State__PersistentVolumeClaimGetⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimList_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimList" (State__PersistentVolumeClaimListⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimMutGet_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimMutGet" (State__PersistentVolumeClaimMutGetⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimMutList_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimMutList" (State__PersistentVolumeClaimMutListⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimUpdate_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimUpdate" (State__PersistentVolumeClaimUpdateⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimUpdateStatus" (State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_PodCreate_unfold :: MethodUnfold (go.PointerType (State)) "PodCreate" (State__PodCreateⁱᵐᵖˡ);
   #[global] State'ptr_PodDelete_unfold :: MethodUnfold (go.PointerType (State)) "PodDelete" (State__PodDeleteⁱᵐᵖˡ);
   #[global] State'ptr_PodGet_unfold :: MethodUnfold (go.PointerType (State)) "PodGet" (State__PodGetⁱᵐᵖˡ);
@@ -3354,6 +4048,14 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ReplicaSetMutGet_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetMutGet" (State__ReplicaSetMutGetⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdate" (State__ReplicaSetUpdateⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatus" (State__ReplicaSetUpdateStatusⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetCreate_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetCreate" (State__StatefulSetCreateⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetDelete_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetDelete" (State__StatefulSetDeleteⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetGet_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetGet" (State__StatefulSetGetⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetList_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetList" (State__StatefulSetListⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetMutGet_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetMutGet" (State__StatefulSetMutGetⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetMutList_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetMutList" (State__StatefulSetMutListⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetUpdate" (State__StatefulSetUpdateⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetUpdateStatus" (State__StatefulSetUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_create_unfold :: MethodUnfold (go.PointerType (State)) "create" (State__createⁱᵐᵖˡ);
   #[global] State'ptr_delete_unfold :: MethodUnfold (go.PointerType (State)) "delete" (State__deleteⁱᵐᵖˡ);
   #[global] State'ptr_deleteTx_unfold :: MethodUnfold (go.PointerType (State)) "deleteTx" (State__deleteTxⁱᵐᵖˡ);
@@ -3482,6 +4184,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_apis_core_v1_Assumption :: apis_core_v1.Assumptions;
   #[global] import_controller_Assumption :: controller.Assumptions;
   #[global] import_replicaset_Assumption :: replicaset.Assumptions;
+  #[global] import_statefulset_Assumption :: statefulset.Assumptions;
+  #[global] import_persistentvolumeclaim_Assumption :: persistentvolumeclaim.Assumptions;
   #[global] import_pod_Assumption :: pod.Assumptions;
   #[global] import_install_Assumption :: install.Assumptions;
 }.

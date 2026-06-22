@@ -504,8 +504,10 @@ Proof.
     apply elem_of_map_to_list in Hin.
     apply map_lookup_filter_Some in Hin as [Hlookup_abs [Hkind _]].
     pose proof (Habs_valid key obj Hlookup_abs) as [Hkey_eq _].
-    destruct obj as [pod|rs].
+    destruct obj as [pod|rs|pvc|sts].
     - eexists. done.
+    - exfalso. subst key. simpl in Hkind. done.
+    - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
   }
   destruct (kobject_list_to_pods _ Hobjs_are_pods) as [pods ->].

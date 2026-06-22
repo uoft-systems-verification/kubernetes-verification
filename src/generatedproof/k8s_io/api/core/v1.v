@@ -228,6 +228,46 @@ Proof. Admitted.
 End def.
 End PersistentVolumeList.
 
+Module PersistentVolumeClaimSpec.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimSpec.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimSpec.t) (v1.PersistentVolumeClaimSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End PersistentVolumeClaimSpec.
+
+Module PersistentVolumeClaimStatus.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PersistentVolumeClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t). Admitted.
+
+#[global] Instance PersistentVolumeClaimStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PersistentVolumeClaimStatus.t) (v1.PersistentVolumeClaimStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End PersistentVolumeClaimStatus.
+
 Module PersistentVolumeClaim.
 Section def.
 
@@ -237,13 +277,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaim_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaim.t). Admitted.
+#[global]Program Instance PersistentVolumeClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaim.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.PersistentVolumeClaim.t), "TypeMeta"] ↦{dq} v.(v1.PersistentVolumeClaim.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.PersistentVolumeClaim.t), "ObjectMeta"] ↦{dq} v.(v1.PersistentVolumeClaim.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.PersistentVolumeClaim.t), "Spec"] ↦{dq} v.(v1.PersistentVolumeClaim.Spec') ∗
+      "Status" ∷ l.[(v1.PersistentVolumeClaim.t), "Status"] ↦{dq} v.(v1.PersistentVolumeClaim.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaim_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaim.t) (v1.PersistentVolumeClaimⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaim_access_load_TypeMeta l (v : (v1.PersistentVolumeClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "TypeMeta"] ↦{dq} (v.(v1.PersistentVolumeClaim.TypeMeta')))
+    (l.[(v1.PersistentVolumeClaim.t), "TypeMeta"] ↦{dq} (v.(v1.PersistentVolumeClaim.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaim_access_store_TypeMeta l (v : (v1.PersistentVolumeClaim.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "TypeMeta"] ↦ (v.(v1.PersistentVolumeClaim.TypeMeta')))
+    (l.[(v1.PersistentVolumeClaim.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaim.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaim_access_load_ObjectMeta l (v : (v1.PersistentVolumeClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "ObjectMeta"] ↦{dq} (v.(v1.PersistentVolumeClaim.ObjectMeta')))
+    (l.[(v1.PersistentVolumeClaim.t), "ObjectMeta"] ↦{dq} (v.(v1.PersistentVolumeClaim.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaim_access_store_ObjectMeta l (v : (v1.PersistentVolumeClaim.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "ObjectMeta"] ↦ (v.(v1.PersistentVolumeClaim.ObjectMeta')))
+    (l.[(v1.PersistentVolumeClaim.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaim.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaim_access_load_Spec l (v : (v1.PersistentVolumeClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "Spec"] ↦{dq} (v.(v1.PersistentVolumeClaim.Spec')))
+    (l.[(v1.PersistentVolumeClaim.t), "Spec"] ↦{dq} (v.(v1.PersistentVolumeClaim.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaim_access_store_Spec l (v : (v1.PersistentVolumeClaim.t)) Spec' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "Spec"] ↦ (v.(v1.PersistentVolumeClaim.Spec')))
+    (l.[(v1.PersistentVolumeClaim.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaim.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaim_access_load_Status l (v : (v1.PersistentVolumeClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaim.Status')))
+    (l.[(v1.PersistentVolumeClaim.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaim.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaim_access_store_Status l (v : (v1.PersistentVolumeClaim.t)) Status' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaim.t), "Status"] ↦ (v.(v1.PersistentVolumeClaim.Status')))
+    (l.[(v1.PersistentVolumeClaim.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaim.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaim.
@@ -267,26 +370,6 @@ Proof. Admitted.
 
 End def.
 End PersistentVolumeClaimList.
-
-Module PersistentVolumeClaimSpec.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimSpec.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimSpec_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimSpec.t) (v1.PersistentVolumeClaimSpecⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimSpec.
 
 Module TypedObjectReference.
 Section def.
@@ -407,26 +490,6 @@ Proof. Admitted.
 
 End def.
 End PersistentVolumeClaimCondition.
-
-Module PersistentVolumeClaimStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimStatus.t) (v1.PersistentVolumeClaimStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimStatus.
 
 Module PersistentVolumeAccessMode.
 Section def.

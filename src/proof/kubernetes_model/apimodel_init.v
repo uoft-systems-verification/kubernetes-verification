@@ -23,7 +23,9 @@ From New.proof.k8s_io.kubernetes.pkg.apis.apps Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg.apis.core Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.k8s_io.kubernetes.pkg.registry.apps Require Export replicaset_init.
+From New.proof.k8s_io.kubernetes.pkg.registry.apps Require Export statefulset_init.
 From New.proof.k8s_io.kubernetes.pkg.registry.core Require Export pod_init.
+From New.proof.k8s_io.kubernetes.pkg.registry.core Require Export persistentvolumeclaim_init.
 From New.proof Require Export strconv_init.
 From New.proof Require Export rand_init.
 From New.proof Require Export reflect_init.

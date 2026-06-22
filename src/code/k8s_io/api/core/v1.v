@@ -1251,8 +1251,6 @@ Axiom PersistentVolumeStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGl
 
 Axiom PersistentVolumeListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom PersistentVolumeClaimⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PersistentVolumeClaimListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PersistentVolumeClaimSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -4568,20 +4566,79 @@ Class PersistentVolumeList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{
   #[global] PersistentVolumeListⁱᵐᵖˡ_underlying :: (PersistentVolumeListⁱᵐᵖˡ) ↓u (PersistentVolumeListⁱᵐᵖˡ);
 }.
 
-Module PersistentVolumeClaim.
+Module PersistentVolumeClaimSpec.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Axiom t : Type.
 Axiom zero_val : ZeroVal t.
 #[global] Existing Instance zero_val.
 End def.
+End PersistentVolumeClaimSpec.
+
+Class PersistentVolumeClaimSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PersistentVolumeClaimSpec_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimSpecⁱᵐᵖˡ PersistentVolumeClaimSpec.t;
+  #[global] PersistentVolumeClaimSpec_underlying :: (PersistentVolumeClaimSpec) <u (PersistentVolumeClaimSpecⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimSpecⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimSpecⁱᵐᵖˡ) ↓u (PersistentVolumeClaimSpecⁱᵐᵖˡ);
+}.
+
+Module PersistentVolumeClaimStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End PersistentVolumeClaimStatus.
+
+Class PersistentVolumeClaimStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PersistentVolumeClaimStatus_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimStatusⁱᵐᵖˡ PersistentVolumeClaimStatus.t;
+  #[global] PersistentVolumeClaimStatus_underlying :: (PersistentVolumeClaimStatus) <u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimStatusⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimStatusⁱᵐᵖˡ) ↓u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
+}.
+
+Module PersistentVolumeClaim.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : v1.ObjectMeta.t;
+  Spec' : v1.PersistentVolumeClaimSpec.t;
+  Status' : v1.PersistentVolumeClaimStatus.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
 End PersistentVolumeClaim.
+
+Definition PersistentVolumeClaim'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.FieldDecl "Spec"%go PersistentVolumeClaimSpec);
+  (go.FieldDecl "Status"%go PersistentVolumeClaimStatus)
+].
+Program Definition PersistentVolumeClaim'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PersistentVolumeClaim'fds_unsealed).
+Global Instance equals_unfold_PersistentVolumeClaim {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PersistentVolumeClaim'fds =→ PersistentVolumeClaim'fds_unsealed.
+Proof. rewrite /PersistentVolumeClaim'fds seal_eq //. Qed.
+
+Definition PersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PersistentVolumeClaim'fds).
 
 Class PersistentVolumeClaim_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PersistentVolumeClaim_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimⁱᵐᵖˡ PersistentVolumeClaim.t;
   #[global] PersistentVolumeClaim_underlying :: (PersistentVolumeClaim) <u (PersistentVolumeClaimⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimⁱᵐᵖˡ) ↓u (PersistentVolumeClaimⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaim_get_TypeMeta (x : PersistentVolumeClaim.t) :: ⟦StructFieldGet (PersistentVolumeClaimⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(PersistentVolumeClaim.TypeMeta');
+  #[global] PersistentVolumeClaim_set_TypeMeta (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.TypeMeta' := y|>);
+  #[global] PersistentVolumeClaim_get_ObjectMeta (x : PersistentVolumeClaim.t) :: ⟦StructFieldGet (PersistentVolumeClaimⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(PersistentVolumeClaim.ObjectMeta');
+  #[global] PersistentVolumeClaim_set_ObjectMeta (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.ObjectMeta' := y|>);
+  #[global] PersistentVolumeClaim_get_Spec (x : PersistentVolumeClaim.t) :: ⟦StructFieldGet (PersistentVolumeClaimⁱᵐᵖˡ) "Spec", #x⟧ ⤳[under] #x.(PersistentVolumeClaim.Spec');
+  #[global] PersistentVolumeClaim_set_Spec (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.Spec' := y|>);
+  #[global] PersistentVolumeClaim_get_Status (x : PersistentVolumeClaim.t) :: ⟦StructFieldGet (PersistentVolumeClaimⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(PersistentVolumeClaim.Status');
+  #[global] PersistentVolumeClaim_set_Status (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.Status' := y|>);
 }.
 
 Module PersistentVolumeClaimList.
@@ -4598,22 +4655,6 @@ Class PersistentVolumeClaimList_Assumptions {ext : ffi_syntax} `{!GoGlobalContex
   #[global] PersistentVolumeClaimList_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimListⁱᵐᵖˡ PersistentVolumeClaimList.t;
   #[global] PersistentVolumeClaimList_underlying :: (PersistentVolumeClaimList) <u (PersistentVolumeClaimListⁱᵐᵖˡ);
   #[global] PersistentVolumeClaimListⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimListⁱᵐᵖˡ) ↓u (PersistentVolumeClaimListⁱᵐᵖˡ);
-}.
-
-Module PersistentVolumeClaimSpec.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End PersistentVolumeClaimSpec.
-
-Class PersistentVolumeClaimSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] PersistentVolumeClaimSpec_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimSpecⁱᵐᵖˡ PersistentVolumeClaimSpec.t;
-  #[global] PersistentVolumeClaimSpec_underlying :: (PersistentVolumeClaimSpec) <u (PersistentVolumeClaimSpecⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimSpecⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimSpecⁱᵐᵖˡ) ↓u (PersistentVolumeClaimSpecⁱᵐᵖˡ);
 }.
 
 Module TypedObjectReference.
@@ -4710,22 +4751,6 @@ Class PersistentVolumeClaimCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalC
   #[global] PersistentVolumeClaimCondition_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimConditionⁱᵐᵖˡ PersistentVolumeClaimCondition.t;
   #[global] PersistentVolumeClaimCondition_underlying :: (PersistentVolumeClaimCondition) <u (PersistentVolumeClaimConditionⁱᵐᵖˡ);
   #[global] PersistentVolumeClaimConditionⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimConditionⁱᵐᵖˡ) ↓u (PersistentVolumeClaimConditionⁱᵐᵖˡ);
-}.
-
-Module PersistentVolumeClaimStatus.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End PersistentVolumeClaimStatus.
-
-Class PersistentVolumeClaimStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] PersistentVolumeClaimStatus_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimStatusⁱᵐᵖˡ PersistentVolumeClaimStatus.t;
-  #[global] PersistentVolumeClaimStatus_underlying :: (PersistentVolumeClaimStatus) <u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimStatusⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimStatusⁱᵐᵖˡ) ↓u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
 }.
 
 Module PersistentVolumeAccessMode.

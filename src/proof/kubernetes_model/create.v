@@ -451,7 +451,7 @@ Proof.
     with "[$Hinit $Hisk $Hdeepown_i $Hown_children_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (i' kobj' key uid) "Hpost". iNamed "Hpost".
-  destruct kobj' as [pod'|]; [|done].
+  destruct kobj' as [pod'|rs'|pvc'|sts']; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]". wp_auto.
   unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).

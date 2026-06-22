@@ -692,6 +692,191 @@ Qed.
 End proof.
 End PodV.
 
+Module PersistentVolumeClaimSpecV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
+Axiom valid: t → Prop.
+Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
+
+End def.
+End PersistentVolumeClaimSpecV.
+
+Module PersistentVolumeClaimStatusV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
+Axiom valid: t → Prop.
+Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
+
+End def.
+End PersistentVolumeClaimStatusV.
+
+Module PersistentVolumeClaimV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Record t := mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : ObjectMetaV.t;
+  Spec' : PersistentVolumeClaimSpecV.t;
+  Status' : PersistentVolumeClaimStatusV.t;
+}.
+
+Definition kind : go_string :=
+  "PersistentVolumeClaim"%go.
+
+Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
+  {|
+    KKey.Kind' := kind;
+    KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+    KKey.Name' := meta.(ObjectMetaV.Name')
+  |}.
+
+Definition key (v: t) : KKey.t :=
+  meta_key v.(ObjectMeta').
+
+Definition valid (pvc: t) : Prop :=
+  valid_typemeta kind pvc.(TypeMeta') ∧
+  valid_resource_version pvc.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  ObjectMetaV.valid pvc.(ObjectMeta') ∧
+  PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
+  PersistentVolumeClaimStatusV.valid pvc.(Status').
+
+Definition valid_without_meta (pvc: t) : Prop :=
+  PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
+  PersistentVolumeClaimStatusV.valid pvc.(Status').
+
+Definition deepown (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
+  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.PersistentVolumeClaim.TypeMeta') = v.(TypeMeta') ⌝ ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') ∗
+  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status').
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+Definition typemeta_ptr l: loc :=
+  struct_field_ref v1.PersistentVolumeClaim.t "TypeMeta" l.
+
+Definition objectmeta_ptr l: loc :=
+  struct_field_ref v1.PersistentVolumeClaim.t "ObjectMeta" l.
+
+Definition spec_ptr l: loc :=
+  struct_field_ref v1.PersistentVolumeClaim.t "Spec" l.
+
+Definition status_ptr l: loc :=
+  struct_field_ref v1.PersistentVolumeClaim.t "Status" l.
+
+Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
+  v <| ObjectMeta' := m |>.
+
+Definition deepown_without_meta (c: v1.PersistentVolumeClaim.t) (v: t): iProp Σ :=
+  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') ∗
+  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status').
+
+Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
+  ∃ c,
+  spec_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Spec') ∗
+  status_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Status') ∗
+  deepown_without_meta c v.
+
+End def.
+
+Section proof.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Lemma deepown_l_split l v dq:
+  deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
+    (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+    ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+    PersistentVolumeClaimSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+    PersistentVolumeClaimStatusV.deepown_l (status_ptr l) v.(Status') dq.
+Proof.
+  unfold deepown_l, deepown.
+  iIntros "H".
+  iDestruct "H" as (c) "[Hl Hdeepown]".
+  iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
+  iDestruct (struct_fields_split (V:=v1.PersistentVolumeClaim.t) with "Hl") as "[Hfields %Hnot_null]".
+  iNamedPrefix "Hfields" "H".
+  iSplitR; first done.
+  rewrite -Htypemeta.
+  iFrame "HTypeMeta".
+  iSplitL "HObjectMeta Hobjectmeta".
+  { unfold ObjectMetaV.deepown_l, objectmeta_ptr. iFrame. }
+  iSplitL "HSpec Hspec".
+  { unfold PersistentVolumeClaimSpecV.deepown_l, spec_ptr. iFrame. }
+  unfold PersistentVolumeClaimStatusV.deepown_l, status_ptr. iFrame.
+Qed.
+
+Lemma deepown_l_merge l v vm dq:
+  l ≠ null →
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) vm dq ∗
+  PersistentVolumeClaimSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  PersistentVolumeClaimStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l (update_objectmeta v vm) dq.
+Proof.
+  intros Hnot_null.
+  destruct v as [v_typemeta v_objectmeta v_spec v_status].
+  unfold deepown_l, deepown, update_objectmeta.
+  rewrite /typemeta_ptr /objectmeta_ptr /spec_ptr /status_ptr.
+  iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
+  iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
+  iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
+  iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
+  iAssert (typed_pointsto_def l (v1.PersistentVolumeClaim.mk v_typemeta cm cspec cstatus) dq)
+    with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields".
+  { simpl. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.PersistentVolumeClaim.t)
+    l (v1.PersistentVolumeClaim.mk v_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl".
+  iExists (v1.PersistentVolumeClaim.mk v_typemeta cm cspec cstatus).
+  iSplitL "Hl"; first iExact "Hl".
+  iSplitR "Hobjectmeta Hspec Hstatus"; first done.
+  simpl. iFrame.
+Qed.
+
+Lemma deepown_l_restore l v dq:
+  l ≠ null →
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+  PersistentVolumeClaimSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  PersistentVolumeClaimStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l v dq.
+Proof.
+  intros Hnot_null.
+  iIntros "H".
+  iPoseProof (deepown_l_merge l v v.(ObjectMeta') dq Hnot_null with "H") as "H".
+  assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
+  { destruct v. done. }
+  iFrame.
+Qed.
+
+End proof.
+End PersistentVolumeClaimV.
+
 Module PodTemplateSpecV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -925,28 +1110,222 @@ Qed.
 End proof.
 End ReplicaSetV.
 
+Module StatefulSetSpecV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
+Axiom valid: t → Prop.
+Axiom deepown : v1.StatefulSetSpec.t → t → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
+
+End def.
+End StatefulSetSpecV.
+
+Module StatefulSetStatusV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Axiom t : Type.
+Axiom valid: t → Prop.
+Axiom deepown : v1.StatefulSetStatus.t → t → iProp Σ.
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v.
+
+End def.
+End StatefulSetStatusV.
+
+Module StatefulSetV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Record t := mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : ObjectMetaV.t;
+  Spec' : StatefulSetSpecV.t;
+  Status' : StatefulSetStatusV.t;
+}.
+
+Definition kind : go_string :=
+  "StatefulSet"%go.
+
+Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
+  {|
+    KKey.Kind' := kind;
+    KKey.Namespace' := meta.(ObjectMetaV.Namespace');
+    KKey.Name' := meta.(ObjectMetaV.Name')
+  |}.
+
+Definition key (v: t) : KKey.t :=
+  meta_key v.(ObjectMeta').
+
+Definition valid (sts: t) : Prop :=
+  valid_typemeta kind sts.(TypeMeta') ∧
+  valid_resource_version sts.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  ObjectMetaV.valid sts.(ObjectMeta') ∧
+  StatefulSetSpecV.valid sts.(Spec') ∧
+  StatefulSetStatusV.valid sts.(Status').
+
+Definition valid_without_meta (sts: t) : Prop :=
+  StatefulSetSpecV.valid sts.(Spec') ∧
+  StatefulSetStatusV.valid sts.(Status').
+
+Definition deepown (c: v1.StatefulSet.t) (v: t) dq: iProp Σ :=
+  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.StatefulSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.StatefulSet.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') ∗
+  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status').
+
+Definition deepown_l l v dq: iProp Σ :=
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+Definition typemeta_ptr l: loc :=
+  struct_field_ref v1.StatefulSet.t "TypeMeta" l.
+
+Definition objectmeta_ptr l: loc :=
+  struct_field_ref v1.StatefulSet.t "ObjectMeta" l.
+
+Definition spec_ptr l: loc :=
+  struct_field_ref v1.StatefulSet.t "Spec" l.
+
+Definition status_ptr l: loc :=
+  struct_field_ref v1.StatefulSet.t "Status" l.
+
+Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
+  v <| ObjectMeta' := m |>.
+
+Definition deepown_without_meta (c: v1.StatefulSet.t) (v: t): iProp Σ :=
+  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') ∗
+  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status').
+
+Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
+  ∃ c,
+  spec_ptr l ↦{dq} c.(v1.StatefulSet.Spec') ∗
+  status_ptr l ↦{dq} c.(v1.StatefulSet.Status') ∗
+  deepown_without_meta c v.
+
+End def.
+
+Section proof.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Lemma deepown_l_split l v dq:
+  deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
+    (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+    ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+    StatefulSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+    StatefulSetStatusV.deepown_l (status_ptr l) v.(Status') dq.
+Proof.
+  unfold deepown_l, deepown.
+  iIntros "H".
+  iDestruct "H" as (c) "[Hl Hdeepown]".
+  iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)".
+  iDestruct (struct_fields_split (V:=v1.StatefulSet.t) with "Hl") as "[Hfields %Hnot_null]".
+  iNamedPrefix "Hfields" "H".
+  iSplitR; first done.
+  rewrite -Htypemeta.
+  iFrame "HTypeMeta".
+  iSplitL "HObjectMeta Hobjectmeta".
+  { unfold ObjectMetaV.deepown_l, objectmeta_ptr. iFrame. }
+  iSplitL "HSpec Hspec".
+  { unfold StatefulSetSpecV.deepown_l, spec_ptr. iFrame. }
+  unfold StatefulSetStatusV.deepown_l, status_ptr. iFrame.
+Qed.
+
+Lemma deepown_l_merge l v vm dq:
+  l ≠ null →
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) vm dq ∗
+  StatefulSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  StatefulSetStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l (update_objectmeta v vm) dq.
+Proof.
+  intros Hnot_null.
+  destruct v as [v_typemeta v_objectmeta v_spec v_status].
+  unfold deepown_l, deepown, update_objectmeta.
+  rewrite /typemeta_ptr /objectmeta_ptr /spec_ptr /status_ptr.
+  iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
+  iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
+  iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
+  iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
+  iAssert (typed_pointsto_def l (v1.StatefulSet.mk v_typemeta cm cspec cstatus) dq)
+    with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields".
+  { simpl. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.StatefulSet.t)
+    l (v1.StatefulSet.mk v_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl".
+  iExists (v1.StatefulSet.mk v_typemeta cm cspec cstatus).
+  iSplitL "Hl"; first iExact "Hl".
+  iSplitR "Hobjectmeta Hspec Hstatus"; first done.
+  simpl. iFrame.
+Qed.
+
+Lemma deepown_l_restore l v dq:
+  l ≠ null →
+  (typemeta_ptr l) ↦{dq} v.(TypeMeta') ∗
+  ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+  StatefulSetSpecV.deepown_l (spec_ptr l) v.(Spec') dq ∗
+  StatefulSetStatusV.deepown_l (status_ptr l) v.(Status') dq ⊢
+    deepown_l l v dq.
+Proof.
+  intros Hnot_null.
+  iIntros "H".
+  iPoseProof (deepown_l_merge l v v.(ObjectMeta') dq Hnot_null with "H") as "H".
+  assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
+  { destruct v. done. }
+  iFrame.
+Qed.
+
+End proof.
+End StatefulSetV.
+
 Module KObject.
 Section def.
 Inductive t :=
 | Pod (p : v1.Pod.t)
-| ReplicaSet (rs : v1.ReplicaSet.t).
+| ReplicaSet (rs : v1.ReplicaSet.t)
+| PersistentVolumeClaim (pvc : v1.PersistentVolumeClaim.t)
+| StatefulSet (sts : v1.StatefulSet.t).
 
 Definition typemeta o : v1.TypeMeta.t :=
   match o with
   | Pod p => p.(v1.Pod.TypeMeta')
   | ReplicaSet rs => rs.(v1.ReplicaSet.TypeMeta')
+  | PersistentVolumeClaim pvc => pvc.(v1.PersistentVolumeClaim.TypeMeta')
+  | StatefulSet sts => sts.(v1.StatefulSet.TypeMeta')
   end.
 
 Definition objectmeta o : v1.ObjectMeta.t :=
   match o with
   | Pod p => p.(v1.Pod.ObjectMeta')
   | ReplicaSet rs => rs.(v1.ReplicaSet.ObjectMeta')
+  | PersistentVolumeClaim pvc => pvc.(v1.PersistentVolumeClaim.ObjectMeta')
+  | StatefulSet sts => sts.(v1.StatefulSet.ObjectMeta')
   end.
 
 Definition update_objectmeta o m: t :=
   match o with
   | Pod pod => Pod (pod <| v1.Pod.ObjectMeta' := m |>)
   | ReplicaSet rs => ReplicaSet (rs <| v1.ReplicaSet.ObjectMeta' := m |>)
+  | PersistentVolumeClaim pvc =>
+      PersistentVolumeClaim (pvc <| v1.PersistentVolumeClaim.ObjectMeta' := m |>)
+  | StatefulSet sts => StatefulSet (sts <| v1.StatefulSet.ObjectMeta' := m |>)
   end.
 
 End def.
@@ -962,12 +1341,16 @@ Context {sem : go.Semantics}
 
 Inductive t :=
 | PodSpec (p : PodSpecV.t)
-| ReplicaSetSpec (rs : ReplicaSetSpecV.t).
+| ReplicaSetSpec (rs : ReplicaSetSpecV.t)
+| PersistentVolumeClaimSpec (pvc : PersistentVolumeClaimSpecV.t)
+| StatefulSetSpec (sts : StatefulSetSpecV.t).
 
 Definition valid (v : t) : Prop :=
   match v with
   | PodSpec p => PodSpecV.valid p
   | ReplicaSetSpec rs => ReplicaSetSpecV.valid rs
+  | PersistentVolumeClaimSpec pvc => PersistentVolumeClaimSpecV.valid pvc
+  | StatefulSetSpec sts => StatefulSetSpecV.valid sts
   end.
 
 Axiom valid_create: t → Prop.
@@ -984,6 +1367,10 @@ Definition deepown_l l v dq: iProp Σ :=
       ∃ c, l ↦{dq} c ∗ PodSpecV.deepown c p
   | ReplicaSetSpec rs =>
       ∃ c, l ↦{dq} c ∗ ReplicaSetSpecV.deepown c rs dq
+  | PersistentVolumeClaimSpec pvc =>
+      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc
+  | StatefulSetSpec sts =>
+      ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts
   end.
 
 End def.
@@ -999,12 +1386,16 @@ Context {sem : go.Semantics}
 
 Inductive t :=
 | PodStatus (p : PodStatusV.t)
-| ReplicaSetStatus (rs : ReplicaSetStatusV.t).
+| ReplicaSetStatus (rs : ReplicaSetStatusV.t)
+| PersistentVolumeClaimStatus (pvc : PersistentVolumeClaimStatusV.t)
+| StatefulSetStatus (sts : StatefulSetStatusV.t).
 
 Definition valid (v : t) : Prop :=
   match v with
   | PodStatus p => PodStatusV.valid p
   | ReplicaSetStatus rs => ReplicaSetStatusV.valid rs
+  | PersistentVolumeClaimStatus pvc => PersistentVolumeClaimStatusV.valid pvc
+  | StatefulSetStatus sts => StatefulSetStatusV.valid sts
   end.
 
 Axiom valid_create: t → Prop.
@@ -1020,6 +1411,10 @@ Definition deepown_l l v dq: iProp Σ :=
       ∃ c, l ↦{dq} c ∗ PodStatusV.deepown c p
   | ReplicaSetStatus rs =>
       ∃ c, l ↦{dq} c ∗ ReplicaSetStatusV.deepown c rs
+  | PersistentVolumeClaimStatus pvc =>
+      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc
+  | StatefulSetStatus sts =>
+      ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts
   end.
 
 End def.
@@ -1034,36 +1429,50 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Inductive t :=
 | Pod (p : PodV.t)
-| ReplicaSet (rs : ReplicaSetV.t).
+| ReplicaSet (rs : ReplicaSetV.t)
+| PersistentVolumeClaim (pvc : PersistentVolumeClaimV.t)
+| StatefulSet (sts : StatefulSetV.t).
 
 Definition typemeta o : v1.TypeMeta.t :=
   match o with
   | Pod p => p.(PodV.TypeMeta')
   | ReplicaSet rs => rs.(ReplicaSetV.TypeMeta')
+  | PersistentVolumeClaim pvc => pvc.(PersistentVolumeClaimV.TypeMeta')
+  | StatefulSet sts => sts.(StatefulSetV.TypeMeta')
   end.
 
 Definition objectmeta o : ObjectMetaV.t :=
   match o with
   | Pod p => p.(PodV.ObjectMeta')
   | ReplicaSet rs => rs.(ReplicaSetV.ObjectMeta')
+  | PersistentVolumeClaim pvc => pvc.(PersistentVolumeClaimV.ObjectMeta')
+  | StatefulSet sts => sts.(StatefulSetV.ObjectMeta')
   end.
 
 Definition spec o: ObjectSpecV.t :=
   match o with
   | Pod p => ObjectSpecV.PodSpec p.(PodV.Spec')
   | ReplicaSet rs => ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')
+  | PersistentVolumeClaim pvc =>
+      ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec')
+  | StatefulSet sts => ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')
   end.
 
 Definition status o: ObjectStatusV.t :=
   match o with
   | Pod p => ObjectStatusV.PodStatus p.(PodV.Status')
   | ReplicaSet rs => ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status')
+  | PersistentVolumeClaim pvc =>
+      ObjectStatusV.PersistentVolumeClaimStatus pvc.(PersistentVolumeClaimV.Status')
+  | StatefulSet sts => ObjectStatusV.StatefulSetStatus sts.(StatefulSetV.Status')
   end.
 
 Definition kind o : go_string :=
   match o with
   | Pod _ => PodV.kind
   | ReplicaSet _ => ReplicaSetV.kind
+  | PersistentVolumeClaim _ => PersistentVolumeClaimV.kind
+  | StatefulSet _ => StatefulSetV.kind
   end.
 
 Definition key o : KKey.t :=
@@ -1077,6 +1486,9 @@ Definition update_objectmeta o m: t :=
   match o with
   | Pod pod => Pod (pod <| PodV.ObjectMeta' := m |>)
   | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
+  | PersistentVolumeClaim pvc =>
+      PersistentVolumeClaim (pvc <| PersistentVolumeClaimV.ObjectMeta' := m |>)
+  | StatefulSet sts => StatefulSet (sts <| StatefulSetV.ObjectMeta' := m |>)
   end.
 
 Lemma kind_update_objectmeta :
@@ -1124,6 +1536,8 @@ Definition same_kind (o1 o2 : t) : Prop :=
   match o1, o2 with
   | Pod _, Pod _ => True
   | ReplicaSet _, ReplicaSet _ => True
+  | PersistentVolumeClaim _, PersistentVolumeClaim _ => True
+  | StatefulSet _, StatefulSet _ => True
   | _, _ => False
   end.
 
@@ -1151,13 +1565,16 @@ Definition valid2 o : Prop :=
   match o with
   | Pod p => PodV.valid p
   | ReplicaSet rs => ReplicaSetV.valid rs
+  | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid pvc
+  | StatefulSet sts => StatefulSetV.valid sts
   end.
 
 Lemma valid_eq_valid2 o :
   valid o = valid2 o.
 Proof.
-  destruct o as [[tm meta spec status]|[tm meta spec status]];
+  destruct o as [[tm meta spec status]|[tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
     rewrite /valid /valid2 /PodV.valid /ReplicaSetV.valid
+      /PersistentVolumeClaimV.valid /StatefulSetV.valid
       /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
 Qed.
 
@@ -1165,24 +1582,32 @@ Definition valid_without_meta o : Prop :=
   match o with
   | Pod p => PodV.valid_without_meta p
   | ReplicaSet rs => ReplicaSetV.valid_without_meta rs
+  | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid_without_meta pvc
+  | StatefulSet sts => StatefulSetV.valid_without_meta sts
   end.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
   | Pod v => PodV.deepown_l l v dq
   | ReplicaSet v => ReplicaSetV.deepown_l l v dq
+  | PersistentVolumeClaim v => PersistentVolumeClaimV.deepown_l l v dq
+  | StatefulSet v => StatefulSetV.deepown_l l v dq
   end.
 
 Definition deepown_l_without_meta l v dq: iProp Σ :=
   match v with
   | Pod v => PodV.deepown_l_without_meta l v dq
   | ReplicaSet v => ReplicaSetV.deepown_l_without_meta l v dq
+  | PersistentVolumeClaim v => PersistentVolumeClaimV.deepown_l_without_meta l v dq
+  | StatefulSet v => StatefulSetV.deepown_l_without_meta l v dq
   end.
 
 Definition valid_interface i (l: loc) v: Prop :=
   match v with
   | Pod _ => i = interface.mk (go.PointerType v1.Pod) #l
   | ReplicaSet _ => i = interface.mk (go.PointerType v1.ReplicaSet) #l
+  | PersistentVolumeClaim _ => i = interface.mk (go.PointerType v1.PersistentVolumeClaim) #l
+  | StatefulSet _ => i = interface.mk (go.PointerType v1.StatefulSet) #l
   end.
 
 Definition deepown_i i v dq: iProp Σ :=
@@ -1192,24 +1617,32 @@ Definition typemeta_ptr l v: loc :=
   match v with
   | Pod _ => struct_field_ref v1.Pod.t "TypeMeta" l
   | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "TypeMeta" l
+  | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "TypeMeta" l
+  | StatefulSet _ => struct_field_ref v1.StatefulSet.t "TypeMeta" l
   end.
 
 Definition objectmeta_ptr l v: loc :=
   match v with
   | Pod _ => struct_field_ref v1.Pod.t "ObjectMeta" l
   | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "ObjectMeta" l
+  | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "ObjectMeta" l
+  | StatefulSet _ => struct_field_ref v1.StatefulSet.t "ObjectMeta" l
   end.
 
 Definition spec_ptr l v: loc :=
   match v with
   | Pod _ => struct_field_ref v1.Pod.t "Spec" l
   | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "Spec" l
+  | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "Spec" l
+  | StatefulSet _ => struct_field_ref v1.StatefulSet.t "Spec" l
   end.
 
 Definition status_ptr l v: loc :=
   match v with
   | Pod _ => struct_field_ref v1.Pod.t "Status" l
   | ReplicaSet _ => struct_field_ref v1.ReplicaSet.t "Status" l
+  | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "Status" l
+  | StatefulSet _ => struct_field_ref v1.StatefulSet.t "Status" l
   end.
 
 End def.
@@ -1229,24 +1662,15 @@ Lemma deepown_l_split l v dq:
     ObjectSpecV.deepown_l (spec_ptr l v) (spec v) dq ∗
     ObjectStatusV.deepown_l (status_ptr l v) (status v) dq.
 Proof.
-  destruct v as [p|rs]; simpl;
-    [unfold PodV.deepown_l, PodV.deepown, ObjectSpecV.deepown_l, ObjectStatusV.deepown_l
-    |unfold ReplicaSetV.deepown_l, ReplicaSetV.deepown, ObjectSpecV.deepown_l, ObjectStatusV.deepown_l].
-  all: iIntros "H";
-    iDestruct "H" as (c) "[Hl Hdeepown]";
-    iDestruct "Hdeepown" as "(%Htypemeta & Hobjectmeta & Hspec & Hstatus)";
-    first
-      [iDestruct (struct_fields_split (V:=v1.Pod.t) with "Hl") as "[Hfields %Hnot_null]"
-      |iDestruct (struct_fields_split (V:=v1.ReplicaSet.t) with "Hl") as "[Hfields %Hnot_null]"];
-    iNamedPrefix "Hfields" "H";
-    iSplitR; first done;
-    rewrite -Htypemeta;
-    iFrame "HTypeMeta";
-    iSplitL "HObjectMeta Hobjectmeta";
-    [unfold ObjectMetaV.deepown_l; iFrame|];
-    iSplitL "HSpec Hspec";
-    [iFrame|];
-    iFrame.
+  destruct v as [p|rs|pvc|sts]; simpl.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply PodV.deepown_l_split.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply ReplicaSetV.deepown_l_split.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply PersistentVolumeClaimV.deepown_l_split.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply StatefulSetV.deepown_l_split.
 Qed.
 
 (* TODO: deepown_l_merge is only used for merging updated objectmeta; generalize it later *)
@@ -1259,32 +1683,15 @@ Lemma deepown_l_merge l v vm dq:
     deepown_l l (update_objectmeta v vm) dq.
 Proof.
   intros Hnot_null.
-  destruct v as [p|rs]; simpl;
-    [destruct p as [p_typemeta p_objectmeta p_spec p_status];
-     unfold ObjectSpecV.deepown_l, ObjectStatusV.deepown_l, PodV.deepown_l, PodV.deepown
-    |destruct rs as [rs_typemeta rs_objectmeta rs_spec rs_status];
-     unfold ObjectSpecV.deepown_l, ObjectStatusV.deepown_l, ReplicaSetV.deepown_l, ReplicaSetV.deepown].
-  all: iIntros "(HTypeMeta & Hobjectmeta & Hspec_l & Hstatus_l)".
-  all: iDestruct "Hobjectmeta" as (cm) "(HObjectMeta & Hobjectmeta)".
-  all: iDestruct "Hspec_l" as (cspec) "(HSpec & Hspec)".
-  all: iDestruct "Hstatus_l" as (cstatus) "(HStatus & Hstatus)".
-  all: first
-    [iAssert (typed_pointsto_def l (v1.Pod.mk p_typemeta cm cspec cstatus) dq)
-       with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields";
-     [simpl; iFrame|];
-     iDestruct (struct_fields_combine (V:=v1.Pod.t)
-       l (v1.Pod.mk p_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl";
-     iExists (v1.Pod.mk p_typemeta cm cspec cstatus)
-    |iAssert (typed_pointsto_def l (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus) dq)
-       with "[HTypeMeta HObjectMeta HSpec HStatus]" as "Hfields";
-     [simpl; iFrame|];
-     iDestruct (struct_fields_combine (V:=v1.ReplicaSet.t)
-       l (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus) dq Hnot_null with "Hfields") as "Hl";
-     iExists (v1.ReplicaSet.mk rs_typemeta cm cspec cstatus)].
-  all: iSplitL "Hl"; first iExact "Hl".
-  all: iSplitR "Hobjectmeta Hspec Hstatus"; first (iPureIntro; done).
-  all: simpl.
-  all: iFrame.
+  destruct v as [p|rs|pvc|sts]; simpl.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (PodV.deepown_l_merge l p vm dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (ReplicaSetV.deepown_l_merge l rs vm dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (PersistentVolumeClaimV.deepown_l_merge l pvc vm dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (StatefulSetV.deepown_l_merge l sts vm dq Hnot_null).
 Qed.
 
 Lemma deepown_l_restore l v dq:
@@ -1296,11 +1703,15 @@ Lemma deepown_l_restore l v dq:
     deepown_l l v dq.
 Proof.
   intros Hnot_null.
-  iIntros "H".
-  iPoseProof (deepown_l_merge l v (objectmeta v) dq Hnot_null with "H") as "H".
-  assert (update_objectmeta v (objectmeta v) = v) as ->.
-  { destruct v as [p|rs]; [destruct p | destruct rs]; done. }
-  iFrame.
+  destruct v as [p|rs|pvc|sts]; simpl.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (PodV.deepown_l_restore l p dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (ReplicaSetV.deepown_l_restore l rs dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (PersistentVolumeClaimV.deepown_l_restore l pvc dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iApply (StatefulSetV.deepown_l_restore l sts dq Hnot_null).
 Qed.
 
 Lemma deepown_i_yields_deepown_l i l v dq:

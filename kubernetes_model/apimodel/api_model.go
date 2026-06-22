@@ -33,6 +33,8 @@ import (
 	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
 	"k8s.io/kubernetes/pkg/controller"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
+	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
+	pvcstrategy "k8s.io/kubernetes/pkg/registry/core/persistentvolumeclaim"
 	podstrategy "k8s.io/kubernetes/pkg/registry/core/pod"
 
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
@@ -89,7 +91,11 @@ func deepCopy(obj interface{}) interface{} {
 	switch o := obj.(type) {
 	case *corev1.Pod:
 		return o.DeepCopy()
+	case *corev1.PersistentVolumeClaim:
+		return o.DeepCopy()
 	case *appsv1.ReplicaSet:
+		return o.DeepCopy()
+	case *appsv1.StatefulSet:
 		return o.DeepCopy()
 	default:
 		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
@@ -371,12 +377,24 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Pod to internal Pod: %v", err))
 		}
 		return internalPod, nil
+	case *corev1.PersistentVolumeClaim:
+		internalPVC := &core.PersistentVolumeClaim{}
+		if err := legacyscheme.Scheme.Convert(typed, internalPVC, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.PersistentVolumeClaim to internal PersistentVolumeClaim: %v", err))
+		}
+		return internalPVC, nil
 	case *appsv1.ReplicaSet:
 		internalRS := &apps.ReplicaSet{}
 		if err := legacyscheme.Scheme.Convert(typed, internalRS, nil); err != nil {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v", err))
 		}
 		return internalRS, nil
+	case *appsv1.StatefulSet:
+		internalSTS := &apps.StatefulSet{}
+		if err := legacyscheme.Scheme.Convert(typed, internalSTS, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.StatefulSet to internal StatefulSet: %v", err))
+		}
+		return internalSTS, nil
 	default:
 		return nil, fmt.Errorf("unsupported versioned object type for conversion: %T", obj)
 	}
@@ -393,11 +411,15 @@ func applySchemaDefaults(obj interface{}) error {
 		// - Container defaults (ImagePullPolicy, TerminationMessagePolicy, etc.)
 		// - Volume defaults, Probe defaults, etc.
 		corev1defaults.SetObjectDefaults_Pod(typed)
+	case *corev1.PersistentVolumeClaim:
+		corev1defaults.SetObjectDefaults_PersistentVolumeClaim(typed)
 	case *appsv1.ReplicaSet:
 		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
 		// - ReplicaSet.Spec.Replicas defaults to 1
 		// - Pod template defaults (same as Pod)
 		appsv1defaults.SetObjectDefaults_ReplicaSet(typed)
+	case *appsv1.StatefulSet:
+		appsv1defaults.SetObjectDefaults_StatefulSet(typed)
 	default:
 		return fmt.Errorf("unsupported object type for schema defaults: %T", obj)
 	}
@@ -409,8 +431,12 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 	switch typed := obj.(type) {
 	case *core.Pod:
 		podstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *core.PersistentVolumeClaim:
+		pvcstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *apps.StatefulSet:
+		stsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -425,7 +451,11 @@ func applyAdmissionMutate(obj interface{}) error {
 		// A full Kubernetes cluster would set ServiceAccountName="default" if empty, but envtest doesn't.
 		applyDefaultTolerationSeconds(typed)
 		applyPriorityAdmission(typed)
+	case *core.PersistentVolumeClaim:
+		return nil
 	case *apps.ReplicaSet:
+		return nil
+	case *apps.StatefulSet:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
@@ -458,7 +488,11 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 			policy := *oldPod.Spec.PreemptionPolicy
 			typed.Spec.PreemptionPolicy = &policy
 		}
+	case *core.PersistentVolumeClaim:
+		return nil
 	case *apps.ReplicaSet:
+		return nil
+	case *apps.StatefulSet:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for update admission mutation: %T", obj)
@@ -474,8 +508,14 @@ func applyAdmissionValidate(obj interface{}) error {
 		// - Priority: its Validate method applies to PriorityClass objects, not Pods
 		// So there is no additional Pod admission validation to run here.
 		return nil
+	case *core.PersistentVolumeClaim:
+		// This model does not mirror any PVC-specific validating admission plugins.
+		return nil
 	case *apps.ReplicaSet:
 		// This model does not mirror any ReplicaSet-specific validating admission plugins.
+		return nil
+	case *apps.StatefulSet:
+		// This model does not mirror any StatefulSet-specific validating admission plugins.
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
@@ -484,11 +524,13 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "ReplicaSet":
-		// Both Pod and ReplicaSet strategies return true from AllowUnconditionalUpdate() in release-1.34.
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet":
+		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/persistentvolumeclaim/strategy.go#L134-L136
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/strategy.go#L159-L160
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/statefulset/strategy.go#L191-L193
 		return true, nil
 	default:
 		return false, fmt.Errorf("unsupported kind for update: %s", kind)
@@ -511,8 +553,12 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 	switch obj.(type) {
 	case *core.Pod:
 		return podstrategy.Strategy, nil
+	case *core.PersistentVolumeClaim:
+		return pvcstrategy.Strategy, nil
 	case *apps.ReplicaSet:
 		return rsstrategy.Strategy, nil
+	case *apps.StatefulSet:
+		return stsstrategy.Strategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for update strategy: %T", obj)
 	}
@@ -522,8 +568,12 @@ func statusUpdateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrate
 	switch obj.(type) {
 	case *core.Pod:
 		return podstrategy.StatusStrategy, nil
+	case *core.PersistentVolumeClaim:
+		return pvcstrategy.StatusStrategy, nil
 	case *apps.ReplicaSet:
 		return rsstrategy.StatusStrategy, nil
+	case *apps.StatefulSet:
+		return stsstrategy.StatusStrategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for status update strategy: %T", obj)
 	}
@@ -536,9 +586,17 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := podstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "Pod"}, name, errs)
 		}
+	case *core.PersistentVolumeClaim:
+		if errs := pvcstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "PersistentVolumeClaim"}, name, errs)
+		}
 	case *apps.ReplicaSet:
 		if errs := rsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, name, errs)
+		}
+	case *apps.StatefulSet:
+		if errs := stsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "StatefulSet"}, name, errs)
 		}
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
@@ -550,8 +608,12 @@ func applyStrategyCanonicalize(obj interface{}) error {
 	switch typed := obj.(type) {
 	case *core.Pod:
 		podstrategy.Strategy.Canonicalize(typed)
+	case *core.PersistentVolumeClaim:
+		pvcstrategy.Strategy.Canonicalize(typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.Canonicalize(typed)
+	case *apps.StatefulSet:
+		stsstrategy.Strategy.Canonicalize(typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -1242,6 +1304,12 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 	case *appsv1.ReplicaSet:
 		// ReplicaSets don't support graceful deletion
 		return false, false, nil
+	case *corev1.PersistentVolumeClaim:
+		// PersistentVolumeClaims don't support graceful deletion
+		return false, false, nil
+	case *appsv1.StatefulSet:
+		// StatefulSets don't support graceful deletion
+		return false, false, nil
 
 	default:
 		return false, false, fmt.Errorf("unsupported object type for graceful delete: %T", obj)
@@ -1566,5 +1634,197 @@ func (s *State) ReplicaSetUpdateStatus(namespace string, rs *appsv1.ReplicaSet) 
 
 func (s *State) ReplicaSetDelete(namespace, name string, options metav1.DeleteOptions) error {
 	key := KKey{Kind: "ReplicaSet", Namespace: namespace, Name: name}
+	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) PersistentVolumeClaimGet(namespace, name string) (*corev1.PersistentVolumeClaim, error) {
+	return s.PersistentVolumeClaimMutGet(namespace, name)
+}
+
+func (s *State) PersistentVolumeClaimMutGet(namespace, name string) (*corev1.PersistentVolumeClaim, error) {
+	key := KKey{
+		Kind:      "PersistentVolumeClaim",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(corev1.Resource("persistentvolumeclaim"), name)
+	}
+
+	pvc, ok := obj.(*corev1.PersistentVolumeClaim)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for persistentvolumeclaim %s/%s is not a *v1.PersistentVolumeClaim", namespace, name)
+	}
+
+	return pvc, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) PersistentVolumeClaimList(namespace string, selector labels.Selector) ([]*corev1.PersistentVolumeClaim, error) {
+	return s.PersistentVolumeClaimMutList(namespace, selector)
+}
+
+func (s *State) PersistentVolumeClaimMutList(namespace string, selector labels.Selector) ([]*corev1.PersistentVolumeClaim, error) {
+	objs, err := s.objListBySelector("PersistentVolumeClaim", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	claims := make([]*corev1.PersistentVolumeClaim, 0, len(objs))
+	for _, obj := range objs {
+		claim, ok := obj.(*corev1.PersistentVolumeClaim)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.PersistentVolumeClaim")
+		}
+		claims = append(claims, claim)
+	}
+
+	return claims, nil
+}
+
+func (s *State) PersistentVolumeClaimCreate(namespace string, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	obj, err := s.create("PersistentVolumeClaim", namespace, pvc)
+	if err != nil {
+		return nil, err
+	}
+
+	createdPVC, ok := obj.(*corev1.PersistentVolumeClaim)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdPVC, nil
+}
+
+func (s *State) PersistentVolumeClaimUpdate(namespace string, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	obj, err := s.update("PersistentVolumeClaim", namespace, pvc)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedPVC, ok := obj.(*corev1.PersistentVolumeClaim)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedPVC, nil
+}
+
+func (s *State) PersistentVolumeClaimUpdateStatus(namespace string, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	obj, err := s.updateStatus("PersistentVolumeClaim", namespace, pvc)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedPVC, ok := obj.(*corev1.PersistentVolumeClaim)
+	if !ok {
+		return nil, fmt.Errorf("status update returned unexpected type %T", obj)
+	}
+
+	return updatedPVC, nil
+}
+
+func (s *State) PersistentVolumeClaimDelete(namespace, name string, options metav1.DeleteOptions) error {
+	key := KKey{Kind: "PersistentVolumeClaim", Namespace: namespace, Name: name}
+	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) StatefulSetGet(namespace, name string) (*appsv1.StatefulSet, error) {
+	return s.StatefulSetMutGet(namespace, name)
+}
+
+func (s *State) StatefulSetMutGet(namespace, name string) (*appsv1.StatefulSet, error) {
+	key := KKey{
+		Kind:      "StatefulSet",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(appsv1.Resource("statefulset"), name)
+	}
+
+	ss, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for statefulset %s/%s is not a *v1.StatefulSet", namespace, name)
+	}
+
+	return ss, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) StatefulSetList(namespace string, selector labels.Selector) ([]*appsv1.StatefulSet, error) {
+	return s.StatefulSetMutList(namespace, selector)
+}
+
+func (s *State) StatefulSetMutList(namespace string, selector labels.Selector) ([]*appsv1.StatefulSet, error) {
+	objs, err := s.objListBySelector("StatefulSet", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	sets := make([]*appsv1.StatefulSet, 0, len(objs))
+	for _, obj := range objs {
+		set, ok := obj.(*appsv1.StatefulSet)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.StatefulSet")
+		}
+		sets = append(sets, set)
+	}
+
+	return sets, nil
+}
+
+func (s *State) StatefulSetCreate(namespace string, ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	obj, err := s.create("StatefulSet", namespace, ss)
+	if err != nil {
+		return nil, err
+	}
+
+	createdSS, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdSS, nil
+}
+
+func (s *State) StatefulSetUpdate(namespace string, ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	obj, err := s.update("StatefulSet", namespace, ss)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedSS, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedSS, nil
+}
+
+func (s *State) StatefulSetUpdateStatus(namespace string, ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	obj, err := s.updateStatus("StatefulSet", namespace, ss)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedSS, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("status update returned unexpected type %T", obj)
+	}
+
+	return updatedSS, nil
+}
+
+func (s *State) StatefulSetDelete(namespace, name string, options metav1.DeleteOptions) error {
+	key := KKey{Kind: "StatefulSet", Namespace: namespace, Name: name}
 	return s.delete(key, options)
 }

@@ -9,6 +9,46 @@ Require Export New.code.k8s_io.api.apps.v1.
 Set Default Proof Using "Type".
 
 Module v1.
+Module StatefulSetSpec.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetSpec.t). Admitted.
+
+#[global] Instance StatefulSetSpec_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetSpec.t) (v1.StatefulSetSpecⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End StatefulSetSpec.
+
+Module StatefulSetStatus.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetStatus.t). Admitted.
+
+#[global] Instance StatefulSetStatus_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetStatus.t) (v1.StatefulSetStatusⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End StatefulSetStatus.
+
 Module StatefulSet.
 Section def.
 
@@ -18,13 +58,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StatefulSet_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSet.t). Admitted.
+#[global]Program Instance StatefulSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSet.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.StatefulSet.t), "TypeMeta"] ↦{dq} v.(v1.StatefulSet.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.StatefulSet.t), "ObjectMeta"] ↦{dq} v.(v1.StatefulSet.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.StatefulSet.t), "Spec"] ↦{dq} v.(v1.StatefulSet.Spec') ∗
+      "Status" ∷ l.[(v1.StatefulSet.t), "Status"] ↦{dq} v.(v1.StatefulSet.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StatefulSet_into_val_typed
    :
   IntoValTypedUnderlying (v1.StatefulSet.t) (v1.StatefulSetⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StatefulSet_access_load_TypeMeta l (v : (v1.StatefulSet.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "TypeMeta"] ↦{dq} (v.(v1.StatefulSet.TypeMeta')))
+    (l.[(v1.StatefulSet.t), "TypeMeta"] ↦{dq} (v.(v1.StatefulSet.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSet_access_store_TypeMeta l (v : (v1.StatefulSet.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "TypeMeta"] ↦ (v.(v1.StatefulSet.TypeMeta')))
+    (l.[(v1.StatefulSet.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSet.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSet_access_load_ObjectMeta l (v : (v1.StatefulSet.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "ObjectMeta"] ↦{dq} (v.(v1.StatefulSet.ObjectMeta')))
+    (l.[(v1.StatefulSet.t), "ObjectMeta"] ↦{dq} (v.(v1.StatefulSet.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSet_access_store_ObjectMeta l (v : (v1.StatefulSet.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "ObjectMeta"] ↦ (v.(v1.StatefulSet.ObjectMeta')))
+    (l.[(v1.StatefulSet.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSet.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSet_access_load_Spec l (v : (v1.StatefulSet.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "Spec"] ↦{dq} (v.(v1.StatefulSet.Spec')))
+    (l.[(v1.StatefulSet.t), "Spec"] ↦{dq} (v.(v1.StatefulSet.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSet_access_store_Spec l (v : (v1.StatefulSet.t)) Spec' :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "Spec"] ↦ (v.(v1.StatefulSet.Spec')))
+    (l.[(v1.StatefulSet.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSet.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSet_access_load_Status l (v : (v1.StatefulSet.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "Status"] ↦{dq} (v.(v1.StatefulSet.Status')))
+    (l.[(v1.StatefulSet.t), "Status"] ↦{dq} (v.(v1.StatefulSet.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSet_access_store_Status l (v : (v1.StatefulSet.t)) Status' :
+  AccessStrict
+    (l.[(v1.StatefulSet.t), "Status"] ↦ (v.(v1.StatefulSet.Status')))
+    (l.[(v1.StatefulSet.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSet.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatefulSet.
@@ -168,46 +271,6 @@ Proof. Admitted.
 
 End def.
 End StatefulSetOrdinals.
-
-Module StatefulSetSpec.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatefulSetSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetSpec.t). Admitted.
-
-#[global] Instance StatefulSetSpec_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatefulSetSpec.t) (v1.StatefulSetSpecⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatefulSetSpec.
-
-Module StatefulSetStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatefulSetStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetStatus.t). Admitted.
-
-#[global] Instance StatefulSetStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatefulSetStatus.t) (v1.StatefulSetStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatefulSetStatus.
 
 Module StatefulSetConditionType.
 Section def.
