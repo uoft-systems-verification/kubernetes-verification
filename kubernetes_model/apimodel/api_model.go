@@ -452,7 +452,7 @@ func applyAdmissionMutate(obj interface{}) error {
 		applyDefaultTolerationSeconds(typed)
 		applyPriorityAdmission(typed)
 	case *core.PersistentVolumeClaim:
-		return nil
+		applyPersistentVolumeClaimProtectionAdmission(typed)
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
@@ -461,6 +461,55 @@ func applyAdmissionMutate(obj interface{}) error {
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
 	return nil
+}
+
+// applyPersistentVolumeClaimProtectionAdmission mirrors the built-in
+// StorageObjectInUseProtection admission plugin. Envtest enables this plugin on
+// PVC creates, and the finalizer affects later delete behavior, so the model
+// needs to store it rather than treating it as ignorable metadata.
+func applyPersistentVolumeClaimProtectionAdmission(pvc *core.PersistentVolumeClaim) {
+	const pvcProtectionFinalizer = "kubernetes.io/pvc-protection"
+	for _, finalizer := range pvc.Finalizers {
+		if finalizer == pvcProtectionFinalizer {
+			return
+		}
+	}
+	pvc.Finalizers = append(pvc.Finalizers, pvcProtectionFinalizer)
+}
+
+// applyPostPrepareCreateDefaults restores server-owned create defaults that are
+// lost when a REST strategy clears user-controlled fields. PVC create defaulting
+// initially sets status.phase=Pending, then the PVC strategy clears Status; the
+// API server still stores and returns a created PVC with Pending phase.
+func applyPostPrepareCreateDefaults(obj interface{}) error {
+	switch typed := obj.(type) {
+	case *core.Pod:
+		return nil
+	case *core.PersistentVolumeClaim:
+		if typed.Status.Phase == "" {
+			typed.Status.Phase = core.ClaimPending
+		}
+	case *apps.ReplicaSet:
+		return nil
+	case *apps.StatefulSet:
+		return nil
+	default:
+		return fmt.Errorf("unsupported object type for post-prepare create defaults: %T", obj)
+	}
+	return nil
+}
+
+// normalizeVersionedObject removes conversion artifacts after converting an
+// internal object back to its external API type. In particular, Kubernetes does
+// not store TypeMeta on StatefulSet volumeClaimTemplates, while the internal to
+// external conversion can materialize kind/apiVersion on those embedded PVCs.
+func normalizeVersionedObject(obj interface{}) {
+	switch typed := obj.(type) {
+	case *appsv1.StatefulSet:
+		for i := range typed.Spec.VolumeClaimTemplates {
+			typed.Spec.VolumeClaimTemplates[i].TypeMeta = metav1.TypeMeta{}
+		}
+	}
 }
 
 // applyAdmissionMutateForUpdate mirrors the mutating admission plugins that affect the
@@ -672,6 +721,7 @@ func applyValidationAndDefaultingOnUpdate(newObj, oldObj interface{}, namespace 
 	if err := legacyscheme.Scheme.Convert(legacyNewObj, newObj, nil); err != nil {
 		return errors.NewBadRequest(fmt.Sprintf("failed to convert internal updated object back to versioned object: %v", err))
 	}
+	normalizeVersionedObject(newObj)
 	return nil
 }
 
@@ -722,6 +772,7 @@ func applyValidationAndDefaultingOnStatusUpdate(newObj, oldObj interface{}, name
 	if err := legacyscheme.Scheme.Convert(legacyNewObj, newObj, nil); err != nil {
 		return errors.NewBadRequest(fmt.Sprintf("failed to convert internal status-updated object back to versioned object: %v", err))
 	}
+	normalizeVersionedObject(newObj)
 	return nil
 }
 
@@ -752,6 +803,10 @@ func applyValidationAndDefaulting(obj interface{}, name string) error {
 		return err
 	}
 
+	if err := applyPostPrepareCreateDefaults(legacyObj); err != nil {
+		return err
+	}
+
 	// Apply the strategy's custom validation.
 	// Note: generic metadata validation from rest.BeforeCreate is handled separately.
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L122-L124
@@ -776,6 +831,7 @@ func applyValidationAndDefaulting(obj interface{}, name string) error {
 	if err := legacyscheme.Scheme.Convert(legacyObj, obj, nil); err != nil {
 		return errors.NewBadRequest(fmt.Sprintf("failed to convert internal object back to versioned object: %v", err))
 	}
+	normalizeVersionedObject(obj)
 	return nil
 }
 

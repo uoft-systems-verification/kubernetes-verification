@@ -305,7 +305,15 @@ func deepCopyAndClear(obj interface{}) interface{} {
 		copy := o.DeepCopy()
 		clearServerAssignedFields(copy)
 		return copy
+	case *corev1.PersistentVolumeClaim:
+		copy := o.DeepCopy()
+		clearServerAssignedFields(copy)
+		return copy
 	case *appsv1.ReplicaSet:
+		copy := o.DeepCopy()
+		clearServerAssignedFields(copy)
+		return copy
+	case *appsv1.StatefulSet:
 		copy := o.DeepCopy()
 		clearServerAssignedFields(copy)
 		return copy

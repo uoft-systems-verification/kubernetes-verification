@@ -172,6 +172,32 @@ func (s *TestServer) UpdatePodStatus(ctx context.Context, pod *corev1.Pod) (*cor
 	return s.client.CoreV1().Pods(s.namespace).UpdateStatus(ctx, pod, metav1.UpdateOptions{})
 }
 
+// CreatePersistentVolumeClaim creates a PVC in the test server.
+func (s *TestServer) CreatePersistentVolumeClaim(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	pvc = pvc.DeepCopy()
+	pvc.Namespace = s.namespace
+	return s.client.CoreV1().PersistentVolumeClaims(s.namespace).Create(ctx, pvc, metav1.CreateOptions{})
+}
+
+// GetPersistentVolumeClaim gets a PVC from the test server.
+func (s *TestServer) GetPersistentVolumeClaim(ctx context.Context, name string) (*corev1.PersistentVolumeClaim, error) {
+	return s.client.CoreV1().PersistentVolumeClaims(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+// UpdatePersistentVolumeClaim updates a PVC in the test server.
+func (s *TestServer) UpdatePersistentVolumeClaim(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	pvc = pvc.DeepCopy()
+	pvc.Namespace = s.namespace
+	return s.client.CoreV1().PersistentVolumeClaims(s.namespace).Update(ctx, pvc, metav1.UpdateOptions{})
+}
+
+// UpdatePersistentVolumeClaimStatus updates a PVC status in the test server.
+func (s *TestServer) UpdatePersistentVolumeClaimStatus(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+	pvc = pvc.DeepCopy()
+	pvc.Namespace = s.namespace
+	return s.client.CoreV1().PersistentVolumeClaims(s.namespace).UpdateStatus(ctx, pvc, metav1.UpdateOptions{})
+}
+
 // CreateReplicaSet creates a ReplicaSet in the test server.
 func (s *TestServer) CreateReplicaSet(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 	rs = rs.DeepCopy()
@@ -198,14 +224,50 @@ func (s *TestServer) UpdateReplicaSetStatus(ctx context.Context, rs *appsv1.Repl
 	return s.client.AppsV1().ReplicaSets(s.namespace).UpdateStatus(ctx, rs, metav1.UpdateOptions{})
 }
 
+// CreateStatefulSet creates a StatefulSet in the test server.
+func (s *TestServer) CreateStatefulSet(ctx context.Context, sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	sts = sts.DeepCopy()
+	sts.Namespace = s.namespace
+	return s.client.AppsV1().StatefulSets(s.namespace).Create(ctx, sts, metav1.CreateOptions{})
+}
+
+// GetStatefulSet gets a StatefulSet from the test server.
+func (s *TestServer) GetStatefulSet(ctx context.Context, name string) (*appsv1.StatefulSet, error) {
+	return s.client.AppsV1().StatefulSets(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+// UpdateStatefulSet updates a StatefulSet in the test server.
+func (s *TestServer) UpdateStatefulSet(ctx context.Context, sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	sts = sts.DeepCopy()
+	sts.Namespace = s.namespace
+	return s.client.AppsV1().StatefulSets(s.namespace).Update(ctx, sts, metav1.UpdateOptions{})
+}
+
+// UpdateStatefulSetStatus updates a StatefulSet status in the test server.
+func (s *TestServer) UpdateStatefulSetStatus(ctx context.Context, sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	sts = sts.DeepCopy()
+	sts.Namespace = s.namespace
+	return s.client.AppsV1().StatefulSets(s.namespace).UpdateStatus(ctx, sts, metav1.UpdateOptions{})
+}
+
 // DeletePod deletes a Pod from the test server with optional DeleteOptions.
 func (s *TestServer) DeletePod(ctx context.Context, name string, options metav1.DeleteOptions) error {
 	return s.client.CoreV1().Pods(s.namespace).Delete(ctx, name, options)
 }
 
+// DeletePersistentVolumeClaim deletes a PVC from the test server with optional DeleteOptions.
+func (s *TestServer) DeletePersistentVolumeClaim(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.CoreV1().PersistentVolumeClaims(s.namespace).Delete(ctx, name, options)
+}
+
 // DeleteReplicaSet deletes a ReplicaSet from the test server with optional DeleteOptions.
 func (s *TestServer) DeleteReplicaSet(ctx context.Context, name string, options metav1.DeleteOptions) error {
 	return s.client.AppsV1().ReplicaSets(s.namespace).Delete(ctx, name, options)
+}
+
+// DeleteStatefulSet deletes a StatefulSet from the test server with optional DeleteOptions.
+func (s *TestServer) DeleteStatefulSet(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.AppsV1().StatefulSets(s.namespace).Delete(ctx, name, options)
 }
 
 // Cleanup cleans up all resources created by the test server.
@@ -215,8 +277,18 @@ func (s *TestServer) Cleanup(ctx context.Context) error {
 		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 		return err
 	}
+	// Delete all PVCs in the namespace
+	if err := s.client.CoreV1().PersistentVolumeClaims(s.namespace).DeleteCollection(
+		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		return err
+	}
 	// Delete all replicasets in the namespace
 	if err := s.client.AppsV1().ReplicaSets(s.namespace).DeleteCollection(
+		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		return err
+	}
+	// Delete all statefulsets in the namespace
+	if err := s.client.AppsV1().StatefulSets(s.namespace).DeleteCollection(
 		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 		return err
 	}

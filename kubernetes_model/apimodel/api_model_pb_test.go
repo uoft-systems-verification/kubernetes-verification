@@ -141,6 +141,7 @@ func TestPBT(t *testing.T) {
 
 		// Track existing objects (should match between model and real API)
 		existingObjects := make(map[KKey]bool)
+		kinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet"}
 
 		for range 10000 {
 			// Weighted operation selection: favor Create early to build up state.
@@ -156,7 +157,7 @@ func TestPBT(t *testing.T) {
 
 			switch {
 			case opRoll < createWeight:
-				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
 
 				switch kind {
 				case "Pod":
@@ -179,6 +180,34 @@ func TestPBT(t *testing.T) {
 						func(ctx context.Context, obj *corev1.Pod) (*corev1.Pod, error) { return server.CreatePod(ctx, obj) },
 						func(ns, name string) (interface{}, error) { return state.PodGet(ns, name) },
 						func(ctx context.Context, name string) (*corev1.Pod, error) { return server.GetPod(ctx, name) },
+					)
+
+				case "PersistentVolumeClaim":
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						stats,
+						"PersistentVolumeClaim",
+						func(rt *rapid.T) *corev1.PersistentVolumeClaim {
+							switch rapid.IntRange(0, 1).Draw(rt, "validPVCGenType") {
+							case 0:
+								return generators.MinimalPersistentVolumeClaimGen().Draw(rt, "validPVC")
+							default:
+								return generators.ComprehensivePersistentVolumeClaimGen().Draw(rt, "validPVC")
+							}
+						},
+						func(rt *rapid.T) *corev1.PersistentVolumeClaim {
+							return generators.InvalidPersistentVolumeClaimGen().Draw(rt, "invalidPVC")
+						},
+						func(pvc *corev1.PersistentVolumeClaim) *corev1.PersistentVolumeClaim { return pvc.DeepCopy() },
+						func(ns string, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return state.PersistentVolumeClaimCreate(ns, obj)
+						},
+						func(ctx context.Context, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return server.CreatePersistentVolumeClaim(ctx, obj)
+						},
+						func(ns, name string) (interface{}, error) { return state.PersistentVolumeClaimGet(ns, name) },
+						func(ctx context.Context, name string) (*corev1.PersistentVolumeClaim, error) {
+							return server.GetPersistentVolumeClaim(ctx, name)
+						},
 					)
 
 				case "ReplicaSet":
@@ -208,9 +237,37 @@ func TestPBT(t *testing.T) {
 							return server.GetReplicaSet(ctx, name)
 						},
 					)
+
+				case "StatefulSet":
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						stats,
+						"StatefulSet",
+						func(rt *rapid.T) *appsv1.StatefulSet {
+							switch rapid.IntRange(0, 1).Draw(rt, "validStatefulSetGenType") {
+							case 0:
+								return generators.MinimalStatefulSetGen().Draw(rt, "validStatefulSet")
+							default:
+								return generators.ComprehensiveStatefulSetGen().Draw(rt, "validStatefulSet")
+							}
+						},
+						func(rt *rapid.T) *appsv1.StatefulSet {
+							return generators.InvalidStatefulSetGen().Draw(rt, "invalidStatefulSet")
+						},
+						func(sts *appsv1.StatefulSet) *appsv1.StatefulSet { return sts.DeepCopy() },
+						func(ns string, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return state.StatefulSetCreate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return server.CreateStatefulSet(ctx, obj)
+						},
+						func(ns, name string) (interface{}, error) { return state.StatefulSetGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.StatefulSet, error) {
+							return server.GetStatefulSet(ctx, name)
+						},
+					)
 				}
 			case opRoll < createWeight+updateWeight:
-				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
 
 				switch kind {
 				case "Pod":
@@ -229,6 +286,32 @@ func TestPBT(t *testing.T) {
 							return pod
 						},
 						generators.ComprehensivePodMut,
+					)
+
+				case "PersistentVolumeClaim":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"Update", stats.recordUpdate, "PersistentVolumeClaim",
+						func(ns, name string) (*corev1.PersistentVolumeClaim, error) {
+							return state.PersistentVolumeClaimGet(ns, name)
+						},
+						func(ctx context.Context, name string) (*corev1.PersistentVolumeClaim, error) {
+							return server.GetPersistentVolumeClaim(ctx, name)
+						},
+						func(ns string, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return state.PersistentVolumeClaimUpdate(ns, obj)
+						},
+						func(ctx context.Context, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return server.UpdatePersistentVolumeClaim(ctx, obj)
+						},
+						func(pvc *corev1.PersistentVolumeClaim) *corev1.PersistentVolumeClaim { return pvc.DeepCopy() },
+						func(name, namespace string) *corev1.PersistentVolumeClaim {
+							pvc := generators.MinimalPersistentVolumeClaimGen().Example()
+							pvc.Name = name
+							pvc.Namespace = namespace
+							return pvc
+						},
+						generators.ComprehensivePersistentVolumeClaimMut,
 					)
 
 				case "ReplicaSet":
@@ -254,9 +337,33 @@ func TestPBT(t *testing.T) {
 						},
 						generators.ComprehensiveReplicaSetMut,
 					)
+
+				case "StatefulSet":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"Update", stats.recordUpdate, "StatefulSet",
+						func(ns, name string) (*appsv1.StatefulSet, error) { return state.StatefulSetGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.StatefulSet, error) {
+							return server.GetStatefulSet(ctx, name)
+						},
+						func(ns string, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return state.StatefulSetUpdate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return server.UpdateStatefulSet(ctx, obj)
+						},
+						func(sts *appsv1.StatefulSet) *appsv1.StatefulSet { return sts.DeepCopy() },
+						func(name, namespace string) *appsv1.StatefulSet {
+							sts := generators.MinimalStatefulSetGen().Example()
+							sts.Name = name
+							sts.Namespace = namespace
+							return sts
+						},
+						generators.ComprehensiveStatefulSetMut,
+					)
 				}
 			case opRoll < createWeight+updateWeight+updateStatusWeight:
-				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
 
 				switch kind {
 				case "Pod":
@@ -277,6 +384,32 @@ func TestPBT(t *testing.T) {
 							return pod
 						},
 						generators.ComprehensivePodStatusMut,
+					)
+
+				case "PersistentVolumeClaim":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"UpdateStatus", stats.recordUpdateStatus, "PersistentVolumeClaim",
+						func(ns, name string) (*corev1.PersistentVolumeClaim, error) {
+							return state.PersistentVolumeClaimGet(ns, name)
+						},
+						func(ctx context.Context, name string) (*corev1.PersistentVolumeClaim, error) {
+							return server.GetPersistentVolumeClaim(ctx, name)
+						},
+						func(ns string, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return state.PersistentVolumeClaimUpdateStatus(ns, obj)
+						},
+						func(ctx context.Context, obj *corev1.PersistentVolumeClaim) (*corev1.PersistentVolumeClaim, error) {
+							return server.UpdatePersistentVolumeClaimStatus(ctx, obj)
+						},
+						func(pvc *corev1.PersistentVolumeClaim) *corev1.PersistentVolumeClaim { return pvc.DeepCopy() },
+						func(name, namespace string) *corev1.PersistentVolumeClaim {
+							pvc := generators.MinimalPersistentVolumeClaimGen().Example()
+							pvc.Name = name
+							pvc.Namespace = namespace
+							return pvc
+						},
+						generators.ComprehensivePersistentVolumeClaimStatusMut,
 					)
 
 				case "ReplicaSet":
@@ -302,9 +435,33 @@ func TestPBT(t *testing.T) {
 						},
 						generators.ComprehensiveReplicaSetStatusMut,
 					)
+
+				case "StatefulSet":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"UpdateStatus", stats.recordUpdateStatus, "StatefulSet",
+						func(ns, name string) (*appsv1.StatefulSet, error) { return state.StatefulSetGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.StatefulSet, error) {
+							return server.GetStatefulSet(ctx, name)
+						},
+						func(ns string, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return state.StatefulSetUpdateStatus(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+							return server.UpdateStatefulSetStatus(ctx, obj)
+						},
+						func(sts *appsv1.StatefulSet) *appsv1.StatefulSet { return sts.DeepCopy() },
+						func(name, namespace string) *appsv1.StatefulSet {
+							sts := generators.MinimalStatefulSetGen().Example()
+							sts.Name = name
+							sts.Namespace = namespace
+							return sts
+						},
+						generators.ComprehensiveStatefulSetStatusMut,
+					)
 				}
 			default:
-				kind := rapid.SampledFrom([]string{"Pod", "ReplicaSet"}).Draw(rt, "kind")
+				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
 
 				switch kind {
 				case "Pod":
@@ -317,6 +474,16 @@ func TestPBT(t *testing.T) {
 						server.DeletePod,
 					)
 
+				case "PersistentVolumeClaim":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"PersistentVolumeClaim",
+						state.PersistentVolumeClaimGet,
+						server.GetPersistentVolumeClaim,
+						state.PersistentVolumeClaimDelete,
+						server.DeletePersistentVolumeClaim,
+					)
+
 				case "ReplicaSet":
 					testDelete(
 						rt, ctx, state, server, namespace, existingObjects, stats,
@@ -325,6 +492,16 @@ func TestPBT(t *testing.T) {
 						server.GetReplicaSet,
 						state.ReplicaSetDelete,
 						server.DeleteReplicaSet,
+					)
+
+				case "StatefulSet":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"StatefulSet",
+						state.StatefulSetGet,
+						server.GetStatefulSet,
+						state.StatefulSetDelete,
+						server.DeleteStatefulSet,
 					)
 				}
 			}
