@@ -1,3 +1,3 @@
 rocq = "src"
 go_path = "./controllers/"
-packages = ["./common", "./replicaset"]
+packages = ["./common", "./replicaset", "./statefulset"]
