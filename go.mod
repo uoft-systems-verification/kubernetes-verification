@@ -15,7 +15,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mit-pdos/perennial v0.0.0-20260613092350-da3c08b0f037 // indirect
+	github.com/mit-pdos/perennial v0.0.0-20260623180933-c7214070e69a // indirect
 	github.com/mit-pdos/perennial-cli v0.4.3 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
@@ -29,4 +29,4 @@ require (
 	golang.org/x/tools v0.45.0 // indirect
 )
 
-replace github.com/mit-pdos/perennial => github.com/marshtompsxd/perennial v0.0.0-20260613092350-da3c08b0f037
+replace github.com/mit-pdos/perennial => github.com/uoft-systems-verification/perennial v0.0.0-20260623180933-c7214070e69a

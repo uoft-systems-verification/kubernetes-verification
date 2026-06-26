@@ -2,9 +2,9 @@ opam-version: "2.0"
 license: "MIT"
 maintainer: "Xudong Sun"
 authors: "kubernetes-verification authors"
-homepage: "https://github.com/marshtompsxd/kubernetes-verification"
-bug-reports: "https://github.com/marshtompsxd/kubernetes-verification/issues"
-dev-repo: "git+https://github.com/marshtompsxd/kubernetes-verification.git"
+homepage: "https://github.com/uoft-systems-verification/kubernetes-verification"
+bug-reports: "https://github.com/uoft-systems-verification/kubernetes-verification/issues"
+dev-repo: "git+https://github.com/uoft-systems-verification/kubernetes-verification.git"
 version: "dev"
 synopsis: "Specs and proofs for Kubernetes controllers"
 
@@ -13,7 +13,7 @@ depends: [
 ]
 
 pin-depends: [
-  ["perennial.dev"             "git+https://github.com/marshtompsxd/perennial.git#c15c19774d4394959ae1e9ee85e5852df00046e7"]
+  ["perennial.dev"             "git+https://github.com/uoft-systems-verification/perennial.git#c7214070e69a5ada13858d25fde7d65ccca94814"]
 
   ## begin indirect
   ["coq-coqutil.dev"           "git+https://github.com/mit-plv/coqutil#cfd88cef005cda5ec400108606d27a0d40578a8f"]
