@@ -3,7 +3,7 @@ From New.proof.string Require Export prefix_suffix.
 From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
 From New.proof.controllers Require Export common.
-From New.proof.controllers Require Export statefulset_init.
+From New.proof.controllers.statefulset Require Export statefulset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
@@ -501,11 +501,14 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq sts.(StatefulSetV.ObjectMeta') ∗
+      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       "Hown_pod_frags" ∷ own_pods_frags γ 1 pods ∗
       "Hown_pvc_frags" ∷ own_pvcs_frags γ 1 pvcs ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods)) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        1 (list_to_set (PodV.key <$> pods)) ∗
       "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
       "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
@@ -517,11 +520,14 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
   {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) (err : interface.t), RET #err;
       ((⌜ err = interface.nil ⌝ ∗ ⌜ current_state_matches sts pods' pvcs' ⌝) ∨
        (⌜ err ≠ interface.nil ⌝ ∗ ⌜ match_distance sts pods pvcs > match_distance sts pods' pvcs' ⌝)) ∗
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq sts.(StatefulSetV.ObjectMeta') ∗
+      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       own_pods_frags γ 1 pods' ∗
       own_pvcs_frags γ 1 pvcs' ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods'))
+      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        1 (list_to_set (PodV.key <$> pods'))
   }}}.
 Proof.
 Admitted.
@@ -531,11 +537,14 @@ Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace na
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq sts.(StatefulSetV.ObjectMeta') ∗
+      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       "Hown_pod_frags" ∷ own_pods_frags γ dq pods ∗
       "Hown_pvc_frags" ∷ own_pvcs_frags γ dq pvcs ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (list_to_set (PodV.key <$> pods)) ∗
       "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
       "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
@@ -545,11 +554,14 @@ Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace na
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ RET #interface.nil;
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq sts.(StatefulSetV.ObjectMeta') ∗
+      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       own_pods_frags γ dq pods ∗
       own_pvcs_frags γ dq pvcs ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods))
+      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        dq (list_to_set (PodV.key <$> pods))
   }}}.
 Proof.
 Admitted.
