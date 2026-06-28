@@ -592,8 +592,7 @@ Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs dq po
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hdeletion_timestamp_eq" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
-      "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝
+      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
   }}}
     @! replicaset.syncReplicaSet #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
@@ -622,6 +621,11 @@ Proof.
   iRename "Hget_Hdeepown_l" into "Hdeepown_l_rs".
   iRename "Hget_Hown_meta_frag" into "Hown_rs_meta_frag".
   iRename "Hget_Hown_spec_frag" into "Hown_rs_spec_frag".
+  assert (ReplicaSetSpecV.valid rs_get.(ReplicaSetV.Spec')) as Hrs_get_spec_valid.
+  { destruct Hget_Hvalid' as (_ & _ & _ & Hrs_get_spec_valid & _).
+    exact Hrs_get_spec_valid. }
+  assert (ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec')) as Hrs_spec_valid.
+  { rewrite Hget_Hspec_eq. exact Hrs_get_spec_valid. }
   wp_auto.
   wp_apply (wp_IsNotFound_nil with "[]").
   { done. }
@@ -721,8 +725,6 @@ Proof.
   pose proof (ReplicaSetSpecV.valid_replicas _ Hrs_spec_valid) as (n & Hreplicas_eq & _).
   assert (rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n) as Hreplicas_eq_get.
   { rewrite <-Hget_Hspec_eq. exact Hreplicas_eq. }
-  assert (ReplicaSetSpecV.valid rs_get.(ReplicaSetV.Spec')) as Hrs_get_spec_valid.
-  { rewrite <-Hget_Hspec_eq. exact Hrs_spec_valid. }
   assert (length rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58) as Hrs_get_name_short.
   { rewrite (ObjectMetaV.equiv_except_resource_version_name _ _ Hget_Hmeta_eq).
     exact Hrs_name_short. }
