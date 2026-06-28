@@ -182,10 +182,6 @@ Axiom StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ : ∀ {ext : ff
 
 Axiom StatefulSetOrdinalsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom StatefulSetSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom StatefulSetConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom StatefulSetConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -564,36 +560,174 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (map_StatefulSetUpdateStrategy'init #()))
       ).
 
-Module StatefulSetSpec.
+Module PodManagementPolicyType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Axiom t : Type.
 Axiom zero_val : ZeroVal t.
 #[global] Existing Instance zero_val.
 End def.
+End PodManagementPolicyType.
+
+Class PodManagementPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PodManagementPolicyType_type_repr  :: go.TypeReprUnderlying PodManagementPolicyTypeⁱᵐᵖˡ PodManagementPolicyType.t;
+  #[global] PodManagementPolicyType_underlying :: (PodManagementPolicyType) <u (PodManagementPolicyTypeⁱᵐᵖˡ);
+  #[global] PodManagementPolicyTypeⁱᵐᵖˡ_underlying :: (PodManagementPolicyTypeⁱᵐᵖˡ) ↓u (PodManagementPolicyTypeⁱᵐᵖˡ);
+}.
+
+Module StatefulSetUpdateStrategy.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Axiom t : Type.
+Axiom zero_val : ZeroVal t.
+#[global] Existing Instance zero_val.
+End def.
+End StatefulSetUpdateStrategy.
+
+Class StatefulSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyⁱᵐᵖˡ StatefulSetUpdateStrategy.t;
+  #[global] StatefulSetUpdateStrategy_underlying :: (StatefulSetUpdateStrategy) <u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
+  #[global] StatefulSetUpdateStrategyⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
+}.
+
+Module StatefulSetSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Replicas' : loc;
+  Selector' : loc;
+  Template' : core_v1.PodTemplateSpec.t;
+  VolumeClaimTemplates' : slice.t;
+  ServiceName' : go_string;
+  PodManagementPolicy' : v1.PodManagementPolicyType.t;
+  UpdateStrategy' : v1.StatefulSetUpdateStrategy.t;
+  RevisionHistoryLimit' : loc;
+  MinReadySeconds' : w32;
+  PersistentVolumeClaimRetentionPolicy' : loc;
+  Ordinals' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
 End StatefulSetSpec.
+
+Definition StatefulSetSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Replicas"%go (go.PointerType go.int32));
+  (go.FieldDecl "Selector"%go (go.PointerType meta_v1.LabelSelector));
+  (go.FieldDecl "Template"%go core_v1.PodTemplateSpec);
+  (go.FieldDecl "VolumeClaimTemplates"%go (go.SliceType core_v1.PersistentVolumeClaim));
+  (go.FieldDecl "ServiceName"%go go.string);
+  (go.FieldDecl "PodManagementPolicy"%go PodManagementPolicyType);
+  (go.FieldDecl "UpdateStrategy"%go StatefulSetUpdateStrategy);
+  (go.FieldDecl "RevisionHistoryLimit"%go (go.PointerType go.int32));
+  (go.FieldDecl "MinReadySeconds"%go go.int32);
+  (go.FieldDecl "PersistentVolumeClaimRetentionPolicy"%go (go.PointerType StatefulSetPersistentVolumeClaimRetentionPolicy));
+  (go.FieldDecl "Ordinals"%go (go.PointerType StatefulSetOrdinals))
+].
+Program Definition StatefulSetSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetSpec'fds_unsealed).
+Global Instance equals_unfold_StatefulSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetSpec'fds =→ StatefulSetSpec'fds_unsealed.
+Proof. rewrite /StatefulSetSpec'fds seal_eq //. Qed.
+
+Definition StatefulSetSpecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetSpec'fds).
 
 Class StatefulSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetSpec_type_repr  :: go.TypeReprUnderlying StatefulSetSpecⁱᵐᵖˡ StatefulSetSpec.t;
   #[global] StatefulSetSpec_underlying :: (StatefulSetSpec) <u (StatefulSetSpecⁱᵐᵖˡ);
-  #[global] StatefulSetSpecⁱᵐᵖˡ_underlying :: (StatefulSetSpecⁱᵐᵖˡ) ↓u (StatefulSetSpecⁱᵐᵖˡ);
+  #[global] StatefulSetSpec_get_Replicas (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "Replicas", #x⟧ ⤳[under] #x.(StatefulSetSpec.Replicas');
+  #[global] StatefulSetSpec_set_Replicas (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "Replicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.Replicas' := y|>);
+  #[global] StatefulSetSpec_get_Selector (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "Selector", #x⟧ ⤳[under] #x.(StatefulSetSpec.Selector');
+  #[global] StatefulSetSpec_set_Selector (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "Selector", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.Selector' := y|>);
+  #[global] StatefulSetSpec_get_Template (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "Template", #x⟧ ⤳[under] #x.(StatefulSetSpec.Template');
+  #[global] StatefulSetSpec_set_Template (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "Template", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.Template' := y|>);
+  #[global] StatefulSetSpec_get_VolumeClaimTemplates (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "VolumeClaimTemplates", #x⟧ ⤳[under] #x.(StatefulSetSpec.VolumeClaimTemplates');
+  #[global] StatefulSetSpec_set_VolumeClaimTemplates (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "VolumeClaimTemplates", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.VolumeClaimTemplates' := y|>);
+  #[global] StatefulSetSpec_get_ServiceName (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "ServiceName", #x⟧ ⤳[under] #x.(StatefulSetSpec.ServiceName');
+  #[global] StatefulSetSpec_set_ServiceName (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "ServiceName", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.ServiceName' := y|>);
+  #[global] StatefulSetSpec_get_PodManagementPolicy (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "PodManagementPolicy", #x⟧ ⤳[under] #x.(StatefulSetSpec.PodManagementPolicy');
+  #[global] StatefulSetSpec_set_PodManagementPolicy (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "PodManagementPolicy", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.PodManagementPolicy' := y|>);
+  #[global] StatefulSetSpec_get_UpdateStrategy (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "UpdateStrategy", #x⟧ ⤳[under] #x.(StatefulSetSpec.UpdateStrategy');
+  #[global] StatefulSetSpec_set_UpdateStrategy (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "UpdateStrategy", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.UpdateStrategy' := y|>);
+  #[global] StatefulSetSpec_get_RevisionHistoryLimit (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "RevisionHistoryLimit", #x⟧ ⤳[under] #x.(StatefulSetSpec.RevisionHistoryLimit');
+  #[global] StatefulSetSpec_set_RevisionHistoryLimit (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "RevisionHistoryLimit", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.RevisionHistoryLimit' := y|>);
+  #[global] StatefulSetSpec_get_MinReadySeconds (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "MinReadySeconds", #x⟧ ⤳[under] #x.(StatefulSetSpec.MinReadySeconds');
+  #[global] StatefulSetSpec_set_MinReadySeconds (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "MinReadySeconds", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.MinReadySeconds' := y|>);
+  #[global] StatefulSetSpec_get_PersistentVolumeClaimRetentionPolicy (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "PersistentVolumeClaimRetentionPolicy", #x⟧ ⤳[under] #x.(StatefulSetSpec.PersistentVolumeClaimRetentionPolicy');
+  #[global] StatefulSetSpec_set_PersistentVolumeClaimRetentionPolicy (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "PersistentVolumeClaimRetentionPolicy", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.PersistentVolumeClaimRetentionPolicy' := y|>);
+  #[global] StatefulSetSpec_get_Ordinals (x : StatefulSetSpec.t) :: ⟦StructFieldGet (StatefulSetSpecⁱᵐᵖˡ) "Ordinals", #x⟧ ⤳[under] #x.(StatefulSetSpec.Ordinals');
+  #[global] StatefulSetSpec_set_Ordinals (x : StatefulSetSpec.t) y :: ⟦StructFieldSet (StatefulSetSpecⁱᵐᵖˡ) "Ordinals", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetSpec.Ordinals' := y|>);
 }.
 
 Module StatefulSetStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  ObservedGeneration' : w64;
+  Replicas' : w32;
+  ReadyReplicas' : w32;
+  CurrentReplicas' : w32;
+  UpdatedReplicas' : w32;
+  CurrentRevision' : go_string;
+  UpdateRevision' : go_string;
+  CollisionCount' : loc;
+  Conditions' : slice.t;
+  AvailableReplicas' : w32;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetStatus.
+
+Definition StatefulSetStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "ObservedGeneration"%go go.int64);
+  (go.FieldDecl "Replicas"%go go.int32);
+  (go.FieldDecl "ReadyReplicas"%go go.int32);
+  (go.FieldDecl "CurrentReplicas"%go go.int32);
+  (go.FieldDecl "UpdatedReplicas"%go go.int32);
+  (go.FieldDecl "CurrentRevision"%go go.string);
+  (go.FieldDecl "UpdateRevision"%go go.string);
+  (go.FieldDecl "CollisionCount"%go (go.PointerType go.int32));
+  (go.FieldDecl "Conditions"%go (go.SliceType StatefulSetCondition));
+  (go.FieldDecl "AvailableReplicas"%go go.int32)
+].
+Program Definition StatefulSetStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetStatus'fds_unsealed).
+Global Instance equals_unfold_StatefulSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetStatus'fds =→ StatefulSetStatus'fds_unsealed.
+Proof. rewrite /StatefulSetStatus'fds seal_eq //. Qed.
+
+Definition StatefulSetStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetStatus'fds).
 
 Class StatefulSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetStatus_type_repr  :: go.TypeReprUnderlying StatefulSetStatusⁱᵐᵖˡ StatefulSetStatus.t;
   #[global] StatefulSetStatus_underlying :: (StatefulSetStatus) <u (StatefulSetStatusⁱᵐᵖˡ);
-  #[global] StatefulSetStatusⁱᵐᵖˡ_underlying :: (StatefulSetStatusⁱᵐᵖˡ) ↓u (StatefulSetStatusⁱᵐᵖˡ);
+  #[global] StatefulSetStatus_get_ObservedGeneration (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "ObservedGeneration", #x⟧ ⤳[under] #x.(StatefulSetStatus.ObservedGeneration');
+  #[global] StatefulSetStatus_set_ObservedGeneration (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "ObservedGeneration", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.ObservedGeneration' := y|>);
+  #[global] StatefulSetStatus_get_Replicas (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "Replicas", #x⟧ ⤳[under] #x.(StatefulSetStatus.Replicas');
+  #[global] StatefulSetStatus_set_Replicas (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "Replicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.Replicas' := y|>);
+  #[global] StatefulSetStatus_get_ReadyReplicas (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "ReadyReplicas", #x⟧ ⤳[under] #x.(StatefulSetStatus.ReadyReplicas');
+  #[global] StatefulSetStatus_set_ReadyReplicas (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "ReadyReplicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.ReadyReplicas' := y|>);
+  #[global] StatefulSetStatus_get_CurrentReplicas (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "CurrentReplicas", #x⟧ ⤳[under] #x.(StatefulSetStatus.CurrentReplicas');
+  #[global] StatefulSetStatus_set_CurrentReplicas (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "CurrentReplicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.CurrentReplicas' := y|>);
+  #[global] StatefulSetStatus_get_UpdatedReplicas (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "UpdatedReplicas", #x⟧ ⤳[under] #x.(StatefulSetStatus.UpdatedReplicas');
+  #[global] StatefulSetStatus_set_UpdatedReplicas (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "UpdatedReplicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.UpdatedReplicas' := y|>);
+  #[global] StatefulSetStatus_get_CurrentRevision (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "CurrentRevision", #x⟧ ⤳[under] #x.(StatefulSetStatus.CurrentRevision');
+  #[global] StatefulSetStatus_set_CurrentRevision (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "CurrentRevision", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.CurrentRevision' := y|>);
+  #[global] StatefulSetStatus_get_UpdateRevision (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "UpdateRevision", #x⟧ ⤳[under] #x.(StatefulSetStatus.UpdateRevision');
+  #[global] StatefulSetStatus_set_UpdateRevision (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "UpdateRevision", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.UpdateRevision' := y|>);
+  #[global] StatefulSetStatus_get_CollisionCount (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "CollisionCount", #x⟧ ⤳[under] #x.(StatefulSetStatus.CollisionCount');
+  #[global] StatefulSetStatus_set_CollisionCount (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "CollisionCount", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.CollisionCount' := y|>);
+  #[global] StatefulSetStatus_get_Conditions (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "Conditions", #x⟧ ⤳[under] #x.(StatefulSetStatus.Conditions');
+  #[global] StatefulSetStatus_set_Conditions (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "Conditions", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.Conditions' := y|>);
+  #[global] StatefulSetStatus_get_AvailableReplicas (x : StatefulSetStatus.t) :: ⟦StructFieldGet (StatefulSetStatusⁱᵐᵖˡ) "AvailableReplicas", #x⟧ ⤳[under] #x.(StatefulSetStatus.AvailableReplicas');
+  #[global] StatefulSetStatus_set_AvailableReplicas (x : StatefulSetStatus.t) y :: ⟦StructFieldSet (StatefulSetStatusⁱᵐᵖˡ) "AvailableReplicas", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetStatus.AvailableReplicas' := y|>);
 }.
 
 Module StatefulSet.
@@ -637,38 +771,6 @@ Class StatefulSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalC
   #[global] StatefulSet_set_Spec (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Spec' := y|>);
   #[global] StatefulSet_get_Status (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(StatefulSet.Status');
   #[global] StatefulSet_set_Status (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Status' := y|>);
-}.
-
-Module PodManagementPolicyType.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End PodManagementPolicyType.
-
-Class PodManagementPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] PodManagementPolicyType_type_repr  :: go.TypeReprUnderlying PodManagementPolicyTypeⁱᵐᵖˡ PodManagementPolicyType.t;
-  #[global] PodManagementPolicyType_underlying :: (PodManagementPolicyType) <u (PodManagementPolicyTypeⁱᵐᵖˡ);
-  #[global] PodManagementPolicyTypeⁱᵐᵖˡ_underlying :: (PodManagementPolicyTypeⁱᵐᵖˡ) ↓u (PodManagementPolicyTypeⁱᵐᵖˡ);
-}.
-
-Module StatefulSetUpdateStrategy.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatefulSetUpdateStrategy.
-
-Class StatefulSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatefulSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyⁱᵐᵖˡ StatefulSetUpdateStrategy.t;
-  #[global] StatefulSetUpdateStrategy_underlying :: (StatefulSetUpdateStrategy) <u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
-  #[global] StatefulSetUpdateStrategyⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
 }.
 
 Module StatefulSetUpdateStrategyType.

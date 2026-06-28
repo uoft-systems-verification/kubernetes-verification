@@ -1,6 +1,10 @@
 translate = [
+    "PodPending",
+    "PodRunning",
+    "PodSucceeded",
+    "PodFailed",
+    "PodUnknown",
     "Pod",
-    "PersistentVolumeClaim",
     # "PodSpec",
     # "PodStatus",
     # "Affinity",
@@ -32,11 +36,7 @@ translate = [
     # "TopologySpreadConstraint",
     # "Volume",
     # "PodTemplateSpec",
-    "PodPending",
-    "PodRunning",
-    "PodSucceeded",
-    "PodFailed",
-    "PodUnknown",
+    "PersistentVolumeClaim",
 ]
 
 imports = [

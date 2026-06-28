@@ -47,11 +47,11 @@ func parentNameAndOrdinal(pod *v1.Pod) (string, int) {
 	if idx < 0 {
 		return "", -1
 	}
-	ordinal, err := strconv.Atoi(pod.Name[idx+1:])
+	ordinal, err := strconv.ParseInt(pod.Name[idx+1:], 10, 32)
 	if err != nil {
 		return "", -1
 	}
-	return pod.Name[:idx], ordinal
+	return pod.Name[:idx], int(ordinal)
 }
 
 func ordinalOf(pod *v1.Pod) int {
@@ -61,7 +61,7 @@ func ordinalOf(pod *v1.Pod) int {
 
 func isMemberOf(set *apps.StatefulSet, pod *v1.Pod) bool {
 	parent, ordinal := parentNameAndOrdinal(pod)
-	return parent == set.Name && ordinal >= 0
+	return parent == set.Name && ordinal >= 0 && pod.Name == podName(set, ordinal)
 }
 
 func filterPodsForStatefulSet(set *apps.StatefulSet, pods []*v1.Pod) []*v1.Pod {
@@ -72,6 +72,41 @@ func filterPodsForStatefulSet(set *apps.StatefulSet, pods []*v1.Pod) []*v1.Pod {
 		}
 	}
 	return result
+}
+
+func releasePod(set *apps.StatefulSet, pod *v1.Pod) error {
+	updatedPod := pod.DeepCopy()
+	ownerReferences := []metav1.OwnerReference{}
+	released := false
+	for _, ownerReference := range updatedPod.OwnerReferences {
+		isController := ownerReference.Controller != nil && *ownerReference.Controller
+		if isController && ownerReference.UID == set.UID {
+			released = true
+			continue
+		}
+		ownerReferences = append(ownerReferences, ownerReference)
+	}
+	if !released {
+		return nil
+	}
+	updatedPod.OwnerReferences = ownerReferences
+	_, err := apimodel.ModelState.PodUpdate(updatedPod.Namespace, updatedPod)
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
+func releasePodsWithBadNames(set *apps.StatefulSet, pods []*v1.Pod) error {
+	for _, pod := range pods {
+		if isMemberOf(set, pod) {
+			continue
+		}
+		if err := releasePod(set, pod); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func podInOrdinalRange(set *apps.StatefulSet, pod *v1.Pod) bool {
@@ -92,23 +127,23 @@ func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
 	pod.Labels[apps.PodIndexLabel] = strconv.Itoa(ordinal)
 }
 
-func hasVolumeClaimTemplate(set *apps.StatefulSet, volumeName string) bool {
-	for _, claim := range set.Spec.VolumeClaimTemplates {
-		if claim.Name == volumeName {
-			return true
-		}
+func volumeClaimTemplatesByName(set *apps.StatefulSet) map[string]v1.PersistentVolumeClaim {
+	claimTemplates := make(map[string]v1.PersistentVolumeClaim, len(set.Spec.VolumeClaimTemplates))
+	for _, claimTemplate := range set.Spec.VolumeClaimTemplates {
+		claimTemplates[claimTemplate.Name] = claimTemplate
 	}
-	return false
+	return claimTemplates
 }
 
 func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
 	ordinal := ordinalOf(pod)
 	currentVolumes := pod.Spec.Volumes
 	newVolumes := []v1.Volume{}
+	claimTemplates := volumeClaimTemplatesByName(set)
 
-	for _, claim := range set.Spec.VolumeClaimTemplates {
+	for name, claim := range claimTemplates {
 		newVolumes = append(newVolumes, v1.Volume{
-			Name: claim.Name,
+			Name: name,
 			VolumeSource: v1.VolumeSource{
 				PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
 					ClaimName: claimName(set, &claim, ordinal),
@@ -118,7 +153,7 @@ func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
 	}
 
 	for _, volume := range currentVolumes {
-		if !hasVolumeClaimTemplate(set, volume.Name) {
+		if _, ok := claimTemplates[volume.Name]; !ok {
 			newVolumes = append(newVolumes, volume)
 		}
 	}
@@ -153,7 +188,7 @@ func newPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate 
 }
 
 func createPersistentVolumeClaims(set *apps.StatefulSet, pod *v1.Pod) error {
-	for _, claimTemplate := range set.Spec.VolumeClaimTemplates {
+	for _, claimTemplate := range volumeClaimTemplatesByName(set) {
 		claim := newPersistentVolumeClaim(set, pod, &claimTemplate)
 		_, err := apimodel.ModelState.PersistentVolumeClaimGet(claim.Namespace, claim.Name)
 		if apierrors.IsNotFound(err) {
@@ -319,6 +354,10 @@ func syncStatefulSet(namespace, name string) error {
 
 	if set.DeletionTimestamp != nil {
 		return nil
+	}
+
+	if err := releasePodsWithBadNames(set, allPods); err != nil {
+		return err
 	}
 
 	return reconcileReplicas(set, filterPodsForStatefulSet(set, allPods))

@@ -2,7 +2,8 @@ From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
-From New.proof Require Export time string.
+From New.proof Require Export time.
+From New.proof.string Require Export prefix_suffix.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
@@ -884,17 +885,8 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : PodSpecV.t;
-}.
-
-Axiom meta_valid: ObjectMetaV.t → Prop.
-
-Definition valid (v: t) : Prop :=
-  meta_valid v.(ObjectMeta') ∧
-  PodSpecV.valid v.(Spec').
-
+Axiom t : Type.
+Axiom valid : t → Prop.
 Axiom deepown : v1.PodTemplateSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -1117,9 +1109,35 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
+Record t := mk {
+  Replicas' : option w32;
+  (* Selector' : loc; *)
+  Template' : PodTemplateSpecV.t;
+  VolumeClaimTemplates' : list PersistentVolumeClaimV.t;
+  ServiceName' : go_string;
+  (* PodManagementPolicy' : v1.PodManagementPolicyType.t; *)
+  (* UpdateStrategy' : v1.StatefulSetUpdateStrategy.t; *)
+  (* RevisionHistoryLimit' : loc; *)
+  (* MinReadySeconds' : w32; *)
+  (* PersistentVolumeClaimRetentionPolicy' : loc; *)
+  (* Ordinals' : loc; *)
+}.
 Axiom valid: t → Prop.
-Axiom deepown : v1.StatefulSetSpec.t → t → iProp Σ.
+
+Definition deepown (c: v1.StatefulSetSpec.t) (v: t): iProp Σ :=
+  "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
+  "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
+  | Some i => ∃ replicas, c.(v1.StatefulSetSpec.Replicas') ↦ replicas ∗ ⌜ replicas = i ⌝
+  | None => True%I
+  end) ∗
+  "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') 1 ∗
+  "Hdeepown_volumeclaimtemplates" ∷ (
+    ∃ claim_templates,
+      c.(v1.StatefulSetSpec.VolumeClaimTemplates') ↦* claim_templates ∗
+      ([∗ list] claim_template;pure_claim_template ∈ claim_templates;v.(VolumeClaimTemplates'),
+        PersistentVolumeClaimV.deepown claim_template pure_claim_template 1)
+  ) ∗
+  "%Hdeepown_servicename" ∷ ⌜c.(v1.StatefulSetSpec.ServiceName') = v.(ServiceName')⌝.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v.

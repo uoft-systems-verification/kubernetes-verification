@@ -90,6 +90,40 @@ Proof.
   f_equal. apply IH. intros y Hy. apply Hall. right. exact Hy.
 Qed.
 
+Lemma filter_length_zero_not_elem {A} (P : A → Prop) `{∀ x, Decision (P x)}
+    (xs : list A) x :
+  length (filter P xs) = 0%nat →
+  x ∈ xs →
+  ¬ P x.
+Proof.
+  intros Hlen Hin HP.
+  assert (x ∈ filter P xs) as Hin_filter.
+  { apply list_elem_of_filter. split; done. }
+  destruct (filter P xs) eqn:Hfilter.
+  - inversion Hin_filter.
+  - simpl in Hlen. lia.
+Qed.
+
+Lemma NoDup_fmap_filter {A B} (f : A → B) (P : A → Prop)
+    `{∀ x, Decision (P x)} (xs : list A) :
+  NoDup (f <$> xs) →
+  NoDup (f <$> filter P xs).
+Proof.
+  induction xs as [|x xs IH]; intros Hnodup; [done|].
+  rewrite (filter_cons P x xs).
+  inversion Hnodup as [|? ? Hnotin Hnodup_tail]; subst.
+  destruct (decide (P x)) as [_|_].
+  - simpl. constructor.
+    + intros Hin.
+      apply Hnotin.
+      apply list_elem_of_fmap_1 in Hin as (y & Hkey_eq & Hy_filter).
+      apply list_elem_of_filter in Hy_filter as [_ Hy].
+      rewrite Hkey_eq.
+      apply list_elem_of_fmap_2. exact Hy.
+    + by apply IH.
+  - by apply IH.
+Qed.
+
 Lemma filter_none {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
   (∀ x, x ∈ l → ¬ P x) →
   filter P l = [].

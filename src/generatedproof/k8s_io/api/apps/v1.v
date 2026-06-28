@@ -9,6 +9,46 @@ Require Export New.code.k8s_io.api.apps.v1.
 Set Default Proof Using "Type".
 
 Module v1.
+Module PodManagementPolicyType.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance PodManagementPolicyType_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodManagementPolicyType.t). Admitted.
+
+#[global] Instance PodManagementPolicyType_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.PodManagementPolicyType.t) (v1.PodManagementPolicyTypeⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End PodManagementPolicyType.
+
+Module StatefulSetUpdateStrategy.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global] Instance StatefulSetUpdateStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetUpdateStrategy.t). Admitted.
+
+#[global] Instance StatefulSetUpdateStrategy_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.StatefulSetUpdateStrategy.t) (v1.StatefulSetUpdateStrategyⁱᵐᵖˡ).
+Proof. Admitted.
+
+End def.
+End StatefulSetUpdateStrategy.
+
 Module StatefulSetSpec.
 Section def.
 
@@ -18,13 +58,174 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StatefulSetSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetSpec.t). Admitted.
+#[global]Program Instance StatefulSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Replicas" ∷ l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas') ∗
+      "Selector" ∷ l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector') ∗
+      "Template" ∷ l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template') ∗
+      "VolumeClaimTemplates" ∷ l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates') ∗
+      "ServiceName" ∷ l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName') ∗
+      "PodManagementPolicy" ∷ l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy') ∗
+      "UpdateStrategy" ∷ l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy') ∗
+      "RevisionHistoryLimit" ∷ l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit') ∗
+      "MinReadySeconds" ∷ l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds') ∗
+      "PersistentVolumeClaimRetentionPolicy" ∷ l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy') ∗
+      "Ordinals" ∷ l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StatefulSetSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.StatefulSetSpec.t) (v1.StatefulSetSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_Replicas l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} (v.(v1.StatefulSetSpec.Replicas')))
+    (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} (v.(v1.StatefulSetSpec.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_Replicas l (v : (v1.StatefulSetSpec.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ (v.(v1.StatefulSetSpec.Replicas')))
+    (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_Selector l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} (v.(v1.StatefulSetSpec.Selector')))
+    (l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} (v.(v1.StatefulSetSpec.Selector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_Selector l (v : (v1.StatefulSetSpec.t)) Selector' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Selector"] ↦ (v.(v1.StatefulSetSpec.Selector')))
+    (l.[(v1.StatefulSetSpec.t), "Selector"] ↦ Selector')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.Selector') := Selector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_Template l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} (v.(v1.StatefulSetSpec.Template')))
+    (l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} (v.(v1.StatefulSetSpec.Template')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_Template l (v : (v1.StatefulSetSpec.t)) Template' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Template"] ↦ (v.(v1.StatefulSetSpec.Template')))
+    (l.[(v1.StatefulSetSpec.t), "Template"] ↦ Template')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.Template') := Template'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_VolumeClaimTemplates l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} (v.(v1.StatefulSetSpec.VolumeClaimTemplates')))
+    (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} (v.(v1.StatefulSetSpec.VolumeClaimTemplates')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_VolumeClaimTemplates l (v : (v1.StatefulSetSpec.t)) VolumeClaimTemplates' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ (v.(v1.StatefulSetSpec.VolumeClaimTemplates')))
+    (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ VolumeClaimTemplates')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.VolumeClaimTemplates') := VolumeClaimTemplates'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_ServiceName l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} (v.(v1.StatefulSetSpec.ServiceName')))
+    (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} (v.(v1.StatefulSetSpec.ServiceName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_ServiceName l (v : (v1.StatefulSetSpec.t)) ServiceName' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ (v.(v1.StatefulSetSpec.ServiceName')))
+    (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ ServiceName')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.ServiceName') := ServiceName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_PodManagementPolicy l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} (v.(v1.StatefulSetSpec.PodManagementPolicy')))
+    (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} (v.(v1.StatefulSetSpec.PodManagementPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_PodManagementPolicy l (v : (v1.StatefulSetSpec.t)) PodManagementPolicy' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ (v.(v1.StatefulSetSpec.PodManagementPolicy')))
+    (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ PodManagementPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.PodManagementPolicy') := PodManagementPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_UpdateStrategy l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} (v.(v1.StatefulSetSpec.UpdateStrategy')))
+    (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} (v.(v1.StatefulSetSpec.UpdateStrategy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_UpdateStrategy l (v : (v1.StatefulSetSpec.t)) UpdateStrategy' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ (v.(v1.StatefulSetSpec.UpdateStrategy')))
+    (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ UpdateStrategy')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.UpdateStrategy') := UpdateStrategy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_RevisionHistoryLimit l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.StatefulSetSpec.RevisionHistoryLimit')))
+    (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.StatefulSetSpec.RevisionHistoryLimit')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_RevisionHistoryLimit l (v : (v1.StatefulSetSpec.t)) RevisionHistoryLimit' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ (v.(v1.StatefulSetSpec.RevisionHistoryLimit')))
+    (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ RevisionHistoryLimit')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.RevisionHistoryLimit') := RevisionHistoryLimit'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_MinReadySeconds l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.StatefulSetSpec.MinReadySeconds')))
+    (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.StatefulSetSpec.MinReadySeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_MinReadySeconds l (v : (v1.StatefulSetSpec.t)) MinReadySeconds' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ (v.(v1.StatefulSetSpec.MinReadySeconds')))
+    (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ MinReadySeconds')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.MinReadySeconds') := MinReadySeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_PersistentVolumeClaimRetentionPolicy l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} (v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy')))
+    (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} (v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_PersistentVolumeClaimRetentionPolicy l (v : (v1.StatefulSetSpec.t)) PersistentVolumeClaimRetentionPolicy' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ (v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy')))
+    (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ PersistentVolumeClaimRetentionPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy') := PersistentVolumeClaimRetentionPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetSpec_access_load_Ordinals l (v : (v1.StatefulSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} (v.(v1.StatefulSetSpec.Ordinals')))
+    (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} (v.(v1.StatefulSetSpec.Ordinals')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetSpec_access_store_Ordinals l (v : (v1.StatefulSetSpec.t)) Ordinals' :
+  AccessStrict
+    (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ (v.(v1.StatefulSetSpec.Ordinals')))
+    (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ Ordinals')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetSpec.Ordinals') := Ordinals'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatefulSetSpec.
@@ -38,13 +239,160 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StatefulSetStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetStatus.t). Admitted.
+#[global]Program Instance StatefulSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatefulSetStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ObservedGeneration" ∷ l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration') ∗
+      "Replicas" ∷ l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas') ∗
+      "ReadyReplicas" ∷ l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas') ∗
+      "CurrentReplicas" ∷ l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas') ∗
+      "UpdatedReplicas" ∷ l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas') ∗
+      "CurrentRevision" ∷ l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision') ∗
+      "UpdateRevision" ∷ l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision') ∗
+      "CollisionCount" ∷ l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount') ∗
+      "Conditions" ∷ l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions') ∗
+      "AvailableReplicas" ∷ l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StatefulSetStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.StatefulSetStatus.t) (v1.StatefulSetStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_ObservedGeneration l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.StatefulSetStatus.ObservedGeneration')))
+    (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.StatefulSetStatus.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_ObservedGeneration l (v : (v1.StatefulSetStatus.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ (v.(v1.StatefulSetStatus.ObservedGeneration')))
+    (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_Replicas l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} (v.(v1.StatefulSetStatus.Replicas')))
+    (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} (v.(v1.StatefulSetStatus.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_Replicas l (v : (v1.StatefulSetStatus.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ (v.(v1.StatefulSetStatus.Replicas')))
+    (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_ReadyReplicas l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.ReadyReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.ReadyReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_ReadyReplicas l (v : (v1.StatefulSetStatus.t)) ReadyReplicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ (v.(v1.StatefulSetStatus.ReadyReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ ReadyReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.ReadyReplicas') := ReadyReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_CurrentReplicas l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.CurrentReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.CurrentReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_CurrentReplicas l (v : (v1.StatefulSetStatus.t)) CurrentReplicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ (v.(v1.StatefulSetStatus.CurrentReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ CurrentReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.CurrentReplicas') := CurrentReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_UpdatedReplicas l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.UpdatedReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.UpdatedReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_UpdatedReplicas l (v : (v1.StatefulSetStatus.t)) UpdatedReplicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ (v.(v1.StatefulSetStatus.UpdatedReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ UpdatedReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.UpdatedReplicas') := UpdatedReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_CurrentRevision l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} (v.(v1.StatefulSetStatus.CurrentRevision')))
+    (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} (v.(v1.StatefulSetStatus.CurrentRevision')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_CurrentRevision l (v : (v1.StatefulSetStatus.t)) CurrentRevision' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ (v.(v1.StatefulSetStatus.CurrentRevision')))
+    (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ CurrentRevision')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.CurrentRevision') := CurrentRevision'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_UpdateRevision l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} (v.(v1.StatefulSetStatus.UpdateRevision')))
+    (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} (v.(v1.StatefulSetStatus.UpdateRevision')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_UpdateRevision l (v : (v1.StatefulSetStatus.t)) UpdateRevision' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ (v.(v1.StatefulSetStatus.UpdateRevision')))
+    (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ UpdateRevision')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.UpdateRevision') := UpdateRevision'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_CollisionCount l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} (v.(v1.StatefulSetStatus.CollisionCount')))
+    (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} (v.(v1.StatefulSetStatus.CollisionCount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_CollisionCount l (v : (v1.StatefulSetStatus.t)) CollisionCount' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ (v.(v1.StatefulSetStatus.CollisionCount')))
+    (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ CollisionCount')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.CollisionCount') := CollisionCount'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_Conditions l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} (v.(v1.StatefulSetStatus.Conditions')))
+    (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} (v.(v1.StatefulSetStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_Conditions l (v : (v1.StatefulSetStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ (v.(v1.StatefulSetStatus.Conditions')))
+    (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatefulSetStatus_access_load_AvailableReplicas l (v : (v1.StatefulSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.AvailableReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.StatefulSetStatus.AvailableReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatefulSetStatus_access_store_AvailableReplicas l (v : (v1.StatefulSetStatus.t)) AvailableReplicas' :
+  AccessStrict
+    (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ (v.(v1.StatefulSetStatus.AvailableReplicas')))
+    (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ AvailableReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.StatefulSetStatus.AvailableReplicas') := AvailableReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatefulSetStatus.
@@ -131,46 +479,6 @@ Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatefulSet.
-
-Module PodManagementPolicyType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodManagementPolicyType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodManagementPolicyType.t). Admitted.
-
-#[global] Instance PodManagementPolicyType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodManagementPolicyType.t) (v1.PodManagementPolicyTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodManagementPolicyType.
-
-Module StatefulSetUpdateStrategy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatefulSetUpdateStrategy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetUpdateStrategy.t). Admitted.
-
-#[global] Instance StatefulSetUpdateStrategy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatefulSetUpdateStrategy.t) (v1.StatefulSetUpdateStrategyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatefulSetUpdateStrategy.
 
 Module StatefulSetUpdateStrategyType.
 Section def.
