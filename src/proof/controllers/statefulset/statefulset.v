@@ -496,6 +496,30 @@ Proof.
     done.
 Qed.
 
+Definition pod_key_set (pods : list PodV.t) : gset KKey.t :=
+  list_to_set (PodV.key <$> pods).
+
+Definition pod_meta_except_resource_version_changed
+    (pods pods' : list PodV.t) : Prop :=
+  ∃ pod pod',
+    pod ∈ pods ∧
+    pod' ∈ pods' ∧
+    PodV.key pod = PodV.key pod' ∧
+    ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta') ≠
+      ObjectMetaV.without_resource_version pod'.(PodV.ObjectMeta').
+
+Definition pod_spec_changed (pods pods' : list PodV.t) : Prop :=
+  ∃ pod pod',
+    pod ∈ pods ∧
+    pod' ∈ pods' ∧
+    PodV.key pod = PodV.key pod' ∧
+    pod.(PodV.Spec') ≠ pod'.(PodV.Spec').
+
+Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
+  pod_key_set pods ≠ pod_key_set pods' ∨
+  pod_meta_except_resource_version_changed pods pods' ∨
+  pod_spec_changed pods pods'.
+
 Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace name sts dq pods pvcs :
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -518,8 +542,8 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) (err : interface.t), RET #err;
-      ((⌜ err = interface.nil ⌝ ∗ ⌜ current_state_matches sts pods' pvcs' ⌝) ∨
-       (⌜ err ≠ interface.nil ⌝ ∗ ⌜ match_distance sts pods pvcs > match_distance sts pods' pvcs' ⌝)) ∗
+      ⌜ current_state_matches sts pods' pvcs' ∨
+        pods_progress_observed pods pods' ∧ match_distance sts pods pvcs > match_distance sts pods' pvcs' ⌝ ∗
       own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
         dq sts.(StatefulSetV.ObjectMeta') ∗
       own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
