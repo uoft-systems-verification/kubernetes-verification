@@ -20,8 +20,6 @@ End pkg_id.
 Export pkg_id.
 Module statefulset.
 
-Definition controllerKind {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.controllerKind"%go.
-
 Definition replicasOf {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.replicasOf"%go.
 
 Definition endOrdinalOf {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.endOrdinalOf"%go.
@@ -44,11 +42,17 @@ Definition releasePodsWithBadNames {ext : ffi_syntax} {go_gctx : GoGlobalContext
 
 Definition podInOrdinalRange {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.podInOrdinalRange"%go.
 
+Definition isTerminating {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.isTerminating"%go.
+
 Definition updateIdentity {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.updateIdentity"%go.
+
+Definition identityMatches {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.identityMatches"%go.
 
 Definition volumeClaimTemplatesByName {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.volumeClaimTemplatesByName"%go.
 
 Definition updateStorage {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.updateStorage"%go.
+
+Definition storageMatches {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.storageMatches"%go.
 
 Definition newStatefulSetPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.newStatefulSetPod"%go.
 
@@ -72,15 +76,11 @@ Definition podSpecMatches {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_st
 
 Definition largestOutdatedPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.largestOutdatedPod"%go.
 
-Definition samePod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.samePod"%go.
-
-Definition withoutPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.withoutPod"%go.
-
 Definition reconcileReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.reconcileReplicas"%go.
 
 Definition syncStatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.syncStatefulSet"%go.
 
-(* go: stateful_set.go:26:6 *)
+(* go: stateful_set.go:24:6 *)
 Definition replicasOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set",
     exception_do (let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
@@ -89,14 +89,14 @@ Definition replicasOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
     else do:  #());;;
     return: (Convert go.int32 go.int (![go.int32] (![go.PointerType go.int32] (StructFieldRef apps_v1.StatefulSetSpec "Replicas"%go (StructFieldRef apps_v1.StatefulSet "Spec"%go (![go.PointerType apps_v1.StatefulSet] "set"))))))).
 
-(* go: stateful_set.go:33:6 *)
+(* go: stateful_set.go:31:6 *)
 Definition endOrdinalOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set",
     exception_do (let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
     return: ((let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
      (FuncResolve replicasOf [] #()) "$a0") -⟨go.int⟩ #(W64 1))).
 
-(* go: stateful_set.go:37:6 *)
+(* go: stateful_set.go:35:6 *)
 Definition podNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -104,7 +104,7 @@ Definition podNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
     return: (((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef apps_v1.StatefulSet "ObjectMeta"%go (![go.PointerType apps_v1.StatefulSet] "set")))) +⟨go.string⟩ #"-"%go) +⟨go.string⟩ (let: "$a0" := (![go.int] "ordinal") in
      (FuncResolve strconv.Itoa [] #()) "$a0"))).
 
-(* go: stateful_set.go:41:6 *)
+(* go: stateful_set.go:39:6 *)
 Definition claimNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "claim" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -113,7 +113,7 @@ Definition claimNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
     return: (((((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) +⟨go.string⟩ #"-"%go) +⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef apps_v1.StatefulSet "ObjectMeta"%go (![go.PointerType apps_v1.StatefulSet] "set"))))) +⟨go.string⟩ #"-"%go) +⟨go.string⟩ (let: "$a0" := (![go.int] "ordinal") in
      (FuncResolve strconv.Itoa [] #()) "$a0"))).
 
-(* go: stateful_set.go:45:6 *)
+(* go: stateful_set.go:43:6 *)
 Definition parentNameAndOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -142,7 +142,7 @@ Definition parentNameAndOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     return: (let: "$s" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) in
      Slice go.string ("$s", #(W64 0), ![go.int] "idx"), Convert go.int64 go.int (![go.int64] "ordinal"))).
 
-(* go: stateful_set.go:57:6 *)
+(* go: stateful_set.go:55:6 *)
 Definition ordinalOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -155,7 +155,7 @@ Definition ordinalOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
     do:  ("ordinal" <-[go.int] "$r1");;;
     return: (![go.int] "ordinal")).
 
-(* go: stateful_set.go:62:6 *)
+(* go: stateful_set.go:60:6 *)
 Definition isMemberOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -172,7 +172,7 @@ Definition isMemberOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
      let: "$a1" := (![go.int] "ordinal") in
      (FuncResolve podName [] #()) "$a0" "$a1")))).
 
-(* go: stateful_set.go:67:6 *)
+(* go: stateful_set.go:65:6 *)
 Definition filterPodsForStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -197,7 +197,7 @@ Definition filterPodsForStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType core_v1.Pod)] "result")).
 
-(* go: stateful_set.go:77:6 *)
+(* go: stateful_set.go:75:6 *)
 Definition releasePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -249,7 +249,7 @@ Definition releasePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:100:6 *)
+(* go: stateful_set.go:98:6 *)
 Definition releasePodsWithBadNamesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -274,7 +274,7 @@ Definition releasePodsWithBadNamesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:112:6 *)
+(* go: stateful_set.go:110:6 *)
 Definition podInOrdinalRangeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -286,7 +286,13 @@ Definition podInOrdinalRangeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     return: (((![go.int] "ordinal") ≥⟨go.int⟩ #(W64 0)) && ((![go.int] "ordinal") ≤⟨go.int⟩ (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
      (FuncResolve endOrdinalOf [] #()) "$a0")))).
 
-(* go: stateful_set.go:117:6 *)
+(* go: stateful_set.go:115:6 *)
+Definition isTerminatingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "pod",
+    exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
+    return: ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) ≠⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil))).
+
+(* go: stateful_set.go:119:6 *)
 Definition updateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -317,7 +323,25 @@ Definition updateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) (Convert go.untyped_string go.string apps_v1.PodIndexLabel) "$r0");;;
     return: #()).
 
-(* go: stateful_set.go:130:6 *)
+(* go: stateful_set.go:132:6 *)
+Definition identityMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pod",
+    exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "ordinal" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "parent" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
+    (FuncResolve parentNameAndOrdinal [] #()) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("parent" <-[go.string] "$r0");;;
+    do:  ("ordinal" <-[go.int] "$r1");;;
+    return: (((((((((![go.int] "ordinal") ≥⟨go.int⟩ #(W64 0)) && ((![go.string] "parent") =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef apps_v1.StatefulSet "ObjectMeta"%go (![go.PointerType apps_v1.StatefulSet] "set")))))) && ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+     let: "$a1" := (![go.int] "ordinal") in
+     (FuncResolve podName [] #()) "$a0" "$a1"))) && ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.StatefulSet "ObjectMeta"%go (![go.PointerType apps_v1.StatefulSet] "set")))))) && ((![go.string] (StructFieldRef core_v1.PodSpec "Hostname"%go (StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))))) && ((![go.string] (StructFieldRef core_v1.PodSpec "Subdomain"%go (StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef apps_v1.StatefulSetSpec "ServiceName"%go (StructFieldRef apps_v1.StatefulSet "Spec"%go (![go.PointerType apps_v1.StatefulSet] "set")))))) && ((map.lookup1 go.string go.string (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) (Convert go.untyped_string go.string apps_v1.StatefulSetPodNameLabel)) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))))) && ((map.lookup1 go.string go.string (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) (Convert go.untyped_string go.string apps_v1.PodIndexLabel)) =⟨go.string⟩ (let: "$a0" := (![go.int] "ordinal") in
+     (FuncResolve strconv.Itoa [] #()) "$a0")))).
+
+(* go: stateful_set.go:144:6 *)
 Definition volumeClaimTemplatesByNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set",
     exception_do (let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
@@ -334,7 +358,7 @@ Definition volumeClaimTemplatesByNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
       do:  (map.insert go.string (![go.MapType go.string core_v1.PersistentVolumeClaim] "claimTemplates") (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go "claimTemplate"))) "$r0")));;;
     return: (![go.MapType go.string core_v1.PersistentVolumeClaim] "claimTemplates")).
 
-(* go: stateful_set.go:138:6 *)
+(* go: stateful_set.go:152:6 *)
 Definition updateStorageⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -394,7 +418,52 @@ Definition updateStorageⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     do:  ((StructFieldRef core_v1.PodSpec "Volumes"%go (StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod"))) <-[go.SliceType core_v1.Volume] "$r0");;;
     return: #()).
 
-(* go: stateful_set.go:164:6 *)
+(* go: stateful_set.go:178:6 *)
+Definition storageMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pod",
+    exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "ordinal" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
+    (FuncResolve ordinalOf [] #()) "$a0") in
+    do:  ("ordinal" <-[go.int] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.int] "ordinal") <⟨go.int⟩ #(W64 0))
+    then return: (#false)
+    else do:  #());;;
+    let: "volumes" := (GoAlloc (go.MapType go.string core_v1.Volume) (GoZeroVal (go.MapType go.string core_v1.Volume) #())) in
+    let: "$r0" := ((FuncResolve go.make2 [go.MapType go.string core_v1.Volume] #()) (let: "$a0" := (![go.SliceType core_v1.Volume] (StructFieldRef core_v1.PodSpec "Volumes"%go (StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod")))) in
+    (FuncResolve go.len [go.SliceType core_v1.Volume] #()) "$a0")) in
+    do:  ("volumes" <-[go.MapType go.string core_v1.Volume] "$r0");;;
+    let: "$range" := (![go.SliceType core_v1.Volume] (StructFieldRef core_v1.PodSpec "Volumes"%go (StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod")))) in
+    (let: "volume" := (GoAlloc core_v1.Volume (GoZeroVal core_v1.Volume #())) in
+    slice.for_range core_v1.Volume "$range" (λ: "$key" "$value",
+      do:  ("volume" <-[core_v1.Volume] "$value");;;
+      do:  "$key";;;
+      let: "$r0" := (![core_v1.Volume] "volume") in
+      do:  (map.insert go.string (![go.MapType go.string core_v1.Volume] "volumes") (![go.string] (StructFieldRef core_v1.Volume "Name"%go "volume")) "$r0")));;;
+    let: "$range" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    (FuncResolve volumeClaimTemplatesByName [] #()) "$a0") in
+    (let: "claim" := (GoAlloc core_v1.PersistentVolumeClaim (GoZeroVal core_v1.PersistentVolumeClaim #())) in
+    let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    map.for_range go.string core_v1.PersistentVolumeClaim "$range" (λ: "$key" "$value",
+      do:  ("claim" <-[core_v1.PersistentVolumeClaim] "$value");;;
+      do:  ("name" <-[go.string] "$key");;;
+      let: "found" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+      let: "volume" := (GoAlloc core_v1.Volume (GoZeroVal core_v1.Volume #())) in
+      let: ("$ret0", "$ret1") := (map.lookup2 go.string core_v1.Volume (![go.MapType go.string core_v1.Volume] "volumes") (![go.string] "name")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("volume" <-[core_v1.Volume] "$r0");;;
+      do:  ("found" <-[go.bool] "$r1");;;
+      (if: ((⟨go.bool⟩! (![go.bool] "found")) || ((![go.PointerType core_v1.PersistentVolumeClaimVolumeSource] (StructFieldRef core_v1.VolumeSource "PersistentVolumeClaim"%go (StructFieldRef core_v1.Volume "VolumeSource"%go "volume"))) =⟨go.PointerType core_v1.PersistentVolumeClaimVolumeSource⟩ (Convert go.untyped_nil (go.PointerType core_v1.PersistentVolumeClaimVolumeSource) UntypedNil))) || ((![go.string] (StructFieldRef core_v1.PersistentVolumeClaimVolumeSource "ClaimName"%go (![go.PointerType core_v1.PersistentVolumeClaimVolumeSource] (StructFieldRef core_v1.VolumeSource "PersistentVolumeClaim"%go (StructFieldRef core_v1.Volume "VolumeSource"%go "volume"))))) ≠⟨go.string⟩ (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+      let: "$a1" := "claim" in
+      let: "$a2" := (![go.int] "ordinal") in
+      (FuncResolve claimName [] #()) "$a0" "$a1" "$a2"))
+      then return: (#false)
+      else do:  #())));;;
+    return: (#true)).
+
+(* go: stateful_set.go:201:6 *)
 Definition newStatefulSetPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -404,7 +473,8 @@ Definition newStatefulSetPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     let: ("$ret0", "$ret1") := (let: "$a0" := (StructFieldRef apps_v1.StatefulSetSpec "Template"%go (StructFieldRef apps_v1.StatefulSet "Spec"%go (![go.PointerType apps_v1.StatefulSet] "set"))) in
     let: "$a1" := (Convert (go.PointerType apps_v1.StatefulSet) runtime.Object (![go.PointerType apps_v1.StatefulSet] "set")) in
     let: "$a2" := (let: "$a0" := (Convert (go.PointerType apps_v1.StatefulSet) meta_v1.Object (![go.PointerType apps_v1.StatefulSet] "set")) in
-    let: "$a1" := (![schema.GroupVersionKind] (GlobalVarAddr controllerKind #())) in
+    let: "$a1" := (let: "$a0" := #"StatefulSet"%go in
+    (MethodResolve (go.PointerType schema.GroupVersion) "WithKind"%go (GlobalVarAddr apps_v1.SchemeGroupVersion #())) "$a0") in
     (FuncResolve meta_v1.NewControllerRef [] #()) "$a0" "$a1") in
     (FuncResolve controller.GetPodFromTemplate [] #()) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -426,7 +496,7 @@ Definition newStatefulSetPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     (FuncResolve updateStorage [] #()) "$a0" "$a1");;;
     return: (![go.PointerType core_v1.Pod] "pod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:175:6 *)
+(* go: stateful_set.go:212:6 *)
 Definition newPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod" "claimTemplate",
     exception_do (let: "claimTemplate" := (GoAlloc (go.PointerType core_v1.PersistentVolumeClaim) "claimTemplate") in
@@ -461,7 +531,7 @@ Definition newPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType core_v1.PersistentVolumeClaim] "claim")).
 
-(* go: stateful_set.go:190:6 *)
+(* go: stateful_set.go:227:6 *)
 Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -507,7 +577,7 @@ Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
       else do:  #())));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:208:6 *)
+(* go: stateful_set.go:245:6 *)
 Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -534,20 +604,37 @@ Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:219:6 *)
+(* go: stateful_set.go:256:6 *)
 Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
     let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    (if: (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    let: "$a1" := (![go.PointerType core_v1.Pod] "pod") in
+    (FuncResolve identityMatches [] #()) "$a0" "$a1") && (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    let: "$a1" := (![go.PointerType core_v1.Pod] "pod") in
+    (FuncResolve storageMatches [] #()) "$a0" "$a1")
+    then return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
     let: "updatedPod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
     let: "$r0" := ((MethodResolve (go.PointerType core_v1.Pod) "DeepCopy"%go (![go.PointerType core_v1.Pod] "pod")) #()) in
     do:  ("updatedPod" <-[go.PointerType core_v1.Pod] "$r0");;;
-    do:  (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    (if: (⟨go.bool⟩! (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
     let: "$a1" := (![go.PointerType core_v1.Pod] "updatedPod") in
-    (FuncResolve updateIdentity [] #()) "$a0" "$a1");;;
-    do:  (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    (FuncResolve identityMatches [] #()) "$a0" "$a1"))
+    then
+      do:  (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+      let: "$a1" := (![go.PointerType core_v1.Pod] "updatedPod") in
+      (FuncResolve updateIdentity [] #()) "$a0" "$a1")
+    else do:  #());;;
+    (if: (⟨go.bool⟩! (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
     let: "$a1" := (![go.PointerType core_v1.Pod] "updatedPod") in
-    (FuncResolve updateStorage [] #()) "$a0" "$a1");;;
+    (FuncResolve storageMatches [] #()) "$a0" "$a1"))
+    then
+      do:  (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+      let: "$a1" := (![go.PointerType core_v1.Pod] "updatedPod") in
+      (FuncResolve updateStorage [] #()) "$a0" "$a1")
+    else do:  #());;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "updatedPod")))) in
     let: "$a1" := (![go.PointerType core_v1.Pod] "updatedPod") in
@@ -558,7 +645,7 @@ Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:227:6 *)
+(* go: stateful_set.go:272:6 *)
 Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -578,7 +665,7 @@ Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
     else do:  #());;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:236:6 *)
+(* go: stateful_set.go:281:6 *)
 Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -602,7 +689,7 @@ Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:246:6 *)
+(* go: stateful_set.go:291:6 *)
 Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -630,7 +717,7 @@ Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       else do:  #())));;;
     return: (![go.PointerType core_v1.Pod] "condemned")).
 
-(* go: stateful_set.go:260:6 *)
+(* go: stateful_set.go:305:6 *)
 Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "spec",
     exception_do (let: "spec" := (GoAlloc core_v1.PodSpec "spec") in
@@ -642,7 +729,7 @@ Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ((StructFieldRef core_v1.PodSpec "Subdomain"%go "spec") <-[go.string] "$r0");;;
     return: (![core_v1.PodSpec] "spec")).
 
-(* go: stateful_set.go:267:6 *)
+(* go: stateful_set.go:312:6 *)
 Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -659,7 +746,7 @@ Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
      let: "$a1" := (Convert core_v1.PodSpec go.any (![core_v1.PodSpec] "templateSpec")) in
      (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")).
 
-(* go: stateful_set.go:273:6 *)
+(* go: stateful_set.go:318:6 *)
 Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -682,39 +769,7 @@ Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:283:6 *)
-Definition samePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "pod" "other",
-    exception_do (let: "other" := (GoAlloc (go.PointerType core_v1.Pod) "other") in
-    let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
-    return: ((((![go.PointerType core_v1.Pod] "other") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)) && ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "other")))))) && ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "other"))))))).
-
-(* go: stateful_set.go:287:6 *)
-Definition withoutPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "pods" "target",
-    exception_do (let: "target" := (GoAlloc (go.PointerType core_v1.Pod) "target") in
-    let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
-    let: "result" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
-    let: "$r0" := (CompositeLiteral (go.SliceType (go.PointerType core_v1.Pod)) (LiteralValue [])) in
-    do:  ("result" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
-    let: "$range" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-    (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-    slice.for_range (go.PointerType core_v1.Pod) "$range" (λ: "$key" "$value",
-      do:  ("pod" <-[go.PointerType core_v1.Pod] "$value");;;
-      do:  "$key";;;
-      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
-      let: "$a1" := (![go.PointerType core_v1.Pod] "target") in
-      (FuncResolve samePod [] #()) "$a0" "$a1"
-      then continue: #()
-      else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "result") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType core_v1.Pod] "pod") in
-      CompositeLiteral (go.SliceType (go.PointerType core_v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType core_v1.Pod) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType core_v1.Pod)] #()) "$a0" "$a1") in
-      do:  ("result" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType core_v1.Pod)] "result")).
-
-(* go: stateful_set.go:298:6 *)
+(* go: stateful_set.go:328:6 *)
 Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -755,7 +810,11 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
         (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
         then return: (![go.error] "err")
         else do:  #()));;;
-        continue: #()
+        return: (Convert go.untyped_nil go.error UntypedNil)
+      else do:  #());;;
+      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
+      (FuncResolve isTerminating [] #()) "$a0"
+      then return: (Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
@@ -778,17 +837,11 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
     (FuncResolve firstCondemnedPod [] #()) "$a0" "$a1") in
     do:  ("condemned" <-[go.PointerType core_v1.Pod] "$r0");;;
-    (for: (λ: <>, (![go.PointerType core_v1.Pod] "condemned") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)); (λ: <>, let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
-    let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-    (FuncResolve firstCondemnedPod [] #()) "$a0" "$a1") in
-    do:  ("condemned" <-[go.PointerType core_v1.Pod] "$r0")) := λ: <>,
-      (if: Convert go.untyped_bool go.bool ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "condemned")))) ≠⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil))
-      then
-        let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-        let: "$a1" := (![go.PointerType core_v1.Pod] "condemned") in
-        (FuncResolve withoutPod [] #()) "$a0" "$a1") in
-        do:  ("pods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
-        continue: #()
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "condemned") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
+    then
+      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
+      (FuncResolve isTerminating [] #()) "$a0"
+      then return: (Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "$r0" := (let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
@@ -797,10 +850,8 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #()));;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-      let: "$a1" := (![go.PointerType core_v1.Pod] "condemned") in
-      (FuncResolve withoutPod [] #()) "$a0" "$a1") in
-      do:  ("pods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0")));;;
+      return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #()));;;
     (let: "outdated" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
     let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
@@ -808,12 +859,16 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     do:  ("outdated" <-[go.PointerType core_v1.Pod] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "outdated") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
     then
+      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
+      (FuncResolve isTerminating [] #()) "$a0"
+      then return: (Convert go.untyped_nil go.error UntypedNil)
+      else do:  #());;;
       return: (let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
        (FuncResolve deletePod [] #()) "$a0")
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:341:6 *)
+(* go: stateful_set.go:377:6 *)
 Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -870,8 +925,7 @@ Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.statefulset (λ: <>,
-      exception_do (do:  (go.GlobalAlloc controllerKind schema.GroupVersionKind #());;;
-      do:  (controller.initialize' #());;;
+      exception_do (do:  (controller.initialize' #());;;
       do:  (meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
       do:  (core_v1.initialize' #());;;
@@ -880,10 +934,7 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (strconv.initialize' #());;;
       do:  (reflect.initialize' #());;;
       do:  (apimodel.initialize' #());;;
-      do:  (common.initialize' #());;;
-      let: "$r0" := (let: "$a0" := #"StatefulSet"%go in
-      (MethodResolve (go.PointerType schema.GroupVersion) "WithKind"%go (GlobalVarAddr apps_v1.SchemeGroupVersion #())) "$a0") in
-      do:  ((GlobalVarAddr controllerKind #()) <-[schema.GroupVersionKind] "$r0"))
+      do:  (common.initialize' #()))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
@@ -899,9 +950,12 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] releasePod_unfold :: FuncUnfold releasePod [] (releasePodⁱᵐᵖˡ);
   #[global] releasePodsWithBadNames_unfold :: FuncUnfold releasePodsWithBadNames [] (releasePodsWithBadNamesⁱᵐᵖˡ);
   #[global] podInOrdinalRange_unfold :: FuncUnfold podInOrdinalRange [] (podInOrdinalRangeⁱᵐᵖˡ);
+  #[global] isTerminating_unfold :: FuncUnfold isTerminating [] (isTerminatingⁱᵐᵖˡ);
   #[global] updateIdentity_unfold :: FuncUnfold updateIdentity [] (updateIdentityⁱᵐᵖˡ);
+  #[global] identityMatches_unfold :: FuncUnfold identityMatches [] (identityMatchesⁱᵐᵖˡ);
   #[global] volumeClaimTemplatesByName_unfold :: FuncUnfold volumeClaimTemplatesByName [] (volumeClaimTemplatesByNameⁱᵐᵖˡ);
   #[global] updateStorage_unfold :: FuncUnfold updateStorage [] (updateStorageⁱᵐᵖˡ);
+  #[global] storageMatches_unfold :: FuncUnfold storageMatches [] (storageMatchesⁱᵐᵖˡ);
   #[global] newStatefulSetPod_unfold :: FuncUnfold newStatefulSetPod [] (newStatefulSetPodⁱᵐᵖˡ);
   #[global] newPersistentVolumeClaim_unfold :: FuncUnfold newPersistentVolumeClaim [] (newPersistentVolumeClaimⁱᵐᵖˡ);
   #[global] createPersistentVolumeClaims_unfold :: FuncUnfold createPersistentVolumeClaims [] (createPersistentVolumeClaimsⁱᵐᵖˡ);
@@ -913,8 +967,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] withoutStatefulSetFields_unfold :: FuncUnfold withoutStatefulSetFields [] (withoutStatefulSetFieldsⁱᵐᵖˡ);
   #[global] podSpecMatches_unfold :: FuncUnfold podSpecMatches [] (podSpecMatchesⁱᵐᵖˡ);
   #[global] largestOutdatedPod_unfold :: FuncUnfold largestOutdatedPod [] (largestOutdatedPodⁱᵐᵖˡ);
-  #[global] samePod_unfold :: FuncUnfold samePod [] (samePodⁱᵐᵖˡ);
-  #[global] withoutPod_unfold :: FuncUnfold withoutPod [] (withoutPodⁱᵐᵖˡ);
   #[global] reconcileReplicas_unfold :: FuncUnfold reconcileReplicas [] (reconcileReplicasⁱᵐᵖˡ);
   #[global] syncStatefulSet_unfold :: FuncUnfold syncStatefulSet [] (syncStatefulSetⁱᵐᵖˡ);
   #[global] import_common_Assumption :: common.Assumptions;

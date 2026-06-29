@@ -67,10 +67,12 @@ Definition alive_condemned_pods sts pods : list PodV.t :=
 
 (* The progress metric gives an outdated desired Pod cost 2 and a missing
    desired Pod cost 1, so deleting one outdated Pod strictly reduces the
-   distance even though the desired replacement Pod is created by a later run. *)
+   distance even though the desired replacement Pod is created by a later run.
+   Once the delete only sets DeletionTimestamp, the Pod is no longer alive and
+   should not keep contributing to the outdated-Pod distance. *)
 Definition pod_distance sts pods : nat :=
   length (missing_pod_keys sts pods) +
-  2 * length (outdated_pods sts pods) +
+  2 * length (filter is_pod_alive (outdated_pods sts pods)) +
   length (bad_name_pods sts pods) +
   length (alive_condemned_pods sts pods).
 
@@ -97,10 +99,11 @@ Definition current_state_matches sts pods pvcs : Prop :=
   pods_match sts pods ∧ pvcs_match sts pvcs.
 
 Lemma match_distance_zero_matches γ sts pods pvcs :
+  (∀ pod, pod ∈ pods → is_pod_alive pod) →
   ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) -∗
   ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
 Proof.
-  iIntros "Hpod_meta_frags".
+  iIntros (Hpods_alive) "Hpod_meta_frags".
   iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
     with "Hpod_meta_frags") as "%Hpods_nodup".
   iPureIntro.
@@ -119,7 +122,8 @@ Proof.
   - intros Hdist.
     unfold match_distance, pod_distance, pvc_distance in Hdist.
     assert (Hmissing_pods : length (missing_pod_keys sts pods) = 0%nat) by lia.
-    assert (Houtdated_pods : length (outdated_pods sts pods) = 0%nat) by lia.
+    assert (Halive_outdated_pods :
+        length (filter is_pod_alive (outdated_pods sts pods)) = 0%nat) by lia.
     assert (Hbad_name_pods : length (bad_name_pods sts pods) = 0%nat) by lia.
     assert (Halive_condemned_pods :
         length (alive_condemned_pods sts pods) = 0%nat) by lia.
@@ -180,11 +184,14 @@ Proof.
               apply list_elem_of_filter in Hpod as [Hpod_desired Hpod].
               destruct (decide (pod_match sts pod)) as [Hmatch|Hnot_match]; [exact Hmatch|].
               exfalso.
+              assert (Hpod_outdated : pod ∈ outdated_pods sts pods).
+              { unfold outdated_pods.
+                apply list_elem_of_filter. split; [exact Hnot_match|exact Hpod_needed]. }
               eapply (filter_length_zero_not_elem
-                (λ pod, ¬ pod_match sts pod)
-                (needed_pods sts pods) pod);
-                [|exact Hpod_needed|exact Hnot_match].
-              unfold outdated_pods in Houtdated_pods. exact Houtdated_pods.
+                is_pod_alive
+                (outdated_pods sts pods) pod);
+                [exact Halive_outdated_pods|exact Hpod_outdated|].
+              by apply Hpods_alive.
     + intros key Hdesired.
       destruct (decide (key ∈ PersistentVolumeClaimV.key <$> pvcs)) as [Hactual|Hnot_actual]; [done|].
       exfalso.
@@ -270,13 +277,13 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
       "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hnot_match" ∷ ⌜ ¬ current_state_matches sts pods pvcs ⌝
+      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) (err : interface.t), RET #err;
       ⌜ current_state_matches sts pods' pvcs' ∨
-        pods_progress_observed pods pods' ∧ match_distance sts pods pvcs > match_distance sts pods' pvcs' ⌝ ∗
+        pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs ∨
+        (∃ pod, pod ∈ pods ∧ ¬ is_pod_alive pod) ∧ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝ ∗
       own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       ([∗ list] pod ∈ pods',
@@ -304,12 +311,12 @@ Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace na
         own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
         own_spec_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
-      "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
-      "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hnot_match" ∷ ⌜ current_state_matches sts pods pvcs ⌝
+	    "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+	    "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+	    "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
+	    "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝ ∗
+	    "%Hpods_no_dup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+	    "%Hpvcs_no_dup" ∷ ⌜ NoDup (PersistentVolumeClaimV.key <$> pvcs) ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ RET #interface.nil;

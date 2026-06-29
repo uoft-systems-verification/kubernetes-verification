@@ -21,8 +21,6 @@ import (
 // * concurrent creation/deletion
 // * PVC retention policy owner reference updates
 
-var controllerKind = apps.SchemeGroupVersion.WithKind("StatefulSet")
-
 func replicasOf(set *apps.StatefulSet) int {
 	if set.Spec.Replicas == nil {
 		return 1
@@ -114,6 +112,10 @@ func podInOrdinalRange(set *apps.StatefulSet, pod *v1.Pod) bool {
 	return ordinal >= 0 && ordinal <= endOrdinalOf(set)
 }
 
+func isTerminating(pod *v1.Pod) bool {
+	return pod.DeletionTimestamp != nil
+}
+
 func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
 	ordinal := ordinalOf(pod)
 	pod.Name = podName(set, ordinal)
@@ -125,6 +127,18 @@ func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
 	}
 	pod.Labels[apps.StatefulSetPodNameLabel] = pod.Name
 	pod.Labels[apps.PodIndexLabel] = strconv.Itoa(ordinal)
+}
+
+func identityMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
+	parent, ordinal := parentNameAndOrdinal(pod)
+	return ordinal >= 0 &&
+		parent == set.Name &&
+		pod.Name == podName(set, ordinal) &&
+		pod.Namespace == set.Namespace &&
+		pod.Spec.Hostname == pod.Name &&
+		pod.Spec.Subdomain == set.Spec.ServiceName &&
+		pod.Labels[apps.StatefulSetPodNameLabel] == pod.Name &&
+		pod.Labels[apps.PodIndexLabel] == strconv.Itoa(ordinal)
 }
 
 func volumeClaimTemplatesByName(set *apps.StatefulSet) map[string]v1.PersistentVolumeClaim {
@@ -161,8 +175,31 @@ func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
 	pod.Spec.Volumes = newVolumes
 }
 
+func storageMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
+	ordinal := ordinalOf(pod)
+	if ordinal < 0 {
+		return false
+	}
+
+	volumes := make(map[string]v1.Volume, len(pod.Spec.Volumes))
+	for _, volume := range pod.Spec.Volumes {
+		volumes[volume.Name] = volume
+	}
+
+	for name, claim := range volumeClaimTemplatesByName(set) {
+		volume, found := volumes[name]
+		if !found ||
+			volume.VolumeSource.PersistentVolumeClaim == nil ||
+			volume.VolumeSource.PersistentVolumeClaim.ClaimName != claimName(set, &claim, ordinal) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func newStatefulSetPod(set *apps.StatefulSet, ordinal int) (*v1.Pod, error) {
-	pod, err := controller.GetPodFromTemplate(&set.Spec.Template, set, metav1.NewControllerRef(set, controllerKind))
+	pod, err := controller.GetPodFromTemplate(&set.Spec.Template, set, metav1.NewControllerRef(set, apps.SchemeGroupVersion.WithKind("StatefulSet")))
 	if err != nil {
 		return nil, err
 	}
@@ -217,9 +254,17 @@ func createStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
 }
 
 func updateStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
+	if identityMatches(set, pod) && storageMatches(set, pod) {
+		return nil
+	}
+
 	updatedPod := pod.DeepCopy()
-	updateIdentity(set, updatedPod)
-	updateStorage(set, updatedPod)
+	if !identityMatches(set, updatedPod) {
+		updateIdentity(set, updatedPod)
+	}
+	if !storageMatches(set, updatedPod) {
+		updateStorage(set, updatedPod)
+	}
 	_, err := apimodel.ModelState.PodUpdate(updatedPod.Namespace, updatedPod)
 	return err
 }
@@ -280,21 +325,6 @@ func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
 	return nil
 }
 
-func samePod(pod, other *v1.Pod) bool {
-	return other != nil && pod.Namespace == other.Namespace && pod.Name == other.Name
-}
-
-func withoutPod(pods []*v1.Pod, target *v1.Pod) []*v1.Pod {
-	result := []*v1.Pod{}
-	for _, pod := range pods {
-		if samePod(pod, target) {
-			continue
-		}
-		result = append(result, pod)
-	}
-	return result
-}
-
 func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
 	end := endOrdinalOf(set)
 
@@ -308,7 +338,11 @@ func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
 			if err := createStatefulPod(set, newPod); err != nil {
 				return err
 			}
-			continue
+			return nil
+		}
+
+		if isTerminating(pod) {
+			return nil
 		}
 
 		if err := createPersistentVolumeClaims(set, pod); err != nil {
@@ -320,18 +354,20 @@ func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
 		}
 	}
 
-	for condemned := firstCondemnedPod(set, pods); condemned != nil; condemned = firstCondemnedPod(set, pods) {
-		if condemned.DeletionTimestamp != nil {
-			pods = withoutPod(pods, condemned)
-			continue
+	if condemned := firstCondemnedPod(set, pods); condemned != nil {
+		if isTerminating(condemned) {
+			return nil
 		}
 		if err := deletePod(condemned); err != nil {
 			return err
 		}
-		pods = withoutPod(pods, condemned)
+		return nil
 	}
 
 	if outdated := largestOutdatedPod(set, pods); outdated != nil {
+		if isTerminating(outdated) {
+			return nil
+		}
 		return deletePod(outdated)
 	}
 
