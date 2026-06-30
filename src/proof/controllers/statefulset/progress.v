@@ -290,40 +290,4 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
 Proof.
 Admitted.
 
-Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace name sts dq pods pvcs :
-  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_spec_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
-	    "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-	    "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-	    "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-	    "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝ ∗
-	    "%Hpods_no_dup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-	    "%Hpvcs_no_dup" ∷ ⌜ NoDup (PersistentVolumeClaimV.key <$> pvcs) ⌝
-  }}}
-    @! statefulset.syncStatefulSet #namespace #name
-  {{{ (err : interface.t), RET #err;
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_spec_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods))
-  }}}.
-Proof.
-Admitted.
-
 End proof.
