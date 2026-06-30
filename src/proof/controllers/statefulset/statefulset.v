@@ -59,11 +59,8 @@ Definition outdated_pods sts pods : list PodV.t :=
 Definition bad_name_pods sts pods : list PodV.t :=
   filter (λ pod, ¬ pod_has_member_key sts pod) pods.
 
-Definition alive_condemned_pods sts pods : list PodV.t :=
-  filter
-    (λ pod, pod_has_member_key sts pod ∧ ¬ pod_key_is_desired sts (PodV.key pod) ∧
-      is_pod_alive pod)
-    pods.
+Definition condemned_pods sts pods : list PodV.t :=
+  filter (λ pod, pod_has_member_key sts pod ∧ ¬ pod_key_is_desired sts (PodV.key pod)) pods.
 
 (* The progress metric gives an outdated desired Pod cost 2 and a missing
    desired Pod cost 1, so deleting one outdated Pod strictly reduces the
@@ -73,8 +70,8 @@ Definition alive_condemned_pods sts pods : list PodV.t :=
 Definition pod_distance sts pods : nat :=
   length (missing_pod_keys sts pods) +
   2 * length (filter is_pod_alive (outdated_pods sts pods)) +
-  length (bad_name_pods sts pods) +
-  length (alive_condemned_pods sts pods).
+  length (filter is_pod_alive (condemned_pods sts pods)) +
+  length (bad_name_pods sts pods).
 
 Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) : list KKey.t :=
   filter (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts).
@@ -86,10 +83,9 @@ Definition match_distance sts pods pvcs : nat :=
   pod_distance sts pods + pvc_distance sts pvcs.
 
 Definition pods_match sts pods : Prop :=
-  Forall (pod_has_member_key sts) pods ∧
-  Forall (λ pod, ¬ pod_key_is_desired sts (PodV.key pod) → ¬ is_pod_alive pod) pods ∧
-  PodV.key <$> needed_pods sts pods ≡ₚ desired_pod_keys sts ∧
-  Forall (pod_match sts) (needed_pods sts pods).
+  PodV.key <$> pods ≡ₚ desired_pod_keys sts ∧
+  Forall is_pod_alive pods ∧
+  Forall (pod_match sts) pods.
 
 Definition pvcs_match sts (pvcs : list PersistentVolumeClaimV.t) : Prop :=
   ∀ key, key ∈ desired_pvc_keys sts →
@@ -118,15 +114,15 @@ Proof.
       apply app_inv_head in Hkey.
       by apply decimal_string_inj in Hkey.
     - apply NoDup_seq. }
-  split.
-  - intros Hdist.
-    unfold match_distance, pod_distance, pvc_distance in Hdist.
-    assert (Hmissing_pods : length (missing_pod_keys sts pods) = 0%nat) by lia.
+	split.
+	- intros Hdist.
+	  unfold match_distance, pod_distance, pvc_distance in Hdist.
+	  assert (Hmissing_pods : length (missing_pod_keys sts pods) = 0%nat) by lia.
     assert (Halive_outdated_pods :
         length (filter is_pod_alive (outdated_pods sts pods)) = 0%nat) by lia.
     assert (Hbad_name_pods : length (bad_name_pods sts pods) = 0%nat) by lia.
     assert (Halive_condemned_pods :
-        length (alive_condemned_pods sts pods) = 0%nat) by lia.
+        length (filter is_pod_alive (condemned_pods sts pods)) = 0%nat) by lia.
     assert (Hmissing_pvcs : length (missing_pvc_keys sts pvcs) = 0%nat) by lia.
     assert (Hpod_good_name : ∀ pod,
         pod ∈ pods → pod_has_member_key sts pod).
@@ -138,99 +134,91 @@ Proof.
         [exact Hbad_name_pods|exact Hpod|exact Hbad]. }
     assert (Hdesired_pod_actual : ∀ key,
         key ∈ desired_pod_keys sts → key ∈ PodV.key <$> pods).
-    { intros key Hdesired.
-      destruct (decide (key ∈ PodV.key <$> pods)) as [Hactual|Hnot_actual]; [done|].
-      exfalso.
-      eapply (filter_length_zero_not_elem
-        (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts) key);
-        [exact Hmissing_pods|exact Hdesired|exact Hnot_actual]. }
-    split.
-    + split.
-      * apply Forall_forall. intros pod Hpod.
-        rewrite <- list_elem_of_In in Hpod.
-        by apply Hpod_good_name.
-      * split.
-        -- apply Forall_forall. intros pod Hpod Hnot_desired Halive.
-           rewrite <- list_elem_of_In in Hpod.
-           eapply (filter_length_zero_not_elem
-             (λ pod, pod_has_member_key sts pod ∧ ¬ pod_key_is_desired sts (PodV.key pod) ∧
-               is_pod_alive pod)
-             pods pod);
-             [exact Halive_condemned_pods|exact Hpod|].
-           repeat split; [by apply Hpod_good_name|exact Hnot_desired|exact Halive].
-        -- split.
-           ++ apply NoDup_Permutation.
-              ** apply NoDup_fmap_filter. exact Hpods_nodup.
-              ** exact Hdesired_pods_nodup.
-              ** intros key. split.
-                 --- intros Hactual.
-                     apply list_elem_of_fmap_1 in Hactual as (pod & Hkey_eq & Hpod_filter).
-                     apply list_elem_of_filter in Hpod_filter as [Hpod_desired _].
-                     unfold pod_key_is_desired in Hpod_desired.
-                     rewrite Hkey_eq. exact Hpod_desired.
-                 --- intros Hdesired.
-                     apply Hdesired_pod_actual in Hdesired as Hactual.
-                     apply list_elem_of_fmap_1 in Hactual as (pod & Hkey_eq & Hpod).
-                     rewrite Hkey_eq.
-                     apply list_elem_of_fmap_2.
-                     apply list_elem_of_filter.
-                     split; [|exact Hpod].
-                     unfold pod_key_is_desired.
-                     rewrite -Hkey_eq. exact Hdesired.
-           ++ apply Forall_forall. intros pod Hpod.
-              rewrite <- list_elem_of_In in Hpod.
-              assert (Hpod_needed : pod ∈ needed_pods sts pods) by exact Hpod.
-              unfold needed_pods in Hpod.
-              apply list_elem_of_filter in Hpod as [Hpod_desired Hpod].
-              destruct (decide (pod_match sts pod)) as [Hmatch|Hnot_match]; [exact Hmatch|].
-              exfalso.
-              assert (Hpod_outdated : pod ∈ outdated_pods sts pods).
-              { unfold outdated_pods.
-                apply list_elem_of_filter. split; [exact Hnot_match|exact Hpod_needed]. }
-              eapply (filter_length_zero_not_elem
-                is_pod_alive
-                (outdated_pods sts pods) pod);
-                [exact Halive_outdated_pods|exact Hpod_outdated|].
-              by apply Hpods_alive.
-    + intros key Hdesired.
-      destruct (decide (key ∈ PersistentVolumeClaimV.key <$> pvcs)) as [Hactual|Hnot_actual]; [done|].
-      exfalso.
-      eapply (filter_length_zero_not_elem
-        (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts) key);
-        [exact Hmissing_pvcs|exact Hdesired|exact Hnot_actual].
-  - intros [[Hmember [Hcondemned [Hneeded_perm Hneeded_match]]] Hpvcs_match].
-    unfold match_distance, pod_distance, pvc_distance.
-    assert (Hmissing_pods_nil : missing_pod_keys sts pods = []).
-    { unfold missing_pod_keys.
-      apply filter_none. intros key Hdesired Hnot_actual.
-      apply Hnot_actual.
-      rewrite -Hneeded_perm in Hdesired.
-      apply list_elem_of_fmap_1 in Hdesired as (pod & Hkey_eq & Hpod_needed).
-      rewrite Hkey_eq. apply list_elem_of_fmap_2.
-      unfold needed_pods in Hpod_needed.
-      apply list_elem_of_filter in Hpod_needed as [_ Hpod].
-      exact Hpod. }
-    assert (Houtdated_pods_nil : outdated_pods sts pods = []).
-    { unfold outdated_pods.
-      apply filter_none. intros pod Hpod Hnot_match.
-      rewrite Forall_forall in Hneeded_match.
-      rewrite list_elem_of_In in Hpod.
-      exact (Hnot_match (Hneeded_match pod Hpod)). }
-    assert (Hbad_name_pods_nil : bad_name_pods sts pods = []).
-    { unfold bad_name_pods.
-      apply filter_none. intros pod Hpod Hnot_member.
-      rewrite Forall_forall in Hmember.
-      rewrite list_elem_of_In in Hpod.
-      exact (Hnot_member (Hmember pod Hpod)). }
-    assert (Halive_condemned_pods_nil : alive_condemned_pods sts pods = []).
-    { unfold alive_condemned_pods.
-      apply filter_none. intros pod Hpod (_ & Hnot_desired & Halive).
-      rewrite Forall_forall in Hcondemned.
-      rewrite list_elem_of_In in Hpod.
-      exact (Hcondemned pod Hpod Hnot_desired Halive). }
-    assert (Hmissing_pvcs_nil : missing_pvc_keys sts pvcs = []).
-    { unfold missing_pvc_keys.
-      apply filter_none. intros key Hdesired Hnot_actual.
+	  { intros key Hdesired.
+	    destruct (decide (key ∈ PodV.key <$> pods)) as [Hactual|Hnot_actual]; [done|].
+	    exfalso.
+	    eapply (filter_length_zero_not_elem
+	      (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts) key);
+	      [exact Hmissing_pods|exact Hdesired|exact Hnot_actual]. }
+	  assert (Hactual_pod_desired : ∀ pod,
+	      pod ∈ pods → pod_key_is_desired sts (PodV.key pod)).
+	  { intros pod Hpod.
+	    destruct (decide (pod_key_is_desired sts (PodV.key pod))) as [Hdesired|Hnot_desired]; [done|].
+	    exfalso.
+	    assert (Hpod_condemned : pod ∈ condemned_pods sts pods).
+	    { unfold condemned_pods.
+	      apply list_elem_of_filter. split; [split; [by apply Hpod_good_name|exact Hnot_desired]|exact Hpod]. }
+	    eapply (filter_length_zero_not_elem
+	      is_pod_alive (condemned_pods sts pods) pod);
+	      [exact Halive_condemned_pods|exact Hpod_condemned|by apply Hpods_alive]. }
+	  assert (Hpods_perm : PodV.key <$> pods ≡ₚ desired_pod_keys sts).
+	  { apply NoDup_Permutation; [exact Hpods_nodup|exact Hdesired_pods_nodup|].
+	    intros key. split.
+	    - intros Hactual.
+	      apply list_elem_of_fmap_1 in Hactual as (pod & Hkey_eq & Hpod).
+	      rewrite Hkey_eq. by apply Hactual_pod_desired.
+	    - intros Hdesired. by apply Hdesired_pod_actual. }
+	  split.
+	  + split; [exact Hpods_perm|].
+	    split.
+	    * apply Forall_forall. intros pod Hpod.
+	      rewrite <- list_elem_of_In in Hpod.
+	      by apply Hpods_alive.
+	    * apply Forall_forall. intros pod Hpod.
+	      rewrite <- list_elem_of_In in Hpod.
+	      destruct (decide (pod_match sts pod)) as [Hmatch|Hnot_match]; [exact Hmatch|].
+	      exfalso.
+	      assert (Hpod_needed : pod ∈ needed_pods sts pods).
+	      { unfold needed_pods.
+	        apply list_elem_of_filter. split; [by apply Hactual_pod_desired|exact Hpod]. }
+	      assert (Hpod_outdated : pod ∈ outdated_pods sts pods).
+	      { unfold outdated_pods.
+	        apply list_elem_of_filter. split; [exact Hnot_match|exact Hpod_needed]. }
+	      eapply (filter_length_zero_not_elem
+	        is_pod_alive
+	        (outdated_pods sts pods) pod);
+	        [exact Halive_outdated_pods|exact Hpod_outdated|].
+	      by apply Hpods_alive.
+	  + intros key Hdesired.
+	    destruct (decide (key ∈ PersistentVolumeClaimV.key <$> pvcs)) as [Hactual|Hnot_actual]; [done|].
+	    exfalso.
+	    eapply (filter_length_zero_not_elem
+	      (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts) key);
+	      [exact Hmissing_pvcs|exact Hdesired|exact Hnot_actual].
+	- intros [[Hpods_perm [Hpods_alive_forall Hpods_match_forall]] Hpvcs_match].
+	  unfold match_distance, pod_distance, pvc_distance.
+	  assert (Hmissing_pods_nil : missing_pod_keys sts pods = []).
+	  { unfold missing_pod_keys.
+	    apply filter_none. intros key Hdesired Hnot_actual.
+	    apply Hnot_actual.
+	    rewrite Hpods_perm. exact Hdesired. }
+	  assert (Houtdated_pods_nil : outdated_pods sts pods = []).
+	  { unfold outdated_pods.
+	    apply filter_none. intros pod Hpod Hnot_match.
+	    rewrite Forall_forall in Hpods_match_forall.
+	    unfold needed_pods in Hpod.
+	    apply list_elem_of_filter in Hpod as [_ Hpod].
+	    rewrite list_elem_of_In in Hpod.
+	    exact (Hnot_match (Hpods_match_forall pod Hpod)). }
+	  assert (Hbad_name_pods_nil : bad_name_pods sts pods = []).
+	  { unfold bad_name_pods.
+	    apply filter_none. intros pod Hpod Hnot_member.
+	    apply Hnot_member.
+	    assert (Hkey_desired : PodV.key pod ∈ desired_pod_keys sts).
+	    { rewrite -Hpods_perm. by apply list_elem_of_fmap_2. }
+	    unfold desired_pod_keys in Hkey_desired.
+	    apply list_elem_of_fmap_1 in Hkey_desired as (ordinal & Hkey_eq & _).
+	    exists ordinal. exact Hkey_eq. }
+	  assert (Halive_condemned_pods_nil : filter is_pod_alive (condemned_pods sts pods) = []).
+	  { apply filter_none. intros pod Hpod Halive.
+	    unfold condemned_pods in Hpod.
+	    apply list_elem_of_filter in Hpod as ((_ & Hnot_desired) & Hpod).
+	    apply Hnot_desired.
+	    unfold pod_key_is_desired.
+	    rewrite -Hpods_perm. by apply list_elem_of_fmap_2. }
+	  assert (Hmissing_pvcs_nil : missing_pvc_keys sts pvcs = []).
+	  { unfold missing_pvc_keys.
+	    apply filter_none. intros key Hdesired Hnot_actual.
       apply Hnot_actual. by apply Hpvcs_match. }
     rewrite Hmissing_pods_nil Houtdated_pods_nil Hbad_name_pods_nil
       Halive_condemned_pods_nil Hmissing_pvcs_nil.
@@ -281,6 +269,11 @@ Lemma wp_syncStatefulSet_progress γ l (gv: schema.GroupVersion.t) namespace nam
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) (err : interface.t), RET #err;
+      (* We expect one of the three cases when reconcile finishes:
+        (1) the current state (pods' and pvcs') matches the desired state encoded in sts,
+        (2) the distance is reduced and a new reoncile is rescheduled because of changes to pods
+        (3) the distance doesn't get increased because the controller needs to wait for some terminating pods
+      *)
       ⌜ current_state_matches sts pods' pvcs' ∨
         pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs ∨
         (∃ pod, pod ∈ pods ∧ ¬ is_pod_alive pod) ∧ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝ ∗
@@ -319,7 +312,7 @@ Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace na
 	    "%Hpvcs_no_dup" ∷ ⌜ NoDup (PersistentVolumeClaimV.key <$> pvcs) ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ RET #interface.nil;
+  {{{ (err : interface.t), RET #err;
       own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       ([∗ list] pod ∈ pods,
