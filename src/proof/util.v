@@ -78,6 +78,18 @@ Proof.
     destruct (decide (Q x)); simpl; [constructor; done|done].
 Qed.
 
+Lemma Forall_reverse {A} (P : A → Prop) (xs : list A) :
+  Forall P xs →
+  Forall P (reverse xs).
+Proof.
+  rewrite !Forall_forall.
+  intros Hforall x Hin.
+  apply Hforall.
+  rewrite -list_elem_of_In in Hin.
+  rewrite elem_of_reverse in Hin.
+  by rewrite -list_elem_of_In.
+Qed.
+
 Lemma filter_all {A} (P : A → Prop) `{∀ x, Decision (P x)} (l : list A) :
   (∀ x, x ∈ l → P x) →
   filter P l = l.

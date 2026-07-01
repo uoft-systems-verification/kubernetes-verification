@@ -1124,6 +1124,10 @@ Record t := mk {
 }.
 Axiom valid: t → Prop.
 
+Axiom valid_replicas :
+  ∀ v, valid v →
+  ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+
 Definition deepown (c: v1.StatefulSetSpec.t) (v: t): iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with

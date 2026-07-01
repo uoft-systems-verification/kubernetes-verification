@@ -12,6 +12,28 @@ Definition dash_free (s: go_string) : Prop :=
 Definition slash_free (s: go_string) : Prop :=
   Forall (λ b, b ≠ byte_slash) s.
 
+Lemma dash_free_of_not_elem s :
+  byte_dash ∉ s →
+  dash_free s.
+Proof.
+  intros Hnotin.
+  unfold dash_free.
+  apply Forall_forall. intros b Hin ->.
+  apply Hnotin.
+  by rewrite list_elem_of_In.
+Qed.
+
+Lemma decimal_string_dash_free n :
+  dash_free (decimal_string n).
+Proof.
+  unfold decimal_string, dash_free.
+  remember (Nat.to_uint n) as d.
+  clear n Heqd.
+  induction d; simpl; constructor; try done;
+    unfold byte_dash, byte_zero, byte_one, byte_two, byte_three, byte_four,
+      byte_five, byte_six, byte_seven, byte_eight, byte_nine; word.
+Qed.
+
 Definition w8_eq_dec (x y : w8) : {x = y} + {x ≠ y}.
 Proof.
   destruct (decide (x = y)); [left|right]; done.
@@ -71,6 +93,27 @@ Proof.
   destruct Heq as [Hprefix_eq Hsep_suffix_eq].
   split; [done|].
   injection Hsep_suffix_eq as ->. done.
+Qed.
+
+Lemma app_last_sep_inj (sep : w8) prefix1 suffix1 prefix2 suffix2 :
+  Forall (λ b, b ≠ sep) suffix1 →
+  Forall (λ b, b ≠ sep) suffix2 →
+  prefix1 ++ [sep] ++ suffix1 = prefix2 ++ [sep] ++ suffix2 →
+  prefix1 = prefix2 ∧ suffix1 = suffix2.
+Proof.
+  intros Hsuffix1 Hsuffix2 Heq.
+  apply (f_equal reverse) in Heq.
+  rewrite !reverse_app /= in Heq.
+  rewrite -!app_assoc in Heq.
+  apply app_prefix_sep_inj in Heq.
+  - destruct Heq as [Hsuffix Hprefix].
+    apply (f_equal reverse) in Hsuffix.
+    apply (f_equal reverse) in Hprefix.
+    rewrite !reverse_involutive in Hsuffix.
+    rewrite !reverse_involutive in Hprefix.
+    done.
+  - by apply Forall_reverse.
+  - by apply Forall_reverse.
 Qed.
 
 Fixpoint strip_prefix (prefix s : go_string) : option go_string :=

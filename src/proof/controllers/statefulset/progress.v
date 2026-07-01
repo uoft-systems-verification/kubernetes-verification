@@ -2,6 +2,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.string Require Export prefix_suffix.
 From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
+From New.proof Require Export external_wp.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.statefulset Require Export name.
 From New.proof.controllers.statefulset Require Export statefulset_init.
@@ -41,6 +42,509 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
+
+Lemma wp_replicasOf set_l (set : StatefulSetV.t) dq :
+  {{{ StatefulSetV.deepown_l set_l set dq ∗
+      ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ }}}
+    @! statefulset.replicasOf #set_l
+  {{{ (replicas : w64), RET #replicas;
+      ⌜ sint.Z replicas = Z.of_nat (statefulset_replicas set) ⌝ ∗
+      StatefulSetV.deepown_l set_l set dq
+  }}}.
+Proof.
+  wp_start as "(Hset & %Hvalid)".
+  iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
+    "(%Hset_l_not_null & Htypemeta & Hobjectmeta & Hspec_l & Hstatus_l)".
+  iDestruct "Hspec_l" as (spec_c) "[Hspec_field Hspec]".
+  iNamed "Hspec".
+  pose proof (StatefulSetSpecV.valid_replicas _ Hvalid) as
+    (replicas32 & Hreplicas_eq & Hreplicas_nonnegative).
+  rewrite Hreplicas_eq.
+  iDestruct "Hdeepown_replicas_some" as (replicas32_c)
+    "[Hreplicas %Hreplicas32_c_eq]".
+  subst replicas32_c.
+  assert (spec_c.(v1.StatefulSetSpec.Replicas') ≠ null) as Hreplicas_ptr_not_null.
+  { intros Hreplicas_ptr_null.
+    apply Hdeepown_replicas_none in Hreplicas_ptr_null.
+    congruence. }
+  wp_auto.
+  wp_if_destruct.
+  { exfalso. done. }
+  wp_pures.
+  iApply ("HΦ" $! (W64 (sint.Z replicas32))).
+  iSplitR.
+  { iPureIntro.
+    replace (sint.Z (W64 (sint.Z replicas32))) with (sint.Z replicas32) by word.
+    unfold statefulset_replicas.
+    rewrite Hreplicas_eq.
+    replace (Z.of_nat (sint.nat replicas32)) with (sint.Z replicas32) by word.
+    done. }
+  iApply (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null).
+  iFrame "Htypemeta Hobjectmeta Hstatus_l".
+  unfold StatefulSetSpecV.deepown_l, StatefulSetV.spec_ptr.
+  iExists spec_c.
+  iFrame "Hspec_field".
+  unfold StatefulSetSpecV.deepown.
+  iSplit; first done.
+  iSplitL "Hreplicas".
+  {
+  rewrite Hreplicas_eq.
+  iExists replicas32.
+  iFrame.
+  done.
+  }
+  iFrame.
+  done.
+Qed.
+
+Lemma wp_endOrdinalOf set_l (set : StatefulSetV.t) dq :
+  {{{ StatefulSetV.deepown_l set_l set dq ∗
+      ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ }}}
+    @! statefulset.endOrdinalOf #set_l
+  {{{ (end_ordinal : w64), RET #end_ordinal;
+      ⌜ sint.Z end_ordinal = Z.of_nat (statefulset_replicas set) - 1 ⌝ ∗
+      StatefulSetV.deepown_l set_l set dq
+  }}}.
+Proof.
+  wp_start as "(Hset & %Hvalid)".
+  wp_auto.
+  wp_apply (wp_replicasOf with "[$Hset //]").
+  iIntros (replicas) "[%Hreplicas Hset]".
+  wp_pures.
+  iApply "HΦ".
+  iFrame.
+  iPureIntro.
+  assert (sint.Z (word.sub replicas (W64 1)) = sint.Z replicas - 1) as -> by word.
+  rewrite Hreplicas.
+  done.
+Qed.
+
+Lemma wp_podName (set_name : go_string) (ordinal : w64) :
+  {{{ ⌜ 0 <= sint.Z ordinal ⌝ }}}
+    @! statefulset.podName #set_name #ordinal
+  {{{ RET #(set_name ++ "-"%go ++ decimal_string (sint.nat ordinal)); True }}}.
+Proof.
+  wp_start as "%Hordinal_nonnegative".
+  wp_auto.
+  wp_apply (wp_strconv_Itoa with "[]").
+  { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
+    iPureIntro. exact Hordinal_nonnegative. }
+  wp_pures.
+  iEval (rewrite List.app_assoc) in "HΦ".
+  iApply "HΦ".
+  done.
+Qed.
+
+Lemma wp_claimName
+    (set_name claim_template_name : go_string) (ordinal : w64) :
+  {{{ ⌜ 0 <= sint.Z ordinal ⌝ }}}
+    @! statefulset.claimName #set_name #claim_template_name #ordinal
+  {{{ RET #(claim_template_name ++ "-"%go ++ set_name ++ "-"%go ++
+        decimal_string (sint.nat ordinal)); True }}}.
+Proof.
+  wp_start as "%Hordinal_nonnegative".
+  wp_auto.
+  wp_apply (wp_strconv_Itoa with "[]").
+  { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
+    iPureIntro. exact Hordinal_nonnegative. }
+  wp_pures.
+  iEval (rewrite !List.app_assoc) in "HΦ".
+  iApply "HΦ".
+  done.
+Qed.
+
+Lemma wp_parentNameAndOrdinal (pod_name : go_string) :
+  {{{ ⌜ Z.of_nat (length pod_name) <= go_int_max ⌝ }}}
+    @! statefulset.parentNameAndOrdinal #pod_name
+  {{{ (parent : go_string) (ordinal : w64), RET (#parent, #ordinal);
+      ⌜ ∀ set_name,
+        (parent = set_name ∧
+          0 <= sint.Z ordinal ∧
+          pod_name = desired_pod_name set_name (sint.nat ordinal)) ↔
+        pod_has_int32_member_name set_name pod_name ⌝
+  }}}.
+Proof.
+  wp_start as "%Hpod_name_len".
+  wp_auto.
+  wp_apply (wp_strings_LastIndex_singleton pod_name byte_dash with "[]").
+  { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
+    iPureIntro. exact Hpod_name_len. }
+  iIntros (idx) "%Hidx".
+  wp_auto.
+  destruct Hidx as [(parent & suffix & Hname_decomp & Hsuffix_no_dash & Hidx_Z)|
+                    (Hno_dash & Hidx_Z)].
+  - pose proof (last_index_byte_found_facts _ _ _ _ _ Hpod_name_len
+      Hname_decomp Hidx_Z) as
+      (Hidx_nat & Hidx_next_nonneg & Hidx_next).
+    wp_if_destruct.
+    { exfalso. rewrite Hidx_Z in l. change (sint.Z (W64 0)) with 0 in l. lia. }
+    wp_pures.
+    wp_pures.
+    wp_bind (Slice go.string
+      ((#(parent ++ [byte_dash] ++ suffix), #(word.add idx (W64 1)))%V,
+       #(functions go.len [go.string]) (#(parent ++ [byte_dash] ++ suffix))))%E.
+    iApply (wp_wand _ _ _
+      (λ v, ⌜ v = #(drop (sint.nat (word.add idx (W64 1)))
+        (parent ++ [byte_dash] ++ suffix)) ⌝)%I with "[]").
+    { iApply (wp_string_slice_to_end
+        (parent ++ [byte_dash] ++ suffix) (word.add idx (W64 1))).
+      - iPureIntro.
+        split; [exact Hidx_next_nonneg|].
+        rewrite Hidx_next app_length /=.
+        lia.
+      - iIntros "_".
+        iPureIntro.
+        done. }
+    iIntros (suffix_val) "->".
+    assert (drop (sint.nat (word.add idx (W64 1)))
+      (parent ++ [byte_dash] ++ suffix) = suffix) as Hdrop_suffix.
+    { rewrite Hidx_next.
+      clear Hpod_name_len Hsuffix_no_dash Hidx_Z Hidx_nat Hidx_next_nonneg Hidx_next.
+      induction parent as [|b parent IH]; simpl; [done|exact IH]. }
+    rewrite Hdrop_suffix.
+    wp_pures.
+    wp_apply (wp_strconv_ParseInt_decimal_int32 with "[]").
+    { by iEval (rewrite is_pkg_init_unfold /=). }
+    iIntros (ordinal err) "%Hparse".
+    wp_auto.
+    unfold parse_int32_decimal_result in Hparse.
+    destruct (parse_decimal_string suffix) as [expected_ordinal|] eqn:Hparse_suffix.
+    + destruct (decide (expected_ordinal <= go_int32_max_nat)%nat) as
+        [Hexpected_ordinal_bound|Hexpected_ordinal_overflow].
+      * destruct Hparse as (Herr_nil & Hordinal_nat & Hordinal_Z & Hordinal_bounds).
+        rewrite Herr_nil.
+        wp_auto.
+        wp_bind (Slice go.string
+          (#(parent ++ [byte_dash] ++ suffix), #(W64 0), #idx)%V)%E.
+        iApply (wp_wand _ _ _
+          (λ v, ⌜ v = #(subslice (sint.nat (W64 0)) (sint.nat idx)
+            (parent ++ [byte_dash] ++ suffix)) ⌝)%I with "[]").
+        { iApply (wp_string_slice
+            (parent ++ [byte_dash] ++ suffix) (W64 0) idx).
+          - iPureIntro.
+            split.
+            + split; [word|].
+              rewrite Hidx_Z.
+              lia.
+            + rewrite Hidx_nat app_length /=.
+              lia.
+          - iIntros "_".
+            iPureIntro.
+            done. }
+        iIntros (parent_val) "->".
+        wp_auto.
+        rewrite /subslice /= Hidx_nat.
+        rewrite drop_0.
+        rewrite take_app_length.
+        assert (Hpost : ∀ set_name,
+          (parent = set_name ∧ 0 <= sint.Z ordinal ∧
+            (parent ++ [byte_dash] ++ suffix) =
+              desired_pod_name set_name (sint.nat ordinal)) ↔
+          pod_has_int32_member_name set_name (parent ++ [byte_dash] ++ suffix)).
+        { intros set_name. split.
+          - intros (Hparent_eq & _ & Hname).
+            subst set_name.
+            unfold pod_has_int32_member_name.
+            exists expected_ordinal.
+            split; [done|].
+            by rewrite -Hordinal_nat.
+          - intros Hex.
+            unfold pod_has_int32_member_name in Hex.
+            destruct Hex as (ordinal' & Hordinal'_bound & Hcanonical).
+            pose proof (desired_pod_name_last_dash_decomp
+              (parent ++ [byte_dash] ++ suffix) parent suffix set_name ordinal'
+              eq_refl Hsuffix_no_dash Hcanonical) as [-> Hsuffix].
+            rewrite Hsuffix parse_decimal_string_decimal_string in Hparse_suffix.
+            simplify_eq/=.
+            repeat split; try done; try lia. }
+        iApply ("HΦ" $! parent ordinal).
+        iPureIntro.
+        exact Hpost.
+      * destruct err as [err_i|].
+        2: { exfalso. apply Hparse. reflexivity. }
+        wp_pures.
+        iApply ("HΦ" $! ""%go (W64 (-1))).
+        iPureIntro.
+        intros set_name. split.
+        -- intros (_ & Hnonnegative & _). word.
+        -- intros (ordinal' & Hordinal'_bound & Hname).
+           pose proof (desired_pod_name_last_dash_decomp
+             (parent ++ [byte_dash] ++ suffix) parent suffix set_name ordinal'
+             eq_refl Hsuffix_no_dash Hname) as [_ Hsuffix].
+           rewrite Hsuffix parse_decimal_string_decimal_string in Hparse_suffix.
+           simplify_eq/=.
+    + destruct err as [err_i|].
+      2: { exfalso. apply Hparse. reflexivity. }
+      wp_pures.
+      iApply ("HΦ" $! ""%go (W64 (-1))).
+      iPureIntro.
+      intros set_name. split.
+      * intros (_ & Hnonnegative & _). word.
+      * intros (ordinal' & Hordinal'_bound & Hname).
+        pose proof (desired_pod_name_last_dash_decomp
+          (parent ++ [byte_dash] ++ suffix) parent suffix set_name ordinal'
+          eq_refl Hsuffix_no_dash Hname) as [_ Hsuffix].
+        rewrite Hsuffix parse_decimal_string_decimal_string in Hparse_suffix.
+        done.
+  - 
+    wp_if_destruct.
+    2: { exfalso. word. }
+    wp_pures.
+    iApply ("HΦ" $! ""%go (W64 (-1))).
+    iPureIntro.
+    intros set_name. split.
+    + intros (_ & Hnonnegative & _). word.
+    + intros (ordinal' & Hordinal'_bound & Hname).
+      exfalso.
+      apply Hno_dash.
+      rewrite Hname.
+      apply desired_pod_name_has_dash.
+Qed.
+
+Lemma wp_ordinalOf pod_name ordinal set_name :
+  {{{ ⌜ Z.of_nat (length pod_name) <= go_int_max ⌝ ∗
+      ⌜ (ordinal <= go_int32_max_nat)%nat ∧
+        pod_name = desired_pod_name set_name ordinal ⌝
+  }}}
+    @! statefulset.ordinalOf #pod_name
+  {{{ (ordinal_ret : w64), RET #ordinal_ret;
+      ⌜ sint.Z ordinal_ret = Z.of_nat ordinal ⌝
+  }}}.
+Proof.
+  wp_start as "(%Hname_len & %Hpre)".
+  destruct Hpre as (Hordinal_bound & Hname).
+  wp_auto.
+  wp_apply (wp_parentNameAndOrdinal with "[]").
+  { iPureIntro. exact Hname_len. }
+  iIntros (parent ordinal_ret) "%Hparent".
+  wp_auto.
+  iApply "HΦ".
+  iPureIntro.
+  unfold pod_has_int32_member_name.
+  pose proof (proj2 (Hparent set_name)
+    (ex_intro _ ordinal (conj Hordinal_bound Hname))) as
+    (_ & Hordinal_ret_nonnegative & Hname_ret).
+  assert (sint.nat ordinal_ret = ordinal) as Hordinal_ret.
+  { apply (desired_pod_name_inj set_name).
+    rewrite -Hname_ret. exact Hname. }
+  replace (sint.Z ordinal_ret) with (Z.of_nat (sint.nat ordinal_ret)) by word.
+  by rewrite Hordinal_ret.
+Qed.
+
+Lemma wp_isMemberOf (set_name name : go_string) :
+  {{{ ⌜ Z.of_nat (length name) <= go_int_max ⌝ }}}
+    @! statefulset.isMemberOf #set_name #name
+  {{{ (ret : bool), RET #ret;
+      ⌜ ret = true ↔ pod_has_int32_member_name set_name name ⌝
+  }}}.
+Proof.
+  wp_start as "%Hname_len".
+  wp_auto.
+  wp_apply (wp_parentNameAndOrdinal with "[]").
+  { iPureIntro. exact Hname_len. }
+  iIntros (parent ordinal) "%Hparent".
+  wp_auto.
+  destruct (decide (parent = set_name)) as [Hparent_eq|Hparent_ne].
+  - subst parent.
+    replace (bool_decide (set_name = set_name)) with true by
+      (symmetry; apply bool_decide_true; done).
+    wp_pures.
+    wp_load.
+    destruct (decide (0 <= sint.Z ordinal)) as
+      [Hordinal_nonnegative|Hordinal_negative].
+    + wp_auto.
+      replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal)) with true by
+        (symmetry; apply bool_decide_true; word).
+      wp_pures.
+      wp_load.
+      wp_load.
+      wp_pures.
+      wp_load.
+      wp_pures.
+      wp_bind (@! statefulset.podName #set_name #ordinal)%E.
+      wp_apply (wp_podName set_name ordinal with "[]").
+      { iPureIntro. exact Hordinal_nonnegative. }
+      iApply ("HΦ" $! (bool_decide
+        (name = desired_pod_name set_name (sint.nat ordinal)))).
+      iPureIntro.
+      unfold pod_has_int32_member_name.
+      split.
+      * intros Hret.
+        apply bool_decide_eq_true in Hret.
+        apply (proj1 (Hparent set_name)).
+        repeat split; done.
+      * intros Hex.
+        destruct (proj2 (Hparent set_name) Hex) as (_ & _ & Hname_eq).
+        apply bool_decide_eq_true_2.
+        done.
+    + wp_auto.
+      replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal)) with false by
+        (symmetry; apply bool_decide_false; word).
+      wp_pures.
+      iApply "HΦ".
+      iPureIntro.
+      unfold pod_has_int32_member_name.
+      split; [done|].
+      intros Hex.
+      destruct (proj2 (Hparent set_name) Hex) as (_ & Hordinal_nonnegative & _).
+      lia.
+  - replace (bool_decide (parent = set_name)) with false by
+      (symmetry; apply bool_decide_false; done).
+    wp_auto.
+    iApply "HΦ".
+    iPureIntro.
+    unfold pod_has_int32_member_name.
+    split; [done|].
+    intros Hex.
+    destruct (proj2 (Hparent set_name) Hex) as (Hparent_eq & _ & _).
+    contradiction.
+Qed.
+
+Lemma wp_filterPodsForStatefulSet set_l pods_sl
+    (set : StatefulSetV.t) (ptrs : list loc) (pods : list PodV.t) dq_set dq_pods :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
+      "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq_pods) ∗
+      "%Hpod_name_len" ∷ ⌜ ∀ pod, pod ∈ pods → Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <= go_int_max ⌝
+  }}}
+    @! statefulset.filterPodsForStatefulSet #set_l #pods_sl
+  {{{ result_sl ptrs', RET #result_sl;
+      StatefulSetV.deepown_l set_l set dq_set ∗
+      pods_sl ↦* ptrs ∗
+      result_sl ↦* ptrs' ∗
+      ([∗ list] ptr;pod ∈ ptrs';
+        filter (λ pod, pod_has_int32_member_name
+          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+          pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) pods,
+        PodV.deepown_l ptr pod dq_pods)
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  wp_auto.
+  wp_apply wp_slice_literal. iSplitR; first done.
+  iIntros (result_sl0) "[Hresult0 Hown_result_cap]".
+  set result0 := {|
+    slice.ptr := result_sl0;
+    slice.len := W64 (go.array_literal_size []);
+    slice.cap := W64 (go.array_literal_size []);
+  |}.
+  wp_auto.
+  iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_sl_len1 & Hpods_sl_len2).
+  iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
+  iDestruct (big_sepL2_length with "Hpods") as %Hlen.
+  set set_name := set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name').
+  set P := (λ pod, pod_has_int32_member_name set_name
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
+  set I := (∃ (i: w64) (pod_ptr_value: loc) (result: slice.t) (ptrs': list loc),
+    "Hi_ptr" ∷ i_ptr ↦ i ∗
+    "Hset_ptr" ∷ set_ptr ↦ set_l ∗
+    "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+    "Hpod_ptr" ∷ pod_ptr ↦ pod_ptr_value ∗
+    "Hresult_ptr" ∷ result_ptr ↦ result ∗
+    "Hresult" ∷ result ↦* ptrs' ∗
+    "Hlist_pre" ∷ ([∗ list] ptr;pod ∈ ptrs';filter P (take (sint.nat i) pods),
+      PodV.deepown_l ptr pod dq_pods) ∗
+    "Hlist_post" ∷ ([∗ list] ptr;pod ∈ (drop (sint.nat i) ptrs);(drop (sint.nat i) pods),
+      PodV.deepown_l ptr pod dq_pods) ∗
+    "Hown_result_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len pods_sl) ⌝
+  )%I.
+  iAssert (I) with "[i set Hset pod result Hpods Hresult0 Hown_result_cap]" as "Hloop_inv".
+  { iExists (W64 0), (zero_val loc), result0, [].
+    rewrite !take_0 !filter_nil !big_sepL2_nil.
+    iFrame.
+    iPureIntro. word. }
+  wp_for "Hloop_inv".
+  wp_if_destruct.
+  - list_elem ptrs (sint.Z i) as this_ptr.
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len pods_sl))) as [_|Hbounds]; last word.
+    wp_apply (wp_load_slice_index with "[$Hpods_sl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr_lookup. }
+    iIntros "Hpods_sl". wp_auto.
+    assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
+    { apply lookup_lt_is_Some_2. rewrite -Hlen Hpods_sl_len1. word. }
+    iPoseProof (big_sepL2_head_tail _ _ _ this_ptr this_pod with "Hlist_post") as "[Hthis Hother]".
+    { split. all: rewrite lookup_drop Nat.add_0_r; done. }
+    iPoseProof (PodV.deepown_l_split with "Hthis") as
+      "(%Hthis_not_null & Hthis_typemeta & Hthis_objectmeta_l & Hthis_spec_l & Hthis_status_l)".
+    iDestruct "Hthis_objectmeta_l" as (this_meta_c) "[Hthis_objectmeta_field Hthis_objectmeta]".
+    iNamedPrefix "Hthis_objectmeta" "Hthis_meta_".
+    iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
+      "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l & Hset_spec_l & Hset_status_l)".
+    iDestruct "Hset_objectmeta_l" as (set_meta_c) "[Hset_objectmeta_field Hset_objectmeta]".
+    iNamedPrefix "Hset_objectmeta" "Hset_meta_".
+    wp_auto.
+    rewrite Hset_meta_Hdeepown_name Hthis_meta_Hdeepown_name.
+    wp_apply (wp_isMemberOf with "[]").
+    { iPureIntro.
+      apply Hpod_name_len.
+      apply list_elem_of_lookup_2 in Hthis_pod_lookup.
+      exact Hthis_pod_lookup. }
+    iIntros (member) "%Hmember".
+    iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
+    iAssert (ObjectMetaV.deepown set_meta_c set.(StatefulSetV.ObjectMeta') dq_set)
+      with "[Hset_objectmeta]" as "Hset_objectmeta".
+    { iNamed "Hset_objectmeta". iFrame. done. }
+    iAssert (ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l)
+        set.(StatefulSetV.ObjectMeta') dq_set)
+      with "[Hset_objectmeta_field Hset_objectmeta]" as "Hset_objectmeta_l".
+    { iExists set_meta_c. iFrame. }
+    iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
+      with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l $Hset_status_l]") as "Hset".
+    iCombineNamed "Hthis_meta_*" as "Hthis_objectmeta".
+    iAssert (ObjectMetaV.deepown this_meta_c this_pod.(PodV.ObjectMeta') dq_pods)
+      with "[Hthis_objectmeta]" as "Hthis_objectmeta".
+    { iNamed "Hthis_objectmeta". iFrame. done. }
+    iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr this_ptr)
+        this_pod.(PodV.ObjectMeta') dq_pods)
+      with "[Hthis_objectmeta_field Hthis_objectmeta]" as "Hthis_objectmeta_l".
+    { iExists this_meta_c. iFrame. }
+    iPoseProof (PodV.deepown_l_restore _ _ _ Hthis_not_null
+      with "[$Hthis_typemeta $Hthis_objectmeta_l $Hthis_spec_l $Hthis_status_l]") as "Hthis".
+    wp_if_destruct.
+    + wp_apply wp_slice_literal. iSplitR; first done.
+      iIntros (sl0) "[Hsl0 _]". wp_auto.
+      wp_apply (wp_slice_append with "[$Hresult $Hown_result_cap $Hsl0]").
+      iIntros (result') "(Hresult & Hown_result_cap & Hsl0)". wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      iFrame "Hpods_sl HΦ".
+      iExists (word.add i (W64 1)), this_ptr, result', (ptrs' ++ [this_ptr]).
+      assert (P this_pod) as Hthis_member.
+      { unfold P.
+        apply (proj1 Hmember). done. }
+      assert (filter P (take (sint.nat i) pods) ++ [this_pod] =
+              filter P (take (sint.nat (word.add i (W64 1))) pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pod); [done|].
+        rewrite list.filter_app filter_singleton_True; [done|done|done]. }
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite !drop_drop Nat.add_1_r.
+      iFrame.
+      iSplitR; [done|]. iPureIntro. word.
+    + 
+      iApply wp_for_post_do. wp_auto.
+      iFrame "Hpods_sl HΦ".
+      iExists (word.add i (W64 1)), this_ptr, result, ptrs'.
+      assert (¬ P this_pod) as Hthis_not_member.
+      { unfold P.
+        intros Hthis_member.
+        pose proof (proj2 Hmember Hthis_member) as Hfalse.
+        done. }
+      assert (filter P (take (sint.nat i) pods) =
+              filter P (take (sint.nat (word.add i (W64 1))) pods)) as <-.
+      { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+        rewrite (take_S_r _ _ this_pod); [done|].
+        rewrite list.filter_app filter_singleton_False; [done|done|rewrite app_nil_r; done]. }
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite !drop_drop Nat.add_1_r.
+      iFrame. iPureIntro. word.
+  - assert (take (sint.nat i) pods = pods) as ->.
+    { assert (sint.nat i = length ptrs) as Hi_len.
+      { rewrite Hpods_sl_len1. word. }
+      rewrite Hlen in Hi_len. rewrite Hi_len.
+      apply take_ge. lia. }
+    iApply "HΦ". iFrame.
+Qed.
 
 (* TODO: complete this definition *)
 Parameter pod_match : StatefulSetV.t → PodV.t → Prop.
@@ -110,9 +614,10 @@ Proof.
       apply (f_equal KKey.Name') in Hkey.
       simpl in Hkey.
       unfold desired_pod_name in Hkey.
+      simpl in Hkey.
       apply app_inv_head in Hkey.
-      apply app_inv_head in Hkey.
-      by apply decimal_string_inj in Hkey.
+      inversion Hkey as [Hdecimal].
+      by apply decimal_string_inj in Hdecimal.
     - apply NoDup_seq. }
 	split.
 	- intros Hdist.

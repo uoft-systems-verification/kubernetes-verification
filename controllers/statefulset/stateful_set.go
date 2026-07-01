@@ -32,40 +32,40 @@ func endOrdinalOf(set *apps.StatefulSet) int {
 	return replicasOf(set) - 1
 }
 
-func podName(set *apps.StatefulSet, ordinal int) string {
-	return set.Name + "-" + strconv.Itoa(ordinal)
+func podName(setName string, ordinal int) string {
+	return setName + "-" + strconv.Itoa(ordinal)
 }
 
-func claimName(set *apps.StatefulSet, claim *v1.PersistentVolumeClaim, ordinal int) string {
-	return claim.Name + "-" + set.Name + "-" + strconv.Itoa(ordinal)
+func claimName(setName, claimTemplateName string, ordinal int) string {
+	return claimTemplateName + "-" + setName + "-" + strconv.Itoa(ordinal)
 }
 
-func parentNameAndOrdinal(pod *v1.Pod) (string, int) {
-	idx := strings.LastIndex(pod.Name, "-")
+func parentNameAndOrdinal(podName string) (string, int) {
+	idx := strings.LastIndex(podName, "-")
 	if idx < 0 {
 		return "", -1
 	}
-	ordinal, err := strconv.ParseInt(pod.Name[idx+1:], 10, 32)
+	ordinal, err := strconv.ParseInt(podName[idx+1:], 10, 32)
 	if err != nil {
 		return "", -1
 	}
-	return pod.Name[:idx], int(ordinal)
+	return podName[:idx], int(ordinal)
 }
 
-func ordinalOf(pod *v1.Pod) int {
-	_, ordinal := parentNameAndOrdinal(pod)
+func ordinalOf(podName string) int {
+	_, ordinal := parentNameAndOrdinal(podName)
 	return ordinal
 }
 
-func isMemberOf(set *apps.StatefulSet, pod *v1.Pod) bool {
-	parent, ordinal := parentNameAndOrdinal(pod)
-	return parent == set.Name && ordinal >= 0 && pod.Name == podName(set, ordinal)
+func isMemberOf(setName, name string) bool {
+	parent, ordinal := parentNameAndOrdinal(name)
+	return parent == setName && ordinal >= 0 && name == podName(setName, ordinal)
 }
 
 func filterPodsForStatefulSet(set *apps.StatefulSet, pods []*v1.Pod) []*v1.Pod {
 	result := []*v1.Pod{}
 	for _, pod := range pods {
-		if isMemberOf(set, pod) {
+		if isMemberOf(set.Name, pod.Name) {
 			result = append(result, pod)
 		}
 	}
@@ -97,7 +97,7 @@ func releasePod(set *apps.StatefulSet, pod *v1.Pod) error {
 
 func releasePodsWithBadNames(set *apps.StatefulSet, pods []*v1.Pod) error {
 	for _, pod := range pods {
-		if isMemberOf(set, pod) {
+		if isMemberOf(set.Name, pod.Name) {
 			continue
 		}
 		if err := releasePod(set, pod); err != nil {
@@ -107,8 +107,8 @@ func releasePodsWithBadNames(set *apps.StatefulSet, pods []*v1.Pod) error {
 	return nil
 }
 
-func podInOrdinalRange(set *apps.StatefulSet, pod *v1.Pod) bool {
-	ordinal := ordinalOf(pod)
+func podInOrdinalRange(set *apps.StatefulSet, podName string) bool {
+	ordinal := ordinalOf(podName)
 	return ordinal >= 0 && ordinal <= endOrdinalOf(set)
 }
 
@@ -117,8 +117,8 @@ func isTerminating(pod *v1.Pod) bool {
 }
 
 func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
-	ordinal := ordinalOf(pod)
-	pod.Name = podName(set, ordinal)
+	ordinal := ordinalOf(pod.Name)
+	pod.Name = podName(set.Name, ordinal)
 	pod.Namespace = set.Namespace
 	pod.Spec.Hostname = pod.Name
 	pod.Spec.Subdomain = set.Spec.ServiceName
@@ -130,10 +130,10 @@ func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
 }
 
 func identityMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
-	parent, ordinal := parentNameAndOrdinal(pod)
+	parent, ordinal := parentNameAndOrdinal(pod.Name)
 	return ordinal >= 0 &&
 		parent == set.Name &&
-		pod.Name == podName(set, ordinal) &&
+		pod.Name == podName(set.Name, ordinal) &&
 		pod.Namespace == set.Namespace &&
 		pod.Spec.Hostname == pod.Name &&
 		pod.Spec.Subdomain == set.Spec.ServiceName &&
@@ -150,7 +150,7 @@ func volumeClaimTemplatesByName(set *apps.StatefulSet) map[string]v1.PersistentV
 }
 
 func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
-	ordinal := ordinalOf(pod)
+	ordinal := ordinalOf(pod.Name)
 	currentVolumes := pod.Spec.Volumes
 	newVolumes := []v1.Volume{}
 	claimTemplates := volumeClaimTemplatesByName(set)
@@ -160,7 +160,7 @@ func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
 			Name: name,
 			VolumeSource: v1.VolumeSource{
 				PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-					ClaimName: claimName(set, &claim, ordinal),
+					ClaimName: claimName(set.Name, claim.Name, ordinal),
 				},
 			},
 		})
@@ -176,7 +176,7 @@ func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
 }
 
 func storageMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
-	ordinal := ordinalOf(pod)
+	ordinal := ordinalOf(pod.Name)
 	if ordinal < 0 {
 		return false
 	}
@@ -190,7 +190,7 @@ func storageMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
 		volume, found := volumes[name]
 		if !found ||
 			volume.VolumeSource.PersistentVolumeClaim == nil ||
-			volume.VolumeSource.PersistentVolumeClaim.ClaimName != claimName(set, &claim, ordinal) {
+			volume.VolumeSource.PersistentVolumeClaim.ClaimName != claimName(set.Name, claim.Name, ordinal) {
 			return false
 		}
 	}
@@ -203,7 +203,7 @@ func newStatefulSetPod(set *apps.StatefulSet, ordinal int) (*v1.Pod, error) {
 	if err != nil {
 		return nil, err
 	}
-	pod.Name = podName(set, ordinal)
+	pod.Name = podName(set.Name, ordinal)
 	updateIdentity(set, pod)
 	updateStorage(set, pod)
 	return pod, nil
@@ -211,7 +211,7 @@ func newStatefulSetPod(set *apps.StatefulSet, ordinal int) (*v1.Pod, error) {
 
 func newPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate *v1.PersistentVolumeClaim) *v1.PersistentVolumeClaim {
 	claim := claimTemplate.DeepCopy()
-	claim.Name = claimName(set, claim, ordinalOf(pod))
+	claim.Name = claimName(set.Name, claim.Name, ordinalOf(pod.Name))
 	claim.Namespace = set.Namespace
 	if claim.Labels == nil {
 		claim.Labels = map[string]string{}
@@ -280,7 +280,7 @@ func deletePod(pod *v1.Pod) error {
 
 func findPodByOrdinal(set *apps.StatefulSet, pods []*v1.Pod, ordinal int) *v1.Pod {
 	for _, pod := range pods {
-		parent, podOrdinal := parentNameAndOrdinal(pod)
+		parent, podOrdinal := parentNameAndOrdinal(pod.Name)
 		if parent == set.Name && podOrdinal == ordinal {
 			return pod
 		}
@@ -291,11 +291,11 @@ func findPodByOrdinal(set *apps.StatefulSet, pods []*v1.Pod, ordinal int) *v1.Po
 func firstCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
 	var condemned *v1.Pod
 	for _, pod := range pods {
-		ordinal := ordinalOf(pod)
-		if ordinal < 0 || podInOrdinalRange(set, pod) {
+		ordinal := ordinalOf(pod.Name)
+		if ordinal < 0 || podInOrdinalRange(set, pod.Name) {
 			continue
 		}
-		if condemned == nil || ordinal > ordinalOf(condemned) {
+		if condemned == nil || ordinal > ordinalOf(condemned.Name) {
 			condemned = pod
 		}
 	}
