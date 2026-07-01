@@ -66,39 +66,6 @@ Lemma wp_strconv_ParseInt_decimal_int32 (s : go_string) :
 Proof.
 Admitted.
 
-Fixpoint split_last_byte (sep : w8) (s : go_string) : option (go_string * go_string) :=
-  match s with
-  | [] => None
-  | b :: s' =>
-      match split_last_byte sep s' with
-      | Some (parent, suffix) => Some (b :: parent, suffix)
-      | None =>
-          if decide (b = sep) then Some ([], s') else None
-      end
-  end.
-
-Lemma split_last_byte_correct sep s parent suffix :
-  split_last_byte sep s = Some (parent, suffix) →
-  s = parent ++ [sep] ++ suffix.
-Proof.
-  revert sep parent suffix.
-  induction s as [|b s IH]; intros sep parent suffix Hsplit; simpl in Hsplit; [done|].
-  destruct (split_last_byte sep s) as [[parent' suffix']|] eqn:Htail.
-  - simplify_eq/=.
-    rewrite (IH _ _ _ Htail).
-    done.
-  - destruct (decide (b = sep)) as [->|Hneq]; [|done].
-    simplify_eq/=.
-    done.
-Qed.
-
-Definition last_index_byte_result (s : go_string) (sep : w8) (idx : w64) : Prop :=
-  (∃ prefix suffix,
-    s = prefix ++ [sep] ++ suffix ∧
-    sep ∉ suffix ∧
-    sint.Z idx = Z.of_nat (length prefix)) ∨
-  (sep ∉ s ∧ sint.Z idx = -1).
-
 Lemma last_index_byte_found_facts (s : go_string) (sep : w8)
     (prefix suffix : go_string) idx :
   Z.of_nat (length s) <= go_int_max →
@@ -120,12 +87,21 @@ Proof.
   - word.
 Qed.
 
+(* Spec for strings.LastIndex when the separator is a one-byte string. The
+   successful branch exposes the split around the last occurrence: the suffix
+   contains no [sep], so the returned index is the length of the prefix before
+   that final separator. The failure branch states that [sep] is absent and the
+   returned index is -1. *)
 Lemma wp_strings_LastIndex_singleton (s : go_string) (sep : w8) :
   {{{ is_pkg_init strings ∗
       ⌜ Z.of_nat (length s) <= go_int_max ⌝ }}}
     @! strings.LastIndex #s #([sep] : go_string)
   {{{ (idx : w64), RET #idx;
-      ⌜ last_index_byte_result s sep idx ⌝ }}}.
+      ⌜ (∃ prefix suffix,
+          s = prefix ++ [sep] ++ suffix ∧
+          sep ∉ suffix ∧
+          sint.Z idx = Z.of_nat (length prefix)) ∨
+        (sep ∉ s ∧ sint.Z idx = -1) ⌝ }}}.
 Proof.
 Admitted.
 
