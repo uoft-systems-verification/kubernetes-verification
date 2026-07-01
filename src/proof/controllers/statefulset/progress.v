@@ -173,9 +173,15 @@ Proof.
   wp_auto.
   destruct Hidx as [(parent & suffix & Hname_decomp & Hsuffix_no_dash & Hidx_Z)|
                     (Hno_dash & Hidx_Z)].
-  - pose proof (last_index_byte_found_facts _ _ _ _ _ Hpod_name_len
-      Hname_decomp Hidx_Z) as
-      (Hidx_nat & Hidx_next_nonneg & Hidx_next).
+  - assert (Hprefix_next_bound : Z.of_nat (S (length parent)) <= go_int_max).
+    { rewrite Hname_decomp app_length /= in Hpod_name_len. lia. }
+    unfold go_int_max in Hprefix_next_bound.
+    assert (Hidx_next_Z : sint.Z (word.add idx (W64 1)) =
+        Z.of_nat (S (length parent))) by word.
+    assert (Hidx_nat : sint.nat idx = length parent) by word.
+    assert (Hidx_next_nonneg : 0 <= sint.Z (word.add idx (W64 1))).
+    { rewrite Hidx_next_Z. lia. }
+    assert (Hidx_next : sint.nat (word.add idx (W64 1)) = S (length parent)) by word.
     wp_if_destruct.
     { exfalso. rewrite Hidx_Z in l. change (sint.Z (W64 0)) with 0 in l. lia. }
     wp_pures.
@@ -199,7 +205,8 @@ Proof.
     assert (drop (sint.nat (word.add idx (W64 1)))
       (parent ++ [byte_dash] ++ suffix) = suffix) as Hdrop_suffix.
     { rewrite Hidx_next.
-      clear Hpod_name_len Hsuffix_no_dash Hidx_Z Hidx_nat Hidx_next_nonneg Hidx_next.
+      clear Hpod_name_len Hsuffix_no_dash Hidx_Z Hprefix_next_bound
+        Hidx_next_Z Hidx_nat Hidx_next_nonneg Hidx_next.
       induction parent as [|b parent IH]; simpl; [done|exact IH]. }
     rewrite Hdrop_suffix.
     wp_pures.
@@ -207,7 +214,6 @@ Proof.
     { by iEval (rewrite is_pkg_init_unfold /=). }
     iIntros (ordinal err) "%Hparse".
     wp_auto.
-    unfold parse_int32_decimal_result in Hparse.
     destruct (parse_decimal_string suffix) as [expected_ordinal|] eqn:Hparse_suffix.
     + destruct (decide (expected_ordinal <= go_int32_max_nat)%nat) as
         [Hexpected_ordinal_bound|Hexpected_ordinal_overflow].

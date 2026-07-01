@@ -46,46 +46,27 @@ Definition go_int32_max_nat : nat := Z.to_nat go_int32_max.
 
 Definition go_int_max : Z := 2 ^ 63 - 1.
 
-Definition parse_int32_decimal_result (s : go_string) (i : w64) (err : error.t) : Prop :=
-  match parse_decimal_string s with
-  | Some n =>
-      if decide (n <= go_int32_max_nat)%nat
-      then err = interface.nil ∧
-        sint.nat i = n ∧
-        sint.Z i = Z.of_nat n ∧
-        (0 <= sint.Z i <= go_int32_max)%Z
-      else err ≠ interface.nil
-  | None => err ≠ interface.nil
-  end.
-
+(* Spec for strconv.ParseInt(s, 10, 32) on decimal strings. If [s] parses as a
+   natural number within signed int32 range, ParseInt succeeds and returns that
+   number as a Go int64 value. If [s] is not decimal or the parsed value exceeds
+   the int32 bound requested by the bit-size argument, ParseInt returns a
+   non-nil error; the numeric return value is intentionally left unspecified. *)
 Lemma wp_strconv_ParseInt_decimal_int32 (s : go_string) :
   {{{ is_pkg_init strconv }}}
     @! strconv.ParseInt #s #(W64 10) #(W64 32)
   {{{ (i : w64) (err : error.t), RET (#i, #err);
-      ⌜ parse_int32_decimal_result s i err ⌝ }}}.
+      ⌜ match parse_decimal_string s with
+        | Some n =>
+            if decide (n <= go_int32_max_nat)%nat
+            then err = interface.nil ∧
+              sint.nat i = n ∧
+              sint.Z i = Z.of_nat n ∧
+              (0 <= sint.Z i <= go_int32_max)%Z
+            else err ≠ interface.nil
+        | None => err ≠ interface.nil
+        end ⌝ }}}.
 Proof.
 Admitted.
-
-Lemma last_index_byte_found_facts (s : go_string) (sep : w8)
-    (prefix suffix : go_string) idx :
-  Z.of_nat (length s) <= go_int_max →
-  s = prefix ++ [sep] ++ suffix →
-  sint.Z idx = Z.of_nat (length prefix) →
-  sint.nat idx = length prefix ∧
-  0 <= sint.Z (word.add idx (W64 1)) ∧
-  sint.nat (word.add idx (W64 1)) = S (length prefix).
-Proof.
-  intros Hlen Hdecomp Hidx.
-  assert (Hprefix_next_bound : Z.of_nat (S (length prefix)) <= go_int_max).
-  { rewrite Hdecomp app_length /= in Hlen. lia. }
-  unfold go_int_max in Hprefix_next_bound.
-  assert (Hidx_next : sint.Z (word.add idx (W64 1)) =
-      Z.of_nat (S (length prefix))) by word.
-  repeat split.
-  - word.
-  - rewrite Hidx_next. lia.
-  - word.
-Qed.
 
 (* Spec for strings.LastIndex when the separator is a one-byte string. The
    successful branch exposes the split around the last occurrence: the suffix
