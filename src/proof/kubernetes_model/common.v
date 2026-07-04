@@ -188,7 +188,7 @@ Lemma wp_deletionTimestampForDelete (graceful: bool) (gracePeriod: w64) :
     @! apimodel.deletionTimestampForDelete #graceful #gracePeriod
   {{{ l c v, RET #l;
       l ↦ c ∗
-      TimeV.deepown c v
+      TimeV.deepown c v 1
   }}}.
 Proof.
 Admitted.

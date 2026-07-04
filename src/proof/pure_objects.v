@@ -15,8 +15,8 @@ Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
 Axiom reserved_key_pred : KKey.t → Prop.
 
 Definition deepown_list `{hG: heapGS Σ} {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
-    (c_slice : slice.t) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
-  ∃ cs, c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
+    (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
+  c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
 
 Module TimeV.
 Section def.
@@ -26,7 +26,7 @@ Context {sem : go.Semantics}
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
-Axiom deepown : v1.Time.t → t → iProp Σ.
+Axiom deepown : v1.Time.t → t → dfrac → iProp Σ.
 End def.
 End TimeV.
 
@@ -339,11 +339,11 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_uid" ∷ ⌜ c.(v1.ObjectMeta.UID') = v.(UID') ⌝ ∗
   "%Hdeepown_resourceversion" ∷ ⌜ c.(v1.ObjectMeta.ResourceVersion') = v.(ResourceVersion') ⌝ ∗
   "%Hdeepown_generation" ∷ ⌜ c.(v1.ObjectMeta.Generation') = v.(Generation') ⌝ ∗
-  "Hdeepown_creationtimestamp" ∷ TimeV.deepown c.(v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') ∗
+  "Hdeepown_creationtimestamp" ∷ TimeV.deepown c.(v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') dq ∗
   (* TODO: define this repeated pattern to reduce the code below *)
   "%Hdeepown_deletiontimestamp_none" ∷ ⌜c.(v1.ObjectMeta.DeletionTimestamp') = null ↔ v.(DeletionTimestamp') = None⌝ ∗
   "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with
-  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦{dq} cd ∗ TimeV.deepown cd vd
+  | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦{dq} cd ∗ TimeV.deepown cd vd dq
   | None => True%I
   end) ∗
   "%Hdeepown_deletiongraceperiodseconds_none" ∷ ⌜c.(v1.ObjectMeta.DeletionGracePeriodSeconds') = null ↔ v.(DeletionGracePeriodSeconds') = None⌝ ∗
@@ -513,10 +513,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.PodSpec.t → t → iProp Σ.
+Axiom deepown : v1.PodSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PodSpecV.
@@ -530,10 +530,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.PodStatus.t → t → iProp Σ.
+Axiom deepown : v1.PodStatus.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PodStatusV.
@@ -579,8 +579,8 @@ Definition valid_without_meta (pod: t) : Prop :=
 Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.Pod.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') ∗
-  "Hdeepown_podstatus" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status').
+  "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') dq ∗
+  "Hdeepown_podstatus" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status') dq.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -600,15 +600,15 @@ Definition status_ptr l: loc :=
 Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
   v <| ObjectMeta' := m |>.
 
-Definition deepown_without_meta (c: v1.Pod.t) (v: t): iProp Σ :=
-  "Hdeepown_spec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') ∗
-  "Hdeepown_status" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status').
+Definition deepown_without_meta (c: v1.Pod.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_spec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status') dq.
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
   spec_ptr l ↦{dq} c.(v1.Pod.Spec') ∗
   status_ptr l ↦{dq} c.(v1.Pod.Status') ∗
-  deepown_without_meta c v.
+  deepown_without_meta c v dq.
 
 End def.
 
@@ -698,10 +698,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → iProp Σ.
+Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PersistentVolumeClaimSpecV.
@@ -715,10 +715,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → iProp Σ.
+Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End PersistentVolumeClaimStatusV.
@@ -764,8 +764,8 @@ Definition valid_without_meta (pvc: t) : Prop :=
 Definition deepown (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.PersistentVolumeClaim.TypeMeta') = v.(TypeMeta') ⌝ ∗
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') ∗
-  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status').
+  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status') dq.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -785,15 +785,15 @@ Definition status_ptr l: loc :=
 Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
   v <| ObjectMeta' := m |>.
 
-Definition deepown_without_meta (c: v1.PersistentVolumeClaim.t) (v: t): iProp Σ :=
-  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') ∗
-  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status').
+Definition deepown_without_meta (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status') dq.
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
   spec_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Spec') ∗
   status_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Status') ∗
-  deepown_without_meta c v.
+  deepown_without_meta c v dq.
 
 End def.
 
@@ -939,10 +939,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
 Axiom valid : t → Prop.
-Axiom deepown : v1.ReplicaSetStatus.t → t → iProp Σ.
+Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End ReplicaSetStatusV.
@@ -989,7 +989,7 @@ Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ ReplicaSetSpecV.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
-  "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status').
+  "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status') dq.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -1011,7 +1011,7 @@ Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
 
 Definition deepown_without_meta (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "Hdeepown_spec" ∷ ReplicaSetSpecV.deepown c.(v1.ReplicaSet.Spec') v.(Spec') dq ∗
-  "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status').
+  "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(v1.ReplicaSet.Status') v.(Status') dq.
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
@@ -1124,21 +1124,23 @@ Axiom valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
 
-Definition deepown (c: v1.StatefulSetSpec.t) (v: t): iProp Σ :=
+Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-  | Some i => ∃ replicas, c.(v1.StatefulSetSpec.Replicas') ↦ replicas ∗ ⌜ replicas = i ⌝
+  | Some i => ∃ replicas, c.(v1.StatefulSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
   | None => True%I
   end) ∗
-  "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') 1 ∗
+  "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') dq ∗
   "Hdeepown_volumeclaimtemplates" ∷
-    deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates')
-      (λ claim_template pure_claim_template,
-        PersistentVolumeClaimV.deepown claim_template pure_claim_template 1) ∗
+    (∃ claim_templates,
+      deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates
+        v.(VolumeClaimTemplates')
+        (λ claim_template pure_claim_template,
+          PersistentVolumeClaimV.deepown claim_template pure_claim_template dq)) ∗
   "%Hdeepown_servicename" ∷ ⌜c.(v1.StatefulSetSpec.ServiceName') = v.(ServiceName')⌝.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End StatefulSetSpecV.
@@ -1152,10 +1154,10 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.StatefulSetStatus.t → t → iProp Σ.
+Axiom deepown : v1.StatefulSetStatus.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v.
+  ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
 End StatefulSetStatusV.
@@ -1201,8 +1203,8 @@ Definition valid_without_meta (sts: t) : Prop :=
 Definition deepown (c: v1.StatefulSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.StatefulSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.StatefulSet.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') ∗
-  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status').
+  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status') dq.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -1222,15 +1224,15 @@ Definition status_ptr l: loc :=
 Definition update_objectmeta (v: t) (m: ObjectMetaV.t) : t :=
   v <| ObjectMeta' := m |>.
 
-Definition deepown_without_meta (c: v1.StatefulSet.t) (v: t): iProp Σ :=
-  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') ∗
-  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status').
+Definition deepown_without_meta (c: v1.StatefulSet.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') dq ∗
+  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status') dq.
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
   spec_ptr l ↦{dq} c.(v1.StatefulSet.Spec') ∗
   status_ptr l ↦{dq} c.(v1.StatefulSet.Status') ∗
-  deepown_without_meta c v.
+  deepown_without_meta c v dq.
 
 End def.
 
@@ -1380,13 +1382,13 @@ Axiom updated: t → t → Prop. (* old spec → input spec → output spec *)
 Definition deepown_l l v dq: iProp Σ :=
   match v with
   | PodSpec p =>
-      ∃ c, l ↦{dq} c ∗ PodSpecV.deepown c p
+      ∃ c, l ↦{dq} c ∗ PodSpecV.deepown c p dq
   | ReplicaSetSpec rs =>
       ∃ c, l ↦{dq} c ∗ ReplicaSetSpecV.deepown c rs dq
   | PersistentVolumeClaimSpec pvc =>
-      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc
+      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc dq
   | StatefulSetSpec sts =>
-      ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts
+      ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts dq
   end.
 
 End def.
@@ -1424,13 +1426,13 @@ Axiom updated: t → t → Prop. (* old status → input status → output statu
 Definition deepown_l l v dq: iProp Σ :=
   match v with
   | PodStatus p =>
-      ∃ c, l ↦{dq} c ∗ PodStatusV.deepown c p
+      ∃ c, l ↦{dq} c ∗ PodStatusV.deepown c p dq
   | ReplicaSetStatus rs =>
-      ∃ c, l ↦{dq} c ∗ ReplicaSetStatusV.deepown c rs
+      ∃ c, l ↦{dq} c ∗ ReplicaSetStatusV.deepown c rs dq
   | PersistentVolumeClaimStatus pvc =>
-      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc
+      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc dq
   | StatefulSetStatus sts =>
-      ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts
+      ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts dq
   end.
 
 End def.

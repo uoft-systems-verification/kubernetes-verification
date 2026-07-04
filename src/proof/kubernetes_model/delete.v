@@ -584,7 +584,7 @@ Proof.
         (mc_dgps <| v1.ObjectMeta.DeletionTimestamp' := dt_ptr |>
           <| v1.ObjectMeta.Generation' := gen |>) ∗
       "Hdt_ptr" ∷ dt_ptr ↦ dt_c ∗
-      "Hdeepown_time" ∷ TimeV.deepown dt_c dt_v)%I
+      "Hdeepown_time" ∷ TimeV.deepown dt_c dt_v 1)%I
     with "[metadata Hmc_ptr graceful gracePeriod Hmeta_Hdeepown_deletiontimestamp_some]".
   { wp_apply (wp_deletionTimestampForDelete). iIntros (timel timec timev) "[Htimel Hdeepown_time]". wp_auto.
     wp_apply (wp_SetDeletionTimestamp with "[$Hmc_ptr]") as "Hmc_ptr".

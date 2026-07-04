@@ -11,7 +11,7 @@ Lemma wp_Now :
   {{{ is_pkg_init v1 }}}
     @! v1.Now #()
   {{{ c v, RET #c;
-    TimeV.deepown c v
+    TimeV.deepown c v 1
   }}}.
 Proof. Admitted.
 
@@ -270,7 +270,7 @@ Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 Lemma wp_SetCreationTimestamp_deepown l m creation_timestamp pure_creation_timestamp :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1 ∗
-      TimeV.deepown creation_timestamp pure_creation_timestamp
+      TimeV.deepown creation_timestamp pure_creation_timestamp 1
   }}}
     l @! (go.PointerType v1.ObjectMeta) @! "SetCreationTimestamp" #creation_timestamp
   {{{ RET #();
@@ -314,7 +314,7 @@ Lemma wp_SetDeletionTimestamp_deepown l m deletion_timestamp pure_deletion_times
       ObjectMetaV.deepown_l l m 1 ∗
       ⌜ deletion_timestamp = null ↔ pure_deletion_timestamp = None ⌝ ∗
       (match pure_deletion_timestamp with
-       | Some vd => ∃ cd, deletion_timestamp ↦ cd ∗ TimeV.deepown cd vd
+       | Some vd => ∃ cd, deletion_timestamp ↦ cd ∗ TimeV.deepown cd vd 1
        | None => True
        end)
   }}}
