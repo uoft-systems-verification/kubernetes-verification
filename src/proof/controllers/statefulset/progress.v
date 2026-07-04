@@ -406,6 +406,92 @@ Proof.
     contradiction.
 Qed.
 
+Lemma wp_podInOrdinalRange set_l (set : StatefulSetV.t) pod_name ordinal set_name dq :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
+      "%Hspec_valid" ∷ ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ ∗
+      "%Hname_len" ∷ ⌜ Z.of_nat (length pod_name) <= go_int_max ⌝ ∗
+      "%Hpod_name" ∷ ⌜ (ordinal <= go_int32_max_nat)%nat ∧
+        pod_name = desired_pod_name set_name ordinal ⌝
+  }}}
+    @! statefulset.podInOrdinalRange #set_l #pod_name
+  {{{ (ret : bool), RET #ret;
+      ⌜ ret = true ↔ (ordinal < statefulset_replicas set)%nat ⌝ ∗
+      StatefulSetV.deepown_l set_l set dq
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  wp_auto.
+  wp_apply (wp_ordinalOf pod_name ordinal set_name with "[]").
+  { iPureIntro. split; done. }
+  iIntros (ordinal_ret) "%Hordinal_ret".
+  wp_auto.
+  replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal_ret)) with true.
+  2:{ symmetry. apply bool_decide_true.
+      rewrite Hordinal_ret. change (sint.Z (W64 0)) with 0. lia. }
+  wp_pures.
+  wp_load.
+  wp_pures.
+  wp_load.
+  wp_pures.
+  wp_apply (wp_endOrdinalOf with "[$Hset //]").
+  iIntros (end_ordinal) "[%Hend_ordinal Hset]".
+  wp_pures.
+  iApply "HΦ".
+  iFrame.
+  iPureIntro.
+  split.
+  - intros Hret.
+    apply bool_decide_eq_true in Hret.
+    rewrite Hordinal_ret Hend_ordinal in Hret.
+    lia.
+  - intros Hlt.
+    apply bool_decide_eq_true_2.
+    rewrite Hordinal_ret Hend_ordinal.
+    lia.
+Qed.
+
+Lemma wp_isTerminating pod_l (pod : PodV.t) dq :
+  {{{ PodV.deepown_l pod_l pod dq }}}
+    @! statefulset.isTerminating #pod_l
+  {{{ (ret : bool), RET #ret;
+      ⌜ ret = true ↔ ¬ is_pod_alive pod ⌝ ∗
+      PodV.deepown_l pod_l pod dq
+  }}}.
+Proof.
+  wp_start as "Hpod".
+  iPoseProof (PodV.deepown_l_split with "Hpod") as
+    "(%Hpod_l_not_null & Hpod_typemeta & Hpod_objectmeta_l & Hpod_spec_l & Hpod_status_l)".
+  iDestruct "Hpod_objectmeta_l" as (pod_meta_c) "[Hpod_objectmeta_field Hpod_objectmeta]".
+  iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
+  wp_auto.
+  iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
+  iAssert (ObjectMetaV.deepown pod_meta_c pod.(PodV.ObjectMeta') dq)
+    with "[Hpod_objectmeta]" as "Hpod_objectmeta".
+  { iNamed "Hpod_objectmeta". iFrame. done. }
+  iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
+      pod.(PodV.ObjectMeta') dq)
+    with "[Hpod_objectmeta_field Hpod_objectmeta]" as "Hpod_objectmeta_l".
+  { iExists pod_meta_c. iFrame. }
+  iPoseProof (PodV.deepown_l_restore _ _ _ Hpod_l_not_null
+    with "[$Hpod_typemeta $Hpod_objectmeta_l $Hpod_spec_l $Hpod_status_l]") as "Hpod".
+  iApply "HΦ".
+  iFrame.
+  iPureIntro.
+  unfold is_pod_alive.
+  split.
+  - intros Hnot_null Hdeletion_timestamp_none.
+    apply negb_true_iff in Hnot_null.
+    apply bool_decide_eq_false in Hnot_null.
+    apply Hnot_null.
+    by apply Hpod_meta_Hdeepown_deletiontimestamp_none.
+  - intros Hnot_alive.
+    apply negb_true_iff.
+    apply bool_decide_eq_false.
+    intros Hnull.
+    apply Hnot_alive.
+    by apply Hpod_meta_Hdeepown_deletiontimestamp_none.
+Qed.
+
 Lemma wp_filterPodsForStatefulSet set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc) (pods : list PodV.t) dq_set dq_pods :
   {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
