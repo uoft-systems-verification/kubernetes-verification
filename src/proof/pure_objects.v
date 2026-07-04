@@ -4,6 +4,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export time.
 From New.proof.string Require Export prefix_suffix.
+From New.proof Require Export struct.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
@@ -12,15 +13,6 @@ Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
    irrelevant here; the model only relies on API-server generated names never
    forming keys that satisfy it. *)
 Axiom reserved_key_pred : KKey.t → Prop.
-
-Lemma struct_fields_split `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l (v : V) dq :
-  l ↦{dq} v ⊢@{iProp Σ} typed_pointsto_def l v dq ∗ ⌜l ≠ null⌝.
-Proof. rewrite typed_pointsto_unseal /typed_pointsto_wrap. iIntros "[$ $]". Qed.
-
-Lemma struct_fields_combine `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l (v : V) dq :
-  l ≠ null →
-  typed_pointsto_def l v dq ⊢@{iProp Σ} l ↦{dq} v.
-Proof. intros Hnot_null. iApply (typed_pointsto_combine l v dq Hnot_null). Qed.
 
 Definition deepown_list `{hG: heapGS Σ} {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
     (c_slice : slice.t) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
