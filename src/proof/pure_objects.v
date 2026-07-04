@@ -22,6 +22,10 @@ Lemma struct_fields_combine `{hG: heapGS Σ} {V} `{!TypedPointsto (Σ:=Σ) V} l 
   typed_pointsto_def l v dq ⊢@{iProp Σ} l ↦{dq} v.
 Proof. intros Hnot_null. iApply (typed_pointsto_combine l v dq Hnot_null). Qed.
 
+Definition deepown_list `{hG: heapGS Σ} {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
+    (c_slice : slice.t) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
+  ∃ cs, c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
+
 Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -1135,12 +1139,10 @@ Definition deepown (c: v1.StatefulSetSpec.t) (v: t): iProp Σ :=
   | None => True%I
   end) ∗
   "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') 1 ∗
-  "Hdeepown_volumeclaimtemplates" ∷ (
-    ∃ claim_templates,
-      c.(v1.StatefulSetSpec.VolumeClaimTemplates') ↦* claim_templates ∗
-      ([∗ list] claim_template;pure_claim_template ∈ claim_templates;v.(VolumeClaimTemplates'),
-        PersistentVolumeClaimV.deepown claim_template pure_claim_template 1)
-  ) ∗
+  "Hdeepown_volumeclaimtemplates" ∷
+    deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates')
+      (λ claim_template pure_claim_template,
+        PersistentVolumeClaimV.deepown claim_template pure_claim_template 1) ∗
   "%Hdeepown_servicename" ∷ ⌜c.(v1.StatefulSetSpec.ServiceName') = v.(ServiceName')⌝.
 
 Definition deepown_l l v dq: iProp Σ :=
