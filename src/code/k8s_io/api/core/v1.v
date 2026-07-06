@@ -1539,8 +1539,6 @@ Axiom TolerationOperatorⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobal
 
 Axiom PodReadinessGateⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom PodSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PodResourceClaimⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodResourceClaimStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -6913,20 +6911,211 @@ Class PodReadinessGate_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoL
   #[global] PodReadinessGateⁱᵐᵖˡ_underlying :: (PodReadinessGateⁱᵐᵖˡ) ↓u (PodReadinessGateⁱᵐᵖˡ);
 }.
 
-Module PodSpec.
+Module ResourceList.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Axiom t : Type.
 Axiom zero_val : ZeroVal t.
 #[global] Existing Instance zero_val.
 End def.
+End ResourceList.
+
+Class ResourceList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ResourceList_type_repr  :: go.TypeReprUnderlying ResourceListⁱᵐᵖˡ ResourceList.t;
+  #[global] ResourceList_underlying :: (ResourceList) <u (ResourceListⁱᵐᵖˡ);
+  #[global] ResourceListⁱᵐᵖˡ_underlying :: (ResourceListⁱᵐᵖˡ) ↓u (ResourceListⁱᵐᵖˡ);
+}.
+
+Module PodSpec.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Volumes' : slice.t;
+  InitContainers' : slice.t;
+  Containers' : slice.t;
+  EphemeralContainers' : slice.t;
+  RestartPolicy' : v1.RestartPolicy.t;
+  TerminationGracePeriodSeconds' : loc;
+  ActiveDeadlineSeconds' : loc;
+  DNSPolicy' : v1.DNSPolicy.t;
+  NodeSelector' : map.t;
+  ServiceAccountName' : go_string;
+  DeprecatedServiceAccount' : go_string;
+  AutomountServiceAccountToken' : loc;
+  NodeName' : go_string;
+  HostNetwork' : bool;
+  HostPID' : bool;
+  HostIPC' : bool;
+  ShareProcessNamespace' : loc;
+  SecurityContext' : loc;
+  ImagePullSecrets' : slice.t;
+  Hostname' : go_string;
+  Subdomain' : go_string;
+  Affinity' : loc;
+  SchedulerName' : go_string;
+  Tolerations' : slice.t;
+  HostAliases' : slice.t;
+  PriorityClassName' : go_string;
+  Priority' : loc;
+  DNSConfig' : loc;
+  ReadinessGates' : slice.t;
+  RuntimeClassName' : loc;
+  EnableServiceLinks' : loc;
+  PreemptionPolicy' : loc;
+  Overhead' : v1.ResourceList.t;
+  TopologySpreadConstraints' : slice.t;
+  SetHostnameAsFQDN' : loc;
+  OS' : loc;
+  HostUsers' : loc;
+  SchedulingGates' : slice.t;
+  ResourceClaims' : slice.t;
+  Resources' : loc;
+  HostnameOverride' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
 End PodSpec.
+
+Definition PodSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Volumes"%go (go.SliceType Volume));
+  (go.FieldDecl "InitContainers"%go (go.SliceType Container));
+  (go.FieldDecl "Containers"%go (go.SliceType Container));
+  (go.FieldDecl "EphemeralContainers"%go (go.SliceType EphemeralContainer));
+  (go.FieldDecl "RestartPolicy"%go RestartPolicy);
+  (go.FieldDecl "TerminationGracePeriodSeconds"%go (go.PointerType go.int64));
+  (go.FieldDecl "ActiveDeadlineSeconds"%go (go.PointerType go.int64));
+  (go.FieldDecl "DNSPolicy"%go DNSPolicy);
+  (go.FieldDecl "NodeSelector"%go (go.MapType go.string go.string));
+  (go.FieldDecl "ServiceAccountName"%go go.string);
+  (go.FieldDecl "DeprecatedServiceAccount"%go go.string);
+  (go.FieldDecl "AutomountServiceAccountToken"%go (go.PointerType go.bool));
+  (go.FieldDecl "NodeName"%go go.string);
+  (go.FieldDecl "HostNetwork"%go go.bool);
+  (go.FieldDecl "HostPID"%go go.bool);
+  (go.FieldDecl "HostIPC"%go go.bool);
+  (go.FieldDecl "ShareProcessNamespace"%go (go.PointerType go.bool));
+  (go.FieldDecl "SecurityContext"%go (go.PointerType PodSecurityContext));
+  (go.FieldDecl "ImagePullSecrets"%go (go.SliceType LocalObjectReference));
+  (go.FieldDecl "Hostname"%go go.string);
+  (go.FieldDecl "Subdomain"%go go.string);
+  (go.FieldDecl "Affinity"%go (go.PointerType Affinity));
+  (go.FieldDecl "SchedulerName"%go go.string);
+  (go.FieldDecl "Tolerations"%go (go.SliceType Toleration));
+  (go.FieldDecl "HostAliases"%go (go.SliceType HostAlias));
+  (go.FieldDecl "PriorityClassName"%go go.string);
+  (go.FieldDecl "Priority"%go (go.PointerType go.int32));
+  (go.FieldDecl "DNSConfig"%go (go.PointerType PodDNSConfig));
+  (go.FieldDecl "ReadinessGates"%go (go.SliceType PodReadinessGate));
+  (go.FieldDecl "RuntimeClassName"%go (go.PointerType go.string));
+  (go.FieldDecl "EnableServiceLinks"%go (go.PointerType go.bool));
+  (go.FieldDecl "PreemptionPolicy"%go (go.PointerType PreemptionPolicy));
+  (go.FieldDecl "Overhead"%go ResourceList);
+  (go.FieldDecl "TopologySpreadConstraints"%go (go.SliceType TopologySpreadConstraint));
+  (go.FieldDecl "SetHostnameAsFQDN"%go (go.PointerType go.bool));
+  (go.FieldDecl "OS"%go (go.PointerType PodOS));
+  (go.FieldDecl "HostUsers"%go (go.PointerType go.bool));
+  (go.FieldDecl "SchedulingGates"%go (go.SliceType PodSchedulingGate));
+  (go.FieldDecl "ResourceClaims"%go (go.SliceType PodResourceClaim));
+  (go.FieldDecl "Resources"%go (go.PointerType ResourceRequirements));
+  (go.FieldDecl "HostnameOverride"%go (go.PointerType go.string))
+].
+Program Definition PodSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PodSpec'fds_unsealed).
+Global Instance equals_unfold_PodSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PodSpec'fds =→ PodSpec'fds_unsealed.
+Proof. rewrite /PodSpec'fds seal_eq //. Qed.
+
+Definition PodSpecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PodSpec'fds).
 
 Class PodSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PodSpec_type_repr  :: go.TypeReprUnderlying PodSpecⁱᵐᵖˡ PodSpec.t;
   #[global] PodSpec_underlying :: (PodSpec) <u (PodSpecⁱᵐᵖˡ);
-  #[global] PodSpecⁱᵐᵖˡ_underlying :: (PodSpecⁱᵐᵖˡ) ↓u (PodSpecⁱᵐᵖˡ);
+  #[global] PodSpec_get_Volumes (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Volumes", #x⟧ ⤳[under] #x.(PodSpec.Volumes');
+  #[global] PodSpec_set_Volumes (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Volumes", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Volumes' := y|>);
+  #[global] PodSpec_get_InitContainers (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "InitContainers", #x⟧ ⤳[under] #x.(PodSpec.InitContainers');
+  #[global] PodSpec_set_InitContainers (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "InitContainers", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.InitContainers' := y|>);
+  #[global] PodSpec_get_Containers (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Containers", #x⟧ ⤳[under] #x.(PodSpec.Containers');
+  #[global] PodSpec_set_Containers (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Containers", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Containers' := y|>);
+  #[global] PodSpec_get_EphemeralContainers (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "EphemeralContainers", #x⟧ ⤳[under] #x.(PodSpec.EphemeralContainers');
+  #[global] PodSpec_set_EphemeralContainers (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "EphemeralContainers", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.EphemeralContainers' := y|>);
+  #[global] PodSpec_get_RestartPolicy (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "RestartPolicy", #x⟧ ⤳[under] #x.(PodSpec.RestartPolicy');
+  #[global] PodSpec_set_RestartPolicy (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "RestartPolicy", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.RestartPolicy' := y|>);
+  #[global] PodSpec_get_TerminationGracePeriodSeconds (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "TerminationGracePeriodSeconds", #x⟧ ⤳[under] #x.(PodSpec.TerminationGracePeriodSeconds');
+  #[global] PodSpec_set_TerminationGracePeriodSeconds (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "TerminationGracePeriodSeconds", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.TerminationGracePeriodSeconds' := y|>);
+  #[global] PodSpec_get_ActiveDeadlineSeconds (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ActiveDeadlineSeconds", #x⟧ ⤳[under] #x.(PodSpec.ActiveDeadlineSeconds');
+  #[global] PodSpec_set_ActiveDeadlineSeconds (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ActiveDeadlineSeconds", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ActiveDeadlineSeconds' := y|>);
+  #[global] PodSpec_get_DNSPolicy (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "DNSPolicy", #x⟧ ⤳[under] #x.(PodSpec.DNSPolicy');
+  #[global] PodSpec_set_DNSPolicy (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "DNSPolicy", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.DNSPolicy' := y|>);
+  #[global] PodSpec_get_NodeSelector (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "NodeSelector", #x⟧ ⤳[under] #x.(PodSpec.NodeSelector');
+  #[global] PodSpec_set_NodeSelector (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "NodeSelector", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.NodeSelector' := y|>);
+  #[global] PodSpec_get_ServiceAccountName (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ServiceAccountName", #x⟧ ⤳[under] #x.(PodSpec.ServiceAccountName');
+  #[global] PodSpec_set_ServiceAccountName (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ServiceAccountName", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ServiceAccountName' := y|>);
+  #[global] PodSpec_get_DeprecatedServiceAccount (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "DeprecatedServiceAccount", #x⟧ ⤳[under] #x.(PodSpec.DeprecatedServiceAccount');
+  #[global] PodSpec_set_DeprecatedServiceAccount (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "DeprecatedServiceAccount", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.DeprecatedServiceAccount' := y|>);
+  #[global] PodSpec_get_AutomountServiceAccountToken (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "AutomountServiceAccountToken", #x⟧ ⤳[under] #x.(PodSpec.AutomountServiceAccountToken');
+  #[global] PodSpec_set_AutomountServiceAccountToken (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "AutomountServiceAccountToken", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.AutomountServiceAccountToken' := y|>);
+  #[global] PodSpec_get_NodeName (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "NodeName", #x⟧ ⤳[under] #x.(PodSpec.NodeName');
+  #[global] PodSpec_set_NodeName (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "NodeName", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.NodeName' := y|>);
+  #[global] PodSpec_get_HostNetwork (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostNetwork", #x⟧ ⤳[under] #x.(PodSpec.HostNetwork');
+  #[global] PodSpec_set_HostNetwork (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostNetwork", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostNetwork' := y|>);
+  #[global] PodSpec_get_HostPID (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostPID", #x⟧ ⤳[under] #x.(PodSpec.HostPID');
+  #[global] PodSpec_set_HostPID (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostPID", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostPID' := y|>);
+  #[global] PodSpec_get_HostIPC (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostIPC", #x⟧ ⤳[under] #x.(PodSpec.HostIPC');
+  #[global] PodSpec_set_HostIPC (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostIPC", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostIPC' := y|>);
+  #[global] PodSpec_get_ShareProcessNamespace (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ShareProcessNamespace", #x⟧ ⤳[under] #x.(PodSpec.ShareProcessNamespace');
+  #[global] PodSpec_set_ShareProcessNamespace (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ShareProcessNamespace", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ShareProcessNamespace' := y|>);
+  #[global] PodSpec_get_SecurityContext (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "SecurityContext", #x⟧ ⤳[under] #x.(PodSpec.SecurityContext');
+  #[global] PodSpec_set_SecurityContext (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "SecurityContext", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.SecurityContext' := y|>);
+  #[global] PodSpec_get_ImagePullSecrets (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ImagePullSecrets", #x⟧ ⤳[under] #x.(PodSpec.ImagePullSecrets');
+  #[global] PodSpec_set_ImagePullSecrets (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ImagePullSecrets", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ImagePullSecrets' := y|>);
+  #[global] PodSpec_get_Hostname (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Hostname", #x⟧ ⤳[under] #x.(PodSpec.Hostname');
+  #[global] PodSpec_set_Hostname (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Hostname", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Hostname' := y|>);
+  #[global] PodSpec_get_Subdomain (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Subdomain", #x⟧ ⤳[under] #x.(PodSpec.Subdomain');
+  #[global] PodSpec_set_Subdomain (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Subdomain", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Subdomain' := y|>);
+  #[global] PodSpec_get_Affinity (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Affinity", #x⟧ ⤳[under] #x.(PodSpec.Affinity');
+  #[global] PodSpec_set_Affinity (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Affinity", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Affinity' := y|>);
+  #[global] PodSpec_get_SchedulerName (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "SchedulerName", #x⟧ ⤳[under] #x.(PodSpec.SchedulerName');
+  #[global] PodSpec_set_SchedulerName (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "SchedulerName", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.SchedulerName' := y|>);
+  #[global] PodSpec_get_Tolerations (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Tolerations", #x⟧ ⤳[under] #x.(PodSpec.Tolerations');
+  #[global] PodSpec_set_Tolerations (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Tolerations", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Tolerations' := y|>);
+  #[global] PodSpec_get_HostAliases (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostAliases", #x⟧ ⤳[under] #x.(PodSpec.HostAliases');
+  #[global] PodSpec_set_HostAliases (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostAliases", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostAliases' := y|>);
+  #[global] PodSpec_get_PriorityClassName (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "PriorityClassName", #x⟧ ⤳[under] #x.(PodSpec.PriorityClassName');
+  #[global] PodSpec_set_PriorityClassName (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "PriorityClassName", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.PriorityClassName' := y|>);
+  #[global] PodSpec_get_Priority (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Priority", #x⟧ ⤳[under] #x.(PodSpec.Priority');
+  #[global] PodSpec_set_Priority (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Priority", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Priority' := y|>);
+  #[global] PodSpec_get_DNSConfig (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "DNSConfig", #x⟧ ⤳[under] #x.(PodSpec.DNSConfig');
+  #[global] PodSpec_set_DNSConfig (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "DNSConfig", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.DNSConfig' := y|>);
+  #[global] PodSpec_get_ReadinessGates (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ReadinessGates", #x⟧ ⤳[under] #x.(PodSpec.ReadinessGates');
+  #[global] PodSpec_set_ReadinessGates (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ReadinessGates", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ReadinessGates' := y|>);
+  #[global] PodSpec_get_RuntimeClassName (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "RuntimeClassName", #x⟧ ⤳[under] #x.(PodSpec.RuntimeClassName');
+  #[global] PodSpec_set_RuntimeClassName (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "RuntimeClassName", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.RuntimeClassName' := y|>);
+  #[global] PodSpec_get_EnableServiceLinks (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "EnableServiceLinks", #x⟧ ⤳[under] #x.(PodSpec.EnableServiceLinks');
+  #[global] PodSpec_set_EnableServiceLinks (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "EnableServiceLinks", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.EnableServiceLinks' := y|>);
+  #[global] PodSpec_get_PreemptionPolicy (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "PreemptionPolicy", #x⟧ ⤳[under] #x.(PodSpec.PreemptionPolicy');
+  #[global] PodSpec_set_PreemptionPolicy (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "PreemptionPolicy", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.PreemptionPolicy' := y|>);
+  #[global] PodSpec_get_Overhead (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Overhead", #x⟧ ⤳[under] #x.(PodSpec.Overhead');
+  #[global] PodSpec_set_Overhead (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Overhead", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Overhead' := y|>);
+  #[global] PodSpec_get_TopologySpreadConstraints (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "TopologySpreadConstraints", #x⟧ ⤳[under] #x.(PodSpec.TopologySpreadConstraints');
+  #[global] PodSpec_set_TopologySpreadConstraints (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "TopologySpreadConstraints", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.TopologySpreadConstraints' := y|>);
+  #[global] PodSpec_get_SetHostnameAsFQDN (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "SetHostnameAsFQDN", #x⟧ ⤳[under] #x.(PodSpec.SetHostnameAsFQDN');
+  #[global] PodSpec_set_SetHostnameAsFQDN (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "SetHostnameAsFQDN", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.SetHostnameAsFQDN' := y|>);
+  #[global] PodSpec_get_OS (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "OS", #x⟧ ⤳[under] #x.(PodSpec.OS');
+  #[global] PodSpec_set_OS (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "OS", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.OS' := y|>);
+  #[global] PodSpec_get_HostUsers (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostUsers", #x⟧ ⤳[under] #x.(PodSpec.HostUsers');
+  #[global] PodSpec_set_HostUsers (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostUsers", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostUsers' := y|>);
+  #[global] PodSpec_get_SchedulingGates (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "SchedulingGates", #x⟧ ⤳[under] #x.(PodSpec.SchedulingGates');
+  #[global] PodSpec_set_SchedulingGates (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "SchedulingGates", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.SchedulingGates' := y|>);
+  #[global] PodSpec_get_ResourceClaims (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "ResourceClaims", #x⟧ ⤳[under] #x.(PodSpec.ResourceClaims');
+  #[global] PodSpec_set_ResourceClaims (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "ResourceClaims", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.ResourceClaims' := y|>);
+  #[global] PodSpec_get_Resources (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "Resources", #x⟧ ⤳[under] #x.(PodSpec.Resources');
+  #[global] PodSpec_set_Resources (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "Resources", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.Resources' := y|>);
+  #[global] PodSpec_get_HostnameOverride (x : PodSpec.t) :: ⟦StructFieldGet (PodSpecⁱᵐᵖˡ) "HostnameOverride", #x⟧ ⤳[under] #x.(PodSpec.HostnameOverride');
+  #[global] PodSpec_set_HostnameOverride (x : PodSpec.t) y :: ⟦StructFieldSet (PodSpecⁱᵐᵖˡ) "HostnameOverride", (#x, #y)⟧ ⤳[under] #(x <|PodSpec.HostnameOverride' := y|>);
 }.
 
 Module PodResourceClaim.
@@ -8314,22 +8503,6 @@ Class ResourceName_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocal
   #[global] ResourceName_type_repr  :: go.TypeReprUnderlying ResourceNameⁱᵐᵖˡ ResourceName.t;
   #[global] ResourceName_underlying :: (ResourceName) <u (ResourceNameⁱᵐᵖˡ);
   #[global] ResourceNameⁱᵐᵖˡ_underlying :: (ResourceNameⁱᵐᵖˡ) ↓u (ResourceNameⁱᵐᵖˡ);
-}.
-
-Module ResourceList.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End ResourceList.
-
-Class ResourceList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] ResourceList_type_repr  :: go.TypeReprUnderlying ResourceListⁱᵐᵖˡ ResourceList.t;
-  #[global] ResourceList_underlying :: (ResourceList) <u (ResourceListⁱᵐᵖˡ);
-  #[global] ResourceListⁱᵐᵖˡ_underlying :: (ResourceListⁱᵐᵖˡ) ↓u (ResourceListⁱᵐᵖˡ);
 }.
 
 Module Node.
