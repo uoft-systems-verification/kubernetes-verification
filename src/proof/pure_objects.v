@@ -504,7 +504,7 @@ Qed.
 End proof.
 End ObjectMetaV.
 
-Module PodSpecV.
+Module VolumeV.
 Section def.
 Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}
@@ -513,7 +513,77 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
-Axiom deepown : v1.PodSpec.t → t → dfrac → iProp Σ.
+Axiom deepown : v1.Volume.t → t → dfrac → iProp Σ.
+End def.
+End VolumeV.
+
+Module PodSpecV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+(* Axiom TemplateFieldsV : Type. *)
+Record t :=
+mk {
+  Volumes' : list VolumeV.t;
+  Hostname' : go_string;
+  Subdomain' : go_string;
+  (* TemplateFields' : TemplateFieldsV; *)
+
+  (* These copied PodSpec fields are not individually read or written by the
+     StatefulSet controller. They are represented collectively by
+     [TemplateFields'] for template-freshness comparisons after clearing
+     Volumes, Hostname, and Subdomain. *)
+  (* InitContainers' : slice.t; *)
+  (* Containers' : slice.t; *)
+  (* EphemeralContainers' : slice.t; *)
+  (* RestartPolicy' : v1.RestartPolicy.t; *)
+  (* TerminationGracePeriodSeconds' : loc; *)
+  (* ActiveDeadlineSeconds' : loc; *)
+  (* DNSPolicy' : v1.DNSPolicy.t; *)
+  (* NodeSelector' : map.t; *)
+  (* ServiceAccountName' : go_string; *)
+  (* DeprecatedServiceAccount' : go_string; *)
+  (* AutomountServiceAccountToken' : loc; *)
+  (* NodeName' : go_string; *)
+  (* HostNetwork' : bool; *)
+  (* HostPID' : bool; *)
+  (* HostIPC' : bool; *)
+  (* ShareProcessNamespace' : loc; *)
+  (* SecurityContext' : loc; *)
+  (* ImagePullSecrets' : slice.t; *)
+  (* Affinity' : loc; *)
+  (* SchedulerName' : go_string; *)
+  (* Tolerations' : slice.t; *)
+  (* HostAliases' : slice.t; *)
+  (* PriorityClassName' : go_string; *)
+  (* Priority' : loc; *)
+  (* DNSConfig' : loc; *)
+  (* ReadinessGates' : slice.t; *)
+  (* RuntimeClassName' : loc; *)
+  (* EnableServiceLinks' : loc; *)
+  (* PreemptionPolicy' : loc; *)
+  (* Overhead' : v1.ResourceList.t; *)
+  (* TopologySpreadConstraints' : slice.t; *)
+  (* SetHostnameAsFQDN' : loc; *)
+  (* OS' : loc; *)
+  (* HostUsers' : loc; *)
+  (* SchedulingGates' : slice.t; *)
+  (* ResourceClaims' : slice.t; *)
+  (* Resources' : loc; *)
+  (* HostnameOverride' : loc; *)
+}.
+Axiom valid: t → Prop.
+
+Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
+  "Hdeepown_volumes" ∷
+    (∃ volumes,
+      deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
+        (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
+  "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
+  "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
