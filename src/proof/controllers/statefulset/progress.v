@@ -492,6 +492,151 @@ Proof.
     by apply Hpod_meta_Hdeepown_deletiontimestamp_none.
 Qed.
 
+Parameter pod_identity_matches : StatefulSetV.t → PodV.t → Prop.
+Axiom pod_identity_matches_decision : ∀ sts pod,
+  Decision (pod_identity_matches sts pod).
+#[local] Existing Instance pod_identity_matches_decision.
+
+Parameter pod_storage_matches : StatefulSetV.t → PodV.t → Prop.
+Axiom pod_storage_matches_decision : ∀ sts pod,
+  Decision (pod_storage_matches sts pod).
+#[local] Existing Instance pod_storage_matches_decision.
+
+(* The template-controlled PodSpec fields checked by podSpecMatches after
+   removing the identity and storage fields managed in place. *)
+Parameter pod_immutable_matches : StatefulSetV.t → PodV.t → Prop.
+Axiom pod_immutable_matches_decision : ∀ sts pod,
+  Decision (pod_immutable_matches sts pod).
+#[local] Existing Instance pod_immutable_matches_decision.
+
+Definition pod_match (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
+  pod_identity_matches sts pod ∧
+  pod_storage_matches sts pod ∧
+  pod_immutable_matches sts pod.
+
+#[local] Instance pod_match_decision sts pod : Decision (pod_match sts pod).
+Proof. unfold pod_match. apply _. Defined.
+
+Lemma wp_identityMatches set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
+    dq_set dq_pod :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "%Hpod_name_len" ∷
+        ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <=
+          go_int_max ⌝
+  }}}
+    @! statefulset.identityMatches #set_l #pod_l
+  {{{ (ret : bool), RET #ret;
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "%Hret" ∷ ⌜ ret = true ↔ pod_identity_matches set pod ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_storageMatches set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
+    dq_set dq_pod :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "%Hpod_name_len" ∷
+        ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <=
+          go_int_max ⌝
+  }}}
+    @! statefulset.storageMatches #set_l #pod_l
+  {{{ (ret : bool), RET #ret;
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "%Hret" ∷ ⌜ ret = true ↔ pod_storage_matches set pod ⌝
+  }}}.
+Proof. Admitted.
+
+(* The name precondition excludes the failure result (-1) from ordinalOf.  The
+   helper mutates the Pod in place, so it requires full Pod ownership and
+   returns an existentially quantified updated pure Pod. *)
+Lemma wp_updateIdentity set_l pod_l (set : StatefulSetV.t) (pod : PodV.t) dq_set :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "%Hpod_name_len" ∷ ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <= go_int_max ⌝ ∗
+      "%Hmember_name" ∷
+        ⌜ pod_has_int32_member_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! statefulset.updateIdentity #set_l #pod_l
+  {{{ pod', RET #();
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod' 1 ∗
+      "%Hmember_name" ∷
+        ⌜ pod_has_int32_member_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            pod'.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+      "%Hidentity_matches" ∷ ⌜ pod_identity_matches set pod' ⌝ ∗
+      "%Hstorage_matches" ∷
+        ⌜ pod_storage_matches set pod' ↔ pod_storage_matches set pod ⌝ ∗
+      "%Himmutable_matches" ∷
+        ⌜ pod_immutable_matches set pod' ↔ pod_immutable_matches set pod ⌝
+  }}}.
+Proof. Admitted.
+
+(* updateStorage only rewrites Pod volumes.  In particular, it establishes the
+   storage predicate without changing whether the identity predicate holds. *)
+Lemma wp_updateStorage set_l pod_l (set : StatefulSetV.t) (pod : PodV.t) dq_set :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "%Hpod_name_len" ∷ ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <= go_int_max ⌝ ∗
+      "%Hmember_name" ∷
+        ⌜ pod_has_int32_member_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! statefulset.updateStorage #set_l #pod_l
+  {{{ pod', RET #();
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod' 1 ∗
+      "%Hmember_name" ∷
+        ⌜ pod_has_int32_member_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            pod'.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+      "%Hstorage_matches" ∷ ⌜ pod_storage_matches set pod' ⌝ ∗
+      "%Hidentity_matches" ∷
+        ⌜ pod_identity_matches set pod' ↔ pod_identity_matches set pod ⌝ ∗
+      "%Himmutable_matches" ∷
+        ⌜ pod_immutable_matches set pod' ↔ pod_immutable_matches set pod ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_newStatefulSetPod (gv : schema.GroupVersion.t) set_l (set : StatefulSetV.t) (ordinal : w64) dq :
+  {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
+      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
+      "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid set.(StatefulSetV.ObjectMeta') ⌝ ∗
+      "%Htemplate_valid" ∷ ⌜ PodTemplateSpecV.valid set.(StatefulSetV.Spec').(StatefulSetSpecV.Template') ⌝ ∗
+      "%Hordinal_nonnegative" ∷ ⌜ 0 <= sint.Z ordinal ⌝ ∗
+      "%Hordinal_int32" ∷ ⌜ (sint.nat ordinal <= go_int32_max_nat)%nat ⌝ ∗
+      "%Hpod_name_valid" ∷
+        ⌜ valid_name (desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') (sint.nat ordinal)) ⌝ ∗
+      "%Hpod_name_len" ∷
+        ⌜ Z.of_nat (length (desired_pod_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            (sint.nat ordinal))) <= go_int_max ⌝
+  }}}
+    @! statefulset.newStatefulSetPod #set_l #ordinal
+  {{{ pod_l pod, RET (#pod_l, #interface.nil);
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "%Hkey" ∷ ⌜ PodV.key pod = desired_pod_key set (sint.nat ordinal) ⌝ ∗
+      "%Hparent" ∷
+        ⌜ obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hvalid" ∷
+        ⌜ KObjectV.valid_named_create PodV.kind
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+            (KObjectV.Pod pod) ⌝ ∗
+      "%Halive" ∷ ⌜ is_pod_alive pod ⌝ ∗
+      "%Hmatch" ∷ ⌜ pod_match set pod ⌝
+  }}}.
+Proof. Admitted.
+
 Definition claim_templates_map_insert m claim_template : gmap go_string v1.PersistentVolumeClaim.t :=
   <[claim_template.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name') := claim_template]> m.
 
@@ -834,11 +979,6 @@ Proof.
       apply take_ge. lia. }
     iApply "HΦ". iFrame.
 Qed.
-
-(* TODO: complete this definition *)
-Parameter pod_match : StatefulSetV.t → PodV.t → Prop.
-Axiom pod_match_decision : ∀ sts pod, Decision (pod_match sts pod).
-#[local] Existing Instance pod_match_decision.
 
 Definition missing_pod_keys sts (pods : list PodV.t) : list KKey.t :=
   filter (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts).
