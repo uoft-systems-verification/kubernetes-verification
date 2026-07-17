@@ -1744,6 +1744,27 @@ Proof.
   done.
 Qed.
 
+Lemma valid_nameless_pod_set_name pod namespace name :
+  valid_nameless_create PodV.kind namespace (Pod pod) →
+  name ≠ ""%go →
+  valid_name name →
+  valid_named_create PodV.kind namespace
+    (Pod (PodV.update_objectmeta pod
+      (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
+Proof.
+  rewrite /valid_nameless_create /valid_named_create /=.
+  intros (Hkind & Htypemeta & Hmeta & Hspec & Hstatus)
+    Hname_nonempty Hname_valid.
+  assert (Hmeta_named : ObjectMetaV.valid_named_create namespace
+      (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)).
+  { rewrite /ObjectMetaV.valid_nameless_create in Hmeta.
+    rewrite /ObjectMetaV.valid_named_create /=.
+    destruct Hmeta as (Hgenerate_name & _ & _ & Hnamespace & Hlabels &
+      Hannotations & Howner_references & Hfinalizers & Hmanaged_fields).
+    split_and!; done. }
+  split_and!; done.
+Qed.
+
 End proof.
 End KObjectV.
 

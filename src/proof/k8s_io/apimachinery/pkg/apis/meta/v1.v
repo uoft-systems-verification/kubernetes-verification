@@ -584,6 +584,26 @@ Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
   }}}.
 Proof. Admitted.
 
+Lemma wp_NewControllerRef_StatefulSet owner gvk set_l m dq :
+  {{{ is_pkg_init v1 ∗
+      ⌜ owner = interface.mk_ok (go.PointerType v1.StatefulSet) (#set_l) ⌝ ∗
+      ⌜ gvk.(schema.GroupVersionKind.Group') = "apps"%go ∧
+        gvk.(schema.GroupVersionKind.Version') = "v1"%go ∧
+        gvk.(schema.GroupVersionKind.Kind') = "StatefulSet"%go ⌝ ∗
+      ⌜ ObjectMetaV.valid m ⌝ ∗
+      ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) m dq
+  }}}
+    @! v1.NewControllerRef #owner #gvk
+  {{{ l controller_ref, RET #l;
+      OwnerReferenceV.deepown_l l controller_ref 1 ∗
+      ⌜ OwnerReferenceV.refers_to_controller controller_ref
+          gvk.(schema.GroupVersionKind.Kind')
+          m.(ObjectMetaV.Name') m.(ObjectMetaV.UID') ⌝ ∗
+      ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
+      ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) m dq
+  }}}.
+Proof. Admitted.
+
 Definition namespace_matches ns_query ns: Prop :=
   ns_query = v1.NamespaceAll ∨ ns_query = ns.
 

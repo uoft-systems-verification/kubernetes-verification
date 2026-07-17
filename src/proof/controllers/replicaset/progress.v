@@ -3,6 +3,7 @@ From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
@@ -201,24 +202,6 @@ Proof.
   apply Permutation_map. exact Hperm.
 Qed.
 
-Lemma wp_SchemeGroupVersion__WithKind gv kind:
-  {{{ "#Hschema_init" ∷ is_pkg_init schema ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv
-  }}}
-    (global_addr apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #kind
-  {{{ gvk, RET #gvk;
-      ⌜ gvk.(schema.GroupVersionKind.Group') = gv.(schema.GroupVersion.Group') ∧
-        gvk.(schema.GroupVersionKind.Version') = gv.(schema.GroupVersion.Version') ∧
-        gvk.(schema.GroupVersionKind.Kind') = kind ⌝
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H".
-  wp_pures.
-  wp_load.
-  wp_pures.
-  by wp_apply (schema.wp_GroupVersion__WithKind with "[$Hschema_init]").
-Qed.
-
 Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pods inactive_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -287,7 +270,10 @@ Proof.
     { iExists (W64 0), active_pods. iFrame. iPureIntro. split_and!. all: try word. done. }
     wp_for "Hloop_inv". wp_if_destruct.
 	  + wp_bind ((global_addr apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
-	    wp_apply (wp_SchemeGroupVersion__WithKind with "[]"); [iFrame "#"; iPkgInit|].
+	    wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
+	      (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
+	        _ _ _ _ object_apps_v1_sem) gv "ReplicaSet"%go with "[]");
+	      [iFrame "#"; iPkgInit|].
 	    iIntros (gvk) "%Hgvk". wp_auto.
 	    destruct Hgvk as (Hgvk_g & Hgvk_v & Hgvk_k).
 	    wp_bind (@! replicaset.meta_v1.NewControllerRef
