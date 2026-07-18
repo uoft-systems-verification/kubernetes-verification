@@ -5,7 +5,7 @@ translate = [
     "PodFailed",
     "PodUnknown",
     "Pod",
-    # "PodSpec",
+    "PodSpec",
     # "PodStatus",
     # "Affinity",
     # "Container",
