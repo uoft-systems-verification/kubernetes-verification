@@ -9,11 +9,6 @@ From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
 
-(* This predicate is intentionally axiomatized. The concrete definition is
-   irrelevant here; the model only relies on API-server generated names never
-   forming keys that satisfy it. *)
-Axiom reserved_key_pred : KKey.t → Prop.
-
 Definition deepown_list `{hG: heapGS Σ} {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
     (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
   c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).

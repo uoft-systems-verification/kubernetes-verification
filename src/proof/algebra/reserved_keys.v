@@ -2,6 +2,11 @@ From New.proof Require Import prelude.
 From New.proof Require Export pure_objects.
 From New.proof.algebra Require Import constrained_gset.
 
+(* This predicate is intentionally axiomatized. The concrete definition is
+   irrelevant here; the model only relies on API-server generated names never
+   forming keys that satisfy it. *)
+Axiom reserved_key_pred : KKey.t → Prop.
+
 Class reserved_keysG Σ :=
   { #[global] reserved_keys_constrained_gsetG ::
       constrained_gset.constrained_gsetG reserved_key_pred Σ; }.
