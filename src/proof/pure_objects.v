@@ -49,22 +49,25 @@ Lemma valid_kind_slash_free kind:
   valid_kind kind → slash_free kind.
 Proof. Admitted.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L169 *)
-Axiom valid_name: go_string → Prop.
+(* Kubernetes selects the name validator from the resource's REST strategy.
+   The current model uses kind as its resource discriminator. *)
+Axiom valid_name: go_string → go_string → Prop.
 
-Lemma valid_name_slash_free name:
-  valid_name name → slash_free name.
+Lemma valid_name_slash_free {kind} name:
+  valid_name kind name → slash_free name.
 Proof. Admitted.
 
-Definition valid_generate_name generate_name : Prop :=
+Definition valid_generate_name kind generate_name : Prop :=
   (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
-  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name prefix.
+  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name kind prefix.
 
   (* Below is the actual validation logic for generate_name, which is too complex and seems buggy *)
   (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L37 *)
   (* TODO: there might be a bug in Kubernetes that performs name[:len(name)-2] in generic.go *)
-  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧ valid_name (prefix ++ "a"%go)) ∨
-  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧ valid_name generate_name. *)
+  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧
+        valid_name kind (prefix ++ "a"%go)) ∨
+  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧
+    valid_name kind generate_name. *)
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
 Axiom valid_namespace: go_string → Prop.
@@ -222,12 +225,13 @@ Record t := mk {
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155 *)
 (* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
-   because kview's meta frag needs to be ObjectMetaV.valid and the frag doesn't
-   carry the resource version. *)
-Definition valid (m: t) : Prop :=
-  (m.(GenerateName') ≠ ""%go → valid_generate_name m.(GenerateName')) ∧
+   because kview's meta frag needs ObjectMetaV.valid and the fragment doesn't
+   carry the resource version. The fragment does carry a KKey, which supplies
+   the kind argument. *)
+Definition valid kind (m: t) : Prop :=
+  (m.(GenerateName') ≠ ""%go → valid_generate_name kind m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
-  valid_name m.(Name') ∧
+  valid_name kind m.(Name') ∧
   m.(Namespace') ≠ ""%go ∧
   valid_namespace m.(Namespace') ∧
   (* Kubernetes does not really pose any requirement on uid, but
@@ -245,8 +249,8 @@ Definition valid (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
-Definition valid_nameless_create ns (m: t) : Prop :=
-  valid_generate_name m.(GenerateName') ∧
+Definition valid_nameless_create kind ns (m: t) : Prop :=
+  valid_generate_name kind m.(GenerateName') ∧
   (* The max len of generate_name must be 58 so that the suffix can fit in:
     https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
   length m.(GenerateName') ≤ 58 ∧
@@ -260,10 +264,10 @@ Definition valid_nameless_create ns (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
-Definition valid_named_create ns (m: t) : Prop :=
-  (m.(GenerateName') ≠ ""%go → valid_generate_name m.(GenerateName')) ∧
+Definition valid_named_create kind ns (m: t) : Prop :=
+  (m.(GenerateName') ≠ ""%go → valid_generate_name kind m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
-  valid_name m.(Name') ∧
+  valid_name kind m.(Name') ∧
   (* The namespace in the meta is either empty or equal to the provided ns *)
   (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
   valid_labels m.(Labels') ∧
@@ -391,59 +395,59 @@ End def.
 
 Section proof.
 
-Lemma valid_generate_name_of_valid m:
-  valid m →
+Lemma valid_generate_name_of_valid {kind} m:
+  valid kind m →
   m.(GenerateName') ≠ ""%go →
-  valid_generate_name m.(GenerateName').
+  valid_generate_name kind m.(GenerateName').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_name_nonempty_of_valid m:
-  valid m →
+Lemma valid_name_nonempty_of_valid {kind} m:
+  valid kind m →
   m.(Name') ≠ ""%go.
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_name_of_valid m:
-  valid m →
-  valid_name m.(Name').
+Lemma valid_name_of_valid {kind} m:
+  valid kind m →
+  valid_name kind m.(Name').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_namespace_nonempty_of_valid m:
-  valid m →
+Lemma valid_namespace_nonempty_of_valid {kind} m:
+  valid kind m →
   m.(Namespace') ≠ ""%go.
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_namespace_of_valid m:
-  valid m →
+Lemma valid_namespace_of_valid {kind} m:
+  valid kind m →
   valid_namespace m.(Namespace').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_uid_of_valid m:
-  valid m →
+Lemma valid_uid_of_valid {kind} m:
+  valid kind m →
   valid_uid m.(UID').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_labels_of_valid m:
-  valid m →
+Lemma valid_labels_of_valid {kind} m:
+  valid kind m →
   valid_labels m.(Labels').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_annotations_of_valid m:
-  valid m →
+Lemma valid_annotations_of_valid {kind} m:
+  valid kind m →
   valid_annotations m.(Annotations').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_owner_references_of_valid m:
-  valid m →
+Lemma valid_owner_references_of_valid {kind} m:
+  valid kind m →
   valid_owner_references m.(OwnerReferences').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_finalizers_of_valid m:
-  valid m →
+Lemma valid_finalizers_of_valid {kind} m:
+  valid kind m →
   valid_finalizers m.(Finalizers').
 Proof. unfold valid. tauto. Qed.
 
-Lemma valid_managed_fields_of_valid m:
-  valid m →
+Lemma valid_managed_fields_of_valid {kind} m:
+  valid kind m →
   valid_managed_fields m.(ManagedFields').
 Proof. unfold valid. tauto. Qed.
 
@@ -474,10 +478,10 @@ Proof.
   destruct m1, m2; simpl. intros H. inversion H. done.
 Qed.
 
-Lemma equiv_except_resource_version_valid m1 m2 :
+Lemma equiv_except_resource_version_valid {kind} m1 m2 :
   equiv_except_resource_version m1 m2 →
-  valid m1 →
-  valid m2.
+  valid kind m1 →
+  valid kind m2.
 Proof.
   destruct m1, m2; simpl. intros H Heq. inversion H; subst.
   unfold valid in *. tauto.
@@ -642,7 +646,7 @@ Definition key (v: t) : KKey.t :=
 Definition valid (pod: t) : Prop :=
   valid_typemeta kind pod.(TypeMeta') ∧
   valid_resource_version pod.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
-  ObjectMetaV.valid pod.(ObjectMeta') ∧
+  ObjectMetaV.valid kind pod.(ObjectMeta') ∧
   PodSpecV.valid pod.(Spec') ∧
   PodStatusV.valid pod.(Status').
 
@@ -827,7 +831,7 @@ Definition key (v: t) : KKey.t :=
 Definition valid (pvc: t) : Prop :=
   valid_typemeta kind pvc.(TypeMeta') ∧
   valid_resource_version pvc.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
-  ObjectMetaV.valid pvc.(ObjectMeta') ∧
+  ObjectMetaV.valid kind pvc.(ObjectMeta') ∧
   PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
   PersistentVolumeClaimStatusV.valid pvc.(Status').
 
@@ -1051,7 +1055,7 @@ Definition key (v: t) : KKey.t :=
 Definition valid (rs: t) : Prop :=
   valid_typemeta kind rs.(TypeMeta') ∧
   valid_resource_version rs.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
-  ObjectMetaV.valid rs.(ObjectMeta') ∧
+  ObjectMetaV.valid kind rs.(ObjectMeta') ∧
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
 
@@ -1273,7 +1277,7 @@ Definition key (v: t) : KKey.t :=
 Definition valid (sts: t) : Prop :=
   valid_typemeta kind sts.(TypeMeta') ∧
   valid_resource_version sts.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
-  ObjectMetaV.valid sts.(ObjectMeta') ∧
+  ObjectMetaV.valid kind sts.(ObjectMeta') ∧
   StatefulSetSpecV.valid sts.(Spec') ∧
   StatefulSetStatusV.valid sts.(Status').
 
@@ -1613,21 +1617,21 @@ Axiom valid_update_status: go_string → go_string → t → t → Prop.
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
-  ObjectMetaV.valid (objectmeta o) ∧
+  ObjectMetaV.valid (kind o) (objectmeta o) ∧
   ObjectSpecV.valid (spec o) ∧
   ObjectStatusV.valid (status o).
 
 Definition valid_nameless_create knd ns o : Prop :=
   knd = kind o ∧
   valid_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_nameless_create ns (objectmeta o) ∧
+  ObjectMetaV.valid_nameless_create knd ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).
 
 Definition valid_named_create knd ns o : Prop :=
   knd = kind o ∧
   valid_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_named_create ns (objectmeta o) ∧
+  ObjectMetaV.valid_named_create knd ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).
 
@@ -1828,7 +1832,7 @@ Qed.
 Lemma valid_nameless_pod_set_name pod namespace name :
   valid_nameless_create PodV.kind namespace (Pod pod) →
   name ≠ ""%go →
-  valid_name name →
+  valid_name PodV.kind name →
   valid_named_create PodV.kind namespace
     (Pod (PodV.update_objectmeta pod
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
@@ -1836,7 +1840,7 @@ Proof.
   rewrite /valid_nameless_create /valid_named_create /=.
   intros (Hkind & Htypemeta & Hmeta & Hspec & Hstatus)
     Hname_nonempty Hname_valid.
-  assert (Hmeta_named : ObjectMetaV.valid_named_create namespace
+  assert (Hmeta_named : ObjectMetaV.valid_named_create PodV.kind namespace
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)).
   { rewrite /ObjectMetaV.valid_nameless_create in Hmeta.
     rewrite /ObjectMetaV.valid_named_create /=.
@@ -2040,7 +2044,8 @@ Proof.
 Qed.
 
 Lemma valid_object_has_valid_objectmeta obj:
-  KObjectV.valid2 obj → ObjectMetaV.valid (KObjectV.objectmeta obj).
+  KObjectV.valid2 obj →
+    ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj).
 Proof.
   rewrite -KObjectV.valid_eq_valid2.
   intros (_ & _ & Hmeta & _ & _). exact Hmeta.
@@ -2050,7 +2055,7 @@ Lemma valid_object_has_valid_key key obj:
   key = KObjectV.key obj →
   KObjectV.valid2 obj →
     key.(KKey.Name') ≠ ""%go ∧
-    valid_name key.(KKey.Name') ∧
+    valid_name key.(KKey.Kind') key.(KKey.Name') ∧
     key.(KKey.Namespace') ≠ ""%go ∧
     valid_namespace key.(KKey.Namespace').
 Proof.
@@ -2133,7 +2138,7 @@ Ltac solve_update_objectmeta_valid
       rewrite KObjectV.typemeta_update_objectmeta;
       exact Hvalid_typemeta
     | simpl; exact Hvalid_rv
-    | exact Hvalid_meta
+    | rewrite KObjectV.kind_update_objectmeta; exact Hvalid_meta
     | rewrite KObjectV.spec_update_objectmeta; exact Hvalid_spec
     | rewrite KObjectV.status_update_objectmeta; exact Hvalid_status
     ].

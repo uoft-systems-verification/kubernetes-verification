@@ -590,7 +590,7 @@ Lemma wp_NewControllerRef_StatefulSet owner gvk set_l m dq :
       ⌜ gvk.(schema.GroupVersionKind.Group') = "apps"%go ∧
         gvk.(schema.GroupVersionKind.Version') = "v1"%go ∧
         gvk.(schema.GroupVersionKind.Kind') = "StatefulSet"%go ⌝ ∗
-      ⌜ ObjectMetaV.valid m ⌝ ∗
+      ⌜ ObjectMetaV.valid StatefulSetV.kind m ⌝ ∗
       ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) m dq
   }}}
     @! v1.NewControllerRef #owner #gvk

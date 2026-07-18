@@ -743,7 +743,7 @@ Proof.
       split_and!. all: unfold new_kobj.
       + destruct kobj; done.
       + destruct kobj; simpl; exact Hgenerated_rv_valid.
-      + assert (ObjectMetaV.valid new_kmeta1) as Hvalid_m1.
+      + assert (ObjectMetaV.valid (KObjectV.kind kobj) new_kmeta1) as Hvalid_m1.
         { unfold ObjectMetaV.valid in Hvalid_m.
           decompose [and] Hvalid_m.
           unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.

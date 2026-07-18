@@ -97,7 +97,7 @@ Proof.
   iIntros "Hdeepown_metadata". wp_auto.
   assert (ObjectMetaV.Name' (KObjectV.objectmeta kobj) ≠ ""%go) as Hname_not_empty.
   { destruct Hvalid as (_ & _ & Hmeta & _).
-    apply ObjectMetaV.valid_name_nonempty_of_valid. done. }
+    eapply ObjectMetaV.valid_name_nonempty_of_valid. done. }
   rewrite bool_decide_false //. wp_auto.
   set key := {|
     KKey.Kind' := kind;

@@ -225,7 +225,7 @@ Admitted.
 
 Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
-      ⌜ valid_generate_name generate_name ⌝ ∗
+      ⌜ valid_generate_name kind generate_name ⌝ ∗
       ⌜ length generate_name ≤ 58 ⌝ ∗
       l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
       m_ptr ↦$ phys_state
@@ -233,7 +233,7 @@ Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state
     l @! (go.PointerType apimodel.State) @! "generateNewName" #kind #namespace #generate_name
   {{{ (new_name: go_string), RET #new_name;
       ⌜ new_name ≠ ""%go ⌝ ∗
-      ⌜ valid_name new_name ⌝ ∗
+      ⌜ valid_name kind new_name ⌝ ∗
       ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
       ⌜ ∀ kind namespace,
           ¬ reserved_key_pred {| KKey.Kind' := kind;
@@ -249,7 +249,7 @@ Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ i = interface.mk (go.PointerType v1.ObjectMeta) #l ⌝ ∗
       ObjectMetaV.deepown_l l m dq ∗
-      ⌜ ObjectMetaV.valid m ⌝
+      ⌜ ObjectMetaV.valid kind m ⌝
   }}}
     @! apimodel.validateObjectMeta #(interface.ok i) #kind
   {{{ RET #interface.nil;
@@ -264,9 +264,9 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
       KObjectV.deepown_l l o 1 ∗
       ⌜ let m := KObjectV.objectmeta o in
         (m.(ObjectMetaV.GenerateName') ≠ ""%go →
-          valid_generate_name m.(ObjectMetaV.GenerateName')) ∧
+          valid_generate_name (KObjectV.kind o) m.(ObjectMetaV.GenerateName')) ∧
         m.(ObjectMetaV.Name') ≠ ""%go ∧
-        valid_name m.(ObjectMetaV.Name') ∧
+        valid_name (KObjectV.kind o) m.(ObjectMetaV.Name') ∧
         m.(ObjectMetaV.Namespace') ≠ ""%go ∧
         valid_namespace m.(ObjectMetaV.Namespace') ∧
         valid_labels m.(ObjectMetaV.Labels') ∧
@@ -279,7 +279,7 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
   {{{ o', RET #interface.nil;
       KObjectV.deepown_l l o' 1 ∗
       ⌜ KObjectV.same_kind o o' ⌝ ∗
-      ⌜ ObjectMetaV.valid (KObjectV.objectmeta o') ⌝ ∗
+      ⌜ ObjectMetaV.valid (KObjectV.kind o') (KObjectV.objectmeta o') ⌝ ∗
       ⌜ ObjectSpecV.valid (KObjectV.spec o') ⌝ ∗
       ⌜ ObjectStatusV.valid (KObjectV.status o') ⌝ ∗
       ⌜ KObjectV.typemeta o' = KObjectV.typemeta o ⌝ ∗

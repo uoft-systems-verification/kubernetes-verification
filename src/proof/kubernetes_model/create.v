@@ -95,9 +95,9 @@ Proof.
   wp_apply (wp_applyValidationAndDefaulting with "[Hdeepown_l]").
   { iFrame.
     iPureIntro.
-    destruct Hvalid as (_ & _ & Hmeta & _).
+    destruct Hvalid as (Hkind & _ & Hmeta & _).
     destruct Hmeta as (Hgn_valid & _ & _ & _ & Hlabels & Hannotations & Howner_refs & Hfinalizers & Hmanaged_fields).
-    split_and!. all: destruct kobj; done.
+    destruct kobj; simpl in Hkind |- *; subst kind; split_and!; done.
   }
   iIntros (kobj1) "(Hdeepown_l & %Hsame_kind & %Hvalid_meta & %Hvalid_spec & %Hvalid_status & %Htypemeta_eq & %Hm_eq &
     %Hcreated_spec & %Hcreated_status)". wp_auto.
@@ -105,7 +105,12 @@ Proof.
     "(%Hl1_not_null1 & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   assert (KObjectV.objectmeta_ptr l1 kobj = KObjectV.objectmeta_ptr l1 kobj1) as ->.
   { destruct kobj, kobj1; done. }
-  wp_apply (wp_validateObjectMeta with "[$Hdeepown_m_l]"). 1: done.
+  assert (KObjectV.kind kobj1 = kind) as Hkind1.
+  { destruct Hvalid as (Hkind & _).
+    destruct kobj, kobj1; simpl in *; subst; done. }
+  wp_apply (wp_validateObjectMeta with "[$Hdeepown_m_l]").
+  { iSplit; first done. iPureIntro.
+    rewrite -Hkind1. exact Hvalid_meta. }
   iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
   iIntros "Hinv_Hown_phys". wp_auto.

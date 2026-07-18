@@ -72,7 +72,7 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   assert (ObjectMetaV.Name' (KObjectV.objectmeta kobj) ≠ ""%go) as Hname_not_empty.
-  { destruct Hvalid as (_ & _ & Hmeta & _). apply ObjectMetaV.valid_name_nonempty_of_valid. done. }
+  { destruct Hvalid as (_ & _ & Hmeta & _). eapply ObjectMetaV.valid_name_nonempty_of_valid. done. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
   iIntros "Hinv_Hown_phys". wp_auto.

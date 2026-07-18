@@ -37,7 +37,7 @@ Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
       OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
       ⌜ PodTemplateSpecV.valid template ⌝ ∗
       ⌜ obj = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
-      ⌜ ObjectMetaV.valid meta ⌝ ∗
+      ⌜ ObjectMetaV.valid ReplicaSetV.kind meta ⌝ ∗
       ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref "ReplicaSet"%go
         meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝
@@ -63,7 +63,7 @@ Lemma wp_GetPodFromTemplate_StatefulSet template_l obj controller_ref_l
       OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
       ⌜ PodTemplateSpecV.valid template ⌝ ∗
       ⌜ obj = interface.mk_ok (go.PointerType v1.StatefulSet) (#set_l) ⌝ ∗
-      ⌜ ObjectMetaV.valid meta ⌝ ∗
+      ⌜ ObjectMetaV.valid StatefulSetV.kind meta ⌝ ∗
       ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref "StatefulSet"%go

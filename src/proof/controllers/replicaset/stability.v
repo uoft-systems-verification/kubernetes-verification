@@ -195,7 +195,7 @@ Proof.
     "(%Hrs_l_not_null & Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
   destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid).
-  assert (ObjectMetaV.valid rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
+  assert (ObjectMetaV.valid ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
   { eapply ObjectMetaV.equiv_except_resource_version_valid.
     - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
     - exact Hrs_meta_valid. }

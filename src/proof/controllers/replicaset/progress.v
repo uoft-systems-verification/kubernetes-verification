@@ -214,7 +214,7 @@ Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pod
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods ++ inactive_pods))) ∗
-      "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid ReplicaSetV.kind rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
       "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝ ∗
       "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
       "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
@@ -311,8 +311,8 @@ Proof.
 	      with "[Hdeepown_l_pod Hown_children_frag]").
 	    { iFrame "#".
 	      iSplit; [iPureIntro; exact Hvalid|].
-	      iSplit; [iPureIntro; apply ObjectMetaV.valid_namespace_nonempty_of_valid; exact Hrs_meta_valid|].
-	      iSplit; [iPureIntro; apply ObjectMetaV.valid_namespace_of_valid; exact Hrs_meta_valid|].
+	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_nonempty_of_valid; exact Hrs_meta_valid|].
+	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_of_valid; exact Hrs_meta_valid|].
 	      iSplit; [iPureIntro; rewrite /ReplicaSetV.key /ReplicaSetV.meta_key /=; done|].
 	      iSplit; [iPureIntro; exact Hpr|].
 	      iSplitL "Hdeepown_l_pod".
@@ -620,7 +620,7 @@ Proof.
     "(%Hrs_l_not_null & Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
   destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid).
-  assert (ObjectMetaV.valid rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
+  assert (ObjectMetaV.valid ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
   { eapply ObjectMetaV.equiv_except_resource_version_valid.
     - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
     - exact Hrs_meta_valid. }

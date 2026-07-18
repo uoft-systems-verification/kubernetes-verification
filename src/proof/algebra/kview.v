@@ -353,7 +353,7 @@ Lemma meta_valid k uid dq meta:
   k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
   k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
   uid = meta.(ObjectMetaV.UID') ∧
-  ObjectMetaV.valid meta.
+  ObjectMetaV.valid k.(KKey.Kind') meta.
 Proof.
   intros Hvalid.
   rewrite /kview_frag in Hvalid.
@@ -376,11 +376,12 @@ Proof.
 	  apply leibniz_equiv in Hmeta_eqv.
 	  assert (Hobj_meta_eq : ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta).
 	  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
+	  subst k.
 	  split.
-	  - subst k. rewrite /KObjectV.key /=.
+	  - rewrite /KObjectV.key /=.
 	    exact (ObjectMetaV.equiv_except_resource_version_name _ _ Hobj_meta_eq).
 	  - split.
-	    + subst k. rewrite /KObjectV.key /=.
+	    + rewrite /KObjectV.key /=.
 	      exact (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hobj_meta_eq).
 	    + split.
 	      * rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). symmetry. exact Huid_obj.
@@ -1859,7 +1860,7 @@ Lemma own_meta_valid {γ k uid dq meta}:
     ⌜ k.(KKey.Name') = meta.(ObjectMetaV.Name') ∧
     k.(KKey.Namespace') = meta.(ObjectMetaV.Namespace') ∧
     uid = meta.(ObjectMetaV.UID') ∧
-    ObjectMetaV.valid meta ⌝.
+    ObjectMetaV.valid k.(KKey.Kind') meta ⌝.
 Proof.
   iIntros "Hmeta".
   iDestruct (own_valid with "Hmeta") as "Hvalid".

@@ -591,7 +591,7 @@ Lemma wp_updateIdentity set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
       "%Hpod_name_len" ∷ ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <= go_int_max ⌝ ∗
       "%Hpod_hostname_len" ∷
         ⌜ length pod.(PodV.ObjectMeta').(ObjectMetaV.Name') <= 63 ⌝ ∗
-      "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid set.(StatefulSetV.ObjectMeta') ⌝ ∗
+      "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid StatefulSetV.kind set.(StatefulSetV.ObjectMeta') ⌝ ∗
       "%Hset_spec_valid" ∷ ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ ∗
       "%Hvalid" ∷
         ⌜ KObjectV.valid_named_create PodV.kind
@@ -647,7 +647,7 @@ Lemma wp_updateStorage set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
       "%Hclaim_names_valid" ∷
         ⌜ ∀ claim_template_name,
             claim_template_name ∈ pvc_claim_template_names set →
-            valid_name (desired_pvc_name
+            valid_name PersistentVolumeClaimV.kind (desired_pvc_name
               set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
               claim_template_name ordinal) ⌝ ∗
       "%Hvalid" ∷
@@ -691,7 +691,7 @@ Lemma wp_newStatefulSetPod (gv : schema.GroupVersion.t) set_l (set : StatefulSet
       "%Hgv_group" ∷ ⌜ gv.(schema.GroupVersion.Group') = "apps"%go ⌝ ∗
       "%Hgv_version" ∷ ⌜ gv.(schema.GroupVersion.Version') = "v1"%go ⌝ ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
-      "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid set.(StatefulSetV.ObjectMeta') ⌝ ∗
+      "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid StatefulSetV.kind set.(StatefulSetV.ObjectMeta') ⌝ ∗
       "%Hset_name_short" ∷
         ⌜ length set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
       "%Hset_spec_valid" ∷ ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ ∗
@@ -699,7 +699,8 @@ Lemma wp_newStatefulSetPod (gv : schema.GroupVersion.t) set_l (set : StatefulSet
       "%Hordinal_nonnegative" ∷ ⌜ 0 <= sint.Z ordinal ⌝ ∗
       "%Hordinal_int32" ∷ ⌜ (sint.nat ordinal <= go_int32_max_nat)%nat ⌝ ∗
       "%Hpod_name_valid" ∷
-        ⌜ valid_name (desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') (sint.nat ordinal)) ⌝ ∗
+        ⌜ valid_name PodV.kind
+            (desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') (sint.nat ordinal)) ⌝ ∗
       "%Hpod_name_len" ∷
         ⌜ Z.of_nat (length (desired_pod_name
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
@@ -711,7 +712,7 @@ Lemma wp_newStatefulSetPod (gv : schema.GroupVersion.t) set_l (set : StatefulSet
       "%Hclaim_names_valid" ∷
         ⌜ ∀ claim_template_name,
             claim_template_name ∈ pvc_claim_template_names set →
-            valid_name (desired_pvc_name
+            valid_name PersistentVolumeClaimV.kind (desired_pvc_name
               set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
               claim_template_name (sint.nat ordinal)) ⌝
   }}}
