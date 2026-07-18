@@ -30,6 +30,11 @@ Axiom deepown : v1.Time.t → t → dfrac → iProp Σ.
 End def.
 End TimeV.
 
+(* Kubernetes permits both fields to be empty.  A non-empty value is validated
+   as a DNS-1123 label:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L4563-L4570 *)
+Axiom valid_dns1123_label : go_string → Prop.
+
 Axiom valid_kind: go_string → Prop.
 
 (* TODO: this definition is incomplete but for now we only care about kind *)
@@ -524,18 +529,13 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-(* Axiom TemplateFieldsV : Type. *)
+
 Record t :=
 mk {
   Volumes' : list VolumeV.t;
   Hostname' : go_string;
   Subdomain' : go_string;
-  (* TemplateFields' : TemplateFieldsV; *)
 
-  (* These copied PodSpec fields are not individually read or written by the
-     StatefulSet controller. They are represented collectively by
-     [TemplateFields'] for template-freshness comparisons after clearing
-     Volumes, Hostname, and Subdomain. *)
   (* InitContainers' : slice.t; *)
   (* Containers' : slice.t; *)
   (* EphemeralContainers' : slice.t; *)
@@ -575,7 +575,11 @@ mk {
   (* Resources' : loc; *)
   (* HostnameOverride' : loc; *)
 }.
-Axiom valid: t → Prop.
+
+Definition valid (spec : t) : Prop :=
+  Forall VolumeV.valid spec.(Volumes') ∧
+  (spec.(Hostname') = ""%go ∨ valid_dns1123_label spec.(Hostname')) ∧
+  (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')).
 
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷
@@ -1188,11 +1192,18 @@ Record t := mk {
   (* PersistentVolumeClaimRetentionPolicy' : loc; *)
   (* Ordinals' : loc; *)
 }.
-Axiom valid: t → Prop.
 
-Axiom valid_replicas :
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
+Definition valid (spec : t) : Prop :=
+  (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
+  PodTemplateSpecV.valid spec.(Template') ∧
+  Forall (λ pvc, PersistentVolumeClaimSpecV.valid pvc.(PersistentVolumeClaimV.Spec')) spec.(VolumeClaimTemplates') ∧
+  (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
+
+Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
 
 Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
