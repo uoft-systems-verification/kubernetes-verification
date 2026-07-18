@@ -30,16 +30,66 @@ Axiom deepown : v1.Time.t → t → dfrac → iProp Σ.
 End def.
 End TimeV.
 
-(* Kubernetes permits both fields to be empty.  A non-empty value is validated
-   as a DNS-1123 label:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L4563-L4570 *)
-Axiom valid_dns1123_label : go_string → Prop.
+Definition byte_dot : w8 := W8 46.  (* ASCII '.' *)
+
+Definition dns1123_lower_alphanumeric (b : w8) : Prop :=
+  (48 ≤ uint.Z b ≤ 57)%Z ∨ (97 ≤ uint.Z b ≤ 122)%Z.
+
+Definition dns1123_label_byte (b : w8) : Prop :=
+  dns1123_lower_alphanumeric b ∨ b = byte_dash.
+
+Fixpoint dns1123_label_tail (previous : w8) (suffix : go_string) : Prop :=
+  match suffix with
+  | [] => dns1123_lower_alphanumeric previous
+  | b :: suffix' =>
+      dns1123_label_byte b ∧ dns1123_label_tail b suffix'
+  end.
+
+Definition dns1123_label_syntax (s : go_string) : Prop :=
+  match s with
+  | [] => False
+  | first :: suffix =>
+      dns1123_lower_alphanumeric first ∧
+      dns1123_label_tail first suffix
+  end.
+
+(* Kubernetes' DNS-1123 label validator applies this ASCII syntax and a
+   63-byte length limit. Callers that allow an empty field handle that case
+   separately:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L176-L202 *)
+Definition valid_dns1123_label (s : go_string) : Prop :=
+  dns1123_label_syntax s ∧ length s ≤ 63.
+
+Definition dns1123_subdomain_byte (b : w8) : Prop :=
+  dns1123_label_byte b ∨ b = byte_dot.
+
+Fixpoint dns1123_subdomain_tail
+    (previous : w8) (suffix : go_string) : Prop :=
+  match suffix with
+  | [] => dns1123_lower_alphanumeric previous
+  | b :: suffix' =>
+      dns1123_subdomain_byte b ∧
+      (previous = byte_dot → dns1123_lower_alphanumeric b) ∧
+      (b = byte_dot → dns1123_lower_alphanumeric previous) ∧
+      dns1123_subdomain_tail b suffix'
+  end.
+
+Definition dns1123_subdomain_syntax (s : go_string) : Prop :=
+  match s with
+  | [] => False
+  | first :: suffix =>
+      dns1123_lower_alphanumeric first ∧
+      dns1123_subdomain_tail first suffix
+  end.
+
+(* Kubernetes limits the complete subdomain to 253 bytes. Its regexp uses the
+   label syntax for dot-separated components without separately imposing the
+   63-byte standalone-label bound on each component:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L205-L231 *)
+Definition valid_dns1123_subdomain (s : go_string) : Prop :=
+  dns1123_subdomain_syntax s ∧ length s ≤ 253.
 
 Axiom valid_kind: go_string → Prop.
-
-(* TODO: this definition is incomplete but for now we only care about kind *)
-Definition valid_typemeta kind tm : Prop :=
-  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
 
 (* Upstream reference: Kubernetes validates CRD `spec.names.kind` by
    lowercasing it and checking it as a DNS-1035 label, which excludes `/`.
@@ -48,15 +98,103 @@ Definition valid_typemeta kind tm : Prop :=
 Axiom valid_kind_slash_free: ∀ kind, valid_kind kind → slash_free kind.
 
 (* Kubernetes selects the name validator from the resource's REST strategy.
-   The current model uses kind as its resource discriminator. *)
-Axiom valid_name: go_string → go_string → Prop.
+   This is a closed-world definition for the four resource kinds represented
+   by KObjectV: StatefulSet uses a DNS-1123 label; Pod, ReplicaSet, and PVC use
+   a DNS-1123 subdomain. An unknown kind has no valid names in this model.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L47-L54
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L749-L757
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L256-L259
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L1860-L1863 *)
+Definition valid_name (kind name : go_string) : Prop :=
+  (kind = "StatefulSet"%go ∧ valid_dns1123_label name) ∨
+  ((kind = "Pod"%go ∨
+    kind = "ReplicaSet"%go ∨
+    kind = "PersistentVolumeClaim"%go) ∧
+   valid_dns1123_subdomain name).
 
 (* After resource-specific validation, the API server applies common metadata
    validation with ValidatePathSegmentName for every resource kind:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L126-L130
    ValidatePathSegmentName rejects names containing `/`:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/path/name.go#L24-L45 *)
-Axiom valid_name_slash_free: ∀ {kind} name, valid_name kind name → slash_free name.
+Lemma dns1123_lower_alphanumeric_not_slash b:
+  dns1123_lower_alphanumeric b → b ≠ byte_slash.
+Proof.
+  unfold dns1123_lower_alphanumeric, byte_slash.
+  intros [Hdigit | Hlower] ->; word.
+Qed.
+
+Lemma dns1123_label_byte_not_slash b:
+  dns1123_label_byte b → b ≠ byte_slash.
+Proof.
+  intros [Halphanumeric | ->].
+  - by apply dns1123_lower_alphanumeric_not_slash.
+  - unfold byte_dash, byte_slash. word.
+Qed.
+
+Lemma dns1123_subdomain_byte_not_slash b:
+  dns1123_subdomain_byte b → b ≠ byte_slash.
+Proof.
+  intros [Hlabel | ->].
+  - by apply dns1123_label_byte_not_slash.
+  - unfold byte_dot, byte_slash. word.
+Qed.
+
+Lemma dns1123_label_tail_slash_free previous suffix:
+  dns1123_label_tail previous suffix → slash_free suffix.
+Proof.
+  unfold slash_free.
+  revert previous.
+  induction suffix as [|b suffix IH]; intros previous Htail; simpl in *.
+  - constructor.
+  - destruct Htail as [Hb Htail].
+    constructor.
+    + by apply dns1123_label_byte_not_slash.
+    + by apply (IH b).
+Qed.
+
+Lemma dns1123_subdomain_tail_slash_free previous suffix:
+  dns1123_subdomain_tail previous suffix → slash_free suffix.
+Proof.
+  unfold slash_free.
+  revert previous.
+  induction suffix as [|b suffix IH]; intros previous Htail; simpl in *.
+  - constructor.
+  - destruct Htail as (Hb & _ & _ & Htail).
+    constructor.
+    + by apply dns1123_subdomain_byte_not_slash.
+    + by apply (IH b).
+Qed.
+
+Lemma valid_dns1123_label_slash_free s:
+  valid_dns1123_label s → slash_free s.
+Proof.
+  intros [Hsyntax _].
+  destruct s as [|first suffix]; simpl in Hsyntax; [contradiction|].
+  destruct Hsyntax as [Hfirst Htail].
+  unfold slash_free. constructor.
+  - by apply dns1123_lower_alphanumeric_not_slash.
+  - exact (dns1123_label_tail_slash_free first suffix Htail).
+Qed.
+
+Lemma valid_dns1123_subdomain_slash_free s:
+  valid_dns1123_subdomain s → slash_free s.
+Proof.
+  intros [Hsyntax _].
+  destruct s as [|first suffix]; simpl in Hsyntax; [contradiction|].
+  destruct Hsyntax as [Hfirst Htail].
+  unfold slash_free. constructor.
+  - by apply dns1123_lower_alphanumeric_not_slash.
+  - exact (dns1123_subdomain_tail_slash_free first suffix Htail).
+Qed.
+
+Lemma valid_name_slash_free {kind} name:
+  valid_name kind name → slash_free name.
+Proof.
+  intros [[_ Hlabel] | [_ Hsubdomain]].
+  - by apply valid_dns1123_label_slash_free.
+  - by apply valid_dns1123_subdomain_slash_free.
+Qed.
 
 Definition valid_generate_name kind generate_name : Prop :=
   (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
@@ -70,8 +208,12 @@ Definition valid_generate_name kind generate_name : Prop :=
   ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧
     valid_name kind generate_name. *)
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
-Axiom valid_namespace: go_string → Prop.
+(* Kubernetes validates a nonempty namespace with ValidateNamespaceName, which
+   is NameIsDNSLabel:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L173-L180
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L60-L63 *)
+Definition valid_namespace (ns : go_string) : Prop :=
+  valid_dns1123_label ns.
 
 (* Object metadata validation applies ValidateNamespaceName to namespaced
    resources:
@@ -80,7 +222,12 @@ Axiom valid_namespace: go_string → Prop.
    permits only lowercase alphanumerics and `-`, and therefore excludes `/`:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L44-L63
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L176-L202 *)
-Axiom valid_namespace_slash_free: ∀ ns, valid_namespace ns → slash_free ns.
+Lemma valid_namespace_slash_free ns:
+  valid_namespace ns → slash_free ns.
+Proof.
+  unfold valid_namespace.
+  apply valid_dns1123_label_slash_free.
+Qed.
 
 Axiom valid_uid: go_string → Prop.
 
@@ -122,6 +269,10 @@ Axiom valid_labels: option (gmap go_string go_string) → Prop.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
 Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+
+(* TODO: this definition is incomplete but for now we only care about kind *)
+Definition valid_typemeta kind tm : Prop :=
+  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
 
 Module OwnerReferenceV.
 Section def.
@@ -2082,7 +2233,8 @@ Proof.
   apply valid_object_has_valid_objectmeta in Hwf.
   destruct obj; simpl in *; subst key; simpl;
   destruct Hwf as [_ [Hname_ne [Hname_valid [Hns_ne Hns_valid]]]];
-  repeat split; intuition.
+  destruct Hns_valid as [Hns_valid _];
+  exact (conj Hname_ne (conj Hname_valid (conj Hns_ne Hns_valid))).
 Qed.
 
 Lemma valid_owner_references_has_at_most_one_controller_parent os:
