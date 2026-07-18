@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export pure_objects.
+From New.proof.kubernetes_types Require Export prelude.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
 

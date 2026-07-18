@@ -18,7 +18,7 @@ make -j10 src/proof/[FILE].vo
 
 Examples:
 - `make -j10 src/proof/get.vo`
-- `make -j10 src/proof/pure_objects.vo`
+- `make -j10 src/proof/kubernetes_types/prelude.vo`
 
 ## Project Structure
 

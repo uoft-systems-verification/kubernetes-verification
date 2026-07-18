@@ -1,5 +1,5 @@
 From New.proof Require Import prelude.
-From New.proof Require Export pure_objects.
+From New.proof.kubernetes_types Require Export prelude.
 From New.proof.algebra Require Import constrained_gset.
 
 (* This predicate is intentionally axiomatized. The concrete definition is

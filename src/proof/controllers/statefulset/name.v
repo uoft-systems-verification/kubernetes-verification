@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.string Require Export prefix_suffix.
-From New.proof Require Export pure_objects.
+From New.proof.kubernetes_types Require Export prelude.
 From New.proof Require Export external_wp.
 
 Definition desired_pod_name (set_name : go_string) (ordinal : nat) : go_string :=

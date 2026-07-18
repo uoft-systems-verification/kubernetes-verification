@@ -3,7 +3,7 @@ From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Export pure_objects.
+From New.proof.kubernetes_types Require Export prelude.
 From New.proof.big_op Require Export big_sepL big_sepM.
 From New.proof.algebra Require Export kview cview tombstone reserved_keys.
 

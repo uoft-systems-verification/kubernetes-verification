@@ -1,5 +1,6 @@
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From New.proof Require Import prelude empty_ffi pure_objects.
+From New.proof Require Import prelude empty_ffi.
+From New.proof.kubernetes_types Require Import prelude.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
