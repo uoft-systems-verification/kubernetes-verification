@@ -45,17 +45,18 @@ Definition valid_typemeta kind tm : Prop :=
    lowercasing it and checking it as a DNS-1035 label, which excludes `/`.
    See:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation/validation.go#L762-L763 *)
-Lemma valid_kind_slash_free kind:
-  valid_kind kind → slash_free kind.
-Proof. Admitted.
+Axiom valid_kind_slash_free: ∀ kind, valid_kind kind → slash_free kind.
 
 (* Kubernetes selects the name validator from the resource's REST strategy.
    The current model uses kind as its resource discriminator. *)
 Axiom valid_name: go_string → go_string → Prop.
 
-Lemma valid_name_slash_free {kind} name:
-  valid_name kind name → slash_free name.
-Proof. Admitted.
+(* After resource-specific validation, the API server applies common metadata
+   validation with ValidatePathSegmentName for every resource kind:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L126-L130
+   ValidatePathSegmentName rejects names containing `/`:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/path/name.go#L24-L45 *)
+Axiom valid_name_slash_free: ∀ {kind} name, valid_name kind name → slash_free name.
 
 Definition valid_generate_name kind generate_name : Prop :=
   (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
@@ -72,27 +73,45 @@ Definition valid_generate_name kind generate_name : Prop :=
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L177 *)
 Axiom valid_namespace: go_string → Prop.
 
-Lemma valid_namespace_slash_free ns:
-  valid_namespace ns → slash_free ns.
-Proof. Admitted.
+(* Object metadata validation applies ValidateNamespaceName to namespaced
+   resources:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L173-L180
+   ValidateNamespaceName is NameIsDNSLabel, whose DNS-1123 label regexp
+   permits only lowercase alphanumerics and `-`, and therefore excludes `/`:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L44-L63
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L176-L202 *)
+Axiom valid_namespace_slash_free: ∀ ns, valid_namespace ns → slash_free ns.
 
 Axiom valid_uid: go_string → Prop.
 
-Lemma valid_uid_non_empty uid:
-  valid_uid uid → uid ≠ ""%go.
-Proof. Admitted.
+(* The generic registry initializes metadata on create with
+   FillObjectMetaSystemFields, which assigns uuid.NewUUID():
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L477-L488
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/meta.go#L38-L42
+   Kubernetes' NewUUID uses google/uuid's canonical 36-byte string encoding,
+   so a system-assigned UID is nonempty:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/uuid/uuid.go#L25-L26
+   https://github.com/google/uuid/blob/v1.6.0/uuid.go#L244-L268 *)
+Axiom valid_uid_non_empty: ∀ uid, valid_uid uid → uid ≠ ""%go.
 
-(* This holds in practice because uuid does not contain slash *)
-Lemma valid_uid_slash_free uid:
-  valid_uid uid → slash_free uid.
-Proof. Admitted.
+(* The same canonical UUID encoder emits only hexadecimal digits and `-`, so
+   a system-assigned UID cannot contain `/`:
+   https://github.com/google/uuid/blob/v1.6.0/uuid.go#L244-L268 *)
+Axiom valid_uid_slash_free: ∀ uid, valid_uid uid → slash_free uid.
 
-(* A valid resource version should be parsable to a int64, which implies it's not empty *)
+(* This predicate describes a resource version assigned to a persisted object,
+   rather than the empty resource version accepted in some request paths. *)
 Axiom valid_resource_version: go_string → Prop.
 
-Lemma valid_resource_version_non_empty rv:
-  valid_resource_version rv → rv ≠ ""%go.
-Proof. Admitted.
+(* etcd's MVCC revision counter starts at 1 and advances on writes:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/vendor/go.etcd.io/etcd/server/v3/storage/mvcc/kvstore.go#L96-L104
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/vendor/go.etcd.io/etcd/server/v3/storage/mvcc/kvstore_txn.go#L182-L188
+   Kubernetes passes that positive revision to APIObjectVersioner when decoding
+   a stored object, and APIObjectVersioner formats every nonzero revision as a
+   base-10 string, so the assigned resource version is nonempty:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/etcd3/decoder.go#L59-L74
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/api_object_versioner.go#L32-L43 *)
+Axiom valid_resource_version_non_empty: ∀ rv, valid_resource_version rv → rv ≠ ""%go.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
 Definition valid_generation (generation: w64) : Prop :=
