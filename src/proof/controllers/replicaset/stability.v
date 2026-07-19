@@ -2,7 +2,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
-From New.proof Require Export external_wp.
+From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.replicaset Require Export progress.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.

@@ -1,4 +1,5 @@
 From New.proof Require Export prelude empty_ffi.
+(* Shared weakest-precondition helpers for external and generated Go code. *)
 From New.code Require Export fmt.
 From New.code.k8s_io.api.apps Require Export v1.
 From New.code.k8s_io.apimachinery.pkg Require Export runtime.

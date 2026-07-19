@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.string Require Export prefix_suffix.
 From New.proof.kubernetes_types Require Export prelude.
-From New.proof Require Export external_wp.
+From New.proof Require Export wp_helpers.
 
 Definition desired_pod_name (set_name : go_string) (ordinal : nat) : go_string :=
   set_name ++ "-"%go ++ decimal_string ordinal.

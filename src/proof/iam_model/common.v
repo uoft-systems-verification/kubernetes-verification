@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof Require Import external_wp.
+From New.proof Require Import wp_helpers.
 From New.proof.map Require Import for_range.
 From New.proof.iam_model Require Export iammodel_init.
 From New.proof.iam_model Require Export inv.
