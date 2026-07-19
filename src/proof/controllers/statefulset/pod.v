@@ -189,10 +189,74 @@ Proof.
   - rewrite lookup_insert_eq. done.
 Qed.
 
-Parameter pod_storage_matches : StatefulSetV.t → PodV.t → Prop.
-Axiom pod_storage_matches_decision : ∀ sts pod,
-  Decision (pod_storage_matches sts pod).
-#[global] Existing Instance pod_storage_matches_decision.
+(* [ordinalOf] parses the decimal suffix following the last dash, without
+   checking that the preceding parent name belongs to the StatefulSet. *)
+Definition pod_ordinal_suffix (pod_name : go_string) : option go_string :=
+  match list_find (λ b, b = byte_dash) (reverse pod_name) with
+  | Some (idx, _) => Some (reverse (take idx (reverse pod_name)))
+  | None => None
+  end.
+
+Definition parse_pod_ordinal (pod_name : go_string) : option nat :=
+  suffix ← pod_ordinal_suffix pod_name;
+  parse_decimal_string suffix.
+
+(* Go map insertion overwrites an earlier volume with the same name, so the
+   left fold preserves the last volume from the Pod's volume slice. *)
+Definition pod_volumes_map_insert
+    (volumes : gmap go_string VolumeV.t) (volume : VolumeV.t) :
+    gmap go_string VolumeV.t :=
+  <[volume.(VolumeV.Name') := volume]> volumes.
+
+Definition pod_volumes_map_of_list (volumes : list VolumeV.t) :
+    gmap go_string VolumeV.t :=
+  fold_left pod_volumes_map_insert volumes ∅.
+
+Definition pod_volume_claim_matches
+    (volumes : gmap go_string VolumeV.t) (set_name : go_string)
+    (ordinal : nat) (claim_template_name : go_string) : Prop :=
+  match volumes !! claim_template_name with
+  | Some volume =>
+      match volume.(VolumeV.VolumeSource').(VolumeSourceV.PersistentVolumeClaim') with
+      | Some pvc =>
+          pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName') =
+            desired_pvc_name set_name claim_template_name ordinal
+      | None => False
+      end
+  | None => False
+  end.
+
+#[global] Instance pod_volume_claim_matches_decision volumes set_name ordinal
+    claim_template_name :
+    Decision (pod_volume_claim_matches volumes set_name ordinal
+      claim_template_name).
+Proof.
+  unfold pod_volume_claim_matches.
+  destruct (volumes !! claim_template_name) as [volume|]; [|apply _].
+  destruct volume.(VolumeV.VolumeSource').(VolumeSourceV.PersistentVolumeClaim');
+    apply _.
+Defined.
+
+Definition pod_storage_matches (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
+  match parse_pod_ordinal
+      pod.(PodV.ObjectMeta').(ObjectMetaV.Name') with
+  | Some ordinal =>
+      (ordinal <= go_int32_max_nat)%nat ∧
+      Forall
+        (pod_volume_claim_matches
+          (pod_volumes_map_of_list pod.(PodV.Spec').(PodSpecV.Volumes'))
+          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
+        (pvc_claim_template_names set)
+  | None => False
+  end.
+
+#[global] Instance pod_storage_matches_decision set pod :
+    Decision (pod_storage_matches set pod).
+Proof.
+  unfold pod_storage_matches.
+  destruct (parse_pod_ordinal
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); apply _.
+Defined.
 
 (* The template-controlled PodSpec fields checked by podSpecMatches after
    removing the identity and storage fields managed in place. *)
