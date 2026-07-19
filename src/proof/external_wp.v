@@ -17,54 +17,17 @@ Definition statefulset_pod_name_label : go_string :=
 Definition pod_index_label : go_string :=
   "apps.kubernetes.io/pod-index"%go.
 
-(* Goose leaves the underlying method sets of these named Kubernetes
-   interfaces opaque.  These rules record the pure Go interface-packaging
-   result shared by the controller proofs. *)
-Axiom pure_wp_convert_statefulset_to_runtime_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)
-      code.k8s_io.apimachinery.pkg.runtime.runtime.Object (#l))
-    (#(interface.mk_ok
-      (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #l)).
-#[global] Existing Instance pure_wp_convert_statefulset_to_runtime_object.
-
-Axiom pure_wp_convert_statefulset_to_meta_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)
-      code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (#l))
-    (#(interface.mk_ok
-      (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #l)).
-#[global] Existing Instance pure_wp_convert_statefulset_to_meta_object.
-
-Axiom pure_wp_convert_replicaset_to_runtime_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)
-      code.k8s_io.apimachinery.pkg.runtime.runtime.Object (#l))
-    (#(interface.mk_ok
-      (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #l)).
-#[global] Existing Instance pure_wp_convert_replicaset_to_runtime_object.
-
-Axiom pure_wp_convert_replicaset_to_meta_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)
-      code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (#l))
-    (#(interface.mk_ok
-      (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #l)).
-#[global] Existing Instance pure_wp_convert_replicaset_to_meta_object.
-
-Axiom pure_wp_convert_statefulset_pod_name_label :
-  PureWp True
-    (Convert go.untyped_string go.string
-      code.k8s_io.api.apps.v1.v1.StatefulSetPodNameLabel)
-    #statefulset_pod_name_label.
-#[global] Existing Instance pure_wp_convert_statefulset_pod_name_label.
-
-Axiom pure_wp_convert_pod_index_label :
-  PureWp True
-    (Convert go.untyped_string go.string
-      code.k8s_io.api.apps.v1.v1.PodIndexLabel)
-    #pod_index_label.
-#[global] Existing Instance pure_wp_convert_pod_index_label.
+(* Shared pure Go interface-packaging rule for pointer values. *)
+Lemma pure_wp_convert_pointer_to_interface t to elems
+    `{!to ≤u go.InterfaceType elems} (l : loc) :
+  PureWp True (Convert (go.PointerType t) to (#l))
+    (#(interface.mk_ok (go.PointerType t) #l)).
+Proof.
+  apply pure_wp_go_step_det.
+  apply (@go.convert_to_interface _ _ _ _ _ (#l) _
+    (go.PointerType t) _ _ _ _).
+Qed.
+#[global] Existing Instance pure_wp_convert_pointer_to_interface.
 
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
   {{{ is_pkg_init fmt ∗

@@ -240,9 +240,9 @@ Axiom DeprecatedRollbackTo : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext},
 
 Axiom DeprecatedTemplateGeneration : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatefulSetPodNameLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition StatefulSetPodNameLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"statefulset.kubernetes.io/pod-name"%go.
 
-Axiom PodIndexLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition PodIndexLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"apps.kubernetes.io/pod-index"%go.
 
 Axiom OrderedReadyPodManagement : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 

@@ -528,14 +528,17 @@ Proof.
       assert (Hpod_name_lookup :
           labels !! statefulset_pod_name_label =
             Some pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
-      { destruct (labels !! statefulset_pod_name_label) as [label|]
+      { unfold statefulset_pod_name_label.
+        destruct (labels !! "statefulset.kubernetes.io/pod-name"%go) as [label|]
           eqn:Hlookup.
         - simpl in e3. f_equal.
           rewrite -Hpod_meta_Hdeepown_name. exact e3.
         - simpl in e3. exfalso. apply Hpod_name_nonempty. by rewrite -e3. }
       assert (Hpod_index_lookup :
           labels !! pod_index_label = Some (decimal_string (sint.nat ordinal))).
-      { destruct (labels !! pod_index_label) as [label|] eqn:Hlookup.
+      { unfold pod_index_label.
+        destruct (labels !! "apps.kubernetes.io/pod-index"%go) as [label|]
+          eqn:Hlookup.
         - simpl in e4. by f_equal.
         - simpl in e4.
           pose proof (parse_decimal_string_decimal_string

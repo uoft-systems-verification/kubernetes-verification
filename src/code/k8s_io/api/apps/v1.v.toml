@@ -5,6 +5,8 @@ translate = [
     "ReplicaSetCondition",
     "ReplicaSetConditionType",
     "GroupName",
+    "StatefulSetPodNameLabel",
+    "PodIndexLabel",
     "SchemeGroupVersion",
     "StatefulSet",
     "StatefulSetSpec",
