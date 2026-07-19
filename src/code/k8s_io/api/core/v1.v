@@ -1229,12 +1229,6 @@ Definition ImageVolumeSource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go
 
 #[global] Opaque ImageVolumeSource.
 
-Axiom Volumeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom VolumeSourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PersistentVolumeSourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PersistentVolumeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -4388,52 +4382,221 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (map_WindowsSecurityContextOptions'init #()))
       ).
 
-Module Volume.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End Volume.
-
-Class Volume_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] Volume_type_repr  :: go.TypeReprUnderlying Volumeⁱᵐᵖˡ Volume.t;
-  #[global] Volume_underlying :: (Volume) <u (Volumeⁱᵐᵖˡ);
-  #[global] Volumeⁱᵐᵖˡ_underlying :: (Volumeⁱᵐᵖˡ) ↓u (Volumeⁱᵐᵖˡ);
-}.
-
 Module VolumeSource.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  HostPath' : loc;
+  EmptyDir' : loc;
+  GCEPersistentDisk' : loc;
+  AWSElasticBlockStore' : loc;
+  GitRepo' : loc;
+  Secret' : loc;
+  NFS' : loc;
+  ISCSI' : loc;
+  Glusterfs' : loc;
+  PersistentVolumeClaim' : loc;
+  RBD' : loc;
+  FlexVolume' : loc;
+  Cinder' : loc;
+  CephFS' : loc;
+  Flocker' : loc;
+  DownwardAPI' : loc;
+  FC' : loc;
+  AzureFile' : loc;
+  ConfigMap' : loc;
+  VsphereVolume' : loc;
+  Quobyte' : loc;
+  AzureDisk' : loc;
+  PhotonPersistentDisk' : loc;
+  Projected' : loc;
+  PortworxVolume' : loc;
+  ScaleIO' : loc;
+  StorageOS' : loc;
+  CSI' : loc;
+  Ephemeral' : loc;
+  Image' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End VolumeSource.
+
+Definition VolumeSource'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "HostPath"%go (go.PointerType HostPathVolumeSource));
+  (go.FieldDecl "EmptyDir"%go (go.PointerType EmptyDirVolumeSource));
+  (go.FieldDecl "GCEPersistentDisk"%go (go.PointerType GCEPersistentDiskVolumeSource));
+  (go.FieldDecl "AWSElasticBlockStore"%go (go.PointerType AWSElasticBlockStoreVolumeSource));
+  (go.FieldDecl "GitRepo"%go (go.PointerType GitRepoVolumeSource));
+  (go.FieldDecl "Secret"%go (go.PointerType SecretVolumeSource));
+  (go.FieldDecl "NFS"%go (go.PointerType NFSVolumeSource));
+  (go.FieldDecl "ISCSI"%go (go.PointerType ISCSIVolumeSource));
+  (go.FieldDecl "Glusterfs"%go (go.PointerType GlusterfsVolumeSource));
+  (go.FieldDecl "PersistentVolumeClaim"%go (go.PointerType PersistentVolumeClaimVolumeSource));
+  (go.FieldDecl "RBD"%go (go.PointerType RBDVolumeSource));
+  (go.FieldDecl "FlexVolume"%go (go.PointerType FlexVolumeSource));
+  (go.FieldDecl "Cinder"%go (go.PointerType CinderVolumeSource));
+  (go.FieldDecl "CephFS"%go (go.PointerType CephFSVolumeSource));
+  (go.FieldDecl "Flocker"%go (go.PointerType FlockerVolumeSource));
+  (go.FieldDecl "DownwardAPI"%go (go.PointerType DownwardAPIVolumeSource));
+  (go.FieldDecl "FC"%go (go.PointerType FCVolumeSource));
+  (go.FieldDecl "AzureFile"%go (go.PointerType AzureFileVolumeSource));
+  (go.FieldDecl "ConfigMap"%go (go.PointerType ConfigMapVolumeSource));
+  (go.FieldDecl "VsphereVolume"%go (go.PointerType VsphereVirtualDiskVolumeSource));
+  (go.FieldDecl "Quobyte"%go (go.PointerType QuobyteVolumeSource));
+  (go.FieldDecl "AzureDisk"%go (go.PointerType AzureDiskVolumeSource));
+  (go.FieldDecl "PhotonPersistentDisk"%go (go.PointerType PhotonPersistentDiskVolumeSource));
+  (go.FieldDecl "Projected"%go (go.PointerType ProjectedVolumeSource));
+  (go.FieldDecl "PortworxVolume"%go (go.PointerType PortworxVolumeSource));
+  (go.FieldDecl "ScaleIO"%go (go.PointerType ScaleIOVolumeSource));
+  (go.FieldDecl "StorageOS"%go (go.PointerType StorageOSVolumeSource));
+  (go.FieldDecl "CSI"%go (go.PointerType CSIVolumeSource));
+  (go.FieldDecl "Ephemeral"%go (go.PointerType EphemeralVolumeSource));
+  (go.FieldDecl "Image"%go (go.PointerType ImageVolumeSource))
+].
+Program Definition VolumeSource'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (VolumeSource'fds_unsealed).
+Global Instance equals_unfold_VolumeSource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : VolumeSource'fds =→ VolumeSource'fds_unsealed.
+Proof. rewrite /VolumeSource'fds seal_eq //. Qed.
+
+Definition VolumeSourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (VolumeSource'fds).
 
 Class VolumeSource_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] VolumeSource_type_repr  :: go.TypeReprUnderlying VolumeSourceⁱᵐᵖˡ VolumeSource.t;
   #[global] VolumeSource_underlying :: (VolumeSource) <u (VolumeSourceⁱᵐᵖˡ);
-  #[global] VolumeSourceⁱᵐᵖˡ_underlying :: (VolumeSourceⁱᵐᵖˡ) ↓u (VolumeSourceⁱᵐᵖˡ);
+  #[global] VolumeSource_get_HostPath (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "HostPath", #x⟧ ⤳[under] #x.(VolumeSource.HostPath');
+  #[global] VolumeSource_set_HostPath (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "HostPath", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.HostPath' := y|>);
+  #[global] VolumeSource_get_EmptyDir (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "EmptyDir", #x⟧ ⤳[under] #x.(VolumeSource.EmptyDir');
+  #[global] VolumeSource_set_EmptyDir (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "EmptyDir", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.EmptyDir' := y|>);
+  #[global] VolumeSource_get_GCEPersistentDisk (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "GCEPersistentDisk", #x⟧ ⤳[under] #x.(VolumeSource.GCEPersistentDisk');
+  #[global] VolumeSource_set_GCEPersistentDisk (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "GCEPersistentDisk", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.GCEPersistentDisk' := y|>);
+  #[global] VolumeSource_get_AWSElasticBlockStore (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "AWSElasticBlockStore", #x⟧ ⤳[under] #x.(VolumeSource.AWSElasticBlockStore');
+  #[global] VolumeSource_set_AWSElasticBlockStore (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "AWSElasticBlockStore", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.AWSElasticBlockStore' := y|>);
+  #[global] VolumeSource_get_GitRepo (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "GitRepo", #x⟧ ⤳[under] #x.(VolumeSource.GitRepo');
+  #[global] VolumeSource_set_GitRepo (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "GitRepo", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.GitRepo' := y|>);
+  #[global] VolumeSource_get_Secret (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Secret", #x⟧ ⤳[under] #x.(VolumeSource.Secret');
+  #[global] VolumeSource_set_Secret (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Secret", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Secret' := y|>);
+  #[global] VolumeSource_get_NFS (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "NFS", #x⟧ ⤳[under] #x.(VolumeSource.NFS');
+  #[global] VolumeSource_set_NFS (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "NFS", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.NFS' := y|>);
+  #[global] VolumeSource_get_ISCSI (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "ISCSI", #x⟧ ⤳[under] #x.(VolumeSource.ISCSI');
+  #[global] VolumeSource_set_ISCSI (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "ISCSI", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.ISCSI' := y|>);
+  #[global] VolumeSource_get_Glusterfs (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Glusterfs", #x⟧ ⤳[under] #x.(VolumeSource.Glusterfs');
+  #[global] VolumeSource_set_Glusterfs (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Glusterfs", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Glusterfs' := y|>);
+  #[global] VolumeSource_get_PersistentVolumeClaim (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "PersistentVolumeClaim", #x⟧ ⤳[under] #x.(VolumeSource.PersistentVolumeClaim');
+  #[global] VolumeSource_set_PersistentVolumeClaim (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "PersistentVolumeClaim", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.PersistentVolumeClaim' := y|>);
+  #[global] VolumeSource_get_RBD (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "RBD", #x⟧ ⤳[under] #x.(VolumeSource.RBD');
+  #[global] VolumeSource_set_RBD (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "RBD", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.RBD' := y|>);
+  #[global] VolumeSource_get_FlexVolume (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "FlexVolume", #x⟧ ⤳[under] #x.(VolumeSource.FlexVolume');
+  #[global] VolumeSource_set_FlexVolume (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "FlexVolume", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.FlexVolume' := y|>);
+  #[global] VolumeSource_get_Cinder (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Cinder", #x⟧ ⤳[under] #x.(VolumeSource.Cinder');
+  #[global] VolumeSource_set_Cinder (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Cinder", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Cinder' := y|>);
+  #[global] VolumeSource_get_CephFS (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "CephFS", #x⟧ ⤳[under] #x.(VolumeSource.CephFS');
+  #[global] VolumeSource_set_CephFS (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "CephFS", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.CephFS' := y|>);
+  #[global] VolumeSource_get_Flocker (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Flocker", #x⟧ ⤳[under] #x.(VolumeSource.Flocker');
+  #[global] VolumeSource_set_Flocker (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Flocker", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Flocker' := y|>);
+  #[global] VolumeSource_get_DownwardAPI (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "DownwardAPI", #x⟧ ⤳[under] #x.(VolumeSource.DownwardAPI');
+  #[global] VolumeSource_set_DownwardAPI (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "DownwardAPI", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.DownwardAPI' := y|>);
+  #[global] VolumeSource_get_FC (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "FC", #x⟧ ⤳[under] #x.(VolumeSource.FC');
+  #[global] VolumeSource_set_FC (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "FC", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.FC' := y|>);
+  #[global] VolumeSource_get_AzureFile (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "AzureFile", #x⟧ ⤳[under] #x.(VolumeSource.AzureFile');
+  #[global] VolumeSource_set_AzureFile (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "AzureFile", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.AzureFile' := y|>);
+  #[global] VolumeSource_get_ConfigMap (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "ConfigMap", #x⟧ ⤳[under] #x.(VolumeSource.ConfigMap');
+  #[global] VolumeSource_set_ConfigMap (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "ConfigMap", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.ConfigMap' := y|>);
+  #[global] VolumeSource_get_VsphereVolume (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "VsphereVolume", #x⟧ ⤳[under] #x.(VolumeSource.VsphereVolume');
+  #[global] VolumeSource_set_VsphereVolume (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "VsphereVolume", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.VsphereVolume' := y|>);
+  #[global] VolumeSource_get_Quobyte (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Quobyte", #x⟧ ⤳[under] #x.(VolumeSource.Quobyte');
+  #[global] VolumeSource_set_Quobyte (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Quobyte", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Quobyte' := y|>);
+  #[global] VolumeSource_get_AzureDisk (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "AzureDisk", #x⟧ ⤳[under] #x.(VolumeSource.AzureDisk');
+  #[global] VolumeSource_set_AzureDisk (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "AzureDisk", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.AzureDisk' := y|>);
+  #[global] VolumeSource_get_PhotonPersistentDisk (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "PhotonPersistentDisk", #x⟧ ⤳[under] #x.(VolumeSource.PhotonPersistentDisk');
+  #[global] VolumeSource_set_PhotonPersistentDisk (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "PhotonPersistentDisk", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.PhotonPersistentDisk' := y|>);
+  #[global] VolumeSource_get_Projected (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Projected", #x⟧ ⤳[under] #x.(VolumeSource.Projected');
+  #[global] VolumeSource_set_Projected (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Projected", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Projected' := y|>);
+  #[global] VolumeSource_get_PortworxVolume (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "PortworxVolume", #x⟧ ⤳[under] #x.(VolumeSource.PortworxVolume');
+  #[global] VolumeSource_set_PortworxVolume (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "PortworxVolume", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.PortworxVolume' := y|>);
+  #[global] VolumeSource_get_ScaleIO (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "ScaleIO", #x⟧ ⤳[under] #x.(VolumeSource.ScaleIO');
+  #[global] VolumeSource_set_ScaleIO (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "ScaleIO", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.ScaleIO' := y|>);
+  #[global] VolumeSource_get_StorageOS (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "StorageOS", #x⟧ ⤳[under] #x.(VolumeSource.StorageOS');
+  #[global] VolumeSource_set_StorageOS (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "StorageOS", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.StorageOS' := y|>);
+  #[global] VolumeSource_get_CSI (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "CSI", #x⟧ ⤳[under] #x.(VolumeSource.CSI');
+  #[global] VolumeSource_set_CSI (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "CSI", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.CSI' := y|>);
+  #[global] VolumeSource_get_Ephemeral (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Ephemeral", #x⟧ ⤳[under] #x.(VolumeSource.Ephemeral');
+  #[global] VolumeSource_set_Ephemeral (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Ephemeral", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Ephemeral' := y|>);
+  #[global] VolumeSource_get_Image (x : VolumeSource.t) :: ⟦StructFieldGet (VolumeSourceⁱᵐᵖˡ) "Image", #x⟧ ⤳[under] #x.(VolumeSource.Image');
+  #[global] VolumeSource_set_Image (x : VolumeSource.t) y :: ⟦StructFieldSet (VolumeSourceⁱᵐᵖˡ) "Image", (#x, #y)⟧ ⤳[under] #(x <|VolumeSource.Image' := y|>);
+}.
+
+Module Volume.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Name' : go_string;
+  VolumeSource' : v1.VolumeSource.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+End Volume.
+
+Definition Volume'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Name"%go go.string);
+  (go.EmbeddedField "VolumeSource"%go VolumeSource)
+].
+Program Definition Volume'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Volume'fds_unsealed).
+Global Instance equals_unfold_Volume {ext : ffi_syntax} {go_gctx : GoGlobalContext} : Volume'fds =→ Volume'fds_unsealed.
+Proof. rewrite /Volume'fds seal_eq //. Qed.
+
+Definition Volumeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (Volume'fds).
+
+Class Volume_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] Volume_type_repr  :: go.TypeReprUnderlying Volumeⁱᵐᵖˡ Volume.t;
+  #[global] Volume_underlying :: (Volume) <u (Volumeⁱᵐᵖˡ);
+  #[global] Volume_get_Name (x : Volume.t) :: ⟦StructFieldGet (Volumeⁱᵐᵖˡ) "Name", #x⟧ ⤳[under] #x.(Volume.Name');
+  #[global] Volume_set_Name (x : Volume.t) y :: ⟦StructFieldSet (Volumeⁱᵐᵖˡ) "Name", (#x, #y)⟧ ⤳[under] #(x <|Volume.Name' := y|>);
+  #[global] Volume_get_VolumeSource (x : Volume.t) :: ⟦StructFieldGet (Volumeⁱᵐᵖˡ) "VolumeSource", #x⟧ ⤳[under] #x.(Volume.VolumeSource');
+  #[global] Volume_set_VolumeSource (x : Volume.t) y :: ⟦StructFieldSet (Volumeⁱᵐᵖˡ) "VolumeSource", (#x, #y)⟧ ⤳[under] #(x <|Volume.VolumeSource' := y|>);
 }.
 
 Module PersistentVolumeClaimVolumeSource.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  ClaimName' : go_string;
+  ReadOnly' : bool;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimVolumeSource.
+
+Definition PersistentVolumeClaimVolumeSource'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "ClaimName"%go go.string);
+  (go.FieldDecl "ReadOnly"%go go.bool)
+].
+Program Definition PersistentVolumeClaimVolumeSource'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PersistentVolumeClaimVolumeSource'fds_unsealed).
+Global Instance equals_unfold_PersistentVolumeClaimVolumeSource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PersistentVolumeClaimVolumeSource'fds =→ PersistentVolumeClaimVolumeSource'fds_unsealed.
+Proof. rewrite /PersistentVolumeClaimVolumeSource'fds seal_eq //. Qed.
+
+Definition PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PersistentVolumeClaimVolumeSource'fds).
 
 Class PersistentVolumeClaimVolumeSource_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PersistentVolumeClaimVolumeSource_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ PersistentVolumeClaimVolumeSource.t;
   #[global] PersistentVolumeClaimVolumeSource_underlying :: (PersistentVolumeClaimVolumeSource) <u (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ) ↓u (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimVolumeSource_get_ClaimName (x : PersistentVolumeClaimVolumeSource.t) :: ⟦StructFieldGet (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ) "ClaimName", #x⟧ ⤳[under] #x.(PersistentVolumeClaimVolumeSource.ClaimName');
+  #[global] PersistentVolumeClaimVolumeSource_set_ClaimName (x : PersistentVolumeClaimVolumeSource.t) y :: ⟦StructFieldSet (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ) "ClaimName", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimVolumeSource.ClaimName' := y|>);
+  #[global] PersistentVolumeClaimVolumeSource_get_ReadOnly (x : PersistentVolumeClaimVolumeSource.t) :: ⟦StructFieldGet (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ) "ReadOnly", #x⟧ ⤳[under] #x.(PersistentVolumeClaimVolumeSource.ReadOnly');
+  #[global] PersistentVolumeClaimVolumeSource_set_ReadOnly (x : PersistentVolumeClaimVolumeSource.t) y :: ⟦StructFieldSet (PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ) "ReadOnly", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimVolumeSource.ReadOnly' := y|>);
 }.
 
 Module PersistentVolumeSource.

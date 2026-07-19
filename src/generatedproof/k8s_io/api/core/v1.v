@@ -9,26 +9,6 @@ Require Export New.code.k8s_io.api.core.v1.
 Set Default Proof Using "Type".
 
 Module v1.
-Module Volume.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance Volume_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Volume.t). Admitted.
-
-#[global] Instance Volume_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.Volume.t) (v1.Volumeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End Volume.
-
 Module VolumeSource.
 Section def.
 
@@ -38,16 +18,2260 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeSource.t). Admitted.
+#[global]Program Instance VolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "HostPath" ∷ l.[(v1.VolumeSource.t), "HostPath"] ↦{dq} v.(v1.VolumeSource.HostPath') ∗
+      "EmptyDir" ∷ l.[(v1.VolumeSource.t), "EmptyDir"] ↦{dq} v.(v1.VolumeSource.EmptyDir') ∗
+      "GCEPersistentDisk" ∷ l.[(v1.VolumeSource.t), "GCEPersistentDisk"] ↦{dq} v.(v1.VolumeSource.GCEPersistentDisk') ∗
+      "AWSElasticBlockStore" ∷ l.[(v1.VolumeSource.t), "AWSElasticBlockStore"] ↦{dq} v.(v1.VolumeSource.AWSElasticBlockStore') ∗
+      "GitRepo" ∷ l.[(v1.VolumeSource.t), "GitRepo"] ↦{dq} v.(v1.VolumeSource.GitRepo') ∗
+      "Secret" ∷ l.[(v1.VolumeSource.t), "Secret"] ↦{dq} v.(v1.VolumeSource.Secret') ∗
+      "NFS" ∷ l.[(v1.VolumeSource.t), "NFS"] ↦{dq} v.(v1.VolumeSource.NFS') ∗
+      "ISCSI" ∷ l.[(v1.VolumeSource.t), "ISCSI"] ↦{dq} v.(v1.VolumeSource.ISCSI') ∗
+      "Glusterfs" ∷ l.[(v1.VolumeSource.t), "Glusterfs"] ↦{dq} v.(v1.VolumeSource.Glusterfs') ∗
+      "PersistentVolumeClaim" ∷ l.[(v1.VolumeSource.t), "PersistentVolumeClaim"] ↦{dq} v.(v1.VolumeSource.PersistentVolumeClaim') ∗
+      "RBD" ∷ l.[(v1.VolumeSource.t), "RBD"] ↦{dq} v.(v1.VolumeSource.RBD') ∗
+      "FlexVolume" ∷ l.[(v1.VolumeSource.t), "FlexVolume"] ↦{dq} v.(v1.VolumeSource.FlexVolume') ∗
+      "Cinder" ∷ l.[(v1.VolumeSource.t), "Cinder"] ↦{dq} v.(v1.VolumeSource.Cinder') ∗
+      "CephFS" ∷ l.[(v1.VolumeSource.t), "CephFS"] ↦{dq} v.(v1.VolumeSource.CephFS') ∗
+      "Flocker" ∷ l.[(v1.VolumeSource.t), "Flocker"] ↦{dq} v.(v1.VolumeSource.Flocker') ∗
+      "DownwardAPI" ∷ l.[(v1.VolumeSource.t), "DownwardAPI"] ↦{dq} v.(v1.VolumeSource.DownwardAPI') ∗
+      "FC" ∷ l.[(v1.VolumeSource.t), "FC"] ↦{dq} v.(v1.VolumeSource.FC') ∗
+      "AzureFile" ∷ l.[(v1.VolumeSource.t), "AzureFile"] ↦{dq} v.(v1.VolumeSource.AzureFile') ∗
+      "ConfigMap" ∷ l.[(v1.VolumeSource.t), "ConfigMap"] ↦{dq} v.(v1.VolumeSource.ConfigMap') ∗
+      "VsphereVolume" ∷ l.[(v1.VolumeSource.t), "VsphereVolume"] ↦{dq} v.(v1.VolumeSource.VsphereVolume') ∗
+      "Quobyte" ∷ l.[(v1.VolumeSource.t), "Quobyte"] ↦{dq} v.(v1.VolumeSource.Quobyte') ∗
+      "AzureDisk" ∷ l.[(v1.VolumeSource.t), "AzureDisk"] ↦{dq} v.(v1.VolumeSource.AzureDisk') ∗
+      "PhotonPersistentDisk" ∷ l.[(v1.VolumeSource.t), "PhotonPersistentDisk"] ↦{dq} v.(v1.VolumeSource.PhotonPersistentDisk') ∗
+      "Projected" ∷ l.[(v1.VolumeSource.t), "Projected"] ↦{dq} v.(v1.VolumeSource.Projected') ∗
+      "PortworxVolume" ∷ l.[(v1.VolumeSource.t), "PortworxVolume"] ↦{dq} v.(v1.VolumeSource.PortworxVolume') ∗
+      "ScaleIO" ∷ l.[(v1.VolumeSource.t), "ScaleIO"] ↦{dq} v.(v1.VolumeSource.ScaleIO') ∗
+      "StorageOS" ∷ l.[(v1.VolumeSource.t), "StorageOS"] ↦{dq} v.(v1.VolumeSource.StorageOS') ∗
+      "CSI" ∷ l.[(v1.VolumeSource.t), "CSI"] ↦{dq} v.(v1.VolumeSource.CSI') ∗
+      "Ephemeral" ∷ l.[(v1.VolumeSource.t), "Ephemeral"] ↦{dq} v.(v1.VolumeSource.Ephemeral') ∗
+      "Image" ∷ l.[(v1.VolumeSource.t), "Image"] ↦{dq} v.(v1.VolumeSource.Image') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.VolumeSource.t) (v1.VolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "HostPath" (go.PointerType v1.HostPathVolumeSource)
+      (fun v => v.(v1.VolumeSource.HostPath'))
+      (fun v x => v <|(v1.VolumeSource.HostPath') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "EmptyDir" (go.PointerType v1.EmptyDirVolumeSource)
+      (fun v => v.(v1.VolumeSource.EmptyDir'))
+      (fun v x => v <|(v1.VolumeSource.EmptyDir') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "GCEPersistentDisk" (go.PointerType v1.GCEPersistentDiskVolumeSource)
+      (fun v => v.(v1.VolumeSource.GCEPersistentDisk'))
+      (fun v x => v <|(v1.VolumeSource.GCEPersistentDisk') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AWSElasticBlockStore" (go.PointerType v1.AWSElasticBlockStoreVolumeSource)
+      (fun v => v.(v1.VolumeSource.AWSElasticBlockStore'))
+      (fun v x => v <|(v1.VolumeSource.AWSElasticBlockStore') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "GitRepo" (go.PointerType v1.GitRepoVolumeSource)
+      (fun v => v.(v1.VolumeSource.GitRepo'))
+      (fun v x => v <|(v1.VolumeSource.GitRepo') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Secret" (go.PointerType v1.SecretVolumeSource)
+      (fun v => v.(v1.VolumeSource.Secret'))
+      (fun v x => v <|(v1.VolumeSource.Secret') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "NFS" (go.PointerType v1.NFSVolumeSource)
+      (fun v => v.(v1.VolumeSource.NFS'))
+      (fun v x => v <|(v1.VolumeSource.NFS') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ISCSI" (go.PointerType v1.ISCSIVolumeSource)
+      (fun v => v.(v1.VolumeSource.ISCSI'))
+      (fun v x => v <|(v1.VolumeSource.ISCSI') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Glusterfs" (go.PointerType v1.GlusterfsVolumeSource)
+      (fun v => v.(v1.VolumeSource.Glusterfs'))
+      (fun v x => v <|(v1.VolumeSource.Glusterfs') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "PersistentVolumeClaim" (go.PointerType v1.PersistentVolumeClaimVolumeSource)
+      (fun v => v.(v1.VolumeSource.PersistentVolumeClaim'))
+      (fun v x => v <|(v1.VolumeSource.PersistentVolumeClaim') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RBD" (go.PointerType v1.RBDVolumeSource)
+      (fun v => v.(v1.VolumeSource.RBD'))
+      (fun v x => v <|(v1.VolumeSource.RBD') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FlexVolume" (go.PointerType v1.FlexVolumeSource)
+      (fun v => v.(v1.VolumeSource.FlexVolume'))
+      (fun v x => v <|(v1.VolumeSource.FlexVolume') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Cinder" (go.PointerType v1.CinderVolumeSource)
+      (fun v => v.(v1.VolumeSource.Cinder'))
+      (fun v x => v <|(v1.VolumeSource.Cinder') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "CephFS" (go.PointerType v1.CephFSVolumeSource)
+      (fun v => v.(v1.VolumeSource.CephFS'))
+      (fun v x => v <|(v1.VolumeSource.CephFS') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Flocker" (go.PointerType v1.FlockerVolumeSource)
+      (fun v => v.(v1.VolumeSource.Flocker'))
+      (fun v x => v <|(v1.VolumeSource.Flocker') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "DownwardAPI" (go.PointerType v1.DownwardAPIVolumeSource)
+      (fun v => v.(v1.VolumeSource.DownwardAPI'))
+      (fun v x => v <|(v1.VolumeSource.DownwardAPI') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FC" (go.PointerType v1.FCVolumeSource)
+      (fun v => v.(v1.VolumeSource.FC'))
+      (fun v x => v <|(v1.VolumeSource.FC') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AzureFile" (go.PointerType v1.AzureFileVolumeSource)
+      (fun v => v.(v1.VolumeSource.AzureFile'))
+      (fun v x => v <|(v1.VolumeSource.AzureFile') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ConfigMap" (go.PointerType v1.ConfigMapVolumeSource)
+      (fun v => v.(v1.VolumeSource.ConfigMap'))
+      (fun v x => v <|(v1.VolumeSource.ConfigMap') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VsphereVolume" (go.PointerType v1.VsphereVirtualDiskVolumeSource)
+      (fun v => v.(v1.VolumeSource.VsphereVolume'))
+      (fun v x => v <|(v1.VolumeSource.VsphereVolume') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Quobyte" (go.PointerType v1.QuobyteVolumeSource)
+      (fun v => v.(v1.VolumeSource.Quobyte'))
+      (fun v x => v <|(v1.VolumeSource.Quobyte') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AzureDisk" (go.PointerType v1.AzureDiskVolumeSource)
+      (fun v => v.(v1.VolumeSource.AzureDisk'))
+      (fun v x => v <|(v1.VolumeSource.AzureDisk') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "PhotonPersistentDisk" (go.PointerType v1.PhotonPersistentDiskVolumeSource)
+      (fun v => v.(v1.VolumeSource.PhotonPersistentDisk'))
+      (fun v x => v <|(v1.VolumeSource.PhotonPersistentDisk') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Projected" (go.PointerType v1.ProjectedVolumeSource)
+      (fun v => v.(v1.VolumeSource.Projected'))
+      (fun v x => v <|(v1.VolumeSource.Projected') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "PortworxVolume" (go.PointerType v1.PortworxVolumeSource)
+      (fun v => v.(v1.VolumeSource.PortworxVolume'))
+      (fun v x => v <|(v1.VolumeSource.PortworxVolume') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ScaleIO" (go.PointerType v1.ScaleIOVolumeSource)
+      (fun v => v.(v1.VolumeSource.ScaleIO'))
+      (fun v x => v <|(v1.VolumeSource.ScaleIO') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StorageOS" (go.PointerType v1.StorageOSVolumeSource)
+      (fun v => v.(v1.VolumeSource.StorageOS'))
+      (fun v x => v <|(v1.VolumeSource.StorageOS') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "CSI" (go.PointerType v1.CSIVolumeSource)
+      (fun v => v.(v1.VolumeSource.CSI'))
+      (fun v x => v <|(v1.VolumeSource.CSI') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Ephemeral" (go.PointerType v1.EphemeralVolumeSource)
+      (fun v => v.(v1.VolumeSource.Ephemeral'))
+      (fun v x => v <|(v1.VolumeSource.Ephemeral') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Image" (go.PointerType v1.ImageVolumeSource)
+      (fun v => v.(v1.VolumeSource.Image'))
+      (fun v x => v <|(v1.VolumeSource.Image') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.VolumeSource.t v1.VolumeSourceⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.VolumeSource'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.VolumeSource'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance VolumeSource_access_load_HostPath l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "HostPath"] ↦{dq} (v.(v1.VolumeSource.HostPath')))
+    (l.[(v1.VolumeSource.t), "HostPath"] ↦{dq} (v.(v1.VolumeSource.HostPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_HostPath l (v : (v1.VolumeSource.t)) HostPath' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "HostPath"] ↦ (v.(v1.VolumeSource.HostPath')))
+    (l.[(v1.VolumeSource.t), "HostPath"] ↦ HostPath')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.HostPath') := HostPath'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_EmptyDir l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "EmptyDir"] ↦{dq} (v.(v1.VolumeSource.EmptyDir')))
+    (l.[(v1.VolumeSource.t), "EmptyDir"] ↦{dq} (v.(v1.VolumeSource.EmptyDir')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_EmptyDir l (v : (v1.VolumeSource.t)) EmptyDir' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "EmptyDir"] ↦ (v.(v1.VolumeSource.EmptyDir')))
+    (l.[(v1.VolumeSource.t), "EmptyDir"] ↦ EmptyDir')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.EmptyDir') := EmptyDir'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_GCEPersistentDisk l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "GCEPersistentDisk"] ↦{dq} (v.(v1.VolumeSource.GCEPersistentDisk')))
+    (l.[(v1.VolumeSource.t), "GCEPersistentDisk"] ↦{dq} (v.(v1.VolumeSource.GCEPersistentDisk')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_GCEPersistentDisk l (v : (v1.VolumeSource.t)) GCEPersistentDisk' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "GCEPersistentDisk"] ↦ (v.(v1.VolumeSource.GCEPersistentDisk')))
+    (l.[(v1.VolumeSource.t), "GCEPersistentDisk"] ↦ GCEPersistentDisk')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.GCEPersistentDisk') := GCEPersistentDisk'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_AWSElasticBlockStore l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AWSElasticBlockStore"] ↦{dq} (v.(v1.VolumeSource.AWSElasticBlockStore')))
+    (l.[(v1.VolumeSource.t), "AWSElasticBlockStore"] ↦{dq} (v.(v1.VolumeSource.AWSElasticBlockStore')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_AWSElasticBlockStore l (v : (v1.VolumeSource.t)) AWSElasticBlockStore' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AWSElasticBlockStore"] ↦ (v.(v1.VolumeSource.AWSElasticBlockStore')))
+    (l.[(v1.VolumeSource.t), "AWSElasticBlockStore"] ↦ AWSElasticBlockStore')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.AWSElasticBlockStore') := AWSElasticBlockStore'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_GitRepo l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "GitRepo"] ↦{dq} (v.(v1.VolumeSource.GitRepo')))
+    (l.[(v1.VolumeSource.t), "GitRepo"] ↦{dq} (v.(v1.VolumeSource.GitRepo')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_GitRepo l (v : (v1.VolumeSource.t)) GitRepo' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "GitRepo"] ↦ (v.(v1.VolumeSource.GitRepo')))
+    (l.[(v1.VolumeSource.t), "GitRepo"] ↦ GitRepo')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.GitRepo') := GitRepo'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Secret l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Secret"] ↦{dq} (v.(v1.VolumeSource.Secret')))
+    (l.[(v1.VolumeSource.t), "Secret"] ↦{dq} (v.(v1.VolumeSource.Secret')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Secret l (v : (v1.VolumeSource.t)) Secret' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Secret"] ↦ (v.(v1.VolumeSource.Secret')))
+    (l.[(v1.VolumeSource.t), "Secret"] ↦ Secret')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Secret') := Secret'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_NFS l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "NFS"] ↦{dq} (v.(v1.VolumeSource.NFS')))
+    (l.[(v1.VolumeSource.t), "NFS"] ↦{dq} (v.(v1.VolumeSource.NFS')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_NFS l (v : (v1.VolumeSource.t)) NFS' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "NFS"] ↦ (v.(v1.VolumeSource.NFS')))
+    (l.[(v1.VolumeSource.t), "NFS"] ↦ NFS')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.NFS') := NFS'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_ISCSI l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ISCSI"] ↦{dq} (v.(v1.VolumeSource.ISCSI')))
+    (l.[(v1.VolumeSource.t), "ISCSI"] ↦{dq} (v.(v1.VolumeSource.ISCSI')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_ISCSI l (v : (v1.VolumeSource.t)) ISCSI' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ISCSI"] ↦ (v.(v1.VolumeSource.ISCSI')))
+    (l.[(v1.VolumeSource.t), "ISCSI"] ↦ ISCSI')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.ISCSI') := ISCSI'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Glusterfs l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Glusterfs"] ↦{dq} (v.(v1.VolumeSource.Glusterfs')))
+    (l.[(v1.VolumeSource.t), "Glusterfs"] ↦{dq} (v.(v1.VolumeSource.Glusterfs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Glusterfs l (v : (v1.VolumeSource.t)) Glusterfs' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Glusterfs"] ↦ (v.(v1.VolumeSource.Glusterfs')))
+    (l.[(v1.VolumeSource.t), "Glusterfs"] ↦ Glusterfs')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Glusterfs') := Glusterfs'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_PersistentVolumeClaim l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PersistentVolumeClaim"] ↦{dq} (v.(v1.VolumeSource.PersistentVolumeClaim')))
+    (l.[(v1.VolumeSource.t), "PersistentVolumeClaim"] ↦{dq} (v.(v1.VolumeSource.PersistentVolumeClaim')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_PersistentVolumeClaim l (v : (v1.VolumeSource.t)) PersistentVolumeClaim' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PersistentVolumeClaim"] ↦ (v.(v1.VolumeSource.PersistentVolumeClaim')))
+    (l.[(v1.VolumeSource.t), "PersistentVolumeClaim"] ↦ PersistentVolumeClaim')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.PersistentVolumeClaim') := PersistentVolumeClaim'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_RBD l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "RBD"] ↦{dq} (v.(v1.VolumeSource.RBD')))
+    (l.[(v1.VolumeSource.t), "RBD"] ↦{dq} (v.(v1.VolumeSource.RBD')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_RBD l (v : (v1.VolumeSource.t)) RBD' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "RBD"] ↦ (v.(v1.VolumeSource.RBD')))
+    (l.[(v1.VolumeSource.t), "RBD"] ↦ RBD')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.RBD') := RBD'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_FlexVolume l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "FlexVolume"] ↦{dq} (v.(v1.VolumeSource.FlexVolume')))
+    (l.[(v1.VolumeSource.t), "FlexVolume"] ↦{dq} (v.(v1.VolumeSource.FlexVolume')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_FlexVolume l (v : (v1.VolumeSource.t)) FlexVolume' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "FlexVolume"] ↦ (v.(v1.VolumeSource.FlexVolume')))
+    (l.[(v1.VolumeSource.t), "FlexVolume"] ↦ FlexVolume')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.FlexVolume') := FlexVolume'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Cinder l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Cinder"] ↦{dq} (v.(v1.VolumeSource.Cinder')))
+    (l.[(v1.VolumeSource.t), "Cinder"] ↦{dq} (v.(v1.VolumeSource.Cinder')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Cinder l (v : (v1.VolumeSource.t)) Cinder' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Cinder"] ↦ (v.(v1.VolumeSource.Cinder')))
+    (l.[(v1.VolumeSource.t), "Cinder"] ↦ Cinder')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Cinder') := Cinder'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_CephFS l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "CephFS"] ↦{dq} (v.(v1.VolumeSource.CephFS')))
+    (l.[(v1.VolumeSource.t), "CephFS"] ↦{dq} (v.(v1.VolumeSource.CephFS')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_CephFS l (v : (v1.VolumeSource.t)) CephFS' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "CephFS"] ↦ (v.(v1.VolumeSource.CephFS')))
+    (l.[(v1.VolumeSource.t), "CephFS"] ↦ CephFS')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.CephFS') := CephFS'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Flocker l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Flocker"] ↦{dq} (v.(v1.VolumeSource.Flocker')))
+    (l.[(v1.VolumeSource.t), "Flocker"] ↦{dq} (v.(v1.VolumeSource.Flocker')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Flocker l (v : (v1.VolumeSource.t)) Flocker' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Flocker"] ↦ (v.(v1.VolumeSource.Flocker')))
+    (l.[(v1.VolumeSource.t), "Flocker"] ↦ Flocker')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Flocker') := Flocker'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_DownwardAPI l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "DownwardAPI"] ↦{dq} (v.(v1.VolumeSource.DownwardAPI')))
+    (l.[(v1.VolumeSource.t), "DownwardAPI"] ↦{dq} (v.(v1.VolumeSource.DownwardAPI')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_DownwardAPI l (v : (v1.VolumeSource.t)) DownwardAPI' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "DownwardAPI"] ↦ (v.(v1.VolumeSource.DownwardAPI')))
+    (l.[(v1.VolumeSource.t), "DownwardAPI"] ↦ DownwardAPI')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.DownwardAPI') := DownwardAPI'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_FC l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "FC"] ↦{dq} (v.(v1.VolumeSource.FC')))
+    (l.[(v1.VolumeSource.t), "FC"] ↦{dq} (v.(v1.VolumeSource.FC')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_FC l (v : (v1.VolumeSource.t)) FC' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "FC"] ↦ (v.(v1.VolumeSource.FC')))
+    (l.[(v1.VolumeSource.t), "FC"] ↦ FC')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.FC') := FC'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_AzureFile l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AzureFile"] ↦{dq} (v.(v1.VolumeSource.AzureFile')))
+    (l.[(v1.VolumeSource.t), "AzureFile"] ↦{dq} (v.(v1.VolumeSource.AzureFile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_AzureFile l (v : (v1.VolumeSource.t)) AzureFile' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AzureFile"] ↦ (v.(v1.VolumeSource.AzureFile')))
+    (l.[(v1.VolumeSource.t), "AzureFile"] ↦ AzureFile')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.AzureFile') := AzureFile'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_ConfigMap l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ConfigMap"] ↦{dq} (v.(v1.VolumeSource.ConfigMap')))
+    (l.[(v1.VolumeSource.t), "ConfigMap"] ↦{dq} (v.(v1.VolumeSource.ConfigMap')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_ConfigMap l (v : (v1.VolumeSource.t)) ConfigMap' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ConfigMap"] ↦ (v.(v1.VolumeSource.ConfigMap')))
+    (l.[(v1.VolumeSource.t), "ConfigMap"] ↦ ConfigMap')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.ConfigMap') := ConfigMap'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_VsphereVolume l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "VsphereVolume"] ↦{dq} (v.(v1.VolumeSource.VsphereVolume')))
+    (l.[(v1.VolumeSource.t), "VsphereVolume"] ↦{dq} (v.(v1.VolumeSource.VsphereVolume')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_VsphereVolume l (v : (v1.VolumeSource.t)) VsphereVolume' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "VsphereVolume"] ↦ (v.(v1.VolumeSource.VsphereVolume')))
+    (l.[(v1.VolumeSource.t), "VsphereVolume"] ↦ VsphereVolume')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.VsphereVolume') := VsphereVolume'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Quobyte l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Quobyte"] ↦{dq} (v.(v1.VolumeSource.Quobyte')))
+    (l.[(v1.VolumeSource.t), "Quobyte"] ↦{dq} (v.(v1.VolumeSource.Quobyte')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Quobyte l (v : (v1.VolumeSource.t)) Quobyte' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Quobyte"] ↦ (v.(v1.VolumeSource.Quobyte')))
+    (l.[(v1.VolumeSource.t), "Quobyte"] ↦ Quobyte')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Quobyte') := Quobyte'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_AzureDisk l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AzureDisk"] ↦{dq} (v.(v1.VolumeSource.AzureDisk')))
+    (l.[(v1.VolumeSource.t), "AzureDisk"] ↦{dq} (v.(v1.VolumeSource.AzureDisk')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_AzureDisk l (v : (v1.VolumeSource.t)) AzureDisk' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "AzureDisk"] ↦ (v.(v1.VolumeSource.AzureDisk')))
+    (l.[(v1.VolumeSource.t), "AzureDisk"] ↦ AzureDisk')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.AzureDisk') := AzureDisk'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_PhotonPersistentDisk l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PhotonPersistentDisk"] ↦{dq} (v.(v1.VolumeSource.PhotonPersistentDisk')))
+    (l.[(v1.VolumeSource.t), "PhotonPersistentDisk"] ↦{dq} (v.(v1.VolumeSource.PhotonPersistentDisk')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_PhotonPersistentDisk l (v : (v1.VolumeSource.t)) PhotonPersistentDisk' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PhotonPersistentDisk"] ↦ (v.(v1.VolumeSource.PhotonPersistentDisk')))
+    (l.[(v1.VolumeSource.t), "PhotonPersistentDisk"] ↦ PhotonPersistentDisk')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.PhotonPersistentDisk') := PhotonPersistentDisk'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Projected l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Projected"] ↦{dq} (v.(v1.VolumeSource.Projected')))
+    (l.[(v1.VolumeSource.t), "Projected"] ↦{dq} (v.(v1.VolumeSource.Projected')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Projected l (v : (v1.VolumeSource.t)) Projected' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Projected"] ↦ (v.(v1.VolumeSource.Projected')))
+    (l.[(v1.VolumeSource.t), "Projected"] ↦ Projected')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Projected') := Projected'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_PortworxVolume l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PortworxVolume"] ↦{dq} (v.(v1.VolumeSource.PortworxVolume')))
+    (l.[(v1.VolumeSource.t), "PortworxVolume"] ↦{dq} (v.(v1.VolumeSource.PortworxVolume')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_PortworxVolume l (v : (v1.VolumeSource.t)) PortworxVolume' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "PortworxVolume"] ↦ (v.(v1.VolumeSource.PortworxVolume')))
+    (l.[(v1.VolumeSource.t), "PortworxVolume"] ↦ PortworxVolume')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.PortworxVolume') := PortworxVolume'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_ScaleIO l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ScaleIO"] ↦{dq} (v.(v1.VolumeSource.ScaleIO')))
+    (l.[(v1.VolumeSource.t), "ScaleIO"] ↦{dq} (v.(v1.VolumeSource.ScaleIO')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_ScaleIO l (v : (v1.VolumeSource.t)) ScaleIO' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "ScaleIO"] ↦ (v.(v1.VolumeSource.ScaleIO')))
+    (l.[(v1.VolumeSource.t), "ScaleIO"] ↦ ScaleIO')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.ScaleIO') := ScaleIO'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_StorageOS l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "StorageOS"] ↦{dq} (v.(v1.VolumeSource.StorageOS')))
+    (l.[(v1.VolumeSource.t), "StorageOS"] ↦{dq} (v.(v1.VolumeSource.StorageOS')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_StorageOS l (v : (v1.VolumeSource.t)) StorageOS' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "StorageOS"] ↦ (v.(v1.VolumeSource.StorageOS')))
+    (l.[(v1.VolumeSource.t), "StorageOS"] ↦ StorageOS')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.StorageOS') := StorageOS'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_CSI l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "CSI"] ↦{dq} (v.(v1.VolumeSource.CSI')))
+    (l.[(v1.VolumeSource.t), "CSI"] ↦{dq} (v.(v1.VolumeSource.CSI')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_CSI l (v : (v1.VolumeSource.t)) CSI' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "CSI"] ↦ (v.(v1.VolumeSource.CSI')))
+    (l.[(v1.VolumeSource.t), "CSI"] ↦ CSI')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.CSI') := CSI'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Ephemeral l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Ephemeral"] ↦{dq} (v.(v1.VolumeSource.Ephemeral')))
+    (l.[(v1.VolumeSource.t), "Ephemeral"] ↦{dq} (v.(v1.VolumeSource.Ephemeral')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[H27 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 H27 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Ephemeral l (v : (v1.VolumeSource.t)) Ephemeral' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Ephemeral"] ↦ (v.(v1.VolumeSource.Ephemeral')))
+    (l.[(v1.VolumeSource.t), "Ephemeral"] ↦ Ephemeral')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Ephemeral') := Ephemeral'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[H27 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 H27 Hfield Hrest".
+Qed.
+#[global] Instance VolumeSource_access_load_Image l (v : (v1.VolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Image"] ↦{dq} (v.(v1.VolumeSource.Image')))
+    (l.[(v1.VolumeSource.t), "Image"] ↦{dq} (v.(v1.VolumeSource.Image')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[H27 H]".
+  iDestruct "H" as "[H28 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 H27 H28 Hfield Hrest".
+Qed.
+
+#[global] Instance VolumeSource_access_store_Image l (v : (v1.VolumeSource.t)) Image' :
+  AccessStrict
+    (l.[(v1.VolumeSource.t), "Image"] ↦ (v.(v1.VolumeSource.Image')))
+    (l.[(v1.VolumeSource.t), "Image"] ↦ Image')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeSource.Image') := Image'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[H24 H]".
+  iDestruct "H" as "[H25 H]".
+  iDestruct "H" as "[H26 H]".
+  iDestruct "H" as "[H27 H]".
+  iDestruct "H" as "[H28 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 H27 H28 Hfield Hrest".
+Qed.
 
 End def.
 End VolumeSource.
+
+Module Volume.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance Volume_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Volume.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.Volume.t), "Name"] ↦{dq} v.(v1.Volume.Name') ∗
+      "VolumeSource" ∷ l.[(v1.Volume.t), "VolumeSource"] ↦{dq} v.(v1.Volume.VolumeSource') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance Volume_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.Volume.t) (v1.Volumeⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Volume_access_load_Name l (v : (v1.Volume.t)) dq :
+  AccessStrict
+    (l.[(v1.Volume.t), "Name"] ↦{dq} (v.(v1.Volume.Name')))
+    (l.[(v1.Volume.t), "Name"] ↦{dq} (v.(v1.Volume.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Volume_access_store_Name l (v : (v1.Volume.t)) Name' :
+  AccessStrict
+    (l.[(v1.Volume.t), "Name"] ↦ (v.(v1.Volume.Name')))
+    (l.[(v1.Volume.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.Volume.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Volume_access_load_VolumeSource l (v : (v1.Volume.t)) dq :
+  AccessStrict
+    (l.[(v1.Volume.t), "VolumeSource"] ↦{dq} (v.(v1.Volume.VolumeSource')))
+    (l.[(v1.Volume.t), "VolumeSource"] ↦{dq} (v.(v1.Volume.VolumeSource')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Volume_access_store_VolumeSource l (v : (v1.Volume.t)) VolumeSource' :
+  AccessStrict
+    (l.[(v1.Volume.t), "VolumeSource"] ↦ (v.(v1.Volume.VolumeSource')))
+    (l.[(v1.Volume.t), "VolumeSource"] ↦ VolumeSource')
+    (l ↦ v) (l ↦ (v <|(v1.Volume.VolumeSource') := VolumeSource'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End Volume.
 
 Module PersistentVolumeClaimVolumeSource.
 Section def.
@@ -58,13 +2282,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimVolumeSource.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ClaimName" ∷ l.[(v1.PersistentVolumeClaimVolumeSource.t), "ClaimName"] ↦{dq} v.(v1.PersistentVolumeClaimVolumeSource.ClaimName') ∗
+      "ReadOnly" ∷ l.[(v1.PersistentVolumeClaimVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.PersistentVolumeClaimVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimVolumeSource.t) (v1.PersistentVolumeClaimVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimVolumeSource_access_load_ClaimName l (v : (v1.PersistentVolumeClaimVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ClaimName"] ↦{dq} (v.(v1.PersistentVolumeClaimVolumeSource.ClaimName')))
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ClaimName"] ↦{dq} (v.(v1.PersistentVolumeClaimVolumeSource.ClaimName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimVolumeSource_access_store_ClaimName l (v : (v1.PersistentVolumeClaimVolumeSource.t)) ClaimName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ClaimName"] ↦ (v.(v1.PersistentVolumeClaimVolumeSource.ClaimName')))
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ClaimName"] ↦ ClaimName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimVolumeSource.ClaimName') := ClaimName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimVolumeSource_access_load_ReadOnly l (v : (v1.PersistentVolumeClaimVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.PersistentVolumeClaimVolumeSource.ReadOnly')))
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.PersistentVolumeClaimVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimVolumeSource_access_store_ReadOnly l (v : (v1.PersistentVolumeClaimVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ReadOnly"] ↦ (v.(v1.PersistentVolumeClaimVolumeSource.ReadOnly')))
+    (l.[(v1.PersistentVolumeClaimVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimVolumeSource.

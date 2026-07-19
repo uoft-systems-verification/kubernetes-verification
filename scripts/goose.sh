@@ -15,11 +15,11 @@ go tool perennial-cli goose --config goose-benchmark.toml
 # multiple whitespace-separated paths; core/v1.v is the default target.
 GOOSE_PROOF_OPTIMIZER_TARGETS="${GOOSE_PROOF_OPTIMIZER_TARGETS:-src/generatedproof/k8s_io/api/core/v1.v}"
 
-# Select PodSpec for both optimizations by default. Each variable accepts a
+# Select PodSpec and VolumeSource for both optimizations by default. Each variable accepts a
 # comma-separated struct list and can be set to an explicit empty value to
 # disable that optimization independently.
-GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED="${GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED-PodSpec}"
-GOOSE_PROOF_OPTIMIZER_ACCESS="${GOOSE_PROOF_OPTIMIZER_ACCESS-PodSpec}"
+GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED="${GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED-PodSpec,VolumeSource}"
+GOOSE_PROOF_OPTIMIZER_ACCESS="${GOOSE_PROOF_OPTIMIZER_ACCESS-PodSpec,VolumeSource}"
 
 # Add each optional flag only when at least one struct is selected.
 OPTIMIZER_ARGS=()

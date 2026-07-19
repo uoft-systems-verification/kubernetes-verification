@@ -1,6 +1,37 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export objectmeta.
 
+Module VolumeSourceV.
+Section def.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Record t := mk {
+  PersistentVolumeClaim' : option v1.PersistentVolumeClaimVolumeSource.t;
+}.
+
+Definition valid (source : t) : Prop :=
+  match source.(PersistentVolumeClaim') with
+  | Some pvc => valid_dns1123_subdomain pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName')
+  | None => True
+  end.
+
+Definition deepown (c : v1.VolumeSource.t) (v : t) dq : iProp Σ :=
+  "%Hdeepown_persistentvolumeclaim_none" ∷
+    ⌜c.(v1.VolumeSource.PersistentVolumeClaim') = null ↔ v.(PersistentVolumeClaim') = None⌝ ∗
+  "Hdeepown_persistentvolumeclaim_some" ∷
+    (match v.(PersistentVolumeClaim') with
+    | Some pvc => 
+      ∃ c_pvc, c.(v1.VolumeSource.PersistentVolumeClaim') ↦{dq} c_pvc ∗ ⌜c_pvc = pvc⌝
+    | None => True%I
+    end).
+
+End def.
+End VolumeSourceV.
+
 Module VolumeV.
 Section def.
 Context `{hG: !heapGS Σ}.
@@ -8,9 +39,19 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
-Axiom valid: t → Prop.
-Axiom deepown : v1.Volume.t → t → dfrac → iProp Σ.
+
+Record t := mk {
+  Name' : go_string;
+  VolumeSource' : VolumeSourceV.t;
+}.
+
+Definition valid (volume : t) : Prop :=
+  valid_dns1123_label volume.(Name') ∧
+  VolumeSourceV.valid volume.(VolumeSource').
+
+Definition deepown (c : v1.Volume.t) (v : t) dq : iProp Σ :=
+  "%Hdeepown_name" ∷ ⌜c.(v1.Volume.Name') = v.(Name')⌝ ∗
+  "Hdeepown_volumesource" ∷ VolumeSourceV.deepown c.(v1.Volume.VolumeSource') v.(VolumeSource') dq.
 End def.
 End VolumeV.
 
@@ -75,9 +116,8 @@ Definition valid (spec : t) : Prop :=
 
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷
-    (∃ volumes,
-      deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
-        (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
+    (∃ volumes, deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
+      (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
   "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
   "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.
 

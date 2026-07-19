@@ -37,6 +37,9 @@ translate = [
     # "Volume",
     # "PodTemplateSpec",
     "PersistentVolumeClaim",
+    "PersistentVolumeClaimVolumeSource",
+    "Volume",
+    "VolumeSource",
 ]
 
 imports = [
