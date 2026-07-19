@@ -26,6 +26,12 @@ or `naive_solver` directly. Every use must be wrapped in a 10 second timeout:
 `Timeout 10 set_solver.` or `Timeout 10 naive_solver.`. If the timeout fires,
 choose a more explicit proof step instead of increasing the timeout.
 
+Never call `vm_compute` directly. Every use must be wrapped in a 10 second
+timeout as `Timeout 10 vm_compute.`. For small concrete equalities or
+inequalities, prefer targeted unfolding followed by structural tactics such as
+`discriminate` or `inversion` so proof checking does not evaluate unrelated
+definitions.
+
 ## Fast Rocq Proof Checks
 
 When asked to "Run fast proof check" or to use a fast Rocq proof check, always

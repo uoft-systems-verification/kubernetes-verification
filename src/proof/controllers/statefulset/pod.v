@@ -141,6 +141,54 @@ Definition pod_identity_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
     Decision (pod_identity_matches sts pod).
 Proof. unfold pod_identity_matches. destruct parse_member_name, (pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')); apply _. Defined.
 
+(* The pure effect of [updateIdentity] after [ordinalOf] has successfully
+   recovered [ordinal] from the Pod name. *)
+Definition update_identity (set : StatefulSetV.t) (pod : PodV.t)
+    (ordinal : nat) : PodV.t :=
+  let pod_name := desired_pod_name
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal in
+  let labels : gmap go_string go_string :=
+    default ∅ pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') in
+  let labels :=
+    <[pod_index_label := decimal_string ordinal]>
+      (<[statefulset_pod_name_label := pod_name]> labels) in
+  let object_meta :=
+    pod.(PodV.ObjectMeta')
+      <| ObjectMetaV.Name' := pod_name |>
+      <| ObjectMetaV.Namespace' :=
+          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
+      <| ObjectMetaV.Labels' := Some labels |> in
+  let spec :=
+    pod.(PodV.Spec')
+      <| PodSpecV.Hostname' := pod_name |>
+      <| PodSpecV.Subdomain' :=
+          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |> in
+  pod <| PodV.ObjectMeta' := object_meta |>
+      <| PodV.Spec' := spec |>.
+
+Lemma update_identity_identity_matches set pod ordinal :
+  (ordinal <= go_int32_max_nat)%nat →
+  pod_identity_matches set (update_identity set pod ordinal).
+Proof.
+  intros Hordinal.
+  unfold pod_identity_matches, update_identity.
+  cbn -[parse_member_name].
+  rewrite (parse_member_name_complete
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+    (desired_pod_name
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
+    ordinal eq_refl).
+  cbn.
+  split_and!; try done.
+  - rewrite lookup_insert_ne.
+    + {
+      unfold pod_index_label, statefulset_pod_name_label.
+      intros Hlabels. inversion Hlabels.
+    }
+    + rewrite lookup_insert_eq. done.
+  - rewrite lookup_insert_eq. done.
+Qed.
+
 Parameter pod_storage_matches : StatefulSetV.t → PodV.t → Prop.
 Axiom pod_storage_matches_decision : ∀ sts pod,
   Decision (pod_storage_matches sts pod).
