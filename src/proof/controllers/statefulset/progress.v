@@ -28,16 +28,6 @@ Proof using package_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
 Proof using package_sem. apply _. Qed.
-#[local] Axiom pure_wp_convert_statefulset_to_runtime_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType apps_v1.StatefulSet) runtime.Object (#l))
-    (#(interface.mk_ok (go.PointerType apps_v1.StatefulSet) #l)).
-#[local] Existing Instance pure_wp_convert_statefulset_to_runtime_object.
-#[local] Axiom pure_wp_convert_statefulset_to_meta_object : ∀ l : loc,
-  PureWp True
-    (Convert (go.PointerType apps_v1.StatefulSet) meta_v1.Object (#l))
-    (#(interface.mk_ok (go.PointerType apps_v1.StatefulSet) #l)).
-#[local] Existing Instance pure_wp_convert_statefulset_to_meta_object.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
   common.import_apimodel_Assumption.
 #[local] Instance object_meta_v1_sem :

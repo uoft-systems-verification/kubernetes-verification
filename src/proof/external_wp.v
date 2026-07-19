@@ -1,5 +1,8 @@
 From New.proof Require Export prelude empty_ffi.
 From New.code Require Export fmt.
+From New.code.k8s_io.api.apps Require Export v1.
+From New.code.k8s_io.apimachinery.pkg Require Export runtime.
+From New.code.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From New.proof Require Export fmt strconv_init rand_init strings.
 From New.proof.string Require Export decimal.
 
@@ -7,6 +10,61 @@ Section proof.
 Context `{hG: !heapGS Σ}.
 Context `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+
+Definition statefulset_pod_name_label : go_string :=
+  "statefulset.kubernetes.io/pod-name"%go.
+
+Definition pod_index_label : go_string :=
+  "apps.kubernetes.io/pod-index"%go.
+
+(* Goose leaves the underlying method sets of these named Kubernetes
+   interfaces opaque.  These rules record the pure Go interface-packaging
+   result shared by the controller proofs. *)
+Axiom pure_wp_convert_statefulset_to_runtime_object : ∀ l : loc,
+  PureWp True
+    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)
+      code.k8s_io.apimachinery.pkg.runtime.runtime.Object (#l))
+    (#(interface.mk_ok
+      (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #l)).
+#[global] Existing Instance pure_wp_convert_statefulset_to_runtime_object.
+
+Axiom pure_wp_convert_statefulset_to_meta_object : ∀ l : loc,
+  PureWp True
+    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)
+      code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (#l))
+    (#(interface.mk_ok
+      (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #l)).
+#[global] Existing Instance pure_wp_convert_statefulset_to_meta_object.
+
+Axiom pure_wp_convert_replicaset_to_runtime_object : ∀ l : loc,
+  PureWp True
+    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)
+      code.k8s_io.apimachinery.pkg.runtime.runtime.Object (#l))
+    (#(interface.mk_ok
+      (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #l)).
+#[global] Existing Instance pure_wp_convert_replicaset_to_runtime_object.
+
+Axiom pure_wp_convert_replicaset_to_meta_object : ∀ l : loc,
+  PureWp True
+    (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)
+      code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (#l))
+    (#(interface.mk_ok
+      (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #l)).
+#[global] Existing Instance pure_wp_convert_replicaset_to_meta_object.
+
+Axiom pure_wp_convert_statefulset_pod_name_label :
+  PureWp True
+    (Convert go.untyped_string go.string
+      code.k8s_io.api.apps.v1.v1.StatefulSetPodNameLabel)
+    #statefulset_pod_name_label.
+#[global] Existing Instance pure_wp_convert_statefulset_pod_name_label.
+
+Axiom pure_wp_convert_pod_index_label :
+  PureWp True
+    (Convert go.untyped_string go.string
+      code.k8s_io.api.apps.v1.v1.PodIndexLabel)
+    #pod_index_label.
+#[global] Existing Instance pure_wp_convert_pod_index_label.
 
 Lemma wp_fmt_Sprintf (format: go_string) string_slice (string_list: list interface.t):
   {{{ is_pkg_init fmt ∗
