@@ -2,6 +2,9 @@ translate = [
     "PodControllerIndex",
     "IsPodActive",
     "ActivePodsWithRanks",
+    "getPodsLabelSet",
+    "getPodsFinalizers",
+    "getPodsAnnotationSet",
     "GetPodFromTemplate",
 ]
 

@@ -65,8 +65,6 @@ Definition ValidatedSetSelector {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
 
 Axiom Labelsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom Set'ⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom Requirementsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom Selectorⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -227,17 +225,16 @@ Class Labels_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContex
 Module Set'.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := map.t.
+#[global] Arguments t : clear implicits.
 End def.
 End Set'.
 
+Definition Set'ⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.MapType go.string go.string.
+
 Class Set_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] Set_type_repr  :: go.TypeReprUnderlying Set'ⁱᵐᵖˡ Set'.t;
   #[global] Set_underlying :: (Set') <u (Set'ⁱᵐᵖˡ);
-  #[global] Set'ⁱᵐᵖˡ_underlying :: (Set'ⁱᵐᵖˡ) ↓u (Set'ⁱᵐᵖˡ);
 }.
 
 Module Requirements.

@@ -9595,13 +9595,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodTemplateSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodTemplateSpec.t). Admitted.
+#[global]Program Instance PodTemplateSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodTemplateSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ObjectMeta" ∷ l.[(v1.PodTemplateSpec.t), "ObjectMeta"] ↦{dq} v.(v1.PodTemplateSpec.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.PodTemplateSpec.t), "Spec"] ↦{dq} v.(v1.PodTemplateSpec.Spec') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodTemplateSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodTemplateSpec.t) (v1.PodTemplateSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodTemplateSpec_access_load_ObjectMeta l (v : (v1.PodTemplateSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PodTemplateSpec.t), "ObjectMeta"] ↦{dq} (v.(v1.PodTemplateSpec.ObjectMeta')))
+    (l.[(v1.PodTemplateSpec.t), "ObjectMeta"] ↦{dq} (v.(v1.PodTemplateSpec.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodTemplateSpec_access_store_ObjectMeta l (v : (v1.PodTemplateSpec.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.PodTemplateSpec.t), "ObjectMeta"] ↦ (v.(v1.PodTemplateSpec.ObjectMeta')))
+    (l.[(v1.PodTemplateSpec.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.PodTemplateSpec.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodTemplateSpec_access_load_Spec l (v : (v1.PodTemplateSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PodTemplateSpec.t), "Spec"] ↦{dq} (v.(v1.PodTemplateSpec.Spec')))
+    (l.[(v1.PodTemplateSpec.t), "Spec"] ↦{dq} (v.(v1.PodTemplateSpec.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodTemplateSpec_access_store_Spec l (v : (v1.PodTemplateSpec.t)) Spec' :
+  AccessStrict
+    (l.[(v1.PodTemplateSpec.t), "Spec"] ↦ (v.(v1.PodTemplateSpec.Spec')))
+    (l.[(v1.PodTemplateSpec.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.PodTemplateSpec.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodTemplateSpec.

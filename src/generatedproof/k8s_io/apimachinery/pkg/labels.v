@@ -26,26 +26,6 @@ Proof. Admitted.
 End def.
 End Labels.
 
-Module Set'.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : labels.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance Set'_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (labels.Set'.t). Admitted.
-
-#[global] Instance Set'_into_val_typed
-   :
-  IntoValTypedUnderlying (labels.Set'.t) (labels.Set'ⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End Set'.
-
 Module Requirements.
 Section def.
 

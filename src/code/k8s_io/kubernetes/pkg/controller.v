@@ -313,6 +313,53 @@ Definition ComputeHash {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_strin
 
 Definition AddOrUpdateLabelsOnNode {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/kubernetes/pkg/controller.AddOrUpdateLabelsOnNode"%go.
 
+(* go: controller_utils.go:489:6 *)
+Definition getPodsLabelSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "template",
+    exception_do (let: "template" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) "template") in
+    let: "desiredLabels" := (GoAlloc labels.Set' (GoZeroVal labels.Set' #())) in
+    let: "$r0" := ((FuncResolve go.make1 [labels.Set'] #()) #()) in
+    do:  ("desiredLabels" <-[labels.Set'] "$r0");;;
+    let: "$range" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "template")))) in
+    (let: "v" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    let: "k" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    map.for_range go.string go.string "$range" (λ: "$key" "$value",
+      do:  ("v" <-[go.string] "$value");;;
+      do:  ("k" <-[go.string] "$key");;;
+      let: "$r0" := (![go.string] "v") in
+      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredLabels", ![go.string] "k")) <-[go.string] "$r0")));;;
+    return: (![labels.Set'] "desiredLabels")).
+
+(* go: controller_utils.go:497:6 *)
+Definition getPodsFinalizersⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "template",
+    exception_do (let: "template" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) "template") in
+    let: "desiredFinalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
+    let: "$r0" := ((FuncResolve go.make2 [go.SliceType go.string] #()) (let: "$a0" := (![go.SliceType go.string] (StructFieldRef meta_v1.ObjectMeta "Finalizers"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "template")))) in
+    (FuncResolve go.len [go.SliceType go.string] #()) "$a0")) in
+    do:  ("desiredFinalizers" <-[go.SliceType go.string] "$r0");;;
+    do:  (let: "$a0" := (![go.SliceType go.string] "desiredFinalizers") in
+    let: "$a1" := (![go.SliceType go.string] (StructFieldRef meta_v1.ObjectMeta "Finalizers"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "template")))) in
+    (FuncResolve go.copy [go.SliceType go.string] #()) "$a0" "$a1");;;
+    return: (![go.SliceType go.string] "desiredFinalizers")).
+
+(* go: controller_utils.go:503:6 *)
+Definition getPodsAnnotationSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "template",
+    exception_do (let: "template" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) "template") in
+    let: "desiredAnnotations" := (GoAlloc labels.Set' (GoZeroVal labels.Set' #())) in
+    let: "$r0" := ((FuncResolve go.make1 [labels.Set'] #()) #()) in
+    do:  ("desiredAnnotations" <-[labels.Set'] "$r0");;;
+    let: "$range" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Annotations"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "template")))) in
+    (let: "v" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    let: "k" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    map.for_range go.string go.string "$range" (λ: "$key" "$value",
+      do:  ("v" <-[go.string] "$value");;;
+      do:  ("k" <-[go.string] "$key");;;
+      let: "$r0" := (![go.string] "v") in
+      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredAnnotations", ![go.string] "k")) <-[go.string] "$r0")));;;
+    return: (![labels.Set'] "desiredAnnotations")).
+
 (* go: controller_utils.go:562:6 *)
 Definition GetPodFromTemplateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "template" "parentObject" "controllerRef",
@@ -922,6 +969,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] ReplicaSetsByCreationTimestamp_instance :: ReplicaSetsByCreationTimestamp_Assumptions;
   #[global] ReplicaSetsBySizeOlder_instance :: ReplicaSetsBySizeOlder_Assumptions;
   #[global] ReplicaSetsBySizeNewer_instance :: ReplicaSetsBySizeNewer_Assumptions;
+  #[global] getPodsLabelSet_unfold :: FuncUnfold getPodsLabelSet [] (getPodsLabelSetⁱᵐᵖˡ);
+  #[global] getPodsFinalizers_unfold :: FuncUnfold getPodsFinalizers [] (getPodsFinalizersⁱᵐᵖˡ);
+  #[global] getPodsAnnotationSet_unfold :: FuncUnfold getPodsAnnotationSet [] (getPodsAnnotationSetⁱᵐᵖˡ);
   #[global] GetPodFromTemplate_unfold :: FuncUnfold GetPodFromTemplate [] (GetPodFromTemplateⁱᵐᵖˡ);
   #[global] IsPodActive_unfold :: FuncUnfold IsPodActive [] (IsPodActiveⁱᵐᵖˡ);
   #[global] import_fmt_Assumption :: fmt.Assumptions;

@@ -1591,8 +1591,6 @@ Axiom PodStatusResultⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 Axiom PodListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom PodTemplateSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PodTemplateⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodTemplateListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -7791,17 +7789,36 @@ Class PodList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalConte
 Module PodTemplateSpec.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  ObjectMeta' : v1.ObjectMeta.t;
+  Spec' : v1.PodSpec.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PodTemplateSpec.
+
+Definition PodTemplateSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.FieldDecl "Spec"%go PodSpec)
+].
+Program Definition PodTemplateSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PodTemplateSpec'fds_unsealed).
+Global Instance equals_unfold_PodTemplateSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PodTemplateSpec'fds =→ PodTemplateSpec'fds_unsealed.
+Proof. rewrite /PodTemplateSpec'fds seal_eq //. Qed.
+
+Definition PodTemplateSpecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PodTemplateSpec'fds).
 
 Class PodTemplateSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PodTemplateSpec_type_repr  :: go.TypeReprUnderlying PodTemplateSpecⁱᵐᵖˡ PodTemplateSpec.t;
   #[global] PodTemplateSpec_underlying :: (PodTemplateSpec) <u (PodTemplateSpecⁱᵐᵖˡ);
-  #[global] PodTemplateSpecⁱᵐᵖˡ_underlying :: (PodTemplateSpecⁱᵐᵖˡ) ↓u (PodTemplateSpecⁱᵐᵖˡ);
+  #[global] PodTemplateSpec_get_ObjectMeta (x : PodTemplateSpec.t) :: ⟦StructFieldGet (PodTemplateSpecⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(PodTemplateSpec.ObjectMeta');
+  #[global] PodTemplateSpec_set_ObjectMeta (x : PodTemplateSpec.t) y :: ⟦StructFieldSet (PodTemplateSpecⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|PodTemplateSpec.ObjectMeta' := y|>);
+  #[global] PodTemplateSpec_get_Spec (x : PodTemplateSpec.t) :: ⟦StructFieldGet (PodTemplateSpecⁱᵐᵖˡ) "Spec", #x⟧ ⤳[under] #x.(PodTemplateSpec.Spec');
+  #[global] PodTemplateSpec_set_Spec (x : PodTemplateSpec.t) y :: ⟦StructFieldSet (PodTemplateSpecⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|PodTemplateSpec.Spec' := y|>);
 }.
 
 Module PodTemplate.

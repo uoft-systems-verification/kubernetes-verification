@@ -302,9 +302,22 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
-Axiom valid : t → Prop.
-Axiom deepown : v1.PodTemplateSpec.t → t → dfrac → iProp Σ.
+Record t := mk {
+  ObjectMeta' : ObjectMetaV.t;
+  Spec' : PodSpecV.t;
+}.
+
+Definition valid (template : t) : Prop :=
+  valid_labels template.(ObjectMeta').(ObjectMetaV.Labels') ∧
+  valid_annotations template.(ObjectMeta').(ObjectMetaV.Annotations') ∧
+  valid_finalizers template.(ObjectMeta').(ObjectMetaV.Finalizers') ∧
+  PodSpecV.valid template.(Spec').
+
+Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
+  "Hdeepown_objectmeta" ∷
+    ObjectMetaV.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_spec" ∷
+    PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec') dq.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.

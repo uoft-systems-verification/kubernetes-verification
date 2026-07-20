@@ -2,10 +2,96 @@ From New.proof Require Import prelude empty_ffi.
 From New.golang.theory Require Export map.
 From iris.algebra Require Import gmap.
 
+Definition map_prefix `{Countable K} {A}
+    (keys : list K) (i : Z) (m : gmap K A) : gmap K A :=
+  filter (λ '(k, _), k ∈ list_to_set (C:=gset K) (take (Z.to_nat i) keys)) m.
+
+Lemma map_prefix_empty `{Countable K} {A} (keys : list K) (m : gmap K A) :
+  map_prefix keys 0 m = ∅.
+Proof.
+  apply map_eq. intros key.
+  rewrite /map_prefix map_lookup_filter lookup_empty take_0.
+  destruct (m !! key); simpl; [|done].
+  destruct (decide (key ∈ list_to_set (C:=gset K) [])); [|done].
+  rewrite elem_of_list_to_set elem_of_nil in e. done.
+Qed.
+
+Lemma map_prefix_insert `{Countable K} {A}
+    (keys : list K) i key (m : gmap K A) v :
+  (0 ≤ i)%Z →
+  keys !! Z.to_nat i = Some key →
+  m !! key = Some v →
+  map_prefix keys (i + 1) m = <[key:=v]> (map_prefix keys i m).
+Proof.
+  intros Hi_nonneg Hkey_lookup Hm_lookup.
+  apply map_eq. intros key'.
+  destruct (decide (key' = key)) as [->|Hne].
+  - rewrite lookup_insert_eq /map_prefix.
+    apply map_lookup_filter_Some_2; [done|].
+    simpl.
+    replace (Z.to_nat (i + 1)) with (S (Z.to_nat i)) by lia.
+    rewrite (take_S_r _ _ _ Hkey_lookup).
+    rewrite elem_of_list_to_set elem_of_app /=. right. Timeout 10 set_solver.
+  - replace (<[key:=v]> (map_prefix keys i m) !! key') with
+      (map_prefix keys i m !! key').
+    2:{ symmetry. apply lookup_insert_ne.
+        intro Heq. apply Hne. symmetry. exact Heq. }
+    assert (Hin_iff : key' ∈ list_to_set (C:=gset K)
+        (take (Z.to_nat (i + 1)) keys) ↔
+      key' ∈ list_to_set (C:=gset K) (take (Z.to_nat i) keys)).
+    { replace (Z.to_nat (i + 1)) with (S (Z.to_nat i)) by lia.
+      rewrite (take_S_r _ _ _ Hkey_lookup).
+      rewrite !elem_of_list_to_set elem_of_app /= elem_of_cons elem_of_nil.
+      split; intros Hin.
+      - destruct Hin as [Hin|Hin]; [done|].
+        destruct Hin as [Heq|[]]. subst. contradiction.
+      - left. done. }
+    destruct (m !! key') as [v'|] eqn:Hm_lookup'.
+    + destruct (decide (key' ∈ list_to_set (C:=gset K)
+        (take (Z.to_nat i) keys))) as [Hin|Hnot].
+      * rewrite /map_prefix.
+        transitivity (Some v').
+        -- apply map_lookup_filter_Some_2; [done|].
+           simpl. apply Hin_iff. done.
+        -- symmetry. apply map_lookup_filter_Some_2; [done|done].
+      * rewrite /map_prefix.
+        transitivity (@None A).
+        -- apply map_lookup_filter_None_2. right.
+           intros x Hx Hin_succ. simpl in Hin_succ.
+           apply Hnot. apply Hin_iff. done.
+        -- symmetry. apply map_lookup_filter_None_2. right.
+           intros x Hx Hin_old. done.
+    + rewrite /map_prefix.
+      transitivity (@None A).
+      * apply map_lookup_filter_None_2. left. done.
+      * symmetry. apply map_lookup_filter_None_2. left. done.
+Qed.
+
+Lemma map_prefix_all `{Countable K} {A} (keys : list K) (m : gmap K A) :
+  list_to_set keys = dom m →
+  length keys = size m →
+  map_prefix keys (Z.of_nat (size m)) m = m.
+Proof.
+  intros Hdom Hlen. apply map_eq. intros key.
+  destruct (m !! key) as [v|] eqn:Hlookup.
+  - rewrite /map_prefix. apply map_lookup_filter_Some_2; [done|].
+    simpl. rewrite Nat2Z.id. replace (size m) with (length keys) by done.
+    replace (take (length keys) keys) with keys
+      by (symmetry; apply take_ge; lia).
+    rewrite Hdom elem_of_dom. eexists. exact Hlookup.
+  - rewrite /map_prefix. apply map_lookup_filter_None_2. left. done.
+Qed.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Local Set Default Proof Using "All".
+
+Lemma wp_map_for_range_nil key_type elem_type (body : func.t) :
+  {{{ True }}}
+    map.for_range key_type elem_type #map.nil #body
+  {{{ RET execute_val; True }}}.
+Proof. wp_start as "_". iApply "HΦ". done. Qed.
 
 Definition for_map_postcondition_no_break (P : iProp Σ) (bv : val) : iProp Σ :=
   (⌜ bv = continue_val ⌝ ∗ P) ∨
