@@ -50,6 +50,61 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+(* [ordinalOf] parses the decimal suffix following the last dash, without
+   checking that the preceding parent name belongs to the StatefulSet. *)
+Definition pod_ordinal_suffix (pod_name : go_string) : option go_string :=
+  match list_find (λ b, b = byte_dash) (reverse pod_name) with
+  | Some (idx, _) => Some (reverse (take idx (reverse pod_name)))
+  | None => None
+  end.
+
+Definition parse_pod_ordinal (pod_name : go_string) : option nat :=
+  suffix ← pod_ordinal_suffix pod_name;
+  parse_decimal_string suffix.
+
+Lemma pod_ordinal_suffix_last_dash pod_name parent suffix :
+  pod_name = parent ++ [byte_dash] ++ suffix →
+  byte_dash ∉ suffix →
+  pod_ordinal_suffix pod_name = Some suffix.
+Proof.
+  intros -> Hsuffix.
+  unfold pod_ordinal_suffix.
+  rewrite !reverse_app /=.
+  assert (list_find (λ b, b = byte_dash)
+      (reverse suffix ++ byte_dash :: reverse parent) =
+      Some (length suffix, byte_dash)) as Hfind.
+  { apply list_find_Some. split_and!.
+    - erewrite lookup_app_r.
+      2: { rewrite length_reverse. lia. }
+      rewrite length_reverse Nat.sub_diag. done.
+    - done.
+    - intros j b Hlookup Hj Heq. subst b. apply Hsuffix.
+      assert ((j < length (reverse suffix))%nat) as Hj'.
+      { rewrite length_reverse. exact Hj. }
+      rewrite (lookup_app_l _ _ _ Hj') in Hlookup.
+      apply list_elem_of_lookup_2 in Hlookup.
+      by apply (proj1 (elem_of_reverse _ _)) in Hlookup. }
+  rewrite reverse_singleton -List.app_assoc.
+  rewrite Hfind /=.
+  replace (length suffix) with (length (reverse suffix)) by
+    exact (length_reverse suffix).
+  rewrite take_app_length reverse_involutive. done.
+Qed.
+
+Lemma pod_ordinal_suffix_no_dash pod_name :
+  byte_dash ∉ pod_name →
+  pod_ordinal_suffix pod_name = None.
+Proof.
+  intros Hno_dash. unfold pod_ordinal_suffix.
+  assert (list_find (λ b, b = byte_dash) (reverse pod_name) = None)
+    as Hfind.
+  { apply list_find_None. apply Forall_forall.
+    intros b Hb Heq. apply Hno_dash. subst b.
+    rewrite -list_elem_of_In in Hb.
+    apply (proj1 (elem_of_reverse _ _)). exact Hb. }
+  rewrite Hfind. done.
+Qed.
+
 Lemma wp_replicasOf set_l (set : StatefulSetV.t) dq :
   {{{ StatefulSetV.deepown_l set_l set dq ∗
       ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ }}}
@@ -312,6 +367,139 @@ Proof.
       apply Hno_dash.
       rewrite Hname.
       apply desired_pod_name_has_dash.
+Qed.
+
+Lemma wp_parentNameAndOrdinal_parse (pod_name : go_string) :
+  {{{ ⌜ Z.of_nat (length pod_name) <= go_int_max ⌝ }}}
+    @! statefulset.parentNameAndOrdinal #pod_name
+  {{{ (parent : go_string) (ordinal : w64), RET (#parent, #ordinal);
+      ⌜ match parse_pod_ordinal pod_name with
+        | Some expected_ordinal =>
+            if decide (expected_ordinal <= go_int32_max_nat)%nat
+            then sint.Z ordinal = Z.of_nat expected_ordinal
+            else sint.Z ordinal < 0
+        | None => sint.Z ordinal < 0
+        end ⌝
+  }}}.
+Proof.
+  wp_start as "%Hpod_name_len".
+  wp_auto.
+  wp_apply (wp_strings_LastIndex_singleton pod_name byte_dash with "[]").
+  { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
+    iPureIntro. exact Hpod_name_len. }
+  iIntros (idx) "%Hidx".
+  wp_auto.
+  destruct Hidx as
+    [(parent & suffix & Hname_decomp & Hsuffix_no_dash & Hidx_Z)|
+     (Hno_dash & Hidx_Z)].
+  - assert (Hpod_ordinal_suffix :
+      pod_ordinal_suffix pod_name = Some suffix).
+    { by apply (pod_ordinal_suffix_last_dash pod_name parent suffix). }
+    assert (Hprefix_next_bound : Z.of_nat (S (length parent)) <= go_int_max).
+    { rewrite Hname_decomp app_length /= in Hpod_name_len. lia. }
+    unfold go_int_max in Hprefix_next_bound.
+    assert (Hidx_next_Z : sint.Z (word.add idx (W64 1)) =
+        Z.of_nat (S (length parent))) by word.
+    assert (Hidx_nat : sint.nat idx = length parent) by word.
+    assert (Hidx_next_nonneg : 0 <= sint.Z (word.add idx (W64 1))).
+    { rewrite Hidx_next_Z. lia. }
+    assert (Hidx_next : sint.nat (word.add idx (W64 1)) =
+        S (length parent)) by word.
+    wp_if_destruct.
+    { exfalso. rewrite Hidx_Z in l.
+      change (sint.Z (W64 0)) with 0 in l. lia. }
+    wp_pures.
+    wp_pures.
+    wp_bind (Slice go.string
+      ((#(parent ++ [byte_dash] ++ suffix), #(word.add idx (W64 1)))%V,
+       #(functions go.len [go.string])
+         (#(parent ++ [byte_dash] ++ suffix))))%E.
+    iApply (wp_wand _ _ _
+      (λ v, ⌜ v = #(drop (sint.nat (word.add idx (W64 1)))
+        (parent ++ [byte_dash] ++ suffix)) ⌝)%I with "[]").
+    { iApply (wp_string_slice_to_end
+        (parent ++ [byte_dash] ++ suffix) (word.add idx (W64 1))).
+      - iPureIntro. split; [exact Hidx_next_nonneg|].
+        rewrite Hidx_next app_length /=. lia.
+      - iIntros "_". iPureIntro. done. }
+    iIntros (suffix_val) "->".
+    assert (drop (sint.nat (word.add idx (W64 1)))
+      (parent ++ [byte_dash] ++ suffix) = suffix) as Hdrop_suffix.
+    { rewrite Hidx_next.
+      clear Hpod_name_len Hsuffix_no_dash Hidx_Z Hprefix_next_bound
+        Hidx_next_Z Hidx_nat Hidx_next_nonneg Hidx_next
+        Hpod_ordinal_suffix.
+      induction parent as [|b parent IH]; simpl; [done|exact IH]. }
+    rewrite Hdrop_suffix.
+    wp_pures.
+    wp_apply (wp_strconv_ParseInt_decimal_int32 with "[]").
+    { by iEval (rewrite is_pkg_init_unfold /=). }
+    iIntros (ordinal err) "%Hparse".
+    wp_auto.
+    destruct (parse_decimal_string suffix) as [expected_ordinal|]
+      eqn:Hparse_suffix.
+    + destruct (decide (expected_ordinal <= go_int32_max_nat)%nat) as
+        [Hexpected_ordinal_bound|Hexpected_ordinal_overflow].
+      * destruct Hparse as
+          (Herr_nil & Hordinal_nat & Hordinal_Z & Hordinal_bounds).
+        rewrite Herr_nil.
+        wp_auto.
+        wp_bind (Slice go.string
+          (#(parent ++ [byte_dash] ++ suffix), #(W64 0), #idx)%V)%E.
+        iApply (wp_wand _ _ _
+          (λ v, ⌜ v = #(subslice (sint.nat (W64 0)) (sint.nat idx)
+            (parent ++ [byte_dash] ++ suffix)) ⌝)%I with "[]").
+        { iApply (wp_string_slice
+            (parent ++ [byte_dash] ++ suffix) (W64 0) idx).
+          - iPureIntro. split.
+            + split; [word|]. rewrite Hidx_Z. lia.
+            + rewrite Hidx_nat app_length /=. lia.
+          - iIntros "_". iPureIntro. done. }
+        iIntros (parent_val) "->".
+        wp_auto.
+        rewrite /subslice /= Hidx_nat drop_0 take_app_length.
+        iApply "HΦ". iPureIntro.
+        unfold parse_pod_ordinal.
+        rewrite Hpod_ordinal_suffix /=.
+        rewrite Hparse_suffix.
+        case_decide; [exact Hordinal_Z|done].
+      * destruct err as [err_i|].
+        2: { exfalso. apply Hparse. reflexivity. }
+        wp_pures. iApply "HΦ". iPureIntro.
+        unfold parse_pod_ordinal.
+        rewrite Hpod_ordinal_suffix /=.
+        rewrite Hparse_suffix.
+        case_decide; [done|word].
+    + destruct err as [err_i|].
+      2: { exfalso. apply Hparse. reflexivity. }
+      wp_pures. iApply "HΦ". iPureIntro.
+      unfold parse_pod_ordinal.
+      rewrite Hpod_ordinal_suffix /= Hparse_suffix. word.
+  - wp_if_destruct.
+    2: { exfalso. word. }
+    wp_pures. iApply "HΦ". iPureIntro.
+    unfold parse_pod_ordinal.
+    rewrite (pod_ordinal_suffix_no_dash pod_name Hno_dash). simpl. word.
+Qed.
+
+Lemma wp_ordinalOf_parse (pod_name : go_string) :
+  {{{ ⌜ Z.of_nat (length pod_name) <= go_int_max ⌝ }}}
+    @! statefulset.ordinalOf #pod_name
+  {{{ (ordinal : w64), RET #ordinal;
+      ⌜ match parse_pod_ordinal pod_name with
+        | Some expected_ordinal =>
+            if decide (expected_ordinal <= go_int32_max_nat)%nat
+            then sint.Z ordinal = Z.of_nat expected_ordinal
+            else sint.Z ordinal < 0
+        | None => sint.Z ordinal < 0
+        end ⌝
+  }}}.
+Proof.
+  wp_start as "%Hpod_name_len". wp_auto.
+  wp_apply (wp_parentNameAndOrdinal_parse pod_name with "[]").
+  { iPureIntro. exact Hpod_name_len. }
+  iIntros (parent ordinal) "%Hordinal". wp_auto.
+  iApply "HΦ". done.
 Qed.
 
 Lemma wp_ordinalOf pod_name ordinal set_name :

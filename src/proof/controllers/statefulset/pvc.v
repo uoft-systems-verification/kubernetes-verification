@@ -108,6 +108,85 @@ Proof.
       exists x. by rewrite lookup_insert_eq.
 Qed.
 
+Lemma claim_templates_map_of_list_dom claim_templates :
+  dom (claim_templates_map_of_list claim_templates) =
+    list_to_set
+      ((λ claim_template,
+          claim_template.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name'))
+        <$> claim_templates).
+Proof.
+  induction claim_templates using rev_ind.
+  - rewrite /claim_templates_map_of_list /= dom_empty_L. done.
+  - apply leibniz_equiv. apply set_equiv.
+    intros name.
+    assert (is_Some (claim_templates_map_of_list claim_templates !! name) ↔
+      name ∈ list_to_set (C:=gset go_string)
+        ((λ claim_template,
+            claim_template.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name'))
+          <$> claim_templates)) as Hprevious.
+    { rewrite -elem_of_dom IHclaim_templates. done. }
+    rewrite claim_templates_map_of_list_snoc /claim_templates_map_insert.
+    rewrite elem_of_dom lookup_insert_is_Some'.
+    rewrite fmap_app elem_of_list_to_set elem_of_app /=.
+    rewrite Hprevious elem_of_list_to_set.
+    rewrite list_elem_of_singleton.
+    split; intros [Hname|Hprevious'];
+      [right; symmetry; exact Hname
+      |left; exact Hprevious'
+      |right; exact Hname
+      |left; symmetry; exact Hprevious'].
+Qed.
+
+Lemma persistent_volume_claim_deepown_name claim_template_phy
+    claim_template dq :
+  PersistentVolumeClaimV.deepown claim_template_phy claim_template dq ⊢
+    ⌜ claim_template_phy.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name') =
+      claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+    PersistentVolumeClaimV.deepown claim_template_phy claim_template dq.
+Proof.
+  iIntros "Hclaim_template".
+  iNamedPrefix "Hclaim_template" "Hclaim_template_".
+  iNamedPrefix "Hclaim_template_Hdeepown_objectmeta" "Hclaim_template_meta_".
+  iSplit; first done.
+  rewrite /PersistentVolumeClaimV.deepown /ObjectMetaV.deepown.
+  iFrame.
+  iFrame "%".
+Qed.
+
+Lemma persistent_volume_claim_deepown_list_names claim_templates_phy
+    claim_templates dq :
+  ([∗ list] claim_template_phy;claim_template ∈
+      claim_templates_phy;claim_templates,
+      PersistentVolumeClaimV.deepown claim_template_phy claim_template dq) ⊢
+    ⌜ (λ claim_template,
+          claim_template.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name'))
+          <$> claim_templates_phy =
+       (λ claim_template,
+          claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
+          <$> claim_templates ⌝ ∗
+    ([∗ list] claim_template_phy;claim_template ∈
+      claim_templates_phy;claim_templates,
+      PersistentVolumeClaimV.deepown claim_template_phy claim_template dq).
+Proof.
+  iInduction claim_templates_phy as [|claim_template_phy claim_templates_phy]
+    "IH" forall (claim_templates).
+  - destruct claim_templates; simpl.
+    + iIntros "H". iFrame. done.
+    + iIntros "H".
+      iDestruct "H" as %Hfalse. done.
+  - destruct claim_templates as [|claim_template claim_templates]; simpl.
+    + iIntros "H".
+      iDestruct "H" as %Hfalse. done.
+    + iIntros "[Hclaim_template Hclaim_templates]".
+      iDestruct (persistent_volume_claim_deepown_name with
+        "Hclaim_template") as "[%Hname Hclaim_template]".
+      iDestruct ("IH" with "Hclaim_templates") as
+        "[%Hnames Hclaim_templates]".
+      iSplit.
+      { iPureIntro. simpl. f_equal; done. }
+      iFrame.
+Qed.
+
 (* The returned map contains physical PVC template values copied from the
    StatefulSet's physical VolumeClaimTemplates slice.  Keeping the StatefulSet
    deep ownership split in the postcondition exposes that physical slice and
@@ -151,6 +230,12 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
             is_Some (claim_templates_phy !!
               claim_template_phy.(v1.PersistentVolumeClaim.ObjectMeta').(v1.ObjectMeta.Name'))
           ) claim_templates_list ⌝ ∗
+      "%Hclaim_templates_map_dom" ∷
+        ⌜ dom claim_templates_phy =
+          list_to_set
+            ((λ claim_template,
+                claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
+              <$> set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')) ⌝ ∗
       "%Hdeepown_servicename" ∷
         ⌜ set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.ServiceName') =
           set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ⌝ ∗
@@ -234,6 +319,9 @@ Proof.
       rewrite Hi_len.
       apply take_ge. lia. }
     rewrite Htake_all.
+    iDestruct (persistent_volume_claim_deepown_list_names with
+      "Hclaim_templates_deepown") as
+      "[%Hclaim_template_names Hclaim_templates_deepown]".
     iApply ("HΦ" $! set_phy claim_templates_map_l claim_templates_list
       (claim_templates_map_of_list claim_templates_list)).
     iFrame.
@@ -242,7 +330,10 @@ Proof.
     iFrame "%".
     iSplit.
     + iPureIntro. apply claim_templates_map_of_list_values.
-    + iPureIntro. apply claim_templates_map_of_list_names.
+    + iSplit.
+      { iPureIntro. apply claim_templates_map_of_list_names. }
+      iPureIntro.
+      rewrite claim_templates_map_of_list_dom Hclaim_template_names. done.
 Unshelve.
   all: apply _.
 Qed.
