@@ -307,10 +307,15 @@ Record t := mk {
   Spec' : PodSpecV.t;
 }.
 
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L6795-L6810 *)
+(* This is the projection of Kubernetes' ValidatePodTemplateSpec onto the
+   fields represented by PodTemplateSpecV.t and PodSpecV.t.  In particular,
+   Kubernetes does not validate ObjectMeta.Finalizers as part of validating a
+   pod template.  Checks involving unmodeled PodSpec fields and pod-specific
+   annotation/field consistency are likewise outside this projection. *)
 Definition valid (template : t) : Prop :=
   valid_labels template.(ObjectMeta').(ObjectMetaV.Labels') ∧
   valid_annotations template.(ObjectMeta').(ObjectMetaV.Annotations') ∧
-  valid_finalizers template.(ObjectMeta').(ObjectMetaV.Finalizers') ∧
   PodSpecV.valid template.(Spec').
 
 Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
