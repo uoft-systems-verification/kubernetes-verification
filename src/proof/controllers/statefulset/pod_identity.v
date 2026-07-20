@@ -570,7 +570,9 @@ Lemma wp_updateIdentity set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
     @! statefulset.updateIdentity #set_l #pod_l
   {{{ RET #();
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
-      "Hpod" ∷ PodV.deepown_l pod_l (update_identity set pod ordinal) 1
+      "Hpod" ∷ PodV.deepown_l pod_l (update_identity set pod ordinal) 1 ∗
+      "%Hidentity_matches" ∷
+        ⌜ pod_identity_matches set (update_identity set pod ordinal) ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -645,6 +647,9 @@ Proof.
       as "Hset".
     iApply "HΦ".
     iFrame "Hset".
+    iSplitL.
+    2: { iPureIntro. apply update_identity_identity_matches.
+         exact Hordinal_int32. }
     unfold update_identity.
     cbn.
     iEval (rewrite Hlabels /=).
@@ -780,6 +785,9 @@ Proof.
     as "Hset".
   iApply "HΦ".
   iFrame "Hset".
+  iSplitL.
+  2: { iPureIntro. apply update_identity_identity_matches.
+       exact Hordinal_int32. }
   unfold update_identity.
   cbn.
   iEval (rewrite Hlabels /=).

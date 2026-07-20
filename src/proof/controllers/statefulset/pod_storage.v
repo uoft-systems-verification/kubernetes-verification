@@ -945,7 +945,9 @@ Lemma wp_updateStorage set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
       "%Hclaim_template_names" ∷
         ⌜ NoDup claim_template_names ∧
           list_to_set (C:=gset go_string) claim_template_names =
-            list_to_set (pvc_claim_template_names set) ⌝
+            list_to_set (pvc_claim_template_names set) ⌝ ∗
+      "%Hstorage_matches" ∷ ⌜ pod_storage_matches set
+        (update_storage set pod ordinal claim_template_names) ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -1316,8 +1318,10 @@ Proof.
       as "Hpod".
     { iApply (PodV.deepown_l_restore _ _ _ Hpod_l_not_null).
       rewrite /update_storage /=. iFrame. }
-    iApply ("HΦ" $! keys). iFrame "Hset Hpod".
-    iPureIntro. split; first exact Hkeys_nodup.
+    iApply ("HΦ" $! keys). iFrame "Hset Hpod". iSplit.
+    { iPureIntro. split; first exact Hkeys_nodup.
+      rewrite Hkeys_dom Hclaim_templates_map_dom. done. }
+    iPureIntro. apply update_storage_storage_matches; try done.
     rewrite Hkeys_dom Hclaim_templates_map_dom. done.
 Qed.
 
