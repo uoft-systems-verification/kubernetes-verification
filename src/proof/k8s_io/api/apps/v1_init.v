@@ -20,4 +20,10 @@ Definition is_initialized : iProp Σ :=
   define_is_pkg_init is_initialized.
 #[global] Instance : GetIsPkgInitWf (iProp Σ) code.k8s_io.api.apps.v1.pkg_id.v1 := build_get_is_pkg_init_wf.
 
+(* TODO: Prove [wp_initialize'] showing that the generated apps/v1 package
+initializer establishes [is_initialized]. The generated initializer currently
+calls opaque initializers for untranslated globals, as well as the core/v1,
+meta/v1, and schema package initializers, so those calls first need proved
+specifications (or their implementations need to be translated). *)
+
 End proof.
