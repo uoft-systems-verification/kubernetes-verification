@@ -32,6 +32,7 @@ End def.
 End TimeV.
 
 Definition byte_dot : w8 := W8 46.  (* ASCII '.' *)
+Definition byte_a : w8 := W8 97.  (* ASCII 'a' *)
 
 Definition dns1123_lower_alphanumeric (b : w8) : Prop :=
   (48 ≤ uint.Z b ≤ 57)%Z ∨ (97 ≤ uint.Z b ≤ 122)%Z.
@@ -197,17 +198,105 @@ Proof.
   - by apply valid_dns1123_subdomain_slash_free.
 Qed.
 
+(* With [prefix = true], Kubernetes' label and subdomain name validators call
+   [maskTrailingDash]. If the name has at least two bytes and ends in ["-"],
+   that function validates [name[:len(name)-2] + "a"]; otherwise it validates
+   the name unchanged:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L36-L49
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L70-L79
+   We reported [name[:len(name)-2]] to the Kubernetes community as a likely
+   bug:
+   https://github.com/kubernetes/kubernetes/issues/137491
+   The community acknowledged that the rationale is unclear, but does not plan
+   to change the behavior. *)
 Definition valid_generate_name kind generate_name : Prop :=
-  (* The generate_name must be a valid name followed by a "-"; this is overly restrict but still practical *)
-  ∃ prefix, generate_name = prefix ++ "-"%go ∧ prefix ≠ ""%go ∧ valid_name kind prefix.
+  (∃ prefix char,
+    generate_name = prefix ++ [char] ++ "-"%go ∧
+    valid_name kind (prefix ++ [byte_a])) ∨
+  (¬ ∃ prefix char,
+    generate_name = prefix ++ [char] ++ "-"%go) ∧
+  valid_name kind generate_name.
 
-  (* Below is the actual validation logic for generate_name, which is too complex and seems buggy *)
-  (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L37 *)
-  (* TODO: there might be a bug in Kubernetes that performs name[:len(name)-2] in generic.go *)
-  (* (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go ∧
-        valid_name kind (prefix ++ "a"%go)) ∨
-  ¬ (∃ prefix char, generate_name = prefix ++ [char] ++ "-"%go) ∧
-    valid_name kind generate_name. *)
+(* We often use this lemma to prove that a generate name is valid. *)
+Lemma valid_generate_name_of_valid_prefix kind generate_name:
+  (∃ prefix,
+    generate_name = prefix ++ "-"%go ∧
+    prefix ≠ ""%go ∧
+    valid_name kind prefix) →
+  valid_generate_name kind generate_name.
+Proof.
+  assert (Ha : dns1123_lower_alphanumeric byte_a).
+  { unfold dns1123_lower_alphanumeric, byte_a. right. word. }
+  assert (Hlabel_tail : ∀ previous prefix last,
+      dns1123_label_tail previous (prefix ++ [last]) →
+      dns1123_label_tail previous (prefix ++ [byte_a])).
+  { intros previous prefix last. revert previous.
+    induction prefix as [|b prefix IH]; intros previous Htail; simpl in *.
+    - split.
+      + left. exact Ha.
+      + exact Ha.
+    - destruct Htail as [Hb Htail].
+      split; first exact Hb.
+      by apply IH. }
+  assert (Hsubdomain_tail : ∀ previous prefix last,
+      dns1123_subdomain_tail previous (prefix ++ [last]) →
+      dns1123_subdomain_tail previous (prefix ++ [byte_a])).
+  { intros previous prefix last. revert previous.
+    induction prefix as [|b prefix IH]; intros previous Htail; simpl in *.
+    - split_and!.
+      + left. left. exact Ha.
+      + intros _. exact Ha.
+      + intros Heq. unfold byte_a, byte_dot in Heq. word.
+      + exact Ha.
+    - destruct Htail as (Hb & Hprevious & Hb_dot & Htail).
+      split_and!; try done.
+      by apply IH. }
+  assert (Hlabel : ∀ prefix last,
+      valid_dns1123_label (prefix ++ [last]) →
+      valid_dns1123_label (prefix ++ [byte_a])).
+  { intros prefix last [Hsyntax Hlength].
+    split.
+    - destruct prefix as [|first suffix].
+      + simpl. split; exact Ha.
+      + simpl in Hsyntax |-.
+        destruct Hsyntax as [Hfirst Htail].
+        split; first exact Hfirst.
+        exact (Hlabel_tail first suffix last Htail).
+    - rewrite !app_length /= in Hlength.
+      rewrite app_length /=. exact Hlength. }
+  assert (Hsubdomain : ∀ prefix last,
+      valid_dns1123_subdomain (prefix ++ [last]) →
+      valid_dns1123_subdomain (prefix ++ [byte_a])).
+  { intros prefix last [Hsyntax Hlength].
+    split.
+    - destruct prefix as [|first suffix].
+      + simpl. split; exact Ha.
+      + simpl in Hsyntax |-.
+        destruct Hsyntax as [Hfirst Htail].
+        split; first exact Hfirst.
+        exact (Hsubdomain_tail first suffix last Htail).
+    - rewrite !app_length /= in Hlength.
+      rewrite app_length /=. exact Hlength. }
+  assert (Hvalid_name : ∀ kind prefix last,
+      valid_name kind (prefix ++ [last]) →
+      valid_name kind (prefix ++ [byte_a])).
+  { intros k prefix last [[Hkind Hvalid] | [Hkind Hvalid]].
+    - left. split; first exact Hkind. exact (Hlabel prefix last Hvalid).
+    - right. split; first exact Hkind. exact (Hsubdomain prefix last Hvalid). }
+  assert (Hsnoc : ∀ s : go_string,
+      s ≠ ""%go → ∃ prefix last, s = prefix ++ [last]).
+  { intros s. induction s as [|b s IH]; intros Hnonempty.
+    - contradiction.
+    - destruct s as [|b' s].
+      + exists [], b. done.
+      + destruct (IH ltac:(done)) as (prefix & last & ->).
+        exists (b :: prefix), last. done. }
+  intros (prefix & -> & Hprefix_nonempty & Hprefix_valid).
+  destruct (Hsnoc prefix Hprefix_nonempty) as (prefix' & last & ->).
+  left. exists prefix', last. split.
+  - by rewrite app_assoc.
+  - exact (Hvalid_name kind prefix' last Hprefix_valid).
+Qed.
 
 (* Kubernetes validates a nonempty namespace with ValidateNamespaceName, which
    is NameIsDNSLabel:
