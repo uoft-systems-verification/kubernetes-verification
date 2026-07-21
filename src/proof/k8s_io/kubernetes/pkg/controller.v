@@ -51,7 +51,7 @@ Lemma wp_getPodsLabelSet template_l template dq :
   {{{ "Hinit" ∷ is_pkg_init controller ∗
       "Htemplate" ∷ PodTemplateSpecV.deepown_l template_l template dq
   }}}
-  @! controller.getPodsLabelSet #template_l
+    @! controller.getPodsLabelSet #template_l
   {{{ labels_l, RET #labels_l;
       PodTemplateSpecV.deepown_l template_l template dq ∗
       labels_l ↦$ default ∅
@@ -192,7 +192,7 @@ Lemma wp_getPodsFinalizers template_l template dq :
   {{{ is_pkg_init controller ∗
       PodTemplateSpecV.deepown_l template_l template dq
   }}}
-  @! controller.getPodsFinalizers #template_l
+    @! controller.getPodsFinalizers #template_l
   {{{ finalizers_sl, RET #finalizers_sl;
       PodTemplateSpecV.deepown_l template_l template dq ∗
       finalizers_sl ↦* default []
@@ -205,7 +205,7 @@ Lemma wp_getPodsAnnotationSet template_l template dq :
   {{{ is_pkg_init controller ∗
       PodTemplateSpecV.deepown_l template_l template dq
   }}}
-  @! controller.getPodsAnnotationSet #template_l
+    @! controller.getPodsAnnotationSet #template_l
   {{{ annotations_l, RET #annotations_l;
       PodTemplateSpecV.deepown_l template_l template dq ∗
       annotations_l ↦$ default ∅
@@ -217,7 +217,7 @@ Lemma wp_getPodsPrefix controller_name :
   {{{ is_pkg_init controller ∗
       ⌜ valid_dns1123_subdomain controller_name ⌝
   }}}
-  @! controller.getPodsPrefix #controller_name
+    @! controller.getPodsPrefix #controller_name
   {{{ RET #(controller_name ++ "-"%go); True }}}.
 Proof. Admitted.
 
@@ -227,7 +227,7 @@ Lemma wp_PodSpec__DeepCopy spec_l spec dq :
   {{{ is_pkg_init controller ∗
       PodSpecV.deepown_l spec_l spec dq
   }}}
-  spec_l @! (go.PointerType v1.PodSpec) @! "DeepCopy" #()
+    spec_l @! (go.PointerType v1.PodSpec) @! "DeepCopy" #()
   {{{ spec_copy_l, RET #spec_copy_l;
       PodSpecV.deepown_l spec_copy_l spec 1 ∗
       PodSpecV.deepown_l spec_l spec dq
@@ -238,7 +238,7 @@ Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
   {{{ is_pkg_init controller ∗
       ownerReference ↦{dq} owner_reference
   }}}
-  @! controller.PodControllerIndexKey #namespace #ownerReference
+    @! controller.PodControllerIndexKey #namespace #ownerReference
   {{{ index_key, RET #index_key;
       ⌜ index_key = namespace ++ "/"%go ++ 
         owner_reference.(v1.OwnerReference.Kind') ++ "/"%go ++ 
@@ -266,7 +266,7 @@ Lemma wp_GetPodFromTemplate template_l obj controller_ref_l template_dq
         ⌜ valid_dns1123_subdomain
             (KObjectV.objectmeta parent).(ObjectMetaV.Name') ⌝
   }}}
-  @! controller.GetPodFromTemplate #template_l #(interface.ok obj) #controller_ref_l
+    @! controller.GetPodFromTemplate #template_l #(interface.ok obj) #controller_ref_l
   {{{ pod_l, RET (#pod_l, #interface.nil);
       "Hpod" ∷ PodV.deepown_l pod_l
         (generated_pod template
@@ -516,11 +516,17 @@ Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
       ⌜ PodTemplateSpecV.valid template ⌝ ∗
       ⌜ obj = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
       ⌜ ObjectMetaV.valid ReplicaSetV.kind meta ⌝ ∗
+      (* [generated_pod] appends ["-"] to the ReplicaSet name, while our
+         strengthened [ObjectMetaV.valid_nameless_create] requires the complete
+         generate name to have length at most 58. Upstream validation does not
+         require this bound: [SimpleNameGenerator] truncates longer bases before
+         adding its five-byte suffix:
+         https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L42-L53 *)
       ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref "ReplicaSet"%go
         meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝
   }}}
-  @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
+    @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
   {{{ pod_l pod, RET (#pod_l, #interface.nil);
       PodV.deepown_l pod_l pod 1 ∗
       ⌜ obj_parent_ref_is (KObjectV.Pod pod) "ReplicaSet"%go meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝ ∗
@@ -528,37 +534,6 @@ Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
       template_l ↦{dq} template_c ∗
       PodTemplateSpecV.deepown template_c template dq ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq
-  }}}.
-Proof. Admitted.
-
-Lemma wp_GetPodFromTemplate_StatefulSet template_l obj controller_ref_l
-    dq (template_c : v1.core_v1.PodTemplateSpec.t) template set_l meta
-    controller_ref :
-  {{{ is_pkg_init controller ∗
-      template_l ↦{dq} template_c ∗
-      PodTemplateSpecV.deepown template_c template dq ∗
-      ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) meta dq ∗
-      OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
-      ⌜ PodTemplateSpecV.valid template ⌝ ∗
-      ⌜ obj = interface.mk_ok (go.PointerType v1.StatefulSet) (#set_l) ⌝ ∗
-      ⌜ ObjectMetaV.valid StatefulSetV.kind meta ⌝ ∗
-      ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
-      ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
-      ⌜ OwnerReferenceV.refers_to_controller controller_ref "StatefulSet"%go
-          meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝
-  }}}
-    @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
-  {{{ pod_l pod, RET (#pod_l, #interface.nil);
-      PodV.deepown_l pod_l pod 1 ∗
-      ⌜ obj_parent_ref_is (KObjectV.Pod pod) "StatefulSet"%go
-          meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝ ∗
-      ⌜ KObjectV.valid_nameless_create "Pod"%go meta.(ObjectMetaV.Namespace')
-          (KObjectV.Pod pod) ⌝ ∗
-      ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      ⌜ pod_from_template template pod ⌝ ∗
-      template_l ↦{dq} template_c ∗
-      PodTemplateSpecV.deepown template_c template dq ∗
-      ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) meta dq
   }}}.
 Proof. Admitted.
 
