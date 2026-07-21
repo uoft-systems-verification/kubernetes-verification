@@ -226,14 +226,17 @@ Definition valid o : Prop :=
 
 Definition valid_nameless_create knd ns o : Prop :=
   knd = kind o ∧
-  valid_typemeta (kind o) (typemeta o) ∧
+  (* Empty TypeMeta kind/apiVersion fields are valid here: the create request
+     decoder defaults them from the REST endpoint before validation. *)
+  valid_create_typemeta (kind o) (typemeta o) ∧
   ObjectMetaV.valid_nameless_create knd ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).
 
 Definition valid_named_create knd ns o : Prop :=
   knd = kind o ∧
-  valid_typemeta (kind o) (typemeta o) ∧
+  (* See [valid_nameless_create]: TypeMeta fields may be omitted on create. *)
+  valid_create_typemeta (kind o) (typemeta o) ∧
   ObjectMetaV.valid_named_create knd ns (objectmeta o) ∧
   ObjectSpecV.valid_create (spec o) ∧
   ObjectStatusV.valid_create (status o).

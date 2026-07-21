@@ -262,7 +262,8 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
   {{{ is_pkg_init apimodel ∗
       ⌜ KObjectV.valid_interface i l o ⌝ ∗
       KObjectV.deepown_l l o 1 ∗
-      ⌜ let m := KObjectV.objectmeta o in
+      ⌜ valid_create_typemeta (KObjectV.kind o) (KObjectV.typemeta o) ∧
+        let m := KObjectV.objectmeta o in
         (m.(ObjectMetaV.GenerateName') ≠ ""%go →
           valid_generate_name (KObjectV.kind o) m.(ObjectMetaV.GenerateName')) ∧
         m.(ObjectMetaV.Name') ≠ ""%go ∧
@@ -282,7 +283,10 @@ Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
       ⌜ ObjectMetaV.valid (KObjectV.kind o') (KObjectV.objectmeta o') ⌝ ∗
       ⌜ ObjectSpecV.valid (KObjectV.spec o') ⌝ ∗
       ⌜ ObjectStatusV.valid (KObjectV.status o') ⌝ ∗
-      ⌜ KObjectV.typemeta o' = KObjectV.typemeta o ⌝ ∗
+      (* This contract includes the omitted decoder step: a create request may
+         omit TypeMeta.kind, while the typed object returned by Kubernetes has
+         the concrete kind selected by the endpoint. *)
+      ⌜ valid_typemeta (KObjectV.kind o') (KObjectV.typemeta o') ⌝ ∗
       ⌜ KObjectV.objectmeta o' = ((KObjectV.objectmeta o) <| ObjectMetaV.Generation' := W64 1 |>) ⌝ ∗
       ⌜ ObjectSpecV.created (KObjectV.spec o) (KObjectV.spec o') ⌝ ∗
       ⌜ ObjectStatusV.created (KObjectV.status o) (KObjectV.status o') ⌝

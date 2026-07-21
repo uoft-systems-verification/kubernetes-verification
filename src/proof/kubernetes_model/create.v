@@ -94,11 +94,17 @@ Proof.
   wp_apply (wp_applyValidationAndDefaulting with "[Hdeepown_l]").
   { iFrame.
     iPureIntro.
-    destruct Hvalid as (Hkind & _ & Hmeta & _).
+    destruct Hvalid as (Hkind & Hvalid_create_typemeta & Hmeta & _).
     destruct Hmeta as (Hgn_valid & _ & _ & _ & Hlabels & Hannotations & Howner_refs & Hfinalizers & Hmanaged_fields).
-    destruct kobj; simpl in Hkind |- *; subst kind; split_and!; done.
+    split.
+    - destruct kobj; done.
+    - split.
+      + rewrite KObjectV.kind_update_objectmeta
+          KObjectV.typemeta_update_objectmeta.
+        exact Hvalid_create_typemeta.
+      + destruct kobj; simpl in Hkind |- *; subst kind; split_and!; done.
   }
-  iIntros (kobj1) "(Hdeepown_l & %Hsame_kind & %Hvalid_meta & %Hvalid_spec & %Hvalid_status & %Htypemeta_eq & %Hm_eq &
+  iIntros (kobj1) "(Hdeepown_l & %Hsame_kind & %Hvalid_meta & %Hvalid_spec & %Hvalid_status & %Hvalid_typemeta & %Hm_eq &
     %Hcreated_spec & %Hcreated_status)". wp_auto.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hl1_not_null1 & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
@@ -145,18 +151,10 @@ Proof.
     as "[%Hchildren_eq_dom %Hin_used_reference]".
   assert (KObjectV.valid kobj2) as Hvalid2.
   { subst kobj2.
-    destruct Hvalid as (Hkind_eq & Hvalid_typemeta & _ & _ & _).
+    destruct Hvalid as (Hkind_eq & _).
     destruct kobj; destruct kobj1; try done.
-    all: (
-      lazymatch goal with
-      | Hvalid_typemeta : valid_typemeta ?kind ?tm_old,
-        Htypemeta_eq : ?tm_new = ?tm_old |- _ =>
-          assert (valid_typemeta kind tm_new) as Hvalid_typemeta1
-            by (rewrite Htypemeta_eq; done)
-      end;
-      solve_update_objectmeta_valid
-        Hvalid_typemeta1 Hgenerated_rv_valid Hvalid_meta Hvalid_spec Hvalid_status
-    ).
+    all: solve_update_objectmeta_valid
+      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec Hvalid_status.
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }

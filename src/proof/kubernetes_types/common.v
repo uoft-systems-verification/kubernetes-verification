@@ -374,3 +374,30 @@ Axiom valid_annotations: option (gmap go_string go_string) → Prop.
 (* TODO: this definition is incomplete but for now we only care about kind *)
 Definition valid_typemeta kind tm : Prop :=
   kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
+
+(* The API version expected for each concrete kind represented by [KObjectV]. *)
+Definition valid_api_version kind api_version : Prop :=
+  ((kind = "Pod"%go ∨ kind = "PersistentVolumeClaim"%go) ∧
+    api_version = "v1"%go) ∨
+  ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go) ∧
+    api_version = "apps/v1"%go).
+
+(* TypeMeta on a create request may omit [kind] and/or [apiVersion]: the JSON
+   decoder fills each missing GVK field from the REST endpoint's default GVK.
+   An explicitly incompatible kind does not match that typed object and fails
+   during decoding/conversion, while an incompatible group/version is rejected
+   by the create handler before resource validation:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/runtime/serializer/json/json.go#L115-L127
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/runtime/serializer/json/json.go#L164-L205
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L116-L147
+
+   [valid_typemeta] remains the stronger invariant for an object returned by
+   Kubernetes. *)
+Definition valid_create_typemeta kind tm : Prop :=
+  (tm.(v1.TypeMeta.Kind') = ""%go ∨ kind = tm.(v1.TypeMeta.Kind')) ∧
+  (tm.(v1.TypeMeta.APIVersion') = ""%go ∨
+    valid_api_version kind tm.(v1.TypeMeta.APIVersion')).
+
+Lemma zero_typemeta_valid_create kind :
+  valid_create_typemeta kind (zero_val v1.TypeMeta.t).
+Proof. split; left; done. Qed.
