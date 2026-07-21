@@ -193,11 +193,10 @@ Proof.
   apply Permutation_map. exact Hperm.
 Qed.
 
-Lemma wp_manageReplicas γ l (gv: schema.GroupVersion.t) sl rs_l ptrs active_pods inactive_pods rs n dq1 dq2 :
+Lemma wp_manageReplicas γ l sl rs_l ptrs active_pods inactive_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hsl" ∷ sl ↦* ptrs ∗
       "Hdeepown_l_active_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;active_pods, PodV.deepown_l ptr pod dq1) ∗
       "Hdeepown_l_rs" ∷ ReplicaSetV.deepown_l rs_l rs dq2 ∗
@@ -261,10 +260,12 @@ Proof.
     { iExists (W64 0), active_pods. iFrame. iPureIntro. split_and!. all: try word. done. }
     wp_for "Hloop_inv". wp_if_destruct.
 	  + wp_bind ((global_addr apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
+	    iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
+	      "(_ & _ & #Happs_v1_init & _)".
 	    wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
 	      (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
-	        _ _ _ _ object_apps_v1_sem) gv "ReplicaSet"%go with "[]");
-	      [iFrame "#"; iPkgInit|].
+	        _ _ _ _ object_apps_v1_sem) "ReplicaSet"%go with
+	      "[$Happs_v1_init]").
 	    iIntros (gvk) "%Hgvk". wp_auto.
 	    destruct Hgvk as (Hgvk_g & Hgvk_v & Hgvk_k).
 	    wp_bind (@! replicaset.meta_v1.NewControllerRef
@@ -553,11 +554,10 @@ Proof.
       rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet γ l (gv: schema.GroupVersion.t) namespace name rs dq pods :
+Lemma wp_syncReplicaSet γ l namespace name rs dq pods :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         rs.(ReplicaSetV.ObjectMeta') ∗
       "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
@@ -708,7 +708,7 @@ Proof.
   assert (NoDup (PodV.key <$>
       (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))) as Hpartition_nodup.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
-  wp_apply (wp_manageReplicas γ l gv active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas γ l active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
     rs_get n dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag]").

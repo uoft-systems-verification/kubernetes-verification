@@ -130,11 +130,10 @@ Proof.
       rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet_stability γ l (gv: schema.GroupVersion.t) namespace name rs dq pods :
+Lemma wp_syncReplicaSet_stability γ l namespace name rs dq pods :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
         rs.(ReplicaSetV.ObjectMeta') ∗
       "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq

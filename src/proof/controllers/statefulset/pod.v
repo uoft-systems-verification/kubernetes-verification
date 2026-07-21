@@ -112,12 +112,8 @@ Definition new_statefulset_pod (set : StatefulSetV.t) (ordinal : nat)
   update_storage set (update_identity set pod ordinal) ordinal
     claim_template_names.
 
-Lemma wp_newStatefulSetPod (gv : schema.GroupVersion.t) set_l
-    (set : StatefulSetV.t) (ordinal : w64) dq :
+Lemma wp_newStatefulSetPod set_l (set : StatefulSetV.t) (ordinal : w64) dq :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
-      "%Hgv_group" ∷ ⌜ gv.(schema.GroupVersion.Group') = "apps"%go ⌝ ∗
-      "%Hgv_version" ∷ ⌜ gv.(schema.GroupVersion.Version') = "v1"%go ⌝ ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
       "%Hset_meta_valid" ∷ ⌜ ObjectMetaV.valid StatefulSetV.kind set.(StatefulSetV.ObjectMeta') ⌝ ∗
       "%Hordinal_nonnegative" ∷ ⌜ 0 <= sint.Z ordinal ⌝ ∗
@@ -150,10 +146,12 @@ Proof.
   wp_auto.
   wp_bind ((global_addr apps_v1.SchemeGroupVersion) @!
     (go.PointerType schema.GroupVersion) @! "WithKind" #"StatefulSet"%go)%E.
+  iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
+    "(_ & _ & _ & _ & _ & #Happs_v1_init & _)".
   wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
     (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
-      _ _ _ _ object_apps_v1_sem) gv "StatefulSet"%go with "[]").
-  { iFrame "#". }
+      _ _ _ _ object_apps_v1_sem) "StatefulSet"%go with
+    "[$Happs_v1_init]").
   iIntros (gvk) "%Hgvk".
   destruct Hgvk as (Hgvk_group & Hgvk_version & Hgvk_kind).
   wp_auto.
@@ -165,7 +163,7 @@ Proof.
   wp_apply (v1.wp_NewControllerRef_StatefulSet with "[Hset_objectmeta_l]").
   { iFrame "# Hset_objectmeta_l".
     iPureIntro.
-    rewrite Hgvk_group Hgvk_version Hgvk_kind Hgv_group Hgv_version.
+    rewrite Hgvk_group Hgvk_version Hgvk_kind.
     split; done. }
   iIntros (controller_ref_l controller_ref)
     "(Hcontroller_ref & %Hcontroller_ref_parent &

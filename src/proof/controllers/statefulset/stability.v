@@ -41,11 +41,10 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma wp_syncStatefulSet_stability γ l (gv: schema.GroupVersion.t) namespace name sts dq pods pvcs :
+Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hglobal_gv" ∷ (global_addr apps_v1.SchemeGroupVersion) ↦□ gv ∗
       "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
