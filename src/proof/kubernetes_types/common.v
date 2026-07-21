@@ -298,6 +298,17 @@ Proof.
   - exact (Hvalid_name kind prefix' last Hprefix_valid).
 Qed.
 
+Lemma valid_generate_name_nonempty kind generate_name:
+  valid_generate_name kind generate_name →
+  generate_name ≠ ""%go.
+Proof.
+  intros [(prefix & char & -> & _) | [_ Hvalid]].
+  - intros Hempty.
+    apply app_eq_nil in Hempty as [_ Hdash]. done.
+  - intros ->.
+    destruct Hvalid as [[_ [Hsyntax _]] | [_ [Hsyntax _]]]; done.
+Qed.
+
 (* Kubernetes validates a nonempty namespace with ValidateNamespaceName, which
    is NameIsDNSLabel:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L173-L180

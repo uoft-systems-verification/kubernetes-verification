@@ -82,8 +82,7 @@ Proof.
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.GenerateName') ≠ ""%go) as Hgn_nonempty.
   { destruct Hvalid as (_ & _ & Hmeta & _).
     destruct Hmeta as (Hgn & _ & _ & _ & _).
-    destruct Hgn as (prefix & -> & Hprefix_nonempty & _).
-    intro Hcontra. apply app_eq_nil in Hcontra as [Hprefix _]. done.
+    by apply valid_generate_name_nonempty in Hgn.
   }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_State__generateNewName with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys]").
