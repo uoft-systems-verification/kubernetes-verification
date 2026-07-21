@@ -10,7 +10,7 @@ From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
 Collection W := sem + package_sem.

@@ -39,7 +39,7 @@ End KObject.
 
 Module ObjectSpecV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -84,7 +84,7 @@ End ObjectSpecV.
 
 Module ObjectStatusV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -128,7 +128,7 @@ End ObjectStatusV.
 
 Module KObjectV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -354,7 +354,7 @@ Definition status_ptr l v: loc :=
 End def.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}

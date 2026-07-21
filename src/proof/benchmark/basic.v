@@ -15,7 +15,7 @@ Collection W := sem + package_sem.
 End init.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 
 Definition go_int_min : Z := -(2 ^ 63).

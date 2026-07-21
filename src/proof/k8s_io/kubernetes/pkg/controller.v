@@ -6,17 +6,17 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Import meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : controller.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}
+  {controller_core_v1_sem : core_v1.Assumptions}
+  {controller_meta_v1_sem : meta_v1.Assumptions}.
 Collection W := sem + package_sem.
 Local Set Default Proof Using "All".
 
-#[local] Instance controller_core_v1_sem : core_v1.Assumptions | 0 :=
-  controller.import_core_v1_Assumption.
-#[local] Instance controller_meta_v1_sem : meta_v1.Assumptions | 0 :=
-  controller.import_meta_v1_Assumption.
+#[local] Existing Instance controller_core_v1_sem.
+#[local] Existing Instance controller_meta_v1_sem.
 
 Definition pod_from_template (template : PodTemplateSpecV.t) (pod : PodV.t) : Prop :=
   pod.(PodV.Spec') = template.(PodTemplateSpecV.Spec') ∧

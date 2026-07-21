@@ -3,7 +3,7 @@ From New.proof.kubernetes_types Require Export pod persistentvolumeclaim.
 
 Module StatefulSetSpecV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -57,7 +57,7 @@ End StatefulSetSpecV.
 
 Module StatefulSetStatusV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -74,7 +74,7 @@ End StatefulSetStatusV.
 
 Module StatefulSetV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -147,7 +147,7 @@ Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
 End def.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}

@@ -9,13 +9,14 @@ From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
 
-Definition deepown_list `{hG: heapGS Σ} {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
+Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
+    {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
     (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
   c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
 
 Module TimeV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Axiom t : Type.

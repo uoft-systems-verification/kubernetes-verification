@@ -3,7 +3,7 @@ From New.proof.kubernetes_types Require Export common.
 
 Module OwnerReferenceV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {
@@ -59,7 +59,7 @@ End OwnerReferenceV.
 
 Module ManagedFieldsEntryV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 
@@ -99,7 +99,7 @@ Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
 
 Module ObjectMetaV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Record t := mk {

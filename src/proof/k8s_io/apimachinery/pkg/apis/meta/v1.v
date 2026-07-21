@@ -3,7 +3,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Import prelude.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : v1.Assumptions}.
 Local Set Default Proof Using "All".

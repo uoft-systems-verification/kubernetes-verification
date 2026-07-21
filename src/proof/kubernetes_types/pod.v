@@ -3,7 +3,7 @@ From New.proof.kubernetes_types Require Export objectmeta.
 
 Module VolumeSourceV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -34,7 +34,7 @@ End VolumeSourceV.
 
 Module VolumeV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -57,7 +57,7 @@ End VolumeV.
 
 Module PodSpecV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -129,7 +129,7 @@ End PodSpecV.
 
 Module PodStatusV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -151,7 +151,7 @@ End PodStatusV.
 
 Module PodV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -224,7 +224,7 @@ Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
 End def.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -302,7 +302,7 @@ End PodV.
 
 Module PodTemplateSpecV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -341,7 +341,7 @@ Definition spec_ptr l : loc :=
 End def.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}

@@ -2,7 +2,7 @@ From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof Require Import prelude empty_ffi.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : schema.Assumptions}.
 Collection W := sem + package_sem.
 Set Default Proof Using "W".
