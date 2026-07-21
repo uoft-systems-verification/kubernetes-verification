@@ -138,6 +138,11 @@ Axiom t : Type.
 Axiom valid: t → Prop.
 Axiom deepown : v1.PodStatus.t → t → dfrac → iProp Σ.
 
+(* PodStatus is opaque in this model; expose only the zero value needed when a
+   controller constructs a fresh Pod. *)
+Axiom zero : t.
+Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.PodStatus.t) zero dq.
+
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -327,5 +332,58 @@ Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+Definition objectmeta_ptr l : loc :=
+  struct_field_ref v1.PodTemplateSpec.t "ObjectMeta" l.
+
+Definition spec_ptr l : loc :=
+  struct_field_ref v1.PodTemplateSpec.t "Spec" l.
+
 End def.
+
+Section proof.
+Context `{hG: !heapGS Σ}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Lemma deepown_l_split l v dq :
+  deepown_l l v dq ⊢
+    ⌜ l ≠ null ⌝ ∗
+    ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+    PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq.
+Proof.
+  iIntros "H".
+  iDestruct "H" as (c) "[Hl [Hmeta Hspec]]".
+  iDestruct (struct_fields_split (V:=v1.PodTemplateSpec.t) with "Hl")
+    as "[Hfields %Hnot_null]".
+  iDestruct "Hfields" as "[HObjectMeta HSpec]".
+  iSplitR; first done.
+  iSplitL "HObjectMeta Hmeta".
+  { iExists c.(v1.PodTemplateSpec.ObjectMeta'). iFrame. }
+  iNamed "HSpec".
+  iExists c.(v1.PodTemplateSpec.Spec'). iFrame.
+Qed.
+
+Lemma deepown_l_restore l v dq :
+  l ≠ null →
+  ObjectMetaV.deepown_l (objectmeta_ptr l) v.(ObjectMeta') dq ∗
+  PodSpecV.deepown_l (spec_ptr l) v.(Spec') dq ⊢
+    deepown_l l v dq.
+Proof.
+  intros Hnot_null.
+  iIntros "[Hmeta Hspec]".
+  iDestruct "Hmeta" as (cmeta) "[HObjectMeta Hmeta]".
+  iDestruct "Hspec" as (cspec) "[HSpec Hspec]".
+  iAssert (typed_pointsto_def l
+      (v1.PodTemplateSpec.mk cmeta cspec) dq)
+    with "[HObjectMeta HSpec]" as "Hfields".
+  { simpl. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.PodTemplateSpec.t)
+      l (v1.PodTemplateSpec.mk cmeta cspec) dq Hnot_null with "Hfields")
+    as "Hl".
+  iExists (v1.PodTemplateSpec.mk cmeta cspec). iFrame.
+Qed.
+
+End proof.
 End PodTemplateSpecV.

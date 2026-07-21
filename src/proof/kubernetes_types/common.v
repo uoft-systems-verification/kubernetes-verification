@@ -22,6 +22,11 @@ Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
 Axiom deepown : v1.Time.t → t → dfrac → iProp Σ.
+
+(* The pure model intentionally leaves Time opaque.  This distinguished value
+   is the model of a zero-initialized metav1.Time. *)
+Axiom zero : t.
+Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.Time.t) zero dq.
 End def.
 End TimeV.
 
