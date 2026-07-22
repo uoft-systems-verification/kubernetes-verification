@@ -86,8 +86,8 @@ Proof.
   }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_State__generateNewName with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys]").
-  { destruct Hvalid as (_ & _ & Hmeta & _).
-    destruct Hmeta as (Hgn1 & Hgn2 & _ & _ & _). done. }
+  { destruct Hvalid as (Hkind & _ & Hmeta & _).
+    destruct Hmeta as (Hgn1 & Hgn2 & _ & _ & _). rewrite Hkind. done. }
   iIntros (new_name) "(%Hnn_nonempty & %Hnn_valid & %Hnn_fresh & %Hnn_not_reservedP & Hinv_Hstate_m_addr & Hinv_Hown_phys)". wp_auto.
   wp_apply (wp_SetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hl1_not_null with "[$Hdeepown_t_l $Hdeepown_m_l $Hdeepown_s_l $Hdeepown_st_l]") as "Hdeepown_l".

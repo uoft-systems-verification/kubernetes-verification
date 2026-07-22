@@ -29,6 +29,18 @@ Definition valid (spec : t) : Prop :=
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid pvc.(PersistentVolumeClaimV.Spec')) spec.(VolumeClaimTemplates') ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
 
+(* On create, Kubernetes defaults an omitted replica count to 1 and applies
+   schema defaulting to each embedded volume claim template. *)
+Definition valid_create (spec : t) : Prop :=
+  (match spec.(Replicas') with
+   | Some replicas => 0 ≤ sint.Z replicas
+   | None => True
+   end) ∧
+  PodTemplateSpecV.valid spec.(Template') ∧
+  Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
+    spec.(VolumeClaimTemplates') ∧
+  (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
+
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
@@ -105,6 +117,16 @@ Definition valid (sts: t) : Prop :=
   ObjectMetaV.valid kind sts.(ObjectMeta') ∧
   StatefulSetSpecV.valid sts.(Spec') ∧
   StatefulSetStatusV.valid sts.(Status').
+
+Definition valid_nameless_create ns (sts : t) : Prop :=
+  valid_create_typemeta kind sts.(TypeMeta') ∧
+  ObjectMetaV.valid_nameless_create kind ns sts.(ObjectMeta') ∧
+  StatefulSetSpecV.valid_create sts.(Spec').
+
+Definition valid_named_create ns (sts : t) : Prop :=
+  valid_create_typemeta kind sts.(TypeMeta') ∧
+  ObjectMetaV.valid_named_create kind ns sts.(ObjectMeta') ∧
+  StatefulSetSpecV.valid_create sts.(Spec').
 
 Definition valid_without_meta (sts: t) : Prop :=
   StatefulSetSpecV.valid sts.(Spec') ∧

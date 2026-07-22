@@ -59,7 +59,14 @@ Definition valid (v : t) : Prop :=
   | StatefulSetSpec sts => StatefulSetSpecV.valid sts
   end.
 
-Axiom valid_create: t → Prop.
+Definition valid_create (v : t) : Prop :=
+  match v with
+  | PodSpec p => PodSpecV.valid_create p
+  | ReplicaSetSpec rs => ReplicaSetSpecV.valid_create rs
+  | PersistentVolumeClaimSpec pvc => PersistentVolumeClaimSpecV.valid_create pvc
+  | StatefulSetSpec sts => StatefulSetSpecV.valid_create sts
+  end.
+
 Axiom valid_update: t → t → Prop.
 Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
 Global Existing Instance valid_update_dec.
@@ -213,10 +220,6 @@ Lemma status_update_objectmeta :
   ∀ o m, status (update_objectmeta o m) = status o.
 Proof. destruct o; done. Qed.
 
-Axiom valid_create: go_string → go_string → t → Prop.
-
-Axiom valid_update_status: go_string → go_string → t → t → Prop.
-
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
@@ -224,22 +227,26 @@ Definition valid o : Prop :=
   ObjectSpecV.valid (spec o) ∧
   ObjectStatusV.valid (status o).
 
+(** The create strategies for every resource currently represented by [t]
+    (Pod, PersistentVolumeClaim, ReplicaSet, and StatefulSet) reset the
+    submitted status before validation, so their create predicates impose no
+    condition on the input status. If a resource such as Node is added here,
+    revisit this: Kubernetes permits and validates a Node's status on create.
+    See https://github.com/kubernetes/kubernetes/blob/master/pkg/registry/core/node/strategy.go. *)
 Definition valid_nameless_create knd ns o : Prop :=
   knd = kind o ∧
   (* Empty TypeMeta kind/apiVersion fields are valid here: the create request
      decoder defaults them from the REST endpoint before validation. *)
   valid_create_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_nameless_create knd ns (objectmeta o) ∧
-  ObjectSpecV.valid_create (spec o) ∧
-  ObjectStatusV.valid_create (status o).
+  ObjectMetaV.valid_nameless_create (kind o) ns (objectmeta o) ∧
+  ObjectSpecV.valid_create (spec o).
 
 Definition valid_named_create knd ns o : Prop :=
   knd = kind o ∧
   (* See [valid_nameless_create]: TypeMeta fields may be omitted on create. *)
   valid_create_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_named_create knd ns (objectmeta o) ∧
-  ObjectSpecV.valid_create (spec o) ∧
-  ObjectStatusV.valid_create (status o).
+  ObjectMetaV.valid_named_create (kind o) ns (objectmeta o) ∧
+  ObjectSpecV.valid_create (spec o).
 
 Definition same_kind (o1 o2 : t) : Prop :=
   match o1, o2 with
@@ -286,6 +293,38 @@ Proof.
       /PersistentVolumeClaimV.valid /StatefulSetV.valid
       /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
 Qed.
+
+Definition valid_nameless_create2 knd ns o : Prop :=
+  match o with
+  | Pod p => knd = PodV.kind ∧ PodV.valid_nameless_create ns p
+  | ReplicaSet rs =>
+      knd = ReplicaSetV.kind ∧ ReplicaSetV.valid_nameless_create ns rs
+  | PersistentVolumeClaim pvc =>
+      knd = PersistentVolumeClaimV.kind ∧
+      PersistentVolumeClaimV.valid_nameless_create ns pvc
+  | StatefulSet sts =>
+      knd = StatefulSetV.kind ∧ StatefulSetV.valid_nameless_create ns sts
+  end.
+
+Lemma valid_nameless_create_eq_valid_nameless_create2 knd ns o :
+  valid_nameless_create knd ns o = valid_nameless_create2 knd ns o.
+Proof. destruct o; reflexivity. Qed.
+
+Definition valid_named_create2 knd ns o : Prop :=
+  match o with
+  | Pod p => knd = PodV.kind ∧ PodV.valid_named_create ns p
+  | ReplicaSet rs =>
+      knd = ReplicaSetV.kind ∧ ReplicaSetV.valid_named_create ns rs
+  | PersistentVolumeClaim pvc =>
+      knd = PersistentVolumeClaimV.kind ∧
+      PersistentVolumeClaimV.valid_named_create ns pvc
+  | StatefulSet sts =>
+      knd = StatefulSetV.kind ∧ StatefulSetV.valid_named_create ns sts
+  end.
+
+Lemma valid_named_create_eq_valid_named_create2 knd ns o :
+  valid_named_create knd ns o = valid_named_create2 knd ns o.
+Proof. destruct o; reflexivity. Qed.
 
 Definition valid_without_meta o : Prop :=
   match o with
@@ -444,7 +483,7 @@ Lemma valid_nameless_pod_set_name pod namespace name :
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
 Proof.
   rewrite /valid_nameless_create /valid_named_create /=.
-  intros (Hkind & Htypemeta & Hmeta & Hspec & Hstatus)
+  intros (Hkind & Htypemeta & Hmeta & Hspec)
     Hname_nonempty Hname_valid.
   assert (Hmeta_named : ObjectMetaV.valid_named_create PodV.kind namespace
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)).

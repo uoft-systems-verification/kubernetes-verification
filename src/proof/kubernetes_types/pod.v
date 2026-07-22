@@ -114,6 +114,9 @@ Definition valid (spec : t) : Prop :=
   (spec.(Hostname') = ""%go ∨ valid_dns1123_label spec.(Hostname')) ∧
   (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')).
 
+Definition valid_create (spec : t) : Prop :=
+  valid spec.
+
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷
     (∃ volumes, deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
@@ -182,6 +185,16 @@ Definition valid (pod: t) : Prop :=
   ObjectMetaV.valid kind pod.(ObjectMeta') ∧
   PodSpecV.valid pod.(Spec') ∧
   PodStatusV.valid pod.(Status').
+
+Definition valid_nameless_create ns (pod : t) : Prop :=
+  valid_create_typemeta kind pod.(TypeMeta') ∧
+  ObjectMetaV.valid_nameless_create kind ns pod.(ObjectMeta') ∧
+  PodSpecV.valid_create pod.(Spec').
+
+Definition valid_named_create ns (pod : t) : Prop :=
+  valid_create_typemeta kind pod.(TypeMeta') ∧
+  ObjectMetaV.valid_named_create kind ns pod.(ObjectMeta') ∧
+  PodSpecV.valid_create pod.(Spec').
 
 Definition valid_without_meta (pod: t) : Prop :=
   PodSpecV.valid pod.(Spec') ∧

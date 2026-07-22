@@ -15,15 +15,33 @@ Record t := mk {
   Template' : PodTemplateSpecV.t;
 }.
 
-Axiom valid : t → Prop.
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
+(* This is the projection of Kubernetes' ReplicaSet spec validation onto the
+   represented fields. Selector validation, selector/template matching, and
+   checks on unmodeled PodSpec fields are outside this projection. *)
+Definition valid (rs : t) : Prop :=
+  (∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
+  0 ≤ sint.Z rs.(MinReadySeconds') ∧
+  PodTemplateSpecV.valid rs.(Template').
 
-Axiom valid_replicas v :
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L148-L153 *)
+Definition valid_create (rs : t) : Prop :=
+  (match rs.(Replicas') with
+   | Some replicas => 0 ≤ sint.Z replicas
+   | None => True
+   end) ∧
+  0 ≤ sint.Z rs.(MinReadySeconds') ∧
+  PodTemplateSpecV.valid rs.(Template').
+
+Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
 
-Axiom valid_template :
+Lemma valid_template :
   ∀ v, valid v →
   PodTemplateSpecV.valid v.(Template').
+Proof. intros v (_ & _ & Htemplate). exact Htemplate. Qed.
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -90,6 +108,16 @@ Definition valid (rs: t) : Prop :=
   ObjectMetaV.valid kind rs.(ObjectMeta') ∧
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
+
+Definition valid_nameless_create ns (rs : t) : Prop :=
+  valid_create_typemeta kind rs.(TypeMeta') ∧
+  ObjectMetaV.valid_nameless_create kind ns rs.(ObjectMeta') ∧
+  ReplicaSetSpecV.valid_create rs.(Spec').
+
+Definition valid_named_create ns (rs : t) : Prop :=
+  valid_create_typemeta kind rs.(TypeMeta') ∧
+  ObjectMetaV.valid_named_create kind ns rs.(ObjectMeta') ∧
+  ReplicaSetSpecV.valid_create rs.(Spec').
 
 Definition valid_without_meta (rs: t) : Prop :=
   ReplicaSetSpecV.valid rs.(Spec') ∧

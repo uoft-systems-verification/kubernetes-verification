@@ -10,6 +10,9 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom valid: t → Prop.
+(* PVC schema defaulting, including the default VolumeMode, is not yet
+   expressible because [t] is abstract. *)
+Axiom valid_create: t → Prop.
 Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -68,6 +71,16 @@ Definition valid (pvc: t) : Prop :=
   ObjectMetaV.valid kind pvc.(ObjectMeta') ∧
   PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
   PersistentVolumeClaimStatusV.valid pvc.(Status').
+
+Definition valid_nameless_create ns (pvc : t) : Prop :=
+  valid_create_typemeta kind pvc.(TypeMeta') ∧
+  ObjectMetaV.valid_nameless_create kind ns pvc.(ObjectMeta') ∧
+  PersistentVolumeClaimSpecV.valid_create pvc.(Spec').
+
+Definition valid_named_create ns (pvc : t) : Prop :=
+  valid_create_typemeta kind pvc.(TypeMeta') ∧
+  ObjectMetaV.valid_named_create kind ns pvc.(ObjectMeta') ∧
+  PersistentVolumeClaimSpecV.valid_create pvc.(Spec').
 
 Definition valid_without_meta (pvc: t) : Prop :=
   PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
