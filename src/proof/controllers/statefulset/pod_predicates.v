@@ -131,12 +131,28 @@ Proof.
     pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); apply _.
 Defined.
 
+Definition without_statefulset_fields (_ : PodSpecV.t) : PodSpecV.t := {|
+  PodSpecV.Volumes' := [];
+  PodSpecV.Hostname' := ""%go;
+  PodSpecV.Subdomain' := ""%go;
+|}.
+
 (* The template-controlled PodSpec fields checked by podSpecMatches after
-   removing the identity and storage fields managed in place. *)
-Parameter pod_immutable_matches : StatefulSetV.t → PodV.t → Prop.
-Axiom pod_immutable_matches_decision : ∀ sts pod,
-  Decision (pod_immutable_matches sts pod).
-#[global] Existing Instance pod_immutable_matches_decision.
+   removing the identity and storage fields managed in place. PodSpecV.t
+   currently represents only those three removed fields, so this predicate is
+   always true for now. It becomes informative as more PodSpec fields are
+   added to the pure model. *)
+Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
+  without_statefulset_fields pod.(PodV.Spec') =
+    without_statefulset_fields
+      sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec').
+
+#[global] Instance pod_immutable_matches_decision sts pod :
+    Decision (pod_immutable_matches sts pod).
+Proof.
+  unfold pod_immutable_matches, without_statefulset_fields.
+  left. reflexivity.
+Defined.
 
 (* A Pod produced from the StatefulSet's template already agrees with every
    template-controlled field checked by [pod_immutable_matches]. Replacing its
@@ -144,10 +160,15 @@ Axiom pod_immutable_matches_decision : ∀ sts pod,
    not change the PodSpec. Identity and storage fields are intentionally not
    covered here: [newStatefulSetPod] establishes them separately through
    [updateIdentity] and [updateStorage]. *)
-Axiom pod_from_template_immutable_matches : ∀ sts pod meta,
+Lemma pod_from_template_immutable_matches : ∀ sts pod meta,
   controller.pod_from_template
       sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template') pod →
   pod_immutable_matches sts (PodV.update_objectmeta pod meta).
+Proof.
+  intros sts pod meta _.
+  unfold pod_immutable_matches, without_statefulset_fields.
+  reflexivity.
+Qed.
 
 Definition pod_match (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
   pod_identity_matches sts pod ∧
