@@ -224,18 +224,22 @@ func newPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate 
 	return claim
 }
 
+func createPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate *v1.PersistentVolumeClaim) error {
+	claim := newPersistentVolumeClaim(set, pod, claimTemplate)
+	_, err := apimodel.ModelState.PersistentVolumeClaimGet(claim.Namespace, claim.Name)
+	if apierrors.IsNotFound(err) {
+		_, err = apimodel.ModelState.PersistentVolumeClaimCreate(claim.Namespace, claim)
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+		return nil
+	}
+	return err
+}
+
 func createPersistentVolumeClaims(set *apps.StatefulSet, pod *v1.Pod) error {
 	for _, claimTemplate := range volumeClaimTemplatesByName(set) {
-		claim := newPersistentVolumeClaim(set, pod, &claimTemplate)
-		_, err := apimodel.ModelState.PersistentVolumeClaimGet(claim.Namespace, claim.Name)
-		if apierrors.IsNotFound(err) {
-			_, err = apimodel.ModelState.PersistentVolumeClaimCreate(claim.Namespace, claim)
-			if err != nil && !apierrors.IsAlreadyExists(err) {
-				return err
-			}
-			continue
-		}
-		if err != nil {
+		if err := createPersistentVolumeClaim(set, pod, &claimTemplate); err != nil {
 			return err
 		}
 	}

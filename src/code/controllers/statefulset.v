@@ -58,6 +58,8 @@ Definition newStatefulSetPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go
 
 Definition newPersistentVolumeClaim {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.newPersistentVolumeClaim"%go.
 
+Definition createPersistentVolumeClaim {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.createPersistentVolumeClaim"%go.
+
 Definition createPersistentVolumeClaims {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.createPersistentVolumeClaims"%go.
 
 Definition createStatefulPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.createStatefulPod"%go.
@@ -532,6 +534,44 @@ Definition newPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     return: (![go.PointerType core_v1.PersistentVolumeClaim] "claim")).
 
 (* go: stateful_set.go:227:6 *)
+Definition createPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pod" "claimTemplate",
+    exception_do (let: "claimTemplate" := (GoAlloc (go.PointerType core_v1.PersistentVolumeClaim) "claimTemplate") in
+    let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "claim" := (GoAlloc (go.PointerType core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType core_v1.PersistentVolumeClaim) #())) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    let: "$a1" := (![go.PointerType core_v1.Pod] "pod") in
+    let: "$a2" := (![go.PointerType core_v1.PersistentVolumeClaim] "claimTemplate") in
+    (FuncResolve newPersistentVolumeClaim [] #()) "$a0" "$a1" "$a2") in
+    do:  ("claim" <-[go.PointerType core_v1.PersistentVolumeClaim] "$r0");;;
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
+    let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
+    (MethodResolve (go.PointerType apimodel.State) "PersistentVolumeClaimGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  "$r0";;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: let: "$a0" := (![go.error] "err") in
+    (FuncResolve errors.IsNotFound [] #()) "$a0"
+    then
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
+      let: "$a1" := (![go.PointerType core_v1.PersistentVolumeClaim] "claim") in
+      (MethodResolve (go.PointerType apimodel.State) "PersistentVolumeClaimCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
+      (FuncResolve errors.IsAlreadyExists [] #()) "$a0"))
+      then return: (![go.error] "err")
+      else do:  #());;;
+      return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    return: (![go.error] "err")).
+
+(* go: stateful_set.go:240:6 *)
 Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -542,42 +582,18 @@ Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
     map.for_range go.string core_v1.PersistentVolumeClaim "$range" (λ: "$key" "$value",
       do:  ("claimTemplate" <-[core_v1.PersistentVolumeClaim] "$value");;;
       do:  "$key";;;
-      let: "claim" := (GoAlloc (go.PointerType core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType core_v1.PersistentVolumeClaim) #())) in
+      (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
       let: "$a1" := (![go.PointerType core_v1.Pod] "pod") in
       let: "$a2" := "claimTemplate" in
-      (FuncResolve newPersistentVolumeClaim [] #()) "$a0" "$a1" "$a2") in
-      do:  ("claim" <-[go.PointerType core_v1.PersistentVolumeClaim] "$r0");;;
-      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
-      let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
-      (MethodResolve (go.PointerType apimodel.State) "PersistentVolumeClaimGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
-      let: "$r0" := "$ret0" in
-      let: "$r1" := "$ret1" in
-      do:  "$r0";;;
-      do:  ("err" <-[go.error] "$r1");;;
-      (if: let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsNotFound [] #()) "$a0"
-      then
-        let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core_v1.PersistentVolumeClaim] "claim")))) in
-        let: "$a1" := (![go.PointerType core_v1.PersistentVolumeClaim] "claim") in
-        (MethodResolve (go.PointerType apimodel.State) "PersistentVolumeClaimCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
-        let: "$r0" := "$ret0" in
-        let: "$r1" := "$ret1" in
-        do:  "$r0";;;
-        do:  ("err" <-[go.error] "$r1");;;
-        (if: ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
-        (FuncResolve errors.IsAlreadyExists [] #()) "$a0"))
-        then return: (![go.error] "err")
-        else do:  #());;;
-        continue: #()
-      else do:  #());;;
+      (FuncResolve createPersistentVolumeClaim [] #()) "$a0" "$a1" "$a2") in
+      do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
-      else do:  #())));;;
+      else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:245:6 *)
+(* go: stateful_set.go:249:6 *)
 Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -604,7 +620,7 @@ Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:256:6 *)
+(* go: stateful_set.go:260:6 *)
 Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -645,7 +661,7 @@ Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:272:6 *)
+(* go: stateful_set.go:276:6 *)
 Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -665,7 +681,7 @@ Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
     else do:  #());;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:281:6 *)
+(* go: stateful_set.go:285:6 *)
 Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -689,7 +705,7 @@ Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:291:6 *)
+(* go: stateful_set.go:295:6 *)
 Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -717,7 +733,7 @@ Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       else do:  #())));;;
     return: (![go.PointerType core_v1.Pod] "condemned")).
 
-(* go: stateful_set.go:305:6 *)
+(* go: stateful_set.go:309:6 *)
 Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "spec",
     exception_do (let: "spec" := (GoAlloc core_v1.PodSpec "spec") in
@@ -729,7 +745,7 @@ Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ((StructFieldRef core_v1.PodSpec "Subdomain"%go "spec") <-[go.string] "$r0");;;
     return: (![core_v1.PodSpec] "spec")).
 
-(* go: stateful_set.go:312:6 *)
+(* go: stateful_set.go:316:6 *)
 Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
@@ -746,7 +762,7 @@ Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
      let: "$a1" := (Convert core_v1.PodSpec go.any (![core_v1.PodSpec] "templateSpec")) in
      (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")).
 
-(* go: stateful_set.go:318:6 *)
+(* go: stateful_set.go:322:6 *)
 Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -769,7 +785,7 @@ Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:328:6 *)
+(* go: stateful_set.go:332:6 *)
 Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
@@ -868,7 +884,7 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:377:6 *)
+(* go: stateful_set.go:381:6 *)
 Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -958,6 +974,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] storageMatches_unfold :: FuncUnfold storageMatches [] (storageMatchesⁱᵐᵖˡ);
   #[global] newStatefulSetPod_unfold :: FuncUnfold newStatefulSetPod [] (newStatefulSetPodⁱᵐᵖˡ);
   #[global] newPersistentVolumeClaim_unfold :: FuncUnfold newPersistentVolumeClaim [] (newPersistentVolumeClaimⁱᵐᵖˡ);
+  #[global] createPersistentVolumeClaim_unfold :: FuncUnfold createPersistentVolumeClaim [] (createPersistentVolumeClaimⁱᵐᵖˡ);
   #[global] createPersistentVolumeClaims_unfold :: FuncUnfold createPersistentVolumeClaims [] (createPersistentVolumeClaimsⁱᵐᵖˡ);
   #[global] createStatefulPod_unfold :: FuncUnfold createStatefulPod [] (createStatefulPodⁱᵐᵖˡ);
   #[global] updateStatefulPod_unfold :: FuncUnfold updateStatefulPod [] (updateStatefulPodⁱᵐᵖˡ);
