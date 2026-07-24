@@ -514,8 +514,10 @@ Proof.
     iMod ("Hcommit" $! kmeta'' with "Hpost") as "HΦ".
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_nil interface.nil with "[]").
-    { done. }
+    wp_apply (wp_IsConflict interface.nil with "[]").
+    replace (bool_decide (conflict_error interface.nil)) with false by
+      (symmetry; apply bool_decide_false; exact conflict_error_nil).
+    wp_auto.
     wp_for_post.
     iApply "HΦ".
   - iDestruct "Hconflict" as "(%Herr_ne & %Hconflict & Hown_meta_frag & Hown_children_frag)".
@@ -524,8 +526,10 @@ Proof.
     { iFrame. iFrame "%". }
     iModIntro. iNext.
     wp_auto.
-    wp_apply (wp_IsConflict_conflict err' with "[]").
-    { done. }
+    wp_apply (wp_IsConflict err' with "[]").
+    replace (bool_decide (conflict_error err')) with true by
+      (symmetry; apply bool_decide_true; done).
+    wp_auto.
     wp_for_post.
     iFrame "s key".
     iExists options_c'. iFrame.

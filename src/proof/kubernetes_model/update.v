@@ -289,7 +289,9 @@ Proof.
   wp_if_destruct.
   2: {
     wp_apply wp_newUpdateResourceVersionConflictError.
-    iIntros (err) "(%Herr_not_nil & %Herr_conflict)". wp_auto.
+    iIntros (err) "%Herr_conflict".
+    pose proof (conflict_error_not_nil err Herr_conflict) as Herr_not_nil.
+    wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
     assert (key0 = key) as ->.

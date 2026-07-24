@@ -312,7 +312,6 @@ Lemma wp_newNotFoundError (kind name : go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newNotFoundError #kind #name
   {{{ err, RET #err;
-      ⌜ err ≠ interface.nil ⌝ ∗
       ⌜ not_found_error err ⌝
   }}}.
 Proof. Admitted.
@@ -321,7 +320,6 @@ Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_str
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
   {{{ err, RET #err;
-      ⌜ err ≠ interface.nil ⌝ ∗
       ⌜ conflict_error err ⌝
   }}}.
 Proof. Admitted.

@@ -604,9 +604,10 @@ Proof.
   assert (ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec')) as Hrs_spec_valid.
   { rewrite Hget_Hspec_eq. exact Hrs_get_spec_valid. }
   wp_auto.
-  wp_apply (wp_IsNotFound_nil with "[]").
-  { done. }
-  wp_pures.
+  wp_apply (wp_IsNotFound interface.nil with "[]").
+  replace (bool_decide (not_found_error interface.nil)) with false by
+    (symmetry; apply bool_decide_false; exact not_found_error_nil).
+  wp_auto.
   iPoseProof (ReplicaSetV.deepown_l_split with "Hdeepown_l_rs") as
     "(%Hrs_l_not_null & Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".

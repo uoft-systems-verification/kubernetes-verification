@@ -9,10 +9,28 @@ Require Import New.code.errors.
 Axiom conflict_error: interface.t → Prop.
 Axiom conflict_error_dec: ∀ err, Decision (conflict_error err).
 Global Existing Instance conflict_error_dec.
+Axiom conflict_error_not_nil:
+  ∀ err, conflict_error err → err ≠ interface.nil.
 
 Axiom not_found_error: interface.t → Prop.
 Axiom not_found_error_dec: ∀ err, Decision (not_found_error err).
 Global Existing Instance not_found_error_dec.
+Axiom not_found_error_not_nil:
+  ∀ err, not_found_error err → err ≠ interface.nil.
+
+Lemma conflict_error_nil : ¬ conflict_error interface.nil.
+Proof.
+  intros Hconflict.
+  apply (conflict_error_not_nil interface.nil Hconflict).
+  done.
+Qed.
+
+Lemma not_found_error_nil : ¬ not_found_error interface.nil.
+Proof.
+  intros Hnot_found.
+  apply (not_found_error_not_nil interface.nil Hnot_found).
+  done.
+Qed.
 
 (* Keep these qualified: the stdlib package and Kubernetes API package are
    both named [errors], and unqualified [errors.Assumptions] can resolve to the
@@ -27,72 +45,22 @@ Context {sem : go.Semantics}.
 Context `{!std_errors.Assumptions}.
 Local Set Default Proof Using "All".
 
-Lemma wp_IsNotFound_nil err:
-  {{{ is_pkg_init api_errors_pkg.errors ∗
-      ⌜ err = interface.nil ⌝
-  }}}
+Lemma wp_IsNotFound err:
+  {{{ is_pkg_init api_errors_pkg.errors }}}
     @! api_errors.IsNotFound #err
-  {{{ RET (#false);
-    True%I
+  {{{ RET (#(bool_decide (not_found_error err)));
+      True%I
   }}}.
 Proof.
 Admitted.
 
-Lemma wp_IsNotFound_not_found err:
-  {{{ is_pkg_init api_errors_pkg.errors ∗
-      ⌜ not_found_error err ⌝
-  }}}
-    @! api_errors.IsNotFound #err
-  {{{ RET (#true);
-    True%I
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_IsConflict_nil err:
-  {{{ is_pkg_init api_errors_pkg.errors ∗
-      ⌜ err = interface.nil ⌝
-  }}}
+Lemma wp_IsConflict err:
+  {{{ is_pkg_init api_errors_pkg.errors }}}
     @! api_errors.IsConflict #err
-  {{{ RET (#false);
-    True%I
+  {{{ RET (#(bool_decide (conflict_error err)));
+      True%I
   }}}.
 Proof.
 Admitted.
-
-Lemma wp_IsConflict_conflict err:
-  {{{ is_pkg_init api_errors_pkg.errors ∗
-      ⌜ conflict_error err ⌝
-  }}}
-    @! api_errors.IsConflict #err
-  {{{ RET (#true);
-    True%I
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_IsConflict_nil_cont err Φ :
-  err = interface.nil →
-  is_pkg_init api_errors_pkg.errors -∗
-  ▷ (True -∗ Φ #false) -∗
-  WP @! api_errors.IsConflict #err {{ Φ }}.
-Proof.
-  iIntros (?) "#Hinit HΦ".
-  wp_apply (wp_IsConflict_nil with "[$Hinit]").
-  { done. }
-  iApply "HΦ". done.
-Qed.
-
-Lemma wp_IsConflict_conflict_cont err Φ :
-  conflict_error err →
-  is_pkg_init api_errors_pkg.errors -∗
-  ▷ (True -∗ Φ #true) -∗
-  WP @! api_errors.IsConflict #err {{ Φ }}.
-Proof.
-  iIntros (?) "#Hinit HΦ".
-  wp_apply (wp_IsConflict_conflict with "[$Hinit]").
-  { done. }
-  iApply "HΦ". done.
-Qed.
 
 End proof.

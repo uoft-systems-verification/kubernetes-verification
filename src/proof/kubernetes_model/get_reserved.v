@@ -55,7 +55,7 @@ Proof.
     exfalso. apply Hdecide. done. }
   rewrite /is_Some Hlookup_phys. wp_auto.
   wp_apply (wp_newNotFoundError with "[$Hpkg]").
-  iIntros (err) "(%Herr_non_nil & %Hnot_found)". wp_auto.
+  iIntros (err) "%Hnot_found". wp_auto.
   iApply fupd_wp.
   iMod "Hau" as "H". iNamed "H".
   iMod ("Hclose" $! err with "[$Hown_reserved_frag]") as "HΦ".
