@@ -384,4 +384,137 @@ Proof.
   iApply ("HΦ" with "Hpost").
 Qed.
 
+Lemma wp_State__PersistentVolumeClaimMutGet γ l key namespace name uid dq
+    kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "PersistentVolumeClaim"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.PersistentVolumeClaimSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PersistentVolumeClaimMutGet" #namespace #name
+  {{{ pvc_l pvc, RET (#pvc_l, #interface.nil);
+      "%Hvalid'" ∷
+        ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = PersistentVolumeClaimV.key pvc ⌝ ∗
+      "%Hmeta_eq" ∷
+        ⌜ ObjectMetaV.equiv_except_resource_version
+            pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = pvc.(PersistentVolumeClaimV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.PersistentVolumeClaimSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
+  wp_method_call.
+  rewrite /apimodel.State__PersistentVolumeClaimMutGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__get_some γ l
+    {| KKey.Kind' := "PersistentVolumeClaim"%go;
+       KKey.Namespace' := namespace;
+       KKey.Name' := name |}
+    uid dq kmeta
+    (Some (ObjectSpecV.PersistentVolumeClaimSpec kspec)) None
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  iIntros (i kobj) "Hpost". iNamed "Hpost".
+  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
+  destruct kobj as [pod|rs|pvc|sts];
+    try solve [simpl in Hspec_eq; done].
+  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
+  assert (Hspec_eq' : kspec = pvc.(PersistentVolumeClaimV.Spec'))
+    by congruence.
+  clear Hspec_eq.
+  rename Hspec_eq' into Hspec_eq.
+  iDestruct "Hdeepown_i" as (pvc_l) "[%Hi Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  change (go.PointerType api_core_v1.PersistentVolumeClaim) with
+    (go.PointerType v1.PersistentVolumeClaim).
+  cbn [interface.ty interface.v].
+  replace
+    (if decide
+      (go.PointerType v1.PersistentVolumeClaim =
+       go.PointerType v1.PersistentVolumeClaim)
+     then #pvc_l else #null)%V
+    with (#pvc_l)%V by (rewrite decide_True; done).
+  replace
+    (bool_decide
+      (go.PointerType v1.PersistentVolumeClaim =
+       go.PointerType v1.PersistentVolumeClaim))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+Qed.
+
+Lemma wp_State__PersistentVolumeClaimGet γ l key namespace name uid dq
+    kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "PersistentVolumeClaim"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.PersistentVolumeClaimSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PersistentVolumeClaimGet" #namespace #name
+  {{{ pvc_l pvc, RET (#pvc_l, #interface.nil);
+      "%Hvalid'" ∷
+        ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = PersistentVolumeClaimV.key pvc ⌝ ∗
+      "%Hmeta_eq" ∷
+        ⌜ ObjectMetaV.equiv_except_resource_version
+            pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = pvc.(PersistentVolumeClaimV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.PersistentVolumeClaimSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call.
+  rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__PersistentVolumeClaimMutGet
+    γ l key namespace name uid dq kmeta kspec
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  { iPureIntro. done. }
+  iIntros (pvc_l pvc) "Hpost".
+  wp_auto.
+  iApply ("HΦ" with "Hpost").
+Qed.
+
+(* The public typed Get wrapper maps the absent result from [State.get] to a
+   Kubernetes StatusError classified as NotFound.  Its physical construction
+   remains behind the same opaque API-errors boundary as [wp_State__get]. *)
+Lemma wp_State__PersistentVolumeClaimGet_reserved γ l key namespace name :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "PersistentVolumeClaim"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PersistentVolumeClaimGet" #namespace #name
+  {{{ err, RET (#null, #err);
+      "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}.
+Proof. Admitted.
+
 End proof.

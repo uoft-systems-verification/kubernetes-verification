@@ -1,8 +1,9 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.proof.kubernetes_types Require Export prelude.
-From New.proof.kubernetes_model Require Export inv errors.
+From New.proof.kubernetes_model Require Export inv.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -301,6 +302,18 @@ Lemma wp_parseResourceVersion rv :
     @! apimodel.parseResourceVersion #rv
   {{{ (ret : w64), RET (#ret, #interface.nil);
     True
+  }}}.
+Proof. Admitted.
+
+(* [newNotFoundError] isolates the opaque Kubernetes API error constructor.
+   Its clients reason only about the semantic class observed by
+   [errors.IsNotFound]. *)
+Lemma wp_newNotFoundError (kind name : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newNotFoundError #kind #name
+  {{{ err, RET #err;
+      ⌜ err ≠ interface.nil ⌝ ∗
+      ⌜ not_found_error err ⌝
   }}}.
 Proof. Admitted.
 

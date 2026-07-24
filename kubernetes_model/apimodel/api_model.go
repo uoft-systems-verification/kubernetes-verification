@@ -209,6 +209,10 @@ func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, er
 	return items, nil
 }
 
+func newNotFoundError(kind string, name string) error {
+	return errors.NewNotFound(schema.GroupResource{Resource: kind}, name)
+}
+
 func (s *State) get(key KKey) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -217,7 +221,7 @@ func (s *State) get(key KKey) (interface{}, error) {
 	if exists {
 		return deepCopy(item), nil
 	} else {
-		return nil, errors.NewNotFound(schema.GroupResource{Resource: key.Kind}, key.Name)
+		return nil, newNotFoundError(key.Kind, key.Name)
 	}
 }
 
@@ -1533,7 +1537,7 @@ func (s *State) PodMutGet(namespace, name string) (*corev1.Pod, error) {
 
 	obj, err := s.get(key)
 	if err != nil {
-		return nil, errors.NewNotFound(corev1.Resource("pod"), name)
+		return nil, err
 	}
 
 	pod, ok := obj.(*corev1.Pod)
@@ -1634,7 +1638,7 @@ func (s *State) ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, er
 
 	obj, err := s.get(key)
 	if err != nil {
-		return nil, errors.NewNotFound(appsv1.Resource("replicaset"), name)
+		return nil, err
 	}
 
 	rs, ok := obj.(*appsv1.ReplicaSet)
@@ -1707,7 +1711,7 @@ func (s *State) PersistentVolumeClaimMutGet(namespace, name string) (*corev1.Per
 
 	obj, err := s.get(key)
 	if err != nil {
-		return nil, errors.NewNotFound(corev1.Resource("persistentvolumeclaim"), name)
+		return nil, err
 	}
 
 	pvc, ok := obj.(*corev1.PersistentVolumeClaim)
@@ -1803,7 +1807,7 @@ func (s *State) StatefulSetMutGet(namespace, name string) (*appsv1.StatefulSet, 
 
 	obj, err := s.get(key)
 	if err != nil {
-		return nil, errors.NewNotFound(appsv1.Resource("statefulset"), name)
+		return nil, err
 	}
 
 	ss, ok := obj.(*appsv1.StatefulSet)

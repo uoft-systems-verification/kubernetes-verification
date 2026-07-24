@@ -1,7 +1,18 @@
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Import errors.
 Require Import New.code.errors.
+
+(* [StatusError] and the Kubernetes API error helpers are external to the
+   executable model.  These predicates record the semantic classes exposed by
+   the corresponding Kubernetes error classifiers, independently of the
+   physical StatusError encoding. *)
+Axiom conflict_error: interface.t → Prop.
+Axiom conflict_error_dec: ∀ err, Decision (conflict_error err).
+Global Existing Instance conflict_error_dec.
+
+Axiom not_found_error: interface.t → Prop.
+Axiom not_found_error_dec: ∀ err, Decision (not_found_error err).
+Global Existing Instance not_found_error_dec.
 
 (* Keep these qualified: the stdlib package and Kubernetes API package are
    both named [errors], and unqualified [errors.Assumptions] can resolve to the
@@ -22,6 +33,17 @@ Lemma wp_IsNotFound_nil err:
   }}}
     @! api_errors.IsNotFound #err
   {{{ RET (#false);
+    True%I
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_IsNotFound_not_found err:
+  {{{ is_pkg_init api_errors_pkg.errors ∗
+      ⌜ not_found_error err ⌝
+  }}}
+    @! api_errors.IsNotFound #err
+  {{{ RET (#true);
     True%I
   }}}.
 Proof.

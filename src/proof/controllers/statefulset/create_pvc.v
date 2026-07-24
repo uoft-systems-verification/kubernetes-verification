@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.statefulset Require Export pvc.
+From New.proof.kubernetes_model Require Export create_named_orphan.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
