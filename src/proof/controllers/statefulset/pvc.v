@@ -81,6 +81,7 @@ Definition new_persistent_volume_claim
             ordinal |>
       <| ObjectMetaV.Namespace' :=
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
+      <| ObjectMetaV.OwnerReferences' := None |>
       <| ObjectMetaV.Labels' :=
           Some (new_persistent_volume_claim_labels set claim_template) |> in
   claim_template <| PersistentVolumeClaimV.ObjectMeta' := object_meta |>.
@@ -257,6 +258,7 @@ Proof.
                     decimal_string (sint.nat ordinal_ret) |>
                 <| v1.ObjectMeta.Namespace' :=
                     v1.ObjectMeta.Namespace' set_meta_c |>
+                <| v1.ObjectMeta.OwnerReferences' := slice.nil |>
                 <| v1.ObjectMeta.Labels' := claim_labels_l |> ⌝ ∗
           "Hclaim_labels" ∷ claim_labels_l ↦$
             (map_prefix keys i selector_labels ∪
@@ -331,6 +333,7 @@ Proof.
             decimal_string (sint.nat ordinal_ret) |>
         <| v1.ObjectMeta.Namespace' :=
             v1.ObjectMeta.Namespace' set_meta_c |>
+        <| v1.ObjectMeta.OwnerReferences' := slice.nil |>
         <| v1.ObjectMeta.Labels' := claim_labels_l |>);
     iAssert (PersistentVolumeClaimV.objectmeta_ptr claim_l ↦
         claim_meta_current)%I
@@ -349,6 +352,7 @@ Proof.
               decimal_string (sint.nat ordinal_ret) |>
           <| v1.ObjectMeta.Namespace' :=
               v1.ObjectMeta.Namespace' set_meta_c |>
+          <| v1.ObjectMeta.OwnerReferences' := slice.nil |>
           <| v1.ObjectMeta.Labels' := claim_labels_l |>)
       by reflexivity).
   all:
@@ -529,6 +533,7 @@ Proof.
               (sint.nat ordinal_ret) |>
         <| ObjectMetaV.Namespace' :=
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
+        <| ObjectMetaV.OwnerReferences' := None |>
         <| ObjectMetaV.Labels' :=
             Some (new_persistent_volume_claim_labels set claim_template) |>).
   all:
@@ -548,7 +553,6 @@ Proof.
              Hclaim_meta_Hdeepown_deletiontimestamp_some
              Hclaim_meta_Hdeepown_deletiongraceperiodseconds_some
              Hclaim_meta_Hdeepown_annotations_some
-             Hclaim_meta_Hdeepown_ownerreferences_some
              Hclaim_meta_Hdeepown_finalizers_some
              Hclaim_meta_Hdeepown_managedfields_some]"
       as "Hclaim_objectmeta";
@@ -602,8 +606,8 @@ Proof.
      iFrame "Hclaim_meta_Hdeepown_annotations_some";
      iSplit;
      [iPureIntro;
-      exact Hclaim_meta_Hdeepown_ownerreferences_none|];
-     iFrame "Hclaim_meta_Hdeepown_ownerreferences_some";
+      done|];
+     iSplit; [done|];
      iSplit;
      [iPureIntro;
       exact Hclaim_meta_Hdeepown_finalizers_none|];
@@ -623,6 +627,7 @@ Proof.
                 (sint.nat ordinal_ret) |>
           <| ObjectMetaV.Namespace' :=
               set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
+          <| ObjectMetaV.OwnerReferences' := None |>
           <| ObjectMetaV.Labels' :=
               Some (new_persistent_volume_claim_labels
                 set claim_template) |>) 1)

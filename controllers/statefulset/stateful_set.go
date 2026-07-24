@@ -213,6 +213,8 @@ func newPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate 
 	claim := claimTemplate.DeepCopy()
 	claim.Name = claimName(set.Name, claim.Name, ordinalOf(pod.Name))
 	claim.Namespace = set.Namespace
+	// Keep owner references nil to simplify the reasoning.
+	claim.OwnerReferences = nil
 	if claim.Labels == nil {
 		claim.Labels = map[string]string{}
 	}
