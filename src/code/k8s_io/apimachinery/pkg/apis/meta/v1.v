@@ -501,13 +501,13 @@ Axiom CauseTypeFieldManagerConflict : ∀ {ext : ffi_syntax} {go_gctx : GoGlobal
 
 Axiom CauseTypeResourceVersionTooLarge : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom LabelSelectorOpIn : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition LabelSelectorOpIn {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"In"%go.
 
-Axiom LabelSelectorOpNotIn : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition LabelSelectorOpNotIn {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"NotIn"%go.
 
-Axiom LabelSelectorOpExists : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition LabelSelectorOpExists {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Exists"%go.
 
-Axiom LabelSelectorOpDoesNotExist : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition LabelSelectorOpDoesNotExist {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"DoesNotExist"%go.
 
 Axiom FieldSelectorOpIn : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 

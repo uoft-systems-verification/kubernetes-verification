@@ -213,6 +213,18 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
               ⌜ replicas = i ⌝
         | None => True%I
         end) ∗
+      "%Hdeepown_selector_none" ∷
+        ⌜ set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.Selector') = null ↔
+          set.(StatefulSetV.Spec').(StatefulSetSpecV.Selector') = None ⌝ ∗
+      "Hdeepown_selector_some" ∷
+        (match set.(StatefulSetV.Spec').(StatefulSetSpecV.Selector') with
+        | Some selector =>
+            ∃ selector_c,
+              set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.Selector') ↦{dq}
+                selector_c ∗
+              LabelSelectorV.deepown selector_c selector dq
+        | None => True%I
+        end) ∗
       "Hdeepown_template" ∷ PodTemplateSpecV.deepown set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.Template')
           set.(StatefulSetV.Spec').(StatefulSetSpecV.Template') dq ∗
       "Hdeepown_volumeclaimtemplates" ∷ deepown_list
@@ -299,7 +311,8 @@ Proof.
     wp_auto.
     iFrame "HΦ".
     iFrame "Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-      Hdeepown_template Hclaim_templates_deepown Hdeepown_status".
+      Hdeepown_selector_some Hdeepown_template Hclaim_templates_deepown
+      Hdeepown_status".
     iExists (word.add i (W64 1)), this_claim_template, claim_templates_map_l.
     assert (claim_templates_map_of_list
       (take (sint.nat (word.add i (W64 1))) claim_templates_list) =

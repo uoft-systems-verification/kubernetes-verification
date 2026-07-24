@@ -365,6 +365,12 @@ Axiom valid_resource_version_non_empty: ∀ rv, valid_resource_version rv → rv
 Definition valid_generation (generation: w64) : Prop :=
   (0 <= sint.Z generation)%Z.
 
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L105-L111 *)
+Axiom valid_label_name: go_string → Prop.
+
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L165-L175 *)
+Axiom valid_label_value: go_string → Prop.
+
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
 Axiom valid_labels: option (gmap go_string go_string) → Prop.
 

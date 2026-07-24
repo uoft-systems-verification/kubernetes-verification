@@ -255,6 +255,7 @@ Proof.
   iAssert (StatefulSetSpecV.deepown set_spec_c'
       set.(StatefulSetV.Spec') dq)
     with "[Hset_spec_deepown_Hdeepown_replicas_some
+      Hset_spec_deepown_Hdeepown_selector_some
       Hset_spec_deepown_Hdeepown_template
       Hset_spec_deepown_Hdeepown_volumeclaimtemplates]" as
       "Hset_spec_deepown".

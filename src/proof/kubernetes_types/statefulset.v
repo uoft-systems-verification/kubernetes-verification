@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export pod persistentvolumeclaim.
+From New.proof.kubernetes_types Require Export labelselector pod persistentvolumeclaim.
 
 Module StatefulSetSpecV.
 Section def.
@@ -10,7 +10,7 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {
   Replicas' : option w32;
-  (* Selector' : loc; *)
+  Selector' : option LabelSelectorV.t;
   Template' : PodTemplateSpecV.t;
   VolumeClaimTemplates' : list PersistentVolumeClaimV.t;
   ServiceName' : go_string;
@@ -25,6 +25,12 @@ Record t := mk {
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
 Definition valid (spec : t) : Prop :=
   (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
+  (∃ selector,
+    spec.(Selector') = Some selector ∧
+    LabelSelectorV.valid selector ∧
+    ¬ LabelSelectorV.empty selector ∧
+    LabelSelectorV.matches
+      selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid spec.(Template') ∧
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid pvc.(PersistentVolumeClaimV.Spec')) spec.(VolumeClaimTemplates') ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
@@ -36,6 +42,12 @@ Definition valid_create (spec : t) : Prop :=
    | Some replicas => 0 ≤ sint.Z replicas
    | None => True
    end) ∧
+  (∃ selector,
+    spec.(Selector') = Some selector ∧
+    LabelSelectorV.valid selector ∧
+    ¬ LabelSelectorV.empty selector ∧
+    LabelSelectorV.matches
+      selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid spec.(Template') ∧
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
     spec.(VolumeClaimTemplates') ∧
@@ -52,6 +64,16 @@ Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
   | Some i => ∃ replicas, c.(v1.StatefulSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
   | None => True%I
   end) ∗
+  "%Hdeepown_selector_none" ∷
+    ⌜c.(v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
+  "Hdeepown_selector_some" ∷
+    (match v.(Selector') with
+    | Some selector =>
+        ∃ selector_c,
+          c.(v1.StatefulSetSpec.Selector') ↦{dq} selector_c ∗
+          LabelSelectorV.deepown selector_c selector dq
+    | None => True%I
+    end) ∗
   "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') dq ∗
   "Hdeepown_volumeclaimtemplates" ∷
     (∃ claim_templates,

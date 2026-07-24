@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export pod.
+From New.proof.kubernetes_types Require Export labelselector pod.
 
 Module ReplicaSetSpecV.
 Section def.
@@ -11,17 +11,23 @@ Context {sem : go.Semantics}
 Record t := mk {
   Replicas' : option w32;
   MinReadySeconds' : w32;
-  (* Selector' : loc; *)
+  Selector' : option LabelSelectorV.t;
   Template' : PodTemplateSpecV.t;
 }.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
 (* This is the projection of Kubernetes' ReplicaSet spec validation onto the
-   represented fields. Selector validation, selector/template matching, and
-   checks on unmodeled PodSpec fields are outside this projection. *)
+   represented fields. Checks on unmodeled PodSpec fields are outside this
+   projection. *)
 Definition valid (rs : t) : Prop :=
   (∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
   0 ≤ sint.Z rs.(MinReadySeconds') ∧
+  (∃ selector,
+    rs.(Selector') = Some selector ∧
+    LabelSelectorV.valid selector ∧
+    ¬ LabelSelectorV.empty selector ∧
+    LabelSelectorV.matches
+      selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L148-L153 *)
@@ -31,6 +37,12 @@ Definition valid_create (rs : t) : Prop :=
    | None => True
    end) ∧
   0 ≤ sint.Z rs.(MinReadySeconds') ∧
+  (∃ selector,
+    rs.(Selector') = Some selector ∧
+    LabelSelectorV.valid selector ∧
+    ¬ LabelSelectorV.empty selector ∧
+    LabelSelectorV.matches
+      selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
 
 Lemma valid_replicas :
@@ -41,7 +53,7 @@ Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
 Lemma valid_template :
   ∀ v, valid v →
   PodTemplateSpecV.valid v.(Template').
-Proof. intros v (_ & _ & Htemplate). exact Htemplate. Qed.
+Proof. intros v (_ & _ & _ & Htemplate). exact Htemplate. Qed.
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -50,6 +62,16 @@ Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   | None => True%I
   end) ∗
   "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
+  "%Hdeepown_selector_none" ∷
+    ⌜c.(v1.ReplicaSetSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
+  "Hdeepown_selector_some" ∷
+    (match v.(Selector') with
+    | Some selector =>
+        ∃ selector_c,
+          c.(v1.ReplicaSetSpec.Selector') ↦{dq} selector_c ∗
+          LabelSelectorV.deepown selector_c selector dq
+    | None => True%I
+    end) ∗
   "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.ReplicaSetSpec.Template') v.(Template') dq.
 
 Definition deepown_l l v dq: iProp Σ :=

@@ -568,7 +568,8 @@ Proof.
     iNamed "Hclaim_result".
     iAssert (StatefulSetV.deepown_l set_l set dq_set)
       with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-        Hdeepown_template Hdeepown_volumeclaimtemplates Hdeepown_status]"
+        Hdeepown_selector_some Hdeepown_template
+        Hdeepown_volumeclaimtemplates Hdeepown_status]"
       as "Hset".
     { iExists set_phy. rewrite /StatefulSetV.deepown.
       iFrame. rewrite /StatefulSetSpecV.deepown.
@@ -1106,7 +1107,8 @@ Proof.
   wp_auto.
   iAssert (StatefulSetV.deepown_l set_l set dq_set)
     with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-      Hdeepown_template Hdeepown_volumeclaimtemplates Hdeepown_status]"
+      Hdeepown_selector_some Hdeepown_template
+      Hdeepown_volumeclaimtemplates Hdeepown_status]"
     as "Hset".
   { iExists set_phy. rewrite /StatefulSetV.deepown.
     iFrame. rewrite /StatefulSetSpecV.deepown.
