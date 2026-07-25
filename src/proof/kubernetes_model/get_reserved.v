@@ -92,4 +92,71 @@ Proof.
   iApply ("HΦ" $! err with "Hpost").
 Qed.
 
+Lemma wp_State__PersistentVolumeClaimMutGet_reserved γ l key namespace name :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "PersistentVolumeClaim"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PersistentVolumeClaimMutGet" #namespace #name
+  {{{ err, RET (#null, #err);
+      "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & #Hisk & %Hkey_def & Hown_reserved_frag) HΦ".
+  subst key.
+  wp_method_call.
+  rewrite /apimodel.State__PersistentVolumeClaimMutGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__get_reserved γ l
+    {| KKey.Kind' := "PersistentVolumeClaim"%go;
+       KKey.Namespace' := namespace;
+       KKey.Name' := name |}
+    with "[$Hinit $Hisk $Hown_reserved_frag]").
+  iIntros (err) "Hpost". iNamed "Hpost".
+  destruct err as [err_v|].
+  2: { exfalso. exact (not_found_error_nil Hnot_found). }
+  wp_auto.
+  iApply ("HΦ" $! (interface.ok err_v) with "[$Hown_reserved_frag]").
+  done.
+Qed.
+
+(* The public typed Get wrapper preserves the concrete NotFound result returned
+   by [PersistentVolumeClaimMutGet]. *)
+Lemma wp_State__PersistentVolumeClaimGet_reserved γ l key namespace name :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "PersistentVolumeClaim"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PersistentVolumeClaimGet" #namespace #name
+  {{{ err, RET (#null, #err);
+      "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & #Hisk & %Hkey_def & Hown_reserved_frag) HΦ".
+  wp_method_call.
+  rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__PersistentVolumeClaimMutGet_reserved
+    γ l key namespace name
+    with "[$Hinit $Hisk $Hown_reserved_frag]").
+  { iPureIntro. exact Hkey_def. }
+  iIntros (err) "Hpost".
+  wp_auto.
+  iApply ("HΦ" with "Hpost").
+Qed.
+
 End proof.
