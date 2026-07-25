@@ -1,6 +1,6 @@
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
+From New.proof.k8s_io.apimachinery.pkg.runtime Require Import schema_init.
 From New.proof Require Import prelude empty_ffi.
-Require Import New.code.errors.
 
 (* [StatusError] and the Kubernetes API error helpers are external to the
    executable model.  These predicates record the semantic classes exposed by
@@ -32,17 +32,14 @@ Proof.
   done.
 Qed.
 
-(* Keep these qualified: the stdlib package and Kubernetes API package are
-   both named [errors], and unqualified [errors.Assumptions] can resolve to the
-   stdlib package after [New.code.errors] is imported. *)
+(* Keep the package modules qualified to distinguish them from this proof
+   file's unqualified semantic predicates. *)
 Module api_errors_pkg := code.k8s_io.apimachinery.pkg.api.errors.pkg_id.
 Module api_errors := code.k8s_io.apimachinery.pkg.api.errors.errors.
-Module std_errors := code.errors.errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context `{!std_errors.Assumptions}.
 Local Set Default Proof Using "All".
 
 Lemma wp_IsNotFound err:
@@ -59,6 +56,31 @@ Lemma wp_IsConflict err:
     @! api_errors.IsConflict #err
   {{{ RET (#(bool_decide (conflict_error err)));
       True%I
+  }}}.
+Proof.
+Admitted.
+
+(* Trusted boundary for the untranslated Kubernetes StatusError
+   representation and constructor. *)
+Lemma wp_NewNotFound (resource : schema.GroupResource.t) (name : go_string) :
+  {{{ is_pkg_init api_errors_pkg.errors }}}
+    @! api_errors.NewNotFound #resource #name
+  {{{ (err_l : loc), RET #err_l;
+      ⌜ not_found_error
+          (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) ⌝
+  }}}.
+Proof.
+Admitted.
+
+(* Trusted boundary for the untranslated Kubernetes StatusError
+   representation and constructor. *)
+Lemma wp_NewConflict (resource : schema.GroupResource.t) (name : go_string)
+    (cause : error.t) :
+  {{{ is_pkg_init api_errors_pkg.errors }}}
+    @! api_errors.NewConflict #resource #name #cause
+  {{{ (err_l : loc), RET #err_l;
+      ⌜ conflict_error
+          (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) ⌝
   }}}.
 Proof.
 Admitted.

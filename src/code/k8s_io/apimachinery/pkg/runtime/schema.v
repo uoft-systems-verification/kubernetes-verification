@@ -39,8 +39,6 @@ Definition emptyObjectKind {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.t
 
 #[global] Opaque emptyObjectKind.
 
-Axiom GroupResourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom GroupVersionResourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom GroupKindⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -105,17 +103,36 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 Module GroupResource.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Group' : go_string;
+  Resource' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End GroupResource.
+
+Definition GroupResource'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Group"%go go.string);
+  (go.FieldDecl "Resource"%go go.string)
+].
+Program Definition GroupResource'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (GroupResource'fds_unsealed).
+Global Instance equals_unfold_GroupResource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : GroupResource'fds =→ GroupResource'fds_unsealed.
+Proof. rewrite /GroupResource'fds seal_eq //. Qed.
+
+Definition GroupResourceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (GroupResource'fds).
 
 Class GroupResource_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] GroupResource_type_repr  :: go.TypeReprUnderlying GroupResourceⁱᵐᵖˡ GroupResource.t;
   #[global] GroupResource_underlying :: (GroupResource) <u (GroupResourceⁱᵐᵖˡ);
-  #[global] GroupResourceⁱᵐᵖˡ_underlying :: (GroupResourceⁱᵐᵖˡ) ↓u (GroupResourceⁱᵐᵖˡ);
+  #[global] GroupResource_get_Group (x : GroupResource.t) :: ⟦StructFieldGet (GroupResourceⁱᵐᵖˡ) "Group", #x⟧ ⤳[under] #x.(GroupResource.Group');
+  #[global] GroupResource_set_Group (x : GroupResource.t) y :: ⟦StructFieldSet (GroupResourceⁱᵐᵖˡ) "Group", (#x, #y)⟧ ⤳[under] #(x <|GroupResource.Group' := y|>);
+  #[global] GroupResource_get_Resource (x : GroupResource.t) :: ⟦StructFieldGet (GroupResourceⁱᵐᵖˡ) "Resource", #x⟧ ⤳[under] #x.(GroupResource.Resource');
+  #[global] GroupResource_set_Resource (x : GroupResource.t) y :: ⟦StructFieldSet (GroupResourceⁱᵐᵖˡ) "Resource", (#x, #y)⟧ ⤳[under] #(x <|GroupResource.Resource' := y|>);
 }.
 
 Module GroupVersionResource.

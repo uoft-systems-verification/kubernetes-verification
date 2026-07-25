@@ -15,13 +15,48 @@ Context {package_sem' : schema.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance GroupResource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (schema.GroupResource.t). Admitted.
+#[global]Program Instance GroupResource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (schema.GroupResource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Group" ∷ l.[(schema.GroupResource.t), "Group"] ↦{dq} v.(schema.GroupResource.Group') ∗
+      "Resource" ∷ l.[(schema.GroupResource.t), "Resource"] ↦{dq} v.(schema.GroupResource.Resource') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance GroupResource_into_val_typed
    :
   IntoValTypedUnderlying (schema.GroupResource.t) (schema.GroupResourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance GroupResource_access_load_Group l (v : (schema.GroupResource.t)) dq :
+  AccessStrict
+    (l.[(schema.GroupResource.t), "Group"] ↦{dq} (v.(schema.GroupResource.Group')))
+    (l.[(schema.GroupResource.t), "Group"] ↦{dq} (v.(schema.GroupResource.Group')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GroupResource_access_store_Group l (v : (schema.GroupResource.t)) Group' :
+  AccessStrict
+    (l.[(schema.GroupResource.t), "Group"] ↦ (v.(schema.GroupResource.Group')))
+    (l.[(schema.GroupResource.t), "Group"] ↦ Group')
+    (l ↦ v) (l ↦ (v <|(schema.GroupResource.Group') := Group'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GroupResource_access_load_Resource l (v : (schema.GroupResource.t)) dq :
+  AccessStrict
+    (l.[(schema.GroupResource.t), "Resource"] ↦{dq} (v.(schema.GroupResource.Resource')))
+    (l.[(schema.GroupResource.t), "Resource"] ↦{dq} (v.(schema.GroupResource.Resource')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GroupResource_access_store_Resource l (v : (schema.GroupResource.t)) Resource' :
+  AccessStrict
+    (l.[(schema.GroupResource.t), "Resource"] ↦ (v.(schema.GroupResource.Resource')))
+    (l.[(schema.GroupResource.t), "Resource"] ↦ Resource')
+    (l ↦ v) (l ↦ (v <|(schema.GroupResource.Resource') := Resource'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End GroupResource.
