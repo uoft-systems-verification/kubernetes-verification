@@ -169,7 +169,11 @@ Proof.
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
-  { fold key in Hnn_fresh. apply not_elem_of_dom. apply not_elem_of_dom in Hnn_fresh. timeout 10 set_solver.
+  { fold key in Hnn_fresh.
+    apply not_elem_of_dom.
+    apply not_elem_of_dom in Hnn_fresh.
+    rewrite -Hdom_eq.
+    exact Hnn_fresh.
   }
   { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid. apply not_elem_of_dom. done.
   }
@@ -206,7 +210,9 @@ Proof.
         inversion Hpr; inversion Hparent; done.
     }
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
-    timeout 10 set_solver.
+    apply elem_of_map.
+    exists (parent_key, parent_uid).
+    split; [done | exact Hin_used_reference].
   }
   iMod (cview.create_child_vs2 (pk := parent_key) (puid := parent_uid)
     key generated_uid kobj2

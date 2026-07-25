@@ -324,6 +324,22 @@ Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_str
   }}}.
 Proof. Admitted.
 
+Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
+  {{{ err, RET #err;
+      ⌜ conflict_error err ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
+  {{{ err, RET #err;
+      ⌜ conflict_error err ⌝
+  }}}.
+Proof. Admitted.
+
 Lemma wp_allowUnconditionalUpdate (kind : go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.allowUnconditionalUpdate #kind
@@ -457,24 +473,6 @@ Proof.
     + left. done.
   - left. done.
 Qed.
-
-Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
-  {{{ err, RET #err;
-      ⌜ err ≠ interface.nil ⌝ ∗
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
-  {{{ err, RET #err;
-      ⌜ err ≠ interface.nil ⌝ ∗
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
 
 Lemma wp_validateDeleteOptions l options dq :
   {{{ is_pkg_init apimodel ∗

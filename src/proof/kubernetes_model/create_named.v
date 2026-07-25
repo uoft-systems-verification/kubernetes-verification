@@ -194,7 +194,9 @@ Proof.
         inversion Hpr; inversion Hparent; done.
     }
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
-    timeout 10 set_solver.
+    apply elem_of_map.
+    exists (parent_key, parent_uid).
+    split; [done | exact Hin_used_reference].
   }
   iMod (cview.create_child_vs2 (pk := parent_key) (puid := parent_uid)
     key generated_uid kobj2
@@ -344,7 +346,11 @@ Proof.
       done.
     - exact Htombed_uid_new.
     - rewrite dom_insert_L.
-      Timeout 10 set_solver.
+      rewrite disjoint_union_r.
+      split.
+      + apply disjoint_difference_l1. done.
+      + apply disjoint_difference_l2.
+        exact Hinv_Hreserved_disjoint_abs.
   }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem. all: try done.

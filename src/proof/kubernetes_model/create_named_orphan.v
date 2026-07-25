@@ -349,7 +349,11 @@ Proof.
       done.
     - exact Htombed_uid_new.
     - rewrite dom_insert_L.
-      Timeout 10 set_solver. }
+      rewrite disjoint_union_r.
+      split.
+      + apply disjoint_difference_l1. done.
+      + apply disjoint_difference_l2.
+        exact Hinv_Hreserved_disjoint_abs. }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem.
 all: try done.
