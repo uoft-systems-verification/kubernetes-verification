@@ -18,6 +18,12 @@ Global Existing Instance not_found_error_dec.
 Axiom not_found_error_not_nil:
   ∀ err, not_found_error err → err ≠ interface.nil.
 
+Axiom already_exists_error: interface.t → Prop.
+Axiom already_exists_error_dec: ∀ err, Decision (already_exists_error err).
+Global Existing Instance already_exists_error_dec.
+Axiom already_exists_error_not_nil:
+  ∀ err, already_exists_error err → err ≠ interface.nil.
+
 Lemma conflict_error_nil : ¬ conflict_error interface.nil.
 Proof.
   intros Hconflict.
@@ -29,6 +35,13 @@ Lemma not_found_error_nil : ¬ not_found_error interface.nil.
 Proof.
   intros Hnot_found.
   apply (not_found_error_not_nil interface.nil Hnot_found).
+  done.
+Qed.
+
+Lemma already_exists_error_nil : ¬ already_exists_error interface.nil.
+Proof.
+  intros Halready_exists.
+  apply (already_exists_error_not_nil interface.nil Halready_exists).
   done.
 Qed.
 
@@ -55,6 +68,15 @@ Lemma wp_IsConflict err:
   {{{ is_pkg_init api_errors_pkg.errors }}}
     @! api_errors.IsConflict #err
   {{{ RET (#(bool_decide (conflict_error err)));
+      True%I
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_IsAlreadyExists err:
+  {{{ is_pkg_init api_errors_pkg.errors }}}
+    @! api_errors.IsAlreadyExists #err
+  {{{ RET (#(bool_decide (already_exists_error err)));
       True%I
   }}}.
 Proof.

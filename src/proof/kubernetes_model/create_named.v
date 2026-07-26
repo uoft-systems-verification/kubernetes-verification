@@ -403,4 +403,90 @@ Proof.
   iApply ("HΦ" $! i' kobj' uid with "Hpost").
 Qed.
 
+Lemma wp_State__PodCreate_named
+    γ l namespace key pod_l pod parent_key parent_uid children :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hvalid" ∷ ⌜ PodV.valid_named_create namespace pod ⌝ ∗
+      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
+      "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
+      "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = {|
+        KKey.Kind' := PodV.kind;
+        KKey.Name' := pod.(PodV.ObjectMeta').(ObjectMetaV.Name');
+        KKey.Namespace' := namespace
+      |} ⌝ ∗
+      "%Hpr" ∷
+        ⌜ obj_parent_ref_is (KObjectV.Pod pod)
+            parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "Hown_reserved_frag" ∷ own_reserved_frag γ key ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid 1 children
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PodCreate" #namespace #pod_l
+  {{{ pod_l' pod' uid, RET (#pod_l', #interface.nil);
+      "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
+      "%Hmeta_created" ∷
+        ⌜ ObjectMetaV.named_created namespace
+            pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+      "%Hspec_created" ∷
+        ⌜ ObjectSpecV.created
+            (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+            (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
+      "%Hstatus_created" ∷
+        ⌜ ObjectStatusV.created
+            (ObjectStatusV.PodStatus pod.(PodV.Status'))
+            (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
+      "%Hkey_eq'" ∷ ⌜ key = PodV.key pod' ⌝ ∗
+      "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
+      "%Huid_eq" ∷
+        ⌜ uid = pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1
+        pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1
+        (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1
+        (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
+      "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call. rewrite /apimodel.State__PodCreateⁱᵐᵖˡ. wp_call. wp_auto.
+  iAssert (KObjectV.deepown_i
+      (interface.mk (go.PointerType v1.Pod) #pod_l)
+      (KObjectV.Pod pod) 1)
+    with "[Hdeepown_l]" as "Hdeepown_i".
+  { iExists pod_l. iSplit; [done|]. iFrame. }
+  wp_apply (wp_State__create_named
+    γ l PodV.kind namespace key
+    (interface.mk (go.PointerType v1.Pod) #pod_l)
+    (KObjectV.Pod pod) parent_key parent_uid children
+    with "[$Hinit $Hisk $Hdeepown_i
+      $Hown_reserved_frag $Hown_children_frag]").
+  { iPureIntro.
+    rewrite KObjectV.valid_named_create_eq_valid_named_create2 /=.
+    split_and!; done. }
+  iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
+  destruct kobj' as [pod'|rs'|pvc'|sts']; try done.
+  iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
+  cbn [interface.ty interface.v].
+  replace
+    (if decide (go.PointerType v1.Pod = go.PointerType v1.Pod)
+     then #pod_l' else #null)%V
+    with (#pod_l')%V by (rewrite decide_True; done).
+  replace
+    (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+Qed.
+
 End proof.
