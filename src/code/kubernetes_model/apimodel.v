@@ -3769,14 +3769,14 @@ Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
      let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
-(* go: transaction.go:12:6 *)
+(* go: transaction.go:13:6 *)
 Definition preconditionUIDMismatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
     let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
     return: ((((![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")) ≠⟨go.PointerType apis_meta_v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Preconditions) UntypedNil)) && ((![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")))) ≠⟨go.PointerType types.UID⟩ (Convert go.untyped_nil (go.PointerType types.UID) UntypedNil))) && ((![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options"))))) ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())))).
 
-(* go: transaction.go:16:6 *)
+(* go: transaction.go:17:6 *)
 Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
@@ -3793,7 +3793,7 @@ Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
     do:  ((StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) <-[go.PointerType go.string] "$r0");;;
     return: #()).
 
-(* go: transaction.go:24:17 *)
+(* go: transaction.go:25:17 *)
 Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3851,7 +3851,7 @@ Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.error] "err"))).
 
-(* go: transaction.go:57:17 *)
+(* go: transaction.go:58:17 *)
 Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3943,7 +3943,42 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
-(* go: transaction.go:100:17 *)
+(* go: transaction.go:101:17 *)
+Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "pod",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) "pod") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "pod")) in
+    (MethodResolve (go.PointerType State) "updateTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedPod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedPod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: transaction.go:115:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4149,6 +4184,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_PodMutList_unfold :: MethodUnfold (go.PointerType (State)) "PodMutList" (State__PodMutListⁱᵐᵖˡ);
   #[global] State'ptr_PodUpdate_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdate" (State__PodUpdateⁱᵐᵖˡ);
   #[global] State'ptr_PodUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdateStatus" (State__PodUpdateStatusⁱᵐᵖˡ);
+  #[global] State'ptr_PodUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdateTx" (State__PodUpdateTxⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetCreate_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetCreate" (State__ReplicaSetCreateⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetDelete_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetDelete" (State__ReplicaSetDeleteⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetGet_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetGet" (State__ReplicaSetGetⁱᵐᵖˡ);

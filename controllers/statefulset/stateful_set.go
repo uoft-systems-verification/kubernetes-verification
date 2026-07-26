@@ -271,7 +271,7 @@ func updateStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
 	if !storageMatches(set, updatedPod) {
 		updateStorage(set, updatedPod)
 	}
-	_, err := apimodel.ModelState.PodUpdate(updatedPod.Namespace, updatedPod)
+	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
 	return err
 }
 

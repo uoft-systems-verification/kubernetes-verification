@@ -3,6 +3,7 @@ package apimodel
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,6 +96,20 @@ func (s *State) updateTx(kind, namespace string, obj interface{}) (interface{}, 
 		}
 		return updatedObj, err
 	}
+}
+
+func (s *State) PodUpdateTx(namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	obj, err := s.updateTx("Pod", namespace, pod)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedPod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("transactional update returned unexpected type %T", obj)
+	}
+
+	return updatedPod, nil
 }
 
 func (s *State) updateStatusTx(kind, namespace string, obj interface{}) (interface{}, error) {
