@@ -171,7 +171,9 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
 	      "Hclose" ∷ (
 	          (∀ i' kobj',
-	            ( ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+	            ( ⌜ KObjectV.valid kobj' ⌝ ∗
+	              ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+	              ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
 	              ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
 	              KObjectV.deepown_i i' kobj' 1 ∗
 	              own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
@@ -387,6 +389,10 @@ Proof.
     { assert (KObjectV.spec updated_kobj = KObjectV.spec old_kobj) as Hspec_updated_old.
       { eapply storage_object_normalize_spec_eq. done. }
       rewrite <-Hspec_updated_old. done. }
+    assert (KObjectV.same_kind kobj old_kobj) as Hsame_kind_old.
+    { destruct kobj, old_kobj; simpl in *; try done.
+      all: unfold KObjectV.key in Hkey_old_new;
+        simpl in Hkey_old_new; congruence. }
     iApply fupd_wp.
     iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
     assert (key0 = key) as ->.
@@ -399,10 +405,12 @@ Proof.
     assert (KObjectV.spec old_kobj = kspec) as Hspec_eq.
     { eapply Hspec_found; done. }
     iDestruct "Hclose" as "[Hclose_success _]".
-    iMod ("Hclose_success" $! old_i1 old_kobj with
-      "[Hdeepown_old_i1 Hown_meta_frag Hown_spec_frag]") as "HΦ".
-    { iSplit; first done.
-      iSplit; first done.
+	    iMod ("Hclose_success" $! old_i1 old_kobj with
+	      "[Hdeepown_old_i1 Hown_meta_frag Hown_spec_frag]") as "HΦ".
+	    { iSplit; first (iPureIntro; exact Hvalid_old_kobj).
+	      iSplit; first done.
+	      iSplit; first done.
+	      iSplit; first done.
       iFrame "Hdeepown_old_i1 Hown_meta_frag".
       rewrite Hspec_eq. iFrame. }
     iModIntro.
@@ -472,10 +480,18 @@ Proof.
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     symmetry. eapply valid_simple_update_updated_set_resource_version_uid; done. }
+  assert (KObjectV.same_kind kobj new_kobj) as Hsame_kind_new.
+  { unfold new_kobj.
+    destruct kobj, updated_kobj; simpl in *; simplify_eq; done. }
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
     "[Hdeepown_i1' Hown_meta_frag Hown_spec_frag]") as "HΦ".
   { iSplit.
+    { iPureIntro. unfold new_kobj, new_kmeta.
+      eapply valid_update_objectmeta_set_resource_version; done. }
+    iSplit.
+    { iPureIntro. exact Hsame_kind_new. }
+    iSplit.
     { iPureIntro. unfold new_kobj, new_kmeta.
       rewrite objectmeta_update_objectmeta.
       eapply objectmeta_updated_set_resource_version; done. }
@@ -527,6 +543,8 @@ Lemma wp_State__update γ l kind namespace i kobj key uid kmeta kspec :
     {{{ ret err i' kobj', RET (ret, #err);
         (⌜ err = interface.nil ⌝ ∗
           ⌜ ret = #(interface.ok i') ⌝ ∗
+          ⌜ KObjectV.valid kobj' ⌝ ∗
+          ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
           ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
           ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
           KObjectV.deepown_i i' kobj' 1 ∗

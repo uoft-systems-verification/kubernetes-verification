@@ -44,6 +44,8 @@ Lemma wp_State__updateTx_au γ l kind namespace i kobj :
       "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
+      "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
+      "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
       "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
       "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
@@ -70,6 +72,8 @@ Proof.
         kspec (KObjectV.spec kobj) ⌝ ∗
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
+      "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
+      "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
       "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated
         (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
       "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated
@@ -188,12 +192,18 @@ Proof.
   iSplit; first done.
   iSplit.
   - iIntros (i' kobj') "Hsuccess".
-    iDestruct "Hsuccess" as "(%Hmeta_updated & %Hspec_updated &
-      Hdeepown_i & Hown_meta_frag & Hown_spec_frag)".
+    iDestruct "Hsuccess" as
+      "(%Hvalid' & %Hsame_kind & %Hmeta_updated & %Hspec_updated &
+        Hdeepown_i & Hown_meta_frag & Hown_spec_frag)".
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! i' kobj' with
       "[Hdeepown_i Hown_meta_frag Hown_spec_frag]") as "HΦ".
     { iSplit.
+      { iPureIntro. exact Hvalid'. }
+      iSplit.
+      { iPureIntro. subst kobj_rv.
+        destruct kobj, kobj'; simpl in *; done. }
+      iSplit.
       { iPureIntro. subst kobj_rv kmeta_rv.
         rewrite objectmeta_update_objectmeta in Hmeta_updated.
         eapply objectmeta_updated_unset_resource_version_input. done. }
@@ -243,6 +253,8 @@ Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
   }}}
     l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
   {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
+      "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
       "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
       "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
@@ -275,6 +287,93 @@ Proof.
   - iIntros (i' kobj') "Hpost".
     iModIntro. iNext.
     iApply ("HΦ" $! i' kobj' with "Hpost").
+Qed.
+
+Lemma wp_State__PodUpdateTx γ l namespace pod_l pod key uid kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hvalid" ∷ ⌜ PodV.valid pod ⌝ ∗
+      "%Hns_matches" ∷
+        ⌜ namespace = pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
+      "%Huid_eq" ∷
+        ⌜ uid = pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hvalid_meta_update" ∷
+        ⌜ ObjectMetaV.valid_simple_update
+            kmeta pod.(PodV.ObjectMeta') ⌝ ∗
+      "%Hvalid_spec_update" ∷
+        ⌜ ObjectSpecV.valid_update kspec
+            (ObjectSpecV.PodSpec pod.(PodV.Spec')) ⌝ ∗
+      "%Hno_deletion_timestamp" ∷
+        ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "PodUpdateTx" #namespace #pod_l
+  {{{ pod_l' pod', RET (#pod_l', #interface.nil);
+      "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
+      "%Hmeta_updated" ∷
+        ⌜ ObjectMetaV.updated
+            pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+      "%Hspec_updated" ∷
+        ⌜ ObjectSpecV.updated
+            (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+            (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
+      "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
+      "%Huid_eq'" ∷
+        ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
+      "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1
+        pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1
+        (ObjectSpecV.PodSpec pod'.(PodV.Spec'))
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call. rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  iAssert (KObjectV.deepown_i
+      (interface.mk (go.PointerType v1.Pod) #pod_l)
+      (KObjectV.Pod pod) 1)
+    with "[Hdeepown_l]" as "Hdeepown_i".
+  { iExists pod_l. iSplit; [done|]. iFrame. }
+  wp_apply (wp_State__updateTx γ l PodV.kind namespace
+    (interface.mk (go.PointerType v1.Pod) #pod_l)
+    (KObjectV.Pod pod) key uid kmeta kspec
+    with "[$Hinit $Hisk $Hdeepown_i $Hown_meta_frag $Hown_spec_frag]").
+  { iPureIntro.
+    rewrite KObjectV.valid_eq_valid2 /=.
+    split_and!; done. }
+  iIntros (i' kobj') "Hpost". iNamed "Hpost".
+  destruct kobj' as [pod'|rs'|pvc'|sts']; try done.
+  iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
+  cbn [interface.ty interface.v].
+  replace
+    (if decide (go.PointerType v1.Pod = go.PointerType v1.Pod)
+     then #pod_l' else #null)%V
+    with (#pod_l')%V by (rewrite decide_True; done).
+  replace
+    (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  assert (PodV.key pod' = key) as Hkey_eq'.
+  { rewrite Hkey_eq /PodV.key /PodV.meta_key.
+    destruct Hmeta_updated as
+      (Hname & _ & Hnamespace & _).
+    rewrite Hname Hnamespace. done. }
+  assert (pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid)
+    as Huid_eq'.
+  { rewrite Huid_eq.
+    destruct Hmeta_updated as
+      (_ & _ & _ & _ & Huid & _).
+    exact Huid. }
+  iApply "HΦ". iFrame. iPureIntro.
+  rewrite KObjectV.valid_eq_valid2 /= in Hvalid'.
+  split_and!; done.
 Qed.
 
 End proof.
