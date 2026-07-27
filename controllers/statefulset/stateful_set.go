@@ -77,8 +77,10 @@ func releasePod(set *apps.StatefulSet, pod *v1.Pod) error {
 	ownerReferences := []metav1.OwnerReference{}
 	released := false
 	for _, ownerReference := range updatedPod.OwnerReferences {
-		isController := ownerReference.Controller != nil && *ownerReference.Controller
-		if isController && ownerReference.UID == set.UID {
+		// Upstream releases a Pod with a strategic-merge deletion keyed by the
+		// owner's UID, preserving owner references with other UIDs:
+		// https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/controller/controller_ref_manager.go
+		if ownerReference.UID == set.UID {
 			released = true
 			continue
 		}
@@ -88,7 +90,7 @@ func releasePod(set *apps.StatefulSet, pod *v1.Pod) error {
 		return nil
 	}
 	updatedPod.OwnerReferences = ownerReferences
-	_, err := apimodel.ModelState.PodUpdate(updatedPod.Namespace, updatedPod)
+	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
