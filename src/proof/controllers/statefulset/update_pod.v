@@ -44,24 +44,13 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* Existing Pods are updated only to repair mutable identity metadata. The
+(* Existing Pods are updated only to repair mutable identity metadata. These
+   conditions are needed only when identity repair causes an update to be
+   issued; the early no-op branch does not need update admissibility. The
    immutable Hostname, Subdomain, and Volumes fields are initialized before
-   creation and are never part of this update input. *)
-Definition prepare_stateful_pod_update (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) : PodV.t :=
-  if decide (pod_identity_matches set pod)
-  then pod
-  else update_identity set pod ordinal.
-
-Definition stateful_pod_update_input (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (update_input : PodV.t) : Prop :=
-  update_input = prepare_stateful_pod_update set pod ordinal.
-
-(* The first disjunct covers the early no-op return. Otherwise the repaired
-   metadata must be accepted by Kubernetes update validation. *)
+   creation and are never part of the update input. *)
 Definition stateful_pod_update_admissible
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat) : Prop :=
-  pod_identity_matches set pod ∨
   let update_input := update_identity set pod ordinal in
   PodV.valid update_input ∧
   ObjectMetaV.valid_simple_update
@@ -207,48 +196,7 @@ Proof.
           (update_identity set pod ordinal).(PodV.Spec'))).
   { unfold ObjectSpecV.valid_update, update_identity. cbn.
     apply PodSpecV.valid_update_refl. }
-  right. split_and!; done.
-Qed.
-
-Lemma stateful_pod_update_input_identity set pod ordinal :
-  ¬ pod_identity_matches set pod →
-  stateful_pod_update_input set pod ordinal
-    (update_identity set pod ordinal).
-Proof.
-  intros Hidentity.
-  unfold stateful_pod_update_input, prepare_stateful_pod_update.
-  destruct (decide (pod_identity_matches set pod))
-    as [Hidentity'|Hidentity']; [contradiction|done].
-Qed.
-
-Lemma stateful_pod_update_admissible_valid set pod ordinal :
-  stateful_pod_update_admissible set pod ordinal →
-  ¬ pod_identity_matches set pod →
-  PodV.valid (update_identity set pod ordinal) ∧
-  ObjectMetaV.valid_simple_update
-    pod.(PodV.ObjectMeta')
-    (update_identity set pod ordinal).(PodV.ObjectMeta') ∧
-  ObjectSpecV.valid_update
-    (ObjectSpecV.PodSpec pod.(PodV.Spec'))
-    (ObjectSpecV.PodSpec
-      (update_identity set pod ordinal).(PodV.Spec')).
-Proof.
-  intros [Hidentity|Hadmissible] Hnot_identity.
-  - contradiction.
-  - exact Hadmissible.
-Qed.
-
-Lemma valid_simple_update_pod_key_uid pod pod' :
-  ObjectMetaV.valid_simple_update
-    pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') →
-  PodV.key pod = PodV.key pod' ∧
-  pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
-    pod'.(PodV.ObjectMeta').(ObjectMetaV.UID').
-Proof.
-  intros (Hname & _ & Hnamespace & _ & Huid & _).
-  split.
-  - rewrite /PodV.key /PodV.meta_key Hname Hnamespace. done.
-  - symmetry. exact Huid.
+  split_and!; done.
 Qed.
 
 Lemma wp_updateStatefulPod γ model_l set_l pod_l
@@ -302,9 +250,6 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
         ∨
         ( "%Hnot_ready" ∷
             ⌜ ¬ pod_identity_matches set pod ⌝ ∗
-          "%Hupdate_input" ∷
-            ⌜ stateful_pod_update_input set pod ordinal
-                (update_identity set pod ordinal) ⌝ ∗
           "%Hmeta_updated" ∷
             ⌜ ObjectMetaV.updated
                 (update_identity set pod ordinal).(PodV.ObjectMeta')
@@ -317,10 +262,6 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  pose proof
-    (stateful_pod_update_admissible_of_valid
-      set pod ordinal Hpod_valid Hpod_desired_key Hpod_hostname)
-    as Hupdate_admissible.
   pose proof (f_equal KKey.Name' Hpod_desired_key) as Hpod_name.
   simpl in Hpod_name.
   wp_apply (wp_identityMatches set_l pod_l set pod dq_set dq_pod
@@ -339,16 +280,20 @@ Proof.
   - assert (Hnot_identity : ¬ pod_identity_matches set pod).
     { intros Hidentity. apply Hidentity_spec in Hidentity. done. }
     pose proof
-      (stateful_pod_update_admissible_valid
-        set pod ordinal Hupdate_admissible Hnot_identity)
+      (stateful_pod_update_admissible_of_valid
+        set pod ordinal Hpod_valid Hpod_desired_key Hpod_hostname)
       as (Hinput_valid & Hvalid_meta_update & Hvalid_spec_update).
-    pose proof
-      (valid_simple_update_pod_key_uid
-        pod (update_identity set pod ordinal) Hvalid_meta_update)
-      as (Hinput_key & Hinput_uid).
-    pose proof
-      (stateful_pod_update_input_identity
-        set pod ordinal Hnot_identity) as Hinput.
+    pose proof Hvalid_meta_update as
+      (Hinput_name & _ & Hinput_namespace & _ & Hinput_uid' & _).
+    assert (Hinput_key :
+        PodV.key pod = PodV.key (update_identity set pod ordinal)).
+    { rewrite /PodV.key /PodV.meta_key Hinput_name Hinput_namespace.
+      done. }
+    assert (Hinput_uid :
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
+        (update_identity set pod ordinal).(PodV.ObjectMeta').(
+          ObjectMetaV.UID')).
+    { symmetry. exact Hinput_uid'. }
     wp_auto.
     iAssert
       (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
