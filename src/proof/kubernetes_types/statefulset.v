@@ -53,6 +53,23 @@ Definition valid_create (spec : t) : Prop :=
     spec.(VolumeClaimTemplates') ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
 
+(* Of the represented fields, Kubernetes permits updates to Replicas and the
+   Pod template. Selector, volume-claim templates, and service name remain
+   immutable:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L238-L275 *)
+Definition valid_update (old new : t) : Prop :=
+  new.(Selector') = old.(Selector') ∧
+  new.(VolumeClaimTemplates') = old.(VolumeClaimTemplates') ∧
+  new.(ServiceName') = old.(ServiceName').
+
+Global Instance valid_update_dec old new :
+  Decision (valid_update old new).
+Proof. unfold valid_update. solve_decision. Defined.
+
+Lemma valid_update_refl spec :
+  valid_update spec spec.
+Proof. unfold valid_update. done. Qed.
+
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.

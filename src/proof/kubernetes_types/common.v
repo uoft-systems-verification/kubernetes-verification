@@ -365,17 +365,157 @@ Axiom valid_resource_version_non_empty: ∀ rv, valid_resource_version rv → rv
 Definition valid_generation (generation: w64) : Prop :=
   (0 <= sint.Z generation)%Z.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L105-L111 *)
-Axiom valid_label_name: go_string → Prop.
+Definition byte_underscore : w8 := W8 95.  (* ASCII '_' *)
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L165-L175 *)
-Axiom valid_label_value: go_string → Prop.
+Definition label_alphanumeric (b : w8) : Prop :=
+  (48 ≤ uint.Z b ≤ 57)%Z ∨
+  (65 ≤ uint.Z b ≤ 90)%Z ∨
+  (97 ≤ uint.Z b ≤ 122)%Z.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L113 *)
-Axiom valid_labels: option (gmap go_string go_string) → Prop.
+Definition label_extended_character (b : w8) : Prop :=
+  label_alphanumeric b ∨
+  b = byte_dash ∨ b = byte_underscore ∨ b = byte_dot.
+
+Fixpoint qualified_name_tail (previous : w8) (suffix : go_string) : Prop :=
+  match suffix with
+  | [] => label_alphanumeric previous
+  | b :: suffix' =>
+      label_extended_character b ∧ qualified_name_tail b suffix'
+  end.
+
+Definition qualified_name_syntax (s : go_string) : Prop :=
+  match s with
+  | [] => False
+  | first :: suffix =>
+      label_alphanumeric first ∧ qualified_name_tail first suffix
+  end.
+
+Definition valid_qualified_name (s : go_string) : Prop :=
+  qualified_name_syntax s ∧ length s ≤ 63.
+
+(* Kubernetes label keys are qualified names: either an unprefixed
+   63-character name, or a DNS-1123 subdomain prefix and "/" followed by that
+   name.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L105-L111
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L35-L70 *)
+Definition valid_label_name (name : go_string) : Prop :=
+  valid_qualified_name name ∨
+  ∃ prefix suffix,
+    name = prefix ++ "/"%go ++ suffix ∧
+    valid_dns1123_subdomain prefix ∧
+    valid_qualified_name suffix.
+
+(* A label value may be empty. A nonempty value uses the qualified-name name
+   syntax (without a DNS prefix) and is at most 63 bytes.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L162-L174 *)
+Definition valid_label_value (value : go_string) : Prop :=
+  value = ""%go ∨ valid_qualified_name value.
+
+(* A nil label map and an empty label map are both accepted. Every entry in a
+   nonempty map is checked using ValidateLabelName and IsValidLabelValue.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L112-L121 *)
+Definition valid_labels (labels : option (gmap go_string go_string)) : Prop :=
+  match labels with
+  | None => True
+  | Some labels =>
+      map_Forall
+        (λ name value, valid_label_name name ∧ valid_label_value value)
+        labels
+  end.
+
+Lemma valid_labels_insert labels name value :
+  valid_labels labels →
+  valid_label_name name →
+  valid_label_value value →
+  valid_labels (Some (<[name := value]> (default ∅ labels))).
+Proof.
+  destruct labels as [labels|]; simpl.
+  - intros Hlabels Hname Hvalue.
+    apply map_Forall_insert_2; done.
+  - intros _ Hname Hvalue.
+    apply map_Forall_insert_2; [done|apply map_Forall_empty].
+Qed.
+
+Lemma dns1123_label_syntax_qualified_name_syntax s :
+  dns1123_label_syntax s →
+  qualified_name_syntax s.
+Proof.
+  destruct s as [|first suffix]; simpl; first done.
+  intros [Hfirst Htail].
+  split.
+  - unfold dns1123_lower_alphanumeric, label_alphanumeric in *.
+    tauto.
+  - clear Hfirst. revert first Htail.
+    induction suffix as [|b suffix IH]; intros previous Htail; simpl in *.
+    + unfold dns1123_lower_alphanumeric, label_alphanumeric in *.
+      tauto.
+    + destruct Htail as [Hb Htail].
+      split.
+      * unfold dns1123_label_byte, label_extended_character,
+          dns1123_lower_alphanumeric, label_alphanumeric in *.
+        tauto.
+      * exact (IH b Htail).
+Qed.
+
+Lemma valid_label_value_of_valid_dns1123_label value :
+  valid_dns1123_label value →
+  valid_label_value value.
+Proof.
+  intros [Hsyntax Hlength].
+  right. split.
+  - by apply dns1123_label_syntax_qualified_name_syntax.
+  - exact Hlength.
+Qed.
+
+Lemma decimal_string_label_alphanumeric n :
+  Forall label_alphanumeric (decimal_string n).
+Proof.
+  unfold decimal_string.
+  remember (Nat.to_uint n) as digits.
+  clear n Heqdigits.
+  induction digits; simpl; constructor; try exact IHdigits;
+    unfold label_alphanumeric, byte_zero, byte_one, byte_two, byte_three,
+      byte_four, byte_five, byte_six, byte_seven, byte_eight, byte_nine;
+    word.
+Qed.
+
+Lemma qualified_name_syntax_of_forall_alphanumeric value :
+  value ≠ ""%go →
+  Forall label_alphanumeric value →
+  qualified_name_syntax value.
+Proof.
+  intros Hnonempty Hchars.
+  destruct value as [|first suffix]; first contradiction.
+  inversion Hchars as [|? ? Hfirst Hsuffix]; subst.
+  simpl. split; first exact Hfirst.
+  clear Hnonempty Hchars. revert first Hfirst Hsuffix.
+  induction suffix as [|b suffix IH];
+    intros previous Hprevious Hsuffix; simpl.
+  - exact Hprevious.
+  - inversion Hsuffix as [|? ? Hb Hsuffix']; subst.
+    split.
+    + left. exact Hb.
+    + exact (IH b Hb Hsuffix').
+Qed.
+
+Lemma valid_label_value_decimal_string n :
+  length (decimal_string n) ≤ 63 →
+  valid_label_value (decimal_string n).
+Proof.
+  intros Hlength.
+  right. split; last exact Hlength.
+  apply qualified_name_syntax_of_forall_alphanumeric.
+  - intros Hempty.
+    pose proof (parse_decimal_string_decimal_string n) as Hparse.
+    rewrite Hempty in Hparse. done.
+  - apply decimal_string_label_alphanumeric.
+Qed.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
 Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+
+Global Instance type_meta_eq_dec : EqDecision v1.TypeMeta.t.
+Proof. solve_decision. Defined.
 
 (* TODO: this definition is incomplete but for now we only care about kind *)
 Definition valid_typemeta kind tm : Prop :=

@@ -13,6 +13,13 @@ Record t := mk {
   PersistentVolumeClaim' : option v1.PersistentVolumeClaimVolumeSource.t;
 }.
 
+Global Instance persistent_volume_claim_volume_source_eq_dec :
+  EqDecision v1.PersistentVolumeClaimVolumeSource.t.
+Proof. solve_decision. Qed.
+
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
+
 Definition valid (source : t) : Prop :=
   match source.(PersistentVolumeClaim') with
   | Some pvc => valid_dns1123_subdomain pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName')
@@ -44,6 +51,9 @@ Record t := mk {
   Name' : go_string;
   VolumeSource' : VolumeSourceV.t;
 }.
+
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
 
 Definition valid (volume : t) : Prop :=
   valid_dns1123_label volume.(Name') ∧
@@ -116,6 +126,23 @@ Definition valid (spec : t) : Prop :=
 
 Definition valid_create (spec : t) : Prop :=
   valid spec.
+
+(* Pod update validation treats Volumes, Hostname, and Subdomain as immutable.
+   These are the PodSpec fields currently represented by [t]. Upstream permits
+   updates to a small set of other fields, none of which are modeled here:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L5571-L5675 *)
+Definition valid_update (old new : t) : Prop :=
+  new.(Volumes') = old.(Volumes') ∧
+  new.(Hostname') = old.(Hostname') ∧
+  new.(Subdomain') = old.(Subdomain').
+
+Global Instance valid_update_dec old new :
+  Decision (valid_update old new).
+Proof. unfold valid_update. solve_decision. Defined.
+
+Lemma valid_update_refl spec :
+  valid_update spec spec.
+Proof. unfold valid_update. done. Qed.
 
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷

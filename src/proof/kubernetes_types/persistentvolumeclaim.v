@@ -13,6 +13,28 @@ Axiom valid: t → Prop.
 (* PVC schema defaulting, including the default VolumeMode, is not yet
    expressible because [t] is abstract. *)
 Axiom valid_create: t → Prop.
+
+(* This is a conservative projection of PVC update validation while the PVC
+   spec remains abstract: an unchanged spec is always permitted. Upstream also
+   permits controlled binding and expansion changes, but those depend on
+   currently unmodeled spec and status fields:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L2464-L2549 *)
+Definition valid_update (old new : t) : Prop :=
+  old = new.
+
+Axiom valid_update_dec :
+  ∀ old new, Decision (valid_update old new).
+Global Existing Instance valid_update_dec.
+
+(* The conservative update predicate is equality, so its assumed decision
+   procedure also supplies equality decision for this otherwise opaque type. *)
+Global Instance eq_dec : EqDecision t.
+Proof. intros old new. exact (valid_update_dec old new). Defined.
+
+Lemma valid_update_refl spec :
+  valid_update spec spec.
+Proof. unfold valid_update. done. Qed.
+
 Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -29,6 +51,8 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
+Axiom eq_dec : EqDecision t.
+Global Existing Instance eq_dec.
 Axiom valid: t → Prop.
 Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
 
@@ -51,6 +75,9 @@ Record t := mk {
   Spec' : PersistentVolumeClaimSpecV.t;
   Status' : PersistentVolumeClaimStatusV.t;
 }.
+
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Defined.
 
 Definition kind : go_string :=
   "PersistentVolumeClaim"%go.

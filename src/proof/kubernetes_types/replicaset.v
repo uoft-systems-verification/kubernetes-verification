@@ -45,6 +45,20 @@ Definition valid_create (rs : t) : Prop :=
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
 
+(* Kubernetes allows the represented replica count, minimum-ready duration,
+   and Pod template to change, but keeps the selector immutable:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L763-L770 *)
+Definition valid_update (old new : t) : Prop :=
+  new.(Selector') = old.(Selector').
+
+Global Instance valid_update_dec old new :
+  Decision (valid_update old new).
+Proof. unfold valid_update. solve_decision. Defined.
+
+Lemma valid_update_refl spec :
+  valid_update spec spec.
+Proof. unfold valid_update. done. Qed.
+
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.

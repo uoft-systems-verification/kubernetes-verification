@@ -67,9 +67,23 @@ Definition valid_create (v : t) : Prop :=
   | StatefulSetSpec sts => StatefulSetSpecV.valid_create sts
   end.
 
-Axiom valid_update: t → t → Prop.
-Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
-Global Existing Instance valid_update_dec.
+Definition valid_update (old new : t) : Prop :=
+  match old, new with
+  | PodSpec old, PodSpec new => PodSpecV.valid_update old new
+  | ReplicaSetSpec old, ReplicaSetSpec new =>
+      ReplicaSetSpecV.valid_update old new
+  | PersistentVolumeClaimSpec old, PersistentVolumeClaimSpec new =>
+      PersistentVolumeClaimSpecV.valid_update old new
+  | StatefulSetSpec old, StatefulSetSpec new =>
+      StatefulSetSpecV.valid_update old new
+  | _, _ => False
+  end.
+
+Global Instance valid_update_dec old new :
+  Decision (valid_update old new).
+Proof.
+  destruct old, new; simpl; apply _.
+Defined.
 Axiom defaulted: t → t → Prop.
 Axiom created: t → t → Prop. (* input spec → output spec *)
 Axiom updated: t → t → Prop. (* old spec → input spec → output spec *)

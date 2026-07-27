@@ -13,6 +13,9 @@ Record t := mk {
   Values' : option (list go_string);
 }.
 
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Defined.
+
 Definition valid_operator (operator : v1.LabelSelectorOperator.t) : Prop :=
   operator = "In"%go ∨ operator = "NotIn"%go ∨
   operator = "Exists"%go ∨ operator = "DoesNotExist"%go.
@@ -64,6 +67,9 @@ Record t := mk {
   MatchLabels' : option (gmap go_string go_string);
   MatchExpressions' : option (list LabelSelectorRequirementV.t);
 }.
+
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Defined.
 
 (* As with requirement values, Kubernetes treats nil and non-nil empty
    MatchExpressions slices identically for validation and matching. *)

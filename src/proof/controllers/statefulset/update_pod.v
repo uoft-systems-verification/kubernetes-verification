@@ -70,6 +70,146 @@ Definition stateful_pod_update_admissible
     (ObjectSpecV.PodSpec pod.(PodV.Spec'))
     (ObjectSpecV.PodSpec update_input.(PodV.Spec')).
 
+Lemma statefulset_pod_name_label_valid :
+  valid_label_name statefulset_pod_name_label.
+Proof.
+  right.
+  exists "statefulset.kubernetes.io"%go, "pod-name"%go.
+  split; first done.
+  split.
+  - unfold valid_dns1123_subdomain, dns1123_subdomain_syntax.
+    cbn. repeat split.
+    all: unfold dns1123_lower_alphanumeric, dns1123_subdomain_byte,
+      dns1123_label_byte, byte_dot, byte_dash.
+    Timeout 10 all: vm_compute.
+    all: intuition congruence.
+  - unfold valid_qualified_name, qualified_name_syntax.
+    cbn. repeat split.
+    all: unfold label_alphanumeric, label_extended_character,
+      byte_underscore, byte_dot, byte_dash.
+    Timeout 10 all: vm_compute.
+    all: intuition congruence.
+Qed.
+
+Lemma pod_index_label_valid :
+  valid_label_name pod_index_label.
+Proof.
+  right.
+  exists "apps.kubernetes.io"%go, "pod-index"%go.
+  split; first done.
+  split.
+  - unfold valid_dns1123_subdomain, dns1123_subdomain_syntax.
+    cbn. repeat split.
+    all: unfold dns1123_lower_alphanumeric, dns1123_subdomain_byte,
+      dns1123_label_byte, byte_dot, byte_dash.
+    Timeout 10 all: vm_compute.
+    all: intuition congruence.
+  - unfold valid_qualified_name, qualified_name_syntax.
+    cbn. repeat split.
+    all: unfold label_alphanumeric, label_extended_character,
+      byte_underscore, byte_dot, byte_dash.
+    Timeout 10 all: vm_compute.
+    all: intuition congruence.
+Qed.
+
+Lemma stateful_pod_update_admissible_of_valid set pod ordinal :
+  PodV.valid pod →
+  PodV.key pod = desired_pod_key set ordinal →
+  pod.(PodV.Spec').(PodSpecV.Hostname') =
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') →
+  stateful_pod_update_admissible set pod ordinal.
+Proof.
+  intros Hpod_valid Hpod_key Hhostname.
+  pose proof (f_equal KKey.Name' Hpod_key) as Hpod_name.
+  pose proof (f_equal KKey.Namespace' Hpod_key) as Hpod_namespace.
+  simpl in Hpod_name, Hpod_namespace.
+  destruct Hpod_valid as
+    (Htypemeta & Hresource_version & Hmeta_valid &
+      Hspec_valid & Hstatus_valid).
+  pose proof Hspec_valid as
+    (_ & Hhostname_valid & _).
+  rewrite Hhostname in Hhostname_valid.
+  destruct Hhostname_valid as [Hname_empty|Hname_valid].
+  { exfalso.
+    apply (ObjectMetaV.valid_name_nonempty_of_valid _
+      Hmeta_valid).
+    exact Hname_empty. }
+  pose proof Hname_valid as (_ & Hname_length).
+  assert (Hdecimal_length :
+      length (decimal_string ordinal) ≤ 63).
+  { assert (length (decimal_string ordinal) ≤
+        length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
+    { rewrite Hpod_name /desired_pod_name !app_length /=. lia. }
+    lia. }
+  assert (Hlabels_valid :
+      valid_labels
+        (Some
+          (<[pod_index_label := decimal_string ordinal]>
+            (<[statefulset_pod_name_label :=
+                desired_pod_name
+                  set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+                  ordinal]>
+              (default ∅
+                pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')))))).
+  { assert (Hpod_name_label_valid :
+        valid_labels
+          (Some
+            (<[statefulset_pod_name_label :=
+                desired_pod_name
+                  set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+                  ordinal]>
+              (default ∅
+                pod.(PodV.ObjectMeta').(ObjectMetaV.Labels'))))).
+    { apply valid_labels_insert.
+      - exact (ObjectMetaV.valid_labels_of_valid _ Hmeta_valid).
+      - apply statefulset_pod_name_label_valid.
+      - rewrite -Hpod_name.
+        by apply valid_label_value_of_valid_dns1123_label. }
+    pose proof
+      (valid_labels_insert
+        (Some
+          (<[statefulset_pod_name_label :=
+              desired_pod_name
+                set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+                ordinal]>
+            (default ∅
+              pod.(PodV.ObjectMeta').(ObjectMetaV.Labels'))))
+        pod_index_label (decimal_string ordinal)
+        Hpod_name_label_valid pod_index_label_valid
+        (valid_label_value_decimal_string _ Hdecimal_length))
+      as Hlabels_valid.
+    exact Hlabels_valid. }
+  assert (Hupdated_valid :
+      PodV.valid (update_identity set pod ordinal)).
+  { unfold PodV.valid, update_identity. cbn.
+    split_and!; try done.
+    unfold ObjectMetaV.valid in Hmeta_valid |- *.
+    destruct Hmeta_valid as
+      (Hgenerate_name & Hname_nonempty & Hname_valid' &
+        Hnamespace_nonempty & Hnamespace_valid & Huid_valid &
+        _ & Hannotations_valid & Howner_references_valid &
+        Hfinalizers_valid & Hmanaged_fields_valid).
+    split_and!; try done.
+    - by rewrite -Hpod_name.
+    - by rewrite -Hpod_name.
+    - by rewrite -Hpod_namespace.
+    - by rewrite -Hpod_namespace. }
+  assert (Hmeta_update :
+      ObjectMetaV.valid_simple_update
+        pod.(PodV.ObjectMeta')
+        (update_identity set pod ordinal).(PodV.ObjectMeta')).
+  { unfold ObjectMetaV.valid_simple_update, update_identity. cbn.
+    split_and!; try done. }
+  assert (Hspec_update :
+      ObjectSpecV.valid_update
+        (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+        (ObjectSpecV.PodSpec
+          (update_identity set pod ordinal).(PodV.Spec'))).
+  { unfold ObjectSpecV.valid_update, update_identity. cbn.
+    apply PodSpecV.valid_update_refl. }
+  right. split_and!; done.
+Qed.
+
 Lemma stateful_pod_update_input_identity set pod ordinal :
   ¬ pod_identity_matches set pod →
   stateful_pod_update_input set pod ordinal
@@ -122,11 +262,11 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "%Hpod_valid" ∷ ⌜ PodV.valid pod ⌝ ∗
-      "%Hpod_name" ∷
-        ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
-            desired_pod_name
-              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-              ordinal ⌝ ∗
+      "%Hpod_desired_key" ∷
+        ⌜ PodV.key pod = desired_pod_key set ordinal ⌝ ∗
+      "%Hpod_hostname" ∷
+        ⌜ pod.(PodV.Spec').(PodSpecV.Hostname') =
+            pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hordinal_bound" ∷
         ⌜ (ordinal ≤ go_int32_max_nat)%nat ⌝ ∗
       "%Hpod_name_len" ∷
@@ -135,8 +275,6 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
           go_int_max ⌝ ∗
       "%Hpod_not_deleting" ∷
         ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hupdate_admissible" ∷
-        ⌜ stateful_pod_update_admissible set pod ordinal ⌝ ∗
       "Hown_meta" ∷ own_meta_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         pod.(PodV.ObjectMeta') ∗
@@ -179,6 +317,12 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
+  pose proof
+    (stateful_pod_update_admissible_of_valid
+      set pod ordinal Hpod_valid Hpod_desired_key Hpod_hostname)
+    as Hupdate_admissible.
+  pose proof (f_equal KKey.Name' Hpod_desired_key) as Hpod_name.
+  simpl in Hpod_name.
   wp_apply (wp_identityMatches set_l pod_l set pod dq_set dq_pod
     with "[$Hset $Hpod]").
   { iPureIntro. exact Hpod_name_len. }

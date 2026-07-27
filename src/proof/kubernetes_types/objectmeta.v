@@ -120,6 +120,9 @@ Record t := mk {
   ManagedFields' : option (list ManagedFieldsEntryV.t);
 }.
 
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Defined.
+
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155 *)
 (* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
    because kview's meta frag needs ObjectMetaV.valid and the fragment doesn't
