@@ -1,6 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.statefulset Require Export delete_pod.
-From New.proof.controllers.statefulset Require Export pod_identity pod_storage.
+From New.proof.controllers.statefulset Require Export pod_identity.
+From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update.
 
 Section proof.
@@ -43,42 +44,72 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* The value submitted to PodUpdateTx.  Identity is repaired first.  Storage is
-   then repaired using the unspecified iteration order of the claim-template
-   map. *)
+(* Existing Pods are updated only to repair mutable identity metadata. The
+   immutable Hostname, Subdomain, and Volumes fields are initialized before
+   creation and are never part of this update input. *)
 Definition prepare_stateful_pod_update (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (claim_template_names : list go_string) : PodV.t :=
-  let pod :=
-    if decide (pod_identity_matches set pod)
-    then pod
-    else update_identity set pod ordinal in
-  if decide (pod_storage_matches set pod)
+    (ordinal : nat) : PodV.t :=
+  if decide (pod_identity_matches set pod)
   then pod
-  else update_storage set pod ordinal claim_template_names.
+  else update_identity set pod ordinal.
 
 Definition stateful_pod_update_input (set : StatefulSetV.t) (pod : PodV.t)
     (ordinal : nat) (update_input : PodV.t) : Prop :=
-  ∃ claim_template_names,
-    NoDup claim_template_names ∧
-    list_to_set (C := gset go_string) claim_template_names =
-      list_to_set (pvc_claim_template_names set) ∧
-    update_input =
-      prepare_stateful_pod_update set pod ordinal claim_template_names.
+  update_input = prepare_stateful_pod_update set pod ordinal.
 
-(* The first disjunct covers the early no-op return.  Otherwise every possible
-   map iteration order must produce an input accepted by Kubernetes update
-   validation. *)
+(* The first disjunct covers the early no-op return. Otherwise the repaired
+   metadata must be accepted by Kubernetes update validation. *)
 Definition stateful_pod_update_admissible
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat) : Prop :=
-  (pod_identity_matches set pod ∧ pod_storage_matches set pod) ∨
-  ∀ update_input,
-    stateful_pod_update_input set pod ordinal update_input →
-    PodV.valid update_input ∧
-    ObjectMetaV.valid_simple_update
-      pod.(PodV.ObjectMeta') update_input.(PodV.ObjectMeta') ∧
-    ObjectSpecV.valid_update
-      (ObjectSpecV.PodSpec pod.(PodV.Spec'))
-      (ObjectSpecV.PodSpec update_input.(PodV.Spec')).
+  pod_identity_matches set pod ∨
+  let update_input := update_identity set pod ordinal in
+  PodV.valid update_input ∧
+  ObjectMetaV.valid_simple_update
+    pod.(PodV.ObjectMeta') update_input.(PodV.ObjectMeta') ∧
+  ObjectSpecV.valid_update
+    (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+    (ObjectSpecV.PodSpec update_input.(PodV.Spec')).
+
+Lemma stateful_pod_update_input_identity set pod ordinal :
+  ¬ pod_identity_matches set pod →
+  stateful_pod_update_input set pod ordinal
+    (update_identity set pod ordinal).
+Proof.
+  intros Hidentity.
+  unfold stateful_pod_update_input, prepare_stateful_pod_update.
+  destruct (decide (pod_identity_matches set pod))
+    as [Hidentity'|Hidentity']; [contradiction|done].
+Qed.
+
+Lemma stateful_pod_update_admissible_valid set pod ordinal :
+  stateful_pod_update_admissible set pod ordinal →
+  ¬ pod_identity_matches set pod →
+  PodV.valid (update_identity set pod ordinal) ∧
+  ObjectMetaV.valid_simple_update
+    pod.(PodV.ObjectMeta')
+    (update_identity set pod ordinal).(PodV.ObjectMeta') ∧
+  ObjectSpecV.valid_update
+    (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+    (ObjectSpecV.PodSpec
+      (update_identity set pod ordinal).(PodV.Spec')).
+Proof.
+  intros [Hidentity|Hadmissible] Hnot_identity.
+  - contradiction.
+  - exact Hadmissible.
+Qed.
+
+Lemma valid_simple_update_pod_key_uid pod pod' :
+  ObjectMetaV.valid_simple_update
+    pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') →
+  PodV.key pod = PodV.key pod' ∧
+  pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
+    pod'.(PodV.ObjectMeta').(ObjectMetaV.UID').
+Proof.
+  intros (Hname & _ & Hnamespace & _ & Huid & _).
+  split.
+  - rewrite /PodV.key /PodV.meta_key Hname Hnamespace. done.
+  - symmetry. exact Huid.
+Qed.
 
 Lemma wp_updateStatefulPod γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
@@ -129,26 +160,125 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
       ( ("%Hnoop" ∷
-            ⌜ pod_identity_matches set pod ∧
-              pod_storage_matches set pod ∧ pod' = pod ⌝)
+            ⌜ pod_identity_matches set pod ∧ pod' = pod ⌝)
         ∨
-        (∃ update_input,
-          "%Hnot_ready" ∷
-            ⌜ ¬ (pod_identity_matches set pod ∧
-                  pod_storage_matches set pod) ⌝ ∗
+        ( "%Hnot_ready" ∷
+            ⌜ ¬ pod_identity_matches set pod ⌝ ∗
           "%Hupdate_input" ∷
-            ⌜ stateful_pod_update_input
-                set pod ordinal update_input ⌝ ∗
+            ⌜ stateful_pod_update_input set pod ordinal
+                (update_identity set pod ordinal) ⌝ ∗
           "%Hmeta_updated" ∷
             ⌜ ObjectMetaV.updated
-                update_input.(PodV.ObjectMeta')
+                (update_identity set pod ordinal).(PodV.ObjectMeta')
                 pod'.(PodV.ObjectMeta') ⌝ ∗
           "%Hspec_updated" ∷
             ⌜ ObjectSpecV.updated
-                (ObjectSpecV.PodSpec update_input.(PodV.Spec'))
+                (ObjectSpecV.PodSpec
+                  (update_identity set pod ordinal).(PodV.Spec'))
                 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝))
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_identityMatches set_l pod_l set pod dq_set dq_pod
+    with "[$Hset $Hpod]").
+  { iPureIntro. exact Hpod_name_len. }
+  iIntros (identity_ret)
+    "(Hset & Hpod & %Hidentity_spec)".
+  destruct identity_ret.
+  - assert (Hidentity : pod_identity_matches set pod).
+    { apply Hidentity_spec. done. }
+    wp_auto.
+    iApply ("HΦ" $! pod).
+    iFrame "Hset Hpod Hown_meta Hown_spec".
+    do 3 (iSplit; first done).
+    iLeft. iPureIntro. split; done.
+  - assert (Hnot_identity : ¬ pod_identity_matches set pod).
+    { intros Hidentity. apply Hidentity_spec in Hidentity. done. }
+    pose proof
+      (stateful_pod_update_admissible_valid
+        set pod ordinal Hupdate_admissible Hnot_identity)
+      as (Hinput_valid & Hvalid_meta_update & Hvalid_spec_update).
+    pose proof
+      (valid_simple_update_pod_key_uid
+        pod (update_identity set pod ordinal) Hvalid_meta_update)
+      as (Hinput_key & Hinput_uid).
+    pose proof
+      (stateful_pod_update_input_identity
+        set pod ordinal Hnot_identity) as Hinput.
+    wp_auto.
+    iAssert
+      (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
+      as "#Hcorev1".
+    { iPkgInit. }
+    iEval (rewrite /named) in "Hpod".
+    iDestruct "Hpod" as (pod_phy) "[Hpod_ptr Hpod]".
+    wp_apply (wp_Pod__DeepCopy
+      (package_sem := object_core_v1_sem)
+      (meta_v1_sem := object_meta_v1_sem)
+      pod_l pod_phy pod dq_pod dq_pod
+      with "[$Hcorev1 $Hpod_ptr $Hpod]").
+    iIntros (updatedPod_l) "(HupdatedPod & Hpod_ptr & Hpod)".
+    iAssert (PodV.deepown_l pod_l pod dq_pod)
+      with "[Hpod_ptr Hpod]" as "Hpod".
+    { iExists pod_phy. iFrame. }
+    wp_auto.
+    wp_apply (wp_updateIdentity
+      set_l updatedPod_l set pod ordinal dq_set
+      with "[$Hset $HupdatedPod]").
+    { iPureIntro. split_and!; done. }
+    iIntros "(Hset & HupdatedPod & %Hidentity_matches)".
+    iEval (rewrite /named) in "HupdatedPod".
+    iPoseProof (PodV.deepown_l_split with "HupdatedPod") as
+      "(%HupdatedPod_l_not_null & HupdatedPod_typemeta &
+        HupdatedPod_objectmeta_l & HupdatedPod_spec_l &
+        HupdatedPod_status_l)".
+    iDestruct "HupdatedPod_objectmeta_l" as
+      (updatedPod_meta_c)
+      "[HupdatedPod_objectmeta_field HupdatedPod_objectmeta]".
+    iNamedPrefix "HupdatedPod_objectmeta" "HupdatedPod_meta_".
+    wp_auto.
+    rewrite HupdatedPod_meta_Hdeepown_namespace.
+    iCombineNamed "HupdatedPod_meta_*" as
+      "HupdatedPod_objectmeta".
+    iAssert (ObjectMetaV.deepown updatedPod_meta_c
+        (PodV.ObjectMeta' (update_identity set pod ordinal)) 1)
+      with "[HupdatedPod_objectmeta]" as
+        "HupdatedPod_objectmeta".
+    { iNamed "HupdatedPod_objectmeta". iFrame. done. }
+    iAssert (ObjectMetaV.deepown_l
+        (PodV.objectmeta_ptr updatedPod_l)
+        (PodV.ObjectMeta' (update_identity set pod ordinal)) 1)
+      with
+        "[HupdatedPod_objectmeta_field HupdatedPod_objectmeta]"
+      as "HupdatedPod_objectmeta_l".
+    { iExists updatedPod_meta_c. iFrame. }
+    iPoseProof (PodV.deepown_l_restore _ _ _
+      HupdatedPod_l_not_null
+      with "[$HupdatedPod_typemeta $HupdatedPod_objectmeta_l
+        $HupdatedPod_spec_l $HupdatedPod_status_l]")
+      as "HupdatedPod".
+    iAssert (is_pkg_init apimodel) as "#Hapimodel".
+    { iPkgInit. }
+    wp_apply (wp_State__PodUpdateTx γ model_l
+      (update_identity set pod ordinal).(PodV.ObjectMeta').(
+        ObjectMetaV.Namespace')
+      updatedPod_l (update_identity set pod ordinal)
+      (PodV.key pod)
+      pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
+      pod.(PodV.ObjectMeta')
+      (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+      with "[$HupdatedPod $Hown_meta $Hown_spec]").
+    { iFrame "#".
+      iPureIntro.
+      split_and!; done. }
+    iIntros (returned_pod_l returned_pod) "Hupdate".
+    iNamedPrefix "Hupdate" "Hupdate_".
+    wp_auto.
+    iApply ("HΦ" $! returned_pod).
+    iFrame "Hset Hpod Hupdate_Hown_meta_frag
+      Hupdate_Hown_spec_frag".
+    do 3 (iSplit; first (iPureIntro; assumption)).
+    iRight. iFrame "%".
+Qed.
 
 End proof.

@@ -224,7 +224,7 @@ Proof.
              [pod_idx Hpod_lookup].
            { apply list_elem_of_lookup_1. exact Hpod'. }
            assert (pod_idx = found_idx) as ->.
-           { apply (NoDup_lookup
+	           { apply (NoDup_lookup
                ((λ pod,
                  pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <$> pods)
                pod_idx found_idx
@@ -233,10 +233,11 @@ Proof.
                  (sint.nat i)) Hpod_names_nodup).
              - rewrite list_lookup_fmap Hpod_lookup /=.
                f_equal. exact Hpod_name.
-             - rewrite list_lookup_fmap Hfound_pod_lookup /=.
-               f_equal. exact Hfound_name. }
-           rewrite Hfound_pod_lookup in Hpod_lookup. simplify_eq/=.
-        -- word.
+	             - rewrite list_lookup_fmap Hfound_pod_lookup /=.
+	               f_equal. exact Hfound_name. }
+	           rewrite Hfound_pod_lookup in Hpod_lookup. simplify_eq/=.
+	           exfalso. apply Hnot_matches. apply Hmatches. done.
+	        -- word.
       * wp_auto.
         replace (bool_decide false) with false by done.
         iApply wp_for_post_return. wp_auto.

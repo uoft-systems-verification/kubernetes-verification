@@ -116,12 +116,20 @@ func isTerminating(pod *v1.Pod) bool {
 	return pod.DeletionTimestamp != nil
 }
 
+// initIdentity initializes both the mutable and immutable parts of a
+// StatefulSet Pod's identity. Kubernetes upstream deliberately sets Hostname
+// and Subdomain only during initial Pod creation:
+// https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
+func initIdentity(set *apps.StatefulSet, pod *v1.Pod) {
+	updateIdentity(set, pod)
+	pod.Spec.Hostname = pod.Name
+	pod.Spec.Subdomain = set.Spec.ServiceName
+}
+
 func updateIdentity(set *apps.StatefulSet, pod *v1.Pod) {
 	ordinal := ordinalOf(pod.Name)
 	pod.Name = podName(set.Name, ordinal)
 	pod.Namespace = set.Namespace
-	pod.Spec.Hostname = pod.Name
-	pod.Spec.Subdomain = set.Spec.ServiceName
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
@@ -135,8 +143,6 @@ func identityMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
 		parent == set.Name &&
 		pod.Name == podName(set.Name, ordinal) &&
 		pod.Namespace == set.Namespace &&
-		pod.Spec.Hostname == pod.Name &&
-		pod.Spec.Subdomain == set.Spec.ServiceName &&
 		pod.Labels[apps.StatefulSetPodNameLabel] == pod.Name &&
 		pod.Labels[apps.PodIndexLabel] == strconv.Itoa(ordinal)
 }
@@ -149,7 +155,10 @@ func volumeClaimTemplatesByName(set *apps.StatefulSet) map[string]v1.PersistentV
 	return claimTemplates
 }
 
-func updateStorage(set *apps.StatefulSet, pod *v1.Pod) {
+// initStorage initializes the immutable volume list of a newly created
+// StatefulSet Pod. Upstream performs the same initialization before creation:
+// https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
+func initStorage(set *apps.StatefulSet, pod *v1.Pod) {
 	ordinal := ordinalOf(pod.Name)
 	currentVolumes := pod.Spec.Volumes
 	newVolumes := []v1.Volume{}
@@ -204,8 +213,8 @@ func newStatefulSetPod(set *apps.StatefulSet, ordinal int) (*v1.Pod, error) {
 		return nil, err
 	}
 	pod.Name = podName(set.Name, ordinal)
-	updateIdentity(set, pod)
-	updateStorage(set, pod)
+	initIdentity(set, pod)
+	initStorage(set, pod)
 	return pod, nil
 }
 
@@ -260,17 +269,12 @@ func createStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
 }
 
 func updateStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
-	if identityMatches(set, pod) && storageMatches(set, pod) {
+	if identityMatches(set, pod) {
 		return nil
 	}
 
 	updatedPod := pod.DeepCopy()
-	if !identityMatches(set, updatedPod) {
-		updateIdentity(set, updatedPod)
-	}
-	if !storageMatches(set, updatedPod) {
-		updateStorage(set, updatedPod)
-	}
+	updateIdentity(set, updatedPod)
 	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
 	return err
 }
@@ -316,6 +320,18 @@ func withoutStatefulSetFields(spec v1.PodSpec) v1.PodSpec {
 }
 
 func podSpecMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
+	// Hostname, Subdomain, and Volumes cannot be repaired through the normal
+	// Pod update API. Detect a mismatch here so reconciliation replaces the
+	// Pod instead. Upstream initializes these fields for newly created Pods in
+	// stateful_set_utils.go:
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
+	// See also Kubernetes Pod update validation:
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/validation/validation.go
+	if pod.Spec.Hostname != pod.Name ||
+		pod.Spec.Subdomain != set.Spec.ServiceName ||
+		!storageMatches(set, pod) {
+		return false
+	}
 	podSpec := withoutStatefulSetFields(pod.Spec)
 	templateSpec := withoutStatefulSetFields(set.Spec.Template.Spec)
 	return reflect.DeepEqual(podSpec, templateSpec)

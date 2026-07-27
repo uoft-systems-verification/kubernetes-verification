@@ -371,7 +371,7 @@ Proof.
     set_l pod_l claim_template_l set pod claim_template ordinal
     dq_set dq_pod dq_claim_template_ptr dq_claim_template
     set_phy claim_template_phy
-    with "[$Hset $Hpod $Hclaim_template_ptr $Hclaim_template]").
+    with "[$Hpkg $Hset $Hpod $Hclaim_template_ptr $Hclaim_template]").
   { iFrame "%". }
   iIntros (claim_l) "H". iNamed "H".
   iPoseProof (PersistentVolumeClaimV.deepown_l_split with "Hclaim") as

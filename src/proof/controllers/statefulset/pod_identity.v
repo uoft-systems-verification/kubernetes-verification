@@ -51,7 +51,6 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-
 (* The pure effect of [updateIdentity] after [ordinalOf] has successfully
    recovered [ordinal] from the Pod name. *)
 Definition update_identity (set : StatefulSetV.t) (pod : PodV.t)
@@ -69,13 +68,20 @@ Definition update_identity (set : StatefulSetV.t) (pod : PodV.t)
       <| ObjectMetaV.Namespace' :=
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
       <| ObjectMetaV.Labels' := Some labels |> in
+  pod <| PodV.ObjectMeta' := object_meta |>.
+
+(* Creation-time identity initialization additionally sets the two immutable
+   PodSpec fields omitted by [update_identity]. *)
+Definition init_identity (set : StatefulSetV.t) (pod : PodV.t)
+    (ordinal : nat) : PodV.t :=
+  let pod := update_identity set pod ordinal in
   let spec :=
     pod.(PodV.Spec')
-      <| PodSpecV.Hostname' := pod_name |>
+      <| PodSpecV.Hostname' :=
+          pod.(PodV.ObjectMeta').(ObjectMetaV.Name') |>
       <| PodSpecV.Subdomain' :=
           set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |> in
-  pod <| PodV.ObjectMeta' := object_meta |>
-      <| PodV.Spec' := spec |>.
+  pod <| PodV.Spec' := spec |>.
 
 Lemma update_identity_identity_matches set pod ordinal :
   (ordinal <= go_int32_max_nat)%nat →
@@ -310,12 +316,6 @@ Proof.
     wp_if_destruct.
     2: { finish_identity_false set_meta_c set dq_set set_l set_spec_c
       Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c Hpod_l_not_null. }
-    wp_if_destruct.
-    2: { finish_identity_false set_meta_c set dq_set set_l set_spec_c
-      Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c Hpod_l_not_null. }
-    wp_if_destruct.
-    2: { finish_identity_false set_meta_c set dq_set set_l set_spec_c
-      Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c Hpod_l_not_null. }
     destruct pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') as [labels|]
       eqn:Hlabels.
     - iDestruct "Hpod_meta_Hdeepown_labels_some" as (labels_c)
@@ -373,28 +373,24 @@ Proof.
       { unfold statefulset_pod_name_label.
         destruct (labels !! "statefulset.kubernetes.io/pod-name"%go) as [label|]
           eqn:Hlookup.
-        - simpl in e3. f_equal.
-          rewrite -Hpod_meta_Hdeepown_name. exact e3.
-        - simpl in e3. exfalso. apply Hpod_name_nonempty. by rewrite -e3. }
+        - simpl in e1. f_equal.
+          rewrite -Hpod_meta_Hdeepown_name. exact e1.
+        - simpl in e1. exfalso. apply Hpod_name_nonempty. by rewrite -e1. }
       assert (Hpod_index_lookup :
           labels !! pod_index_label = Some (decimal_string (sint.nat ordinal))).
       { unfold pod_index_label.
         destruct (labels !! "apps.kubernetes.io/pod-index"%go) as [label|]
           eqn:Hlookup.
-        - simpl in e4. by f_equal.
-        - simpl in e4.
+        - simpl in e2. by f_equal.
+        - simpl in e2.
           pose proof (parse_decimal_string_decimal_string
             (sint.nat ordinal)) as Hdecimal.
-          rewrite -e4 in Hdecimal. done. }
+          rewrite -e2 in Hdecimal. done. }
       unfold pod_identity_matches.
       rewrite Hparse Hlabels.
       repeat split; try done.
-      + by rewrite -Hpod_meta_Hdeepown_namespace
-          -Hset_meta_Hdeepown_namespace.
-      + by rewrite -Hpod_spec_Hdeepown_hostname
-          -Hpod_meta_Hdeepown_name.
-      + by rewrite -Hpod_spec_Hdeepown_subdomain
-          -Hset_spec_Hdeepown_servicename.
+      by rewrite -Hpod_meta_Hdeepown_namespace
+        -Hset_meta_Hdeepown_namespace.
     - assert (Hlabels_nil : v1.ObjectMeta.Labels' pod_meta_c = null).
       { apply Hpod_meta_Hdeepown_labels_none. reflexivity. }
       rewrite Hlabels_nil.
@@ -432,8 +428,7 @@ Proof.
   simpl in Hmatches.
   pose proof Hmatches as Hidentity_matches.
   destruct Hmatches as
-    (Hordinal_bound & Hnamespace & Hhostname & Hsubdomain &
-      Hpod_name_label & Hpod_index_label).
+    (Hordinal_bound & Hnamespace & Hpod_name_label & Hpod_index_label).
   assert (Hmember : pod_has_int32_member_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
       pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
@@ -470,16 +465,6 @@ Proof.
   2: {
     exfalso. apply n.
     by rewrite Hpod_meta_Hdeepown_namespace Hset_meta_Hdeepown_namespace.
-  }
-  wp_if_destruct.
-  2: {
-    exfalso. apply n.
-    by rewrite Hpod_spec_Hdeepown_hostname Hpod_meta_Hdeepown_name.
-  }
-  wp_if_destruct.
-  2: {
-    exfalso. apply n.
-    by rewrite Hpod_spec_Hdeepown_subdomain Hset_spec_Hdeepown_servicename.
   }
   iDestruct "Hpod_meta_Hdeepown_labels_some" as (labels_c)
     "[Hpod_labels %Hlabels_c]".
@@ -663,8 +648,6 @@ Proof.
       by rewrite Hset_meta_Hdeepown_name. }
     iEval (rewrite Hpod_name_c Hset_meta_Hdeepown_namespace) in
       "Hpod_objectmeta_field".
-    iEval (rewrite Hpod_name_c Hset_spec_Hdeepown_servicename) in
-      "Hpod_spec_field".
     iEval (rewrite Hpod_name_c) in "Hpod_labels".
     iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta_old".
     iAssert (ObjectMetaV.deepown
@@ -715,36 +698,13 @@ Proof.
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |> <|
         v1.ObjectMeta.Labels' := labels_l |>).
       iFrame. }
-    iAssert (PodSpecV.deepown
-        (pod_spec_c <| v1.PodSpec.Hostname' :=
-            desired_pod_name
-              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-              (sint.nat ordinal_ret) |> <|
-          v1.PodSpec.Subdomain' :=
-            set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>)
-        (pod.(PodV.Spec') <| PodSpecV.Hostname' :=
-            desired_pod_name
-              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-              (sint.nat ordinal_ret) |> <|
-          PodSpecV.Subdomain' :=
-            set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
-      with "[Hpod_spec_Hdeepown_volumes]" as "Hpod_spec".
-    { rewrite /PodSpecV.deepown /=. iFrame. done. }
-    iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
-        (pod.(PodV.Spec') <| PodSpecV.Hostname' :=
-            desired_pod_name
-              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-              (sint.nat ordinal_ret) |> <|
-          PodSpecV.Subdomain' :=
-            set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
+    iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
+    iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
+      with "[Hpod_spec]" as "Hpod_spec".
+    { iNamed "Hpod_spec". iFrame. done. }
+    iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
-    { iExists (pod_spec_c <| v1.PodSpec.Hostname' :=
-          desired_pod_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            (sint.nat ordinal_ret) |> <|
-        v1.PodSpec.Subdomain' :=
-          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>).
-      iFrame. }
+    { iExists pod_spec_c. iFrame. }
     iApply (PodV.deepown_l_restore _ _ _ Hpod_l_not_null).
     iFrame.
   }
@@ -801,8 +761,6 @@ Proof.
     by rewrite Hset_meta_Hdeepown_name. }
   iEval (rewrite Hpod_name_c Hset_meta_Hdeepown_namespace) in
     "Hpod_objectmeta_field".
-  iEval (rewrite Hpod_name_c Hset_spec_Hdeepown_servicename) in
-    "Hpod_spec_field".
   iEval (rewrite Hpod_name_c) in "Hpod_labels".
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta_old".
   iAssert (ObjectMetaV.deepown
@@ -851,39 +809,126 @@ Proof.
       v1.ObjectMeta.Namespace' :=
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>).
     iFrame. }
-  iAssert (PodSpecV.deepown
-      (pod_spec_c <| v1.PodSpec.Hostname' :=
-          desired_pod_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            (sint.nat ordinal_ret) |> <|
-        v1.PodSpec.Subdomain' :=
-          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>)
-      (pod.(PodV.Spec') <| PodSpecV.Hostname' :=
-          desired_pod_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            (sint.nat ordinal_ret) |> <|
-        PodSpecV.Subdomain' :=
-          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
-    with "[Hpod_spec_Hdeepown_volumes]" as "Hpod_spec".
-  { rewrite /PodSpecV.deepown /=. iFrame. done. }
-  iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
-      (pod.(PodV.Spec') <| PodSpecV.Hostname' :=
-          desired_pod_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            (sint.nat ordinal_ret) |> <|
-        PodSpecV.Subdomain' :=
-          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
+  iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
+  iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
+    with "[Hpod_spec]" as "Hpod_spec".
+  { iNamed "Hpod_spec". iFrame. done. }
+  iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
     with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
-  { iExists (pod_spec_c <| v1.PodSpec.Hostname' :=
-        desired_pod_name
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-          (sint.nat ordinal_ret) |> <|
-      v1.PodSpec.Subdomain' :=
-        set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>).
-    iFrame. }
+  { iExists pod_spec_c. iFrame. }
   iApply (PodV.deepown_l_restore _ _ _ Hpod_l_not_null).
   iFrame.
   Unshelve. all: apply _.
 Qed.
+
+(* [initIdentity] is the creation-only extension of [updateIdentity]. It sets
+   Hostname and Subdomain before the Pod is submitted to the create API. *)
+Lemma wp_initIdentity set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
+    (ordinal : nat) dq_set :
+  {{{ "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
+      "%Hpod_name" ∷
+        ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = desired_pod_name
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ⌝ ∗
+      "%Hordinal_int32" ∷ ⌜ (ordinal <= go_int32_max_nat)%nat ⌝ ∗
+      "%Hpod_name_len" ∷
+        ⌜ Z.of_nat
+            (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) <=
+          go_int_max ⌝
+  }}}
+    @! statefulset.initIdentity #set_l #pod_l
+  {{{ RET #();
+      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
+      "Hpod" ∷ PodV.deepown_l pod_l (init_identity set pod ordinal) 1 ∗
+      "%Hidentity_matches" ∷
+        ⌜ pod_identity_matches set (init_identity set pod ordinal) ⌝
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  wp_auto.
+  wp_apply (wp_updateIdentity set_l pod_l set pod ordinal dq_set
+    with "[$Hset $Hpod]").
+  { iFrame "%". }
+  iIntros "(Hset & Hpod & %Hidentity_matches)".
+  iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
+    "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l &
+      Hset_spec_l & Hset_status_l)".
+  iDestruct "Hset_spec_l" as (set_spec_c)
+    "[Hset_spec_field Hset_spec]".
+  iNamedPrefix "Hset_spec" "Hset_spec_".
+  iPoseProof (PodV.deepown_l_split with "Hpod") as
+    "(%Hpod_l_not_null & Hpod_typemeta & Hpod_objectmeta_l &
+      Hpod_spec_l & Hpod_status_l)".
+  iDestruct "Hpod_objectmeta_l" as (pod_meta_c)
+    "[Hpod_objectmeta_field Hpod_objectmeta]".
+  iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
+  iDestruct "Hpod_spec_l" as (pod_spec_c)
+    "[Hpod_spec_field Hpod_spec]".
+  iNamedPrefix "Hpod_spec" "Hpod_spec_".
+  wp_auto.
+  iEval (rewrite Hpod_meta_Hdeepown_name
+    Hset_spec_Hdeepown_servicename) in "Hpod_spec_field".
+  iCombineNamed "Hset_spec_H*" as "Hset_spec".
+  iAssert (StatefulSetSpecV.deepown set_spec_c
+      set.(StatefulSetV.Spec') dq_set)
+    with "[Hset_spec]" as "Hset_spec".
+  { iNamed "Hset_spec". iFrame. done. }
+  iAssert (StatefulSetSpecV.deepown_l (StatefulSetV.spec_ptr set_l)
+      set.(StatefulSetV.Spec') dq_set)
+    with "[Hset_spec_field Hset_spec]" as "Hset_spec_l".
+  { iExists set_spec_c. iFrame. }
+  iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
+    with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l
+      $Hset_status_l]") as "Hset".
+  iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
+  iAssert (ObjectMetaV.deepown pod_meta_c
+      (update_identity set pod ordinal).(PodV.ObjectMeta') 1)
+    with "[Hpod_objectmeta]" as "Hpod_objectmeta".
+  { iNamed "Hpod_objectmeta". iFrame. done. }
+  iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
+      (update_identity set pod ordinal).(PodV.ObjectMeta') 1)
+    with "[Hpod_objectmeta_field Hpod_objectmeta]"
+    as "Hpod_objectmeta_l".
+  { iExists pod_meta_c. iFrame. }
+  iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
+  iAssert (PodSpecV.deepown
+      (pod_spec_c <| v1.PodSpec.Hostname' :=
+          (update_identity set pod ordinal).(PodV.ObjectMeta').(
+            ObjectMetaV.Name') |> <|
+        v1.PodSpec.Subdomain' :=
+          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>)
+      ((update_identity set pod ordinal).(PodV.Spec')
+        <| PodSpecV.Hostname' :=
+            (update_identity set pod ordinal).(PodV.ObjectMeta').(
+              ObjectMetaV.Name') |>
+        <| PodSpecV.Subdomain' :=
+            set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
+    with "[Hpod_spec]" as "Hpod_spec".
+  { rewrite /PodSpecV.deepown /=. iFrame. done. }
+  iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
+      ((update_identity set pod ordinal).(PodV.Spec')
+        <| PodSpecV.Hostname' :=
+            (update_identity set pod ordinal).(PodV.ObjectMeta').(
+              ObjectMetaV.Name') |>
+        <| PodSpecV.Subdomain' :=
+            set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
+    with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
+  { iExists
+      (pod_spec_c <| v1.PodSpec.Hostname' :=
+          (update_identity set pod ordinal).(PodV.ObjectMeta').(
+            ObjectMetaV.Name') |> <|
+        v1.PodSpec.Subdomain' :=
+          set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>).
+    iFrame. }
+  iApply "HΦ".
+  iFrame "Hset".
+  iSplitL.
+  - unfold init_identity. cbn. iApply (PodV.deepown_l_restore _ _ _
+      Hpod_l_not_null). iFrame.
+  - iPureIntro.
+    unfold init_identity, pod_identity_matches in *.
+    exact Hidentity_matches.
+Qed.
+
 
 End proof.

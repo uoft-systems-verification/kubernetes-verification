@@ -60,10 +60,6 @@ Definition pod_identity_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
       (ordinal <= go_int32_max_nat)%nat ∧
       pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∧
-      pod.(PodV.Spec').(PodSpecV.Hostname') =
-        pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
-      pod.(PodV.Spec').(PodSpecV.Subdomain') =
-        sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
       labels !! statefulset_pod_name_label =
         Some pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
       labels !! pod_index_label = Some (decimal_string ordinal)
@@ -72,7 +68,11 @@ Definition pod_identity_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
 
 #[global] Instance pod_identity_matches_decision sts pod :
     Decision (pod_identity_matches sts pod).
-Proof. unfold pod_identity_matches. destruct parse_member_name, (pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')); apply _. Defined.
+Proof.
+  unfold pod_identity_matches.
+  destruct parse_member_name,
+    (pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')); apply _.
+Defined.
 
 (* Go map insertion overwrites an earlier volume with the same name, so the
    left fold preserves the last volume from the Pod's volume slice. *)
@@ -90,7 +90,8 @@ Definition pod_volume_claim_matches
     (ordinal : nat) (claim_template_name : go_string) : Prop :=
   match volumes !! claim_template_name with
   | Some volume =>
-      match volume.(VolumeV.VolumeSource').(VolumeSourceV.PersistentVolumeClaim') with
+      match volume.(VolumeV.VolumeSource').(
+        VolumeSourceV.PersistentVolumeClaim') with
       | Some pvc =>
           pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName') =
             desired_pvc_name set_name claim_template_name ordinal
@@ -106,8 +107,8 @@ Definition pod_volume_claim_matches
 Proof.
   unfold pod_volume_claim_matches.
   destruct (volumes !! claim_template_name) as [volume|]; [|apply _].
-  destruct volume.(VolumeV.VolumeSource').(VolumeSourceV.PersistentVolumeClaim');
-    apply _.
+  destruct volume.(VolumeV.VolumeSource').(
+    VolumeSourceV.PersistentVolumeClaim'); apply _.
 Defined.
 
 Definition pod_storage_matches (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
@@ -137,12 +138,15 @@ Definition without_statefulset_fields (_ : PodSpecV.t) : PodSpecV.t := {|
   PodSpecV.Subdomain' := ""%go;
 |}.
 
-(* The template-controlled PodSpec fields checked by podSpecMatches after
-   removing the identity and storage fields managed in place. PodSpecV.t
-   currently represents only those three removed fields, so this predicate is
-   always true for now. It becomes informative as more PodSpec fields are
-   added to the pure model. *)
+(* [podSpecMatches] treats Hostname, Subdomain, and the StatefulSet PVC
+   volumes as immutable creation-time state. The remaining PodSpec fields must
+   still agree with the Pod template after those generated fields are erased. *)
 Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
+  pod.(PodV.Spec').(PodSpecV.Hostname') =
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
+  pod.(PodV.Spec').(PodSpecV.Subdomain') =
+    sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
+  pod_storage_matches sts pod ∧
   without_statefulset_fields pod.(PodV.Spec') =
     without_statefulset_fields
       sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec').
@@ -151,28 +155,23 @@ Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
     Decision (pod_immutable_matches sts pod).
 Proof.
   unfold pod_immutable_matches, without_statefulset_fields.
-  left. reflexivity.
+  destruct (decide
+    (pod.(PodV.Spec').(PodSpecV.Hostname') =
+      pod.(PodV.ObjectMeta').(ObjectMetaV.Name'))) as [Hhostname|Hhostname].
+  2: { right. intros (H & _). contradiction. }
+  destruct (decide
+    (pod.(PodV.Spec').(PodSpecV.Subdomain') =
+      sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName')))
+    as [Hsubdomain|Hsubdomain].
+  2: { right. intros (_ & H & _). contradiction. }
+  destruct (decide (pod_storage_matches sts pod))
+    as [Hstorage|Hstorage].
+  2: { right. intros (_ & _ & H & _). contradiction. }
+  left. split_and!; try done.
 Defined.
-
-(* A Pod produced from the StatefulSet's template already agrees with every
-   template-controlled field checked by [pod_immutable_matches]. Replacing its
-   ObjectMeta preserves that agreement because [PodV.update_objectmeta] does
-   not change the PodSpec. Identity and storage fields are intentionally not
-   covered here: [newStatefulSetPod] establishes them separately through
-   [updateIdentity] and [updateStorage]. *)
-Lemma pod_from_template_immutable_matches : ∀ sts pod meta,
-  controller.pod_from_template
-      sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template') pod →
-  pod_immutable_matches sts (PodV.update_objectmeta pod meta).
-Proof.
-  intros sts pod meta _.
-  unfold pod_immutable_matches, without_statefulset_fields.
-  reflexivity.
-Qed.
 
 Definition pod_match (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
   pod_identity_matches sts pod ∧
-  pod_storage_matches sts pod ∧
   pod_immutable_matches sts pod.
 
 #[global] Instance pod_match_decision sts pod : Decision (pod_match sts pod).

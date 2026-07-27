@@ -97,7 +97,7 @@ Qed.
 
 (* The pure result of [newStatefulSetPod].  [controller_ref] is exposed because
    [NewControllerRef] specifies it relationally, and [claim_template_names]
-   records the unspecified map-iteration order used by [updateStorage]. *)
+   records the unspecified map-iteration order used by [initStorage]. *)
 Definition new_statefulset_pod (set : StatefulSetV.t) (ordinal : nat)
     (controller_ref : OwnerReferenceV.t)
     (claim_template_names : list go_string) : PodV.t :=
@@ -109,7 +109,7 @@ Definition new_statefulset_pod (set : StatefulSetV.t) (ordinal : nat)
     (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' :=
       desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
         ordinal |>) in
-  update_storage set (update_identity set pod ordinal) ordinal
+  init_storage set (init_identity set pod ordinal) ordinal
     claim_template_names.
 
 Lemma wp_newStatefulSetPod set_l (set : StatefulSetV.t) (ordinal : w64) dq :
@@ -329,7 +329,7 @@ Proof.
   iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
     with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l
       $Hset_status_l]") as "Hset".
-  wp_apply (wp_updateIdentity set_l pod_l set pod_named
+  wp_apply (wp_initIdentity set_l pod_l set pod_named
     (sint.nat ordinal) dq with "[$Hset $Hpod]").
   { iSplit.
     { iPureIntro. unfold pod_named, pod_meta, pod_name. done. }
@@ -337,12 +337,12 @@ Proof.
   iIntros "(Hset & Hpod & %Hidentity_matches)".
   wp_auto.
   assert (Hpod_identity_name :
-      (update_identity set pod_named (sint.nat ordinal)).(PodV.ObjectMeta').(ObjectMetaV.Name') =
-        desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-          (sint.nat ordinal)).
-  { unfold update_identity. done. }
-  wp_apply (wp_updateStorage set_l pod_l set
-    (update_identity set pod_named (sint.nat ordinal))
+      (init_identity set pod_named (sint.nat ordinal)).(PodV.ObjectMeta').(ObjectMetaV.Name') =
+      desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+        (sint.nat ordinal)).
+  { unfold init_identity, update_identity. done. }
+  wp_apply (wp_initStorage set_l pod_l set
+    (init_identity set pod_named (sint.nat ordinal))
     (sint.nat ordinal) dq with "[$Hset $Hpod]").
   { iSplit; first by iPureIntro.
     iSplit; first by iPureIntro.
