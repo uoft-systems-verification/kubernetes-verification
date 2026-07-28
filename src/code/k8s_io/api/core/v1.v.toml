@@ -38,6 +38,7 @@ translate = [
     "PodTemplateSpec",
     "PersistentVolumeClaim",
     "PersistentVolumeClaimVolumeSource",
+    "ServiceAccount",
     "Volume",
     "VolumeSource",
 ]

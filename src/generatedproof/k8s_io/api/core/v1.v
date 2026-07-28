@@ -10110,13 +10110,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ServiceAccount_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ServiceAccount.t). Admitted.
+#[global]Program Instance ServiceAccount_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAccount.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.ServiceAccount.t), "TypeMeta"] ↦{dq} v.(v1.ServiceAccount.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.ServiceAccount.t), "ObjectMeta"] ↦{dq} v.(v1.ServiceAccount.ObjectMeta') ∗
+      "Secrets" ∷ l.[(v1.ServiceAccount.t), "Secrets"] ↦{dq} v.(v1.ServiceAccount.Secrets') ∗
+      "ImagePullSecrets" ∷ l.[(v1.ServiceAccount.t), "ImagePullSecrets"] ↦{dq} v.(v1.ServiceAccount.ImagePullSecrets') ∗
+      "AutomountServiceAccountToken" ∷ l.[(v1.ServiceAccount.t), "AutomountServiceAccountToken"] ↦{dq} v.(v1.ServiceAccount.AutomountServiceAccountToken') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ServiceAccount_into_val_typed
    :
   IntoValTypedUnderlying (v1.ServiceAccount.t) (v1.ServiceAccountⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ServiceAccount_access_load_TypeMeta l (v : (v1.ServiceAccount.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "TypeMeta"] ↦{dq} (v.(v1.ServiceAccount.TypeMeta')))
+    (l.[(v1.ServiceAccount.t), "TypeMeta"] ↦{dq} (v.(v1.ServiceAccount.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccount_access_store_TypeMeta l (v : (v1.ServiceAccount.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "TypeMeta"] ↦ (v.(v1.ServiceAccount.TypeMeta')))
+    (l.[(v1.ServiceAccount.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccount.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccount_access_load_ObjectMeta l (v : (v1.ServiceAccount.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "ObjectMeta"] ↦{dq} (v.(v1.ServiceAccount.ObjectMeta')))
+    (l.[(v1.ServiceAccount.t), "ObjectMeta"] ↦{dq} (v.(v1.ServiceAccount.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccount_access_store_ObjectMeta l (v : (v1.ServiceAccount.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "ObjectMeta"] ↦ (v.(v1.ServiceAccount.ObjectMeta')))
+    (l.[(v1.ServiceAccount.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccount.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccount_access_load_Secrets l (v : (v1.ServiceAccount.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "Secrets"] ↦{dq} (v.(v1.ServiceAccount.Secrets')))
+    (l.[(v1.ServiceAccount.t), "Secrets"] ↦{dq} (v.(v1.ServiceAccount.Secrets')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccount_access_store_Secrets l (v : (v1.ServiceAccount.t)) Secrets' :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "Secrets"] ↦ (v.(v1.ServiceAccount.Secrets')))
+    (l.[(v1.ServiceAccount.t), "Secrets"] ↦ Secrets')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccount.Secrets') := Secrets'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccount_access_load_ImagePullSecrets l (v : (v1.ServiceAccount.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "ImagePullSecrets"] ↦{dq} (v.(v1.ServiceAccount.ImagePullSecrets')))
+    (l.[(v1.ServiceAccount.t), "ImagePullSecrets"] ↦{dq} (v.(v1.ServiceAccount.ImagePullSecrets')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccount_access_store_ImagePullSecrets l (v : (v1.ServiceAccount.t)) ImagePullSecrets' :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "ImagePullSecrets"] ↦ (v.(v1.ServiceAccount.ImagePullSecrets')))
+    (l.[(v1.ServiceAccount.t), "ImagePullSecrets"] ↦ ImagePullSecrets')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccount.ImagePullSecrets') := ImagePullSecrets'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccount_access_load_AutomountServiceAccountToken l (v : (v1.ServiceAccount.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "AutomountServiceAccountToken"] ↦{dq} (v.(v1.ServiceAccount.AutomountServiceAccountToken')))
+    (l.[(v1.ServiceAccount.t), "AutomountServiceAccountToken"] ↦{dq} (v.(v1.ServiceAccount.AutomountServiceAccountToken')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccount_access_store_AutomountServiceAccountToken l (v : (v1.ServiceAccount.t)) AutomountServiceAccountToken' :
+  AccessStrict
+    (l.[(v1.ServiceAccount.t), "AutomountServiceAccountToken"] ↦ (v.(v1.ServiceAccount.AutomountServiceAccountToken')))
+    (l.[(v1.ServiceAccount.t), "AutomountServiceAccountToken"] ↦ AutomountServiceAccountToken')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccount.AutomountServiceAccountToken') := AutomountServiceAccountToken'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ServiceAccount.
