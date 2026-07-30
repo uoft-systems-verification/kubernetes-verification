@@ -261,7 +261,8 @@ Lemma wp_State__objListLocked γ l (kind namespace : go_string) phys_state_l phy
 Proof.
   wp_start as "H".
   iNamed "H".
-  iPoseProof (kview.own_auth_valid_forall with "Hown_abs") as "%Habs_valid".
+  iPoseProof (kview.own_auth_valid_forall with "Hown_abs")
+    as "%Habs_valid".
   wp_auto.
   iPoseProof (own_slice_nil (V:=interface.t)) as "Hslice_nil".
   iPoseProof (own_slice_cap_nil (V:=interface.t)) as "Hcap_nil".
@@ -493,7 +494,8 @@ Proof.
   wp_apply (wp_State__objListLocked with "[$Hstate_m_addr $Hown_phys $Hown_abs $Hphys_abs_rep]").
   iIntros (sl interfaces objs)
     "(Hsl & Hlist & %Hperm & %Hvalid & %Hnodup & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
-  iPoseProof (kview.own_auth_valid_forall with "Hown_abs") as "%Habs_valid".
+  iPoseProof (kview.own_auth_valid_forall with "Hown_abs")
+    as "%Habs_valid".
   assert (Forall (λ obj, ∃ pod, obj = KObjectV.Pod pod) objs) as Hobjs_are_pods.
   { rewrite Forall_forall.
     intros obj Hobj_in.

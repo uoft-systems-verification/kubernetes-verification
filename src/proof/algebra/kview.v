@@ -385,8 +385,9 @@ Proof.
 	      exact (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hobj_meta_eq).
 	    + split.
 	      * rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). symmetry. exact Huid_obj.
-	      * destruct obj; unfold KObjectV.valid in Hwf_obj; destruct Hwf_obj as (_ & _ & Hwf_meta & _ & _);
-	        eapply ObjectMetaV.equiv_except_resource_version_valid; done.
+      * destruct obj; unfold KObjectV.valid in Hwf_obj;
+          destruct Hwf_obj as (_ & _ & Hwf_meta & _ & _);
+          eapply ObjectMetaV.equiv_except_resource_version_valid; done.
 Qed.
 
 Lemma auth_meta_valid a k uid dq meta:
@@ -1774,7 +1775,6 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
 
-(* TODO: lift state !! k = Some obj *)
 Lemma own_auth_valid {γ state used_uid} k obj:
   own_auth γ state used_uid -∗
   ⌜ state !! k = Some obj →
@@ -1792,8 +1792,8 @@ Proof.
   iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
   iPureIntro.
   intros Hlookup.
-  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1 (state, used_uid)) Hvalid0)
-    as [_ Hrel0].
+  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1
+    (state, used_uid)) Hvalid0) as [_ Hrel0].
   assert (Hvalid : ✓ (●K (state, used_uid))).
   { rewrite /kview_auth.
     apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uid))).

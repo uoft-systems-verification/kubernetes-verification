@@ -95,7 +95,8 @@ Lemma valid_update_objectmeta_set_resource_version obj rv :
     (KObjectV.update_objectmeta obj
        ((KObjectV.objectmeta obj) <| ObjectMetaV.ResourceVersion' := rv |>)).
 Proof.
-  intros (Hvalid_typemeta & _ & Hvalid_meta & Hvalid_spec & Hvalid_status) Hvalid_rv.
+  intros (Hvalid_typemeta & _ & Hvalid_meta & Hvalid_spec &
+    Hvalid_status) Hvalid_rv.
   split_and!.
   - rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
     exact Hvalid_typemeta.
@@ -346,16 +347,18 @@ Proof.
     as "Hdeepown_old_l".
   iPoseProof (KObjectV.deepown_l_restore _ _ _ Hl1_not_null with "[$Hdeepown_t_l $Hdeepown_m_l $Hdeepown_s_l $Hdeepown_st_l]")
     as "Hdeepown_l".
-  iPoseProof (kview.own_auth_valid2 key old_kobj with "Hinv_Hown_abs") as "%Hauth_old".
+  iPoseProof (kview.own_auth_valid2 key old_kobj with
+    "Hinv_Hown_abs") as "%Hauth_old".
   1: done.
   destruct Hauth_old as (Hkey_old & Hvalid_old_kobj & Huid_old_in &
     Hno_speculative_parent_reference_old & Huid_unique_old).
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
   wp_apply (wp_applyValidationAndDefaultingOnUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
-  { iFrame "#". iPureIntro. split_and!; done. }
-  iIntros (updated_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hvalid_updated_kobj & %Hsame_key
-    & %Htypemeta_eq & %Hupdated_meta & %Hupdated_spec & %Hstatus_eq)". wp_auto.
+  { iFrame "#". iPureIntro. split_and!; try done. left. done. }
+  iIntros (updated_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hvalid_updated_kobj
+    & %Hsame_key & %Htypemeta_eq & %Hupdated_meta &
+    %Hupdated_spec & %Hspec_eq_if_unchanged & %Hstatus_eq)". wp_auto.
   set P' := ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta old_kobj) = None.
   destruct (bool_decide(P')) eqn:Hdecide''.
   2: {
@@ -449,16 +452,19 @@ Proof.
   { rewrite Hkey_eq. symmetry. exact Hkey_new. }
   assert (kview.valid_k_uid_obj key uid new_kobj) as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj.
-    split_and!.
+    split.
     - unfold new_kobj, new_kmeta.
       rewrite key_update_objectmeta_set_resource_version.
-      rewrite <- Hsame_key. done.
-    - unfold new_kobj, new_kmeta.
-      rewrite objectmeta_update_objectmeta.
-      rewrite Huid_eq.
-      symmetry. eapply objectmeta_updated_set_resource_version_uid. done.
-    - unfold new_kobj, new_kmeta.
-      eapply valid_update_objectmeta_set_resource_version; done.
+      rewrite Hkey_new.
+      rewrite <-Hkey_old_new.
+      exact Hsame_key.
+    - split.
+      + unfold new_kobj, new_kmeta.
+        rewrite objectmeta_update_objectmeta.
+        rewrite Huid_eq.
+        symmetry. eapply objectmeta_updated_set_resource_version_uid. done.
+      + unfold new_kobj, new_kmeta.
+        eapply valid_update_objectmeta_set_resource_version; done.
   }
   iMod (kview.update_kobj_vs old_kobj new_kobj with
     "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_spec_frag]")

@@ -15,22 +15,10 @@ Record t := mk {
   Template' : PodTemplateSpecV.t;
 }.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
-(* This is the projection of Kubernetes' ReplicaSet spec validation onto the
-   represented fields. Checks on unmodeled PodSpec fields are outside this
-   projection. *)
-Definition valid (rs : t) : Prop :=
-  (∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
-  0 ≤ sint.Z rs.(MinReadySeconds') ∧
-  (∃ selector,
-    rs.(Selector') = Some selector ∧
-    LabelSelectorV.valid selector ∧
-    ¬ LabelSelectorV.empty selector ∧
-    LabelSelectorV.matches
-      selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid rs.(Template').
-
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L148-L153 *)
+(* The admission predicate used for both create validation and the general
+   validation phase of update. It deliberately permits fields that schema
+   defaulting normalizes before storage.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L148-L153 *)
 Definition valid_create (rs : t) : Prop :=
   (match rs.(Replicas') with
    | Some replicas => 0 ≤ sint.Z replicas
@@ -44,6 +32,13 @@ Definition valid_create (rs : t) : Prop :=
     LabelSelectorV.matches
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
+
+(* A stored ReplicaSet spec satisfies admission validation, and schema
+   defaulting has additionally made [Replicas'] non-nil.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
+Definition valid (rs : t) : Prop :=
+  valid_create rs ∧
+  ∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas.
 
 (* Kubernetes allows the represented replica count, minimum-ready duration,
    and Pod template to change, but keeps the selector immutable:
@@ -62,12 +57,16 @@ Proof. unfold valid_update. done. Qed.
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
-Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
+Proof. intros v (_ & Hreplicas). exact Hreplicas. Qed.
 
 Lemma valid_template :
   ∀ v, valid v →
   PodTemplateSpecV.valid v.(Template').
-Proof. intros v (_ & _ & _ & Htemplate). exact Htemplate. Qed.
+Proof.
+  intros v (Hvalid_create & _).
+  destruct Hvalid_create as (_ & _ & _ & Htemplate).
+  exact Htemplate.
+Qed.
 
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -102,6 +101,7 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
+(* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid : t → Prop.
 Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
 

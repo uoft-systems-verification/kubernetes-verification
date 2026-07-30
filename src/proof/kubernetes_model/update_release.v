@@ -64,13 +64,6 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
     )%I
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "update" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
-(* TODO: Restore this proof after the Kubernetes invariant tracks that stored
-   objects are in canonical etcd form. The proof currently needs both the
-   owner-reference-only metadata update case and exact spec preservation from
-   [wp_applyValidationAndDefaultingOnUpdate], neither of which belongs in that
-   generic helper without the stronger invariant. Keep the proof text here for
-   reuse during that redesign.
-
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
@@ -395,16 +388,17 @@ Proof.
   assert (kview.valid_k_uid_obj key uid new_kobj)
     as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj.
-    split_and!.
+    split.
     - unfold new_kobj, new_kmeta.
       rewrite key_update_objectmeta_set_resource_version.
       rewrite <-Hsame_key. done.
-    - unfold new_kobj, new_kmeta.
-      rewrite objectmeta_update_objectmeta Huid_eq.
-      symmetry. eapply objectmeta_updated_set_resource_version_uid.
-      done.
-    - unfold new_kobj, new_kmeta.
-      eapply valid_update_objectmeta_set_resource_version; done.
+    - split.
+      + unfold new_kobj, new_kmeta.
+        rewrite objectmeta_update_objectmeta Huid_eq.
+        symmetry. eapply objectmeta_updated_set_resource_version_uid.
+        done.
+      + unfold new_kobj, new_kmeta.
+        eapply valid_update_objectmeta_set_resource_version; done.
   }
   assert (obj_parent_ref new_kobj = None) as Hnew_parent_none.
   { unfold new_kobj, new_kmeta, obj_parent_ref.
@@ -495,7 +489,5 @@ Proof.
   iExact "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem.
 Qed.
-*)
-Admitted.
 
 End proof.

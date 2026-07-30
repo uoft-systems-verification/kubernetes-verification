@@ -475,7 +475,8 @@ Proof.
   { wp_apply (wp_map_delete _ _ key apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
-    iPoseProof (kview.own_auth_valid2 with "Hinv_Hown_abs") as "%Hauth_valid_delete". 1: done.
+    iPoseProof (kview.own_auth_valid2 with "Hinv_Hown_abs")
+      as "%Hauth_valid_delete". 1: done.
     destruct Hauth_valid_delete as (_ & _ & _ & _ & Hunique_id).
     iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_delete".
     destruct Hmeta_valid_delete as (_ & _ & -> & _).
@@ -725,8 +726,11 @@ Proof.
   set new_kobj := KObjectV.update_objectmeta kobj new_kmeta1.
   iApply fupd_wp.
   iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
-  iPoseProof (kview.own_auth_valid2 key kobj with "Hinv_Hown_abs") as "%Hauth_valid_update". 1: done.
-  destruct Hauth_valid_update as (-> & Hvalid_kobj & Huid_in & Hno_speculative_parent_reference & _).
+  iPoseProof (kview.own_auth_valid2 key kobj with
+    "Hinv_Hown_abs") as "%Hauth_valid_update". 1: done.
+  destruct Hauth_valid_update as
+    (-> & Hvalid_kobj & Huid_in &
+      Hno_speculative_parent_reference & _).
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_update".
   destruct Hmeta_valid_update as (_ & _ & -> & _).
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%Hmeta_exists_update". 1: done.
@@ -739,11 +743,13 @@ Proof.
       rewrite Hcurrent_kmeta_eq. destruct kobj; done.
     - unfold new_kobj, new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
       destruct kobj; simpl in *; symmetry; exact Huid_obj.
-    - destruct Hvalid_kobj as (Hvalid_tm & _ & Hvalid_m & Hvalid_spec & Hvalid_status).
+    - destruct Hvalid_kobj as
+        (Hvalid_tm & _ & Hvalid_m & Hvalid_spec & Hvalid_status).
       split_and!. all: unfold new_kobj.
       + destruct kobj; done.
       + destruct kobj; simpl; exact Hgenerated_rv_valid.
-      + assert (ObjectMetaV.valid (KObjectV.kind kobj) new_kmeta1) as Hvalid_m1.
+      + assert (ObjectMetaV.valid (KObjectV.kind kobj) new_kmeta1)
+          as Hvalid_m1.
         { unfold ObjectMetaV.valid in Hvalid_m.
           decompose [and] Hvalid_m.
           unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.

@@ -358,7 +358,7 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
       ⌜ KObjectV.valid old_obj ⌝ ∗
       ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
       ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝ ∗
-      ⌜ ObjectMetaV.valid_simple_update
+      ⌜ ObjectMetaV.valid_update
           (KObjectV.objectmeta old_obj)
           (KObjectV.objectmeta new_obj) ⌝ ∗
       ⌜ ObjectSpecV.valid_update
@@ -379,6 +379,8 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
       ⌜ ObjectSpecV.updated
           (KObjectV.spec new_obj)
           (KObjectV.spec updated_obj) ⌝ ∗
+      ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj →
+        KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
       ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝
   }}}.
 Proof. Admitted.

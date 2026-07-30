@@ -22,21 +22,10 @@ Record t := mk {
   (* Ordinals' : loc; *)
 }.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
-Definition valid (spec : t) : Prop :=
-  (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
-  (∃ selector,
-    spec.(Selector') = Some selector ∧
-    LabelSelectorV.valid selector ∧
-    ¬ LabelSelectorV.empty selector ∧
-    LabelSelectorV.matches
-      selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid spec.(Template') ∧
-  Forall (λ pvc, PersistentVolumeClaimSpecV.valid pvc.(PersistentVolumeClaimV.Spec')) spec.(VolumeClaimTemplates') ∧
-  (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
-
-(* On create, Kubernetes defaults an omitted replica count to 1 and applies
-   schema defaulting to each embedded volume claim template. *)
+(* The admission predicate used for both create validation and the general
+   validation phase of update. Kubernetes may still need to default an omitted
+   replica count and apply schema defaults to embedded volume claim templates
+   before the object reaches stored [valid]. *)
 Definition valid_create (spec : t) : Prop :=
   (match spec.(Replicas') with
    | Some replicas => 0 ≤ sint.Z replicas
@@ -52,6 +41,19 @@ Definition valid_create (spec : t) : Prop :=
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
     spec.(VolumeClaimTemplates') ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
+
+(* A stored StatefulSet spec satisfies admission validation. Schema defaulting
+   has additionally made [Replicas'] non-nil, zeroed the TypeMeta of embedded
+   PVC templates, and normalized those embedded PVC specs.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
+Definition valid (spec : t) : Prop :=
+  valid_create spec ∧
+  (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
+  Forall (λ pvc,
+    pvc.(PersistentVolumeClaimV.TypeMeta') = zero_val v1.TypeMeta.t ∧
+    PersistentVolumeClaimSpecV.valid_embedded
+      pvc.(PersistentVolumeClaimV.Spec'))
+    spec.(VolumeClaimTemplates').
 
 (* Of the represented fields, Kubernetes permits updates to Replicas and the
    Pod template. Selector, volume-claim templates, and service name remain
@@ -73,7 +75,7 @@ Proof. unfold valid_update. done. Qed.
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
-Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
+Proof. intros v (_ & Hreplicas & _). exact Hreplicas. Qed.
 
 Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
@@ -114,6 +116,7 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
+(* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid: t → Prop.
 Axiom deepown : v1.StatefulSetStatus.t → t → dfrac → iProp Σ.
 

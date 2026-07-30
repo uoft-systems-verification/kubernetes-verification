@@ -234,6 +234,10 @@ Lemma status_update_objectmeta :
   ∀ o m, status (update_objectmeta o m) = status o.
 Proof. destruct o; done. Qed.
 
+(* [valid] is the complete invariant guaranteed for an object stored by the
+   API server. It combines Kubernetes validity with the normalization facts
+   represented by this model; request predicates such as
+   [valid_named_create] remain weaker and describe admission before storage. *)
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧

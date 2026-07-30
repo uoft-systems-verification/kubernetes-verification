@@ -153,9 +153,11 @@ Proof.
     destruct Hvalid as (Hkind_eq & _).
     destruct kobj; destruct kobj1; try done.
     all: solve_update_objectmeta_valid
-      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec Hvalid_status.
+      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec
+      Hvalid_status.
   }
-  iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
+  iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
+    as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
   { exact Hkey_not_in_abs. }
@@ -169,7 +171,7 @@ Proof.
       rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - destruct kobj; destruct kobj1; try done;
       rewrite Hm_eq; done.
-    - done.
+    - exact Hvalid2.
   }
   { intros kind' name' uid' Hparent.
     assert (uid' = parent_uid) as ->.
@@ -249,8 +251,9 @@ Proof.
   iMod (reserved_keys.consume_reserved_key_vs key with "[$Hinv_Hown_reserved] [$Hown_reserved_frag]")
     as "Hinv_Hown_reserved".
   iMod ("Hclose" $! i2 kobj2 generated_uid with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
-  { iPureIntro. split_and!.
-    - done.
+  { iSplit.
+    { iPureIntro. exact Hvalid2. }
+    iPureIntro. split_and!.
     - subst kobj2.
       destruct kobj; destruct kobj1; done.
     - unfold ObjectMetaV.named_created.

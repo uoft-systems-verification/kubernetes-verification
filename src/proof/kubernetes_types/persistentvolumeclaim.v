@@ -9,10 +9,23 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
-Axiom valid: t → Prop.
-(* PVC schema defaulting, including the default VolumeMode, is not yet
-   expressible because [t] is abstract. *)
+(* The admission predicate used for both create validation and the general
+   validation phase of update. PVC schema defaulting, including the default
+   VolumeMode, is not yet expressible because [t] is abstract. *)
 Axiom valid_create: t → Prop.
+
+(* The currently abstract fields prevent us from spelling out the two storage
+   normalization relations. A standalone PVC receives both schema defaults and
+   the PVC strategy's data-source normalization; a StatefulSet
+   volumeClaimTemplate receives schema defaults but not that REST strategy. *)
+Axiom standalone_storage_normalized : t → Prop.
+Axiom embedded_storage_normalized : t → Prop.
+
+Definition valid (spec : t) : Prop :=
+  valid_create spec ∧ standalone_storage_normalized spec.
+
+Definition valid_embedded (spec : t) : Prop :=
+  valid_create spec ∧ embedded_storage_normalized spec.
 
 (* This is a conservative projection of PVC update validation while the PVC
    spec remains abstract: an unchanged spec is always permitted. Upstream also
@@ -53,6 +66,7 @@ Context {sem : go.Semantics}
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
+(* This includes validation and feature-gated normalization of PVC status. *)
 Axiom valid: t → Prop.
 Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
 

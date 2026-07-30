@@ -119,13 +119,15 @@ mk {
   (* HostnameOverride' : loc; *)
 }.
 
-Definition valid (spec : t) : Prop :=
+Definition valid_create (spec : t) : Prop :=
   Forall VolumeV.valid spec.(Volumes') ∧
   (spec.(Hostname') = ""%go ∨ valid_dns1123_label spec.(Hostname')) ∧
   (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')).
 
-Definition valid_create (spec : t) : Prop :=
-  valid spec.
+(* The represented PodSpec fields require no additional storage
+   normalization, so stored validity equals the admission predicate. *)
+Definition valid (spec : t) : Prop :=
+  valid_create spec.
 
 (* Pod update validation treats Volumes, Hostname, and Subdomain as immutable.
    These are the PodSpec fields currently represented by [t]. Upstream permits
@@ -165,6 +167,8 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
+(* This includes both validation and normalization properties of a PodStatus
+   stored by the API server. The relevant fields remain abstract. *)
 Axiom valid: t → Prop.
 Axiom deepown : v1.PodStatus.t → t → dfrac → iProp Σ.
 

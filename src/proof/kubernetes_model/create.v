@@ -154,7 +154,8 @@ Proof.
     destruct Hvalid as (Hkind_eq & _).
     destruct kobj; destruct kobj1; try done.
     all: solve_update_objectmeta_valid
-      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec Hvalid_status.
+      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec
+      Hvalid_status.
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
@@ -166,7 +167,8 @@ Proof.
     eapply Hinv_Hreserved_key_pred.
     done.
   }
-  iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]") as "%Habs_state_valid".
+  iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
+    as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
   { fold key in Hnn_fresh.
@@ -185,7 +187,7 @@ Proof.
       rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - destruct kobj; destruct kobj1; try done;
       rewrite Hm_eq; done.
-    - done.
+    - exact Hvalid2.
   }
   { intros kind' name' uid' Hparent.
     assert (uid' = parent_uid) as ->.
@@ -267,8 +269,9 @@ Proof.
     done.
   }
   iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
-  { iPureIntro. split_and!.
-    - done.
+  { iSplit.
+    { iPureIntro. exact Hvalid2. }
+    iPureIntro. split_and!.
     - subst kobj2.
       destruct kobj; destruct kobj1; done.
     - unfold ObjectMetaV.nameless_created.
@@ -433,7 +436,7 @@ Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_ui
   }}}
     l @! (go.PointerType apimodel.State) @! "PodCreate" #namespace #pod_l
   {{{ pod_l' pod' key uid, RET (#pod_l', #interface.nil);
-      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Pod pod') ⌝ ∗
+      "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
       "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
       "%Hspec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
       "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status')) (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗

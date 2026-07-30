@@ -123,11 +123,14 @@ Record t := mk {
 Global Instance eq_dec : EqDecision t.
 Proof. solve_decision. Defined.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155 *)
-(* We intentionally don't put valid_resource_version inside ObjectMetaV.valid
-   because kview's meta frag needs ObjectMetaV.valid and the fragment doesn't
-   carry the resource version. The fragment does carry a KKey, which supplies
-   the kind argument. *)
+(* [valid] is the complete invariant for metadata stored by the API server:
+   it includes both validation and resource-independent normalization.
+   Kubernetes clears the deprecated SelfLink field before storage.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L155
+
+   We intentionally don't put valid_resource_version here because kview's
+   meta fragment needs [valid] and the fragment doesn't carry the resource
+   version. The fragment does carry a KKey, which supplies the kind argument. *)
 Definition valid kind (m: t) : Prop :=
   (m.(GenerateName') ≠ ""%go → valid_generate_name kind m.(GenerateName')) ∧
   m.(Name') ≠ ""%go ∧
@@ -147,7 +150,8 @@ Definition valid kind (m: t) : Prop :=
   valid_annotations m.(Annotations') ∧
   valid_owner_references m.(OwnerReferences') ∧
   valid_finalizers m.(Finalizers') ∧
-  valid_managed_fields m.(ManagedFields').
+  valid_managed_fields m.(ManagedFields') ∧
+  m.(SelfLink') = ""%go.
 
 Definition valid_nameless_create kind ns (m: t) : Prop :=
   valid_generate_name kind m.(GenerateName') ∧
@@ -356,6 +360,16 @@ Definition without_resource_version (m : t) : t :=
 
 Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
   without_resource_version m1 = without_resource_version m2.
+
+(* Metadata updates accepted by the current model. The first branch covers
+   ordinary label/annotation updates; the second covers controller release,
+   whose request differs from the stored metadata only in ownerReferences
+   (and may omit the server-managed resourceVersion). *)
+(* TODO: generalize valid_update *)
+Definition valid_update m m' : Prop :=
+  valid_simple_update m m' ∨
+  equiv_except_resource_version
+    (m <| OwnerReferences' := m'.(OwnerReferences') |>) m'.
 
 Lemma equiv_except_resource_version_name m1 m2 :
   equiv_except_resource_version m1 m2 →

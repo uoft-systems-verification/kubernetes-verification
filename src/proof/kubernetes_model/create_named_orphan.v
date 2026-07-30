@@ -219,7 +219,7 @@ Proof.
         rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - destruct kobj; destruct kobj1; try done;
         rewrite Hm_eq; done.
-    - done. }
+    - exact Hvalid2. }
   { intros kind' name' uid' Hparent.
     unfold obj_parent_ref, meta_parent_ref_is in Hparent_none2, Hparent.
     rewrite Hparent_none2 in Hparent.
@@ -253,8 +253,9 @@ Proof.
   iMod ("Hclose" $! i2 kobj2 generated_uid
     with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
       $Hown_children]") as "HΦ".
-  { iPureIntro. split_and!.
-    - done.
+  { iSplit.
+    { iPureIntro. exact Hvalid2. }
+    iPureIntro. split_and!.
     - subst kobj2.
       destruct kobj; destruct kobj1; done.
     - unfold ObjectMetaV.named_created.
@@ -438,7 +439,7 @@ Lemma wp_State__PersistentVolumeClaimCreate_named_orphan
       "PersistentVolumeClaimCreate" #namespace #pvc_l
   {{{ pvc_l' pvc' uid, RET (#pvc_l', #interface.nil);
       "%Hvalid'" ∷
-        ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc') ⌝ ∗
+        ⌜ PersistentVolumeClaimV.valid pvc' ⌝ ∗
       "%Hmeta_created" ∷
         ⌜ ObjectMetaV.named_created namespace
             pvc.(PersistentVolumeClaimV.ObjectMeta')

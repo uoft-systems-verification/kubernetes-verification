@@ -177,7 +177,7 @@ Proof.
       (Hgenerate_name & Hname_nonempty & Hname_valid' &
         Hnamespace_nonempty & Hnamespace_valid & Huid_valid &
         _ & Hannotations_valid & Howner_references_valid &
-        Hfinalizers_valid & Hmanaged_fields_valid).
+        Hfinalizers_valid & Hmanaged_fields_valid & Hselflink).
     split_and!; try done.
     - by rewrite -Hpod_name.
     - by rewrite -Hpod_name.
