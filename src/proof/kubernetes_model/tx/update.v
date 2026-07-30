@@ -220,8 +220,9 @@ Proof.
     wp_for_post.
     iApply "HΦ".
   - iIntros (err) "Hconflict".
-    iDestruct "Hconflict" as "(%Herr_ne & %Hconflict &
+    iDestruct "Hconflict" as "(%Hconflict &
       Hown_meta_frag & Hown_spec_frag)".
+    pose proof (conflict_error_not_nil err Hconflict) as Herr_ne.
     iDestruct "Hclose" as "[Habort _]".
     iMod ("Habort" with "[Hown_meta_frag Hown_spec_frag]") as "Hau".
     { iFrame. iFrame "%". }

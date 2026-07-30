@@ -181,8 +181,7 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
 	              own_spec_frag γ key uid 1 (KObjectV.spec kobj'))
               ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
 	          (∀ err,
-	            ( ⌜ err ≠ interface.nil ⌝ ∗
-	              ⌜ conflict_error err ⌝ ∗
+	            ( ⌜ conflict_error err ⌝ ∗
 	              own_meta_frag γ key uid 1 kmeta ∗
 	              own_spec_frag γ key uid 1 kspec)
               ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
@@ -301,7 +300,7 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with "[Hown_meta_frag Hown_spec_frag]") as "HΦ".
-    { iSplit; first done. iSplit; first done. iFrame. }
+    { iSplit; first done. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
@@ -577,7 +576,8 @@ Proof.
     iSplit; first done.
     iExact "Hpost".
   - iIntros (err) "Hpost".
-    iDestruct "Hpost" as "(%Herr_ne & %Hconflict & Hown_meta_frag & Hown_spec_frag)".
+    iDestruct "Hpost" as "(%Hconflict & Hown_meta_frag & Hown_spec_frag)".
+    pose proof (conflict_error_not_nil err Hconflict) as Herr_ne.
     iMod "Hmask" as "_".
     iModIntro. iNext.
     iApply ("HΦ" $! #interface.nil err i kobj).

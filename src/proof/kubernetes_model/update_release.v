@@ -55,8 +55,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
           "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}))
         ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
       (∀ err,
-        ( "%Herr_ne" ∷ ⌜ err ≠ interface.nil ⌝ ∗
-          "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
+        ( "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
           "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
           "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
           "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)
@@ -199,7 +198,7 @@ Proof.
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with
       "[Hown_meta_frag Hown_spec_frag Hown_children_frag]") as "HΦ".
-    { iFrame. iPureIntro. split; done. }
+    { iFrame. iPureIntro. exact Herr_conflict. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with

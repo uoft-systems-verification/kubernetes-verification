@@ -308,8 +308,9 @@ Proof.
     iApply "HΦ".
   - iIntros (err) "Hconflict".
     iDestruct "Hconflict" as
-      "(%Herr_ne & %Hconflict & Hown_meta_frag &
+      "(%Hconflict & Hown_meta_frag &
         Hown_spec_frag & Hown_children_frag)".
+    pose proof (conflict_error_not_nil err Hconflict) as Herr_ne.
     iDestruct "Hclose" as "[Habort _]".
     iMod ("Habort" with
       "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
