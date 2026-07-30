@@ -1,12 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
-From New.proof.string Require Export prefix_suffix.
-From New.proof.kubernetes_model Require Export get index create delete.
-From New.proof Require Export util.
-From New.proof.controllers Require Export common.
 From New.proof.controllers.statefulset Require Export progress.
-From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
-From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -57,9 +49,7 @@ Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
 	    "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
 	    "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
 	    "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-	    "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝ ∗
-	    "%Hpods_no_dup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-	    "%Hpvcs_no_dup" ∷ ⌜ NoDup (PersistentVolumeClaimV.key <$> pvcs) ⌝
+	    "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;

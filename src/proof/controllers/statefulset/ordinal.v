@@ -1,15 +1,7 @@
-From New.proof Require Import prelude empty_ffi.
-From New.proof.string Require Export prefix_suffix.
-From New.proof.kubernetes_model Require Export get index create delete.
-From New.proof Require Export util.
-From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
-From New.proof.controllers.statefulset Require Export common.
+From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export statefulset_init.
 From New.proof.k8s_io.api.apps Require Export v1.
-From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
-From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -49,18 +41,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-(* [ordinalOf] parses the decimal suffix following the last dash, without
-   checking that the preceding parent name belongs to the StatefulSet. *)
-Definition pod_ordinal_suffix (pod_name : go_string) : option go_string :=
-  match list_find (λ b, b = byte_dash) (reverse pod_name) with
-  | Some (idx, _) => Some (reverse (take idx (reverse pod_name)))
-  | None => None
-  end.
-
-Definition parse_pod_ordinal (pod_name : go_string) : option nat :=
-  suffix ← pod_ordinal_suffix pod_name;
-  parse_decimal_string suffix.
 
 Definition find_pod_by_ordinal
     (set_name : go_string) (ordinal : nat) (pods : list PodV.t) :

@@ -1,5 +1,5 @@
-From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.statefulset Require Export pod_predicates.
+From New.proof.controllers.statefulset Require Export ordinal.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -39,15 +39,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-Definition pod_is_outdated (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  ∃ ordinal,
-    (ordinal ≤ go_int32_max_nat)%nat ∧
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
-      desired_pod_name
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ∧
-    (ordinal < statefulset_replicas set)%nat ∧
-    ¬ pod_immutable_matches set pod.
 
 Lemma wp_withoutStatefulSetFields
     (spec_c : v1.PodSpec.t) (spec : PodSpecV.t) dq :

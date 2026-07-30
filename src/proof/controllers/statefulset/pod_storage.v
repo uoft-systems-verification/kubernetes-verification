@@ -1,18 +1,6 @@
-From New.proof Require Import prelude empty_ffi.
 From New.proof.map Require Import for_range.
-From New.proof.string Require Export prefix_suffix.
-From New.proof.kubernetes_model Require Export get index create delete.
-From New.proof Require Export util.
-From New.proof Require Export wp_helpers.
-From New.proof.controllers Require Export common.
-From New.proof.controllers.statefulset Require Export ordinal.
-From New.proof.controllers.statefulset Require Export pvc.
 From New.proof.controllers.statefulset Require Export pod_predicates.
-From New.proof.controllers.statefulset Require Export statefulset_init.
-From New.proof.k8s_io.api.apps Require Export v1.
-From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
-From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
+From New.proof.controllers.statefulset Require Export pvc.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

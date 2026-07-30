@@ -1,5 +1,5 @@
-From New.proof Require Import prelude empty_ffi.
-From New.proof.controllers.statefulset Require Export create_pod.
+From New.proof.controllers.statefulset Require Export pod_predicates.
+From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.kubernetes_model Require Export delete.
 
 Section proof.

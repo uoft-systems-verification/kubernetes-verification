@@ -1,5 +1,6 @@
-From New.proof Require Import prelude empty_ffi.
-From New.proof.controllers.statefulset Require Export update_pod.
+From New.proof.controllers.statefulset Require Export pod_predicates.
+From New.proof.controllers.statefulset Require Export ordinal.
+From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update_release.
 
 Section proof.

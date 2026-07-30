@@ -1,17 +1,8 @@
-From New.proof Require Import prelude empty_ffi.
 From New.proof.map Require Import for_range.
-From New.proof.string Require Export prefix_suffix.
-From New.proof.kubernetes_model Require Export get index create delete.
-From New.proof Require Export util.
-From New.proof Require Export wp_helpers.
-From New.proof.controllers Require Export common.
+From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
-From New.proof.controllers.statefulset Require Export statefulset_init.
-From New.proof.k8s_io.api.apps Require Export v1.
+From New.proof.controllers.statefulset Require Export pvc_predicates.
 From New.proof.k8s_io.api.core Require Export v1.
-From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
-From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -51,41 +42,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-(* Selector MatchLabels are copied into the claim after the template labels,
-   so selector values take precedence when both maps contain the same key.
-   The implementation also replaces a nil template label map with an allocated
-   empty map, hence the result always stores [Some labels]. *)
-Definition new_persistent_volume_claim_labels
-    (set : StatefulSetV.t) (claim_template : PersistentVolumeClaimV.t) :
-    gmap go_string go_string :=
-  let claim_labels :=
-    default ∅
-      claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Labels') in
-  let selector_labels :=
-    match set.(StatefulSetV.Spec').(StatefulSetSpecV.Selector') with
-    | Some selector =>
-        default ∅ selector.(LabelSelectorV.MatchLabels')
-    | None => ∅
-    end in
-  selector_labels ∪ claim_labels.
-
-Definition new_persistent_volume_claim
-    (set : StatefulSetV.t) (claim_template : PersistentVolumeClaimV.t)
-    (ordinal : nat) : PersistentVolumeClaimV.t :=
-  let object_meta :=
-    claim_template.(PersistentVolumeClaimV.ObjectMeta')
-      <| ObjectMetaV.Name' :=
-          desired_pvc_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name')
-            ordinal |>
-      <| ObjectMetaV.Namespace' :=
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
-      <| ObjectMetaV.OwnerReferences' := None |>
-      <| ObjectMetaV.Labels' :=
-          Some (new_persistent_volume_claim_labels set claim_template) |> in
-  claim_template <| PersistentVolumeClaimV.ObjectMeta' := object_meta |>.
 
 Definition statefulset_without_claim_templates_l set_l
     (set : StatefulSetV.t) dq (set_phy : v1.StatefulSet.t) : iProp Σ :=

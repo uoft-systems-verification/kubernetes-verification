@@ -1,4 +1,3 @@
-From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.statefulset Require Export create_pvc.
 
 Section proof.
@@ -62,10 +61,6 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
             desired_pod_name
               set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
               ordinal ⌝ ∗
-      "%Hpod_name_len" ∷
-        ⌜ Z.of_nat
-            (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤
-          go_int_max ⌝ ∗
       "%Hnamespace_nonempty" ∷
         ⌜ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ≠
             ""%go ⌝ ∗
@@ -152,6 +147,9 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
+  pose proof (pod_name_length_le_go_int_max_of_valid_named_create
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+    pod Hpod_valid_create) as Hpod_name_len.
   wp_apply (wp_createPersistentVolumeClaims
     γ model_l set_l pod_l set pod ordinal dq_set 1
     with "[$Hset $Hpod $Hpvc_states]").

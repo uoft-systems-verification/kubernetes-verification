@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 
 Section proof.
@@ -39,14 +39,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-Definition pod_is_condemned (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  ∃ ordinal,
-    (ordinal ≤ go_int32_max_nat)%nat ∧
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
-      desired_pod_name
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ∧
-    (statefulset_replicas set ≤ ordinal)%nat.
 
 Lemma wp_firstCondemnedPod set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc) (pods : list PodV.t)

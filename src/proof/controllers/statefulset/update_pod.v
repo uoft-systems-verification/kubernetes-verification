@@ -1,5 +1,3 @@
-From New.proof Require Import prelude empty_ffi.
-From New.proof.controllers.statefulset Require Export delete_pod.
 From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update.
@@ -217,10 +215,6 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
             pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hordinal_bound" ∷
         ⌜ (ordinal ≤ go_int32_max_nat)%nat ⌝ ∗
-      "%Hpod_name_len" ∷
-        ⌜ Z.of_nat
-            (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤
-          go_int_max ⌝ ∗
       "%Hpod_not_deleting" ∷
         ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hown_meta" ∷ own_meta_frag γ (PodV.key pod)
@@ -262,6 +256,8 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
+  pose proof (pod_name_length_le_go_int_max_of_valid pod Hpod_valid)
+    as Hpod_name_len.
   pose proof (f_equal KKey.Name' Hpod_desired_key) as Hpod_name.
   simpl in Hpod_name.
   wp_apply (wp_identityMatches set_l pod_l set pod dq_set dq_pod

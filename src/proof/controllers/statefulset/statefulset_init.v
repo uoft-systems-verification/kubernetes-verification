@@ -1,5 +1,3 @@
-From New.proof Require Export fmt.
-From New.proof Require Export prelude.
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
