@@ -258,7 +258,7 @@ Qed.
    terminating Pod, Kubernetes may complete deletion during the update, so the
    result is either a live orphan or a tombstone.  In either case the Pod is no
    longer among the StatefulSet's children. *)
-Lemma wp_releasePod_exact γ model_l set_l pod_l
+Lemma wp_releasePod γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (children : gset KKey.t) dq_set dq_pod :
   {{{ "#Hpkg" ∷
@@ -857,7 +857,7 @@ Proof.
     iIntros (returned_pod_l returned_pod) "Hupdate".
     iDestruct "Hupdate" as
       "(_ & _ & _ & _ & _ & _ & Hreturned_pod &
-        Hrelease_result)".
+        Hown_children & Hrelease_result)".
     wp_auto.
     wp_apply (wp_IsNotFound interface.nil with "[]").
     replace (bool_decide (not_found_error interface.nil))
@@ -866,8 +866,7 @@ Proof.
        exact not_found_error_nil).
     wp_auto.
     iDestruct "Hrelease_result" as
-      "[(Hown_meta & Hown_spec & Hown_children) |
-        (Hown_tombstone & Hown_children)]".
+      "[(Hown_meta & Hown_spec) | Hown_tombstone]".
     + iApply "HΦ".
       iSplitL "Hset"; first iExact "Hset".
       iSplitL "Hpod"; first iExact "Hpod".
@@ -879,73 +878,6 @@ Proof.
       iSplitL "Hpod"; first iExact "Hpod".
       iSplitL "Hown_tombstone"; first by iRight.
       iExact "Hown_children".
-Qed.
-
-(* The controller only needs to expose that the released Pod is no longer a
-   child.  Keep that weaker public interface while the exact transition above
-   supports composition across a list of Pods. *)
-Lemma wp_releasePod γ model_l set_l pod_l
-    (set : StatefulSetV.t) (pod : PodV.t)
-    (children : gset KKey.t) dq_set dq_pod :
-  {{{ "#Hpkg" ∷
-        is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ model_l ∗
-      "#Hglobal_l" ∷
-        (global_addr apimodel.ModelState) ↦□ model_l ∗
-      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
-      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
-      "%Hvalid_pod" ∷ ⌜ PodV.valid pod ⌝ ∗
-      "%Hparent" ∷
-        ⌜ meta_parent_ref pod.(PodV.ObjectMeta') =
-          Some
-            (StatefulSetV.key set,
-             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')) ⌝ ∗
-      "%Hkey_in" ∷ ⌜ PodV.key pod ∈ children ⌝ ∗
-      "Hown_meta" ∷ own_meta_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        pod.(PodV.ObjectMeta') ∗
-      "Hown_spec" ∷ own_spec_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
-      "Hown_children" ∷ own_children_frag γ
-        (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children
-  }}}
-    @! statefulset.releasePod #set_l #pod_l
-  {{{ (children' : gset KKey.t),
-      RET #interface.nil;
-      "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
-      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
-      "%Hnot_child" ∷ ⌜ PodV.key pod ∉ children' ⌝ ∗
-      ( (∃ pod_meta',
-          "Hown_meta" ∷ own_meta_frag γ
-            (PodV.key pod)
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            pod_meta' ∗
-          "Hown_spec" ∷ own_spec_frag γ
-            (PodV.key pod)
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            (ObjectSpecV.PodSpec pod.(PodV.Spec')))
-        ∨
-        "Hown_tombstone" ∷ own_tombstone_frag γ
-          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
-      "Hown_children" ∷ own_children_frag γ
-        (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-        children'
-  }}}.
-Proof.
-  iIntros (Φ) "H HΦ".
-  iApply (wp_releasePod_exact γ model_l set_l pod_l
-    set pod children dq_set dq_pod with "H").
-  iNext.
-  iIntros "(Hset & Hpod & Hrelease_result & Hown_children)".
-  iApply ("HΦ" $! (children ∖ {[PodV.key pod]})).
-  iFrame.
-  iPureIntro.
-  Timeout 10 set_solver.
 Qed.
 
 Definition pods_with_bad_names
@@ -1331,7 +1263,7 @@ Proof.
         rewrite elem_of_list_to_set.
         exact Hthis_key_not_removed.
       }
-      wp_apply (wp_releasePod_exact γ model_l
+      wp_apply (wp_releasePod γ model_l
         set_l this_ptr set this_pod
         (children ∖ list_to_set
           (PodV.key <$> filter Bad
