@@ -36,8 +36,7 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
             (old_meta <| ObjectMetaV.OwnerReferences' :=
               (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') |>)
             (KObjectV.objectmeta kobj) ⌝ ∗
-      "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
-      "%Hno_deletion_timestamp" ∷ ⌜ old_meta.(ObjectMetaV.DeletionTimestamp') = None ⌝
+      "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
@@ -47,9 +46,12 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
       "%Hkey_eq'" ∷ ⌜ KObjectV.key kobj' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ (KObjectV.objectmeta kobj').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}),
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      ( "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+        "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec
+        ∨
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid),
       COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
     -∗ WP l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i) {{ Φ }}.
@@ -82,9 +84,7 @@ Proof.
                 ObjectMetaV.OwnerReferences') |>)
             (KObjectV.objectmeta kobj) ⌝ ∗
       "%Hspec_eq" ∷
-        ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
-      "%Hno_deletion_timestamp" ∷
-        ⌜ old_meta.(ObjectMetaV.DeletionTimestamp') = None ⌝
+        ⌜ KObjectV.spec kobj = old_spec ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷
@@ -102,14 +102,11 @@ Proof.
         ⌜ (KObjectV.objectmeta kobj').(ObjectMetaV.UID') =
           uid ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷
-        own_meta_frag γ key uid 1
-          (KObjectV.objectmeta kobj') ∗
-      "Hown_spec_frag" ∷
-        own_spec_frag γ key uid dq old_spec ∗
-      "Hown_children_frag" ∷
-        own_children_frag γ parent_key parent_uid 1
-          (children ∖ {[key]}),
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      ( "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+        "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec
+        ∨
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid),
       COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
   )%I.
@@ -170,8 +167,7 @@ Proof.
   { iFrame. iFrame "%". }
   iModIntro. iNext. wp_auto.
   clear uid old_meta old_spec children Hkey_eq Huid_eq
-    Hold_parent Hchild Howner_references_only Hspec_eq
-    Hno_deletion_timestamp Hmeta_eq.
+    Hold_parent Hchild Howner_references_only Hspec_eq Hmeta_eq.
   iDestruct "Hdeepown_existing_i" as
     (existing_l)
     "[%Hvalid_interface_existing Hdeepown_existing_l]".
@@ -273,19 +269,16 @@ Proof.
   iSplit.
   { iPureIntro. subst kobj_rv.
     rewrite KObjectV.spec_update_objectmeta. done. }
-  iSplit; first done.
   iSplit.
   - iIntros (i' kobj') "Hsuccess".
     iDestruct "Hsuccess" as
       "(%Hvalid' & %Hsame_kind & %Hmeta_updated &
         %Hspec_unchanged & %Hparent_released &
         %Hkey_eq' & %Huid_eq' & Hdeepown_i &
-        Hown_meta_frag & Hown_spec_frag &
-        Hown_children_frag)".
+        Hrelease_result)".
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! i' kobj' with
-      "[Hdeepown_i Hown_meta_frag Hown_spec_frag
-        Hown_children_frag]") as "HΦ".
+      "[Hdeepown_i Hrelease_result]") as "HΦ".
     { iSplit; first done.
       iSplit.
       { iPureIntro. subst kobj_rv.
@@ -345,7 +338,6 @@ Lemma wp_State__updateTx_release γ l kind namespace i kobj
               (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') |>)
             (KObjectV.objectmeta kobj) ⌝ ∗
       "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
-      "%Hno_deletion_timestamp" ∷ ⌜ old_meta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
@@ -362,9 +354,11 @@ Lemma wp_State__updateTx_release γ l kind namespace i kobj
       "%Hkey_eq'" ∷ ⌜ KObjectV.key kobj' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ (KObjectV.objectmeta kobj').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      ( "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+        "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec
+        ∨
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -395,9 +389,7 @@ Proof.
               ObjectMetaV.OwnerReferences') |>)
           (KObjectV.objectmeta kobj) ⌝ ∗
     "%Hspec_eq" ∷
-      ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
-    "%Hno_deletion_timestamp" ∷
-      ⌜ old_meta.(ObjectMetaV.DeletionTimestamp') = None ⌝
+      ⌜ KObjectV.spec kobj = old_spec ⌝
   )%I) with
     "[Hown_meta_frag Hown_spec_frag Hown_children_frag]"
     as "Hpre".
@@ -426,7 +418,6 @@ Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
               pod.(PodV.ObjectMeta').(ObjectMetaV.OwnerReferences') |>)
             pod.(PodV.ObjectMeta') ⌝ ∗
       "%Hspec_eq" ∷ ⌜ pod.(PodV.Spec') = old_spec ⌝ ∗
-      "%Hno_deletion_timestamp" ∷ ⌜ old_meta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec old_spec) ∗
@@ -442,9 +433,16 @@ Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
       "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec old_spec) ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid 1
+          (children ∖ {[key]}) ∗
+      ( "Hown_meta_frag" ∷
+          own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
+        "Hown_spec_frag" ∷
+          own_spec_frag γ key uid dq
+            (ObjectSpecV.PodSpec old_spec)
+        ∨
+        "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -467,7 +465,12 @@ Proof.
     rewrite KObjectV.valid_eq_valid2 /=.
     split_and!; try done.
     f_equal. done. }
-  iIntros (i' kobj') "Hpost". iNamed "Hpost".
+  iIntros (i' kobj') "Hpost".
+  iDestruct "Hpost" as
+    "(%Hvalid' & %Hsame_kind & %Hmeta_updated &
+      %Hspec_unchanged & %Hparent_released &
+      %Hkey_eq' & %Huid_eq' & Hdeepown_i &
+      Hrelease_result)".
   destruct kobj' as [pod'|rs'|pvc'|sts']; try done.
   iDestruct "Hdeepown_i" as
     (pod_l') "[%Hi' Hdeepown_l]".

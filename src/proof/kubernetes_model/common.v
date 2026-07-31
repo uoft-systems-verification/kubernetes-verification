@@ -423,7 +423,7 @@ Proof. Admitted.
 
 (* This is not a complete spec for shouldDeleteDuringUpdate, but it is sufficient
    because we only need to prove that it returns false when DeletionTimestamp is nil. *)
-Lemma wp_shouldDeleteDuringUpdate new_i new_l new_obj old_i old_l old_obj dq :
+Lemma wp_shouldDeleteDuringUpdate_false new_i new_l new_obj old_i old_l old_obj dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
       ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
@@ -435,6 +435,25 @@ Lemma wp_shouldDeleteDuringUpdate new_i new_l new_obj old_i old_l old_obj dq :
   {{{ RET #false;
     KObjectV.deepown_l new_l new_obj dq ∗
     KObjectV.deepown_l old_l old_obj dq
+  }}}.
+Proof. Admitted.
+
+(* General ownership-preserving specification.  Release updates also apply to
+   terminating objects, for which Kubernetes may return either boolean.  The
+   caller handles both the update and immediate-deletion branches. *)
+Lemma wp_shouldDeleteDuringUpdate_general
+    new_i new_l new_obj old_i old_l old_obj dq :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.shouldDeleteDuringUpdate
+      #(interface.ok new_i) #(interface.ok old_i)
+  {{{ (should_delete : bool), RET #should_delete;
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq
   }}}.
 Proof. Admitted.
 

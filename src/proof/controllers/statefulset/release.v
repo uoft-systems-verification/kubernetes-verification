@@ -251,12 +251,13 @@ Proof.
     done.
 Qed.
 
-(* This is the intended controller call path: [pod] is a live child of [set].
+(* This is the intended controller call path: [pod] is a child of [set].
    Consequently [releasePod] finds the StatefulSet UID, performs the
    transactional update, and cannot observe NotFound.  The local [set] and
-   [pod] are unchanged because the implementation updates a deep copy.  The
-   postcondition intentionally exposes only that the stored Pod is no longer
-   among the StatefulSet's children. *)
+   [pod] are unchanged because the implementation updates a deep copy.  For a
+   terminating Pod, Kubernetes may complete deletion during the update, so the
+   result is either a live orphan or a tombstone.  In either case the Pod is no
+   longer among the StatefulSet's children. *)
 Lemma wp_releasePod_exact γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (children : gset KKey.t) dq_set dq_pod :
@@ -274,9 +275,6 @@ Lemma wp_releasePod_exact γ model_l set_l pod_l
             (StatefulSetV.key set,
              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')) ⌝ ∗
       "%Hkey_in" ∷ ⌜ PodV.key pod ∈ children ⌝ ∗
-      "%Hno_deletion_timestamp" ∷
-        ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') =
-          None ⌝ ∗
       "Hown_meta" ∷ own_meta_frag γ
         (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -290,18 +288,21 @@ Lemma wp_releasePod_exact γ model_l set_l pod_l
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children
   }}}
     @! statefulset.releasePod #set_l #pod_l
-  {{{ (pod_meta' : ObjectMetaV.t),
-      RET #interface.nil;
+  {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
-      "Hown_meta" ∷ own_meta_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        pod_meta' ∗
-      "Hown_spec" ∷ own_spec_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
+      ( (∃ pod_meta',
+          "Hown_meta" ∷ own_meta_frag γ
+            (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+            pod_meta' ∗
+          "Hown_spec" ∷ own_spec_frag γ
+            (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+            (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+        ∨
+        "Hown_tombstone" ∷ own_tombstone_frag γ
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -854,7 +855,9 @@ Proof.
       iFrame "%".
     }
     iIntros (returned_pod_l returned_pod) "Hupdate".
-    iNamedPrefix "Hupdate" "Hupdate_".
+    iDestruct "Hupdate" as
+      "(_ & _ & _ & _ & _ & _ & Hreturned_pod &
+        Hrelease_result)".
     wp_auto.
     wp_apply (wp_IsNotFound interface.nil with "[]").
     replace (bool_decide (not_found_error interface.nil))
@@ -862,9 +865,20 @@ Proof.
       (symmetry; apply bool_decide_false;
        exact not_found_error_nil).
     wp_auto.
-    iApply ("HΦ" $! returned_pod.(PodV.ObjectMeta')).
-    iFrame "Hset Hpod Hupdate_Hown_meta_frag
-      Hupdate_Hown_spec_frag Hupdate_Hown_children_frag".
+    iDestruct "Hrelease_result" as
+      "[(Hown_meta & Hown_spec & Hown_children) |
+        (Hown_tombstone & Hown_children)]".
+    + iApply "HΦ".
+      iSplitL "Hset"; first iExact "Hset".
+      iSplitL "Hpod"; first iExact "Hpod".
+      iSplitL "Hown_meta Hown_spec".
+      { iLeft. iExists returned_pod.(PodV.ObjectMeta'). iFrame. }
+      iExact "Hown_children".
+    + iApply "HΦ".
+      iSplitL "Hset"; first iExact "Hset".
+      iSplitL "Hpod"; first iExact "Hpod".
+      iSplitL "Hown_tombstone"; first by iRight.
+      iExact "Hown_children".
 Qed.
 
 (* The controller only needs to expose that the released Pod is no longer a
@@ -887,9 +901,6 @@ Lemma wp_releasePod γ model_l set_l pod_l
             (StatefulSetV.key set,
              set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')) ⌝ ∗
       "%Hkey_in" ∷ ⌜ PodV.key pod ∈ children ⌝ ∗
-      "%Hno_deletion_timestamp" ∷
-        ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') =
-          None ⌝ ∗
       "Hown_meta" ∷ own_meta_frag γ
         (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -903,19 +914,23 @@ Lemma wp_releasePod γ model_l set_l pod_l
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children
   }}}
     @! statefulset.releasePod #set_l #pod_l
-  {{{ (pod_meta' : ObjectMetaV.t) (children' : gset KKey.t),
+  {{{ (children' : gset KKey.t),
       RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "%Hnot_child" ∷ ⌜ PodV.key pod ∉ children' ⌝ ∗
-      "Hown_meta" ∷ own_meta_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        pod_meta' ∗
-      "Hown_spec" ∷ own_spec_frag γ
-        (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
+      ( (∃ pod_meta',
+          "Hown_meta" ∷ own_meta_frag γ
+            (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+            pod_meta' ∗
+          "Hown_spec" ∷ own_spec_frag γ
+            (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+            (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+        ∨
+        "Hown_tombstone" ∷ own_tombstone_frag γ
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -926,9 +941,8 @@ Proof.
   iApply (wp_releasePod_exact γ model_l set_l pod_l
     set pod children dq_set dq_pod with "H").
   iNext.
-  iIntros (pod_meta') "H".
-  iNamed "H".
-  iApply ("HΦ" $! pod_meta' (children ∖ {[PodV.key pod]})).
+  iIntros "(Hset & Hpod & Hrelease_result & Hown_children)".
+  iApply ("HΦ" $! (children ∖ {[PodV.key pod]})).
   iFrame.
   iPureIntro.
   Timeout 10 set_solver.
@@ -962,9 +976,9 @@ Proof.
 Qed.
 
 (* [releasePodsWithBadNames] leaves the input Go objects unchanged because
-   [releasePod] updates a deep copy.  The metadata fragments in the
-   postcondition are existential because releasing a Pod changes its stored
-   ownerReferences and resourceVersion. *)
+   [releasePod] updates a deep copy.  Each released Pod is either stored as a
+   live orphan (with existential server-updated metadata) or has completed
+   deletion and is represented by a tombstone. *)
 Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods bad_name_pods : list PodV.t)
@@ -1014,32 +1028,30 @@ Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
                 (StatefulSetV.key set,
                  set.(StatefulSetV.ObjectMeta').(
                    ObjectMetaV.UID')) ∧
-            PodV.key pod ∈ children ∧
-            pod.(PodV.ObjectMeta').(
-              ObjectMetaV.DeletionTimestamp') = None)
+            PodV.key pod ∈ children)
           bad_name_pods ⌝
   }}}
     @! statefulset.releasePodsWithBadNames #set_l #pods_sl
-  {{{ (bad_name_pod_metas' : list ObjectMetaV.t),
-      RET #interface.nil;
+  {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷
         ([∗ list] ptr;pod ∈ ptrs;pods,
           PodV.deepown_l ptr pod dq_pods) ∗
-      "Hown_meta" ∷
-        ([∗ list] pod;pod_meta' ∈
-            bad_name_pods;bad_name_pod_metas',
-          own_meta_frag γ
-            (PodV.key pod)
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            pod_meta') ∗
-      "Hown_spec" ∷
+      "Hreleased" ∷
         ([∗ list] pod ∈ bad_name_pods,
-          own_spec_frag γ
-            (PodV.key pod)
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+          ( (∃ pod_meta',
+              own_meta_frag γ
+                (PodV.key pod)
+                pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+                pod_meta' ∗
+              own_spec_frag γ
+                (PodV.key pod)
+                pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+                (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+            ∨
+            own_tombstone_frag γ
+              pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -1066,8 +1078,7 @@ Proof.
   iDestruct (own_slice_wf with "Hpods_sl") as
     %Hpods_sl_cap.
   iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.
-  set I := (∃ (i : w64) (pod_ptr_value : loc)
-      (bad_name_pod_metas' : list ObjectMetaV.t),
+  set I := (∃ (i : w64) (pod_ptr_value : loc),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
     "Hset_ptr" ∷ set_ptr ↦ set_l ∗
     "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
@@ -1076,26 +1087,26 @@ Proof.
     "Hpods" ∷
       ([∗ list] ptr;pod ∈ ptrs;pods,
         PodV.deepown_l ptr pod dq_pods) ∗
-    "Hown_meta_done" ∷
-      ([∗ list] pod;pod_meta' ∈
-          filter Bad (take (sint.nat i) pods);
-          bad_name_pod_metas',
-        own_meta_frag γ
-          (PodV.key pod)
-          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-          pod_meta') ∗
+    "Hreleased_done" ∷
+      ([∗ list] pod ∈ filter Bad (take (sint.nat i) pods),
+        ( (∃ pod_meta',
+            own_meta_frag γ
+              (PodV.key pod)
+              pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+              pod_meta' ∗
+            own_spec_frag γ
+              (PodV.key pod)
+              pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+              (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+          ∨
+          own_tombstone_frag γ
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))) ∗
     "Hown_meta_todo" ∷
       ([∗ list] pod ∈ filter Bad (drop (sint.nat i) pods),
         own_meta_frag γ
           (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           pod.(PodV.ObjectMeta')) ∗
-    "Hown_spec_done" ∷
-      ([∗ list] pod ∈ filter Bad (take (sint.nat i) pods),
-        own_spec_frag γ
-          (PodV.key pod)
-          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
     "Hown_spec_todo" ∷
       ([∗ list] pod ∈ filter Bad (drop (sint.nat i) pods),
         own_spec_frag γ
@@ -1114,9 +1125,9 @@ Proof.
     "[i set Hset pod Hpods_sl Hpods Hown_meta Hown_spec
       Hown_children]" as "Hloop_inv".
   {
-    iExists (W64 0), (zero_val loc), ([] : list ObjectMetaV.t).
+    iExists (W64 0), (zero_val loc).
     rewrite !take_0 !drop_0 !filter_nil
-      !big_sepL2_nil !big_sepL_nil
+      !big_sepL_nil
       fmap_nil list_to_set_nil difference_empty_L.
     iFrame.
     iPureIntro. word.
@@ -1252,8 +1263,7 @@ Proof.
       iApply wp_for_post_continue.
       wp_auto.
       iFrame "HΦ".
-      iExists (word.add i (W64 1)), this_ptr,
-        bad_name_pod_metas'.
+      iExists (word.add i (W64 1)), this_ptr.
       rewrite Hfilter_take -Hfilter_drop.
       iFrame.
       iPureIntro. word.
@@ -1300,8 +1310,7 @@ Proof.
       }
       pose proof (Hreleaseable this_pod
         Hthis_in_bad_name_pods_In) as
-        (Hthis_valid & Hthis_parent & Hthis_key_in &
-         Hthis_no_deletion_timestamp).
+        (Hthis_valid & Hthis_parent & Hthis_key_in).
       assert (Hthis_key_not_removed :
           PodV.key this_pod ∉
             PodV.key <$> filter Bad (take (sint.nat i) pods)).
@@ -1335,8 +1344,9 @@ Proof.
       {
         iFrame "%".
       }
-      iIntros (this_pod_meta') "Hrelease".
-      iNamedPrefix "Hrelease" "Hrelease_".
+      iIntros
+        "(Hrelease_Hset & Hrelease_Hpod &
+          Hrelease_result & Hrelease_Hown_children)".
       wp_auto.
       assert (Hnext :
           sint.nat (word.add i (W64 1)) =
@@ -1379,8 +1389,7 @@ Proof.
       iApply wp_for_post_do.
       wp_auto.
       iFrame "HΦ".
-      iExists (word.add i (W64 1)), this_ptr,
-        (bad_name_pod_metas' ++ [this_pod_meta']).
+      iExists (word.add i (W64 1)), this_ptr.
       rewrite Hfilter_take Hfilter_drop.
       iFrame.
       simpl.
@@ -1405,10 +1414,10 @@ Proof.
       apply drop_ge. lia.
     }
     iEval (rewrite Htake_all)
-      in "Hown_meta_done Hown_spec_done Hown_children".
+      in "Hreleased_done Hown_children".
     iEval (rewrite Hdrop_all filter_nil !big_sepL_nil)
       in "Hown_meta_todo Hown_spec_todo".
-    iApply ("HΦ" $! bad_name_pod_metas').
+    iApply "HΦ".
     unfold pods_with_bad_names, Bad.
     iFrame.
 Qed.

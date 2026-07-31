@@ -373,7 +373,7 @@ Proof.
     exact Hno_deletion_timestamp.
   }
   apply bool_decide_eq_true in Hdecide''. unfold P' in Hdecide''.
-  wp_apply (wp_shouldDeleteDuringUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
+  wp_apply (wp_shouldDeleteDuringUpdate_false with "[$Hdeepown_l $Hdeepown_old_l]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros "(Hdeepown_l & Hdeepown_old_l)". wp_auto.
   wp_apply (wp_storageObjectDeepEqual with "[$Hdeepown_l $Hdeepown_old_l]").
