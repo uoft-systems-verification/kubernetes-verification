@@ -1,4 +1,4 @@
-From New.proof.controllers.statefulset Require Export progress.
+From New.proof.controllers.statefulset Require Export distance.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -40,24 +40,6 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* These are precisely the Pods that pass [filterPodsForStatefulSet] and cause
-   [reconcileReplicas] to return when it observes their deletion timestamp. *)
-Definition pending_pod sts (pod : PodV.t) : Prop :=
-  ¬ is_pod_alive pod ∧
-  pod_has_int32_member_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
-
-Definition pending_pods sts pods : list PodV.t :=
-  filter (pending_pod sts) pods.
-
-Definition other_pods sts pods : list PodV.t :=
-  filter (λ pod, ¬ pending_pod sts pod) pods.
-
-Definition pending_pods_preserved sts pods pods' : Prop :=
-  Forall (λ pod, pod ∈ pending_pods sts pods')
-    (pending_pods sts pods).
-
 Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dqs pods pvcs :
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -65,11 +47,11 @@ Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dqs pod
       "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       "Hown_terminating_pod_frags" ∷
-        ([∗ list] pod;pending_dq ∈ pending_pods sts pods;pending_dqs,
+        ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
           own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
           own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_other_pod_frags" ∷
-        ([∗ list] pod ∈ other_pods sts pods,
+        ([∗ list] pod ∈ filter (λ pod, not (pending_pod sts pod)) pods,
           own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
           own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
@@ -87,14 +69,14 @@ Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dqs pod
   {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t)
       (err : interface.t), RET #err;
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝ ∗
-      ⌜ pending_pods_preserved sts pods pods' ⌝ ∗
+      ⌜ filter (pending_pod sts) pods ⊆ filter (pending_pod sts) pods' ⌝ ∗
       own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod;pending_dq ∈ pending_pods sts pods;pending_dqs,
+      ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       ([∗ list] pod ∈ filter (λ pod,
-          PodV.key pod ∉ PodV.key <$> pending_pods sts pods) pods',
+          PodV.key pod ∉ PodV.key <$> filter (pending_pod sts) pods) pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       ([∗ list] pvc ∈ pvcs',

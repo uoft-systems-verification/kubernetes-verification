@@ -1,4 +1,4 @@
-From New.proof.controllers.statefulset Require Export progress.
+From New.proof.controllers.statefulset Require Export distance.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

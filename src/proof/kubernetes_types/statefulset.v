@@ -22,6 +22,37 @@ Record t := mk {
   (* Ordinals' : loc; *)
 }.
 
+Definition volume_claim_template_names (spec : t) : list go_string :=
+  (λ pvc,
+    pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
+  <$> spec.(VolumeClaimTemplates').
+
+(* Before validating a StatefulSet's Pod template, Kubernetes replaces every
+   template volume whose name occurs in [VolumeClaimTemplates] with the
+   generated PVC-backed volume. These are precisely the original volumes that
+   survive that replacement. *)
+Definition preserved_template_volumes (spec : t) : list VolumeV.t :=
+  filter
+    (λ volume,
+      volume.(VolumeV.Name') ∉ volume_claim_template_names spec)
+    spec.(Template').(PodTemplateSpecV.Spec').(PodSpecV.Volumes').
+
+(* The projection of StatefulSet's effective Pod-template validation onto the
+   represented metadata and PodSpec fields. Kubernetes clears the template's
+   Hostname and Subdomain because the controller overwrites them, so neither
+   field is constrained here. Claim-template volumes are handled separately
+   below; their names are map keys and are therefore unique, while filtering
+   makes them disjoint from the preserved original volumes.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L193-L214 *)
+Definition valid_template (spec : t) : Prop :=
+  valid_labels
+    spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') ∧
+  valid_annotations
+    spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') ∧
+  Forall VolumeV.valid (preserved_template_volumes spec) ∧
+  NoDup
+    (VolumeV.Name' <$> preserved_template_volumes spec).
+
 (* The admission predicate used for both create validation and the general
    validation phase of update. Kubernetes may still need to default an omitted
    replica count and apply schema defaults to embedded volume claim templates
@@ -37,7 +68,16 @@ Definition valid_create (spec : t) : Prop :=
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches
       selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid spec.(Template') ∧
+  valid_template spec ∧
+  (* Kubernetes injects every claim-template name as a Pod volume name before
+     validating the StatefulSet's Pod template, so each name must be a
+     DNS-1123 label:
+     https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L193-L214 *)
+  Forall
+    (λ pvc,
+      valid_dns1123_label
+        pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
+    spec.(VolumeClaimTemplates') ∧
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
     spec.(VolumeClaimTemplates') ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).

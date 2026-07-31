@@ -1,6 +1,7 @@
 From New.proof Require Export wp_helpers.
 From New.proof.string Require Export prefix_suffix.
 From New.proof.kubernetes_types Require Export prelude.
+From New.proof.controllers Require Export common.
 From New.proof.controllers.statefulset Require Import pvc_predicates.
 
 Definition statefulset_replicas (sts : StatefulSetV.t) : nat :=
@@ -147,6 +148,14 @@ Proof.
     apply parse_member_name_complete in Hname.
     congruence.
 Defined.
+
+(* These are precisely the Pods that pass [filterPodsForStatefulSet] and cause
+   [reconcileReplicas] to return when it observes their deletion timestamp. *)
+Definition pending_pod sts (pod : PodV.t) : Prop :=
+  ¬ is_pod_alive pod ∧
+  pod_has_int32_member_name
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
 
 Lemma pod_has_member_key_iff sts pod :
   pod_has_member_key sts pod ↔
