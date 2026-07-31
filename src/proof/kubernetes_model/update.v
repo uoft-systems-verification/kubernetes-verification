@@ -170,22 +170,22 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
       "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (KObjectV.spec kobj) ⌝ ∗
       (* Hno_deletion_timestamp ensures that the update doesn't delete the object *)
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-	      "Hclose" ∷ (
-	          (∀ i' kobj',
-	            ( ⌜ KObjectV.valid kobj' ⌝ ∗
-	              ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-	              ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-	              ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-	              KObjectV.deepown_i i' kobj' 1 ∗
-	              own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-	              own_spec_frag γ key uid 1 (KObjectV.spec kobj'))
-              ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
-	          (∀ err,
-	            ( ⌜ conflict_error err ⌝ ∗
-	              own_meta_frag γ key uid 1 kmeta ∗
-	              own_spec_frag γ key uid 1 kspec)
-              ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
-	      )%I
+	    "Hclose" ∷ (
+	      (∀ i' kobj',
+	        ( ⌜ KObjectV.valid kobj' ⌝ ∗
+	          ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+	          ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+	          ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+	          KObjectV.deepown_i i' kobj' 1 ∗
+	          own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+	          own_spec_frag γ key uid 1 (KObjectV.spec kobj'))
+          ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
+	      (∀ err,
+	        ( ⌜ conflict_error err ⌝ ∗
+	          own_meta_frag γ key uid 1 kmeta ∗
+	          own_spec_frag γ key uid 1 kspec)
+          ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
+	    )%I
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "update" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
@@ -545,21 +545,21 @@ Lemma wp_State__update γ l kind namespace i kobj key uid kmeta kspec :
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
   }}}
     l @! (go.PointerType apimodel.State) @! "update" #kind #namespace #(interface.ok i)
-    {{{ ret err i' kobj', RET (ret, #err);
-        (⌜ err = interface.nil ⌝ ∗
-          ⌜ ret = #(interface.ok i') ⌝ ∗
-          ⌜ KObjectV.valid kobj' ⌝ ∗
-          ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-          ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-          ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-          KObjectV.deepown_i i' kobj' 1 ∗
-          own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-          own_spec_frag γ key uid 1 (KObjectV.spec kobj')) ∨
-        (⌜ err ≠ interface.nil ⌝ ∗
-          ⌜ ret = #interface.nil ⌝ ∗
-          own_meta_frag γ key uid 1 kmeta ∗
-          own_spec_frag γ key uid 1 kspec)
-    }}}.
+  {{{ ret err i' kobj', RET (ret, #err);
+      (⌜ err = interface.nil ⌝ ∗
+        ⌜ ret = #(interface.ok i') ⌝ ∗
+        ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+        ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectSpecV.updated (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+        KObjectV.deepown_i i' kobj' 1 ∗
+        own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+        own_spec_frag γ key uid 1 (KObjectV.spec kobj')) ∨
+      (⌜ err ≠ interface.nil ⌝ ∗
+        ⌜ ret = #interface.nil ⌝ ∗
+        own_meta_frag γ key uid 1 kmeta ∗
+        own_spec_frag γ key uid 1 kspec)
+  }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__update_au.

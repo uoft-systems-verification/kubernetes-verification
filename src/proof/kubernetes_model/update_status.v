@@ -38,20 +38,20 @@ Lemma wp_State__update_status_au γ l kind namespace i kobj :
       (* Hno_deletion_timestamp ensures that the status update doesn't delete the object. *)
       "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hclose" ∷ (
-          (∀ i' kobj',
-            ( ⌜ KObjectV.valid kobj' ⌝ ∗
-              ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-              ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-              ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
-              KObjectV.deepown_i i' kobj' 1 ∗
-              own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-              own_status_frag γ key uid 1 (KObjectV.status kobj'))
-              ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
-          (∀ err,
-            ( ⌜ conflict_error err ⌝ ∗
-              own_meta_frag γ key uid 1 kmeta ∗
-              own_status_frag γ key uid 1 kstatus)
-              ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
+        (∀ i' kobj',
+          ( ⌜ KObjectV.valid kobj' ⌝ ∗
+            ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+            ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+            ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+            KObjectV.deepown_i i' kobj' 1 ∗
+            own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+            own_status_frag γ key uid 1 (KObjectV.status kobj'))
+            ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
+        (∀ err,
+          ( ⌜ conflict_error err ⌝ ∗
+            own_meta_frag γ key uid 1 kmeta ∗
+            own_status_frag γ key uid 1 kstatus)
+            ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
       )%I
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
@@ -410,20 +410,20 @@ Lemma wp_State__update_status γ l kind namespace i kobj key uid kmeta kstatus :
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 kstatus
   }}}
     l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i)
-    {{{ ret err i' kobj', RET (ret, #err);
-        (⌜ err = interface.nil ⌝ ∗
-          ⌜ ret = #(interface.ok i') ⌝ ∗
-          ⌜ KObjectV.valid kobj' ⌝ ∗
-          ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-          ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-          ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
-          KObjectV.deepown_i i' kobj' 1 ∗
-          own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-          own_status_frag γ key uid 1 (KObjectV.status kobj')) ∨
-        (⌜ err ≠ interface.nil ⌝ ∗
-          ⌜ ret = #interface.nil ⌝ ∗
-          own_meta_frag γ key uid 1 kmeta ∗
-          own_status_frag γ key uid 1 kstatus)
+  {{{ ret err i' kobj', RET (ret, #err);
+      (⌜ err = interface.nil ⌝ ∗
+        ⌜ ret = #(interface.ok i') ⌝ ∗
+        ⌜ KObjectV.valid kobj' ⌝ ∗
+        ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
+        ⌜ ObjectMetaV.updated (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        KObjectV.deepown_i i' kobj' 1 ∗
+        own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+        own_status_frag γ key uid 1 (KObjectV.status kobj')) ∨
+      (⌜ err ≠ interface.nil ⌝ ∗
+        ⌜ ret = #interface.nil ⌝ ∗
+        own_meta_frag γ key uid 1 kmeta ∗
+        own_status_frag γ key uid 1 kstatus)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
