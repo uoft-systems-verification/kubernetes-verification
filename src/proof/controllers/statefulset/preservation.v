@@ -58,14 +58,14 @@ Definition pending_pods_preserved sts pods pods' : Prop :=
   Forall (λ pod, pod ∈ pending_pods sts pods')
     (pending_pods sts pods).
 
-Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dq pods pvcs :
+Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dqs pods pvcs :
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
       "Hown_terminating_pod_frags" ∷
-        ([∗ list] pod ∈ pending_pods sts pods,
+        ([∗ list] pod;pending_dq ∈ pending_pods sts pods;pending_dqs,
           own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
           own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_other_pod_frags" ∷
@@ -90,7 +90,7 @@ Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dq pods
       ⌜ pending_pods_preserved sts pods pods' ⌝ ∗
       own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
       own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod ∈ pending_pods sts pods,
+      ([∗ list] pod;pending_dq ∈ pending_pods sts pods;pending_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       ([∗ list] pod ∈ filter (λ pod,
