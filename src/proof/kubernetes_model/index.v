@@ -884,6 +884,76 @@ Proof.
   iFrame. iFrame "%".
 Qed.
 
+Lemma wp_State__ByIndex_podController_mixed_full γ l indexed_value pods
+    pod_dqs parent_key parent_uid children_keys children_dq :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
+          pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+      "%Hindexed_value_eq" ∷ ⌜ indexed_value =
+        parent_key.(KKey.Namespace') ++ "/"%go ++
+        parent_key.(KKey.Kind') ++ "/"%go ++
+        parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) =
+        filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧
+        slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧
+        slash_free parent_uid ⌝
+  }}}
+    l @! (go.PointerType apimodel.State) @! "ByIndex"
+      #"Pod"%go #"podController"%go #indexed_value
+  {{{ sl interfaces pods' dq', RET (#sl, #interface.nil);
+      "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
+      "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;pods',
+        KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      "%Hstorage_perm" ∷ ⌜ pod_storage_view <$> pods' ≡ₚ
+        pod_storage_view <$> pods ⌝ ∗
+      "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods' ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) =
+          Some (parent_key, parent_uid)) pods' ⌝ ∗
+      "%Hpods_nodup'" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
+          pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid children_dq children_keys
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iApply wp_State__ByIndex_podController_mixed_au.
+  iFrame "#".
+  iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
+  iExists pods, pod_dqs, true, parent_key, parent_uid,
+    children_keys, children_dq.
+  simpl. iFrame "%". iFrame.
+  iIntros (sl interfaces pods_ret dq') "Hpost".
+  iDestruct "Hpost" as
+    "(Hsl & Hpods & %Hmeta_perm & %Hstorage_perm & %Hpods_valid &
+      %Hparent_refs & %Hpods_nodup & Hown_meta_frags &
+      Hown_spec_frags & Hown_children_frag)".
+  specialize (Hstorage_perm eq_refl).
+  iMod "Hmask" as "_".
+  iModIntro. iNext.
+  iApply ("HΦ" $! sl interfaces pods_ret dq').
+  iFrame. iFrame "%".
+Qed.
+
 Lemma wp_State__ByIndex_podController γ l indexed_value pods
     parent_key parent_uid children_keys dq :
   {{{ is_pkg_init apimodel ∗

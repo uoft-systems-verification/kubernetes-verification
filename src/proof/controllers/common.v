@@ -309,13 +309,13 @@ Proof.
     iFrame "%".
 Qed.
 
-Lemma wp_FilterPodsByOwner_full γ l owner owner_kind meta dq1
-    pods pod_dq children_dq children_keys :
+Lemma wp_FilterPodsByOwner_mixed_full γ l owner owner_kind meta dq1
+    pods pod_dqs children_dq children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
+      "Hown_pod_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -346,7 +346,7 @@ Lemma wp_FilterPodsByOwner_full γ l owner owner_kind meta dq1
             meta.(ObjectMetaV.UID'))) pods' ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
-      ([∗ list] pod ∈ pods',
+      ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -373,9 +373,13 @@ Proof.
     "[$Howner_reference]").
   iIntros (index_key) "->". wp_auto.
   iNamedPrefix "Hdeepown_meta" "Htemp_".
-  wp_apply (wp_State__ByIndex_podController_full
-    _ _ _ _ _ _ _ pod_dq children_dq
-    with "[$Hown_pod_frags $Hown_children_frag]").
+  iEval (rewrite big_sepL2_sep) in "Hown_pod_frags".
+  iDestruct "Hown_pod_frags" as
+    "[Hown_pod_meta_frags Hown_pod_spec_frags]".
+  wp_apply (wp_State__ByIndex_podController_mixed_full
+    _ _ _ _ pod_dqs _ _ _ children_dq
+    with "[$Hown_pod_meta_frags $Hown_pod_spec_frags
+      $Hown_children_frag]").
   { iFrame "#". iFrame "%". iPureIntro.
     rewrite Htemp_Hdeepown_namespace Htemp_Hdeepown_name
       Htemp_Hdeepown_uid. done. }
@@ -484,7 +488,101 @@ Proof.
             meta.(ObjectMetaV.UID'))) pods') as Hparent_refs.
     { exact Hindex_Hparent_refs. }
     iFrame "%".
-    iExact "Hindex_Hown_pod_frags".
+    rewrite big_sepL2_sep. iFrame.
+Qed.
+
+Lemma wp_FilterPodsByOwner_full γ l owner owner_kind meta dq1
+    pods pod_dq children_dq children_keys :
+  {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
+      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') children_dq children_keys ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) =
+        filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free owner_kind ∧
+        slash_free meta.(ObjectMetaV.Namespace') ∧
+        slash_free meta.(ObjectMetaV.Name') ∧
+        slash_free meta.(ObjectMetaV.UID') ⌝
+  }}}
+    @! common.FilterPodsByOwner #owner #owner_kind
+  {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
+      sl ↦* ptrs ∗
+      ([∗ list] ptr;pod ∈ ptrs;pods',
+        PodV.deepown_l ptr pod dq') ∗
+      ⌜ pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> pods ⌝ ∗
+      ⌜ Forall PodV.valid pods' ⌝ ∗
+      ⌜ Forall (λ pod,
+        meta_parent_ref pod.(PodV.ObjectMeta') =
+          Some (owner_ref_key owner_kind meta,
+            meta.(ObjectMetaV.UID'))) pods' ⌝ ∗
+      ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      ObjectMetaV.deepown_l owner meta dq1 ∗
+      ([∗ list] pod ∈ pods',
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      own_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') children_dq children_keys
+  }}}.
+Proof.
+  iIntros (Φ) "H HΦ".
+  iDestruct "H" as
+    "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
+      Hown_pod_frags & Hown_children_frag &
+      %Hnodup & %Hdom_eq & %Hslash_free)".
+  set pod_dqs := replicate (length pods) pod_dq.
+  iAssert (([∗ list] pod;dq ∈ pods;pod_dqs,
+      own_meta_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+        pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+        (ObjectSpecV.PodSpec pod.(PodV.Spec'))))%I
+    with "[Hown_pod_frags]" as "Hown_pod_frags".
+  { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
+    iExact "Hown_pod_frags". }
+  iApply (wp_FilterPodsByOwner_mixed_full γ l owner owner_kind meta dq1
+    pods pod_dqs children_dq children_keys with "[-HΦ]").
+  { iFrame "#". iFrame "%". iFrame. }
+  iNext. iIntros (sl ptrs pods' dq') "H".
+  iDestruct "H" as
+    "(Hsl & Hpods & %Hstorage_perm & %Hpods_valid & %Hparent_refs &
+      %Hpods_nodup & Hdeepown_l_meta & Hown_pod_frags &
+      Hown_children_frag)".
+  subst pod_dqs.
+  iEval (rewrite big_sepL2_replicate_r; [done|])
+    in "Hown_pod_frags".
+  iAssert (([∗ list] pod ∈ pods',
+      own_meta_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        (ObjectSpecV.PodSpec pod.(PodV.Spec'))))%I
+    with "[Hown_pod_frags]" as "Hown_pod_frags".
+  { rewrite (own_pod_frags_as_storage_views γ pod_dq pods').
+    rewrite (big_sepL_permutation
+      (own_pod_storage_view_frag γ pod_dq)
+      (pod_storage_view <$> pods') (pod_storage_view <$> pods)
+      Hstorage_perm).
+    iEval (rewrite (own_pod_frags_as_storage_views γ pod_dq pods))
+      in "Hown_pod_frags".
+    iExact "Hown_pod_frags". }
+  iApply "HΦ". iFrame. iFrame "%".
 Qed.
 
 Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1 dq2
