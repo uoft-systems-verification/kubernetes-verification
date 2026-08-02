@@ -263,7 +263,7 @@ Proof.
   rewrite own_meta_frag_erased_meta.
   rewrite /own_spec_frag /kview.own_spec_frag /kview.mk_spec_frag
     /PodV.key /PodV.meta_key /ObjectMetaV.without_resource_version.
-  destruct pod as [typemeta objectmeta spec status].
+  destruct pod as [typemeta objectmeta].
   destruct objectmeta; done.
 Qed.
 
