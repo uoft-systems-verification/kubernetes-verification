@@ -28,8 +28,7 @@ Lemma wp_State__delete_au γ l key options_c options:
           ∀ err kmeta',
             ( ( ⌜ err = interface.nil ⌝ ∗
                 delete_success_post γ key uid parent_key parent_uid children kmeta') ∨
-              ( ⌜ err ≠ interface.nil ⌝ ∗
-                ⌜ conflict_error err ⌝ ∗
+              ( ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
                 own_children_frag γ parent_key parent_uid 1 children)
             )
@@ -103,7 +102,7 @@ Proof.
     { exfalso. apply Hdelete_preconditions_not_match.
       eapply delete_preconditions_match_of_uid_rv_none; done. }
     iMod ("Hclose" $! (interface.ok err0) (KObjectV.objectmeta kobj) with "[Hown_meta_frag Hown_children_frag]") as "HΦ".
-    { iRight. iSplit; first done. iSplit; first done. iFrame. }
+    { iRight. iSplit; first done. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with

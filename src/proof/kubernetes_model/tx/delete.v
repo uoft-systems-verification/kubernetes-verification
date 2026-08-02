@@ -520,7 +520,8 @@ Proof.
     wp_auto.
     wp_for_post.
     iApply "HΦ".
-  - iDestruct "Hconflict" as "(%Herr_ne & %Hconflict & Hown_meta_frag & Hown_children_frag)".
+  - iDestruct "Hconflict" as
+      "(%Hconflict & Hown_meta_frag & Hown_children_frag)".
     iDestruct "Hclose" as "[Habort _]".
     iMod ("Habort" with "[Hown_meta_frag Hown_children_frag]") as "Hau".
     { iFrame. iFrame "%". }
