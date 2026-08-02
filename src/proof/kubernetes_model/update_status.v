@@ -1,6 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export inv common update.
-From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
+From New.proof.kubernetes_model Require Export common_update.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

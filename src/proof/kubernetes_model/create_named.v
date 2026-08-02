@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export create.
+From New.proof.kubernetes_model Require Export common_create.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

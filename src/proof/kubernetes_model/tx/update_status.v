@@ -1,6 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export update_status.
 From New.proof.kubernetes_model Require Import get.
+From New.proof.kubernetes_model.tx Require Export common_update.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From iris.bi.lib Require Import atomic.
 
@@ -9,23 +10,6 @@ Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-Lemma update_status_tx_valid_simple_update_set_resource_version m_old m rv :
-  ObjectMetaV.valid_simple_update m_old m →
-  ObjectMetaV.valid_simple_update
-    m_old (m <| ObjectMetaV.ResourceVersion' := rv |>).
-Proof.
-  rewrite /ObjectMetaV.valid_simple_update.
-  destruct m_old, m; simpl; intuition congruence.
-Qed.
-
-Lemma update_status_tx_objectmeta_updated_unset_resource_version_input m rv m' :
-  ObjectMetaV.updated (m <| ObjectMetaV.ResourceVersion' := rv |>) m' →
-  ObjectMetaV.updated m m'.
-Proof.
-  rewrite /ObjectMetaV.updated.
-  destruct m, m'; simpl; intuition congruence.
-Qed.
 
 Lemma wp_State__updateStatusTx_au γ l kind namespace i kobj :
   ∀ Φ,
@@ -184,7 +168,7 @@ Proof.
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
     rewrite objectmeta_update_objectmeta.
-    apply update_status_tx_valid_simple_update_set_resource_version. done. }
+    apply valid_simple_update_set_resource_version. done. }
   iSplit.
   { iPureIntro. subst kobj_rv.
     rewrite KObjectV.status_update_objectmeta. done. }
@@ -204,7 +188,7 @@ Proof.
       iSplit.
       { iPureIntro. subst kobj_rv kmeta_rv.
         rewrite objectmeta_update_objectmeta in Hmeta_updated.
-        eapply update_status_tx_objectmeta_updated_unset_resource_version_input. done. }
+        eapply objectmeta_updated_unset_resource_version_input. done. }
       iSplit.
       { iPureIntro. subst kobj_rv.
         rewrite KObjectV.status_update_objectmeta in Hstatus_updated. done. }

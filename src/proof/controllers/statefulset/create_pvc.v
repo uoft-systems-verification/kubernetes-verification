@@ -1,6 +1,7 @@
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
 From New.proof.kubernetes_model Require Export create_named_orphan get_reserved.
+From New.proof.kubernetes_model Require Import get.
 From New.proof.map Require Import for_range.
 
 Section proof.
