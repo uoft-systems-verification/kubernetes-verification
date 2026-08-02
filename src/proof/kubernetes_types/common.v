@@ -538,14 +538,47 @@ Proof.
   - apply decimal_string_label_alphanumeric.
 Qed.
 
-(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
-Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+Definition ascii_lower_byte (b : w8) : w8 :=
+  if decide (65 ≤ uint.Z b ≤ 90)%Z then W8 (uint.Z b + 32) else b.
+
+Definition ascii_lower (s : go_string) : go_string :=
+  ascii_lower_byte <$> s.
+
+(* Kubernetes accepts an annotation entry exactly when its key is a qualified
+   name after case-folding. Annotation values have no per-entry syntax or
+   length restriction; only the aggregate map-size limit below applies.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L43-L55 *)
+Definition valid_annotation (name value : go_string) : Prop :=
+  valid_label_name (ascii_lower name).
+
+Definition annotations_size (annotations : gmap go_string go_string) : nat :=
+  sum_list
+    (List.map (λ kv : go_string * go_string,
+      (length kv.1 + length kv.2)%nat)
+      (map_to_list annotations)).
+
+(* Kubernetes treats nil and empty annotation maps equivalently, validates
+   every key, and limits the sum of key and value byte lengths to 256 KiB.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L43-L66 *)
+Definition valid_annotations
+    (annotations : option (gmap go_string go_string)) : Prop :=
+  match annotations with
+  | None => True
+  | Some annotations =>
+      map_Forall valid_annotation annotations ∧
+      annotations_size annotations ≤ 256 * 1024
+  end.
 
 (* Materializing a nil annotation map as an allocated empty map does not
    change the entries checked by Kubernetes annotation validation. *)
-Axiom valid_annotations_default : ∀ annotations,
+Lemma valid_annotations_default : ∀ annotations,
   valid_annotations annotations →
   valid_annotations (Some (default ∅ annotations)).
+Proof.
+  intros [annotations|] Hvalid; first exact Hvalid.
+  split; first apply map_Forall_empty.
+  done.
+Qed.
 
 Global Instance type_meta_eq_dec : EqDecision v1.TypeMeta.t.
 Proof. solve_decision. Defined.
