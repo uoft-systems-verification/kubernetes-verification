@@ -124,6 +124,30 @@ Proof.
   exact IH.
 Qed.
 
+Definition pod_storage_view (pod : PodV.t) : ObjectMetaV.t * ObjectSpecV.t :=
+  (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'),
+   ObjectSpecV.PodSpec pod.(PodV.Spec')).
+
+Definition kobject_storage_view (obj : KObjectV.t) :
+    ObjectMetaV.t * ObjectSpecV.t :=
+  (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj),
+   KObjectV.spec obj).
+
+Lemma pod_storage_view_fmap (pods : list PodV.t) :
+  kobject_storage_view <$> (KObjectV.Pod <$> pods) =
+    pod_storage_view <$> pods.
+Proof.
+  induction pods as [|pod pods IH]; simpl; [done|].
+  f_equal. exact IH.
+Qed.
+
+Definition own_pod_storage_view_frag γ dq
+    (view : ObjectMetaV.t * ObjectSpecV.t) : iProp Σ :=
+  own_meta_frag γ (PodV.meta_key view.1)
+    view.1.(ObjectMetaV.UID') dq view.1 ∗
+  own_spec_frag γ (PodV.meta_key view.1)
+    view.1.(ObjectMetaV.UID') dq view.2.
+
 Lemma child_pod_state_dom_eq (abs_state : gmap KKey.t KObjectV.t) parent_key parent_uid :
   dom (filter (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
     (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state)) =
@@ -218,6 +242,29 @@ Proof.
   apply big_sepL_proper.
   intros k meta Hlookup.
   apply own_meta_frag_erased_meta.
+Qed.
+
+Lemma own_pod_frags_as_storage_views γ dq pods :
+  ([∗ list] pod ∈ pods,
+    own_meta_frag γ (PodV.key pod)
+      pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+      pod.(PodV.ObjectMeta') ∗
+    own_spec_frag γ (PodV.key pod)
+      pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ⊣⊢
+  ([∗ list] view ∈ pod_storage_view <$> pods,
+    own_pod_storage_view_frag γ dq view).
+Proof.
+  rewrite -(big_sepL_fmap pod_storage_view
+    (λ _ view, own_pod_storage_view_frag γ dq view) pods).
+  apply big_sepL_proper.
+  intros i pod Hlookup.
+  rewrite /own_pod_storage_view_frag /pod_storage_view /=.
+  rewrite own_meta_frag_erased_meta.
+  rewrite /own_spec_frag /kview.own_spec_frag /kview.mk_spec_frag
+    /PodV.key /PodV.meta_key /ObjectMetaV.without_resource_version.
+  destruct pod as [typemeta objectmeta spec status].
+  destruct objectmeta; done.
 Qed.
 
 Lemma spec_pods_is_permutation_of_child_pod_state_for_erased_meta
@@ -348,15 +395,214 @@ Proof.
       Hnodup Hdom Hlook_up).
 Qed.
 
+Lemma spec_pods_is_permutation_of_child_pod_state_for_storage_view
+    (spec_pods : list PodV.t) (abs_state : gmap KKey.t KObjectV.t)
+    parent_key parent_uid :
+  NoDup (PodV.key <$> spec_pods) →
+  list_to_set (PodV.key <$> spec_pods) =
+    filter (λ key, KKey.Kind' key = "Pod"%go)
+      (dom (filter
+        (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+        abs_state)) →
+  Forall
+    (λ pod, ∃ obj,
+      abs_state !! PodV.key pod = Some obj ∧
+      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∧
+      ObjectMetaV.equiv_except_resource_version
+        (KObjectV.objectmeta obj) pod.(PodV.ObjectMeta') ∧
+      KObjectV.spec obj = ObjectSpecV.PodSpec pod.(PodV.Spec'))
+    spec_pods →
+  pod_storage_view <$> spec_pods ≡ₚ
+    kobject_storage_view <$>
+      (map_to_list
+        (filter
+          (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+          (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state))).*2.
+Proof.
+  intros Hnodup Hdom Hlookup.
+  set child_pod_state := filter
+    (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+    (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state).
+  assert (Hdom_child :
+      list_to_set (PodV.key <$> spec_pods) = dom child_pod_state).
+  { rewrite /child_pod_state child_pod_state_dom_eq. exact Hdom. }
+  assert (Hentries_nodup :
+      NoDup ((map (λ pod, (PodV.key pod, pod_storage_view pod))
+        spec_pods).*1)).
+  { rewrite pair_fmap_keys. exact Hnodup. }
+  assert (Hview_map_eq :
+      (list_to_map
+        (map (λ pod, (PodV.key pod, pod_storage_view pod)) spec_pods)
+        : gmap KKey.t (ObjectMetaV.t * ObjectSpecV.t)) =
+      kobject_storage_view <$> child_pod_state).
+  {
+    apply map_eq. intros key.
+    destruct ((list_to_map
+      (map (λ pod, (PodV.key pod, pod_storage_view pod)) spec_pods)
+      : gmap KKey.t (ObjectMetaV.t * ObjectSpecV.t)) !! key)
+      as [view|] eqn:Hview.
+    - apply elem_of_list_to_map_2 in Hview as Hin.
+      apply list_elem_of_fmap in Hin as (pod & Hpair & Hin).
+      inversion Hpair; subst key view.
+      rewrite Forall_forall in Hlookup.
+      pose proof Hin as Hin_elem.
+      rewrite list_elem_of_In in Hin.
+      destruct (Hlookup pod Hin) as
+        (obj & Hlookup_abs & Huid & Hmeta & Hspec).
+      assert (PodV.key pod ∈ dom child_pod_state) as Hkey_child.
+      { rewrite -Hdom_child.
+        apply elem_of_list_to_set.
+        apply list_elem_of_fmap.
+        exists pod. split; [done|exact Hin_elem]. }
+      apply elem_of_dom in Hkey_child as [obj' Hlookup_child].
+      rewrite lookup_fmap Hlookup_child /=.
+      apply map_lookup_filter_Some in Hlookup_child as
+        [Hlookup_pod_state Hparent].
+      apply map_lookup_filter_Some in Hlookup_pod_state as
+        [Hlookup_abs' Hkind].
+      rewrite Hlookup_abs in Hlookup_abs'. injection Hlookup_abs' as <-.
+      unfold pod_storage_view, kobject_storage_view.
+      by rewrite Hmeta Hspec.
+    - rewrite lookup_fmap.
+      destruct (child_pod_state !! key) as [obj|]
+        eqn:Hlookup_child; [|reflexivity].
+      apply not_elem_of_dom in Hview.
+      exfalso. apply Hview.
+      rewrite dom_list_to_map_L pair_fmap_keys Hdom_child.
+      apply elem_of_dom. exists obj. exact Hlookup_child.
+  }
+  pose proof (Permutation_sym
+    (map_to_list_to_map
+      (map (λ pod, (PodV.key pod, pod_storage_view pod)) spec_pods)
+      Hentries_nodup)) as Hperm_pairs.
+  pose proof (Permutation_map snd Hperm_pairs) as Hperm_views.
+  replace
+    (map snd
+      (map (λ pod : PodV.t, (PodV.key pod, pod_storage_view pod))
+        spec_pods))
+    with (pod_storage_view <$> spec_pods) in Hperm_views.
+  2: {
+    change
+      (map snd
+        (map (λ pod : PodV.t, (PodV.key pod, pod_storage_view pod))
+          spec_pods))
+      with
+        ((map (λ pod : PodV.t, (PodV.key pod, pod_storage_view pod))
+          spec_pods).*2).
+    symmetry. apply pair_fmap_values.
+  }
+  change
+    ((map_to_list
+      (list_to_map
+        (map (λ pod : PodV.t, (PodV.key pod, pod_storage_view pod))
+          spec_pods)
+        : gmap KKey.t (ObjectMetaV.t * ObjectSpecV.t))).*2)
+    with
+      (snd <$> map_to_list
+        (list_to_map
+          (map (λ pod : PodV.t, (PodV.key pod, pod_storage_view pod))
+            spec_pods)
+          : gmap KKey.t (ObjectMetaV.t * ObjectSpecV.t)))
+    in Hperm_views.
+  rewrite Hview_map_eq in Hperm_views.
+  replace
+    (map snd
+      (map_to_list
+        (kobject_storage_view <$> child_pod_state)))
+    with
+      (kobject_storage_view <$> (map_to_list child_pod_state).*2)
+    in Hperm_views.
+  2: symmetry; apply snd_fmap_map_to_list_fmap.
+  exact Hperm_views.
+Qed.
+
+Lemma pods_is_permutation_of_spec_pods_for_storage_view
+    (pods spec_pods : list PodV.t) (abs_state : gmap KKey.t KObjectV.t)
+    parent_key parent_uid :
+  KObjectV.Pod <$> pods ≡ₚ
+    (map_to_list
+      (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state)).*2 →
+  NoDup (PodV.key <$> spec_pods) →
+  list_to_set (PodV.key <$> spec_pods) =
+    filter (λ key, KKey.Kind' key = "Pod"%go)
+      (dom (filter
+        (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+        abs_state)) →
+  Forall
+    (λ pod, ∃ obj,
+      abs_state !! PodV.key pod = Some obj ∧
+      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∧
+      ObjectMetaV.equiv_except_resource_version
+        (KObjectV.objectmeta obj) pod.(PodV.ObjectMeta') ∧
+      KObjectV.spec obj = ObjectSpecV.PodSpec pod.(PodV.Spec'))
+    spec_pods →
+  pod_storage_view <$>
+    filter
+      (λ pod, obj_parent_ref (KObjectV.Pod pod) =
+        Some (parent_key, parent_uid)) pods ≡ₚ
+  pod_storage_view <$> spec_pods.
+Proof.
+  intros Hperm Hnodup Hdom Hlookup.
+  transitivity
+    (kobject_storage_view <$>
+      (map_to_list
+        (filter
+          (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+          (filter (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state))).*2).
+  - set pod_state := filter
+      (λ kv, KKey.Kind' kv.1 = "Pod"%go) abs_state.
+    set child_pod_state := filter
+      (λ '(_, obj), obj_parent_ref obj = Some (parent_key, parent_uid))
+      pod_state.
+    assert (Hpod_perm :
+      KObjectV.Pod <$>
+        filter
+          (λ pod, obj_parent_ref (KObjectV.Pod pod) =
+            Some (parent_key, parent_uid)) pods ≡ₚ
+      (map_to_list child_pod_state).*2).
+    { pose proof (perm_filter
+        (λ obj : KObjectV.t,
+          obj_parent_ref obj = Some (parent_key, parent_uid))
+        (KObjectV.Pod <$> pods) (map_to_list pod_state).*2 Hperm)
+        as Hfiltered.
+      rewrite filter_pod_parent_ref_fmap in Hfiltered.
+      eapply Permutation_trans; [exact Hfiltered|].
+      apply filter_map_to_list_values_perm. }
+    pose proof (Permutation_map kobject_storage_view Hpod_perm)
+      as Hview_perm.
+    transitivity
+      (kobject_storage_view <$>
+        (KObjectV.Pod <$>
+          filter
+            (λ pod, obj_parent_ref (KObjectV.Pod pod) =
+              Some (parent_key, parent_uid)) pods)).
+    + rewrite pod_storage_view_fmap. reflexivity.
+    + exact Hview_perm.
+  - apply Permutation_sym.
+    exact (spec_pods_is_permutation_of_child_pod_state_for_storage_view
+      spec_pods abs_state parent_key parent_uid
+      Hnodup Hdom Hlookup).
+Qed.
+
 Lemma wp_State__ByIndex_podController_mixed_au γ l indexed_value :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    |={⊤,∅}=> ∃ pods pod_dqs parent_key parent_uid children_keys children_dq,
+    |={⊤,∅}=> ∃ pods pod_dqs (include_specs : bool) parent_key parent_uid
+        children_keys children_dq,
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
           pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_spec_frags" ∷
+        (if include_specs then
+          ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+            own_spec_frag γ (PodV.key pod)
+              pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+              (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+         else True)%I ∗
       "Hown_children_frag" ∷
         own_children_frag γ parent_key parent_uid children_dq children_keys ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
@@ -372,12 +618,23 @@ Lemma wp_State__ByIndex_podController_mixed_au γ l indexed_value :
         ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
         ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
           ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods) ⌝ ∗
+        ⌜ include_specs = true →
+          pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> pods ⌝ ∗
         ⌜ Forall PodV.valid pods' ⌝ ∗
+        ⌜ Forall (λ pod,
+          obj_parent_ref (KObjectV.Pod pod) =
+            Some (parent_key, parent_uid)) pods' ⌝ ∗
         ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
         ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
           own_meta_frag γ (PodV.key pod)
             pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
             pod_dq pod.(PodV.ObjectMeta')) ∗
+        (if include_specs then
+          ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+            own_spec_frag γ (PodV.key pod)
+              pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+              (ObjectSpecV.PodSpec pod.(PodV.Spec')))
+         else True)%I ∗
         own_children_frag γ parent_key parent_uid children_dq children_keys
           ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V
       )
@@ -494,8 +751,12 @@ Proof.
       iFrame.
   - iApply fupd_wp.
     iMod "Hau" as
-      (spec_pods pod_dqs parent_key parent_uid children_keys children_dq)
-      "H". iNamed "H".
+      (spec_pods pod_dqs include_specs parent_key parent_uid
+        children_keys children_dq)
+      "H".
+    iDestruct "H" as
+      "(Hown_meta_frags & Hown_spec_frags & Hown_children_frag &
+        %Hnodup & %Hindexed_value_eq & %Hdom_eq & %Hslash_free & Hclose)".
     assert (sint.nat i = length pods) as ->.
     { rewrite -Hlen_pods.
       rewrite <- (map_length interface.ok interfaces).
@@ -503,7 +764,8 @@ Proof.
     rewrite take_ge. 1: done.
     iPoseProof (kview.own_meta_list_exists_dqs
       PodV.key PodV.ObjectMeta' spec_pods pod_dqs
-      with "Hinv_Hown_abs Hown_meta_frags") as "(%Hlook_up & %Huid_in)".
+      with "Hinv_Hown_abs Hown_meta_frags") as
+      "(%Hlook_up & %Huid_in)".
     iPoseProof (cview.own_auth_frag_valid with "Hinv_Hown_children Hown_children_frag")
       as "(%Hchildren_keys_eq & %Hin_used_reference)".
     destruct Hslash_free as (Hkind_slash_free & Hns_slash_free & Hname_slash_free & Huid_slash_free).
@@ -520,20 +782,50 @@ Proof.
         exact Hdom_eq.
       - exact Hlook_up.
     }
-    iMod ("Hclose" $! sl' interfaces' returned_pods (DfracOwn 1)
-      with "[Hown_meta_frags Hown_children_frag Hsl' Hlist_pre]") as "HΦ".
-    { iFrame "Hown_meta_frags Hown_children_frag Hsl' Hlist_pre".
-      iPureIntro. split_and!.
-      - exact Hmeta_perm.
-      - apply Forall_filter. done.
-      - eapply sublist_NoDup; [exact Hpods_nodup|].
-        apply fmap_sublist, sublist_filter.
-    }
-    iModIntro.
-    iCombineNamed "Hinv_*" as "H".
-    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
-    { iNamed "H". iFrame. iFrame "#". iPureIntro. split_and!. all: done. }
-    iApply "HΦ".
+    destruct include_specs.
+    all: iSimpl in "Hown_spec_frags".
+    1: iPoseProof (kview.own_meta_spec_list_exists_dqs_sep
+        PodV.key PodV.ObjectMeta'
+        (λ pod, ObjectSpecV.PodSpec pod.(PodV.Spec'))
+        spec_pods pod_dqs
+        with "Hinv_Hown_abs Hown_meta_frags Hown_spec_frags")
+        as "%Hlook_up_full".
+    1: assert (Hstorage_perm : true = true →
+          pod_storage_view <$> returned_pods ≡ₚ
+            pod_storage_view <$> spec_pods).
+    1: { intros _.
+        apply (pods_is_permutation_of_spec_pods_for_storage_view
+          pods spec_pods abs_state parent_key parent_uid).
+        - exact Hlist_result.
+        - exact Hnodup.
+        - rewrite Hchildren_keys_eq in Hdom_eq. exact Hdom_eq.
+        - exact Hlook_up_full. }
+    2: assert (Hstorage_perm : false = true →
+          pod_storage_view <$> returned_pods ≡ₚ
+            pod_storage_view <$> spec_pods) by discriminate.
+    Ltac close_index_case gammax lx slx interfacesx returned
+        Hmetax Hstoragex Hvalidx Hnodupx :=
+      iMod ("Hclose" $! slx interfacesx returned (DfracOwn 1)
+        with "[Hown_meta_frags Hown_spec_frags Hown_children_frag Hsl' Hlist_pre]") as "HΦ";
+      [ iFrame "Hown_meta_frags Hown_spec_frags Hown_children_frag Hsl' Hlist_pre";
+        iPureIntro; split_and!;
+        [ exact Hmetax
+        | exact Hstoragex
+        | apply Forall_filter; exact Hvalidx
+        | apply Forall_forall; intros pod Hpod;
+          rewrite -list_elem_of_In in Hpod;
+          apply list_elem_of_filter in Hpod as [Hparent _]; exact Hparent
+        | eapply sublist_NoDup; [exact Hnodupx|];
+          apply fmap_sublist, sublist_filter ]
+      | ];
+      iModIntro;
+      iCombineNamed "Hinv_*" as "H";
+      wp_apply (wp_Mutex__Unlock _ (kubernetes_inv gammax lx)
+        with "[$Hown_Mutex H]");
+      [ iNamed "H"; iFrame; iFrame "#"; iPureIntro; split_and!; done
+      | iApply "HΦ" ].
+    all: close_index_case γ l sl' interfaces' returned_pods
+      Hmeta_perm Hstorage_perm Hpods_valid Hpods_nodup.
 Qed.
 
 Lemma wp_State__ByIndex_podController_mixed γ l indexed_value pods
@@ -562,6 +854,9 @@ Lemma wp_State__ByIndex_podController_mixed γ l indexed_value pods
       "%Hmeta_perm" ∷ ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods) ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods' ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) =
+          Some (parent_key, parent_uid)) pods' ⌝ ∗
       "%Hpods_nodup'" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
@@ -573,12 +868,20 @@ Lemma wp_State__ByIndex_podController_mixed γ l indexed_value pods
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iApply wp_State__ByIndex_podController_mixed_au.
-  iFrame "#". iFrame "%". iFrame.
+  iFrame "#".
   iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
+  iExists pods, pod_dqs, false, parent_key, parent_uid,
+    children_keys, children_dq.
+  simpl. iFrame "%". iFrame.
   iIntros (sl interfaces pods_ret dq') "Hpost".
+  iDestruct "Hpost" as
+    "(Hsl & Hpods & %Hmeta_perm & %Hstorage_perm & %Hpods_valid &
+      %Hparent_refs & %Hpods_nodup & Hown_meta_frags & _ &
+      Hown_children_frag)".
   iMod "Hmask" as "_".
   iModIntro. iNext.
-  iApply ("HΦ" $! sl interfaces pods_ret dq' with "Hpost").
+  iApply ("HΦ" $! sl interfaces pods_ret dq').
+  iFrame. iFrame "%".
 Qed.
 
 Lemma wp_State__ByIndex_podController γ l indexed_value pods
@@ -618,6 +921,9 @@ Lemma wp_State__ByIndex_podController γ l indexed_value pods
           ObjectMetaV.without_resource_version <$>
             (PodV.ObjectMeta' <$> pods) ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods' ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) =
+          Some (parent_key, parent_uid)) pods' ⌝ ∗
       "%Hpods_nodup'" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       "Hown_meta_frags" ∷ ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod)
@@ -654,6 +960,123 @@ Proof.
     with "[Hown_meta_frags]" as "Hown_meta_frags".
   { rewrite own_meta_frag_list_as_erased_metas Hmeta_perm.
     iExact "Hown_meta_frags". }
+  iApply "HΦ". iFrame. iFrame "%".
+Qed.
+
+Lemma wp_State__ByIndex_podController_full γ l indexed_value pods
+    parent_key parent_uid children_keys pod_dq children_dq :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+      "%Hindexed_value_eq" ∷
+        ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
+          parent_key.(KKey.Kind') ++ "/"%go ++
+          parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷
+        ⌜ list_to_set (PodV.key <$> pods) =
+          filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷
+        ⌜ slash_free parent_key.(KKey.Kind') ∧
+          slash_free parent_key.(KKey.Namespace') ∧
+          slash_free parent_key.(KKey.Name') ∧
+          slash_free parent_uid ⌝
+  }}}
+    l @! (go.PointerType apimodel.State) @! "ByIndex"
+      #"Pod"%go #"podController"%go #indexed_value
+  {{{ sl interfaces pods' dq', RET (#sl, #interface.nil);
+      "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
+      "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;pods',
+        KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      "%Hstorage_perm" ∷
+        ⌜ pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> pods ⌝ ∗
+      "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods' ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) =
+          Some (parent_key, parent_uid)) pods' ⌝ ∗
+      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods',
+        own_meta_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷
+        own_children_frag γ parent_key parent_uid children_dq children_keys
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iEval (rewrite big_sepL_sep) in "Hown_pod_frags".
+  iDestruct "Hown_pod_frags" as
+    "[Hown_meta_frags Hown_spec_frags]".
+  set pod_dqs := replicate (length pods) pod_dq.
+  iAssert (([∗ list] pod;dq ∈ pods;pod_dqs,
+      own_meta_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+        pod.(PodV.ObjectMeta')))%I
+    with "[Hown_meta_frags]" as "Hown_meta_frags".
+  { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
+    iExact "Hown_meta_frags". }
+  iAssert (([∗ list] pod;dq ∈ pods;pod_dqs,
+      own_spec_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I)
+    with "[Hown_spec_frags]" as "Hown_spec_frags".
+  { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
+    iExact "Hown_spec_frags". }
+  iApply wp_State__ByIndex_podController_mixed_au.
+  iFrame "#".
+  iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
+  iExists pods, pod_dqs, true, parent_key, parent_uid,
+    children_keys, children_dq.
+  simpl. iFrame "%". iFrame.
+  iIntros (sl interfaces pods' dq') "Hpost".
+  iDestruct "Hpost" as
+    "(Hsl & Hpods & %Hmeta_perm & %Hstorage_perm & %Hpods_valid &
+      %Hparent_refs & %Hpods_nodup & Hown_meta_frags &
+      Hown_spec_frags & Hown_children_frag)".
+  specialize (Hstorage_perm eq_refl).
+  iMod "Hmask" as "_".
+  subst pod_dqs.
+  iEval (rewrite big_sepL2_replicate_r; [done|])
+    in "Hown_meta_frags".
+  iEval (rewrite big_sepL2_replicate_r; [done|])
+    in "Hown_spec_frags".
+  iAssert (([∗ list] pod ∈ pods,
+      own_meta_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I)
+    with "[Hown_meta_frags Hown_spec_frags]" as "Hown_pod_frags".
+  { rewrite big_sepL_sep. iFrame. }
+  iAssert (([∗ list] pod ∈ pods',
+      own_meta_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I)
+    with "[Hown_pod_frags]" as "Hown_pod_frags".
+  { rewrite (own_pod_frags_as_storage_views γ pod_dq pods').
+    rewrite (big_sepL_permutation
+      (own_pod_storage_view_frag γ pod_dq)
+      (pod_storage_view <$> pods') (pod_storage_view <$> pods)
+      Hstorage_perm).
+    iEval (rewrite (own_pod_frags_as_storage_views γ pod_dq pods))
+      in "Hown_pod_frags".
+    iExact "Hown_pod_frags". }
+  iModIntro. iNext.
   iApply "HΦ". iFrame. iFrame "%".
 Qed.
 

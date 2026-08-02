@@ -48,6 +48,23 @@ Lemma valid_update_refl spec :
   valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
+(* The translated PVC spec is still abstract, so the strongest concrete
+   create relation currently expressible is that the output has received all
+   standalone storage normalization. *)
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+(* StatefulSet volume-claim templates receive schema defaults but do not pass
+   through the standalone PVC REST strategy. *)
+Definition embedded_created (_input stored : t) : Prop :=
+  valid_embedded stored.
+
+(* Update callers require the submitted PVC to satisfy [valid], whose
+   [standalone_storage_normalized] conjunct includes the currently abstract
+   defaulting and data-source normalization. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
+
 Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -69,6 +86,12 @@ Global Existing Instance eq_dec.
 (* This includes validation and feature-gated normalization of PVC status. *)
 Axiom valid: t → Prop.
 Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
+
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.

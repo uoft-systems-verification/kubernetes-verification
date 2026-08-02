@@ -349,7 +349,10 @@ func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
 	return nil
 }
 
-func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
+// reconcileDesiredPods returns true only after every desired Pod has been
+// processed. A false result without an error tells the caller to stop this
+// reconciliation after creating a missing Pod or observing a terminating Pod.
+func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 	end := endOrdinalOf(set)
 
 	for ordinal := 0; ordinal <= end; ordinal++ {
@@ -357,45 +360,70 @@ func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
 		if pod == nil {
 			newPod, err := newStatefulSetPod(set, ordinal)
 			if err != nil {
-				return err
+				return false, err
 			}
 			if err := createStatefulPod(set, newPod); err != nil {
-				return err
+				return false, err
 			}
-			return nil
+			return false, nil
 		}
 
 		if isTerminating(pod) {
-			return nil
+			return false, nil
 		}
 
 		if err := createPersistentVolumeClaims(set, pod); err != nil {
-			return err
+			return false, err
 		}
 
 		if err := updateStatefulPod(set, pod); err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	if condemned := firstCondemnedPod(set, pods); condemned != nil {
-		if isTerminating(condemned) {
-			return nil
-		}
-		if err := deletePod(condemned); err != nil {
-			return err
-		}
+	return true, nil
+}
+
+// reconcileCondemnedPod returns true when there is no condemned Pod and
+// reconciliation may continue. After observing or deleting one condemned Pod,
+// the caller stops this reconciliation and waits for the next observed state.
+func reconcileCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
+	condemned := firstCondemnedPod(set, pods)
+	if condemned == nil {
+		return true, nil
+	}
+	if isTerminating(condemned) {
+		return false, nil
+	}
+	if err := deletePod(condemned); err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
+func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) error {
+	outdated := largestOutdatedPod(set, pods)
+	if outdated == nil {
 		return nil
 	}
+	if isTerminating(outdated) {
+		return nil
+	}
+	return deletePod(outdated)
+}
 
-	if outdated := largestOutdatedPod(set, pods); outdated != nil {
-		if isTerminating(outdated) {
-			return nil
-		}
-		return deletePod(outdated)
+func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
+	continueReconcile, err := reconcileDesiredPods(set, pods)
+	if err != nil || !continueReconcile {
+		return err
 	}
 
-	return nil
+	continueReconcile, err = reconcileCondemnedPod(set, pods)
+	if err != nil || !continueReconcile {
+		return err
+	}
+
+	return reconcileOutdatedPod(set, pods)
 }
 
 func syncStatefulSet(namespace, name string) error {

@@ -2091,6 +2091,96 @@ Proof.
   eapply (auth_spec_valid (state, used_uid) k uid dq spec Hvalid obj); simpl; eauto.
 Qed.
 
+Lemma own_meta_spec_list_exists {γ state used_uid A}
+    (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t)
+    (spec_of : A → ObjectSpecV.t) xs dq :
+  own_auth γ state used_uid -∗
+  ([∗ list] x ∈ xs,
+    own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (meta_of x) ∗
+    own_spec_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (spec_of x)) -∗
+  ⌜ Forall (λ x, ∃ obj,
+      state !! key_of x = Some obj ∧
+      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+        (meta_of x).(ObjectMetaV.UID') ∧
+      ObjectMetaV.equiv_except_resource_version
+        (KObjectV.objectmeta obj) (meta_of x) ∧
+      KObjectV.spec obj = spec_of x) xs ⌝.
+Proof.
+  iIntros "Hauth Hxs".
+  iInduction xs as [|x xs] "IH".
+  - rewrite big_sepL_nil.
+    iPureIntro. constructor.
+  - rewrite big_sepL_cons.
+    iDestruct "Hxs" as "[[Hmeta Hspec] Hxs]".
+    iPoseProof (own_meta_exists with "Hauth Hmeta") as "%Hmeta".
+    destruct Hmeta as (obj & Hlookup & Huid & Hmeta_eq & Huid_in).
+    iPoseProof (own_spec_exists with "Hauth Hspec") as "%Hspec".
+    iDestruct ("IH" with "Hauth Hxs") as "%Htail".
+    iPureIntro. constructor; last exact Htail.
+    exists obj. split_and!; try done.
+    by apply Hspec.
+Qed.
+
+Lemma own_meta_spec_list_exists_dqs {γ state used_uid A}
+    (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t)
+    (spec_of : A → ObjectSpecV.t) xs dqs :
+  own_auth γ state used_uid -∗
+  ([∗ list] x;dq ∈ xs;dqs,
+    own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (meta_of x) ∗
+    own_spec_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (spec_of x)) -∗
+  ⌜ Forall (λ x, ∃ obj,
+      state !! key_of x = Some obj ∧
+      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+        (meta_of x).(ObjectMetaV.UID') ∧
+      ObjectMetaV.equiv_except_resource_version
+        (KObjectV.objectmeta obj) (meta_of x) ∧
+      KObjectV.spec obj = spec_of x) xs ⌝.
+Proof.
+  iIntros "Hauth Hxs".
+  iInduction xs as [|x xs] "IH" forall (dqs).
+  - iDestruct (big_sepL2_length with "Hxs") as %Hlen.
+    destruct dqs; simpl in Hlen; last congruence.
+    iPureIntro. constructor.
+  - iDestruct (big_sepL2_length with "Hxs") as %Hlen.
+    destruct dqs as [|dq dqs]; simpl in Hlen; first congruence.
+    rewrite big_sepL2_cons.
+    iDestruct "Hxs" as "[[Hmeta Hspec] Hxs]".
+    iPoseProof (own_meta_exists with "Hauth Hmeta") as "%Hmeta".
+    destruct Hmeta as (obj & Hlookup & Huid & Hmeta_eq & Huid_in).
+    iPoseProof (own_spec_exists with "Hauth Hspec") as "%Hspec".
+    iDestruct ("IH" with "Hauth Hxs") as "%Htail".
+    iPureIntro. constructor; last exact Htail.
+    exists obj. split_and!; try done.
+    by apply Hspec.
+Qed.
+
+Lemma own_meta_spec_list_exists_dqs_sep {γ state used_uid A}
+    (key_of : A → KKey.t) (meta_of : A → ObjectMetaV.t)
+    (spec_of : A → ObjectSpecV.t) xs dqs :
+  own_auth γ state used_uid -∗
+  ([∗ list] x;dq ∈ xs;dqs,
+    own_meta_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (meta_of x)) -∗
+  ([∗ list] x;dq ∈ xs;dqs,
+    own_spec_frag γ (key_of x) (meta_of x).(ObjectMetaV.UID') dq
+      (spec_of x)) -∗
+  ⌜ Forall (λ x, ∃ obj,
+      state !! key_of x = Some obj ∧
+      (KObjectV.objectmeta obj).(ObjectMetaV.UID') =
+        (meta_of x).(ObjectMetaV.UID') ∧
+      ObjectMetaV.equiv_except_resource_version
+        (KObjectV.objectmeta obj) (meta_of x) ∧
+      KObjectV.spec obj = spec_of x) xs ⌝.
+Proof.
+  iIntros "Hauth Hmeta Hspec".
+  iApply (own_meta_spec_list_exists_dqs with "Hauth").
+  rewrite big_sepL2_sep. iFrame.
+Qed.
+
 Lemma own_status_exists {γ state used_uid k uid dq status}:
   own_auth γ state used_uid -∗
   own_status_frag γ k uid dq status -∗

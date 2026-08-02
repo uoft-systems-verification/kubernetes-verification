@@ -68,6 +68,37 @@ Proof.
   - eapply Permutation_trans with (l' := filter P l'); done.
 Qed.
 
+Lemma big_sepL_permutation {PROP : bi} {A}
+    (P : A → PROP) xs ys :
+  xs ≡ₚ ys →
+  ([∗ list] x ∈ xs, P x) ⊣⊢ ([∗ list] x ∈ ys, P x).
+Proof.
+  intros Hperm.
+  induction Hperm; simpl.
+  - done.
+  - by rewrite IHHperm.
+  - rewrite !(assoc bi_sep).
+    by rewrite (comm bi_sep (P x) (P y)).
+  - by rewrite IHHperm1 IHHperm2.
+Qed.
+
+Lemma filter_fmap_comm {A B} (f : A → B)
+    (P : A → Prop) (Q : B → Prop)
+    `{!∀ x, Decision (P x)} `{!∀ y, Decision (Q y)} (xs : list A) :
+  (∀ x, P x ↔ Q (f x)) →
+  filter Q (f <$> xs) = f <$> filter P xs.
+Proof.
+  intros HPQ.
+  induction xs as [|x xs IH]; simpl; first done.
+  rewrite !filter_cons.
+  destruct (decide (P x)) as [HP|HP];
+    destruct (decide (Q (f x))) as [HQ|HQ]; simpl.
+  - by rewrite IH.
+  - exfalso. apply HQ. by apply HPQ.
+  - exfalso. apply HP. by apply HPQ.
+  - exact IH.
+Qed.
+
 Lemma Forall_filter {A} (P Q : A → Prop) `{!∀ x, Decision (Q x)} xs :
   Forall P xs →
   Forall P (filter Q xs).

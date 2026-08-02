@@ -91,6 +91,33 @@ Definition dns1123_subdomain_syntax (s : go_string) : Prop :=
 Definition valid_dns1123_subdomain (s : go_string) : Prop :=
   dns1123_subdomain_syntax s ∧ length s ≤ 253.
 
+Lemma dns1123_label_tail_subdomain previous suffix :
+  dns1123_label_byte previous →
+  dns1123_label_tail previous suffix →
+  dns1123_subdomain_tail previous suffix.
+Proof.
+  revert previous. induction suffix as [|b suffix IH];
+    intros previous Hprevious Htail; simpl in *; first exact Htail.
+  destruct Htail as [Hb Htail]. split_and!.
+  - left. exact Hb.
+  - intros ->. unfold dns1123_label_byte,
+      dns1123_lower_alphanumeric, byte_dot, byte_dash in Hprevious.
+    destruct Hprevious as [[Hdigit|Hlower]|Hdash]; word.
+  - intros ->. unfold dns1123_label_byte,
+      dns1123_lower_alphanumeric, byte_dot, byte_dash in Hb.
+    destruct Hb as [[Hdigit|Hlower]|Hdash]; word.
+  - exact (IH b Hb Htail).
+Qed.
+
+Lemma valid_dns1123_label_subdomain s :
+  valid_dns1123_label s → valid_dns1123_subdomain s.
+Proof.
+  intros [Hsyntax Hlength]. split; last lia.
+  destruct s as [|first suffix]; first contradiction.
+  destruct Hsyntax as [Hfirst Htail]. split; first exact Hfirst.
+  apply dns1123_label_tail_subdomain; [left; exact Hfirst|exact Htail].
+Qed.
+
 Axiom valid_kind: go_string → Prop.
 
 (* Upstream reference: Kubernetes validates CRD `spec.names.kind` by
@@ -513,6 +540,12 @@ Qed.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L44 *)
 Axiom valid_annotations: option (gmap go_string go_string) → Prop.
+
+(* Materializing a nil annotation map as an allocated empty map does not
+   change the entries checked by Kubernetes annotation validation. *)
+Axiom valid_annotations_default : ∀ annotations,
+  valid_annotations annotations →
+  valid_annotations (Some (default ∅ annotations)).
 
 Global Instance type_meta_eq_dec : EqDecision v1.TypeMeta.t.
 Proof. solve_decision. Defined.

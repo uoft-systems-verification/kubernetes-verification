@@ -492,4 +492,103 @@ Proof.
   iApply ("HΦ" with "Hpost").
 Qed.
 
+Lemma wp_State__StatefulSetMutGet γ l key namespace name uid dq kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "StatefulSet"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.StatefulSetSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "StatefulSetMutGet"
+      #namespace #name
+  {{{ sts_l sts, RET (#sts_l, #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.StatefulSet sts) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = StatefulSetV.key sts ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
+        sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = sts.(StatefulSetV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ StatefulSetV.deepown_l sts_l sts 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.StatefulSetSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
+  wp_method_call.
+  rewrite /apimodel.State__StatefulSetMutGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__get_some γ l
+    {| KKey.Kind' := "StatefulSet"%go;
+       KKey.Namespace' := namespace;
+       KKey.Name' := name |}
+    uid dq kmeta (Some (ObjectSpecV.StatefulSetSpec kspec)) None
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  iIntros (i kobj) "Hpost". iNamed "Hpost".
+  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
+  destruct kobj as [pod|rs|pvc|sts];
+    try solve [simpl in Hspec_eq; done].
+  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
+  assert (Hspec_eq' : kspec = sts.(StatefulSetV.Spec')) by congruence.
+  clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
+  iDestruct "Hdeepown_i" as (sts_l) "[%Hi Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  change (go.PointerType api_apps_v1.StatefulSet)
+    with (go.PointerType v1.StatefulSet).
+  cbn [interface.ty interface.v].
+  replace (if decide
+      (go.PointerType v1.StatefulSet = go.PointerType v1.StatefulSet)
+    then #sts_l else #null)%V with (#sts_l)%V by
+    (rewrite decide_True; done).
+  replace (bool_decide
+      (go.PointerType v1.StatefulSet = go.PointerType v1.StatefulSet))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+Qed.
+
+Lemma wp_State__StatefulSetGet γ l key namespace name uid dq kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "StatefulSet"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.StatefulSetSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "StatefulSetGet"
+      #namespace #name
+  {{{ sts_l sts, RET (#sts_l, #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.StatefulSet sts) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = StatefulSetV.key sts ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
+        sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = sts.(StatefulSetV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ StatefulSetV.deepown_l sts_l sts 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
+        (ObjectSpecV.StatefulSetSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call.
+  rewrite /apimodel.State__StatefulSetGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__StatefulSetMutGet
+    γ l key namespace name uid dq kmeta kspec
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  { iPureIntro. done. }
+  iIntros (sts_l sts) "Hpost".
+  wp_auto.
+  iApply ("HΦ" with "Hpost").
+Qed.
+
 End proof.

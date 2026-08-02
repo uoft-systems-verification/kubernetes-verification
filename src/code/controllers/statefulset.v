@@ -80,6 +80,12 @@ Definition podSpecMatches {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_st
 
 Definition largestOutdatedPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.largestOutdatedPod"%go.
 
+Definition reconcileDesiredPods {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.reconcileDesiredPods"%go.
+
+Definition reconcileCondemnedPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.reconcileCondemnedPod"%go.
+
+Definition reconcileOutdatedPod {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.reconcileOutdatedPod"%go.
+
 Definition reconcileReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.reconcileReplicas"%go.
 
 Definition syncStatefulSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/statefulset.syncStatefulSet"%go.
@@ -795,8 +801,12 @@ Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:352:6 *)
-Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+(* reconcileDesiredPods returns true only after every desired Pod has been
+   processed. A false result without an error tells the caller to stop this
+   reconciliation after creating a missing Pod or observing a terminating Pod.
+
+   go: stateful_set.go:355:6 *)
+Definition reconcileDesiredPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
     let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
@@ -826,7 +836,7 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
         do:  ("newPod" <-[go.PointerType core_v1.Pod] "$r0");;;
         do:  ("err" <-[go.error] "$r1");;;
         (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-        then return: (![go.error] "err")
+        then return: (#false, ![go.error] "err")
         else do:  #());;;
         (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
         let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
@@ -834,13 +844,13 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
         (FuncResolve createStatefulPod [] #()) "$a0" "$a1") in
         do:  ("err" <-[go.error] "$r0");;;
         (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-        then return: (![go.error] "err")
+        then return: (#false, ![go.error] "err")
         else do:  #()));;;
-        return: (Convert go.untyped_nil go.error UntypedNil)
+        return: (#false, Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
       (if: let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
       (FuncResolve isTerminating [] #()) "$a0"
-      then return: (Convert go.untyped_nil go.error UntypedNil)
+      then return: (#false, Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
@@ -848,7 +858,7 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       (FuncResolve createPersistentVolumeClaims [] #()) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (![go.error] "err")
+      then return: (#false, ![go.error] "err")
       else do:  #()));;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
@@ -856,45 +866,92 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       (FuncResolve updateStatefulPod [] #()) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (![go.error] "err")
+      then return: (#false, ![go.error] "err")
       else do:  #()))));;;
-    (let: "condemned" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
+    return: (#true, Convert go.untyped_nil go.error UntypedNil)).
+
+(* reconcileCondemnedPod returns true when there is no condemned Pod and
+   reconciliation may continue. After observing or deleting one condemned Pod,
+   the caller stops this reconciliation and waits for the next observed state.
+
+   go: stateful_set.go:390:6 *)
+Definition reconcileCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pods",
+    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "condemned" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
     let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
     (FuncResolve firstCondemnedPod [] #()) "$a0" "$a1") in
     do:  ("condemned" <-[go.PointerType core_v1.Pod] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "condemned") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
-    then
-      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
-      (FuncResolve isTerminating [] #()) "$a0"
-      then return: (Convert go.untyped_nil go.error UntypedNil)
-      else do:  #());;;
-      (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "$r0" := (let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
-      (FuncResolve deletePod [] #()) "$a0") in
-      do:  ("err" <-[go.error] "$r0");;;
-      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (![go.error] "err")
-      else do:  #()));;;
-      return: (Convert go.untyped_nil go.error UntypedNil)
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "condemned") =⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
+    then return: (#true, Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    (if: let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
+    (FuncResolve isTerminating [] #()) "$a0"
+    then return: (#false, Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType core_v1.Pod] "condemned") in
+    (FuncResolve deletePod [] #()) "$a0") in
+    do:  ("err" <-[go.error] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (#false, ![go.error] "err")
     else do:  #()));;;
-    (let: "outdated" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
+    return: (#false, Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: stateful_set.go:404:6 *)
+Definition reconcileOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pods",
+    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "outdated" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
     let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
     (FuncResolve largestOutdatedPod [] #()) "$a0" "$a1") in
     do:  ("outdated" <-[go.PointerType core_v1.Pod] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "outdated") ≠⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
-    then
-      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
-      (FuncResolve isTerminating [] #()) "$a0"
-      then return: (Convert go.untyped_nil go.error UntypedNil)
-      else do:  #());;;
-      return: (let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
-       (FuncResolve deletePod [] #()) "$a0")
-    else do:  #()));;;
-    return: (Convert go.untyped_nil go.error UntypedNil)).
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.Pod] "outdated") =⟨go.PointerType core_v1.Pod⟩ (Convert go.untyped_nil (go.PointerType core_v1.Pod) UntypedNil))
+    then return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    (if: let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
+    (FuncResolve isTerminating [] #()) "$a0"
+    then return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    return: (let: "$a0" := (![go.PointerType core_v1.Pod] "outdated") in
+     (FuncResolve deletePod [] #()) "$a0")).
 
-(* go: stateful_set.go:401:6 *)
+(* go: stateful_set.go:415:6 *)
+Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "set" "pods",
+    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
+    let: "set" := (GoAlloc (go.PointerType apps_v1.StatefulSet) "set") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "continueReconcile" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
+    (FuncResolve reconcileDesiredPods [] #()) "$a0" "$a1") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("continueReconcile" <-[go.bool] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) || (⟨go.bool⟩! (![go.bool] "continueReconcile"))
+    then return: (![go.error] "err")
+    else do:  #());;;
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+    let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
+    (FuncResolve reconcileCondemnedPod [] #()) "$a0" "$a1") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("continueReconcile" <-[go.bool] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) || (⟨go.bool⟩! (![go.bool] "continueReconcile"))
+    then return: (![go.error] "err")
+    else do:  #());;;
+    return: (let: "$a0" := (![go.PointerType apps_v1.StatefulSet] "set") in
+     let: "$a1" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
+     (FuncResolve reconcileOutdatedPod [] #()) "$a0" "$a1")).
+
+(* go: stateful_set.go:429:6 *)
 Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -995,6 +1052,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] withoutStatefulSetFields_unfold :: FuncUnfold withoutStatefulSetFields [] (withoutStatefulSetFieldsⁱᵐᵖˡ);
   #[global] podSpecMatches_unfold :: FuncUnfold podSpecMatches [] (podSpecMatchesⁱᵐᵖˡ);
   #[global] largestOutdatedPod_unfold :: FuncUnfold largestOutdatedPod [] (largestOutdatedPodⁱᵐᵖˡ);
+  #[global] reconcileDesiredPods_unfold :: FuncUnfold reconcileDesiredPods [] (reconcileDesiredPodsⁱᵐᵖˡ);
+  #[global] reconcileCondemnedPod_unfold :: FuncUnfold reconcileCondemnedPod [] (reconcileCondemnedPodⁱᵐᵖˡ);
+  #[global] reconcileOutdatedPod_unfold :: FuncUnfold reconcileOutdatedPod [] (reconcileOutdatedPodⁱᵐᵖˡ);
   #[global] reconcileReplicas_unfold :: FuncUnfold reconcileReplicas [] (reconcileReplicasⁱᵐᵖˡ);
   #[global] syncStatefulSet_unfold :: FuncUnfold syncStatefulSet [] (syncStatefulSetⁱᵐᵖˡ);
   #[global] import_common_Assumption :: common.Assumptions;

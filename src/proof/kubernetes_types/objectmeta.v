@@ -94,8 +94,15 @@ Axiom valid_finalizers: option (list go_string) → Prop.
 Axiom valid_finalizers_dec : ∀ fs, Decision (valid_finalizers fs).
 Global Existing Instance valid_finalizers_dec.
 
+(* Materializing a nil finalizer slice as an allocated empty slice preserves
+   Kubernetes finalizer validation. *)
+Axiom valid_finalizers_default : ∀ finalizers,
+  valid_finalizers finalizers →
+  valid_finalizers (Some (default [] finalizers)).
+
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L269 *)
 Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
+Axiom valid_managed_fields_none : valid_managed_fields None.
 
 Module ObjectMetaV.
 Section def.

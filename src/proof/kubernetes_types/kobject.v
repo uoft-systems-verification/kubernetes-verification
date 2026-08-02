@@ -85,8 +85,34 @@ Proof.
   destruct old, new; simpl; apply _.
 Defined.
 Axiom defaulted: t → t → Prop.
-Axiom created: t → t → Prop. (* input spec → output spec *)
-Axiom updated: t → t → Prop. (* old spec → input spec → output spec *)
+
+Definition created (input stored : t) : Prop :=
+  match input, stored with
+  | PodSpec input, PodSpec stored => PodSpecV.created input stored
+  | ReplicaSetSpec input, ReplicaSetSpec stored =>
+      ReplicaSetSpecV.created input stored
+  | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
+      PersistentVolumeClaimSpecV.created input stored
+  | StatefulSetSpec input, StatefulSetSpec stored =>
+      StatefulSetSpecV.created input stored
+  | _, _ => False
+  end.
+
+(* The API server's update-defaulting relation from the submitted spec to the
+   stored spec. Keeping this dispatch resource-specific prevents facts about a
+   fully modeled resource, such as exact preservation of the represented Pod
+   fields, from being lost behind one unconstrained global axiom. *)
+Definition updated (input stored : t) : Prop :=
+  match input, stored with
+  | PodSpec input, PodSpec stored => PodSpecV.updated input stored
+  | ReplicaSetSpec input, ReplicaSetSpec stored =>
+      ReplicaSetSpecV.updated input stored
+  | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
+      PersistentVolumeClaimSpecV.updated input stored
+  | StatefulSetSpec input, StatefulSetSpec stored =>
+      StatefulSetSpecV.updated input stored
+  | _, _ => False
+  end.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
@@ -129,8 +155,29 @@ Axiom valid_create: t → Prop.
 Axiom valid_update: t → t → Prop.
 Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
 Global Existing Instance valid_update_dec.
-Axiom created: t → t → Prop. (* input status → output status *)
-Axiom updated: t → t → Prop. (* old status → input status → output status *)
+Definition created (input stored : t) : Prop :=
+  match input, stored with
+  | PodStatus input, PodStatus stored => PodStatusV.created input stored
+  | ReplicaSetStatus input, ReplicaSetStatus stored =>
+      ReplicaSetStatusV.created input stored
+  | PersistentVolumeClaimStatus input, PersistentVolumeClaimStatus stored =>
+      PersistentVolumeClaimStatusV.created input stored
+  | StatefulSetStatus input, StatefulSetStatus stored =>
+      StatefulSetStatusV.created input stored
+  | _, _ => False
+  end.
+
+Definition updated (input stored : t) : Prop :=
+  match input, stored with
+  | PodStatus input, PodStatus stored => PodStatusV.updated input stored
+  | ReplicaSetStatus input, ReplicaSetStatus stored =>
+      ReplicaSetStatusV.updated input stored
+  | PersistentVolumeClaimStatus input, PersistentVolumeClaimStatus stored =>
+      PersistentVolumeClaimStatusV.updated input stored
+  | StatefulSetStatus input, StatefulSetStatus stored =>
+      StatefulSetStatusV.updated input stored
+  | _, _ => False
+  end.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with

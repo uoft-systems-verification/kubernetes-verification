@@ -146,6 +146,16 @@ Lemma valid_update_refl spec :
   valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
+(* The represented PodSpec fields are not changed by create-time defaulting. *)
+Definition created (input stored : t) : Prop :=
+  stored = input.
+
+(* None of the PodSpec fields represented by [t] are defaulted by the API
+   server during update. Thus the stored projection equals the submitted
+   projection. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
+
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷
     (∃ volumes, deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
@@ -176,6 +186,16 @@ Axiom deepown : v1.PodStatus.t → t → dfrac → iProp Σ.
    controller constructs a fresh Pod. *)
 Axiom zero : t.
 Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.PodStatus.t) zero dq.
+
+(* Pod creation discards the submitted status and constructs a normalized
+   server-owned status. Its fields remain abstract in this model. *)
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+(* Status-update callers submit a stored-valid status, so all represented
+   normalization has already been applied. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.

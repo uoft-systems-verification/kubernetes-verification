@@ -112,6 +112,34 @@ Lemma valid_update_refl spec :
   valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
+(* StatefulSet creation defaults an omitted replica count, preserves the
+   directly represented fields, and normalizes each embedded PVC template.
+   The PVC spec relation is necessarily abstract until those fields are
+   translated. *)
+Definition created (input stored : t) : Prop :=
+  stored.(Replicas') = Some (default (W32 1) input.(Replicas')) ∧
+  stored.(Selector') = input.(Selector') ∧
+  stored.(Template') = input.(Template') ∧
+  stored.(ServiceName') = input.(ServiceName') ∧
+  Forall2
+    (λ input_claim stored_claim,
+      stored_claim.(PersistentVolumeClaimV.TypeMeta') =
+        zero_val v1.TypeMeta.t ∧
+      stored_claim.(PersistentVolumeClaimV.ObjectMeta') =
+        input_claim.(PersistentVolumeClaimV.ObjectMeta') ∧
+      PersistentVolumeClaimSpecV.embedded_created
+        input_claim.(PersistentVolumeClaimV.Spec')
+        stored_claim.(PersistentVolumeClaimV.Spec') ∧
+      stored_claim.(PersistentVolumeClaimV.Status') =
+        input_claim.(PersistentVolumeClaimV.Status'))
+    input.(VolumeClaimTemplates') stored.(VolumeClaimTemplates').
+
+(* Update callers require the submitted StatefulSet to satisfy [valid], so its
+   represented schema defaults and embedded-PVC normalization are already
+   present. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
+
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
@@ -159,6 +187,12 @@ Axiom t : Type.
 (* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid: t → Prop.
 Axiom deepown : v1.StatefulSetStatus.t → t → dfrac → iProp Σ.
+
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.

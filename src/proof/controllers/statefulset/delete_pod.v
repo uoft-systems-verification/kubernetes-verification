@@ -46,34 +46,39 @@ Local Set Default Proof Using "All".
    implement deletion either by first setting deletionTimestamp or by removing
    the Pod immediately.  In both cases [deletePod] treats the request as
    successful and leaves the caller's local Pod unchanged. *)
-Lemma wp_deletePod γ model_l pod_l (pod : PodV.t)
+Lemma wp_deletePod γ model_l pod_l
+    (local_pod stored_pod : PodV.t)
     parent_key parent_uid (children : gset KKey.t) dq_pod :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
-      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
-      "%Hkey_in" ∷ ⌜ PodV.key pod ∈ children ⌝ ∗
-      "Hown_meta" ∷ own_meta_frag γ (PodV.key pod)
-        pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        pod.(PodV.ObjectMeta') ∗
+      "Hpod" ∷ PodV.deepown_l pod_l local_pod dq_pod ∗
+      "%Hkey" ∷ ⌜ PodV.key local_pod = PodV.key stored_pod ⌝ ∗
+      "%Huid" ∷ ⌜
+        local_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
+          stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hkey_in" ∷ ⌜ PodV.key stored_pod ∈ children ⌝ ∗
+      "Hown_meta" ∷ own_meta_frag γ (PodV.key stored_pod)
+        stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        stored_pod.(PodV.ObjectMeta') ∗
       "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     @! statefulset.deletePod #pod_l
   {{{ (pod_meta' : ObjectMetaV.t), RET #interface.nil;
-      "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "Hpod" ∷ PodV.deepown_l pod_l local_pod dq_pod ∗
       ( ("%Hdeletion_timestamp" ∷
             ⌜ pod_meta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          "Hown_meta" ∷ own_meta_frag γ (PodV.key pod)
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod_meta' ∗
+          "Hown_meta" ∷ own_meta_frag γ (PodV.key stored_pod)
+            stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod_meta' ∗
           "Hown_children" ∷
             own_children_frag γ parent_key parent_uid 1 children)
         ∨
         ("Hown_tombstone" ∷ own_tombstone_frag γ
-            pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
+            stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
          "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
-            (children ∖ {[PodV.key pod]})))
+            (children ∖ {[PodV.key stored_pod]})))
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -94,25 +99,25 @@ Proof.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
   wp_apply (wp_State__PodDelete γ model_l
-    (PodV.key pod)
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name')
+    (PodV.key stored_pod)
+    local_pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')
+    local_pod.(PodV.ObjectMeta').(ObjectMetaV.Name')
     options_c
     (delete_options_with_uid
-      pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))
-    pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
-    pod.(PodV.ObjectMeta') parent_key parent_uid children
+      local_pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))
+    stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
+    stored_pod.(PodV.ObjectMeta') parent_key parent_uid children
     with "[Hoptions Hown_meta Hown_children]").
   { iFrame "#".
     iSplitL "Hoptions"; [iExact "Hoptions"|].
     iSplit; [iPureIntro; exact Hvalid_options|].
     iSplit.
-    { iPureIntro. rewrite /PodV.key /PodV.meta_key /=. done. }
+    { iPureIntro. rewrite -Hkey /PodV.key /PodV.meta_key /=. done. }
     iSplit; [iPureIntro; exact Hkey_in|].
     iSplit.
     { iPureIntro.
       rewrite /delete_preconditions_match /delete_options_with_uid /=.
-      done. }
+      split; [exact Huid|done]. }
     iSplit.
     { iPureIntro.
       rewrite /delete_options_preconditions_resource_version_none
@@ -123,11 +128,11 @@ Proof.
   wp_auto.
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
   iAssert (ObjectMetaV.deepown pod_meta_c
-      pod.(PodV.ObjectMeta') dq_pod)
+      local_pod.(PodV.ObjectMeta') dq_pod)
     with "[Hpod_objectmeta]" as "Hpod_objectmeta".
   { iNamed "Hpod_objectmeta". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
-      pod.(PodV.ObjectMeta') dq_pod)
+      local_pod.(PodV.ObjectMeta') dq_pod)
     with "[Hpod_objectmeta_field Hpod_objectmeta]" as
       "Hpod_objectmeta_l".
   { iExists pod_meta_c. iFrame. }

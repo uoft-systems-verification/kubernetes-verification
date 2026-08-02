@@ -102,25 +102,17 @@ Qed.
 Lemma stateful_pod_update_admissible_of_valid set pod ordinal :
   PodV.valid pod →
   PodV.key pod = desired_pod_key set ordinal →
-  pod.(PodV.Spec').(PodSpecV.Hostname') =
+  valid_dns1123_label
     pod.(PodV.ObjectMeta').(ObjectMetaV.Name') →
   stateful_pod_update_admissible set pod ordinal.
 Proof.
-  intros Hpod_valid Hpod_key Hhostname.
+  intros Hpod_valid Hpod_key Hname_valid.
   pose proof (f_equal KKey.Name' Hpod_key) as Hpod_name.
   pose proof (f_equal KKey.Namespace' Hpod_key) as Hpod_namespace.
   simpl in Hpod_name, Hpod_namespace.
   destruct Hpod_valid as
     (Htypemeta & Hresource_version & Hmeta_valid &
       Hspec_valid & Hstatus_valid).
-  pose proof Hspec_valid as
-    (_ & Hhostname_valid & _).
-  rewrite Hhostname in Hhostname_valid.
-  destruct Hhostname_valid as [Hname_empty|Hname_valid].
-  { exfalso.
-    apply (ObjectMetaV.valid_name_nonempty_of_valid _
-      Hmeta_valid).
-    exact Hname_empty. }
   pose proof Hname_valid as (_ & Hname_length).
   assert (Hdecimal_length :
       length (decimal_string ordinal) ≤ 63).
@@ -210,8 +202,8 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
       "%Hpod_valid" ∷ ⌜ PodV.valid pod ⌝ ∗
       "%Hpod_desired_key" ∷
         ⌜ PodV.key pod = desired_pod_key set ordinal ⌝ ∗
-      "%Hpod_hostname" ∷
-        ⌜ pod.(PodV.Spec').(PodSpecV.Hostname') =
+      "%Hpod_name_valid" ∷
+        ⌜ valid_dns1123_label
             pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hordinal_bound" ∷
         ⌜ (ordinal ≤ go_int32_max_nat)%nat ⌝ ∗
@@ -233,6 +225,7 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
       "%Hpod_uid" ∷
         ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') =
             pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hpod_spec" ∷ ⌜ pod'.(PodV.Spec') = pod.(PodV.Spec') ⌝ ∗
       "Hown_meta" ∷ own_meta_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         pod'.(PodV.ObjectMeta') ∗
@@ -271,13 +264,13 @@ Proof.
     wp_auto.
     iApply ("HΦ" $! pod).
     iFrame "Hset Hpod Hown_meta Hown_spec".
-    do 3 (iSplit; first done).
+    do 4 (iSplit; first done).
     iLeft. iPureIntro. split; done.
   - assert (Hnot_identity : ¬ pod_identity_matches set pod).
     { intros Hidentity. apply Hidentity_spec in Hidentity. done. }
     pose proof
       (stateful_pod_update_admissible_of_valid
-        set pod ordinal Hpod_valid Hpod_desired_key Hpod_hostname)
+        set pod ordinal Hpod_valid Hpod_desired_key Hpod_name_valid)
       as (Hinput_valid & Hvalid_meta_update & Hvalid_spec_update).
     pose proof Hvalid_meta_update as
       (Hinput_name & _ & Hinput_namespace & _ & Hinput_uid' & _).
@@ -358,11 +351,17 @@ Proof.
       split_and!; done. }
     iIntros (returned_pod_l returned_pod) "Hupdate".
     iNamedPrefix "Hupdate" "Hupdate_".
+    assert (returned_pod.(PodV.Spec') = pod.(PodV.Spec'))
+      as Hreturned_spec.
+    { unfold ObjectSpecV.updated, PodSpecV.updated in
+        Hupdate_Hspec_updated.
+      simpl in Hupdate_Hspec_updated.
+      exact Hupdate_Hspec_updated. }
     wp_auto.
     iApply ("HΦ" $! returned_pod).
     iFrame "Hset Hpod Hupdate_Hown_meta_frag
       Hupdate_Hown_spec_frag".
-    do 3 (iSplit; first (iPureIntro; assumption)).
+    do 4 (iSplit; first (iPureIntro; assumption)).
     iRight. iFrame "%".
 Qed.
 

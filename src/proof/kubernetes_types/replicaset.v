@@ -54,6 +54,19 @@ Lemma valid_update_refl spec :
   valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
+(* ReplicaSet create defaults an omitted replica count to one; the other
+   represented fields are preserved. *)
+Definition created (input stored : t) : Prop :=
+  stored.(Replicas') = Some (default (W32 1) input.(Replicas')) ∧
+  stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
+  stored.(Selector') = input.(Selector') ∧
+  stored.(Template') = input.(Template').
+
+(* Update callers require the submitted ReplicaSet to satisfy [valid], so its
+   represented schema defaults are already present. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
+
 Lemma valid_replicas :
   ∀ v, valid v →
   ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
@@ -104,6 +117,12 @@ Record t := mk {}.
 (* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid : t → Prop.
 Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
+
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
