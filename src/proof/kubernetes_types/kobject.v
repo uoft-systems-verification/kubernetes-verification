@@ -84,7 +84,6 @@ Global Instance valid_update_dec old new :
 Proof.
   destruct old, new; simpl; apply _.
 Defined.
-Axiom defaulted: t → t → Prop.
 
 Definition created (input stored : t) : Prop :=
   match input, stored with
@@ -321,12 +320,6 @@ Definition same_kind (o1 o2 : t) : Prop :=
   | StatefulSet _, StatefulSet _ => True
   | _, _ => False
   end.
-
-Definition defaulted o o' : Prop :=
-  typemeta o = typemeta o' ∧
-  objectmeta o = objectmeta o' ∧
-  ObjectSpecV.defaulted (spec o) (spec o') ∧
-  status o = status o'.
 
 Definition nameless_created ns o o' : Prop :=
   same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
