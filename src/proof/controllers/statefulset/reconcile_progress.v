@@ -2255,6 +2255,8 @@ Proof.
     + unfold ObjectMetaV.valid_named_create, new_statefulset_pod,
         init_storage, init_identity, update_identity, PodV.update_objectmeta,
         controller.generated_pod, controller.generated_pod_meta. simpl.
+      pose proof (valid_annotations_default _ Htemplate_annotations) as
+        [Hannotations_keys Hannotations_size].
       split_and!.
       * intros _. apply valid_generate_name_of_valid_prefix.
         exists set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name').
@@ -2271,7 +2273,8 @@ Proof.
         -- exact (ObjectMetaV.valid_namespace_of_valid _ Hset_meta).
         -- done.
       * exact Hlabels_valid.
-      * apply valid_annotations_default. exact Htemplate_annotations.
+      * exact Hannotations_keys.
+      * exact Hannotations_size.
       * exact Howner_unique.
       * exact Howner_each.
       * apply valid_finalizers_default. exact Htemplate_finalizers.
