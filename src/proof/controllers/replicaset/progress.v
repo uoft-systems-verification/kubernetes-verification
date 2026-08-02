@@ -644,7 +644,7 @@ Proof.
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Hrs_uid_eq.
   { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_children_frag".
-  wp_apply (common.wp_FilterPodsByOwner with
+  wp_apply (common.wp_FilterPodsByOwner_uniform with
     "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; try done. }

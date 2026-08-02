@@ -180,7 +180,7 @@ Definition owner_ref_key (owner_kind : go_string) (owner_meta : ObjectMetaV.t) :
   KKey.Name' := owner_meta.(ObjectMetaV.Name');
 |}.
 
-Lemma wp_FilterPodsByOwner_mixed γ l owner owner_kind meta dq1
+Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
     pods pod_dqs children_dq children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -231,7 +231,7 @@ Proof.
   wp_apply (controller.wp_PodControllerIndexKey with "[$Howner_reference]").
   iIntros (index_key) "->". wp_auto.
   iNamedPrefix "Hdeepown_meta" "Htemp_".
-  wp_apply (wp_State__ByIndex_podController_mixed
+  wp_apply (wp_State__ByIndex_podController
     _ _ _ _ pod_dqs _ _ _ children_dq
     with "[$Hown_pod_meta_frags $Hown_children_frag]").
   { iFrame "#". iFrame "%". iPureIntro. rewrite Htemp_Hdeepown_namespace. rewrite Htemp_Hdeepown_name.
@@ -309,7 +309,7 @@ Proof.
     iFrame "%".
 Qed.
 
-Lemma wp_FilterPodsByOwner_mixed_full γ l owner owner_kind meta dq1
+Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
     pods pod_dqs children_dq children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -376,7 +376,7 @@ Proof.
   iEval (rewrite big_sepL2_sep) in "Hown_pod_frags".
   iDestruct "Hown_pod_frags" as
     "[Hown_pod_meta_frags Hown_pod_spec_frags]".
-  wp_apply (wp_State__ByIndex_podController_mixed_full
+  wp_apply (wp_State__ByIndex_podController_with_spec
     _ _ _ _ pod_dqs _ _ _ children_dq
     with "[$Hown_pod_meta_frags $Hown_pod_spec_frags
       $Hown_children_frag]").
@@ -491,7 +491,7 @@ Proof.
     rewrite big_sepL2_sep. iFrame.
 Qed.
 
-Lemma wp_FilterPodsByOwner_full γ l owner owner_kind meta dq1
+Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
     pods pod_dq children_dq children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -555,7 +555,7 @@ Proof.
     with "[Hown_pod_frags]" as "Hown_pod_frags".
   { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
     iExact "Hown_pod_frags". }
-  iApply (wp_FilterPodsByOwner_mixed_full γ l owner owner_kind meta dq1
+  iApply (wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
     pods pod_dqs children_dq children_keys with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }
   iNext. iIntros (sl ptrs pods' dq') "H".
@@ -585,7 +585,7 @@ Proof.
   iApply "HΦ". iFrame. iFrame "%".
 Qed.
 
-Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1 dq2
+Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
     pods children_keys :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -642,7 +642,7 @@ Proof.
   { subst pod_dqs.
     rewrite big_sepL2_replicate_r; [done|].
     iExact "Hown_pod_meta_frags". }
-  iApply (wp_FilterPodsByOwner_mixed γ l owner owner_kind meta dq1
+  iApply (wp_FilterPodsByOwner γ l owner owner_kind meta dq1
     pods pod_dqs dq2 children_keys
     with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }

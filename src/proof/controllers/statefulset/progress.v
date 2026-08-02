@@ -149,7 +149,7 @@ Proof.
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_meta &
       Hset_spec & Hset_status)".
-  wp_apply (common.wp_FilterPodsByOwner_full
+  wp_apply (common.wp_FilterPodsByOwner_uniform_with_spec
     _ _ _ _ _ _ pods 1 1
     (list_to_set (PodV.key <$> pods))
     with "[$Hset_meta $Hown_pod_frags $Hown_children_frag]").

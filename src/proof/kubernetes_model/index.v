@@ -586,7 +586,7 @@ Proof.
       Hnodup Hdom Hlookup).
 Qed.
 
-Lemma wp_State__ByIndex_podController_mixed_au γ l indexed_value :
+Lemma wp_State__ByIndex_podController_au γ l indexed_value :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
@@ -828,7 +828,7 @@ Proof.
       Hmeta_perm Hstorage_perm Hpods_valid Hpods_nodup.
 Qed.
 
-Lemma wp_State__ByIndex_podController_mixed γ l indexed_value pods
+Lemma wp_State__ByIndex_podController γ l indexed_value pods
     pod_dqs parent_key parent_uid children_keys children_dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -867,7 +867,7 @@ Lemma wp_State__ByIndex_podController_mixed γ l indexed_value pods
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  iApply wp_State__ByIndex_podController_mixed_au.
+  iApply wp_State__ByIndex_podController_au.
   iFrame "#".
   iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
   iExists pods, pod_dqs, false, parent_key, parent_uid,
@@ -884,7 +884,7 @@ Proof.
   iFrame. iFrame "%".
 Qed.
 
-Lemma wp_State__ByIndex_podController_mixed_full γ l indexed_value pods
+Lemma wp_State__ByIndex_podController_with_spec γ l indexed_value pods
     pod_dqs parent_key parent_uid children_keys children_dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -936,7 +936,7 @@ Lemma wp_State__ByIndex_podController_mixed_full γ l indexed_value pods
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  iApply wp_State__ByIndex_podController_mixed_au.
+  iApply wp_State__ByIndex_podController_au.
   iFrame "#".
   iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
   iExists pods, pod_dqs, true, parent_key, parent_uid,
@@ -954,7 +954,7 @@ Proof.
   iFrame. iFrame "%".
 Qed.
 
-Lemma wp_State__ByIndex_podController γ l indexed_value pods
+Lemma wp_State__ByIndex_podController_uniform γ l indexed_value pods
     parent_key parent_uid children_keys dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -1013,7 +1013,7 @@ Proof.
   { subst pod_dqs.
     rewrite big_sepL2_replicate_r; [done|].
     iExact "Hown_meta_frags". }
-  wp_apply (wp_State__ByIndex_podController_mixed
+  wp_apply (wp_State__ByIndex_podController
     γ l indexed_value pods pod_dqs parent_key parent_uid children_keys dq
     with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }
@@ -1033,7 +1033,7 @@ Proof.
   iApply "HΦ". iFrame. iFrame "%".
 Qed.
 
-Lemma wp_State__ByIndex_podController_full γ l indexed_value pods
+Lemma wp_State__ByIndex_podController_uniform_with_spec γ l indexed_value pods
     parent_key parent_uid children_keys pod_dq children_dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -1103,7 +1103,7 @@ Proof.
     with "[Hown_spec_frags]" as "Hown_spec_frags".
   { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
     iExact "Hown_spec_frags". }
-  iApply wp_State__ByIndex_podController_mixed_au.
+  iApply wp_State__ByIndex_podController_au.
   iFrame "#".
   iApply fupd_mask_intro; [timeout 10 set_solver|iIntros "Hmask"].
   iExists pods, pod_dqs, true, parent_key, parent_uid,
