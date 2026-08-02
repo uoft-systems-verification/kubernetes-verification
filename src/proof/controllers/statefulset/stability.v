@@ -44,8 +44,7 @@ Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_spec_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))) ∗
+        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
 	    "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
 	    "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
@@ -60,8 +59,7 @@ Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_spec_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))) ∗
+        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
       own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods))
   }}}.
 Proof.
@@ -234,18 +232,15 @@ Proof.
     by rewrite -list_elem_of_In. }
   iEval (rewrite Hgood_eq) in "Hgood_pods".
 
-  iEval (rewrite big_sepL_sep) in "Hown_pvc_frags".
-  iDestruct "Hown_pvc_frags" as
-    "[Hown_pvc_meta_frags Hown_pvc_spec_frags]".
   wp_auto.
   wp_apply (wp_reconcileReplicas_stability γ l set_l good_sl set
     good_ptrs all_pods pvcs 1 pod_dq dq dq dq
     with "[$Hset $Hgood_sl $Hgood_pods $Hall_frags
-      $Hown_pvc_meta_frags $Hown_children_frag]").
+      $Hown_pvc_frags $Hown_children_frag]").
   { iFrame "# %". }
   iIntros
     "(Hset & Hgood_sl & Hgood_pods & Hall_frags &
-      Hown_pvc_meta_frags & Hown_children_frag)".
+      Hown_pvc_frags & Hown_children_frag)".
   wp_auto.
 
   iAssert (([∗ list] pod ∈ pods,
@@ -267,9 +262,6 @@ Proof.
     { rewrite -Hall_storage_perm. iExact "Hall_view_frags". }
     rewrite own_pod_frags_as_storage_views.
     iExact "Hpod_view_frags". }
-  iCombine "Hown_pvc_meta_frags Hown_pvc_spec_frags" as
-    "Hown_pvc_frags".
-  iEval (rewrite -big_sepL_sep) in "Hown_pvc_frags".
   iEval (rewrite Hall_key_perm -Hset_key -Hset_uid) in
     "Hown_children_frag".
   iApply ("HΦ" $! interface.nil).
