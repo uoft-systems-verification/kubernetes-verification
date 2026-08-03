@@ -5,5 +5,6 @@ From New.proof.kubernetes_types Require Export
   persistentvolumeclaim
   replicaset
   statefulset
+  deployment
   kobject
   delete_options.
