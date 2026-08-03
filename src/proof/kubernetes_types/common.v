@@ -432,6 +432,108 @@ Definition valid_label_name (name : go_string) : Prop :=
     valid_dns1123_subdomain prefix ∧
     valid_qualified_name suffix.
 
+#[global] Instance dns1123_subdomain_tail_dec previous suffix :
+    Decision (dns1123_subdomain_tail previous suffix).
+Proof.
+  revert previous.
+  induction suffix as [|b suffix IH]; intros previous; simpl.
+  - unfold dns1123_lower_alphanumeric. apply _.
+  - unfold dns1123_subdomain_byte, dns1123_label_byte,
+      dns1123_lower_alphanumeric.
+    apply _.
+Defined.
+
+#[global] Instance valid_dns1123_subdomain_dec s :
+    Decision (valid_dns1123_subdomain s).
+Proof.
+  unfold valid_dns1123_subdomain, dns1123_subdomain_syntax.
+  destruct s as [|first suffix]; simpl; first apply _.
+  unfold dns1123_lower_alphanumeric. apply _.
+Defined.
+
+#[global] Instance qualified_name_tail_dec previous suffix :
+    Decision (qualified_name_tail previous suffix).
+Proof.
+  revert previous.
+  induction suffix as [|b suffix IH]; intros previous; simpl.
+  - unfold label_alphanumeric. apply _.
+  - unfold label_extended_character, label_alphanumeric. apply _.
+Defined.
+
+#[global] Instance valid_qualified_name_dec s :
+    Decision (valid_qualified_name s).
+Proof.
+  unfold valid_qualified_name, qualified_name_syntax.
+  destruct s as [|first suffix]; simpl; first apply _.
+  unfold label_alphanumeric. apply _.
+Defined.
+
+Fixpoint split_label_name (name : go_string) : option (go_string * go_string) :=
+  match name with
+  | [] => None
+  | b :: suffix =>
+      if decide (b = byte_slash) then Some ([], suffix)
+      else
+        match split_label_name suffix with
+        | Some (prefix, suffix') => Some (b :: prefix, suffix')
+        | None => None
+        end
+  end.
+
+Lemma split_label_name_Some name prefix suffix :
+  split_label_name name = Some (prefix, suffix) →
+  name = prefix ++ "/"%go ++ suffix.
+Proof.
+  revert prefix suffix.
+  induction name as [|b name IH]; intros prefix suffix Hsplit; simpl in Hsplit;
+    first done.
+  destruct (decide (b = byte_slash)) as [->|Hnot_slash].
+  - injection Hsplit as Hprefix Hsuffix.
+    subst prefix suffix. done.
+  - destruct (split_label_name name) as [[prefix' suffix']|] eqn:Hrest;
+      last done.
+    injection Hsplit as Hprefix Hsuffix.
+    subst prefix suffix. simpl. rewrite (IH _ _ eq_refl). done.
+Qed.
+
+Lemma split_label_name_complete prefix suffix :
+  slash_free prefix →
+  split_label_name (prefix ++ "/"%go ++ suffix) = Some (prefix, suffix).
+Proof.
+  assert (Hslash : "/"%go = [byte_slash]) by done.
+  rewrite Hslash. intros Hslash_free.
+  induction prefix as [|b prefix IH]; simpl.
+  - destruct (decide (byte_slash = byte_slash)); [done|congruence].
+  - inversion Hslash_free as [|? ? Hnot_slash Hprefix_slash_free]; subst.
+    destruct (decide (b = byte_slash)); first contradiction.
+    rewrite (IH Hprefix_slash_free). done.
+Qed.
+
+#[global] Instance valid_label_name_dec name : Decision (valid_label_name name).
+Proof.
+  destruct (decide (valid_qualified_name name)) as [Hqualified|Hnot_qualified].
+  { left. by left. }
+  destruct (split_label_name name) as [[prefix suffix]|] eqn:Hsplit.
+  - destruct (decide
+      (valid_dns1123_subdomain prefix ∧ valid_qualified_name suffix)) as
+      [[Hprefix Hsuffix]|Hnot_valid].
+    + left. right. exists prefix, suffix. split_and!; [|done|done].
+      by apply split_label_name_Some.
+    + right. intros [Hqualified|(prefix' & suffix' & Heq & Hprefix & Hsuffix)];
+        first contradiction.
+      assert (Hsplit' : split_label_name name = Some (prefix', suffix')).
+      { rewrite Heq. apply split_label_name_complete.
+        by apply valid_dns1123_subdomain_slash_free. }
+      rewrite Hsplit in Hsplit'. injection Hsplit' as -> ->.
+      apply Hnot_valid. done.
+  - right. intros [Hqualified|(prefix & suffix & Heq & Hprefix & Hsuffix)];
+      first contradiction.
+    assert (Hsplit' : split_label_name name = Some (prefix, suffix)).
+    { rewrite Heq. apply split_label_name_complete.
+      by apply valid_dns1123_subdomain_slash_free. }
+    by rewrite Hsplit in Hsplit'.
+Defined.
+
 (* A label value may be empty. A nonempty value uses the qualified-name name
    syntax (without a DNS prefix) and is at most 63 bytes.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L162-L174 *)

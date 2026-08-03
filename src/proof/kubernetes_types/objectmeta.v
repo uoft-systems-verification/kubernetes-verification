@@ -90,15 +90,32 @@ Definition valid_owner_references (o: option (list OwnerReferenceV.t)) : Prop :=
   end.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L197 *)
-Axiom valid_finalizers: option (list go_string) → Prop.
-Axiom valid_finalizers_dec : ∀ fs, Decision (valid_finalizers fs).
-Global Existing Instance valid_finalizers_dec.
+Definition valid_finalizers (finalizers : option (list go_string)) : Prop :=
+  match finalizers with
+  | None => True
+  | Some finalizers => Forall valid_label_name finalizers
+  end.
+
+#[global] Instance valid_finalizers_dec fs : Decision (valid_finalizers fs).
+Proof.
+  destruct fs as [finalizers|]; simpl; last (left; done).
+  induction finalizers as [|finalizer finalizers IH]; first (left; constructor).
+  destruct (decide (valid_label_name finalizer)) as [Hvalid|Hnot_valid].
+  - destruct IH as [Hvalid_tail|Hnot_valid_tail].
+    + left. by constructor.
+    + right. intros Hvalid_finalizers. inversion Hvalid_finalizers. contradiction.
+  - right. intros Hvalid_finalizers. inversion Hvalid_finalizers. contradiction.
+Defined.
 
 (* Materializing a nil finalizer slice as an allocated empty slice preserves
    Kubernetes finalizer validation. *)
-Axiom valid_finalizers_default : ∀ finalizers,
+Lemma valid_finalizers_default : ∀ finalizers,
   valid_finalizers finalizers →
   valid_finalizers (Some (default [] finalizers)).
+Proof.
+  intros [finalizers|] Hvalid; first exact Hvalid.
+  constructor.
+Qed.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L269 *)
 Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
