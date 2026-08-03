@@ -141,7 +141,7 @@ func TestPBT(t *testing.T) {
 
 		// Track existing objects (should match between model and real API)
 		existingObjects := make(map[KKey]bool)
-		kinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet"}
+		kinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment"}
 
 		for range 10000 {
 			// Weighted operation selection: favor Create early to build up state.
@@ -265,6 +265,34 @@ func TestPBT(t *testing.T) {
 							return server.GetStatefulSet(ctx, name)
 						},
 					)
+
+				case "Deployment":
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						stats,
+						"Deployment",
+						func(rt *rapid.T) *appsv1.Deployment {
+							switch rapid.IntRange(0, 1).Draw(rt, "validDeploymentGenType") {
+							case 0:
+								return generators.MinimalDeploymentGen().Draw(rt, "validDeployment")
+							default:
+								return generators.ComprehensiveDeploymentGen().Draw(rt, "validDeployment")
+							}
+						},
+						func(rt *rapid.T) *appsv1.Deployment {
+							return generators.InvalidDeploymentGen().Draw(rt, "invalidDeployment")
+						},
+						func(d *appsv1.Deployment) *appsv1.Deployment { return d.DeepCopy() },
+						func(ns string, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return state.DeploymentCreate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return server.CreateDeployment(ctx, obj)
+						},
+						func(ns, name string) (interface{}, error) { return state.DeploymentGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.Deployment, error) {
+							return server.GetDeployment(ctx, name)
+						},
+					)
 				}
 			case opRoll < createWeight+updateWeight:
 				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
@@ -360,6 +388,30 @@ func TestPBT(t *testing.T) {
 							return sts
 						},
 						generators.ComprehensiveStatefulSetMut,
+					)
+
+				case "Deployment":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"Update", stats.recordUpdate, "Deployment",
+						func(ns, name string) (*appsv1.Deployment, error) { return state.DeploymentGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.Deployment, error) {
+							return server.GetDeployment(ctx, name)
+						},
+						func(ns string, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return state.DeploymentUpdate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return server.UpdateDeployment(ctx, obj)
+						},
+						func(d *appsv1.Deployment) *appsv1.Deployment { return d.DeepCopy() },
+						func(name, namespace string) *appsv1.Deployment {
+							d := generators.MinimalDeploymentGen().Example()
+							d.Name = name
+							d.Namespace = namespace
+							return d
+						},
+						generators.ComprehensiveDeploymentMut,
 					)
 				}
 			case opRoll < createWeight+updateWeight+updateStatusWeight:
@@ -459,6 +511,30 @@ func TestPBT(t *testing.T) {
 						},
 						generators.ComprehensiveStatefulSetStatusMut,
 					)
+
+				case "Deployment":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"UpdateStatus", stats.recordUpdateStatus, "Deployment",
+						func(ns, name string) (*appsv1.Deployment, error) { return state.DeploymentGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.Deployment, error) {
+							return server.GetDeployment(ctx, name)
+						},
+						func(ns string, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return state.DeploymentUpdateStatus(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.Deployment) (*appsv1.Deployment, error) {
+							return server.UpdateDeploymentStatus(ctx, obj)
+						},
+						func(d *appsv1.Deployment) *appsv1.Deployment { return d.DeepCopy() },
+						func(name, namespace string) *appsv1.Deployment {
+							d := generators.MinimalDeploymentGen().Example()
+							d.Name = name
+							d.Namespace = namespace
+							return d
+						},
+						generators.ComprehensiveDeploymentStatusMut,
+					)
 				}
 			default:
 				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
@@ -502,6 +578,16 @@ func TestPBT(t *testing.T) {
 						server.GetStatefulSet,
 						state.StatefulSetDelete,
 						server.DeleteStatefulSet,
+					)
+
+				case "Deployment":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"Deployment",
+						state.DeploymentGet,
+						server.GetDeployment,
+						state.DeploymentDelete,
+						server.DeleteDeployment,
 					)
 				}
 			}

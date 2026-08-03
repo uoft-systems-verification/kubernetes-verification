@@ -32,6 +32,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/core"
 	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
 	"k8s.io/kubernetes/pkg/controller"
+	deploymentstrategy "k8s.io/kubernetes/pkg/registry/apps/deployment"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
 	pvcstrategy "k8s.io/kubernetes/pkg/registry/core/persistentvolumeclaim"
@@ -96,6 +97,8 @@ func deepCopy(obj interface{}) interface{} {
 	case *appsv1.ReplicaSet:
 		return o.DeepCopy()
 	case *appsv1.StatefulSet:
+		return o.DeepCopy()
+	case *appsv1.Deployment:
 		return o.DeepCopy()
 	default:
 		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
@@ -399,6 +402,12 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.StatefulSet to internal StatefulSet: %v", err))
 		}
 		return internalSTS, nil
+	case *appsv1.Deployment:
+		internalDeployment := &apps.Deployment{}
+		if err := legacyscheme.Scheme.Convert(typed, internalDeployment, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.Deployment to internal Deployment: %v", err))
+		}
+		return internalDeployment, nil
 	default:
 		return nil, fmt.Errorf("unsupported versioned object type for conversion: %T", obj)
 	}
@@ -424,6 +433,8 @@ func applySchemaDefaults(obj interface{}) error {
 		appsv1defaults.SetObjectDefaults_ReplicaSet(typed)
 	case *appsv1.StatefulSet:
 		appsv1defaults.SetObjectDefaults_StatefulSet(typed)
+	case *appsv1.Deployment:
+		appsv1defaults.SetObjectDefaults_Deployment(typed)
 	default:
 		return fmt.Errorf("unsupported object type for schema defaults: %T", obj)
 	}
@@ -441,6 +452,8 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		rsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.StatefulSet:
 		stsstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *apps.Deployment:
+		deploymentstrategy.Strategy.PrepareForCreate(ctx, typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -460,6 +473,8 @@ func applyAdmissionMutate(obj interface{}) error {
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
+		return nil
+	case *apps.Deployment:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
@@ -496,6 +511,8 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
+		return nil
+	case *apps.Deployment:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for post-prepare create defaults: %T", obj)
@@ -547,6 +564,8 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 		return nil
 	case *apps.StatefulSet:
 		return nil
+	case *apps.Deployment:
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for update admission mutation: %T", obj)
 	}
@@ -570,6 +589,9 @@ func applyAdmissionValidate(obj interface{}) error {
 	case *apps.StatefulSet:
 		// This model does not mirror any StatefulSet-specific validating admission plugins.
 		return nil
+	case *apps.Deployment:
+		// This model does not mirror any Deployment-specific validating admission plugins.
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
 	}
@@ -577,13 +599,14 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet":
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/persistentvolumeclaim/strategy.go#L134-L136
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/strategy.go#L159-L160
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/statefulset/strategy.go#L191-L193
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L148-L150
 		return true, nil
 	default:
 		return false, fmt.Errorf("unsupported kind for update: %s", kind)
@@ -612,6 +635,8 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 		return rsstrategy.Strategy, nil
 	case *apps.StatefulSet:
 		return stsstrategy.Strategy, nil
+	case *apps.Deployment:
+		return deploymentstrategy.Strategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for update strategy: %T", obj)
 	}
@@ -627,6 +652,8 @@ func statusUpdateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrate
 		return rsstrategy.StatusStrategy, nil
 	case *apps.StatefulSet:
 		return stsstrategy.StatusStrategy, nil
+	case *apps.Deployment:
+		return deploymentstrategy.StatusStrategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for status update strategy: %T", obj)
 	}
@@ -651,6 +678,10 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := stsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "StatefulSet"}, name, errs)
 		}
+	case *apps.Deployment:
+		if errs := deploymentstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "Deployment"}, name, errs)
+		}
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -667,6 +698,8 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		rsstrategy.Strategy.Canonicalize(typed)
 	case *apps.StatefulSet:
 		stsstrategy.Strategy.Canonicalize(typed)
+	case *apps.Deployment:
+		deploymentstrategy.Strategy.Canonicalize(typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -1370,6 +1403,9 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 	case *appsv1.StatefulSet:
 		// StatefulSets don't support graceful deletion
 		return false, false, nil
+	case *appsv1.Deployment:
+		// Deployments don't support graceful deletion
+		return false, false, nil
 
 	default:
 		return false, false, fmt.Errorf("unsupported object type for graceful delete: %T", obj)
@@ -1650,6 +1686,29 @@ func (s *State) ReplicaSetMutGet(namespace, name string) (*appsv1.ReplicaSet, er
 	return rs, nil
 }
 
+// Returned value must be treated as read-only.
+func (s *State) ReplicaSetList(namespace string, selector labels.Selector) ([]*appsv1.ReplicaSet, error) {
+	return s.ReplicaSetMutList(namespace, selector)
+}
+
+func (s *State) ReplicaSetMutList(namespace string, selector labels.Selector) ([]*appsv1.ReplicaSet, error) {
+	objs, err := s.objListBySelector("ReplicaSet", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	rss := make([]*appsv1.ReplicaSet, 0, len(objs))
+	for _, obj := range objs {
+		rs, ok := obj.(*appsv1.ReplicaSet)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.ReplicaSet")
+		}
+		rss = append(rss, rs)
+	}
+
+	return rss, nil
+}
+
 func (s *State) ReplicaSetCreate(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
 	obj, err := s.create("ReplicaSet", namespace, rs)
 	if err != nil {
@@ -1886,5 +1945,101 @@ func (s *State) StatefulSetUpdateStatus(namespace string, ss *appsv1.StatefulSet
 
 func (s *State) StatefulSetDelete(namespace, name string, options metav1.DeleteOptions) error {
 	key := KKey{Kind: "StatefulSet", Namespace: namespace, Name: name}
+	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) DeploymentGet(namespace, name string) (*appsv1.Deployment, error) {
+	return s.DeploymentMutGet(namespace, name)
+}
+
+func (s *State) DeploymentMutGet(namespace, name string) (*appsv1.Deployment, error) {
+	key := KKey{
+		Kind:      "Deployment",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(appsv1.Resource("deployment"), name)
+	}
+
+	d, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for deployment %s/%s is not a *v1.Deployment", namespace, name)
+	}
+
+	return d, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) DeploymentList(namespace string, selector labels.Selector) ([]*appsv1.Deployment, error) {
+	return s.DeploymentMutList(namespace, selector)
+}
+
+func (s *State) DeploymentMutList(namespace string, selector labels.Selector) ([]*appsv1.Deployment, error) {
+	objs, err := s.objListBySelector("Deployment", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	deployments := make([]*appsv1.Deployment, 0, len(objs))
+	for _, obj := range objs {
+		d, ok := obj.(*appsv1.Deployment)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.Deployment")
+		}
+		deployments = append(deployments, d)
+	}
+
+	return deployments, nil
+}
+
+func (s *State) DeploymentCreate(namespace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	obj, err := s.create("Deployment", namespace, d)
+	if err != nil {
+		return nil, err
+	}
+
+	createdDeployment, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdDeployment, nil
+}
+
+func (s *State) DeploymentUpdate(namespace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	obj, err := s.update("Deployment", namespace, d)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedDeployment, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedDeployment, nil
+}
+
+func (s *State) DeploymentUpdateStatus(namespace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	obj, err := s.updateStatus("Deployment", namespace, d)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedDeployment, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("status update returned unexpected type %T", obj)
+	}
+
+	return updatedDeployment, nil
+}
+
+func (s *State) DeploymentDelete(namespace, name string, options metav1.DeleteOptions) error {
+	key := KKey{Kind: "Deployment", Namespace: namespace, Name: name}
 	return s.delete(key, options)
 }

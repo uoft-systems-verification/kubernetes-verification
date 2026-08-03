@@ -250,6 +250,32 @@ func (s *TestServer) UpdateStatefulSetStatus(ctx context.Context, sts *appsv1.St
 	return s.client.AppsV1().StatefulSets(s.namespace).UpdateStatus(ctx, sts, metav1.UpdateOptions{})
 }
 
+// CreateDeployment creates a Deployment in the test server.
+func (s *TestServer) CreateDeployment(ctx context.Context, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	d = d.DeepCopy()
+	d.Namespace = s.namespace
+	return s.client.AppsV1().Deployments(s.namespace).Create(ctx, d, metav1.CreateOptions{})
+}
+
+// GetDeployment gets a Deployment from the test server.
+func (s *TestServer) GetDeployment(ctx context.Context, name string) (*appsv1.Deployment, error) {
+	return s.client.AppsV1().Deployments(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+// UpdateDeployment updates a Deployment in the test server.
+func (s *TestServer) UpdateDeployment(ctx context.Context, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	d = d.DeepCopy()
+	d.Namespace = s.namespace
+	return s.client.AppsV1().Deployments(s.namespace).Update(ctx, d, metav1.UpdateOptions{})
+}
+
+// UpdateDeploymentStatus updates a Deployment status in the test server.
+func (s *TestServer) UpdateDeploymentStatus(ctx context.Context, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	d = d.DeepCopy()
+	d.Namespace = s.namespace
+	return s.client.AppsV1().Deployments(s.namespace).UpdateStatus(ctx, d, metav1.UpdateOptions{})
+}
+
 // DeletePod deletes a Pod from the test server with optional DeleteOptions.
 func (s *TestServer) DeletePod(ctx context.Context, name string, options metav1.DeleteOptions) error {
 	return s.client.CoreV1().Pods(s.namespace).Delete(ctx, name, options)
@@ -268,6 +294,11 @@ func (s *TestServer) DeleteReplicaSet(ctx context.Context, name string, options 
 // DeleteStatefulSet deletes a StatefulSet from the test server with optional DeleteOptions.
 func (s *TestServer) DeleteStatefulSet(ctx context.Context, name string, options metav1.DeleteOptions) error {
 	return s.client.AppsV1().StatefulSets(s.namespace).Delete(ctx, name, options)
+}
+
+// DeleteDeployment deletes a Deployment from the test server with optional DeleteOptions.
+func (s *TestServer) DeleteDeployment(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.AppsV1().Deployments(s.namespace).Delete(ctx, name, options)
 }
 
 // Cleanup cleans up all resources created by the test server.
@@ -289,6 +320,11 @@ func (s *TestServer) Cleanup(ctx context.Context) error {
 	}
 	// Delete all statefulsets in the namespace
 	if err := s.client.AppsV1().StatefulSets(s.namespace).DeleteCollection(
+		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		return err
+	}
+	// Delete all deployments in the namespace
+	if err := s.client.AppsV1().Deployments(s.namespace).DeleteCollection(
 		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 		return err
 	}
