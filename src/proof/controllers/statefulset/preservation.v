@@ -1,4 +1,5 @@
 From New.proof.controllers.statefulset Require Export reconcile_preservation.
+From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.controllers.statefulset Require Import release.
 From New.proof.kubernetes_model Require Import get.
 
@@ -182,51 +183,10 @@ Proof.
 Qed.
 
 Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pending_dqs pods pvcs :
-  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_terminating_pod_frags" ∷
-        ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
-          own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
-          own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_other_pod_frags" ∷
-        ([∗ list] pod ∈ filter (λ pod, not (pending_pod sts pod)) pods,
-          own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-          own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods)) ∗
-      "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
-      "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
-      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      "%Hpending_nonempty" ∷
-        ⌜ filter (pending_pod sts) pods ≠ [] ⌝ ∗
-      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝
-  }}}
-    @! statefulset.syncStatefulSet #namespace #name
-  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t)
-      (err : interface.t), RET #err;
-      ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝ ∗
-      ⌜ filter (pending_pod sts) pods ⊆ filter (pending_pod sts) pods' ⌝ ∗
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pod ∈ filter (λ pod,
-          PodV.key pod ∉ PodV.key <$> filter (pending_pod sts) pods) pods',
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs',
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods'))
-  }}}.
+  ⊢ syncStatefulSet_preservation_spec γ l namespace name sts dq pending_dqs
+    pods pvcs.
 Proof.
+  unfold syncStatefulSet_preservation_spec.
   wp_start as "H". iNamed "H". wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }

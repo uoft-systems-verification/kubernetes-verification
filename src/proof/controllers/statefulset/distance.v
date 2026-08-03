@@ -1,4 +1,5 @@
 From New.proof.controllers.statefulset Require Export pod.
+From New.proof.controllers.statefulset Require Export top_level.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -144,55 +145,6 @@ Proof.
       Hmax_nonnegative) as Hbound.
     apply (proj1 Hbound). unfold go_int32_max. lia.
 Qed.
-
-Definition pod_has_int32_member_key
-    (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∧
-  pod_has_int32_member_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
-
-#[global] Instance pod_has_int32_member_key_decision sts pod :
-    Decision (pod_has_int32_member_key sts pod).
-Proof. unfold pod_has_int32_member_key. apply _. Defined.
-
-Definition missing_pod_keys sts (pods : list PodV.t) : list KKey.t :=
-  filter (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts).
-
-Definition needed_pods sts pods : list PodV.t :=
-  filter (λ pod, pod_key_is_desired sts (PodV.key pod)) pods.
-
-Definition outdated_pods sts pods : list PodV.t :=
-  filter (λ pod, ¬ pod_match sts pod) (needed_pods sts pods).
-
-Definition bad_name_pods sts pods : list PodV.t :=
-  filter (λ pod, ¬ pod_has_int32_member_key sts pod) pods.
-
-Definition condemned_pods sts pods : list PodV.t :=
-  filter (λ pod,
-    pod_has_int32_member_key sts pod ∧
-    ¬ pod_key_is_desired sts (PodV.key pod)) pods.
-
-(* The progress metric gives an outdated desired Pod cost 2 and a missing
-   desired Pod cost 1, so deleting one outdated Pod strictly reduces the
-   distance even though the desired replacement Pod is created by a later run.
-   Once the delete only sets DeletionTimestamp, the Pod is no longer alive and
-   should not keep contributing to the outdated-Pod distance. *)
-Definition pod_distance sts pods : nat :=
-  length (missing_pod_keys sts pods) +
-  2 * length (filter is_pod_alive (outdated_pods sts pods)) +
-  length (filter is_pod_alive (condemned_pods sts pods)) +
-  length (bad_name_pods sts pods).
-
-Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) : list KKey.t :=
-  filter (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts).
-
-Definition pvc_distance sts pvcs : nat :=
-  length (missing_pvc_keys sts pvcs).
-
-Definition match_distance sts pods pvcs : nat :=
-  pod_distance sts pods + pvc_distance sts pvcs.
 
 Definition statefulset_storage_view (sts : StatefulSetV.t) :
     ObjectMetaV.t * StatefulSetSpecV.t :=
@@ -718,18 +670,6 @@ Proof.
   by rewrite (pod_view_distance_perm _ _ _ Hperm).
 Qed.
 
-Definition pods_match sts pods : Prop :=
-  PodV.key <$> pods ≡ₚ desired_pod_keys sts ∧
-  Forall is_pod_alive pods ∧
-  Forall (pod_match sts) pods.
-
-Definition pvcs_match sts (pvcs : list PersistentVolumeClaimV.t) : Prop :=
-  ∀ key, key ∈ desired_pvc_keys sts →
-    key ∈ (PersistentVolumeClaimV.key <$> pvcs).
-
-Definition current_state_matches sts pods pvcs : Prop :=
-  pods_match sts pods ∧ pvcs_match sts pvcs.
-
 Lemma match_distance_zero_matches γ sts pods pvcs :
   (∀ pod, pod ∈ pods → is_pod_alive pod) →
   ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) -∗
@@ -870,28 +810,6 @@ Proof.
       Halive_condemned_pods_nil Hmissing_pvcs_nil.
     done.
 Qed.
-
-Definition pod_meta_except_resource_version_changed
-    (pods pods' : list PodV.t) : Prop :=
-  ∃ pod pod',
-    pod ∈ pods ∧
-    pod' ∈ pods' ∧
-    PodV.key pod = PodV.key pod' ∧
-    ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta') ≠
-      ObjectMetaV.without_resource_version pod'.(PodV.ObjectMeta').
-
-Definition pod_spec_changed (pods pods' : list PodV.t) : Prop :=
-  ∃ pod pod',
-    pod ∈ pods ∧
-    pod' ∈ pods' ∧
-    PodV.key pod = PodV.key pod' ∧
-    pod.(PodV.Spec') ≠ pod'.(PodV.Spec').
-
-Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
-  list_to_set (C:=gset KKey.t) (PodV.key <$> pods) ≠
-    list_to_set (C:=gset KKey.t) (PodV.key <$> pods') ∨
-  pod_meta_except_resource_version_changed pods pods' ∨
-  pod_spec_changed pods pods'.
 
 Lemma statefulset_storage_view_missing_pod_keys sts1 sts2 pods :
   statefulset_storage_view sts1 = statefulset_storage_view sts2 →

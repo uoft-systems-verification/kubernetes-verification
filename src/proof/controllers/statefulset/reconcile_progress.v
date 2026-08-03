@@ -1,4 +1,5 @@
 From New.proof.controllers.statefulset Require Export distance.
+From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.controllers.statefulset Require Import pod create_pod create_pvc
   update_pod condemned outdated delete_pod.
 
@@ -41,33 +42,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-Definition input_requirement (sts : StatefulSetV.t) : Prop :=
-  (* StatefulSet admission validates the set name before the controller adds
-     the ordinal suffix. Require every generated Pod name to remain a valid
-     DNS-1123 label because it is also used as the Pod hostname and as a label
-     value, both of which have a 63-byte limit. *)
-  (∀ ordinal,
-    (ordinal < statefulset_replicas sts)%nat →
-    valid_dns1123_label
-      (desired_pod_name
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)) ∧
-  (* StatefulSet admission does not validate Pod-template finalizers, but the
-     controller copies them to generated Pods and Pod create validates them. *)
-  valid_finalizers
-    ((sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template')).(
-      PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')) ∧
-  (* StatefulSet admission validates only each volume-claim template's spec.
-     The controller copies its otherwise-unvalidated metadata to generated
-     PVCs, whose full metadata is validated on create. *)
-  Forall
-    (λ claim_template,
-      ∀ ordinal,
-        (ordinal < statefulset_replicas sts)%nat →
-        PersistentVolumeClaimV.valid_named_create
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-          (new_persistent_volume_claim sts claim_template ordinal))
-    sts.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates').
 
 Lemma statefulset_storage_view_input_requirement sts1 sts2 :
   statefulset_storage_view sts1 = statefulset_storage_view sts2 →

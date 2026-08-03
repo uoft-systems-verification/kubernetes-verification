@@ -1,4 +1,5 @@
 From New.proof.controllers.statefulset Require Export reconcile_stability.
+From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.kubernetes_model Require Import get.
 
 Section proof.
@@ -35,34 +36,9 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
-  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
-	    "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-	    "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-	    "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-	    "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
-  }}}
-    @! statefulset.syncStatefulSet #namespace #name
-  {{{ (err : interface.t), RET #err;
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods))
-  }}}.
+  ⊢ syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs.
 Proof.
+  unfold syncStatefulSet_stability_spec.
   wp_start as "H". iNamed "H". wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
