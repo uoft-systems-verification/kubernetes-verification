@@ -1,0 +1,6 @@
+translate = [
+    "IntOrString",
+    "Type",
+]
+
+imports = ["!*"]

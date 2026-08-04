@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.intstr.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.api.apps.v1.
 
@@ -640,7 +641,7 @@ Proof. Admitted.
 End def.
 End StatefulSetList.
 
-Module Deployment.
+Module DeploymentStrategy.
 Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
@@ -649,16 +650,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Deployment_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Deployment.t). Admitted.
+#[global]Program Instance DeploymentStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentStrategy.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.DeploymentStrategy.t), "Type"] ↦{dq} v.(v1.DeploymentStrategy.Type') ∗
+      "RollingUpdate" ∷ l.[(v1.DeploymentStrategy.t), "RollingUpdate"] ↦{dq} v.(v1.DeploymentStrategy.RollingUpdate') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
-#[global] Instance Deployment_into_val_typed
+#[global] Instance DeploymentStrategy_into_val_typed
    :
-  IntoValTypedUnderlying (v1.Deployment.t) (v1.Deploymentⁱᵐᵖˡ).
-Proof. Admitted.
+  IntoValTypedUnderlying (v1.DeploymentStrategy.t) (v1.DeploymentStrategyⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DeploymentStrategy_access_load_Type l (v : (v1.DeploymentStrategy.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStrategy.t), "Type"] ↦{dq} (v.(v1.DeploymentStrategy.Type')))
+    (l.[(v1.DeploymentStrategy.t), "Type"] ↦{dq} (v.(v1.DeploymentStrategy.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStrategy_access_store_Type l (v : (v1.DeploymentStrategy.t)) Type' :
+  AccessStrict
+    (l.[(v1.DeploymentStrategy.t), "Type"] ↦ (v.(v1.DeploymentStrategy.Type')))
+    (l.[(v1.DeploymentStrategy.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStrategy.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStrategy_access_load_RollingUpdate l (v : (v1.DeploymentStrategy.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStrategy.t), "RollingUpdate"] ↦{dq} (v.(v1.DeploymentStrategy.RollingUpdate')))
+    (l.[(v1.DeploymentStrategy.t), "RollingUpdate"] ↦{dq} (v.(v1.DeploymentStrategy.RollingUpdate')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStrategy_access_store_RollingUpdate l (v : (v1.DeploymentStrategy.t)) RollingUpdate' :
+  AccessStrict
+    (l.[(v1.DeploymentStrategy.t), "RollingUpdate"] ↦ (v.(v1.DeploymentStrategy.RollingUpdate')))
+    (l.[(v1.DeploymentStrategy.t), "RollingUpdate"] ↦ RollingUpdate')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStrategy.RollingUpdate') := RollingUpdate'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
-End Deployment.
+End DeploymentStrategy.
 
 Module DeploymentSpec.
 Section def.
@@ -669,76 +705,135 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DeploymentSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentSpec.t). Admitted.
+#[global]Program Instance DeploymentSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Replicas" ∷ l.[(v1.DeploymentSpec.t), "Replicas"] ↦{dq} v.(v1.DeploymentSpec.Replicas') ∗
+      "Selector" ∷ l.[(v1.DeploymentSpec.t), "Selector"] ↦{dq} v.(v1.DeploymentSpec.Selector') ∗
+      "Template" ∷ l.[(v1.DeploymentSpec.t), "Template"] ↦{dq} v.(v1.DeploymentSpec.Template') ∗
+      "Strategy" ∷ l.[(v1.DeploymentSpec.t), "Strategy"] ↦{dq} v.(v1.DeploymentSpec.Strategy') ∗
+      "MinReadySeconds" ∷ l.[(v1.DeploymentSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.DeploymentSpec.MinReadySeconds') ∗
+      "RevisionHistoryLimit" ∷ l.[(v1.DeploymentSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.DeploymentSpec.RevisionHistoryLimit') ∗
+      "Paused" ∷ l.[(v1.DeploymentSpec.t), "Paused"] ↦{dq} v.(v1.DeploymentSpec.Paused') ∗
+      "ProgressDeadlineSeconds" ∷ l.[(v1.DeploymentSpec.t), "ProgressDeadlineSeconds"] ↦{dq} v.(v1.DeploymentSpec.ProgressDeadlineSeconds') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DeploymentSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.DeploymentSpec.t) (v1.DeploymentSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_Replicas l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Replicas"] ↦{dq} (v.(v1.DeploymentSpec.Replicas')))
+    (l.[(v1.DeploymentSpec.t), "Replicas"] ↦{dq} (v.(v1.DeploymentSpec.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_Replicas l (v : (v1.DeploymentSpec.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Replicas"] ↦ (v.(v1.DeploymentSpec.Replicas')))
+    (l.[(v1.DeploymentSpec.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_Selector l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Selector"] ↦{dq} (v.(v1.DeploymentSpec.Selector')))
+    (l.[(v1.DeploymentSpec.t), "Selector"] ↦{dq} (v.(v1.DeploymentSpec.Selector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_Selector l (v : (v1.DeploymentSpec.t)) Selector' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Selector"] ↦ (v.(v1.DeploymentSpec.Selector')))
+    (l.[(v1.DeploymentSpec.t), "Selector"] ↦ Selector')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.Selector') := Selector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_Template l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Template"] ↦{dq} (v.(v1.DeploymentSpec.Template')))
+    (l.[(v1.DeploymentSpec.t), "Template"] ↦{dq} (v.(v1.DeploymentSpec.Template')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_Template l (v : (v1.DeploymentSpec.t)) Template' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Template"] ↦ (v.(v1.DeploymentSpec.Template')))
+    (l.[(v1.DeploymentSpec.t), "Template"] ↦ Template')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.Template') := Template'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_Strategy l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Strategy"] ↦{dq} (v.(v1.DeploymentSpec.Strategy')))
+    (l.[(v1.DeploymentSpec.t), "Strategy"] ↦{dq} (v.(v1.DeploymentSpec.Strategy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_Strategy l (v : (v1.DeploymentSpec.t)) Strategy' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Strategy"] ↦ (v.(v1.DeploymentSpec.Strategy')))
+    (l.[(v1.DeploymentSpec.t), "Strategy"] ↦ Strategy')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.Strategy') := Strategy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_MinReadySeconds l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.DeploymentSpec.MinReadySeconds')))
+    (l.[(v1.DeploymentSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.DeploymentSpec.MinReadySeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_MinReadySeconds l (v : (v1.DeploymentSpec.t)) MinReadySeconds' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "MinReadySeconds"] ↦ (v.(v1.DeploymentSpec.MinReadySeconds')))
+    (l.[(v1.DeploymentSpec.t), "MinReadySeconds"] ↦ MinReadySeconds')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.MinReadySeconds') := MinReadySeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_RevisionHistoryLimit l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.DeploymentSpec.RevisionHistoryLimit')))
+    (l.[(v1.DeploymentSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.DeploymentSpec.RevisionHistoryLimit')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_RevisionHistoryLimit l (v : (v1.DeploymentSpec.t)) RevisionHistoryLimit' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "RevisionHistoryLimit"] ↦ (v.(v1.DeploymentSpec.RevisionHistoryLimit')))
+    (l.[(v1.DeploymentSpec.t), "RevisionHistoryLimit"] ↦ RevisionHistoryLimit')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.RevisionHistoryLimit') := RevisionHistoryLimit'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_Paused l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Paused"] ↦{dq} (v.(v1.DeploymentSpec.Paused')))
+    (l.[(v1.DeploymentSpec.t), "Paused"] ↦{dq} (v.(v1.DeploymentSpec.Paused')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_Paused l (v : (v1.DeploymentSpec.t)) Paused' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "Paused"] ↦ (v.(v1.DeploymentSpec.Paused')))
+    (l.[(v1.DeploymentSpec.t), "Paused"] ↦ Paused')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.Paused') := Paused'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentSpec_access_load_ProgressDeadlineSeconds l (v : (v1.DeploymentSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "ProgressDeadlineSeconds"] ↦{dq} (v.(v1.DeploymentSpec.ProgressDeadlineSeconds')))
+    (l.[(v1.DeploymentSpec.t), "ProgressDeadlineSeconds"] ↦{dq} (v.(v1.DeploymentSpec.ProgressDeadlineSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentSpec_access_store_ProgressDeadlineSeconds l (v : (v1.DeploymentSpec.t)) ProgressDeadlineSeconds' :
+  AccessStrict
+    (l.[(v1.DeploymentSpec.t), "ProgressDeadlineSeconds"] ↦ (v.(v1.DeploymentSpec.ProgressDeadlineSeconds')))
+    (l.[(v1.DeploymentSpec.t), "ProgressDeadlineSeconds"] ↦ ProgressDeadlineSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentSpec.ProgressDeadlineSeconds') := ProgressDeadlineSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DeploymentSpec.
-
-Module DeploymentStrategy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DeploymentStrategy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentStrategy.t). Admitted.
-
-#[global] Instance DeploymentStrategy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DeploymentStrategy.t) (v1.DeploymentStrategyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DeploymentStrategy.
-
-Module DeploymentStrategyType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DeploymentStrategyType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentStrategyType.t). Admitted.
-
-#[global] Instance DeploymentStrategyType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DeploymentStrategyType.t) (v1.DeploymentStrategyTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DeploymentStrategyType.
-
-Module RollingUpdateDeployment.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance RollingUpdateDeployment_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDeployment.t). Admitted.
-
-#[global] Instance RollingUpdateDeployment_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.RollingUpdateDeployment.t) (v1.RollingUpdateDeploymentⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End RollingUpdateDeployment.
 
 Module DeploymentStatus.
 Section def.
@@ -749,18 +844,151 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DeploymentStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentStatus.t). Admitted.
+#[global]Program Instance DeploymentStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ObservedGeneration" ∷ l.[(v1.DeploymentStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.DeploymentStatus.ObservedGeneration') ∗
+      "Replicas" ∷ l.[(v1.DeploymentStatus.t), "Replicas"] ↦{dq} v.(v1.DeploymentStatus.Replicas') ∗
+      "UpdatedReplicas" ∷ l.[(v1.DeploymentStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.DeploymentStatus.UpdatedReplicas') ∗
+      "ReadyReplicas" ∷ l.[(v1.DeploymentStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.DeploymentStatus.ReadyReplicas') ∗
+      "AvailableReplicas" ∷ l.[(v1.DeploymentStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.DeploymentStatus.AvailableReplicas') ∗
+      "UnavailableReplicas" ∷ l.[(v1.DeploymentStatus.t), "UnavailableReplicas"] ↦{dq} v.(v1.DeploymentStatus.UnavailableReplicas') ∗
+      "TerminatingReplicas" ∷ l.[(v1.DeploymentStatus.t), "TerminatingReplicas"] ↦{dq} v.(v1.DeploymentStatus.TerminatingReplicas') ∗
+      "Conditions" ∷ l.[(v1.DeploymentStatus.t), "Conditions"] ↦{dq} v.(v1.DeploymentStatus.Conditions') ∗
+      "CollisionCount" ∷ l.[(v1.DeploymentStatus.t), "CollisionCount"] ↦{dq} v.(v1.DeploymentStatus.CollisionCount') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DeploymentStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.DeploymentStatus.t) (v1.DeploymentStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_ObservedGeneration l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.DeploymentStatus.ObservedGeneration')))
+    (l.[(v1.DeploymentStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.DeploymentStatus.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_ObservedGeneration l (v : (v1.DeploymentStatus.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "ObservedGeneration"] ↦ (v.(v1.DeploymentStatus.ObservedGeneration')))
+    (l.[(v1.DeploymentStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_Replicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "Replicas"] ↦{dq} (v.(v1.DeploymentStatus.Replicas')))
+    (l.[(v1.DeploymentStatus.t), "Replicas"] ↦{dq} (v.(v1.DeploymentStatus.Replicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_Replicas l (v : (v1.DeploymentStatus.t)) Replicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "Replicas"] ↦ (v.(v1.DeploymentStatus.Replicas')))
+    (l.[(v1.DeploymentStatus.t), "Replicas"] ↦ Replicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.Replicas') := Replicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_UpdatedReplicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "UpdatedReplicas"] ↦{dq} (v.(v1.DeploymentStatus.UpdatedReplicas')))
+    (l.[(v1.DeploymentStatus.t), "UpdatedReplicas"] ↦{dq} (v.(v1.DeploymentStatus.UpdatedReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_UpdatedReplicas l (v : (v1.DeploymentStatus.t)) UpdatedReplicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "UpdatedReplicas"] ↦ (v.(v1.DeploymentStatus.UpdatedReplicas')))
+    (l.[(v1.DeploymentStatus.t), "UpdatedReplicas"] ↦ UpdatedReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.UpdatedReplicas') := UpdatedReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_ReadyReplicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.DeploymentStatus.ReadyReplicas')))
+    (l.[(v1.DeploymentStatus.t), "ReadyReplicas"] ↦{dq} (v.(v1.DeploymentStatus.ReadyReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_ReadyReplicas l (v : (v1.DeploymentStatus.t)) ReadyReplicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "ReadyReplicas"] ↦ (v.(v1.DeploymentStatus.ReadyReplicas')))
+    (l.[(v1.DeploymentStatus.t), "ReadyReplicas"] ↦ ReadyReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.ReadyReplicas') := ReadyReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_AvailableReplicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.DeploymentStatus.AvailableReplicas')))
+    (l.[(v1.DeploymentStatus.t), "AvailableReplicas"] ↦{dq} (v.(v1.DeploymentStatus.AvailableReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_AvailableReplicas l (v : (v1.DeploymentStatus.t)) AvailableReplicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "AvailableReplicas"] ↦ (v.(v1.DeploymentStatus.AvailableReplicas')))
+    (l.[(v1.DeploymentStatus.t), "AvailableReplicas"] ↦ AvailableReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.AvailableReplicas') := AvailableReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_UnavailableReplicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "UnavailableReplicas"] ↦{dq} (v.(v1.DeploymentStatus.UnavailableReplicas')))
+    (l.[(v1.DeploymentStatus.t), "UnavailableReplicas"] ↦{dq} (v.(v1.DeploymentStatus.UnavailableReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_UnavailableReplicas l (v : (v1.DeploymentStatus.t)) UnavailableReplicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "UnavailableReplicas"] ↦ (v.(v1.DeploymentStatus.UnavailableReplicas')))
+    (l.[(v1.DeploymentStatus.t), "UnavailableReplicas"] ↦ UnavailableReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.UnavailableReplicas') := UnavailableReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_TerminatingReplicas l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "TerminatingReplicas"] ↦{dq} (v.(v1.DeploymentStatus.TerminatingReplicas')))
+    (l.[(v1.DeploymentStatus.t), "TerminatingReplicas"] ↦{dq} (v.(v1.DeploymentStatus.TerminatingReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_TerminatingReplicas l (v : (v1.DeploymentStatus.t)) TerminatingReplicas' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "TerminatingReplicas"] ↦ (v.(v1.DeploymentStatus.TerminatingReplicas')))
+    (l.[(v1.DeploymentStatus.t), "TerminatingReplicas"] ↦ TerminatingReplicas')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.TerminatingReplicas') := TerminatingReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_Conditions l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "Conditions"] ↦{dq} (v.(v1.DeploymentStatus.Conditions')))
+    (l.[(v1.DeploymentStatus.t), "Conditions"] ↦{dq} (v.(v1.DeploymentStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_Conditions l (v : (v1.DeploymentStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "Conditions"] ↦ (v.(v1.DeploymentStatus.Conditions')))
+    (l.[(v1.DeploymentStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentStatus_access_load_CollisionCount l (v : (v1.DeploymentStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "CollisionCount"] ↦{dq} (v.(v1.DeploymentStatus.CollisionCount')))
+    (l.[(v1.DeploymentStatus.t), "CollisionCount"] ↦{dq} (v.(v1.DeploymentStatus.CollisionCount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentStatus_access_store_CollisionCount l (v : (v1.DeploymentStatus.t)) CollisionCount' :
+  AccessStrict
+    (l.[(v1.DeploymentStatus.t), "CollisionCount"] ↦ (v.(v1.DeploymentStatus.CollisionCount')))
+    (l.[(v1.DeploymentStatus.t), "CollisionCount"] ↦ CollisionCount')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentStatus.CollisionCount') := CollisionCount'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DeploymentStatus.
 
-Module DeploymentConditionType.
+Module Deployment.
 Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
@@ -769,16 +997,134 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DeploymentConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentConditionType.t). Admitted.
+#[global]Program Instance Deployment_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Deployment.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.Deployment.t), "TypeMeta"] ↦{dq} v.(v1.Deployment.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.Deployment.t), "ObjectMeta"] ↦{dq} v.(v1.Deployment.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.Deployment.t), "Spec"] ↦{dq} v.(v1.Deployment.Spec') ∗
+      "Status" ∷ l.[(v1.Deployment.t), "Status"] ↦{dq} v.(v1.Deployment.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
-#[global] Instance DeploymentConditionType_into_val_typed
+#[global] Instance Deployment_into_val_typed
    :
-  IntoValTypedUnderlying (v1.DeploymentConditionType.t) (v1.DeploymentConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
+  IntoValTypedUnderlying (v1.Deployment.t) (v1.Deploymentⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Deployment_access_load_TypeMeta l (v : (v1.Deployment.t)) dq :
+  AccessStrict
+    (l.[(v1.Deployment.t), "TypeMeta"] ↦{dq} (v.(v1.Deployment.TypeMeta')))
+    (l.[(v1.Deployment.t), "TypeMeta"] ↦{dq} (v.(v1.Deployment.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Deployment_access_store_TypeMeta l (v : (v1.Deployment.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.Deployment.t), "TypeMeta"] ↦ (v.(v1.Deployment.TypeMeta')))
+    (l.[(v1.Deployment.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Deployment.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Deployment_access_load_ObjectMeta l (v : (v1.Deployment.t)) dq :
+  AccessStrict
+    (l.[(v1.Deployment.t), "ObjectMeta"] ↦{dq} (v.(v1.Deployment.ObjectMeta')))
+    (l.[(v1.Deployment.t), "ObjectMeta"] ↦{dq} (v.(v1.Deployment.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Deployment_access_store_ObjectMeta l (v : (v1.Deployment.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.Deployment.t), "ObjectMeta"] ↦ (v.(v1.Deployment.ObjectMeta')))
+    (l.[(v1.Deployment.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Deployment.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Deployment_access_load_Spec l (v : (v1.Deployment.t)) dq :
+  AccessStrict
+    (l.[(v1.Deployment.t), "Spec"] ↦{dq} (v.(v1.Deployment.Spec')))
+    (l.[(v1.Deployment.t), "Spec"] ↦{dq} (v.(v1.Deployment.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Deployment_access_store_Spec l (v : (v1.Deployment.t)) Spec' :
+  AccessStrict
+    (l.[(v1.Deployment.t), "Spec"] ↦ (v.(v1.Deployment.Spec')))
+    (l.[(v1.Deployment.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.Deployment.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Deployment_access_load_Status l (v : (v1.Deployment.t)) dq :
+  AccessStrict
+    (l.[(v1.Deployment.t), "Status"] ↦{dq} (v.(v1.Deployment.Status')))
+    (l.[(v1.Deployment.t), "Status"] ↦{dq} (v.(v1.Deployment.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Deployment_access_store_Status l (v : (v1.Deployment.t)) Status' :
+  AccessStrict
+    (l.[(v1.Deployment.t), "Status"] ↦ (v.(v1.Deployment.Status')))
+    (l.[(v1.Deployment.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.Deployment.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
-End DeploymentConditionType.
+End Deployment.
+
+Module RollingUpdateDeployment.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance RollingUpdateDeployment_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDeployment.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "MaxUnavailable" ∷ l.[(v1.RollingUpdateDeployment.t), "MaxUnavailable"] ↦{dq} v.(v1.RollingUpdateDeployment.MaxUnavailable') ∗
+      "MaxSurge" ∷ l.[(v1.RollingUpdateDeployment.t), "MaxSurge"] ↦{dq} v.(v1.RollingUpdateDeployment.MaxSurge') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance RollingUpdateDeployment_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.RollingUpdateDeployment.t) (v1.RollingUpdateDeploymentⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance RollingUpdateDeployment_access_load_MaxUnavailable l (v : (v1.RollingUpdateDeployment.t)) dq :
+  AccessStrict
+    (l.[(v1.RollingUpdateDeployment.t), "MaxUnavailable"] ↦{dq} (v.(v1.RollingUpdateDeployment.MaxUnavailable')))
+    (l.[(v1.RollingUpdateDeployment.t), "MaxUnavailable"] ↦{dq} (v.(v1.RollingUpdateDeployment.MaxUnavailable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RollingUpdateDeployment_access_store_MaxUnavailable l (v : (v1.RollingUpdateDeployment.t)) MaxUnavailable' :
+  AccessStrict
+    (l.[(v1.RollingUpdateDeployment.t), "MaxUnavailable"] ↦ (v.(v1.RollingUpdateDeployment.MaxUnavailable')))
+    (l.[(v1.RollingUpdateDeployment.t), "MaxUnavailable"] ↦ MaxUnavailable')
+    (l ↦ v) (l ↦ (v <|(v1.RollingUpdateDeployment.MaxUnavailable') := MaxUnavailable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RollingUpdateDeployment_access_load_MaxSurge l (v : (v1.RollingUpdateDeployment.t)) dq :
+  AccessStrict
+    (l.[(v1.RollingUpdateDeployment.t), "MaxSurge"] ↦{dq} (v.(v1.RollingUpdateDeployment.MaxSurge')))
+    (l.[(v1.RollingUpdateDeployment.t), "MaxSurge"] ↦{dq} (v.(v1.RollingUpdateDeployment.MaxSurge')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RollingUpdateDeployment_access_store_MaxSurge l (v : (v1.RollingUpdateDeployment.t)) MaxSurge' :
+  AccessStrict
+    (l.[(v1.RollingUpdateDeployment.t), "MaxSurge"] ↦ (v.(v1.RollingUpdateDeployment.MaxSurge')))
+    (l.[(v1.RollingUpdateDeployment.t), "MaxSurge"] ↦ MaxSurge')
+    (l ↦ v) (l ↦ (v <|(v1.RollingUpdateDeployment.MaxSurge') := MaxSurge'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End RollingUpdateDeployment.
 
 Module DeploymentCondition.
 Section def.
@@ -789,13 +1135,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DeploymentCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentCondition.t). Admitted.
+#[global]Program Instance DeploymentCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DeploymentCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.DeploymentCondition.t), "Type"] ↦{dq} v.(v1.DeploymentCondition.Type') ∗
+      "Status" ∷ l.[(v1.DeploymentCondition.t), "Status"] ↦{dq} v.(v1.DeploymentCondition.Status') ∗
+      "LastUpdateTime" ∷ l.[(v1.DeploymentCondition.t), "LastUpdateTime"] ↦{dq} v.(v1.DeploymentCondition.LastUpdateTime') ∗
+      "LastTransitionTime" ∷ l.[(v1.DeploymentCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.DeploymentCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.DeploymentCondition.t), "Reason"] ↦{dq} v.(v1.DeploymentCondition.Reason') ∗
+      "Message" ∷ l.[(v1.DeploymentCondition.t), "Message"] ↦{dq} v.(v1.DeploymentCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DeploymentCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.DeploymentCondition.t) (v1.DeploymentConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_Type l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Type"] ↦{dq} (v.(v1.DeploymentCondition.Type')))
+    (l.[(v1.DeploymentCondition.t), "Type"] ↦{dq} (v.(v1.DeploymentCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_Type l (v : (v1.DeploymentCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Type"] ↦ (v.(v1.DeploymentCondition.Type')))
+    (l.[(v1.DeploymentCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_Status l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Status"] ↦{dq} (v.(v1.DeploymentCondition.Status')))
+    (l.[(v1.DeploymentCondition.t), "Status"] ↦{dq} (v.(v1.DeploymentCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_Status l (v : (v1.DeploymentCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Status"] ↦ (v.(v1.DeploymentCondition.Status')))
+    (l.[(v1.DeploymentCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_LastUpdateTime l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "LastUpdateTime"] ↦{dq} (v.(v1.DeploymentCondition.LastUpdateTime')))
+    (l.[(v1.DeploymentCondition.t), "LastUpdateTime"] ↦{dq} (v.(v1.DeploymentCondition.LastUpdateTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_LastUpdateTime l (v : (v1.DeploymentCondition.t)) LastUpdateTime' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "LastUpdateTime"] ↦ (v.(v1.DeploymentCondition.LastUpdateTime')))
+    (l.[(v1.DeploymentCondition.t), "LastUpdateTime"] ↦ LastUpdateTime')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.LastUpdateTime') := LastUpdateTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_LastTransitionTime l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.DeploymentCondition.LastTransitionTime')))
+    (l.[(v1.DeploymentCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.DeploymentCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_LastTransitionTime l (v : (v1.DeploymentCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "LastTransitionTime"] ↦ (v.(v1.DeploymentCondition.LastTransitionTime')))
+    (l.[(v1.DeploymentCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_Reason l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Reason"] ↦{dq} (v.(v1.DeploymentCondition.Reason')))
+    (l.[(v1.DeploymentCondition.t), "Reason"] ↦{dq} (v.(v1.DeploymentCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_Reason l (v : (v1.DeploymentCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Reason"] ↦ (v.(v1.DeploymentCondition.Reason')))
+    (l.[(v1.DeploymentCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DeploymentCondition_access_load_Message l (v : (v1.DeploymentCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Message"] ↦{dq} (v.(v1.DeploymentCondition.Message')))
+    (l.[(v1.DeploymentCondition.t), "Message"] ↦{dq} (v.(v1.DeploymentCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DeploymentCondition_access_store_Message l (v : (v1.DeploymentCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.DeploymentCondition.t), "Message"] ↦ (v.(v1.DeploymentCondition.Message')))
+    (l.[(v1.DeploymentCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.DeploymentCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DeploymentCondition.

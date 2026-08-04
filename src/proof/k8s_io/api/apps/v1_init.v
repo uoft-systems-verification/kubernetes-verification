@@ -1,6 +1,7 @@
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 From New.proof Require Import proof_prelude.
 From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.util Require Export intstr_init.
 
 
 Section proof.

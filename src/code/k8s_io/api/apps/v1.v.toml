@@ -11,10 +11,21 @@ translate = [
     "StatefulSet",
     "StatefulSetSpec",
     "StatefulSetStatus",
+    "Deployment",
+    "DeploymentSpec",
+    "DeploymentStrategy",
+    "DeploymentStrategyType",
+    "RollingUpdateDeployment",
+    "DeploymentStatus",
+    "DeploymentCondition",
+    "DeploymentConditionType",
+    "RecreateDeploymentStrategyType",
+    "RollingUpdateDeploymentStrategyType",
 ]
 
 imports = [
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/apimachinery/pkg/util/intstr",
 ]
