@@ -98,9 +98,10 @@ Definition created (spec spec' : t) : Prop :=
 
 (* Likewise on update: PrepareForUpdate restores the old status and bumps the
    generation, leaving the submitted spec as the stored one:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L110-L124 *)
-Definition updated (spec spec' : t) : Prop :=
-  defaulted spec spec'.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L110-L124
+   The submitted spec is stored verbatim. *)
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 (* A defaulted spec has an explicit, nonnegative replica count, so a spec that
    passes create validation is valid once stored. *)
