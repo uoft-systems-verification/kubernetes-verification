@@ -83,9 +83,16 @@ Definition old_replica_set_pairs (ptrs : list loc) (rss : list ReplicaSetV.t)
     (new_rs_o : option ReplicaSetV.t) : list (loc * ReplicaSetV.t) :=
   filter (λ pr, rs_is_old new_rs_o pr.2) (zip ptrs rss).
 
-(* equalIgnoreHash compares pod templates ignoring the pod-template-hash
-   label. PodTemplateSpecV is axiomatized, so the comparison relation and the
-   spec below are trusted, mirroring controller.v's pod_from_template. *)
+(* TODO: un-axiomatize. Once PodTemplateSpecV carries enough structure to state
+   template equality, template_matches should become a Definition (equality of
+   the templates after deleting the pod-template-hash label from each
+   ObjectMeta), the two axioms below should become proved lemmas, and
+   wp_equalIgnoreHash in replica_sets.v should be discharged rather than
+   Admitted.
+
+   equalIgnoreHash compares pod templates ignoring the pod-template-hash label.
+   PodTemplateSpecV is axiomatized, so the comparison relation and the spec
+   below are trusted, mirroring controller.v's pod_from_template. *)
 Parameter template_matches : PodTemplateSpecV.t → PodTemplateSpecV.t → Prop.
 Axiom template_matches_dec : ∀ t1 t2, Decision (template_matches t1 t2).
 #[global] Existing Instance template_matches_dec.

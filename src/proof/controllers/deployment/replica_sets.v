@@ -6,7 +6,7 @@ From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
-From New.proof.controllers.deployment Require Export model.
+From New.proof.controllers.deployment Require Export common.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
