@@ -424,8 +424,8 @@ Proof.
         (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(
-              StatefulSetSpecV.VolumeClaimTemplates') !! name =
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
           PersistentVolumeClaimV.valid_named_create
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -440,8 +440,8 @@ Proof.
         exact Hordinal_lt. }
       iDestruct (prepare_pvc_states γ set (sint.nat ordinal)
         (persistent_volume_claim_templates_by_name
-          set.(StatefulSetV.Spec').(
-            StatefulSetSpecV.VolumeClaimTemplates'))
+          (StatefulSetSpecV.volume_claim_templates_list
+            set.(StatefulSetV.Spec')))
         pvc_map reserved_pvcs required_pvcs Hpvc_wf
         Hreserved_pvcs_nodup Hpvc_coverage
         ltac:(intros name claim_template Hlookup;
@@ -679,8 +679,8 @@ Proof.
         with "Hreserved_pods") as "[Hpod_reserved _]".
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(
-              StatefulSetSpecV.VolumeClaimTemplates') !! name =
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
           PersistentVolumeClaimV.valid_named_create
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -695,8 +695,8 @@ Proof.
         exact Hordinal_lt. }
       iDestruct (prepare_pvc_states γ set (sint.nat ordinal)
         (persistent_volume_claim_templates_by_name
-          set.(StatefulSetV.Spec').(
-            StatefulSetSpecV.VolumeClaimTemplates'))
+          (StatefulSetSpecV.volume_claim_templates_list
+            set.(StatefulSetV.Spec')))
         pvc_map reserved_pvcs required_pvcs Hpvc_wf
         Hreserved_pvcs_nodup Hpvc_coverage
         ltac:(intros name claim_template Hlookup;

@@ -86,7 +86,8 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
       "Hpvc_states" ∷
         ([∗ map] claim_template_name↦claim_template ∈
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates'),
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')),
           (∃ claim,
             "%Hkey" ∷
               ⌜ PersistentVolumeClaimV.key claim =

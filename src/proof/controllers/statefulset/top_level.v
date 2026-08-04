@@ -32,7 +32,8 @@ End init.
 Definition pvc_claim_template_names (sts : StatefulSetV.t) : list go_string :=
   (λ claim_template,
     claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
-  <$> sts.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates').
+  <$> StatefulSetSpecV.volume_claim_templates_list
+    sts.(StatefulSetV.Spec').
 
 Definition desired_pvc_name set_name claim_template_name ordinal : go_string :=
   claim_template_name ++ "-"%go ++ set_name ++ "-"%go ++ decimal_string ordinal.
@@ -262,7 +263,8 @@ Definition pod_storage_matches (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
       (ordinal <= go_int32_max_nat)%nat ∧
       Forall
         (pod_volume_claim_matches
-          (pod_volumes_map_of_list pod.(PodV.Spec').(PodSpecV.Volumes'))
+          (pod_volumes_map_of_list
+            (PodSpecV.volumes_list pod.(PodV.Spec')))
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
         (pvc_claim_template_names set)
   | None => False
@@ -277,7 +279,7 @@ Proof.
 Defined.
 
 Definition without_statefulset_fields (_ : PodSpecV.t) : PodSpecV.t := {|
-  PodSpecV.Volumes' := [];
+  PodSpecV.Volumes' := None;
   PodSpecV.Hostname' := ""%go;
   PodSpecV.Subdomain' := ""%go;
 |}.
@@ -419,7 +421,8 @@ Definition input_requirement (sts : StatefulSetV.t) : Prop :=
         PersistentVolumeClaimV.valid_named_create
           sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (new_persistent_volume_claim sts claim_template ordinal))
-    sts.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates').
+    (StatefulSetSpecV.volume_claim_templates_list
+      sts.(StatefulSetV.Spec')).
 
 Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

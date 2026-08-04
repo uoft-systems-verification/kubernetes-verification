@@ -12,7 +12,7 @@ Record t := mk {
   Replicas' : option w32;
   Selector' : option LabelSelectorV.t;
   Template' : PodTemplateSpecV.t;
-  VolumeClaimTemplates' : list PersistentVolumeClaimV.t;
+  VolumeClaimTemplates' : option (list PersistentVolumeClaimV.t);
   ServiceName' : go_string;
   (* PodManagementPolicy' : v1.PodManagementPolicyType.t; *)
   (* UpdateStrategy' : v1.StatefulSetUpdateStrategy.t; *)
@@ -22,10 +22,18 @@ Record t := mk {
   (* Ordinals' : loc; *)
 }.
 
+(* Kubernetes validation and semantic equality treat nil and allocated empty
+   volume-claim-template slices identically. Preserve that representation
+   distinction in [VolumeClaimTemplates'] and use this projection where only
+   the logical sequence matters. *)
+Definition volume_claim_templates_list
+    (spec : t) : list PersistentVolumeClaimV.t :=
+  default [] spec.(VolumeClaimTemplates').
+
 Definition volume_claim_template_names (spec : t) : list go_string :=
   (λ pvc,
     pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
-  <$> spec.(VolumeClaimTemplates').
+  <$> volume_claim_templates_list spec.
 
 (* Before validating a StatefulSet's Pod template, Kubernetes replaces every
    template volume whose name occurs in [VolumeClaimTemplates] with the
@@ -35,7 +43,7 @@ Definition preserved_template_volumes (spec : t) : list VolumeV.t :=
   filter
     (λ volume,
       volume.(VolumeV.Name') ∉ volume_claim_template_names spec)
-    spec.(Template').(PodTemplateSpecV.Spec').(PodSpecV.Volumes').
+    (PodSpecV.volumes_list spec.(Template').(PodTemplateSpecV.Spec')).
 
 (* The projection of StatefulSet's effective Pod-template validation onto the
    represented metadata and PodSpec fields. Kubernetes clears the template's
@@ -77,9 +85,9 @@ Definition valid_create (spec : t) : Prop :=
     (λ pvc,
       valid_dns1123_label
         pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
-    spec.(VolumeClaimTemplates') ∧
+    (volume_claim_templates_list spec) ∧
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
-    spec.(VolumeClaimTemplates') ∧
+    (volume_claim_templates_list spec) ∧
   (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
 
 (* A stored StatefulSet spec satisfies admission validation. Schema defaulting
@@ -93,7 +101,7 @@ Definition valid (spec : t) : Prop :=
     pvc.(PersistentVolumeClaimV.TypeMeta') = zero_val v1.TypeMeta.t ∧
     PersistentVolumeClaimSpecV.valid_embedded
       pvc.(PersistentVolumeClaimV.Spec'))
-    spec.(VolumeClaimTemplates').
+    (volume_claim_templates_list spec).
 
 (* Of the represented fields, Kubernetes permits updates to Replicas and the
    Pod template. Selector, volume-claim templates, and service name remain
@@ -101,7 +109,7 @@ Definition valid (spec : t) : Prop :=
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L238-L275 *)
 Definition valid_update (old new : t) : Prop :=
   new.(Selector') = old.(Selector') ∧
-  new.(VolumeClaimTemplates') = old.(VolumeClaimTemplates') ∧
+  volume_claim_templates_list new = volume_claim_templates_list old ∧
   new.(ServiceName') = old.(ServiceName').
 
 Global Instance valid_update_dec old new :
@@ -121,6 +129,8 @@ Definition created (input stored : t) : Prop :=
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') = input.(Template') ∧
   stored.(ServiceName') = input.(ServiceName') ∧
+  (stored.(VolumeClaimTemplates') = None ↔
+    input.(VolumeClaimTemplates') = None) ∧
   Forall2
     (λ input_claim stored_claim,
       stored_claim.(PersistentVolumeClaimV.TypeMeta') =
@@ -132,7 +142,8 @@ Definition created (input stored : t) : Prop :=
         stored_claim.(PersistentVolumeClaimV.Spec') ∧
       stored_claim.(PersistentVolumeClaimV.Status') =
         input_claim.(PersistentVolumeClaimV.Status'))
-    input.(VolumeClaimTemplates') stored.(VolumeClaimTemplates').
+    (volume_claim_templates_list input)
+    (volume_claim_templates_list stored).
 
 (* Update callers require the submitted StatefulSet to satisfy [valid], so its
    represented schema defaults and embedded-PVC normalization are already
@@ -162,10 +173,13 @@ Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
     | None => True%I
     end) ∗
   "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') dq ∗
+  "%Hdeepown_volumeclaimtemplates_none" ∷
+    ⌜c.(v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔
+      v.(VolumeClaimTemplates') = None⌝ ∗
   "Hdeepown_volumeclaimtemplates" ∷
     (∃ claim_templates,
       deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates
-        v.(VolumeClaimTemplates')
+        (volume_claim_templates_list v)
         (λ claim_template pure_claim_template,
           PersistentVolumeClaimV.deepown claim_template pure_claim_template dq)) ∗
   "%Hdeepown_servicename" ∷ ⌜c.(v1.StatefulSetSpec.ServiceName') = v.(ServiceName')⌝.

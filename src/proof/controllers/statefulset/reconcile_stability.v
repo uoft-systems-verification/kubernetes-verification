@@ -436,7 +436,8 @@ Proof.
     "(%Hdeepown_typemeta & Hdeepown_objectmeta &
       %Hdeepown_replicas_none & Hdeepown_replicas_some &
       %Hdeepown_selector_none & Hdeepown_selector_some &
-      Hdeepown_template & Hdeepown_volumeclaimtemplates &
+      Hdeepown_template & %Hdeepown_volumeclaimtemplates_none &
+      Hdeepown_volumeclaimtemplates &
       %Hclaim_templates_map_values & %Hclaim_templates_list_names &
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
@@ -452,7 +453,8 @@ Proof.
   { rewrite /statefulset_without_claim_templates_l.
     iFrame. iFrame "%". }
   set claim_templates :=
-    set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates').
+    StatefulSetSpecV.volume_claim_templates_list
+      set.(StatefulSetV.Spec').
   set claim_templates_pure :=
     persistent_volume_claim_templates_by_name claim_templates.
   wp_auto.

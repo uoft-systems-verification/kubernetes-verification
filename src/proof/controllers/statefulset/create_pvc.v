@@ -559,7 +559,8 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
       "Hpvc_states" ∷
         ([∗ map] claim_template_name↦claim_template ∈
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates'),
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')),
           (∃ claim,
             "%Hkey" ∷
               ⌜ PersistentVolumeClaimV.key claim =
@@ -602,7 +603,8 @@ Proof.
     "(%Hdeepown_typemeta & Hdeepown_objectmeta &
       %Hdeepown_replicas_none & Hdeepown_replicas_some &
       %Hdeepown_selector_none & Hdeepown_selector_some &
-      Hdeepown_template & Hdeepown_volumeclaimtemplates &
+      Hdeepown_template & %Hdeepown_volumeclaimtemplates_none &
+      Hdeepown_volumeclaimtemplates &
       %Hclaim_templates_map_values & %Hclaim_templates_list_names &
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
@@ -619,7 +621,8 @@ Proof.
     iFrame. iFrame "%". }
 
   set claim_templates :=
-    set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates').
+    StatefulSetSpecV.volume_claim_templates_list
+      set.(StatefulSetV.Spec').
   set claim_templates_pure :=
     persistent_volume_claim_templates_by_name claim_templates.
   set pvc_ready := (λ claim_template_name claim_template,

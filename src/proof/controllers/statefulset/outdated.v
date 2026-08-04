@@ -57,6 +57,7 @@ Proof.
   iSplitL "Hdeepown_volumes".
   - rewrite /PodSpecV.deepown. iFrame. done.
   - rewrite /PodSpecV.deepown /without_statefulset_fields /=.
+    iSplit; first done.
     iSplitL.
     + iExists []. rewrite /deepown_list big_sepL2_nil.
       iSplit; [iApply own_slice_nil|done].

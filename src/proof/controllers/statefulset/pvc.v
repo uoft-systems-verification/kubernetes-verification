@@ -923,9 +923,15 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
         end) ∗
       "Hdeepown_template" ∷ PodTemplateSpecV.deepown set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.Template')
           set.(StatefulSetV.Spec').(StatefulSetSpecV.Template') dq ∗
+      "%Hdeepown_volumeclaimtemplates_none" ∷
+        ⌜ set_phy.(v1.StatefulSet.Spec').(
+              v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔
+          set.(StatefulSetV.Spec').(
+              StatefulSetSpecV.VolumeClaimTemplates') = None ⌝ ∗
       "Hdeepown_volumeclaimtemplates" ∷ deepown_list
         set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates_list
-          set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')
+          (StatefulSetSpecV.volume_claim_templates_list
+            set.(StatefulSetV.Spec'))
           (λ claim_template_phy pure_claim_template,
             PersistentVolumeClaimV.deepown claim_template_phy pure_claim_template dq) ∗
       "%Hclaim_templates_map_values" ∷
@@ -941,9 +947,10 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
       "%Hclaim_templates_map_dom" ∷
         ⌜ dom claim_templates_phy =
           list_to_set
-            ((λ claim_template,
+              ((λ claim_template,
                 claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
-              <$> set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')) ⌝ ∗
+              <$> StatefulSetSpecV.volume_claim_templates_list
+                set.(StatefulSetV.Spec')) ⌝ ∗
       "%Hclaim_templates_map_eq" ∷
         ⌜ ∀ name,
           claim_templates_phy !! name =

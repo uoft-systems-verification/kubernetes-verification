@@ -214,7 +214,7 @@ Definition pod_view_storage_matches sts
           (ordinal <= go_int32_max_nat)%nat ∧
           Forall
             (pod_volume_claim_matches
-              (pod_volumes_map_of_list spec.(PodSpecV.Volumes'))
+              (pod_volumes_map_of_list (PodSpecV.volumes_list spec))
               sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
             (pvc_claim_template_names sts)
       | None => False

@@ -75,7 +75,7 @@ Context {sem : go.Semantics}
 
 Record t :=
 mk {
-  Volumes' : list VolumeV.t;
+  Volumes' : option (list VolumeV.t);
   Hostname' : go_string;
   Subdomain' : go_string;
 
@@ -119,8 +119,16 @@ mk {
   (* HostnameOverride' : loc; *)
 }.
 
+(* Kubernetes validation and semantic equality treat a nil volume slice and
+   an allocated empty slice identically. The option-valued field above keeps
+   the concrete distinction for representation-sensitive operations, while
+   this projection exposes the logical list used by validation and
+   controllers. *)
+Definition volumes_list (spec : t) : list VolumeV.t :=
+  default [] spec.(Volumes').
+
 Definition valid_create (spec : t) : Prop :=
-  Forall VolumeV.valid spec.(Volumes') ∧
+  Forall VolumeV.valid (volumes_list spec) ∧
   (spec.(Hostname') = ""%go ∨ valid_dns1123_label spec.(Hostname')) ∧
   (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')).
 
@@ -134,7 +142,7 @@ Definition valid (spec : t) : Prop :=
    updates to a small set of other fields, none of which are modeled here:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L5571-L5675 *)
 Definition valid_update (old new : t) : Prop :=
-  new.(Volumes') = old.(Volumes') ∧
+  volumes_list new = volumes_list old ∧
   new.(Hostname') = old.(Hostname') ∧
   new.(Subdomain') = old.(Subdomain').
 
@@ -157,8 +165,11 @@ Definition updated (input stored : t) : Prop :=
   stored = input.
 
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
+  "%Hdeepown_volumes_none" ∷
+    ⌜c.(v1.PodSpec.Volumes') = slice.nil ↔ v.(Volumes') = None⌝ ∗
   "Hdeepown_volumes" ∷
-    (∃ volumes, deepown_list c.(v1.PodSpec.Volumes') volumes v.(Volumes')
+    (∃ volumes,
+      deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v)
       (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
   "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
   "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.

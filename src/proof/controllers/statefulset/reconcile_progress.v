@@ -149,7 +149,8 @@ Qed.
 Lemma desired_pvc_key_of_template_is_desired set ordinal name template :
   (ordinal < statefulset_replicas set)%nat →
   persistent_volume_claim_templates_by_name
-      set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates') !!
+      (StatefulSetSpecV.volume_claim_templates_list
+        set.(StatefulSetV.Spec')) !!
       name = Some template →
   desired_pvc_key set name ordinal ∈ desired_pvc_keys set.
 Proof.
@@ -181,7 +182,8 @@ Proof.
       (λ claim_template,
         claim_template.(PersistentVolumeClaimV.ObjectMeta').(
           ObjectMetaV.Name'))
-      set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')
+      (StatefulSetSpecV.volume_claim_templates_list
+        set.(StatefulSetV.Spec'))
       template).
     exact Htemplate.
 Qed.
@@ -239,8 +241,8 @@ Definition desired_prefix_reconciled set next (pods : list PodV.t)
       (∀ claim_template_name,
         claim_template_name ∈ dom
           (persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(
-              StatefulSetSpecV.VolumeClaimTemplates')) →
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec'))) →
         desired_pvc_key set claim_template_name ordinal ∈ dom pvc_map) ).
 
 (* Facts established after every desired ordinal has been processed. Extra
@@ -1697,8 +1699,8 @@ Lemma desired_prefix_reconciled_step set next pods idx pod pod'
   (∀ name,
     name ∈ dom
       (persistent_volume_claim_templates_by_name
-        set.(StatefulSetV.Spec').(
-          StatefulSetSpecV.VolumeClaimTemplates')) →
+        (StatefulSetSpecV.volume_claim_templates_list
+          set.(StatefulSetV.Spec'))) →
     desired_pvc_key set name next ∈ dom pvc_map') →
   desired_prefix_reconciled set (S next)
     (<[idx:=pod']> pods) pvc_map'.
@@ -2206,8 +2208,9 @@ Proof.
     - unfold init_identity, update_identity, PodV.update_objectmeta,
         controller.generated_pod. simpl.
       rewrite (filter_notin_list_set_eq VolumeV.Name'
-        set.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(
-          PodTemplateSpecV.Spec').(PodSpecV.Volumes')
+        (PodSpecV.volumes_list
+          set.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(
+            PodTemplateSpecV.Spec'))
         claim_template_names (pvc_claim_template_names set)
         Hclaim_names).
       exact Hpreserved_valid. }
@@ -2444,8 +2447,8 @@ Lemma desired_pvc_key_elem_elim set key :
     (ordinal < statefulset_replicas set)%nat ∧
     name ∈ dom
       (persistent_volume_claim_templates_by_name
-        set.(StatefulSetV.Spec').(
-          StatefulSetSpecV.VolumeClaimTemplates')) ∧
+        (StatefulSetSpecV.volume_claim_templates_list
+          set.(StatefulSetV.Spec'))) ∧
     key = desired_pvc_key set name ordinal.
 Proof.
   intros Hkey.
@@ -2815,8 +2818,8 @@ Proof.
         (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(
-              StatefulSetSpecV.VolumeClaimTemplates') !! name =
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
           PersistentVolumeClaimV.valid_named_create
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -2831,8 +2834,8 @@ Proof.
         exact Hordinal_lt. }
       iDestruct (prepare_pvc_states γ set (sint.nat ordinal)
         (persistent_volume_claim_templates_by_name
-          set.(StatefulSetV.Spec').(
-            StatefulSetSpecV.VolumeClaimTemplates'))
+          (StatefulSetSpecV.volume_claim_templates_list
+            set.(StatefulSetV.Spec')))
         pvc_map reserved_pvcs required_pvcs Hpvc_wf
         Hreserved_pvcs_nodup Hpvc_coverage
         ltac:(intros name claim_template Hlookup;
@@ -3074,8 +3077,8 @@ Proof.
         with "Hreserved_pods") as "[Hpod_reserved _]".
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
-            set.(StatefulSetV.Spec').(
-              StatefulSetSpecV.VolumeClaimTemplates') !! name =
+            (StatefulSetSpecV.volume_claim_templates_list
+              set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
           PersistentVolumeClaimV.valid_named_create
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -3090,8 +3093,8 @@ Proof.
         exact Hordinal_lt. }
       iDestruct (prepare_pvc_states γ set (sint.nat ordinal)
         (persistent_volume_claim_templates_by_name
-          set.(StatefulSetV.Spec').(
-            StatefulSetSpecV.VolumeClaimTemplates'))
+          (StatefulSetSpecV.volume_claim_templates_list
+            set.(StatefulSetV.Spec')))
         pvc_map reserved_pvcs required_pvcs Hpvc_wf
         Hreserved_pvcs_nodup Hpvc_coverage
         ltac:(intros name claim_template Hlookup;
