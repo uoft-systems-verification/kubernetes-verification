@@ -17,7 +17,12 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
   ∀ Φ,
   is_pkg_init apimodel ∗
   is_kubernetes γ l ∗
-  "%Hvalid" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
+  "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+  "%Huid_nonempty" ∷
+    ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+  "%Hrv_valid" ∷
+    ⌜ valid_resource_version
+        (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ⌝ ∗
   "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
   "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
   "%Hnew_parent" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
@@ -86,8 +91,9 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   assert (ObjectMetaV.Name' (KObjectV.objectmeta kobj) ≠ ""%go)
     as Hname_not_empty.
-  { destruct Hvalid as (_ & _ & Hmeta & _).
-    eapply ObjectMetaV.valid_name_nonempty_of_valid. done. }
+  { pose proof Hvalid as Hvalid_copy.
+    destruct Hvalid_copy as (_ & _ & Hmeta & _).
+    unfold ObjectMetaV.valid_named_create in Hmeta. tauto. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType [])
     with "[$Hinv_Hown_phys]").
@@ -149,14 +155,7 @@ Proof.
   wp_apply (wp_GetUID_deepown with "[$Hdeepown_m_l]").
   iIntros "Hdeepown_m_l". wp_auto.
   wp_if_destruct.
-  1: {
-    exfalso.
-    destruct Hvalid as (_ & _ & Hmeta_valid & _).
-    pose proof (ObjectMetaV.valid_uid_of_valid _ Hmeta_valid)
-      as Huid_valid.
-    pose proof (valid_uid_non_empty _ Huid_valid) as Huid_nonempty.
-    done.
-  }
+  1: { exfalso. done. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_GetUID_deepown with "[$Hdeepown_m_old_l]").
   iIntros "Hdeepown_m_old_l". wp_auto.
@@ -176,15 +175,10 @@ Proof.
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_m_old_l]").
   iIntros "Hdeepown_m_old_l". wp_auto.
   wp_if_destruct.
-  {
-    exfalso.
-    destruct Hvalid as (_ & Hrv_valid & _).
-    pose proof (valid_resource_version_non_empty _ Hrv_valid)
-      as Hrv_nonempty. done.
-  }
+  { exfalso. eapply valid_resource_version_non_empty; done. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply wp_parseResourceVersion.
-  { iPureIntro. destruct Hvalid as (_ & Hrv_valid & _). done. }
+  { iPureIntro. exact Hrv_valid. }
   iIntros (ret) "_". wp_auto.
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
   iIntros "Hdeepown_m_l". wp_auto.

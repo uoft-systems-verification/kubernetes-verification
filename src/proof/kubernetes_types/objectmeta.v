@@ -349,6 +349,12 @@ Lemma valid_namespace_of_valid {kind} m:
   valid_namespace m.(Namespace').
 Proof. unfold valid. tauto. Qed.
 
+Lemma valid_named_create_of_valid {kind ns} m :
+  valid kind m →
+  ns = m.(Namespace') →
+  valid_named_create kind ns m.
+Proof. unfold valid, valid_named_create. intros Hvalid ->. tauto. Qed.
+
 Lemma valid_uid_of_valid {kind} m:
   valid kind m →
   valid_uid m.(UID').
@@ -388,8 +394,9 @@ Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
 (* Metadata updates accepted by the current model. The first branch covers
    ordinary label/annotation updates; the second covers controller release,
    whose request differs from the stored metadata only in ownerReferences
-   (and may omit the server-managed resourceVersion). *)
-(* TODO: generalize valid_update *)
+   (and may omit the server-managed resourceVersion). This relation only
+   expresses cross-object update constraints; it does not require [m] to
+   satisfy the post-storage [valid] predicate. *)
 Definition valid_update m m' : Prop :=
   valid_simple_update m m' ∨
   equiv_except_resource_version

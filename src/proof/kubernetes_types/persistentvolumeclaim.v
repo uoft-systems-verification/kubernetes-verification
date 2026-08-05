@@ -28,9 +28,10 @@ Definition valid_embedded (spec : t) : Prop :=
   valid_create spec ∧ embedded_storage_normalized spec.
 
 (* This is a conservative projection of PVC update validation while the PVC
-   spec remains abstract: an unchanged spec is always permitted. Upstream also
-   permits controlled binding and expansion changes, but those depend on
-   currently unmodeled spec and status fields:
+   spec remains abstract: an unchanged spec is always permitted, even when
+   [old] has not yet received the normalization required by [valid].
+   Upstream also permits controlled binding and expansion changes, but those
+   depend on currently unmodeled spec and status fields:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L2464-L2549 *)
 Definition valid_update (old new : t) : Prop :=
   old = new.
@@ -59,11 +60,12 @@ Definition created (_input stored : t) : Prop :=
 Definition embedded_created (_input stored : t) : Prop :=
   valid_embedded stored.
 
-(* Update callers require the submitted PVC to satisfy [valid], whose
-   [standalone_storage_normalized] conjunct includes the currently abstract
-   defaulting and data-source normalization. *)
+(* A PVC update applies schema defaults and the PVC strategy's data-source
+   normalization just like creation. The abstract view cannot yet express how
+   that normalization depends on the existing PVC, so reuse the strongest
+   currently expressible standalone-storage relation. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  created input stored.
 
 Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 

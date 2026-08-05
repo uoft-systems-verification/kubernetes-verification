@@ -41,7 +41,9 @@ Definition valid (rs : t) : Prop :=
   ∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas.
 
 (* Kubernetes allows the represented replica count, minimum-ready duration,
-   and Pod template to change, but keeps the selector immutable:
+   and Pod template to change, but keeps the selector immutable. In particular,
+   [old] only needs to meet [valid_create], not the stronger post-defaulting
+   [valid] predicate:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L763-L770 *)
 Definition valid_update (old new : t) : Prop :=
   new.(Selector') = old.(Selector').
@@ -62,10 +64,10 @@ Definition created (input stored : t) : Prop :=
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') = input.(Template').
 
-(* Update callers require the submitted ReplicaSet to satisfy [valid], so its
-   represented schema defaults are already present. *)
+(* Update decoding applies the same represented schema default as create, so
+   a create-valid submitted spec need not already satisfy [valid]. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  created input stored.
 
 Lemma valid_replicas :
   ∀ v, valid v →

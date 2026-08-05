@@ -58,10 +58,10 @@ one after preparation and canonicalization.
 | `ObjectMetaV.valid_named_create kind ns meta` | A create request supplies `metadata.name`; its namespace is empty or agrees with the request URL, and its user-controlled metadata passes validation. |
 | `ObjectMetaV.valid_nameless_create kind ns meta` | A create request omits `metadata.name` and supplies a valid, short enough `generateName` from which the API server can choose a name. |
 | `KObjectV.valid_named_create` / `valid_nameless_create` | The full request-level condition: correct resource kind, create-compatible TypeMeta and metadata, and a create-valid spec. |
-| `V.valid_update old new` | The cross-object rules for an update, especially immutable fields. This is used together with validity of the individual objects. |
+| `V.valid_update old new` | The cross-object rules for an update, especially immutable fields. The existing `old` value need only satisfy request-stage `valid_create`, not post-defaulting `valid`. |
 | `V.valid stored` | The stronger invariant guaranteed of the modeled part of an object after it has been prepared, defaulted/normalized, and stored by the API server. |
 | `V.created input stored` | The relation between a create request projection and the projection that the server stores. |
-| `V.updated input stored` | The corresponding relation after update preparation/defaulting. |
+| `V.updated input stored` | The normalization/defaulting relation from a create-valid update request to the value produced by update preparation. |
 
 These are Rocq propositions used in specifications. Some are executable
 definitions with `Decision` instances; others are axiomatized where the
@@ -118,8 +118,3 @@ this Go heap represent, which values may Kubernetes accept at this stage, and
 how may Kubernetes transform the value before returning or storing it?**
 `deepown`, the validity predicates, and the create/update relations answer
 those questions respectively.
-
-## TODO
-
-- Generalize `valid_update` so that `old` does not have to be a `valid`
-  object, and refactor `updated` accordingly.

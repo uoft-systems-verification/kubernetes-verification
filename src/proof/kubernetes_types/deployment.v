@@ -55,7 +55,9 @@ Definition valid_create (spec : t) : Prop :=
   PodTemplateSpecV.valid spec.(Template').
 
 (* Kubernetes allows the represented replica count, minimum-ready duration, and
-   Pod template to change, but keeps the selector immutable:
+   Pod template to change, but keeps the selector immutable. This relation is
+   also meaningful when [old] is only [valid_create], before its replica count
+   has been defaulted:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L709-L714 *)
 Definition valid_update (old new : t) : Prop :=
   new.(Selector') = old.(Selector').
@@ -96,12 +98,13 @@ Definition defaulted (spec spec' : t) : Prop :=
 Definition created (spec spec' : t) : Prop :=
   defaulted spec spec'.
 
-(* Likewise on update: PrepareForUpdate restores the old status and bumps the
-   generation, leaving the submitted spec as the stored one:
+(* Likewise on update: decoder defaulting precedes PrepareForUpdate, which
+   restores the old status and bumps the generation without otherwise changing
+   the represented spec:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L110-L124
-   The submitted spec is stored verbatim. *)
+   Thus [updated] includes the same replica default as [created]. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  defaulted input stored.
 
 (* A defaulted spec has an explicit, nonnegative replica count, so a spec that
    passes create validation is valid once stored. *)

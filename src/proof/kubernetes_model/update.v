@@ -12,7 +12,9 @@ Lemma wp_State__update_au γ l kind namespace i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    "%Hvalid" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
+    "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+    "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+    "%Hrv_valid" ∷ ⌜ valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ⌝ ∗
     "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
     "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -59,7 +61,9 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   assert (ObjectMetaV.Name' (KObjectV.objectmeta kobj) ≠ ""%go) as Hname_not_empty.
-  { destruct Hvalid as (_ & _ & Hmeta & _). eapply ObjectMetaV.valid_name_nonempty_of_valid. done. }
+  { pose proof Hvalid as Hvalid_copy.
+    destruct Hvalid_copy as (_ & _ & Hmeta & _).
+    unfold ObjectMetaV.valid_named_create in Hmeta. tauto. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
   iIntros "Hinv_Hown_phys". wp_auto.
@@ -111,12 +115,7 @@ Proof.
     "(%Hold_l1_not_null & Hdeepown_t_old_l & Hdeepown_m_old_l & Hdeepown_s_old_l & Hdeepown_st_old_l)".
   wp_apply (wp_GetUID_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_if_destruct.
-  1: {
-    exfalso.
-    destruct Hvalid as (_ & _ & Hmeta_valid & _).
-    pose proof (ObjectMetaV.valid_uid_of_valid _ Hmeta_valid) as Huid_valid.
-    pose proof (valid_uid_non_empty _ Huid_valid) as Huid_nonempty. done.
-  }
+  1: { exfalso. done. }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_GetUID_deepown with "[$Hdeepown_m_old_l]"). iIntros "Hdeepown_m_old_l". wp_auto.
   wp_if_destruct.
@@ -134,13 +133,11 @@ Proof.
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_m_old_l]"). iIntros "Hdeepown_m_old_l". wp_auto.
   wp_if_destruct.
   {
-    exfalso.
-    destruct Hvalid as (_ & Hrv_valid & _).
-    pose proof (valid_resource_version_non_empty _ Hrv_valid) as Hrv_nonempty. done.
+    exfalso. eapply valid_resource_version_non_empty; done.
   }
   rewrite bool_decide_false //. wp_auto.
   wp_apply wp_parseResourceVersion.
-  { iPureIntro. destruct Hvalid as (_ & Hrv_valid & _). done. }
+  { iPureIntro. exact Hrv_valid. }
   iIntros (ret) "_". wp_auto.
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_if_destruct.
@@ -209,7 +206,8 @@ Proof.
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
   wp_apply (wp_applyValidationAndDefaultingOnUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
-  { iFrame "#". iPureIntro. split_and!; try done. left. done. }
+  { iFrame "#". iPureIntro. split_and!; try done.
+    left. done. }
   iIntros (updated_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hvalid_updated_kobj
     & %Hsame_key & %Htypemeta_eq & %Hupdated_meta &
     %Hupdated_spec & %Hspec_eq_if_unchanged & %Hstatus_eq)". wp_auto.
@@ -387,7 +385,12 @@ Qed.
 Lemma wp_State__update γ l kind namespace i kobj key uid kmeta kspec :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+      "%Huid_nonempty" ∷
+        ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+      "%Hrv_valid" ∷
+        ⌜ valid_resource_version
+            (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ⌝ ∗
       "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
       "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗

@@ -834,6 +834,18 @@ Proof.
         (release_pod_input set pod).(PodV.Spec') =
           pod.(PodV.Spec')).
     { unfold release_pod_input. done. }
+    assert (Hreleased_pod_valid_create :
+        PodV.valid_named_create
+          (release_pod_input set pod).(PodV.ObjectMeta').(
+            ObjectMetaV.Namespace')
+          (release_pod_input set pod)).
+    { eapply PodV.valid_named_create_of_valid; done. }
+    assert (Hreleased_pod_uid_nonempty :
+        (release_pod_input set pod).(PodV.ObjectMeta').(
+          ObjectMetaV.UID') ≠ ""%go).
+    { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
+      eapply valid_uid_non_empty.
+      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
     rewrite HupdatedPod_meta_Hdeepown_namespace.
     iAssert (is_pkg_init apimodel) as "#Hapimodel".
     { iPkgInit. }

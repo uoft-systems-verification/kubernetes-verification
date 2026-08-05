@@ -97,10 +97,11 @@ Definition created (input stored : t) : Prop :=
   | _, _ => False
   end.
 
-(* The API server's update-defaulting relation from the submitted spec to the
-   stored spec. Keeping this dispatch resource-specific prevents facts about a
-   fully modeled resource, such as exact preservation of the represented Pod
-   fields, from being lost behind one unconstrained global axiom. *)
+(* The API server's update-defaulting relation from a create-valid submitted
+   spec to the normalized stored spec. Keeping this dispatch resource-specific
+   prevents facts about a fully modeled resource, such as exact preservation
+   of the represented Pod fields, from being lost behind one unconstrained
+   global axiom. *)
 Definition updated (input stored : t) : Prop :=
   match input, stored with
   | PodSpec input, PodSpec stored => PodSpecV.updated input stored

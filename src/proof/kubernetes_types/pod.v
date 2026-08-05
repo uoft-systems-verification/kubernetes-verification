@@ -138,8 +138,10 @@ Definition valid (spec : t) : Prop :=
   valid_create spec.
 
 (* Pod update validation treats Volumes, Hostname, and Subdomain as immutable.
-   These are the PodSpec fields currently represented by [t]. Upstream permits
-   updates to a small set of other fields, none of which are modeled here:
+   These are the PodSpec fields currently represented by [t]. The relation does
+   not assume that [old] satisfies anything stronger than [valid_create].
+   Upstream permits updates to a small set of other fields, none of which are
+   modeled here:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L5571-L5675 *)
 Definition valid_update (old new : t) : Prop :=
   volumes_list new = volumes_list old ∧
@@ -162,7 +164,7 @@ Definition created (input stored : t) : Prop :=
    server during update. Thus the stored projection equals the submitted
    projection. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  created input stored.
 
 Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_volumes_none" ∷
@@ -257,6 +259,19 @@ Definition valid_named_create ns (pod : t) : Prop :=
   valid_create_typemeta kind pod.(TypeMeta') ∧
   ObjectMetaV.valid_named_create kind ns pod.(ObjectMeta') ∧
   PodSpecV.valid_create pod.(Spec').
+
+Lemma valid_named_create_of_valid ns pod :
+  valid pod →
+  ns = pod.(ObjectMeta').(ObjectMetaV.Namespace') →
+  valid_named_create ns pod.
+Proof.
+  unfold valid, valid_named_create.
+  intros (Htypemeta & _ & Hmeta & Hspec & _) Hnamespace.
+  split_and!.
+  - eapply valid_typemeta_valid_create_typemeta. exact Htypemeta.
+  - eapply ObjectMetaV.valid_named_create_of_valid; done.
+  - exact Hspec.
+Qed.
 
 Definition valid_without_meta (pod: t) : Prop :=
   PodSpecV.valid pod.(Spec') ∧

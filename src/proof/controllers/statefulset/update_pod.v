@@ -284,6 +284,18 @@ Proof.
         (update_identity set pod ordinal).(PodV.ObjectMeta').(
           ObjectMetaV.UID')).
     { symmetry. exact Hinput_uid'. }
+    assert (Hinput_valid_create :
+        PodV.valid_named_create
+          (update_identity set pod ordinal).(PodV.ObjectMeta').(
+            ObjectMetaV.Namespace')
+          (update_identity set pod ordinal)).
+    { eapply PodV.valid_named_create_of_valid; done. }
+    assert (Hinput_uid_nonempty :
+        (update_identity set pod ordinal).(PodV.ObjectMeta').(
+          ObjectMetaV.UID') ≠ ""%go).
+    { destruct Hinput_valid as (_ & _ & Hmeta & _).
+      eapply valid_uid_non_empty.
+      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
     wp_auto.
     iAssert
       (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)

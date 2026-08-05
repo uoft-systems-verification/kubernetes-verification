@@ -354,7 +354,10 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
       ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
       KObjectV.deepown_l new_l new_obj 1 ∗
       KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid new_obj ⌝ ∗
+      ⌜ KObjectV.valid_named_create
+          (KObjectV.kind new_obj) namespace new_obj ⌝ ∗
+      ⌜ valid_resource_version
+          (KObjectV.objectmeta new_obj).(ObjectMetaV.ResourceVersion') ⌝ ∗
       ⌜ KObjectV.valid old_obj ⌝ ∗
       ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
       ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝ ∗

@@ -19,6 +19,10 @@ Proof.
   exact Hstatus_eq.
 Qed.
 
+(* TODO: Revisit the status-update specification and weaken its full
+   [KObjectV.valid] request requirement. Kubernetes status strategies restore
+   the stored spec before validation, so the eventual request predicate should
+   not require the submitted spec to be create-valid. *)
 Lemma wp_State__update_status_au γ l kind namespace i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗

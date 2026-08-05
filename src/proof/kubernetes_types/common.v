@@ -685,16 +685,20 @@ Qed.
 Global Instance type_meta_eq_dec : EqDecision v1.TypeMeta.t.
 Proof. solve_decision. Defined.
 
-(* TODO: this definition is incomplete but for now we only care about kind *)
-Definition valid_typemeta kind tm : Prop :=
-  kind = tm.(v1.TypeMeta.Kind') ∧ valid_kind kind.
-
 (* The API version expected for each concrete kind represented by [KObjectV]. *)
 Definition valid_api_version kind api_version : Prop :=
   ((kind = "Pod"%go ∨ kind = "PersistentVolumeClaim"%go) ∧
     api_version = "v1"%go) ∨
   ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go) ∧
     api_version = "apps/v1"%go).
+
+(* Stored objects have the concrete kind and API version selected by their
+   typed REST endpoint. This is stronger than create-time TypeMeta validity,
+   which also permits omitted fields before decoding fills them. *)
+Definition valid_typemeta kind tm : Prop :=
+  kind = tm.(v1.TypeMeta.Kind') ∧
+  valid_kind kind ∧
+  valid_api_version kind tm.(v1.TypeMeta.APIVersion').
 
 (* TypeMeta on a create request may omit [kind] and/or [apiVersion]: the JSON
    decoder fills each missing GVK field from the REST endpoint's default GVK.
@@ -715,3 +719,12 @@ Definition valid_create_typemeta kind tm : Prop :=
 Lemma zero_typemeta_valid_create kind :
   valid_create_typemeta kind (zero_val v1.TypeMeta.t).
 Proof. split; left; done. Qed.
+
+Lemma valid_typemeta_valid_create_typemeta kind tm :
+  valid_typemeta kind tm →
+  valid_create_typemeta kind tm.
+Proof.
+  unfold valid_typemeta, valid_create_typemeta.
+  intros (Hkind & _ & Hapi_version).
+  split; right; done.
+Qed.

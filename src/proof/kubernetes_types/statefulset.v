@@ -105,7 +105,8 @@ Definition valid (spec : t) : Prop :=
 
 (* Of the represented fields, Kubernetes permits updates to Replicas and the
    Pod template. Selector, volume-claim templates, and service name remain
-   immutable:
+   immutable. The existing [old] spec may satisfy only [valid_create]; its
+   post-defaulting facts are not prerequisites of this relation:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L238-L275 *)
 Definition valid_update (old new : t) : Prop :=
   new.(Selector') = old.(Selector') ∧
@@ -145,11 +146,10 @@ Definition created (input stored : t) : Prop :=
     (volume_claim_templates_list input)
     (volume_claim_templates_list stored).
 
-(* Update callers require the submitted StatefulSet to satisfy [valid], so its
-   represented schema defaults and embedded-PVC normalization are already
-   present. *)
+(* Update decoding applies the represented replica default and embedded-PVC
+   normalization to a create-valid submitted spec, as it does on create. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  created input stored.
 
 Lemma valid_replicas :
   ∀ v, valid v →

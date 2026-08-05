@@ -73,7 +73,7 @@ Proof.
       Hset_meta_valid & Hset_spec_valid & Hset_status_valid).
   assert (Hset_valid : StatefulSetV.valid set).
   { split_and!; done. }
-  destruct Hset_typemeta_valid as [_ Hset_kind_valid].
+  destruct Hset_typemeta_valid as (_ & Hset_kind_valid & _).
   pose proof (valid_kind_slash_free _ Hset_kind_valid) as Hkind_slash_free.
   pose proof (ObjectMetaV.valid_namespace_of_valid _ Hset_meta_valid)
     as Hnamespace_valid.
