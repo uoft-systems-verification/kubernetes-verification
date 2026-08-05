@@ -10,31 +10,33 @@ import (
 
 // A simplified serviceaccount controller. The following features are not included:
 // * namespace lookup and phase checks; callers only enqueue active namespaces
-// * configurable managed service accounts; only "default" is managed
+// * controller construction; the managed service accounts are listed below
+// * creation error aggregation; the first error is returned
 // * event handling and workqueue retry
 
-const defaultServiceAccountName = "default"
+var serviceAccountsToEnsure = []v1.ServiceAccount{
+	{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+}
 
-// syncNamespace ensures that an active namespace has its default ServiceAccount.
+// syncNamespace ensures that an active namespace has each configured ServiceAccount.
 func syncNamespace(namespace string) error {
-	_, err := apimodel.ModelState.ServiceAccountGet(namespace, defaultServiceAccountName)
-	if err == nil {
-		return nil
-	}
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
+	for _, serviceAccount := range serviceAccountsToEnsure {
+		_, err := apimodel.ModelState.ServiceAccountGet(namespace, serviceAccount.Name)
+		if err == nil {
+			continue
+		}
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
 
-	serviceAccount := &v1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultServiceAccountName,
-			Namespace: namespace,
-		},
+		serviceAccount.Namespace = namespace
+		_, err = apimodel.ModelState.ServiceAccountCreate(namespace, &serviceAccount)
+		if apierrors.IsAlreadyExists(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
 	}
-
-	_, err = apimodel.ModelState.ServiceAccountCreate(namespace, serviceAccount)
-	if apierrors.IsAlreadyExists(err) {
-		return nil
-	}
-	return err
+	return nil
 }

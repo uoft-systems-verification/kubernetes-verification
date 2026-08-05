@@ -13,49 +13,53 @@ End pkg_id.
 Export pkg_id.
 Module serviceaccount.
 
-Definition defaultServiceAccountName {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"default"%go.
+Definition serviceAccountsToEnsure {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/serviceaccount.serviceAccountsToEnsure"%go.
 
 Definition syncNamespace {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/serviceaccount.syncNamespace"%go.
 
-(* syncNamespace ensures that an active namespace has its default ServiceAccount.
+(* syncNamespace ensures that an active namespace has each configured ServiceAccount.
 
-   go: service_account.go:19:6 *)
+   go: service_account.go:22:6 *)
 Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace",
     exception_do (let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (Convert go.untyped_string go.string defaultServiceAccountName) in
-    (MethodResolve (go.PointerType apimodel.State) "ServiceAccountGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  "$r0";;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: Convert go.untyped_bool go.bool ((![go.error] "err") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil go.error UntypedNil)
-    else do:  #());;;
-    (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
-    (FuncResolve errors.IsNotFound [] #()) "$a0"))
-    then return: (![go.error] "err")
-    else do:  #());;;
-    let: "serviceAccount" := (GoAlloc (go.PointerType core_v1.ServiceAccount) (GoZeroVal (go.PointerType core_v1.ServiceAccount) #())) in
-    let: "$r0" := (GoAlloc core_v1.ServiceAccount (let: "$v0" := (let: "$v0" := (Convert go.untyped_string go.string defaultServiceAccountName) in
-    let: "$v1" := (![go.string] "namespace") in
-    CompositeLiteral meta_v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1")])) in
-    CompositeLiteral core_v1.ServiceAccount (LiteralValue [KeyedElement (Some (KeyField "ObjectMeta"%go)) (ElementExpression meta_v1.ObjectMeta "$v0")]))) in
-    do:  ("serviceAccount" <-[go.PointerType core_v1.ServiceAccount] "$r0");;;
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![go.PointerType core_v1.ServiceAccount] "serviceAccount") in
-    (MethodResolve (go.PointerType apimodel.State) "ServiceAccountCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  "$r0";;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: let: "$a0" := (![go.error] "err") in
-    (FuncResolve errors.IsAlreadyExists [] #()) "$a0"
-    then return: (Convert go.untyped_nil go.error UntypedNil)
-    else do:  #());;;
-    return: (![go.error] "err")).
+    let: "$range" := (![go.SliceType core_v1.ServiceAccount] (GlobalVarAddr serviceAccountsToEnsure #())) in
+    (let: "serviceAccount" := (GoAlloc core_v1.ServiceAccount (GoZeroVal core_v1.ServiceAccount #())) in
+    slice.for_range core_v1.ServiceAccount "$range" (λ: "$key" "$value",
+      do:  ("serviceAccount" <-[core_v1.ServiceAccount] "$value");;;
+      do:  "$key";;;
+      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+      let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount"))) in
+      (MethodResolve (go.PointerType apimodel.State) "ServiceAccountGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "err") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then continue: #()
+      else do:  #());;;
+      (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
+      (FuncResolve errors.IsNotFound [] #()) "$a0"))
+      then return: (![go.error] "err")
+      else do:  #());;;
+      let: "$r0" := (![go.string] "namespace") in
+      do:  ((StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount")) <-[go.string] "$r0");;;
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+      let: "$a1" := "serviceAccount" in
+      (MethodResolve (go.PointerType apimodel.State) "ServiceAccountCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: let: "$a0" := (![go.error] "err") in
+      (FuncResolve errors.IsAlreadyExists [] #()) "$a0"
+      then continue: #()
+      else do:  #());;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then return: (![go.error] "err")
+      else do:  #())));;;
+    return: (Convert go.untyped_nil go.error UntypedNil)).
 
 #[global] Instance info' : PkgInfo pkg_id.serviceaccount :=
 {|
@@ -65,10 +69,15 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.serviceaccount (λ: <>,
-      exception_do (do:  (meta_v1.initialize' #());;;
+      exception_do (do:  (go.GlobalAlloc serviceAccountsToEnsure (go.SliceType core_v1.ServiceAccount) #());;;
+      do:  (meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
       do:  (core_v1.initialize' #());;;
-      do:  (apimodel.initialize' #()))
+      do:  (apimodel.initialize' #());;;
+      let: "$r0" := (let: "$v0" := (let: "$v0" := #"default"%go in
+      CompositeLiteral meta_v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0")])) in
+      CompositeLiteral (go.SliceType core_v1.ServiceAccount) (LiteralValue [KeyedElement None (ElementLiteralValue [KeyedElement (Some (KeyField "ObjectMeta"%go)) (ElementExpression meta_v1.ObjectMeta "$v0")])])) in
+      do:  ((GlobalVarAddr serviceAccountsToEnsure #()) <-[go.SliceType core_v1.ServiceAccount] "$r0"))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
