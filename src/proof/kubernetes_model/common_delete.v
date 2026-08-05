@@ -2016,19 +2016,4 @@ Proof.
   - split; done.
 Qed.
 
-Definition delete_success_post
-  (γ : KubernetesGname) (key : KKey.t) (uid : types.UID.t)
-  (parent_key : KKey.t) (parent_uid : types.UID.t)
-  (children : gset KKey.t) (kmeta' : ObjectMetaV.t) : iProp Σ :=
-  ( (* the object is marked as deleting (DeletionTimestamp is set) but still exists *)
-    "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-    "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
-    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
-    ∨
-    (* the object is deleted *)
-    "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid ∗
-    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
-  )%I.
-
-
 End proof.

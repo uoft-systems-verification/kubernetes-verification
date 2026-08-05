@@ -1,37 +1,37 @@
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.algebra Require Export reversed_reference.
 
-Section cview.
+Section terminating_cview.
 
-Definition living_obj_parent_ref (obj : KObjectV.t) : option (KKey.t * types.UID.t) :=
+Definition terminating_obj_parent_ref (obj : KObjectV.t) : option (KKey.t * types.UID.t) :=
   match (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') with
-  | None => obj_parent_ref obj
-  | Some _ => None
+  | None => None
+  | Some _ => obj_parent_ref obj
   end.
 
-Lemma living_obj_parent_ref_eq_some obj r :
-  living_obj_parent_ref obj = Some r ↔
-  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None ∧
+Lemma terminating_obj_parent_ref_eq_some obj r :
+  terminating_obj_parent_ref obj = Some r ↔
+  is_Some (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') ∧
   obj_parent_ref obj = Some r.
 Proof.
-  unfold living_obj_parent_ref.
+  unfold terminating_obj_parent_ref.
   destruct ((KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp')) as [dt|]
     eqn:Hdeletion_timestamp; simpl.
-  - split; [intros H; discriminate|intros [H _]; discriminate].
   - split; [intros H; split; done|intros [_ H]; exact H].
+  - split; [intros H; discriminate|intros [H _]; done].
 Qed.
 
 Definition obj_parent_ref_set (obj : KObjectV.t) : gset (KKey.t * types.UID.t) :=
-  match living_obj_parent_ref obj with
+  match terminating_obj_parent_ref obj with
   | Some r => {[r]}
   | None => ∅
   end.
 
 Lemma obj_parent_ref_set_elem obj r :
-  r ∈ obj_parent_ref_set obj ↔ living_obj_parent_ref obj = Some r.
+  r ∈ obj_parent_ref_set obj ↔ terminating_obj_parent_ref obj = Some r.
 Proof.
   unfold obj_parent_ref_set.
-  destruct (living_obj_parent_ref obj) as [r'|] eqn:Hparent; simpl.
+  destruct (terminating_obj_parent_ref obj) as [r'|] eqn:Hparent; simpl.
   - split.
     + intros Hr. apply elem_of_singleton in Hr. subst. done.
     + intros Hsome. inversion Hsome. subst. apply elem_of_singleton. done.
@@ -52,27 +52,27 @@ Qed.
 Lemma obj_parent_ref_set_filter_dom
     (state : gmap KKey.t KObjectV.t) (r : KKey.t * types.UID.t) :
   dom (filter (λ '(_, v), r ∈ obj_parent_ref_set v) state) =
-  dom (filter (λ '(_, v), living_obj_parent_ref v = Some r) state).
+  dom (filter (λ '(_, v), terminating_obj_parent_ref v = Some r) state).
 Proof.
   f_equal.
   apply map_filter_ext. intros k v _. simpl.
   apply obj_parent_ref_set_elem.
 Qed.
 
-Class cviewG Σ :=
-  { #[global] cview_reversed_referenceG ::
+Class terminating_cviewG Σ :=
+  { #[global] terminating_cview_reversed_referenceG ::
       @reversed_reference.reversed_referenceG
         KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
         obj_parent_ref_set obj_ref Σ; }.
 
-Definition cviewΣ :=
+Definition terminating_cviewΣ :=
   @reversed_reference.reversed_referenceΣ
     KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
     obj_parent_ref_set obj_ref.
 
 #[global]
-Instance subG_cviewG Σ :
-  subG cviewΣ Σ → cviewG Σ.
+Instance subG_terminating_cviewG Σ :
+  subG terminating_cviewΣ Σ → terminating_cviewG Σ.
 Proof.
   intros Hsub.
   constructor.
@@ -81,7 +81,7 @@ Proof.
     obj_parent_ref_set obj_ref Σ Hsub).
 Qed.
 
-Context `{!cviewG Σ}.
+Context `{!terminating_cviewG Σ}.
 
 Definition own_auth γ (state: gmap KKey.t KObjectV.t)
     (used_reference: gset (KKey.t * types.UID.t)) : iProp Σ :=
@@ -110,7 +110,7 @@ Proof. unfold own_frag. apply _. Qed.
 Lemma own_auth_frag_valid {γ state used_reference pk puid dq ks}:
   own_auth γ state used_reference -∗
   own_frag γ pk puid dq ks -∗
-  ⌜ ks = dom (filter (λ '(_, v), living_obj_parent_ref v = Some (pk, puid)) state) ⌝ ∗
+  ⌜ ks = dom (filter (λ '(_, v), terminating_obj_parent_ref v = Some (pk, puid)) state) ⌝ ∗
   ⌜ (pk, puid) ∈ used_reference ⌝.
 Proof.
   unfold own_auth, own_frag.
@@ -131,7 +131,7 @@ Lemma own_auth_frag_lookup {γ state used_reference pk puid dq ks} k obj :
   k ∈ ks →
   own_auth γ state used_reference -∗
   own_frag γ pk puid dq ks -∗
-  ⌜ living_obj_parent_ref obj = Some (pk, puid) ⌝.
+  ⌜ terminating_obj_parent_ref obj = Some (pk, puid) ⌝.
 Proof.
   iIntros (Hlookup Hk) "Hauth Hfrag".
   iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[Hks _].
@@ -139,9 +139,9 @@ Proof.
   rewrite Hks in Hk.
   apply elem_of_dom in Hk as [obj' Hlookup_filter].
   apply map_lookup_filter_Some in Hlookup_filter as
-    [Hlookup' Hliving_parent].
+    [Hlookup' Hterminating_parent].
   rewrite Hlookup in Hlookup'. injection Hlookup' as <-.
-  exact Hliving_parent.
+  exact Hterminating_parent.
 Qed.
 
 Lemma own_auth_frag_valid2 {γ state used_reference pk puid dq ks}:
@@ -159,9 +159,9 @@ Proof.
   apply elem_of_dom in Hk as [obj Hlookup].
   apply map_lookup_filter_Some in Hlookup as [Hlookup Hparent].
   rewrite (map_Forall_lookup_1 _ _ _ _ Hkey_namespace Hlookup).
-  unfold living_obj_parent_ref in Hparent.
+  unfold terminating_obj_parent_ref in Hparent.
   destruct ((KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp')) as [dt|]
-    eqn:Hdeletion_timestamp; simpl in Hparent; [discriminate|].
+    eqn:Hdeletion_timestamp; simpl in Hparent; [|discriminate].
   unfold obj_parent_ref, meta_parent_ref in Hparent.
   destruct ((KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as [orefs|]
     eqn:Horefs; simpl in Hparent; [|discriminate].
@@ -174,8 +174,8 @@ Qed.
 Lemma create_child_vs {γ state used_reference pk puid ks} k uid v cks:
   uid = (KObjectV.objectmeta v).(ObjectMetaV.UID') →
   state !! k = None →
-  living_obj_parent_ref v = Some (pk, puid) →
-  dom (filter (λ '(_, v'), living_obj_parent_ref v' = Some (k, uid)) state) = cks →
+  terminating_obj_parent_ref v = Some (pk, puid) →
+  dom (filter (λ '(_, v'), terminating_obj_parent_ref v' = Some (k, uid)) state) = cks →
   uid ∉ (set_map snd used_reference : gset types.UID.t) →
   own_auth γ state used_reference -∗
   own_frag γ pk puid 1 ks ==∗
@@ -224,7 +224,7 @@ Qed.
 Lemma create_child_vs2 {γ state used_reference pk puid ks} k uid v:
   uid = (KObjectV.objectmeta v).(ObjectMetaV.UID') →
   state !! k = None →
-  living_obj_parent_ref v = Some (pk, puid) →
+  terminating_obj_parent_ref v = Some (pk, puid) →
   map_Forall (λ k v,
     no_speculative_parent_reference (KObjectV.objectmeta v) (set_map snd used_reference : gset types.UID.t)
   ) state →
@@ -238,7 +238,7 @@ Proof.
   iIntros (Huid Hak Hparent Hvalid Hfresh_uid) "Hauth Hfrag".
   subst uid.
   assert (Hcks :
-    dom (filter (λ '(_, v'), living_obj_parent_ref v' = Some (k, obj_ref k v).2) state) = (∅ : gset KKey.t)).
+    dom (filter (λ '(_, v'), terminating_obj_parent_ref v' = Some (k, obj_ref k v).2) state) = (∅ : gset KKey.t)).
   { apply dom_empty_iff_L.
     apply map_empty.
     intros k'.
@@ -250,9 +250,9 @@ Proof.
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as Hno_spec.
       apply Hfresh_uid.
       unfold no_speculative_parent_reference in Hno_spec.
-      unfold living_obj_parent_ref in Hparent_to_new.
+      unfold terminating_obj_parent_ref in Hparent_to_new.
       destruct ((KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp')) as [dt|]
-        eqn:Hdeletion_timestamp; simpl in Hparent_to_new; [discriminate|].
+        eqn:Hdeletion_timestamp; simpl in Hparent_to_new; [|discriminate].
       unfold obj_parent_ref, meta_parent_ref in Hparent_to_new.
       destruct ((KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as [orefs|] eqn:Horefs; [|done].
       destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
@@ -277,8 +277,8 @@ Qed.
 
 Lemma adopt_orphan_vs {γ state used_reference pk puid ks} k v v':
   state !! k = Some v →
-  living_obj_parent_ref v = None →
-  living_obj_parent_ref v' = Some (pk, puid) →
+  terminating_obj_parent_ref v = None →
+  terminating_obj_parent_ref v' = Some (pk, puid) →
   (KObjectV.objectmeta v).(ObjectMetaV.UID') = (KObjectV.objectmeta v').(ObjectMetaV.UID') →
   own_auth γ state used_reference -∗
   own_frag γ pk puid 1 ks ==∗
@@ -304,8 +304,8 @@ Qed.
 
 Lemma release_child_vs {γ state used_reference pk puid ks} k v v':
   state !! k = Some v →
-  living_obj_parent_ref v = Some (pk, puid) →
-  living_obj_parent_ref v' = None →
+  terminating_obj_parent_ref v = Some (pk, puid) →
+  terminating_obj_parent_ref v' = None →
   (KObjectV.objectmeta v).(ObjectMetaV.UID') = (KObjectV.objectmeta v').(ObjectMetaV.UID') →
   own_auth γ state used_reference -∗
   own_frag γ pk puid 1 ks ==∗
@@ -331,7 +331,7 @@ Qed.
 
 Lemma delete_child_vs {γ state used_reference pk puid ks} k v:
   state !! k = Some v →
-  living_obj_parent_ref v = Some (pk, puid) →
+  terminating_obj_parent_ref v = Some (pk, puid) →
   own_auth γ state used_reference -∗
   own_frag γ pk puid 1 ks ==∗
     own_auth γ (delete k state) used_reference ∗
@@ -364,7 +364,7 @@ Qed.
 
 Lemma simple_update_vs {γ state used_reference} k v v':
   state !! k = Some v →
-  living_obj_parent_ref v = living_obj_parent_ref v' →
+  terminating_obj_parent_ref v = terminating_obj_parent_ref v' →
   (KObjectV.objectmeta v).(ObjectMetaV.UID') = (KObjectV.objectmeta v').(ObjectMetaV.UID') →
   own_auth γ state used_reference ==∗
     own_auth γ (<[k := v']> state) used_reference.
@@ -388,8 +388,8 @@ Qed.
 Lemma create_orphan_vs {γ state used_reference} k uid v cks:
   uid = (KObjectV.objectmeta v).(ObjectMetaV.UID') →
   state !! k = None →
-  living_obj_parent_ref v = None →
-  dom (filter (λ '(_, v'), living_obj_parent_ref v' = Some (obj_ref k v)) state) = cks →
+  terminating_obj_parent_ref v = None →
+  dom (filter (λ '(_, v'), terminating_obj_parent_ref v' = Some (obj_ref k v)) state) = cks →
   uid ∉ (set_map snd used_reference : gset types.UID.t) →
   own_auth γ state used_reference ==∗
     own_auth γ (<[k := v]> state) (used_reference ∪ {[obj_ref k v]}) ∗
@@ -419,7 +419,7 @@ Qed.
 Lemma create_orphan_vs2 {γ state used_reference} k uid v:
   uid = (KObjectV.objectmeta v).(ObjectMetaV.UID') →
   state !! k = None →
-  living_obj_parent_ref v = None →
+  terminating_obj_parent_ref v = None →
   map_Forall (λ k v,
     no_speculative_parent_reference (KObjectV.objectmeta v) (set_map snd used_reference : gset types.UID.t)
   ) state →
@@ -431,7 +431,7 @@ Proof.
   iIntros (Huid Hak Hnone Hvalid Hfresh) "Hauth".
   subst uid.
   assert (Hcks :
-    dom (filter (λ '(_, v'), living_obj_parent_ref v' = Some (obj_ref k v)) state) = (∅ : gset KKey.t)).
+    dom (filter (λ '(_, v'), terminating_obj_parent_ref v' = Some (obj_ref k v)) state) = (∅ : gset KKey.t)).
   { apply dom_empty_iff_L.
     apply map_empty.
     intros k'.
@@ -443,9 +443,9 @@ Proof.
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as Hno_spec.
       apply Hfresh.
       unfold no_speculative_parent_reference in Hno_spec.
-      unfold living_obj_parent_ref in Hparent_to_new.
+      unfold terminating_obj_parent_ref in Hparent_to_new.
       destruct ((KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp')) as [dt|]
-        eqn:Hdeletion_timestamp; simpl in Hparent_to_new; [discriminate|].
+        eqn:Hdeletion_timestamp; simpl in Hparent_to_new; [|discriminate].
       unfold obj_parent_ref, meta_parent_ref in Hparent_to_new.
       destruct ((KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as [orefs|] eqn:Horefs; [|done].
       destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
@@ -469,7 +469,7 @@ Qed.
 
 Lemma delete_orphan_vs {γ state used_reference} k v:
   state !! k = Some v →
-  living_obj_parent_ref v = None →
+  terminating_obj_parent_ref v = None →
   own_auth γ state used_reference ==∗
     own_auth γ (delete k state) used_reference.
 Proof.
@@ -482,4 +482,4 @@ Proof.
   - unfold obj_parent_ref_set. rewrite Hnone. done.
 Qed.
 
-End cview.
+End terminating_cview.

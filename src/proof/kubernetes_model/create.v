@@ -148,14 +148,8 @@ Proof.
   }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
-  iPoseProof (reserved_keys.auth_set_Forall with "Hinv_Hown_reserved") as "%Hinv_Hreserved_key_pred".
-  assert (key ∉ reserved_keys) as Hkey_not_reserved.
-  { subst key.
-    intros Hin.
-    eapply (Hnn_not_reservedP kind namespace).
-    eapply Hinv_Hreserved_key_pred.
-    done.
-  }
+  assert (¬ reserved_key_pred key) as Hkey_not_reserved.
+  { subst key. apply Hnn_not_reservedP. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
     as "%Habs_state_valid".
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
@@ -166,6 +160,7 @@ Proof.
     rewrite -Hdom_eq.
     exact Hnn_fresh.
   }
+  { exact Hkey_not_reserved. }
   { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid. apply not_elem_of_dom. done.
   }
   { unfold kview.valid_k_uid_obj.
@@ -239,6 +234,7 @@ Proof.
       injection Hpr as Hkey_eq Huid_eq;
       destruct parent_key as [pk_kind pk_name pk_namespace];
       simpl in Hkey_eq; inversion Hkey_eq; subst;
+      unfold living_obj_parent_ref; simpl;
       unfold obj_parent_ref, meta_parent_ref; simpl;
       rewrite Hfind Huid_eq; done.
   }
@@ -300,34 +296,6 @@ Proof.
     rewrite Hdom_eq in Hnn_fresh.
     done.
   }
-  assert (Htombed_uid_new :
-    tombed_uid =
-    (used_uid ∪ {[generated_uid]}) ∖
-      map_to_set
-        (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID'))
-        (<[key := kobj2]> abs_state)).
-  { assert (Hobj_uid : generated_uid = (KObjectV.objectmeta kobj2).(ObjectMetaV.UID')).
-    { subst kobj2.
-      destruct kobj; destruct kobj1;
-      simpl in Hm_eq |- *;
-      try done; rewrite Hm_eq; done.
-    }
-    assert (Huid_fresh : generated_uid ∉ used_uid).
-    { apply not_elem_of_dom in Hgenerated_uid_is_not_used.
-      rewrite <- Hinv_Hused_uid_eq_dom_phys_used_uid in Hgenerated_uid_is_not_used.
-      done.
-    }
-    rewrite (map_to_set_insert_L
-      (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID'))
-      abs_state key kobj2 Hkey_not_in_abs).
-    rewrite <- Hobj_uid.
-    exact (tombed_uid_create_eq_used_uid_sub
-      used_uid tombed_uid
-      (map_to_set
-        (λ _ obj, (KObjectV.objectmeta obj).(ObjectMetaV.UID'))
-        abs_state)
-      generated_uid Huid_fresh Hinv_Htombed_uid_eq_used_uid_sub).
-  }
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[key:=interface.ok i1]> phys_state; <[key:=kobj2]> abs_state,
     match i with
@@ -361,13 +329,6 @@ Proof.
       rewrite Hinv_Hused_uid_eq_set_map_used_reference.
       rewrite Hobj_uid.
       done.
-    - exact Htombed_uid_new.
-    - rewrite dom_insert_L.
-      rewrite disjoint_union_r.
-      split.
-      + rewrite disjoint_singleton_r.
-        exact Hkey_not_reserved.
-      + exact Hinv_Hreserved_disjoint_abs.
   }
   iApply "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem. all: try done.

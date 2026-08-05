@@ -347,7 +347,18 @@ Proof.
   iMod (cview.simple_update_vs key old_kobj new_kobj with "[$Hinv_Hown_children]")
     as "Hinv_Hown_children".
   { done. }
-  { unfold new_kobj, new_kmeta, obj_parent_ref.
+  { assert (Hdeletion_timestamp :
+        (KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp') =
+        (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp')).
+    { unfold new_kobj, new_kmeta.
+      rewrite objectmeta_update_objectmeta.
+      eapply valid_simple_update_updated_set_resource_version_deletion_timestamp;
+        done. }
+    unfold living_obj_parent_ref, obj_parent_ref.
+    rewrite Hdeletion_timestamp.
+    destruct ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp'));
+      [done|].
+    unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     eapply valid_simple_update_updated_set_resource_version_parent_ref; done. }
   { unfold new_kobj, new_kmeta.
@@ -382,14 +393,6 @@ Proof.
   { iNamed "H".
     iFrame "#". iFrame. iPureIntro. split_and!.
     all: try done.
-    - eapply update_tombed_uid_update_eq_used_uid_sub; [done|done|].
-      unfold new_kobj, new_kmeta.
-      rewrite objectmeta_update_objectmeta.
-      eapply valid_simple_update_updated_set_resource_version_uid; done.
-    - rewrite dom_insert_L.
-      assert (key ∈ dom abs_state) as Hkey_in_abs.
-      { apply elem_of_dom. eexists. exact Hlookup_abs. }
-      Timeout 10 set_solver.
   }
   iExact "HΦ".
 Unshelve.

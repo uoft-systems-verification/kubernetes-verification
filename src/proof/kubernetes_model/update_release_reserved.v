@@ -8,15 +8,16 @@ Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma delete_release_key_kobj_vs γ state used_uid key uid meta :
-  ¬ reserved_key_pred key →
+Lemma delete_reserved_release_key_kobj_vs γ state used_uid key uid meta :
   own_kview_auth γ state used_uid -∗
-  own_meta_frag γ key uid 1 meta ==∗
-    own_kview_auth γ (delete key state) used_uid.
+  own_meta_frag γ key uid 1 meta -∗
+  own_reserved_frag γ key Unavailable ==∗
+    own_kview_auth γ (delete key state) used_uid ∗
+    own_reserved_frag γ key Available.
 Proof.
-  iIntros (Hkey_not_reserved) "Hauth Hmeta".
-  iMod (kview.delete_kobj_vs with "Hauth Hmeta") as "Hauth".
-  { exact Hkey_not_reserved. }
+  iIntros "Hauth Hmeta Hreservation".
+  iMod (kview.delete_reserved_kobj_vs with "Hauth Hmeta Hreservation")
+    as "[Hauth Hreservation]".
   iModIntro. iFrame.
 Qed.
 
@@ -25,7 +26,7 @@ Qed.
    stored. Ordinary update preserves status, so status ownership can remain
    framed around this contract. The parent relation and [own_children_frag]
    are updated atomically with the object. *)
-Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_uid dq :
+Lemma wp_State__update_release_reserved_au γ l kind namespace i kobj parent_key parent_uid dq :
   ∀ Φ,
   is_pkg_init apimodel ∗
   is_kubernetes γ l ∗
@@ -42,7 +43,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
   ( |={⊤,∅}=> ∃ key uid old_meta old_spec children,
     "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
     "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
-    "%Hkey_not_reserved" ∷ ⌜ ¬ reserved_key_pred key ⌝ ∗
+    "Hkey_reservation" ∷ own_reserved_frag γ key Unavailable ∗
     "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
     "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
     "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
@@ -71,14 +72,16 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
           "Hown_children_frag" ∷
             own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
           ( "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-            "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec
+            "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
+            "Hkey_reservation" ∷ own_reserved_frag γ key Unavailable
             ∨
-            True))
+            "Hkey_reservation" ∷ own_reserved_frag γ key Available))
         ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
       (∀ err,
         ( "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
           "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
           "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
+          "Hkey_reservation" ∷ own_reserved_frag γ key Unavailable ∗
           "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)
         ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
     )%I
@@ -208,7 +211,7 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with
-      "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
+      "[Hown_meta_frag Hown_spec_frag Hkey_reservation Hown_children_frag]")
       as "HΦ".
     { iFrame. iPureIntro. exact Herr_conflict. }
     iModIntro.
@@ -362,9 +365,9 @@ Proof.
     pose proof Hold_living_parent as Hold_living_parent_info.
     apply cview.living_obj_parent_ref_eq_some in Hold_living_parent_info as
       [Hold_deletion_timestamp_none _].
-    iMod (delete_release_key_kobj_vs with
-      "Hinv_Hown_abs Hown_meta_frag") as "Hinv_Hown_abs".
-    { exact Hkey_not_reserved. }
+    iMod (delete_reserved_release_key_kobj_vs with
+      "Hinv_Hown_abs Hown_meta_frag Hkey_reservation")
+      as "[Hinv_Hown_abs Hkey_reservation]".
     iMod (cview.delete_child_vs2 key with
       "[$Hinv_Hown_children] [$Hown_children_frag]")
       as "(Hinv_Hown_children & Hown_children_frag)".
@@ -377,7 +380,7 @@ Proof.
       rewrite Hold_deletion_timestamp_none. done. }
     iDestruct "Hclose" as "[Hclose_success _]".
     iMod ("Hclose_success" $! i1 updated_kobj with
-      "[Hdeepown_i1 Hown_children_frag]")
+      "[Hdeepown_i1 Hkey_reservation Hown_children_frag]")
       as "HΦ".
     { iSplit; first done.
       iSplit.
@@ -391,7 +394,7 @@ Proof.
       iSplit; first done.
       iSplit; first done.
       iFrame "Hdeepown_i1 Hown_children_frag".
-      iRight. done. }
+      iRight. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
@@ -567,7 +570,7 @@ Proof.
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
     "[Hdeepown_i1' Hown_meta_frag Hown_spec_frag
-      Hown_children_frag]") as "HΦ".
+      Hkey_reservation Hown_children_frag]") as "HΦ".
   { iSplit.
     { iPureIntro. unfold new_kobj, new_kmeta.
       eapply valid_update_objectmeta_set_resource_version; done. }
@@ -612,3 +615,4 @@ Unshelve. all: try tc_solve. all: try apply _. all: try exact sem.
 Qed.
 
 End proof.
+

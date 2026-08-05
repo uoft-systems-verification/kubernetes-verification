@@ -63,6 +63,21 @@ Proof.
   done.
 Qed.
 
+Lemma valid_simple_update_updated_set_resource_version_deletion_timestamp
+    m_old m_input m_updated rv :
+  ObjectMetaV.valid_simple_update m_old m_input →
+  ObjectMetaV.updated m_input m_updated →
+  m_old.(ObjectMetaV.DeletionTimestamp') =
+    (m_updated <| ObjectMetaV.ResourceVersion' := rv |>).(
+      ObjectMetaV.DeletionTimestamp').
+Proof.
+  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated.
+  destruct m_old, m_input, m_updated; simpl.
+  intros Hvalid Hupdated.
+  decompose [and] Hvalid. decompose [and] Hupdated. subst.
+  done.
+Qed.
+
 Lemma valid_simple_update_updated_set_resource_version_no_speculative_parent_reference
     m_old m_input m_updated rv used_uid :
   ObjectMetaV.valid_simple_update m_old m_input →

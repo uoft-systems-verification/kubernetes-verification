@@ -396,7 +396,16 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
     }> @ ⊤, ∅ <{ ∀∀ kmeta',
-      delete_success_post γ key uid parent_key parent_uid children kmeta',
+      ( "Hown_children_frag" ∷
+          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+        ( (* the object is marked as deleting but still exists *)
+          "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta'
+          ∨
+          (* the object is deleted *)
+          "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid
+        )
+      ),
       COMM ▷ Φ #interface.nil
     }>
     -∗ WP l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c {{ Φ }}.
@@ -413,7 +422,16 @@ Proof.
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
     }> @ ⊤, ∅ <{ ∀∀ kmeta',
-      delete_success_post γ key uid parent_key parent_uid children kmeta',
+      ( "Hown_children_frag" ∷
+          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+        ( (* the object is marked as deleting but still exists *)
+          "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta'
+          ∨
+          (* the object is deleted *)
+          "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid
+        )
+      ),
       COMM ▷ Φ #interface.nil
     }>
   )%I.
@@ -548,7 +566,16 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
   }}}
     l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c
   {{{ kmeta', RET #interface.nil;
-      delete_success_post γ key uid parent_key parent_uid children kmeta'
+      ( "Hown_children_frag" ∷
+          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+        ( (* the object is marked as deleting but still exists *)
+          "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta'
+          ∨
+          (* the object is deleted *)
+          "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid
+        )
+      )
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ".

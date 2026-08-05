@@ -25,23 +25,6 @@ Proof.
   wp_start as "H". iNamed "H". iNamed "Hisk".
 Admitted.
 
-Lemma wp_State__get_none γ l key uid :
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Htomb" ∷ own_tombstone_frag γ uid
-  }}}
-    l @! (go.PointerType apimodel.State) @! "get" #key
-  {{{ i (err: error.t) kobj, RET (#(interface.ok i), #err);
-      ⌜ err = interface.nil ⌝ ∗
-      ⌜ KObjectV.valid kobj ⌝ ∗
-      ⌜ key = KObjectV.key kobj ⌝ ∗
-      ⌜ uid ≠ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ⌝ ∗
-      KObjectV.deepown_i i kobj 1
-      ∨
-      ⌜ err ≠ interface.nil ⌝
-  }}}.
-Proof. Admitted.
-
 Lemma wp_State__get_some_au γ l key :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
