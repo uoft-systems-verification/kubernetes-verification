@@ -18,18 +18,22 @@ Definition serviceAccountsToEnsure {ext : ffi_syntax} {go_gctx : GoGlobalContext
 Definition syncNamespace {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/serviceaccount.syncNamespace"%go.
 
 (* syncNamespace ensures that an active namespace has each configured ServiceAccount.
+   A nil namespace represents a namespace that is no longer present.
 
-   go: service_account.go:22:6 *)
+   go: service_account.go:23:6 *)
 Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace",
-    exception_do (let: "namespace" := (GoAlloc go.string "namespace") in
+    exception_do (let: "namespace" := (GoAlloc (go.PointerType core_v1.Namespace) "namespace") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType core_v1.Namespace] "namespace") =⟨go.PointerType core_v1.Namespace⟩ (Convert go.untyped_nil (go.PointerType core_v1.Namespace) UntypedNil)) || ((![core_v1.NamespacePhase] (StructFieldRef core_v1.NamespaceStatus "Phase"%go (StructFieldRef core_v1.Namespace "Status"%go (![go.PointerType core_v1.Namespace] "namespace")))) ≠⟨core_v1.NamespacePhase⟩ core_v1.NamespaceActive))
+    then return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
     let: "$range" := (![go.SliceType core_v1.ServiceAccount] (GlobalVarAddr serviceAccountsToEnsure #())) in
     (let: "serviceAccount" := (GoAlloc core_v1.ServiceAccount (GoZeroVal core_v1.ServiceAccount #())) in
     slice.for_range core_v1.ServiceAccount "$range" (λ: "$key" "$value",
       do:  ("serviceAccount" <-[core_v1.ServiceAccount] "$value");;;
       do:  "$key";;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
       let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount"))) in
       (MethodResolve (go.PointerType apimodel.State) "ServiceAccountGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
@@ -43,9 +47,9 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
       (FuncResolve errors.IsNotFound [] #()) "$a0"))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (![go.string] "namespace") in
+      let: "$r0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
       do:  ((StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount")) <-[go.string] "$r0");;;
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
       let: "$a1" := "serviceAccount" in
       (MethodResolve (go.PointerType apimodel.State) "ServiceAccountCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
