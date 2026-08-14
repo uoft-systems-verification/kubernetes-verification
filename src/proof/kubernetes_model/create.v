@@ -32,6 +32,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
         own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
         own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
         own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+        own_unreserved_key_frag γ key ∗
         own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
         own_children_frag γ key uid 1 ∅
           ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V
@@ -152,8 +153,15 @@ Proof.
   { subst key. apply Hnn_not_reservedP. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
     as "%Habs_state_valid".
+  assert (generated_uid ∉ used_uid) as Hgenerated_uid_fresh.
+  { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid.
+    apply not_elem_of_dom. done. }
+  assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.UID') = generated_uid)
+    as Hkobj2_uid.
+  { subst kobj2. destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
-    as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status)".
+    as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status & #Hown_unreserved_key_frag)".
   { fold key in Hnn_fresh.
     apply not_elem_of_dom.
     apply not_elem_of_dom in Hnn_fresh.
@@ -161,18 +169,19 @@ Proof.
     exact Hnn_fresh.
   }
   { exact Hkey_not_reserved. }
-  { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid. apply not_elem_of_dom. done.
-  }
+  { exact Hgenerated_uid_fresh. }
   { unfold kview.valid_k_uid_obj.
     subst kobj2 key.
     split_and!.
     - destruct Hvalid as (Hkind_eq & _).
       destruct kobj; destruct kobj1; try done;
       rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
-    - destruct kobj; destruct kobj1; try done;
-      rewrite Hm_eq; done.
+    - symmetry. exact Hkobj2_uid.
     - exact Hvalid2.
   }
+  { subst kobj2.
+    destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
   { intros kind' name' uid' Hparent.
     assert (uid' = parent_uid) as ->.
     { subst kobj2.
@@ -253,7 +262,19 @@ Proof.
     apply Huid_fresh. rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     done.
   }
-  iMod ("Hclose" $! i2 kobj2 with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status $Hown_children_frag $Hown_grandchildren]") as "HΦ".
+  iMod (terminating_children.create_living_vs
+    γ.(γ_terminating_children) abs_state key kobj2 with
+    "Hinv_Hown_terminating_children") as
+    "Hinv_Hown_terminating_children".
+  { apply not_elem_of_dom in Hnn_fresh.
+    rewrite Hdom_eq in Hnn_fresh.
+    apply not_elem_of_dom in Hnn_fresh. exact Hnn_fresh. }
+  { unfold terminating_children.terminating_obj_parent_ref.
+    subst kobj2. destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
+  iMod ("Hclose" $! i2 kobj2 with
+    "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
+      $Hown_unreserved_key_frag $Hown_children_frag $Hown_grandchildren]") as "HΦ".
   { iSplit.
     { iPureIntro. exact Hvalid2. }
     iPureIntro. split_and!.
@@ -296,6 +317,10 @@ Proof.
     rewrite Hdom_eq in Hnn_fresh.
     done.
   }
+  iMod (deletion_observation.create_vs key generated_uid kobj2
+    Hgenerated_uid_fresh Hkobj2_uid with
+    "Hinv_Hown_deletion_observations") as
+    "Hinv_Hown_deletion_observations".
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[key:=interface.ok i1]> phys_state; <[key:=kobj2]> abs_state,
     match i with
@@ -311,7 +336,8 @@ Proof.
   }
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
-  { iNamed "H". iFrame. iFrame "#". iPureIntro. split_and!.
+  { iNamed "H". iFrame. iFrame "#".
+    iNext. iFrame. iPureIntro. split_and!.
     - rewrite dom_insert_L.
       rewrite Hinv_Hused_uid_eq_dom_phys_used_uid.
       rewrite union_comm_L.
@@ -349,7 +375,8 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
   {{{ i' kobj' key uid, RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-      "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hmeta_created" ∷
+        ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
       "%Hspec_created" ∷ ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
       "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = (KObjectV.key kobj') ⌝ ∗
@@ -359,6 +386,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
       "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
@@ -388,8 +416,12 @@ Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_ui
   {{{ pod_l' pod' key uid, RET (#pod_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
       "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
-      "%Hspec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
-      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status')) (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
+      "%Hspec_created" ∷
+        ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
+      "%Hstatus_created" ∷
+        ⌜ ObjectStatusV.created
+          (ObjectStatusV.PodStatus pod.(PodV.Status'))
+          (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod' ⌝ ∗
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
@@ -397,6 +429,7 @@ Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_ui
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
       "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
@@ -423,7 +456,7 @@ Proof.
   replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
   wp_auto.
-  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+  iApply "HΦ". iFrame. iFrame "#". iPureIntro. split_and!; done.
 Qed.
 
 End proof.

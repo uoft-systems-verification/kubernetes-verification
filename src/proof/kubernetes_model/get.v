@@ -7,24 +7,6 @@ Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-
-Lemma wp_State__get γ l key :
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l
-  }}}
-    l @! (go.PointerType apimodel.State) @! "get" #key
-  {{{ i (err: error.t) kobj, RET (#(interface.ok i), #err);
-      ⌜ err = interface.nil ⌝ ∗
-      ⌜ KObjectV.valid kobj ⌝ ∗
-      ⌜ key = KObjectV.key kobj ⌝ ∗
-      KObjectV.deepown_i i kobj 1
-      ∨
-      ⌜ err ≠ interface.nil ⌝
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H". iNamed "Hisk".
-Admitted.
-
 Lemma wp_State__get_some_au γ l key :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
@@ -99,18 +81,18 @@ Proof.
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag")
-    as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf)".
+    as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf & %Hmeta_living)".
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
     as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+  iPoseProof (kview.own_meta_living Hlookup_abs with
+    "Hinv_Hown_abs Hown_meta_frag") as "%Hkobj_living".
   destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
   1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found";
         assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
-          (symmetry; eapply Hspec_found; [exact Hlookup_abs|];
-           exact Huid_obj).
+          (symmetry; eapply Hspec_found; [exact Hlookup_abs|exact Huid_obj|exact Hkobj_living]).
   1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found";
         assert (kstatus = KObjectV.status kobj) as Hkstatus_eq by
-          (symmetry; eapply Hstatus_found; [exact Hlookup_abs|];
-           exact Huid_obj).
+          (symmetry; eapply Hstatus_found; [exact Hlookup_abs|exact Huid_obj|exact Hkobj_living]).
   all: iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ";
     [iFrame; iPureIntro; split_and!; done|].
   all: iModIntro.
@@ -354,12 +336,9 @@ Lemma wp_State__PersistentVolumeClaimMutGet γ l key namespace name uid dq kmeta
   }}}
     l @! (go.PointerType apimodel.State) @! "PersistentVolumeClaimMutGet" #namespace #name
   {{{ pvc_l pvc, RET (#pvc_l, #interface.nil);
-      "%Hvalid'" ∷
-        ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PersistentVolumeClaimV.key pvc ⌝ ∗
-      "%Hmeta_eq" ∷
-        ⌜ ObjectMetaV.equiv_except_resource_version
-            pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta
   }}}.
@@ -427,12 +406,9 @@ Lemma wp_State__PersistentVolumeClaimGet γ l key namespace name uid dq kmeta :
   }}}
     l @! (go.PointerType apimodel.State) @! "PersistentVolumeClaimGet" #namespace #name
   {{{ pvc_l pvc, RET (#pvc_l, #interface.nil);
-      "%Hvalid'" ∷
-        ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.PersistentVolumeClaim pvc) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PersistentVolumeClaimV.key pvc ⌝ ∗
-      "%Hmeta_eq" ∷
-        ⌜ ObjectMetaV.equiv_except_resource_version
-            pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version pvc.(PersistentVolumeClaimV.ObjectMeta') kmeta ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta
   }}}.
@@ -459,21 +435,18 @@ Lemma wp_State__StatefulSetMutGet γ l key namespace name uid dq kmeta kspec :
         KKey.Name' := name
       |} ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
-        (ObjectSpecV.StatefulSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.StatefulSetSpec kspec)
   }}}
     l @! (go.PointerType apimodel.State) @! "StatefulSetMutGet"
       #namespace #name
   {{{ sts_l sts, RET (#sts_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.StatefulSet sts) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = StatefulSetV.key sts ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
-        sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = sts.(StatefulSetV.Spec') ⌝ ∗
       "Hdeepown_l" ∷ StatefulSetV.deepown_l sts_l sts 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
-        (ObjectSpecV.StatefulSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.StatefulSetSpec kspec)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
@@ -519,21 +492,18 @@ Lemma wp_State__StatefulSetGet γ l key namespace name uid dq kmeta kspec :
         KKey.Name' := name
       |} ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
-        (ObjectSpecV.StatefulSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.StatefulSetSpec kspec)
   }}}
     l @! (go.PointerType apimodel.State) @! "StatefulSetGet"
       #namespace #name
   {{{ sts_l sts, RET (#sts_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.StatefulSet sts) ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = StatefulSetV.key sts ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
-        sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version sts.(StatefulSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = sts.(StatefulSetV.Spec') ⌝ ∗
       "Hdeepown_l" ∷ StatefulSetV.deepown_l sts_l sts 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq
-        (ObjectSpecV.StatefulSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.StatefulSetSpec kspec)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".

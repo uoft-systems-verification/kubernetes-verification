@@ -1,5 +1,4 @@
 From New.proof.controllers.statefulset Require Export distance.
-From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.controllers.statefulset Require Import pod create_pod create_pvc
   update_pod condemned outdated delete_pod.
 
@@ -282,14 +281,18 @@ Definition own_pvc_map γ
   ([∗ map] key↦pvc ∈ pvc_map,
     own_meta_frag γ key
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
-      pvc.(PersistentVolumeClaimV.ObjectMeta'))%I.
+      pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
+    own_occupied_reserved_frag γ key
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))%I.
 
 Lemma own_pvc_list_as_map γ pvcs :
   NoDup (PersistentVolumeClaimV.key <$> pvcs) →
   ([∗ list] pvc ∈ pvcs,
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
-      pvc.(PersistentVolumeClaimV.ObjectMeta')) ⊣⊢
+      pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
+    own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ⊣⊢
   own_pvc_map γ (pvc_map_of_list pvcs).
 Proof.
   intros Hnodup.
@@ -309,7 +312,9 @@ Lemma own_pvc_map_as_list γ pvc_map :
   ([∗ list] pvc ∈ pvc_list_of_map pvc_map,
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
-      pvc.(PersistentVolumeClaimV.ObjectMeta')).
+      pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
+    own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')).
 Proof.
   intros Hwf.
   rewrite /own_pvc_map /pvc_list_of_map big_sepM_map_to_list.
@@ -329,8 +334,11 @@ Definition pvc_ready γ set ordinal claim_template_name claim_template :
       own_meta_frag γ
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
-        claim.(PersistentVolumeClaimV.ObjectMeta')) ∨
-   (own_reserved_frag γ
+        claim.(PersistentVolumeClaimV.ObjectMeta') ∗
+      own_occupied_reserved_frag γ
+        (desired_pvc_key set claim_template_name ordinal)
+        claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
+   (own_available_frag γ
       (desired_pvc_key set claim_template_name ordinal) ∗
     ⌜ PersistentVolumeClaimV.valid_named_create
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -343,7 +351,10 @@ Definition pvc_done γ set ordinal claim_template_name : iProp Σ :=
     own_meta_frag γ
       (desired_pvc_key set claim_template_name ordinal)
       claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
-      claim.(PersistentVolumeClaimV.ObjectMeta'))%I.
+      claim.(PersistentVolumeClaimV.ObjectMeta') ∗
+    own_occupied_reserved_frag γ
+      (desired_pvc_key set claim_template_name ordinal)
+      claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))%I.
 
 (* Turn the global PVC map and its outstanding reservations into the
    name-indexed state expected by [createPersistentVolumeClaims].  The wand
@@ -370,7 +381,7 @@ Lemma prepare_pvc_states γ set ordinal
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
       (new_persistent_volume_claim set claim_template ordinal)) →
   own_pvc_map γ pvc_map -∗
-  ([∗ list] key ∈ reserved, own_reserved_frag γ key) -∗
+  ([∗ list] key ∈ reserved, own_available_frag γ key) -∗
   ([∗ map] name↦claim_template ∈ claim_templates,
     pvc_ready γ set ordinal name claim_template) ∗
   (([∗ set] name ∈ dom claim_templates,
@@ -378,7 +389,7 @@ Lemma prepare_pvc_states γ set ordinal
     ∃ (pvc_map' : gmap KKey.t PersistentVolumeClaimV.t)
       (reserved' : list KKey.t),
       own_pvc_map γ pvc_map' ∗
-      ([∗ list] key ∈ reserved', own_reserved_frag γ key) ∗
+      ([∗ list] key ∈ reserved', own_available_frag γ key) ∗
       ⌜ (∀ key claim, pvc_map' !! key = Some claim →
             PersistentVolumeClaimV.key claim = key) ∧
         NoDup reserved' ∧
@@ -486,6 +497,8 @@ Proof.
       destruct (pvc_map_tail !! key) as [other_claim|] eqn:Htail_lookup.
       { iDestruct (big_sepM_lookup_acc with "Hpvc_map") as
           "[Hother_claim _]"; first exact Htail_lookup.
+        iDestruct "Hclaim" as "[Hclaim _]".
+        iDestruct "Hother_claim" as "[Hother_claim _]".
         iDestruct (kview.own_meta_meta_false (γ:=γ.(γ_state)) eq_refl
           with "Hclaim Hother_claim") as %[]. }
       iExists (<[key:=claim]> pvc_map_tail), reserved'.
@@ -530,7 +543,7 @@ Proof.
         with "Hreserved") as "(Hreserved_before & Hkey & Hreserved_after)".
       iAssert (([∗ list] other ∈
           take idx reserved ++ drop (S idx) reserved,
-          own_reserved_frag γ other))%I
+          own_available_frag γ other))%I
         with "[Hreserved_before Hreserved_after]" as "Hreserved".
       { rewrite big_sepL_app.
         iSplitL "Hreserved_before"; iFrame. }
@@ -575,6 +588,8 @@ Proof.
       destruct (pvc_map_tail !! key) as [other_claim|] eqn:Htail_lookup.
       { iDestruct (big_sepM_lookup_acc with "Hpvc_map") as
           "[Hother_claim _]"; first exact Htail_lookup.
+        iDestruct "Hclaim" as "[Hclaim _]".
+        iDestruct "Hother_claim" as "[Hother_claim _]".
         iDestruct (kview.own_meta_meta_false (γ:=γ.(γ_state)) eq_refl
           with "Hclaim Hother_claim") as %[]. }
       iExists (<[key:=claim]> pvc_map_tail), reserved'.
@@ -982,271 +997,6 @@ Proof.
   unfold pod_immutable_matches. rewrite Hkey Hspec Hstorage. done.
 Qed.
 
-Lemma match_distance_mark_deleting_condemned set before pod after pod' pvcs :
-  Forall (pod_has_int32_member_key set) (before ++ pod :: after) →
-  pod_is_condemned set pod →
-  is_pod_alive pod →
-  PodV.key pod = PodV.key pod' →
-  pod.(PodV.Spec') = pod'.(PodV.Spec') →
-  ¬ is_pod_alive pod' →
-  match_distance set (before ++ pod' :: after) pvcs <
-    match_distance set (before ++ pod :: after) pvcs.
-Proof.
-  intros Hmembers Hcondemned Halive Hkey Hspec Hnot_alive.
-  assert (pod_has_int32_member_key set pod) as Hmember.
-  { rewrite Forall_forall in Hmembers. apply Hmembers.
-    apply list_elem_of_In. apply elem_of_app. right. by left. }
-  assert (pod_has_int32_member_key set pod') as Hmember'.
-  { by eapply pod_has_int32_member_key_of_key_eq. }
-  assert (¬ pod_key_is_desired set (PodV.key pod)) as Hnot_desired.
-  { apply (proj1 (pod_int32_member_condemned_iff set pod Hmember)).
-    exact Hcondemned. }
-  assert (¬ pod_key_is_desired set (PodV.key pod')) as Hnot_desired'.
-  { rewrite -Hkey. exact Hnot_desired. }
-  assert (missing_pod_keys set (before ++ pod' :: after) =
-      missing_pod_keys set (before ++ pod :: after)) as Hmissing.
-  { unfold missing_pod_keys. f_equal.
-    rewrite !fmap_app /= Hkey. done. }
-  assert (outdated_pods set (before ++ pod' :: after) =
-      outdated_pods set (before ++ pod :: after)) as Houtdated.
-  { unfold outdated_pods, needed_pods.
-    rewrite !list.filter_app /=
-      (filter_cons_False _ pod after Hnot_desired)
-      (filter_cons_False _ pod' after Hnot_desired').
-    done. }
-  assert (bad_name_pods set (before ++ pod' :: after) =
-      bad_name_pods set (before ++ pod :: after)) as Hbad.
-  { unfold bad_name_pods.
-    rewrite !list.filter_app /=
-      (filter_cons_False
-        (λ pod, ¬ pod_has_int32_member_key set pod) pod after
-        ltac:(intros Hnot; exact (Hnot Hmember)))
-      (filter_cons_False
-        (λ pod, ¬ pod_has_int32_member_key set pod) pod' after
-        ltac:(intros Hnot; exact (Hnot Hmember'))).
-    done. }
-  assert (filter is_pod_alive
-      (condemned_pods set (before ++ pod :: after)) =
-      filter is_pod_alive (condemned_pods set before) ++
-        pod :: filter is_pod_alive (condemned_pods set after))
-      as Hold_condemned.
-  { unfold condemned_pods. rewrite list.filter_app /=.
-    rewrite (filter_cons_True
-      (λ pod0, pod_has_int32_member_key set pod0 ∧
-        ¬ pod_key_is_desired set (PodV.key pod0))
-      pod after ltac:(split; done)).
-    rewrite list.filter_app /=
-      (filter_cons_True is_pod_alive pod
-        (filter (λ pod0 : PodV.t,
-          pod_has_int32_member_key set pod0 ∧
-          ¬ pod_key_is_desired set (PodV.key pod0)) after)
-        Halive).
-    done. }
-  assert (filter is_pod_alive
-      (condemned_pods set (before ++ pod' :: after)) =
-      filter is_pod_alive (condemned_pods set before) ++
-        filter is_pod_alive (condemned_pods set after))
-      as Hnew_condemned.
-  { unfold condemned_pods. rewrite list.filter_app /=.
-    rewrite (filter_cons_True
-      (λ pod0, pod_has_int32_member_key set pod0 ∧
-        ¬ pod_key_is_desired set (PodV.key pod0))
-      pod' after ltac:(split; done)).
-    rewrite list.filter_app /=
-      (filter_cons_False is_pod_alive pod'
-        (filter (λ pod0 : PodV.t,
-          pod_has_int32_member_key set pod0 ∧
-          ¬ pod_key_is_desired set (PodV.key pod0)) after)
-        Hnot_alive).
-    done. }
-  unfold match_distance, pod_distance.
-  rewrite Hmissing Houtdated Hbad Hold_condemned Hnew_condemned.
-  rewrite !app_length /=. lia.
-Qed.
-
-Lemma match_distance_mark_deleting_outdated set before pod after pod' pvcs :
-  Forall (pod_has_int32_member_key set) (before ++ pod :: after) →
-  pod_is_outdated set pod →
-  is_pod_alive pod →
-  PodV.key pod = PodV.key pod' →
-  pod.(PodV.Spec') = pod'.(PodV.Spec') →
-  ¬ is_pod_alive pod' →
-  match_distance set (before ++ pod' :: after) pvcs <
-    match_distance set (before ++ pod :: after) pvcs.
-Proof.
-  intros Hmembers Houtdated_pod Halive Hkey Hspec Hnot_alive.
-  assert (pod_has_int32_member_key set pod) as Hmember.
-  { rewrite Forall_forall in Hmembers. apply Hmembers.
-    apply list_elem_of_In. apply elem_of_app. right. by left. }
-  assert (pod_has_int32_member_key set pod') as Hmember'.
-  { by eapply pod_has_int32_member_key_of_key_eq. }
-  pose proof (proj1
-    (pod_int32_member_outdated_iff set pod Hmember) Houtdated_pod)
-    as [Hdesired Hnot_immutable].
-  assert (pod_key_is_desired set (PodV.key pod')) as Hdesired'.
-  { rewrite -Hkey. exact Hdesired. }
-  assert (¬ pod_immutable_matches set pod') as Hnot_immutable'.
-  { intros Himmutable'. apply Hnot_immutable.
-    apply (proj2
-      (pod_immutable_matches_key_spec_eq set pod pod' Hkey Hspec)).
-    exact Himmutable'. }
-  assert (¬ pod_match set pod) as Hnot_match.
-  { intros [_ Himmutable]. exact (Hnot_immutable Himmutable). }
-  assert (¬ pod_match set pod') as Hnot_match'.
-  { intros [_ Himmutable]. exact (Hnot_immutable' Himmutable). }
-  assert (missing_pod_keys set (before ++ pod' :: after) =
-      missing_pod_keys set (before ++ pod :: after)) as Hmissing.
-  { unfold missing_pod_keys. f_equal.
-    rewrite !fmap_app /= Hkey. done. }
-  assert (filter is_pod_alive
-      (outdated_pods set (before ++ pod :: after)) =
-      filter is_pod_alive (outdated_pods set before) ++
-        pod :: filter is_pod_alive (outdated_pods set after))
-      as Hold_outdated.
-  { unfold outdated_pods, needed_pods.
-    rewrite list.filter_app /=
-      (filter_cons_True _ pod after Hdesired).
-    rewrite list.filter_app /=
-      (filter_cons_True
-        (λ pod0, ¬ pod_match set pod0)
-        pod (filter (λ pod0, pod_key_is_desired set (PodV.key pod0)) after)
-        Hnot_match).
-    rewrite list.filter_app /=
-      (filter_cons_True is_pod_alive pod
-        (filter (λ pod0, ¬ pod_match set pod0)
-          (filter (λ pod0, pod_key_is_desired set (PodV.key pod0)) after)) Halive).
-    done. }
-  assert (filter is_pod_alive
-      (outdated_pods set (before ++ pod' :: after)) =
-      filter is_pod_alive (outdated_pods set before) ++
-        filter is_pod_alive (outdated_pods set after))
-      as Hnew_outdated.
-  { unfold outdated_pods, needed_pods.
-    rewrite list.filter_app /=
-      (filter_cons_True _ pod' after Hdesired').
-    rewrite list.filter_app /=
-      (filter_cons_True
-        (λ pod0, ¬ pod_match set pod0)
-        pod' (filter (λ pod0, pod_key_is_desired set (PodV.key pod0)) after)
-        Hnot_match').
-    rewrite list.filter_app /=
-      (filter_cons_False is_pod_alive pod'
-        (filter (λ pod0, ¬ pod_match set pod0)
-          (filter (λ pod0, pod_key_is_desired set (PodV.key pod0)) after)) Hnot_alive).
-    done. }
-  assert (condemned_pods set (before ++ pod' :: after) =
-      condemned_pods set (before ++ pod :: after)) as Hcondemned.
-  { unfold condemned_pods.
-    rewrite !list.filter_app /=
-      (filter_cons_False
-        (λ pod0, pod_has_int32_member_key set pod0 ∧
-          ¬ pod_key_is_desired set (PodV.key pod0))
-        pod after ltac:(intros [_ Hnot]; exact (Hnot Hdesired)))
-      (filter_cons_False
-        (λ pod0, pod_has_int32_member_key set pod0 ∧
-          ¬ pod_key_is_desired set (PodV.key pod0))
-        pod' after ltac:(intros [_ Hnot]; exact (Hnot Hdesired'))).
-    done. }
-  assert (bad_name_pods set (before ++ pod' :: after) =
-      bad_name_pods set (before ++ pod :: after)) as Hbad.
-  { unfold bad_name_pods.
-    rewrite !list.filter_app /=
-      (filter_cons_False
-        (λ pod0, ¬ pod_has_int32_member_key set pod0) pod after
-        ltac:(intros Hnot; exact (Hnot Hmember)))
-      (filter_cons_False
-        (λ pod0, ¬ pod_has_int32_member_key set pod0) pod' after
-        ltac:(intros Hnot; exact (Hnot Hmember'))).
-    done. }
-  unfold match_distance, pod_distance.
-  rewrite Hmissing Hold_outdated Hnew_outdated Hcondemned Hbad.
-  rewrite !app_length /=. lia.
-Qed.
-
-Lemma pods_progress_observed_mark_deleting before pod after pod' :
-  PodV.key pod = PodV.key pod' →
-  pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None →
-  pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None →
-  pods_progress_observed
-    (before ++ pod :: after) (before ++ pod' :: after).
-Proof.
-  intros Hkey Hold_deletion Hnew_deletion.
-  right. left. exists pod, pod'. split_and!.
-  - apply elem_of_app. right. by left.
-  - apply elem_of_app. right. by left.
-  - exact Hkey.
-  - intros Hmeta.
-    apply (f_equal ObjectMetaV.DeletionTimestamp') in Hmeta.
-    simpl in Hmeta. rewrite Hold_deletion in Hmeta.
-    apply Hnew_deletion. symmetry. exact Hmeta.
-Qed.
-
-Lemma pods_progress_observed_remove before pod after :
-  NoDup (PodV.key <$> (before ++ pod :: after)) →
-  pods_progress_observed (before ++ pod :: after) (before ++ after).
-Proof.
-  intros Hnodup. left. intros Hsets.
-  assert (PodV.key pod ∈
-      list_to_set (C:=gset KKey.t)
-        (PodV.key <$> (before ++ pod :: after))) as Hin.
-  { apply elem_of_list_to_set. rewrite fmap_app /=.
-    apply elem_of_app. right. by left. }
-  rewrite Hsets elem_of_list_to_set fmap_app in Hin.
-  rewrite fmap_app /= in Hnodup.
-  apply list.NoDup_app in Hnodup as (_ & Hdisjoint & Htail_nodup).
-  simpl in Htail_nodup. inversion Htail_nodup as [|? ? Hnot_after _].
-  apply elem_of_app in Hin as [Hbefore|Hafter].
-  - apply (Hdisjoint (PodV.key pod) Hbefore). by left.
-  - exact (Hnot_after Hafter).
-Qed.
-
-Lemma pods_progress_observed_mark_deleting_local local_pod stored_pod pod'
-    local_pods before after idx :
-  local_pods !! idx = Some local_pod →
-  local_pod_matches_stored local_pod stored_pod →
-  PodV.key stored_pod = PodV.key pod' →
-  stored_pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None →
-  pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None →
-  pods_progress_observed local_pods (before ++ pod' :: after).
-Proof.
-  intros Hlocal_lookup Hlocal_stored Hstored_key Hstored_alive Hpod_not_alive.
-  right. left. unfold pod_meta_except_resource_version_changed.
-  exists local_pod, pod'. split_and!.
-  - by apply list_elem_of_lookup_2 in Hlocal_lookup.
-  - apply elem_of_app. right. by left.
-  - etrans; first exact (proj1 Hlocal_stored). exact Hstored_key.
-  - intros Hmeta.
-    pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hmeta) as Hdeletion.
-    simpl in Hdeletion.
-    apply Hpod_not_alive. rewrite -Hdeletion.
-    rewrite (proj1 (proj2 (proj2 Hlocal_stored))). exact Hstored_alive.
-Qed.
-
-Lemma pods_progress_observed_remove_local local_pods stored_pods
-    before pod after :
-  local_pods_match_stored local_pods stored_pods →
-  stored_pods = before ++ pod :: after →
-  NoDup (PodV.key <$> stored_pods) →
-  pods_progress_observed local_pods (before ++ after).
-Proof.
-  intros Hlocal_stored Hstored_decomp Hnodup.
-  left. rewrite (local_pods_match_stored_keys _ _ Hlocal_stored)
-    Hstored_decomp.
-  intros Hsets.
-  assert (PodV.key pod ∈
-      list_to_set (C:=gset KKey.t)
-        (PodV.key <$> (before ++ pod :: after))) as Hin.
-  { apply elem_of_list_to_set. rewrite fmap_app /=.
-    apply elem_of_app. right. by left. }
-  rewrite Hsets elem_of_list_to_set fmap_app in Hin.
-  rewrite Hstored_decomp fmap_app /= in Hnodup.
-  apply list.NoDup_app in Hnodup as (_ & Hdisjoint & Htail_nodup).
-  simpl in Htail_nodup. inversion Htail_nodup as [|? ? Hnot_after _].
-  apply elem_of_app in Hin as [Hbefore|Hafter].
-  - apply (Hdisjoint (PodV.key pod) Hbefore). by left.
-  - exact (Hnot_after Hafter).
-Qed.
-
 Lemma filter_not_elem_add_irrelevant {A} `{EqDecision A}
     (keys before after : list A) x :
   x ∉ keys →
@@ -1337,6 +1087,278 @@ Proof.
       f_equal. by apply IH.
 Qed.
 
+Lemma match_distance_mark_deleting_condemned set before pod after pod' pvcs :
+  Forall (pod_has_int32_member_key set) (before ++ pod :: after) →
+  pod_is_condemned set pod →
+  is_pod_alive pod →
+  PodV.key pod = PodV.key pod' →
+  pod.(PodV.Spec') = pod'.(PodV.Spec') →
+  ¬ is_pod_alive pod' →
+  match_distance set (before ++ pod' :: after) pvcs <
+    match_distance set (before ++ pod :: after) pvcs.
+Proof.
+  intros Hmembers Hcondemned Halive Hkey Hspec Hnot_alive.
+  assert (pod_has_int32_member_key set pod) as Hmember.
+  { rewrite Forall_forall in Hmembers. apply Hmembers.
+    apply list_elem_of_In. apply elem_of_app. right. by left. }
+  assert (pod_has_int32_member_key set pod') as Hmember'.
+  { by eapply pod_has_int32_member_key_of_key_eq. }
+  assert (¬ pod_key_is_desired set (PodV.key pod)) as Hnot_desired.
+  { apply (proj1 (pod_int32_member_condemned_iff set pod Hmember)).
+    exact Hcondemned. }
+  assert (¬ pod_key_is_desired set (PodV.key pod')) as Hnot_desired'.
+  { rewrite -Hkey. exact Hnot_desired. }
+  assert (living_pods (before ++ pod :: after) =
+      living_pods before ++ pod :: living_pods after) as Hliving_old.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_True is_pod_alive pod after Halive). done. }
+  assert (living_pods (before ++ pod' :: after) =
+      living_pods before ++ living_pods after) as Hliving_new.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_False is_pod_alive pod' after Hnot_alive). done. }
+  assert (missing_pod_keys set
+      (living_pods before ++ living_pods after) =
+      missing_pod_keys set
+        (living_pods before ++ pod :: living_pods after)) as Hmissing.
+  { unfold missing_pod_keys. rewrite !fmap_app /=.
+    apply filter_not_elem_add_irrelevant. exact Hnot_desired. }
+  assert (outdated_pods set
+      (living_pods before ++ living_pods after) =
+      outdated_pods set
+        (living_pods before ++ pod :: living_pods after)) as Houtdated.
+  { unfold outdated_pods, needed_pods.
+    rewrite !list.filter_app /=
+      (filter_cons_False _ pod (living_pods after) Hnot_desired).
+    done. }
+  assert (bad_name_pods set
+      (living_pods before ++ living_pods after) =
+      bad_name_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hbad.
+  { unfold bad_name_pods.
+    rewrite !list.filter_app /= (filter_cons_False
+      (λ pod, ¬ pod_has_int32_member_key set pod) pod
+      (living_pods after) ltac:(intros Hnot; exact (Hnot Hmember))).
+    done. }
+  assert (condemned_pods set
+      (living_pods before ++ pod :: living_pods after) =
+      condemned_pods set (living_pods before) ++
+        pod :: condemned_pods set (living_pods after)) as Hold_condemned.
+  { unfold condemned_pods. rewrite list.filter_app /=.
+    rewrite (filter_cons_True
+      (λ pod0, pod_has_int32_member_key set pod0 ∧
+        ¬ pod_key_is_desired set (PodV.key pod0))
+      pod (living_pods after) ltac:(split; done)).
+    done. }
+  assert (condemned_pods set
+      (living_pods before ++ living_pods after) =
+      condemned_pods set (living_pods before) ++
+        condemned_pods set (living_pods after)) as Hnew_condemned.
+  { unfold condemned_pods. by rewrite list.filter_app. }
+  unfold match_distance, pod_distance.
+  rewrite Hliving_old Hliving_new.
+  rewrite Hmissing Houtdated Hbad Hold_condemned Hnew_condemned.
+  rewrite !app_length /=. lia.
+Qed.
+
+Lemma match_distance_mark_deleting_outdated set before pod after pod' pvcs :
+  Forall (pod_has_int32_member_key set) (before ++ pod :: after) →
+  NoDup (PodV.key <$> (before ++ pod :: after)) →
+  pod_is_outdated set pod →
+  is_pod_alive pod →
+  PodV.key pod = PodV.key pod' →
+  pod.(PodV.Spec') = pod'.(PodV.Spec') →
+  ¬ is_pod_alive pod' →
+  match_distance set (before ++ pod' :: after) pvcs <
+    match_distance set (before ++ pod :: after) pvcs.
+Proof.
+  intros Hmembers Hnodup Houtdated_pod Halive Hkey Hspec Hnot_alive.
+  assert (pod_has_int32_member_key set pod) as Hmember.
+  { rewrite Forall_forall in Hmembers. apply Hmembers.
+    apply list_elem_of_In. apply elem_of_app. right. by left. }
+  assert (pod_has_int32_member_key set pod') as Hmember'.
+  { by eapply pod_has_int32_member_key_of_key_eq. }
+  pose proof (proj1
+    (pod_int32_member_outdated_iff set pod Hmember) Houtdated_pod)
+    as [Hdesired Hnot_immutable].
+  assert (pod_key_is_desired set (PodV.key pod')) as Hdesired'.
+  { rewrite -Hkey. exact Hdesired. }
+  assert (¬ pod_immutable_matches set pod') as Hnot_immutable'.
+  { intros Himmutable'. apply Hnot_immutable.
+    apply (proj2
+      (pod_immutable_matches_key_spec_eq set pod pod' Hkey Hspec)).
+    exact Himmutable'. }
+  assert (¬ pod_match set pod) as Hnot_match.
+  { intros [_ Himmutable]. exact (Hnot_immutable Himmutable). }
+  assert (¬ pod_match set pod') as Hnot_match'.
+  { intros [_ Himmutable]. exact (Hnot_immutable' Himmutable). }
+  rewrite fmap_app /= in Hnodup.
+  apply list.NoDup_app in Hnodup as
+    (Hbefore_nodup & Hdisjoint & Htail_nodup).
+  inversion Htail_nodup as [|? ? Hnot_after Hafter_nodup].
+  assert (PodV.key pod ∉ PodV.key <$> before) as Hnot_before.
+  { intros Hin. apply (Hdisjoint (PodV.key pod) Hin). by left. }
+  assert (PodV.key pod ∉ PodV.key <$> living_pods before)
+    as Hnot_before_living.
+  { intros Hin. apply Hnot_before.
+    apply list_elem_of_fmap_1 in Hin as (pod0 & -> & Hin).
+    apply list_elem_of_fmap_2. unfold living_pods in Hin.
+    by apply list_elem_of_filter in Hin as [_ Hin]. }
+  assert (PodV.key pod ∉ PodV.key <$> living_pods after)
+    as Hnot_after_living.
+  { intros Hin. apply Hnot_after.
+    apply list_elem_of_fmap_1 in Hin as (pod0 & -> & Hin).
+    apply list_elem_of_fmap_2. unfold living_pods in Hin.
+    by apply list_elem_of_filter in Hin as [_ Hin]. }
+  assert (living_pods (before ++ pod :: after) =
+      living_pods before ++ pod :: living_pods after) as Hliving_old.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_True is_pod_alive pod after Halive). done. }
+  assert (living_pods (before ++ pod' :: after) =
+      living_pods before ++ living_pods after) as Hliving_new.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_False is_pod_alive pod' after Hnot_alive). done. }
+  assert (length (missing_pod_keys set
+      (living_pods before ++ living_pods after)) =
+      S (length (missing_pod_keys set
+        (living_pods before ++ pod :: living_pods after)))) as Hmissing.
+  { unfold missing_pod_keys. rewrite !fmap_app /=.
+    apply filter_not_elem_remove_unique.
+    - unfold desired_pod_keys, desired_ordinals. apply NoDup_fmap_2.
+      + intros ordinal1 ordinal2 Hkey_eq.
+        apply (f_equal KKey.Name') in Hkey_eq. simpl in Hkey_eq.
+        by apply desired_pod_name_inj in Hkey_eq.
+      + apply NoDup_seq.
+    - exact Hdesired.
+    - exact Hnot_before_living.
+    - exact Hnot_after_living. }
+  assert (outdated_pods set
+      (living_pods before ++ pod :: living_pods after) =
+      outdated_pods set (living_pods before) ++
+        pod :: outdated_pods set (living_pods after)) as Hold_outdated.
+  { unfold outdated_pods, needed_pods.
+    rewrite list.filter_app /=
+      (filter_cons_True _ pod (living_pods after) Hdesired).
+    rewrite list.filter_app /=
+      (filter_cons_True
+        (λ pod0, ¬ pod_match set pod0)
+        pod (filter (λ pod0, pod_key_is_desired set (PodV.key pod0))
+          (living_pods after))
+        Hnot_match).
+    done. }
+  assert (outdated_pods set
+      (living_pods before ++ living_pods after) =
+      outdated_pods set (living_pods before) ++
+        outdated_pods set (living_pods after)) as Hnew_outdated.
+  { unfold outdated_pods, needed_pods. by rewrite !list.filter_app. }
+  assert (condemned_pods set
+      (living_pods before ++ living_pods after) =
+      condemned_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hcondemned.
+  { unfold condemned_pods.
+    rewrite !list.filter_app /= (filter_cons_False
+      (λ pod0, pod_has_int32_member_key set pod0 ∧
+        ¬ pod_key_is_desired set (PodV.key pod0)) pod
+      (living_pods after) ltac:(intros [_ Hnot]; exact (Hnot Hdesired))).
+    done. }
+  assert (bad_name_pods set
+      (living_pods before ++ living_pods after) =
+      bad_name_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hbad.
+  { unfold bad_name_pods.
+    rewrite !list.filter_app /= (filter_cons_False
+      (λ pod0, ¬ pod_has_int32_member_key set pod0) pod
+      (living_pods after) ltac:(intros Hnot; exact (Hnot Hmember))).
+    done. }
+  unfold match_distance, pod_distance.
+  rewrite Hliving_old Hliving_new.
+  rewrite Hmissing Hold_outdated Hnew_outdated Hcondemned Hbad.
+  rewrite !app_length /=. lia.
+Qed.
+
+Lemma pods_progress_observed_mark_deleting before pod after pod' :
+  PodV.key pod = PodV.key pod' →
+  pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None →
+  pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None →
+  pods_progress_observed
+    (before ++ pod :: after) (before ++ pod' :: after).
+Proof.
+  intros Hkey Hold_deletion Hnew_deletion.
+  right. left. exists pod, pod'. split_and!.
+  - apply elem_of_app. right. by left.
+  - apply elem_of_app. right. by left.
+  - exact Hkey.
+  - intros Hmeta.
+    apply (f_equal ObjectMetaV.DeletionTimestamp') in Hmeta.
+    simpl in Hmeta. rewrite Hold_deletion in Hmeta.
+    apply Hnew_deletion. symmetry. exact Hmeta.
+Qed.
+
+Lemma pods_progress_observed_remove before pod after :
+  NoDup (PodV.key <$> (before ++ pod :: after)) →
+  pods_progress_observed (before ++ pod :: after) (before ++ after).
+Proof.
+  intros Hnodup. left. intros Hsets.
+  assert (PodV.key pod ∈
+      list_to_set (C:=gset KKey.t)
+        (PodV.key <$> (before ++ pod :: after))) as Hin.
+  { apply elem_of_list_to_set. rewrite fmap_app /=.
+    apply elem_of_app. right. by left. }
+  rewrite Hsets elem_of_list_to_set fmap_app in Hin.
+  rewrite fmap_app /= in Hnodup.
+  apply list.NoDup_app in Hnodup as (_ & Hdisjoint & Htail_nodup).
+  simpl in Htail_nodup. inversion Htail_nodup as [|? ? Hnot_after _].
+  apply elem_of_app in Hin as [Hbefore|Hafter].
+  - apply (Hdisjoint (PodV.key pod) Hbefore). by left.
+  - exact (Hnot_after Hafter).
+Qed.
+
+Lemma pods_progress_observed_mark_deleting_local local_pod stored_pod pod'
+    local_pods before after idx :
+  local_pods !! idx = Some local_pod →
+  local_pod_matches_stored local_pod stored_pod →
+  PodV.key stored_pod = PodV.key pod' →
+  stored_pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None →
+  pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None →
+  pods_progress_observed local_pods (before ++ pod' :: after).
+Proof.
+  intros Hlocal_lookup Hlocal_stored Hstored_key Hstored_alive Hpod_not_alive.
+  right. left. unfold pod_meta_except_resource_version_changed.
+  exists local_pod, pod'. split_and!.
+  - by apply list_elem_of_lookup_2 in Hlocal_lookup.
+  - apply elem_of_app. right. by left.
+  - etrans; first exact (proj1 Hlocal_stored). exact Hstored_key.
+  - intros Hmeta.
+    pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hmeta) as Hdeletion.
+    simpl in Hdeletion.
+    apply Hpod_not_alive. rewrite -Hdeletion.
+    rewrite (proj1 (proj2 (proj2 Hlocal_stored))). exact Hstored_alive.
+Qed.
+
+Lemma pods_progress_observed_remove_local local_pods stored_pods
+    before pod after :
+  local_pods_match_stored local_pods stored_pods →
+  stored_pods = before ++ pod :: after →
+  NoDup (PodV.key <$> stored_pods) →
+  pods_progress_observed local_pods (before ++ after).
+Proof.
+  intros Hlocal_stored Hstored_decomp Hnodup.
+  left. rewrite (local_pods_match_stored_keys _ _ Hlocal_stored)
+    Hstored_decomp.
+  intros Hsets.
+  assert (PodV.key pod ∈
+      list_to_set (C:=gset KKey.t)
+        (PodV.key <$> (before ++ pod :: after))) as Hin.
+  { apply elem_of_list_to_set. rewrite fmap_app /=.
+    apply elem_of_app. right. by left. }
+  rewrite Hsets elem_of_list_to_set fmap_app in Hin.
+  rewrite Hstored_decomp fmap_app /= in Hnodup.
+  apply list.NoDup_app in Hnodup as (_ & Hdisjoint & Htail_nodup).
+  simpl in Htail_nodup. inversion Htail_nodup as [|? ? Hnot_after _].
+  apply elem_of_app in Hin as [Hbefore|Hafter].
+  - apply (Hdisjoint (PodV.key pod) Hbefore). by left.
+  - exact (Hnot_after Hafter).
+Qed.
+
 Lemma desired_pod_keys_nodup set : NoDup (desired_pod_keys set).
 Proof.
   unfold desired_pod_keys, desired_ordinals.
@@ -1345,6 +1367,73 @@ Proof.
     apply (f_equal KKey.Name') in Hkey. simpl in Hkey.
     by apply desired_pod_name_inj in Hkey.
   - apply NoDup_seq.
+Qed.
+
+Lemma missing_pvc_key_set_subset_reserved set pvc_map reserved :
+  (∀ key claim, pvc_map !! key = Some claim → PersistentVolumeClaimV.key claim = key) →
+  (∀ key, key ∈ list_to_set (C:=gset KKey.t) (desired_pvc_keys set) →
+    key ∈ dom pvc_map ∨ key ∈ reserved) →
+  list_to_set (C:=gset KKey.t) (missing_pvc_keys set (pvc_list_of_map pvc_map)) ⊆
+    list_to_set reserved.
+Proof.
+  intros Hwf Hcoverage key Hmissing.
+  rewrite elem_of_list_to_set in Hmissing |- *.
+  unfold missing_pvc_keys in Hmissing.
+  apply list_elem_of_filter in Hmissing as [Hnotin Hdesired].
+  specialize (Hcoverage key ltac:(by rewrite elem_of_list_to_set)).
+  destruct Hcoverage as [Hdom|Hreserved]; last by apply elem_of_list_to_set.
+  exfalso. apply Hnotin.
+  rewrite -(elem_of_list_to_set (C:=gset KKey.t))
+    (pvc_list_of_map_key_set pvc_map Hwf).
+  exact Hdom.
+Qed.
+
+Lemma own_reserved_pvcs_finish γ set pvc_map reserved :
+  (∀ key claim, pvc_map !! key = Some claim → PersistentVolumeClaimV.key claim = key) →
+  NoDup reserved →
+  (∀ key, key ∈ list_to_set (C:=gset KKey.t) (desired_pvc_keys set) →
+    key ∈ dom pvc_map ∨ key ∈ reserved) →
+  ([∗ list] key ∈ reserved, own_available_frag γ key) -∗
+  own_missing_pvc_reservations γ set (pvc_list_of_map pvc_map).
+Proof.
+  intros Hwf Hnodup Hcoverage. iIntros "Hreserved".
+  rewrite /own_missing_pvc_reservations.
+  iEval (rewrite -(big_sepS_list_to_set _ _ Hnodup)) in "Hreserved".
+  iApply (big_sepS_subseteq with "Hreserved").
+  by apply missing_pvc_key_set_subset_reserved.
+Qed.
+
+Lemma missing_pod_key_set_fmap_eq sts pods pods' :
+  PodV.key <$> pods = PodV.key <$> pods' →
+  list_to_set (C:=gset KKey.t) (missing_pod_keys sts pods) =
+    list_to_set (missing_pod_keys sts pods').
+Proof. intros Hkeys. unfold missing_pod_keys. by rewrite Hkeys. Qed.
+
+Lemma missing_pod_key_set_snoc sts pods pod :
+  PodV.key pod ∈ desired_pod_keys sts →
+  PodV.key pod ∉ PodV.key <$> pods →
+  list_to_set (C:=gset KKey.t) (missing_pod_keys sts (pods ++ [pod])) =
+    list_to_set (missing_pod_keys sts pods) ∖ {[PodV.key pod]}.
+Proof.
+  intros Hdesired Hfresh. apply set_eq. intros key.
+  rewrite elem_of_difference elem_of_singleton !elem_of_list_to_set.
+  unfold missing_pod_keys. rewrite !list_elem_of_filter fmap_app /=.
+  split.
+  - intros [Hnotin Hkey]. split.
+    + split; last exact Hkey. intros Hin. apply Hnotin. apply elem_of_app. by left.
+    + intros ->. apply Hnotin. apply elem_of_app. right. by left.
+  - intros [[Hnotin Hkey] Hneq]. split; last exact Hkey.
+    intros Hin. apply elem_of_app in Hin as [Hin|Hin]; first by apply Hnotin.
+    apply list_elem_of_singleton in Hin. by apply Hneq.
+Qed.
+
+Lemma own_available_missing_to_missing γ set pods :
+  ([∗ set] key ∈ list_to_set (C:=gset KKey.t) (missing_pod_keys set pods),
+    own_available_frag γ key) -∗
+  own_missing_pod_reservations γ set pods.
+Proof.
+  iIntros "Havailable". rewrite /own_missing_pod_reservations.
+  iApply (big_sepS_mono with "Havailable"). iIntros (key Hkey) "Hkey". by iLeft.
 Qed.
 
 Lemma pod_names_nodup_of_key_nodup set pods :
@@ -1410,7 +1499,22 @@ Proof.
       (Hmembers pod Hpod_in))).
     split; first exact Hdesired_key.
     intros Himmutable. apply Hnot_match. split; done. }
+  assert (living_pods pods = pods) as Hliving.
+  { unfold living_pods. apply filter_all. intros pod Hpod.
+    rewrite Forall_forall in Hmembers.
+    rewrite Forall_forall in Hno_condemned.
+    rewrite Forall_forall in Hdesired.
+    assert (pod_key_is_desired set (PodV.key pod)) as Hpod_desired.
+    { destruct (decide (pod_key_is_desired set (PodV.key pod))) as
+        [Hpod_desired|Hnot_desired]; first done.
+      exfalso. apply (Hno_condemned pod ltac:(by rewrite -list_elem_of_In)).
+      apply (proj2 (pod_int32_member_condemned_iff set pod
+        (Hmembers pod ltac:(by rewrite -list_elem_of_In)))).
+      exact Hnot_desired. }
+    exact (proj1 (Hdesired pod ltac:(by rewrite -list_elem_of_In)
+      Hpod_desired)). }
   unfold match_distance, pod_distance, pvc_distance.
+  rewrite Hliving.
   rewrite Hmissing_pods Hmissing_pvcs Hbad Hcondemned Houtdated /=.
   done.
 Qed.
@@ -1429,42 +1533,57 @@ Proof.
   assert (¬ pod_key_is_desired set (PodV.key pod)) as Hnot_desired.
   { apply (proj1 (pod_int32_member_condemned_iff set pod Hmember)).
     exact Hcondemned. }
-  assert (missing_pod_keys set (before ++ after) =
-      missing_pod_keys set (before ++ pod :: after)) as Hmissing.
+  assert (living_pods (before ++ pod :: after) =
+      living_pods before ++ pod :: living_pods after) as Hliving_old.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_True is_pod_alive pod after Halive). done. }
+  assert (living_pods (before ++ after) =
+      living_pods before ++ living_pods after) as Hliving_new.
+  { unfold living_pods. by rewrite list.filter_app. }
+  assert (missing_pod_keys set
+      (living_pods before ++ living_pods after) =
+      missing_pod_keys set
+        (living_pods before ++ pod :: living_pods after)) as Hmissing.
   { unfold missing_pod_keys. rewrite !fmap_app /=.
     apply filter_not_elem_add_irrelevant. exact Hnot_desired. }
-  assert (outdated_pods set (before ++ after) =
-      outdated_pods set (before ++ pod :: after)) as Houtdated.
+  assert (outdated_pods set
+      (living_pods before ++ living_pods after) =
+      outdated_pods set
+        (living_pods before ++ pod :: living_pods after)) as Houtdated.
   { unfold outdated_pods, needed_pods.
     rewrite !list.filter_app /=
-      (filter_cons_False _ pod after Hnot_desired). done. }
-  assert (bad_name_pods set (before ++ after) =
-      bad_name_pods set (before ++ pod :: after)) as Hbad.
+      (filter_cons_False _ pod (living_pods after) Hnot_desired). done. }
+  assert (bad_name_pods set
+      (living_pods before ++ living_pods after) =
+      bad_name_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hbad.
   { unfold bad_name_pods. rewrite !list.filter_app /=.
     rewrite (filter_cons_False
-      (λ pod0, ¬ pod_has_int32_member_key set pod0) pod after
+      (λ pod0, ¬ pod_has_int32_member_key set pod0) pod
+      (living_pods after)
       ltac:(intros Hnot; exact (Hnot Hmember))). done. }
-  assert (length (filter is_pod_alive
-      (condemned_pods set (before ++ pod :: after))) =
-      S (length (filter is_pod_alive
-        (condemned_pods set (before ++ after)))))
-      as Hcondemned_distance.
-  { assert (condemned_pods set (before ++ pod :: after) =
-        condemned_pods set before ++
-          pod :: condemned_pods set after) as Hold.
+  assert (length (condemned_pods set
+      (living_pods before ++ pod :: living_pods after)) =
+      S (length (condemned_pods set
+        (living_pods before ++ living_pods after)))) as Hcondemned_distance.
+  { assert (condemned_pods set
+        (living_pods before ++ pod :: living_pods after) =
+        condemned_pods set (living_pods before) ++
+          pod :: condemned_pods set (living_pods after)) as Hold.
     { unfold condemned_pods. rewrite list.filter_app.
       rewrite (filter_cons_True
         (λ pod0, pod_has_int32_member_key set pod0 ∧
           ¬ pod_key_is_desired set (PodV.key pod0))
-        pod after ltac:(split; done)). done. }
-    assert (condemned_pods set (before ++ after) =
-        condemned_pods set before ++ condemned_pods set after) as Hnew.
+        pod (living_pods after) ltac:(split; done)). done. }
+    assert (condemned_pods set
+        (living_pods before ++ living_pods after) =
+        condemned_pods set (living_pods before) ++
+          condemned_pods set (living_pods after)) as Hnew.
     { unfold condemned_pods. by rewrite list.filter_app. }
-    rewrite Hold Hnew !list.filter_app /=
-      (filter_cons_True is_pod_alive pod
-        (condemned_pods set after) Halive).
+    rewrite Hold Hnew.
     rewrite !app_length /=. lia. }
   unfold match_distance, pod_distance.
+  rewrite Hliving_old Hliving_new.
   rewrite Hmissing Houtdated Hbad Hcondemned_distance.
   lia.
 Qed.
@@ -1492,52 +1611,81 @@ Proof.
   inversion Htail_nodup as [|? ? Hnot_after Hafter_nodup].
   assert (PodV.key pod ∉ PodV.key <$> before) as Hnot_before.
   { intros Hin. apply (Hdisjoint (PodV.key pod) Hin). by left. }
-  assert (length (missing_pod_keys set (before ++ after)) =
-      S (length (missing_pod_keys set (before ++ pod :: after))))
-      as Hmissing.
+  assert (PodV.key pod ∉ PodV.key <$> living_pods before)
+    as Hnot_before_living.
+  { intros Hin. apply Hnot_before.
+    apply list_elem_of_fmap_1 in Hin as (pod0 & -> & Hin).
+    apply list_elem_of_fmap_2. unfold living_pods in Hin.
+    by apply list_elem_of_filter in Hin as [_ Hin]. }
+  assert (PodV.key pod ∉ PodV.key <$> living_pods after)
+    as Hnot_after_living.
+  { intros Hin. apply Hnot_after.
+    apply list_elem_of_fmap_1 in Hin as (pod0 & -> & Hin).
+    apply list_elem_of_fmap_2. unfold living_pods in Hin.
+    by apply list_elem_of_filter in Hin as [_ Hin]. }
+  assert (living_pods (before ++ pod :: after) =
+      living_pods before ++ pod :: living_pods after) as Hliving_old.
+  { unfold living_pods. rewrite !list.filter_app /=.
+    rewrite (filter_cons_True is_pod_alive pod after Halive). done. }
+  assert (living_pods (before ++ after) =
+      living_pods before ++ living_pods after) as Hliving_new.
+  { unfold living_pods. by rewrite list.filter_app. }
+  assert (length (missing_pod_keys set
+      (living_pods before ++ living_pods after)) =
+      S (length (missing_pod_keys set
+        (living_pods before ++ pod :: living_pods after)))) as Hmissing.
   { unfold missing_pod_keys. rewrite !fmap_app /=.
     apply filter_not_elem_remove_unique.
     - apply desired_pod_keys_nodup.
     - exact Hdesired.
-    - exact Hnot_before.
-    - exact Hnot_after. }
-  assert (length (filter is_pod_alive
-      (outdated_pods set (before ++ pod :: after))) =
-      S (length (filter is_pod_alive
-        (outdated_pods set (before ++ after))))) as Houtdated.
-  { assert (outdated_pods set (before ++ pod :: after) =
-        outdated_pods set before ++ pod :: outdated_pods set after)
-      as Hold.
+    - exact Hnot_before_living.
+    - exact Hnot_after_living. }
+  assert (length (outdated_pods set
+      (living_pods before ++ pod :: living_pods after)) =
+      S (length (outdated_pods set
+        (living_pods before ++ living_pods after)))) as Houtdated.
+  { assert (outdated_pods set
+        (living_pods before ++ pod :: living_pods after) =
+        outdated_pods set (living_pods before) ++
+          pod :: outdated_pods set (living_pods after)) as Hold.
     { unfold outdated_pods, needed_pods.
       rewrite list.filter_app /=
-        (filter_cons_True _ pod after Hdesired).
+        (filter_cons_True _ pod (living_pods after) Hdesired).
       rewrite list.filter_app /=
         (filter_cons_True
           (λ pod0, ¬ pod_match set pod0) pod
-          (filter (λ pod0, pod_key_is_desired set (PodV.key pod0)) after)
+          (filter (λ pod0, pod_key_is_desired set (PodV.key pod0))
+            (living_pods after))
           Hnot_match). done. }
-    assert (outdated_pods set (before ++ after) =
-        outdated_pods set before ++ outdated_pods set after) as Hnew.
+    assert (outdated_pods set
+        (living_pods before ++ living_pods after) =
+        outdated_pods set (living_pods before) ++
+          outdated_pods set (living_pods after)) as Hnew.
     { unfold outdated_pods, needed_pods.
       by rewrite !list.filter_app. }
-    rewrite Hold Hnew !list.filter_app /=
-      (filter_cons_True is_pod_alive pod
-        (outdated_pods set after) Halive).
+    rewrite Hold Hnew.
     rewrite !app_length /=. lia. }
-  assert (condemned_pods set (before ++ after) =
-      condemned_pods set (before ++ pod :: after)) as Hcondemned.
+  assert (condemned_pods set
+      (living_pods before ++ living_pods after) =
+      condemned_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hcondemned.
   { unfold condemned_pods. rewrite !list.filter_app /=.
     rewrite (filter_cons_False
       (λ pod0, pod_has_int32_member_key set pod0 ∧
-        ¬ pod_key_is_desired set (PodV.key pod0)) pod after
+        ¬ pod_key_is_desired set (PodV.key pod0)) pod
+      (living_pods after)
       ltac:(intros [_ Hnot]; exact (Hnot Hdesired))). done. }
-  assert (bad_name_pods set (before ++ after) =
-      bad_name_pods set (before ++ pod :: after)) as Hbad.
+  assert (bad_name_pods set
+      (living_pods before ++ living_pods after) =
+      bad_name_pods set
+        (living_pods before ++ pod :: living_pods after)) as Hbad.
   { unfold bad_name_pods. rewrite !list.filter_app /=.
     rewrite (filter_cons_False
-      (λ pod0, ¬ pod_has_int32_member_key set pod0) pod after
+      (λ pod0, ¬ pod_has_int32_member_key set pod0) pod
+      (living_pods after)
       ltac:(intros Hnot; exact (Hnot Hmember))). done. }
   unfold match_distance, pod_distance.
+  rewrite Hliving_old Hliving_new.
   rewrite Hmissing Houtdated Hcondemned Hbad. lia.
 Qed.
 
@@ -1602,6 +1750,44 @@ Proof.
       apply elem_of_app. right. apply elem_of_cons. right. exact Hafter.
 Qed.
 
+Lemma desired_objects_reconciled_remove_desired_missing_pod_keys
+    set before pod after pvcs :
+  desired_objects_reconciled set (before ++ pod :: after) pvcs →
+  NoDup (PodV.key <$> (before ++ pod :: after)) →
+  PodV.key pod ∈ desired_pod_keys set →
+  list_to_set (C:=gset KKey.t) (missing_pod_keys set (before ++ after)) =
+    {[PodV.key pod]}.
+Proof.
+  intros (Hmissing & _ & _) Hnodup Hdesired.
+  apply set_eq. intros key.
+  rewrite elem_of_list_to_set elem_of_singleton.
+  unfold missing_pod_keys in Hmissing |- *.
+  rewrite list_elem_of_filter.
+  split.
+  - intros [Hnotin Hkey_desired].
+    destruct (decide (key = PodV.key pod)); first done.
+    exfalso. apply Hnotin.
+    assert (key ∈ PodV.key <$> (before ++ pod :: after)) as Hall.
+    { destruct (decide (key ∈ PodV.key <$> (before ++ pod :: after))); first done.
+      assert (key ∈ filter (λ key0, key0 ∉ PodV.key <$> (before ++ pod :: after))
+        (desired_pod_keys set)) as Hmissing_key.
+      { apply list_elem_of_filter. done. }
+      rewrite Hmissing in Hmissing_key. inversion Hmissing_key. }
+    rewrite !fmap_app /= in Hall Hnotin.
+    apply elem_of_app in Hall as [Hbefore|Htail].
+    + rewrite fmap_app. apply elem_of_app. by left.
+    + apply elem_of_cons in Htail as [Heq|Hafter].
+      * contradiction.
+      * rewrite fmap_app. apply elem_of_app. by right.
+  - intros ->. split; last exact Hdesired.
+    rewrite !fmap_app /= in Hnodup |- *.
+    apply list.NoDup_app in Hnodup as (_ & Hdisjoint & Htail_nodup).
+    apply list.NoDup_cons in Htail_nodup as (Hnot_after & _).
+    intros Hin. apply elem_of_app in Hin as [Hbefore|Hafter].
+    + apply (Hdisjoint (PodV.key pod) Hbefore). by left.
+    + exact (Hnot_after Hafter).
+Qed.
+
 Lemma list_to_set_pod_keys_remove before pod after :
   NoDup (PodV.key <$> (before ++ pod :: after)) →
   list_to_set (C:=gset KKey.t) (PodV.key <$> (before ++ after)) =
@@ -1633,6 +1819,19 @@ Proof.
     + apply elem_of_cons in Htail as [Heq|Hafter].
       * exfalso. exact (Hneq Heq).
       * apply elem_of_app. right. exact Hafter.
+Qed.
+
+Lemma pod_keys_nodup_remove before pod after :
+  NoDup (PodV.key <$> (before ++ pod :: after)) →
+  NoDup (PodV.key <$> (before ++ after)).
+Proof.
+  intros Hnodup. rewrite !fmap_app /= in Hnodup |- *.
+  apply list.NoDup_app in Hnodup as
+    (Hbefore_nodup & Hbefore_disjoint & Htail_nodup).
+  apply list.NoDup_cons in Htail_nodup as (_ & Hafter_nodup).
+  apply list.NoDup_app. split_and!; try done.
+  intros key Hbefore Hafter.
+  apply (Hbefore_disjoint key Hbefore). by right.
 Qed.
 
 Definition progress_or_complete sts pods pvcs pods' pvcs' : Prop :=
@@ -1855,6 +2054,24 @@ Proof.
     destruct (decide (P b ∧ Q b)); simpl; lia.
 Qed.
 
+Lemma filter2_replace_length_le {A} (P Q : A → Prop)
+    `{∀ x, Decision (P x)} `{∀ x, Decision (Q x)} before after x y :
+  (P y ∧ Q y → P x ∧ Q x) →
+  length (filter Q (filter P (before ++ y :: after))) ≤
+    length (filter Q (filter P (before ++ x :: after))).
+Proof.
+  intros Himp.
+  induction before as [|b before IH]; simpl.
+  - rewrite (filter2_cons P Q y after)
+      (filter2_cons P Q x after).
+    destruct (decide (P y ∧ Q y)) as [Hy|Hy];
+      destruct (decide (P x ∧ Q x)) as [Hx|Hx]; simpl; try lia.
+    exfalso. apply Hx, Himp, Hy.
+  - rewrite (filter2_cons P Q b (before ++ y :: after)).
+    rewrite (filter2_cons P Q b (before ++ x :: after)).
+    destruct (decide (P b ∧ Q b)); simpl; lia.
+Qed.
+
 Lemma filter3_replace_length_le {A} (P Q R : A → Prop)
     `{∀ x, Decision (P x)} `{∀ x, Decision (Q x)}
     `{∀ x, Decision (R x)} before after x y :
@@ -1932,7 +2149,8 @@ Lemma pod_distance_reconcile_desired_step set pods idx pod pod' :
     pod'.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') →
   pod'.(PodV.Spec') = pod.(PodV.Spec') →
   pod_identity_matches set pod' →
-  pod_distance set (<[idx:=pod']> pods) ≤ pod_distance set pods.
+  pod_distance set (living_pods (<[idx:=pod']> pods)) ≤
+    pod_distance set (living_pods pods).
 Proof.
   intros Hlookup Hmembers Hkey Hdeletion Hspec Hidentity.
   assert (pod_has_int32_member_key set pod) as Hmember.
@@ -1946,35 +2164,49 @@ Proof.
   { intros [_ Himmutable]. split; first exact Hidentity.
     apply (proj1 (pod_immutable_matches_key_spec_eq set pod pod'
       (eq_sym Hkey) (eq_sym Hspec))). exact Himmutable. }
-  assert (PodV.key <$> (<[idx:=pod']> pods) = PodV.key <$> pods) as Hkeys.
-  { rewrite list_fmap_insert Hkey. apply list_insert_id.
-    by rewrite list_lookup_fmap Hlookup. }
   destruct (lookup_insert_split pods idx pod pod' Hlookup) as
     (before & after & Hpods & Hpods').
-  assert (length (bad_name_pods set (<[idx:=pod']> pods)) =
-      length (bad_name_pods set pods)) as Hbad.
-  { rewrite Hpods' Hpods. unfold bad_name_pods.
-    apply filter_replace_length_eq.
-    split; intros Hnot; exfalso; [apply Hnot, Hmember'|apply Hnot, Hmember]. }
-  assert (length (filter is_pod_alive
-        (condemned_pods set (<[idx:=pod']> pods))) =
-      length (filter is_pod_alive (condemned_pods set pods))) as Hcondemned.
-  { rewrite Hpods' Hpods. unfold condemned_pods.
+  assert (PodV.key <$> living_pods (<[idx:=pod']> pods) =
+      PodV.key <$> living_pods pods) as Hkeys.
+  { rewrite Hpods' Hpods. unfold living_pods.
+    rewrite !list.filter_app /=.
+    destruct (decide (is_pod_alive pod')) as [Halive'|Hnot_alive'];
+      destruct (decide (is_pod_alive pod)) as [Halive0|Hnot_alive].
+    - rewrite (filter_cons_True is_pod_alive pod' after Halive')
+        (filter_cons_True is_pod_alive pod after Halive0).
+      by rewrite !fmap_app /= Hkey.
+    - exfalso. exact (Hnot_alive ((proj1 Halive) Halive')).
+    - exfalso. exact (Hnot_alive' ((proj2 Halive) Halive0)).
+    - rewrite (filter_cons_False is_pod_alive pod' after Hnot_alive')
+        (filter_cons_False is_pod_alive pod after Hnot_alive). done. }
+  assert (length (bad_name_pods set (living_pods (<[idx:=pod']> pods))) =
+      length (bad_name_pods set (living_pods pods))) as Hbad.
+  { rewrite Hpods' Hpods. unfold bad_name_pods, living_pods.
     apply filter2_replace_length_eq.
-    split; intros [[_ Hnot_desired] Halive_now]; split_and!; try done.
-    - rewrite -Hkey. exact Hnot_desired.
+    split; intros [Halive_now Hnot_member]; split.
     - apply (proj1 Halive). exact Halive_now.
-    - rewrite Hkey. exact Hnot_desired.
-    - apply (proj2 Halive). exact Halive_now. }
-  assert (length (filter is_pod_alive
-        (outdated_pods set (<[idx:=pod']> pods))) ≤
-      length (filter is_pod_alive (outdated_pods set pods))) as Houtdated.
-  { rewrite Hpods' Hpods. unfold outdated_pods, needed_pods.
+    - intros Hmember_now. exact (Hnot_member Hmember').
+    - apply (proj2 Halive). exact Halive_now.
+    - intros Hmember_now. exact (Hnot_member Hmember). }
+  assert (length (condemned_pods set
+        (living_pods (<[idx:=pod']> pods))) =
+      length (condemned_pods set (living_pods pods))) as Hcondemned.
+  { rewrite Hpods' Hpods. unfold condemned_pods, living_pods.
+    apply filter2_replace_length_eq.
+    split; intros [Halive_now [Hmember_now Hnot_desired]]; split.
+    - apply (proj1 Halive). exact Halive_now.
+    - split; first exact Hmember. rewrite -Hkey. exact Hnot_desired.
+    - apply (proj2 Halive). exact Halive_now.
+    - split; first exact Hmember'. rewrite Hkey. exact Hnot_desired. }
+  assert (length (outdated_pods set
+        (living_pods (<[idx:=pod']> pods))) ≤
+      length (outdated_pods set (living_pods pods))) as Houtdated.
+  { rewrite Hpods' Hpods. unfold outdated_pods, needed_pods, living_pods.
     apply filter3_replace_length_le.
-    intros [Hdesired [Hnot_match Halive_now]]. split_and!.
+    intros [Halive_now [Hdesired Hnot_match]]. split_and!.
+    - apply (proj1 Halive). exact Halive_now.
     - rewrite -Hkey. exact Hdesired.
-    - intros Hpod_match. apply Hnot_match. by apply Hmatch.
-    - apply (proj1 Halive). exact Halive_now. }
+    - intros Hpod_match. apply Hnot_match. by apply Hmatch. }
   unfold pod_distance, missing_pod_keys.
   rewrite Hkeys Hbad Hcondemned. lia.
 Qed.
@@ -2371,15 +2603,15 @@ Proof.
       (desired_pod_keys set) (PodV.key <$> pods) [] (PodV.key pod)
       (desired_pod_keys_nodup set) Hdesired Hnotin Hnil) as Hlen.
     rewrite app_nil_r in Hlen. exact Hlen. }
-  assert (length (filter is_pod_alive (outdated_pods set (pods ++ [pod]))) =
-      length (filter is_pod_alive (outdated_pods set pods))) as Houtdated.
+  assert (length (outdated_pods set (pods ++ [pod])) =
+      length (outdated_pods set pods)) as Houtdated.
   { unfold outdated_pods, needed_pods.
-    apply filter3_append_excluded. intros [_ [Hnot_match _]].
+    apply filter2_append_excluded. intros [_ Hnot_match].
     apply Hnot_match. exact Hmatch. }
-  assert (length (filter is_pod_alive (condemned_pods set (pods ++ [pod]))) =
-      length (filter is_pod_alive (condemned_pods set pods))) as Hcondemned.
+  assert (length (condemned_pods set (pods ++ [pod])) =
+      length (condemned_pods set pods)) as Hcondemned.
   { unfold condemned_pods.
-    apply filter2_append_excluded. intros [[_ Hnot_desired] _].
+    apply filter_append_excluded. intros [_ Hnot_desired].
     apply Hnot_desired. exact Hdesired. }
   assert (length (bad_name_pods set (pods ++ [pod])) =
       length (bad_name_pods set pods)) as Hbad_name.
@@ -2417,12 +2649,22 @@ Proof.
       apply elem_of_app. right. rewrite -Hkey. left. }
     rewrite elem_of_list_to_set in Hin. exact Hin.
   - unfold match_distance.
-    assert (PodV.key pod' ∈ missing_pod_keys set pods) as Hmissing.
+    assert (PodV.key pod' ∈ missing_pod_keys set (living_pods pods))
+      as Hmissing.
     { unfold missing_pod_keys. apply list_elem_of_filter. split.
-      - rewrite -(local_pods_match_stored_keys _ _ Hlocal) Hkey. exact Hfresh.
+      - intros Hin. apply Hfresh.
+        rewrite (local_pods_match_stored_keys _ _ Hlocal) -Hkey.
+        apply list_elem_of_fmap_1 in Hin as (pod0 & -> & Hin).
+        apply list_elem_of_fmap_2. unfold living_pods in Hin.
+        by apply list_elem_of_filter in Hin as [_ Hin].
       - rewrite Hkey. apply desired_pod_key_elem_iff. exact Hordinal. }
-    pose proof (pod_distance_append_matching set pods pod' Hmissing
-      Halive Hmember Hmatch) as Hpods.
+    pose proof (pod_distance_append_matching set (living_pods pods) pod'
+      Hmissing Halive Hmember Hmatch) as Hpods.
+    assert (living_pods (pods ++ [pod']) = living_pods pods ++ [pod'])
+      as Hliving_append.
+    { unfold living_pods. rewrite list.filter_app /=.
+      rewrite (filter_cons_True is_pod_alive pod' [] Halive). done. }
+    rewrite Hliving_append.
     pose proof (pvc_distance_map_mono set pvc_map pvc_map' Hwf Hwf' Hdom)
       as Hpvcs.
     lia.
@@ -2526,7 +2768,7 @@ Qed.
 Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods : list PodV.t) (pvcs : list PersistentVolumeClaimV.t)
-    dq_set dq_pods :
+    dq_set dq_pods phase :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -2543,18 +2785,23 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods)) ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set pods,
-        own_reserved_frag γ key) ∗
+        own_available_frag γ key) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
-        own_reserved_frag γ key) ∗
+        own_available_frag γ key) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -2578,14 +2825,21 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs' ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods')) ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+      "Hreserved_pods" ∷ own_missing_pod_reservations γ set pods' ∗
+      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set pvcs' ∗
       "%Hdistance" ∷ ⌜
         match_distance set pods' pvcs' ≤ match_distance set pods pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -2621,6 +2875,8 @@ Proof.
   iPoseProof (kview.own_meta_list_no_dup
     PersistentVolumeClaimV.key PersistentVolumeClaimV.ObjectMeta'
     with "Hown_pvcs") as "%Hpvc_keys_nodup".
+  iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
+  iEval (rewrite /own_occupied_pvcs -big_sepL_sep) in "Hown_pvcs".
   set initial_pvc_map := pvc_map_of_list pvcs.
   iEval (rewrite (own_pvc_list_as_map γ pvcs Hpvc_keys_nodup))
     in "Hown_pvcs".
@@ -2633,6 +2889,9 @@ Proof.
     as Hinitial_reserved_pvcs_nodup.
   { unfold missing_pvc_keys. apply list.NoDup_filter.
     unfold desired_pvc_keys. apply NoDup_elements. }
+  assert (NoDup (missing_pod_keys set pods)) as Hinitial_reserved_pods_nodup.
+  { unfold missing_pod_keys. apply list.NoDup_filter. apply desired_pod_keys_nodup. }
+  iEval (rewrite -(big_sepS_list_to_set _ _ Hinitial_reserved_pods_nodup)) in "Hreserved_pods".
   assert (∀ key, key ∈ required_pvcs →
       key ∈ dom initial_pvc_map ∨
       key ∈ missing_pvc_keys set pvcs) as Hinitial_pvc_coverage.
@@ -2666,15 +2925,19 @@ Proof.
       own_spec_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+    "Hoccupied_pods" ∷ own_occupied_pods γ current_pods ∗
     "Hown_pvcs" ∷ own_pvc_map γ pvc_map ∗
     "Hown_children" ∷ own_children_frag γ
       (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
       (list_to_set (PodV.key <$> current_pods)) ∗
-    "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set pods,
-      own_reserved_frag γ key) ∗
+    "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+      (StatefulSetV.key set)
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+    "Hreserved_pods" ∷ ([∗ set] key ∈
+      list_to_set (C:=gset KKey.t) (missing_pod_keys set current_pods), own_available_frag γ key) ∗
     "Hreserved_pvcs" ∷ ([∗ list] key ∈ reserved_pvcs,
-      own_reserved_frag γ key) ∗
+      own_available_frag γ key) ∗
     "%Hordinal_range" ∷ ⌜ 0 ≤ sint.Z ordinal ∧
       sint.Z ordinal ≤ Z.of_nat (statefulset_replicas set) ⌝ ∗
     "%Hpvc_wf" ∷ ⌜ ∀ key claim, pvc_map !! key = Some claim →
@@ -2693,8 +2956,9 @@ Proof.
     "%Hcurrent_nodup" ∷ ⌜ NoDup (PodV.key <$> current_pods) ⌝ ∗
     "%Hdistance" ∷ ⌜ match_distance set current_pods
       (pvc_list_of_map pvc_map) ≤ match_distance set pods pvcs ⌝)%I.
-  iAssert I with "[Hset Hpods_sl Hpods Hown_pods Hown_pvcs
-      Hown_children Hreserved_pods Hreserved_pvcs ordinal end set pods]"
+  iAssert I with "[Hset Hpods_sl Hpods Hown_pods Hoccupied_pods Hown_pvcs
+      Hown_children Hterminating_children_frag Hreserved_pods Hreserved_pvcs
+      ordinal end set pods]"
     as "Hloop".
   { iExists (W64 0), pods, initial_pvc_map,
       (missing_pvc_keys set pvcs).
@@ -2875,6 +3139,10 @@ Proof.
       iDestruct "Hown_pods" as
         "[[Hmeta_before [Hlocal_meta Hmeta_after]]
           [Hspec_before [Hlocal_spec Hspec_after]]]".
+      iEval (rewrite /own_occupied_pods Hcurrent_decomp
+        big_sepL_app big_sepL_cons) in "Hoccupied_pods".
+      iDestruct "Hoccupied_pods" as
+        "[Hoccupied_before [Hlocal_occupied Hoccupied_after]]".
       wp_auto.
       wp_apply (wp_updateStatefulPod γ model_l set_l pod_l set local_pod
         (sint.nat ordinal) dq_set dq_pods
@@ -2942,6 +3210,12 @@ Proof.
         rewrite Hupdate_Hpod_key Hupdate_Hpod_uid. iFrame. }
       iCombine "Hown_meta Hown_spec" as "Hown_pods".
       iEval (rewrite -big_sepL_sep) in "Hown_pods".
+      iAssert (own_occupied_pods γ
+          (current_before ++ stored_pod' :: current_after))
+        with "[Hoccupied_before Hlocal_occupied Hoccupied_after]"
+        as "Hoccupied_pods".
+      { rewrite /own_occupied_pods big_sepL_app big_sepL_cons
+          Hupdate_Hpod_key Hupdate_Hpod_uid. iFrame. }
       iAssert (own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (list_to_set (PodV.key <$>
@@ -2998,6 +3272,10 @@ Proof.
           [symmetry; exact Hupdate_Hpod_key|exact Hlocal_member]. }
       assert (NoDup (PodV.key <$> current_pods')) as Hcurrent_nodup'.
       { rewrite Hcurrent_insert Hcurrent_keys. exact Hcurrent_nodup. }
+      assert (list_to_set (C:=gset KKey.t) (missing_pod_keys set current_pods) =
+          list_to_set (missing_pod_keys set current_pods')) as Hmissing_set.
+      { apply missing_pod_key_set_fmap_eq. rewrite Hcurrent_insert. symmetry. exact Hcurrent_keys. }
+      iEval (rewrite Hmissing_set) in "Hreserved_pods".
       assert (match_distance set current_pods'
           (pvc_list_of_map pvc_map') ≤
         match_distance set current_pods (pvc_list_of_map pvc_map))
@@ -3070,11 +3348,16 @@ Proof.
       assert (desired_pod_key set (sint.nat ordinal) ∈
           missing_pod_keys set pods) as Hmissing_pod.
       { unfold missing_pod_keys. apply list_elem_of_filter. done. }
-      iDestruct (big_sepL_elem_of_acc
-        (λ key, own_reserved_frag γ key)
-        (missing_pod_keys set pods)
-        (desired_pod_key set (sint.nat ordinal)) Hmissing_pod
-        with "Hreserved_pods") as "[Hpod_reserved _]".
+      assert (desired_pod_key set (sint.nat ordinal) ∈
+          missing_pod_keys set current_pods) as Hmissing_current.
+      { unfold missing_pod_keys. apply list_elem_of_filter. split; last exact Hmissing_pod_desired.
+        rewrite -(local_pods_match_stored_keys pods current_pods Hlocal_stored).
+        exact Hmissing_pod_notin. }
+      assert (desired_pod_key set (sint.nat ordinal) ∈
+          list_to_set (C:=gset KKey.t) (missing_pod_keys set current_pods)) as Hmissing_current_set.
+      { by rewrite elem_of_list_to_set. }
+      iEval (rewrite (big_sepS_delete _ _ _ Hmissing_current_set)) in "Hreserved_pods".
+      iDestruct "Hreserved_pods" as "[Hpod_reserved Hreserved_pods]".
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
             (StatefulSetSpecV.volume_claim_templates_list
@@ -3152,6 +3435,12 @@ Proof.
         as "Hown_pods".
       { unfold current_pods'. rewrite big_sepL_app big_sepL_singleton.
         rewrite -Hcreate_Hpod_key -Hcreate_Huid. iFrame. }
+      iAssert (own_occupied_pods γ current_pods')
+        with "[Hoccupied_pods Hcreate_Hpod_reserved]"
+        as "Hoccupied_pods".
+      { unfold current_pods'.
+        rewrite /own_occupied_pods big_sepL_app big_sepL_singleton.
+        rewrite -Hcreate_Hpod_key -Hcreate_Huid. iFrame. }
       iAssert (own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (list_to_set (PodV.key <$> current_pods')))
@@ -3161,6 +3450,8 @@ Proof.
         rewrite Hcreate_Hpod_key. iExact "Hcreate_Hown_children". }
       iEval (rewrite (own_pvc_map_as_list γ pvc_map' Hpvc_wf'))
         in "Hown_pvcs".
+      iEval (rewrite big_sepL_sep) in "Hown_pvcs".
+      iDestruct "Hown_pvcs" as "[Hown_pvcs Hoccupied_pvcs]".
       assert (match_distance set current_pods'
           (pvc_list_of_map pvc_map') ≤ match_distance set pods pvcs)
         as Hdistance'.
@@ -3175,6 +3466,24 @@ Proof.
       { unfold current_pods'. apply Forall_app. split;
           first exact Hcurrent_members.
         constructor; done. }
+      assert (PodV.key stored_pod' ∉ PodV.key <$> current_pods) as Hstored_fresh.
+      { unfold missing_pod_keys in Hmissing_current.
+        apply list_elem_of_filter in Hmissing_current as [Hfresh _].
+        by rewrite Hstored_pod_key. }
+      assert (list_to_set (C:=gset KKey.t)
+          (missing_pod_keys set current_pods') =
+          list_to_set (missing_pod_keys set current_pods) ∖
+            {[PodV.key stored_pod']}) as Hmissing_snoc.
+      { unfold current_pods'. apply missing_pod_key_set_snoc.
+        - by rewrite Hstored_pod_key.
+        - exact Hstored_fresh. }
+      iAssert (own_missing_pod_reservations γ set current_pods')
+        with "[Hreserved_pods]" as "Hreserved_pods".
+      { rewrite /own_missing_pod_reservations Hmissing_snoc.
+        rewrite Hstored_pod_key. iApply (big_sepS_mono with "Hreserved_pods").
+        iIntros (key Hkey) "Hkey". by iLeft. }
+      iPoseProof (own_reserved_pvcs_finish γ set pvc_map' reserved_pvcs'
+        Hpvc_wf' Hreserved_pvcs_nodup' Hpvc_coverage' with "Hreserved_pvcs") as "Hreserved_pvcs".
       wp_auto.
       iApply wp_for_post_return. wp_auto.
       iApply ("HΦ" $! false current_pods' (pvc_list_of_map pvc_map')).
@@ -3197,6 +3506,12 @@ Proof.
          exact Hcurrent_nodup|exact Hpvc_wf]. }
     iEval (rewrite (own_pvc_map_as_list γ pvc_map Hpvc_wf))
       in "Hown_pvcs".
+    iEval (rewrite big_sepL_sep) in "Hown_pvcs".
+    iDestruct "Hown_pvcs" as "[Hown_pvcs Hoccupied_pvcs]".
+    iPoseProof (own_available_missing_to_missing γ set current_pods
+      with "Hreserved_pods") as "Hreserved_pods".
+    iPoseProof (own_reserved_pvcs_finish γ set pvc_map reserved_pvcs
+      Hpvc_wf Hreserved_pvcs_nodup Hpvc_coverage with "Hreserved_pvcs") as "Hreserved_pvcs".
     iApply ("HΦ" $! true current_pods (pvc_list_of_map pvc_map)).
     iFrame. iPureIntro. split; first exact Hdistance.
     split; first exact Hcurrent_members.
@@ -3206,7 +3521,7 @@ Qed.
 Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (local_pods pods : list PodV.t)
-    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods :
+    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods phase :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -3223,6 +3538,7 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3231,6 +3547,9 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods)) ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hlocal_pods_valid" ∷ ⌜ Forall PodV.valid local_pods ⌝ ∗
       "%Hlocal_pods_members" ∷ ⌜ Forall
@@ -3248,7 +3567,8 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         ⌜ desired_objects_reconciled set pods pvcs ⌝
   }}}
     @! statefulset.reconcileCondemnedPod #set_l #pods_sl
-  {{{ (continue : bool) (pods' : list PodV.t),
+  {{{ (continue : bool) (pods' : list PodV.t)
+      (deletion : option (KKey.t * types.UID.t)),
       RET (#continue, #interface.nil);
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
@@ -3261,6 +3581,7 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3269,18 +3590,30 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods')) ∗
+      "Hstarted_deletion" ∷ own_started_deletion γ deletion ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        (phase_after_deletion phase deletion) ∗
+      "%Hdeletion_retiring" ∷ ⌜ match deletion with
+        | None => True
+        | Some (key, _) => key ∉ desired_pod_keys set
+        end ⌝ ∗
       "%Hdistance" ∷ ⌜
         match_distance set pods' pvcs ≤
           match_distance set local_pods initial_pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
         (pod_has_int32_member_key set) pods' ⌝ ∗
+      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       "%Hdesired_reconciled" ∷
         ⌜ desired_objects_reconciled set pods' pvcs ⌝ ∗
       ( (⌜ continue = true ⌝ ∗
+          ⌜ deletion = None ⌝ ∗
           ⌜ pods' = pods ⌝ ∗
           ⌜ Forall (λ pod, ¬ pod_is_condemned set pod) pods' ⌝)
         ∨
         (⌜ continue = false ⌝ ∗
+          ⌜ is_Some deletion ⌝ ∗
           ⌜ progress_or_complete set local_pods initial_pvcs pods' pvcs ⌝))
   }}}.
 Proof.
@@ -3318,9 +3651,21 @@ Proof.
     assert (Forall (pod_has_int32_member_key set) pods)
       as Hstored_members.
     { eapply local_pods_match_stored_members; done. }
-    iApply ("HΦ" $! true pods).
-    iFrame. iPureIntro. split; first exact Hdistance_le.
+    assert (Forall is_pod_alive pods) as Hstored_alive.
+    { eapply local_pods_match_stored_alive_all; done. }
+    assert (living_pods pods = pods) as Hliving.
+    { unfold living_pods. apply filter_all.
+      rewrite Forall_forall in Hstored_alive.
+      intros pod Hpod. apply Hstored_alive.
+      by rewrite -list_elem_of_In. }
+    iApply ("HΦ" $! true pods None).
+    rewrite /own_started_deletion /phase_after_deletion /=.
+    iFrame. iPureIntro. split; first done.
+    split; first exact Hdistance_le.
     split; first exact Hstored_members.
+    split.
+    { rewrite -(local_pods_match_stored_keys _ _ Hlocal_stored).
+      exact Hlocal_pods_nodup. }
     split; first exact Hdesired_reconciled.
     left. split_and!; done.
   - pose proof (local_pods_match_stored_lookup
@@ -3345,6 +3690,11 @@ Proof.
       eapply pod_has_int32_member_key_of_key_eq; first exact Hlocal_key.
       apply Hlocal_pods_members.
       apply list_elem_of_In. by apply list_elem_of_lookup_2 in Hlocal_lookup. }
+    assert (¬ pod_key_is_desired set (PodV.key stored_pod))
+      as Hnot_desired.
+    { apply (proj1
+        (pod_int32_member_condemned_iff set stored_pod Hstored_member)).
+      exact Hstored_condemned. }
     assert (NoDup (PodV.key <$> pods)) as Hstored_nodup.
     { rewrite -(local_pods_match_stored_keys _ _ Hlocal_stored).
       exact Hlocal_pods_nodup. }
@@ -3382,6 +3732,10 @@ Proof.
       "[Hmeta_before [Hstored_meta Hmeta_after]]".
     iDestruct "Hown_spec" as
       "[Hspec_before [Hstored_spec Hspec_after]]".
+    iEval (rewrite /own_occupied_pods Hpods_decomp
+      big_sepL_app big_sepL_cons) in "Hoccupied_pods".
+    iDestruct "Hoccupied_pods" as
+      "[Hoccupied_before [Hstored_occupied Hoccupied_after]]".
     assert (PodV.key stored_pod ∈
         list_to_set (C:=gset KKey.t) (PodV.key <$> pods)) as Hkey_in.
     { apply elem_of_list_to_set. apply list_elem_of_fmap_2.
@@ -3389,100 +3743,13 @@ Proof.
     wp_apply (wp_deletePod γ model_l condemned_l
       local_pod stored_pod (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
-      (list_to_set (PodV.key <$> pods)) dq_pods
-      with "[$Hlocal_pod $Hstored_meta $Hown_children]").
+      (list_to_set (PodV.key <$> pods)) phase dq_pods
+      with "[$Hlocal_pod $Hstored_meta $Hstored_spec $Hstored_occupied
+        $Hown_children $Hterminating_children_frag]").
     { iFrame "#". iPureIntro. split_and!; done. }
-    iIntros (stored_meta') "Hdelete". iNamedPrefix "Hdelete" "Hdelete_".
-    iDestruct "Hdelete" as "[Hdelete|Hdelete]".
-    all: iNamedPrefix "Hdelete" "Hdelete_".
-    + iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
+    iIntros "Hdelete". iNamedPrefix "Hdelete" "Hdelete_".
+    iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
     iRename "Hlocal_pod_restore" into "Hpods".
-    iPoseProof (kview.own_meta_valid with "Hdelete_Hown_meta")
-      as "%Hstored_meta_valid".
-    destruct Hstored_meta_valid as
-      (Hstored_name & Hstored_namespace & Hstored_uid & _).
-    set stored_pod' := stored_pod <| PodV.ObjectMeta' := stored_meta' |>.
-    assert (PodV.key stored_pod = PodV.key stored_pod') as Hstored_key'.
-    { unfold stored_pod'.
-      rewrite /PodV.key /PodV.meta_key /=
-        -Hstored_name -Hstored_namespace. done. }
-    assert (stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
-        stored_pod'.(PodV.ObjectMeta').(ObjectMetaV.UID')) as Hstored_uid'.
-    { unfold stored_pod'. simpl. exact Hstored_uid. }
-    assert (stored_pod.(PodV.Spec') = stored_pod'.(PodV.Spec'))
-      as Hstored_spec' by done.
-    assert (¬ is_pod_alive stored_pod') as Hstored_not_alive'.
-    { unfold stored_pod', is_pod_alive. simpl.
-      exact Hdelete_Hdeletion_timestamp. }
-    assert (stored_pod.(PodV.ObjectMeta').(
-        ObjectMetaV.DeletionTimestamp') = None) as Hstored_deletion_none.
-    { unfold is_pod_alive in Hstored_pod_alive.
-      exact Hstored_pod_alive. }
-    iAssert (own_meta_frag γ (PodV.key stored_pod')
-        stored_pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-        stored_pod'.(PodV.ObjectMeta'))
-      with "[Hdelete_Hown_meta]" as "Hstored_meta'".
-    { unfold stored_pod'. simpl.
-      rewrite -Hstored_key' -Hstored_uid'. iExact "Hdelete_Hown_meta". }
-    iAssert (([∗ list] pod0 ∈ before ++ stored_pod' :: after,
-        own_meta_frag γ (PodV.key pod0)
-          pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-          pod0.(PodV.ObjectMeta')))%I
-      with "[Hmeta_before Hstored_meta' Hmeta_after]" as "Hown_meta".
-    { rewrite big_sepL_app big_sepL_cons. iFrame. }
-    iAssert (([∗ list] pod0 ∈ before ++ stored_pod' :: after,
-        own_spec_frag γ (PodV.key pod0)
-          pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-          (ObjectSpecV.PodSpec pod0.(PodV.Spec'))))%I
-      with "[Hspec_before Hstored_spec Hspec_after]" as "Hown_spec".
-    { rewrite big_sepL_app big_sepL_cons.
-      unfold stored_pod'. simpl.
-      rewrite -Hstored_key' -Hstored_uid'. iFrame. }
-    iCombine "Hown_meta Hown_spec" as "Hown_pods".
-    iEval (rewrite -big_sepL_sep) in "Hown_pods".
-    assert (PodV.key <$> (before ++ stored_pod' :: after) =
-        PodV.key <$> pods) as Hchildren_keys.
-    { rewrite Hpods_decomp !fmap_app /= Hstored_key'. done. }
-    iAssert (own_children_frag γ (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-        (list_to_set (PodV.key <$> (before ++ stored_pod' :: after))))
-      with "[Hdelete_Hown_children]" as "Hown_children".
-    { rewrite Hchildren_keys.
-      iExact "Hdelete_Hown_children". }
-    assert (desired_objects_reconciled set
-        (before ++ stored_pod' :: after) pvcs) as Hdesired'.
-    { apply (desired_objects_reconciled_mark_condemned set before
-        stored_pod after stored_pod' pvcs);
-        [rewrite -Hpods_decomp; exact Hdesired_reconciled
-        |exact Hstored_member|exact Hstored_condemned|exact Hstored_key']. }
-    assert (match_distance set (before ++ stored_pod' :: after) pvcs <
-        match_distance set pods pvcs) as Hdistance'.
-    { rewrite Hpods_decomp.
-      eapply match_distance_mark_deleting_condemned;
-        [rewrite -Hpods_decomp; exact Hstored_members
-        |exact Hstored_condemned|exact Hstored_pod_alive
-        |exact Hstored_key'|exact Hstored_spec'|exact Hstored_not_alive']. }
-    assert (pods_progress_observed local_pods
-        (before ++ stored_pod' :: after)) as Hprogress'.
-    { eapply pods_progress_observed_mark_deleting_local;
-        [exact Hlocal_lookup|exact Hlocal_stored_pod|exact Hstored_key'
-        |exact Hstored_deletion_none|].
-      unfold stored_pod'. simpl. exact Hdelete_Hdeletion_timestamp. }
-    assert (match_distance set (before ++ stored_pod' :: after) pvcs <
-        match_distance set local_pods initial_pvcs) as Hdistance_local by lia.
-    assert (Forall (pod_has_int32_member_key set)
-        (before ++ stored_pod' :: after)) as Hmembers'.
-    { apply (pod_members_replace_by_key set before stored_pod after
-        stored_pod'); [rewrite -Hpods_decomp|]; done. }
-    wp_auto.
-    iApply ("HΦ" $! false (before ++ stored_pod' :: after)).
-    iFrame. iPureIntro. split; first lia.
-    split; first exact Hmembers'.
-    split; first exact Hdesired'.
-    right. split; first done. right. split; done.
-    + iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
-    iRename "Hlocal_pod_restore" into "Hpods".
-    iClear "Hstored_spec".
     iAssert (([∗ list] pod0 ∈ before ++ after,
         own_meta_frag γ (PodV.key pod0)
           pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3497,6 +3764,18 @@ Proof.
     { rewrite big_sepL_app. iFrame. }
     iCombine "Hown_meta Hown_spec" as "Hown_pods".
     iEval (rewrite -big_sepL_sep) in "Hown_pods".
+    assert (Forall is_pod_alive pods) as Hstored_alive.
+    { eapply local_pods_match_stored_alive_all; done. }
+    assert (living_pods (before ++ after) = before ++ after) as Hliving.
+    { unfold living_pods. apply filter_all. intros pod Hpod.
+      rewrite Forall_forall in Hstored_alive. apply Hstored_alive.
+      rewrite Hpods_decomp -list_elem_of_In.
+      apply elem_of_app in Hpod as [Hpod|Hpod].
+      - apply elem_of_app. left. exact Hpod.
+      - apply elem_of_app. right. apply elem_of_cons. right. exact Hpod. }
+    iAssert (own_occupied_pods γ (before ++ after))
+      with "[Hoccupied_before Hoccupied_after]" as "Hoccupied_pods".
+    { rewrite /own_occupied_pods big_sepL_app. iFrame. }
     assert (NoDup (PodV.key <$> (before ++ stored_pod :: after)))
       as Hdecomp_nodup.
     { rewrite -Hpods_decomp. exact Hstored_nodup. }
@@ -3529,18 +3808,26 @@ Proof.
       as Hmembers'.
     { apply (pod_members_remove set before stored_pod after).
       rewrite -Hpods_decomp. exact Hstored_members. }
+    assert (NoDup (PodV.key <$> (before ++ after))) as Hnodup'.
+    { apply (pod_keys_nodup_remove before stored_pod after Hdecomp_nodup). }
     wp_auto.
-    iApply ("HΦ" $! false (before ++ after)).
-    iFrame. iPureIntro. split; first lia.
+    iApply ("HΦ" $! false (before ++ after)
+      (Some (PodV.key stored_pod,
+        stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
+    rewrite /own_started_deletion /phase_after_deletion /=.
+    iFrame. iPureIntro. split; first exact Hnot_desired.
+    split; first lia.
     split; first exact Hmembers'.
+    split; first exact Hnodup'.
     split; first exact Hdesired'.
-    right. split; first done. right. split; done.
+    right. split; first done. split; first by eexists.
+    right. split; done.
 Qed.
 
 Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (local_pods pods : list PodV.t)
-    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods :
+    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods phase :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -3557,6 +3844,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3565,6 +3853,9 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods)) ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hlocal_pods_valid" ∷ ⌜ Forall PodV.valid local_pods ⌝ ∗
       "%Hlocal_pods_members" ∷ ⌜ Forall
@@ -3584,7 +3875,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         ⌜ Forall (λ pod, ¬ pod_is_condemned set pod) pods ⌝
   }}}
     @! statefulset.reconcileOutdatedPod #set_l #pods_sl
-  {{{ (pods' : list PodV.t), RET #interface.nil;
+  {{{ (pods' : list PodV.t) (deletion : option (KKey.t * types.UID.t)), RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;local_pods,
@@ -3596,6 +3887,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3604,12 +3896,31 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods')) ∗
+      "Hstarted_deletion" ∷ own_started_deletion γ deletion ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        (phase_after_deletion phase deletion) ∗
+      "%Hdeletion_desired" ∷ ⌜ match deletion with
+        | None => True
+        | Some (key, _) => key ∈ desired_pod_keys set
+        end ⌝ ∗
       "%Hdistance" ∷ ⌜
         match_distance set pods' pvcs ≤
           match_distance set local_pods initial_pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
         (pod_has_int32_member_key set) pods' ⌝ ∗
-      ⌜ progress_or_complete set local_pods initial_pvcs pods' pvcs ⌝
+      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      "%Hmissing_pods" ∷ ⌜
+        list_to_set (C:=gset KKey.t) (missing_pod_keys set pods') =
+          match deletion with
+          | None => ∅
+          | Some (key, _) => {[key]}
+          end ⌝ ∗
+      ⌜ (deletion = None ∧ current_state_matches set pods' pvcs) ∨
+        (is_Some deletion ∧ pods_progress_observed local_pods pods' ∧
+          match_distance set pods' pvcs <
+            match_distance set local_pods initial_pvcs) ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -3661,9 +3972,23 @@ Proof.
     { apply (proj1 Hzero_matches). exact Hdistance_zero. }
     iCombine "Hown_meta Hown_spec" as "Hown_pods".
     iEval (rewrite -big_sepL_sep) in "Hown_pods".
+    assert (living_pods pods = pods) as Hliving.
+    { unfold living_pods. apply filter_all.
+      rewrite Forall_forall in Hstored_alive.
+      intros pod Hpod. apply Hstored_alive.
+      by rewrite -list_elem_of_In. }
     wp_auto.
-    iApply ("HΦ" $! pods). iFrame. iPureIntro.
-    split; first lia. split; first exact Hstored_members. by left.
+    iApply ("HΦ" $! pods None).
+    rewrite /own_started_deletion /phase_after_deletion /=.
+    iFrame. iPureIntro. split; first done.
+    split; first lia. split; first exact Hstored_members.
+    split.
+    { rewrite -(local_pods_match_stored_keys _ _ Hlocal_stored).
+      exact Hlocal_pods_nodup. }
+    split.
+    { destruct Hdesired_reconciled as (Hmissing & _ & _).
+      by rewrite Hmissing. }
+    left. split; done.
   - pose proof (local_pods_match_stored_lookup
       local_pods pods idx local_pod Hlocal_stored Hlocal_lookup)
       as (stored_pod & Hstored_lookup & Hlocal_stored_pod).
@@ -3718,6 +4043,16 @@ Proof.
       "[Hmeta_before [Hstored_meta Hmeta_after]]".
     iDestruct "Hown_spec" as
       "[Hspec_before [Hstored_spec Hspec_after]]".
+    iEval (rewrite /own_occupied_pods Hpods_decomp
+      big_sepL_app big_sepL_cons) in "Hoccupied_pods".
+    iDestruct "Hoccupied_pods" as
+      "[Hoccupied_before [Hstored_occupied Hoccupied_after]]".
+    assert (pod_has_int32_member_key set stored_pod) as Hstored_member.
+    { rewrite Forall_forall in Hstored_members. apply Hstored_members.
+      rewrite Hpods_decomp -list_elem_of_In.
+      apply elem_of_app. right. by left. }
+    pose proof (proj1 (pod_int32_member_outdated_iff set stored_pod
+      Hstored_member) Hstored_outdated) as [Hdesired _].
     assert (PodV.key stored_pod ∈
         list_to_set (C:=gset KKey.t) (PodV.key <$> pods)) as Hkey_in.
     { apply elem_of_list_to_set. apply list_elem_of_fmap_2.
@@ -3725,95 +4060,13 @@ Proof.
     wp_apply (wp_deletePod γ model_l outdated_l
       local_pod stored_pod (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
-      (list_to_set (PodV.key <$> pods)) dq_pods
-      with "[$Hlocal_pod $Hstored_meta $Hown_children]").
+      (list_to_set (PodV.key <$> pods)) phase dq_pods
+      with "[$Hlocal_pod $Hstored_meta $Hstored_spec $Hstored_occupied
+        $Hown_children $Hterminating_children_frag]").
     { iFrame "#". iPureIntro. split_and!; done. }
-    iIntros (stored_meta') "Hdelete". iNamedPrefix "Hdelete" "Hdelete_".
-    iDestruct "Hdelete" as "[Hdelete|Hdelete]".
-    all: iNamedPrefix "Hdelete" "Hdelete_".
-    + iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
+    iIntros "Hdelete". iNamedPrefix "Hdelete" "Hdelete_".
+    iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
       iRename "Hlocal_pod_restore" into "Hpods".
-      iPoseProof (kview.own_meta_valid with "Hdelete_Hown_meta")
-        as "%Hstored_meta_valid".
-      destruct Hstored_meta_valid as
-        (Hstored_name & Hstored_namespace & Hstored_uid & _).
-      set stored_pod' := stored_pod <| PodV.ObjectMeta' := stored_meta' |>.
-      assert (PodV.key stored_pod = PodV.key stored_pod') as Hstored_key'.
-      { unfold stored_pod'.
-        rewrite /PodV.key /PodV.meta_key /=
-          -Hstored_name -Hstored_namespace. done. }
-      assert (stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') =
-          stored_pod'.(PodV.ObjectMeta').(ObjectMetaV.UID'))
-        as Hstored_uid'.
-      { unfold stored_pod'. simpl. exact Hstored_uid. }
-      assert (stored_pod.(PodV.Spec') = stored_pod'.(PodV.Spec'))
-        as Hstored_spec' by done.
-      assert (¬ is_pod_alive stored_pod') as Hstored_not_alive'.
-      { unfold stored_pod', is_pod_alive. simpl.
-        exact Hdelete_Hdeletion_timestamp. }
-      assert (stored_pod.(PodV.ObjectMeta').(
-          ObjectMetaV.DeletionTimestamp') = None) as Hstored_deletion_none.
-      { unfold is_pod_alive in Hstored_pod_alive.
-        exact Hstored_pod_alive. }
-      iAssert (own_meta_frag γ (PodV.key stored_pod')
-          stored_pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-          stored_pod'.(PodV.ObjectMeta'))
-        with "[Hdelete_Hown_meta]" as "Hstored_meta'".
-      { unfold stored_pod'. simpl.
-        rewrite -Hstored_key' -Hstored_uid'.
-        iExact "Hdelete_Hown_meta". }
-      iAssert (([∗ list] pod0 ∈ before ++ stored_pod' :: after,
-          own_meta_frag γ (PodV.key pod0)
-            pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            pod0.(PodV.ObjectMeta')))%I
-        with "[Hmeta_before Hstored_meta' Hmeta_after]" as "Hown_meta".
-      { rewrite big_sepL_app big_sepL_cons. iFrame. }
-      iAssert (([∗ list] pod0 ∈ before ++ stored_pod' :: after,
-          own_spec_frag γ (PodV.key pod0)
-            pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
-            (ObjectSpecV.PodSpec pod0.(PodV.Spec'))))%I
-        with "[Hspec_before Hstored_spec Hspec_after]" as "Hown_spec".
-      { rewrite big_sepL_app big_sepL_cons.
-        unfold stored_pod'. simpl.
-        rewrite -Hstored_key' -Hstored_uid'. iFrame. }
-      iCombine "Hown_meta Hown_spec" as "Hown_pods".
-      iEval (rewrite -big_sepL_sep) in "Hown_pods".
-      assert (PodV.key <$> (before ++ stored_pod' :: after) =
-          PodV.key <$> pods) as Hchildren_keys.
-      { rewrite Hpods_decomp !fmap_app /= Hstored_key'. done. }
-      iAssert (own_children_frag γ (StatefulSetV.key set)
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          (list_to_set (PodV.key <$> (before ++ stored_pod' :: after))))
-        with "[Hdelete_Hown_children]" as "Hown_children".
-      { rewrite Hchildren_keys.
-        iExact "Hdelete_Hown_children". }
-      assert (match_distance set (before ++ stored_pod' :: after) pvcs <
-          match_distance set pods pvcs) as Hdistance'.
-      { rewrite Hpods_decomp.
-        apply (match_distance_mark_deleting_outdated set before stored_pod
-          after stored_pod' pvcs);
-          [rewrite -Hpods_decomp; exact Hstored_members
-          |exact Hstored_outdated|exact Hstored_pod_alive
-          |exact Hstored_key'|exact Hstored_spec'|exact Hstored_not_alive']. }
-      assert (pods_progress_observed local_pods
-          (before ++ stored_pod' :: after)) as Hprogress'.
-      { eapply pods_progress_observed_mark_deleting_local;
-          [exact Hlocal_lookup|exact Hlocal_stored_pod|exact Hstored_key'
-          |exact Hstored_deletion_none|].
-        unfold stored_pod'. simpl. exact Hdelete_Hdeletion_timestamp. }
-      assert (match_distance set (before ++ stored_pod' :: after) pvcs <
-          match_distance set local_pods initial_pvcs) as Hdistance_local by lia.
-      assert (Forall (pod_has_int32_member_key set)
-          (before ++ stored_pod' :: after)) as Hmembers'.
-      { apply (pod_members_replace_by_key set before stored_pod after
-          stored_pod'); [rewrite -Hpods_decomp|]; done. }
-      wp_auto.
-      iApply ("HΦ" $! (before ++ stored_pod' :: after)).
-      iFrame. iPureIntro. split; first lia.
-      split; first exact Hmembers'. right. split; done.
-    + iSpecialize ("Hlocal_pod_restore" with "Hdelete_Hpod").
-      iRename "Hlocal_pod_restore" into "Hpods".
-      iClear "Hstored_spec".
       iAssert (([∗ list] pod0 ∈ before ++ after,
           own_meta_frag γ (PodV.key pod0)
             pod0.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3828,6 +4081,18 @@ Proof.
       { rewrite big_sepL_app. iFrame. }
       iCombine "Hown_meta Hown_spec" as "Hown_pods".
       iEval (rewrite -big_sepL_sep) in "Hown_pods".
+      assert (Forall is_pod_alive pods) as Hstored_alive.
+      { eapply local_pods_match_stored_alive_all; done. }
+      assert (living_pods (before ++ after) = before ++ after) as Hliving.
+      { unfold living_pods. apply filter_all. intros pod Hpod.
+        rewrite Forall_forall in Hstored_alive. apply Hstored_alive.
+        rewrite Hpods_decomp -list_elem_of_In.
+        apply elem_of_app in Hpod as [Hpod|Hpod].
+        - apply elem_of_app. left. exact Hpod.
+        - apply elem_of_app. right. apply elem_of_cons. right. exact Hpod. }
+      iAssert (own_occupied_pods γ (before ++ after))
+        with "[Hoccupied_before Hoccupied_after]" as "Hoccupied_pods".
+      { rewrite /own_occupied_pods big_sepL_app. iFrame. }
       assert (NoDup (PodV.key <$> (before ++ stored_pod :: after)))
         as Hdecomp_nodup.
       { rewrite -Hpods_decomp. exact Hstored_nodup. }
@@ -3855,10 +4120,27 @@ Proof.
         as Hmembers'.
       { apply (pod_members_remove set before stored_pod after).
         rewrite -Hpods_decomp. exact Hstored_members. }
+      assert (NoDup (PodV.key <$> (before ++ after))) as Hnodup'.
+      { apply (pod_keys_nodup_remove before stored_pod after Hdecomp_nodup). }
+      assert (list_to_set (C:=gset KKey.t)
+          (missing_pod_keys set (before ++ after)) =
+          {[PodV.key stored_pod]}) as Hmissing'.
+      { apply (desired_objects_reconciled_remove_desired_missing_pod_keys
+          set before stored_pod after pvcs).
+        - rewrite -Hpods_decomp. exact Hdesired_reconciled.
+        - exact Hdecomp_nodup.
+        - exact Hdesired. }
       wp_auto.
-      iApply ("HΦ" $! (before ++ after)).
-      iFrame. iPureIntro. split; first lia.
-      split; first exact Hmembers'. right. split; done.
+      iApply ("HΦ" $! (before ++ after)
+        (Some (PodV.key stored_pod,
+          stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
+      rewrite /own_started_deletion /phase_after_deletion /=.
+      iFrame. iPureIntro. split; first exact Hdesired.
+      split; first lia.
+      split; first exact Hmembers'.
+      split; first exact Hnodup'.
+      split; first exact Hmissing'. right.
+      split; first by eexists. split; done.
 Qed.
 
 (* The composition of the three stages above. This uses the same logical
@@ -3867,7 +4149,7 @@ Qed.
 Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods : list PodV.t) (pvcs : list PersistentVolumeClaimV.t)
-    dq_set dq_pods :
+    dq_set dq_pods phase :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -3884,18 +4166,23 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods)) ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set pods,
-        own_reserved_frag γ key) ∗
+        own_available_frag γ key) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
-        own_reserved_frag γ key) ∗
+        own_available_frag γ key) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -3905,7 +4192,8 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
       "%Hinput_requirement" ∷ ⌜ input_requirement set ⌝
   }}}
     @! statefulset.reconcileReplicas #set_l #pods_sl
-  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t),
+  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t)
+      (deletion : option (KKey.t * types.UID.t)),
       RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
@@ -3918,14 +4206,27 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs' ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> pods')) ∗
+      "Hreserved_pods" ∷ own_missing_pod_reservations γ set pods' ∗
+      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set pvcs' ∗
+      "Hterminating_children_frag" ∷ own_terminating_children_frag γ
+        (StatefulSetV.key set)
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+        (phase_after_deletion phase deletion) ∗
+      "%Hdeletion_classified" ∷ ⌜ match deletion with
+        | None => True
+        | Some (key, _) => key ∈ desired_pod_keys set ∨
+            key ∉ desired_pod_keys set
+        end ⌝ ∗
       "%Hdistance" ∷ ⌜
         match_distance set pods' pvcs' ≤ match_distance set pods pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -3935,20 +4236,23 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
   wp_apply (wp_reconcileDesiredPods γ model_l set_l pods_sl set ptrs pods
-    pvcs dq_set dq_pods with
-    "[$Hset $Hpods_sl $Hpods $Hown_pods $Hown_pvcs $Hown_children
-      $Hreserved_pods $Hreserved_pvcs]").
+    pvcs dq_set dq_pods phase with
+    "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
+      $Hoccupied_pvcs $Hown_children $Hterminating_children_frag $Hreserved_pods
+      $Hreserved_pvcs]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (continue_desired pods1 pvcs1)
-    "(Hset & Hpods_sl & Hpods & Hown_pods & Hown_pvcs &
-      Hown_children & %Hdistance1 & %Hmembers1 & Hdesired_result)".
+    "(Hset & Hpods_sl & Hpods & Hown_pods & Hoccupied_pods &
+      Hown_pvcs & Hoccupied_pvcs & Hown_children & Hterminating_children_frag &
+      Hreserved_pods & Hreserved_pvcs & %Hdistance1 & %Hmembers1 & Hdesired_result)".
   iDestruct "Hdesired_result" as "[Hdesired_continue|Hdesired_stop]".
   - iDestruct "Hdesired_continue" as
       "(%Hcontinue_desired & %Hlocal_stored & %Hdesired_reconciled)".
     subst continue_desired. wp_auto.
     wp_apply (wp_reconcileCondemnedPod γ model_l set_l pods_sl set ptrs
-      pods pods1 pvcs1 pvcs dq_set dq_pods with
-      "[$Hset $Hpods_sl $Hpods $Hown_pods $Hown_pvcs $Hown_children]").
+      pods pods1 pvcs1 pvcs dq_set dq_pods phase with
+      "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
+        $Hown_children $Hterminating_children_frag]").
     { iFrame "#". iPureIntro. split_and!.
       - exact Hset_valid.
       - exact Hpods_valid.
@@ -3958,34 +4262,65 @@ Proof.
       - exact Hpending_empty.
       - exact Hdistance1.
       - exact Hdesired_reconciled. }
-    iIntros (continue_condemned pods2)
-      "(Hset & Hpods_sl & Hpods & Hown_pods & Hown_pvcs &
-        Hown_children & %Hdistance2 & %Hmembers2 &
-        %Hdesired_reconciled2 & Hcondemned_result)".
+    iIntros (continue_condemned pods2 deletion2)
+      "(Hset & Hpods_sl & Hpods & Hown_pods & Hoccupied_pods &
+        Hown_pvcs & Hown_children & Hstarted_deletion &
+        Hterminating_children_frag & %Hdeletion_retiring & %Hdistance2 &
+        %Hmembers2 & %Hnodup2 & %Hdesired_reconciled2 & Hcondemned_result)".
     iDestruct "Hcondemned_result" as
       "[Hcondemned_continue|Hcondemned_stop]".
     + iDestruct "Hcondemned_continue" as
-        "(%Hcontinue_condemned & %Hpods2 & %Hno_condemned)".
-      subst continue_condemned. subst pods2. wp_auto.
+        "(%Hcontinue_condemned & %Hdeletion2 & %Hpods2 & %Hno_condemned)".
+      subst continue_condemned. subst deletion2. subst pods2. wp_auto.
+      iClear "Hstarted_deletion".
       wp_apply (wp_reconcileOutdatedPod γ model_l set_l pods_sl set ptrs
-        pods pods1 pvcs1 pvcs dq_set dq_pods with
-        "[$Hset $Hpods_sl $Hpods $Hown_pods $Hown_pvcs $Hown_children]").
+        pods pods1 pvcs1 pvcs dq_set dq_pods phase with
+        "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
+          $Hown_children $Hterminating_children_frag]").
       { iFrame "#". iPureIntro. split_and!; done. }
-      iIntros (pods3)
-        "(Hset & Hpods_sl & Hpods & Hown_pods & Hown_pvcs &
-          Hown_children & %Hdistance3 & %Hmembers3 & %Hprogress3)".
-      wp_auto. iApply ("HΦ" $! pods3 pvcs1). iFrame.
-      iPureIntro. split_and!; done.
+      iIntros (pods3 deletion3)
+        "(Hset & Hpods_sl & Hpods & Hown_pods & Hoccupied_pods &
+          Hown_pvcs & Hown_children & Hstarted_deletion &
+          Hterminating_children_frag & %Hdeletion_desired & %Hdistance3 &
+          %Hmembers3 & %Hnodup3 & %Hmissing_pods3 & %Hprogress3)".
+      iClear "Hreserved_pods".
+      iAssert (own_missing_pod_reservations γ set pods3)
+        with "[Hstarted_deletion]" as "Hreserved_pods".
+      { rewrite /own_missing_pod_reservations Hmissing_pods3.
+        destruct deletion3 as [[key uid]|]; simpl.
+        - rewrite big_sepS_singleton /own_started_deletion /=.
+          iRight. by iExists uid.
+        - rewrite big_sepS_empty /own_started_deletion. done. }
+      wp_auto. iApply ("HΦ" $! pods3 pvcs1 deletion3). iFrame.
+      iPureIntro. split.
+      { destruct deletion3 as [[key uid]|]; simpl in *; [by left|done]. }
+      split; first exact Hdistance3.
+      split; first exact Hmembers3.
+      unfold progress_or_complete.
+      destruct Hprogress3 as [[_ Hcomplete]|(_ & Hprogress)];
+        [by left|by right].
     + iDestruct "Hcondemned_stop" as
-        "(%Hcontinue_condemned & %Hprogress2)".
+        "(%Hcontinue_condemned & %Hdeletion2_some & %Hprogress2)".
       subst continue_condemned. wp_auto.
-      iApply ("HΦ" $! pods2 pvcs1). iFrame.
-      iPureIntro. split_and!; done.
+      iClear "Hstarted_deletion".
+      iAssert (own_missing_pod_reservations γ set pods2)
+        with "[Hreserved_pods]" as "Hreserved_pods".
+      { destruct Hdesired_reconciled as (Hmissing1 & _ & _).
+        destruct Hdesired_reconciled2 as (Hmissing2 & _ & _).
+        rewrite /own_missing_pod_reservations Hmissing1 Hmissing2. iFrame. }
+      iApply ("HΦ" $! pods2 pvcs1 deletion2). iFrame.
+      iPureIntro. split.
+      { destruct deletion2 as [[key uid]|]; simpl in *; [by right|done]. }
+      split; first exact Hdistance2.
+      split; first exact Hmembers2. exact Hprogress2.
   - iDestruct "Hdesired_stop" as
       "(%Hcontinue_desired & %Hprogress1)".
     subst continue_desired. wp_auto.
-    iApply ("HΦ" $! pods1 pvcs1). iFrame.
-    iPureIntro. split_and!; done.
+    iApply ("HΦ" $! pods1 pvcs1 None).
+    rewrite /own_started_deletion /phase_after_deletion /=.
+    iFrame. iPureIntro. split; first done.
+    split; first exact Hdistance1.
+    split; first exact Hmembers1. exact Hprogress1.
 Qed.
 
 End proof.

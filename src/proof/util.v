@@ -133,6 +133,27 @@ Proof.
   f_equal. apply IH. intros y Hy. apply Hall. right. exact Hy.
 Qed.
 
+Lemma filter_length_le' {A} (P : A → Prop) `{∀ x, Decision (P x)}
+    (xs : list A) :
+  length (filter P xs) ≤ length xs.
+Proof.
+  induction xs as [|x xs IH]; simpl; first lia.
+  rewrite filter_cons.
+  destruct (decide (P x)); simpl; lia.
+Qed.
+
+Lemma filter_length_eq_Forall {A} (P : A → Prop) `{∀ x, Decision (P x)}
+    (xs : list A) :
+  length (filter P xs) = length xs →
+  Forall P xs.
+Proof.
+  induction xs as [|x xs IH]; simpl; intros Hlen; first constructor.
+  rewrite filter_cons in Hlen.
+  destruct (decide (P x)) as [HP|HnotP]; simpl in Hlen.
+  - constructor; [exact HP|]. apply IH. lia.
+  - pose proof (filter_length_le' P xs). lia.
+Qed.
+
 Lemma filter_length_zero_not_elem {A} (P : A → Prop) `{∀ x, Decision (P x)}
     (xs : list A) x :
   length (filter P xs) = 0%nat →

@@ -1,33 +1,8 @@
-From New.proof Require Export wp_helpers.
-From New.proof.string Require Export prefix_suffix.
-From New.proof.kubernetes_types Require Export prelude.
-From New.proof.controllers Require Export common.
-From New.proof.k8s_io.api.apps Require Export v1_init.
-From New.proof.k8s_io.api.core Require Export v1_init.
-From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
-From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
-From New.proof.kubernetes_model Require Export apimodel_init.
-From New.proof Require Export reflect_init strconv_init strings.
-From New.proof.controllers Require Export common_init.
-Require Export New.generatedproof.controllers.statefulset.
-From New.proof Require Import proof_prelude.
-
-Section init.
-Context `{hG: heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics} {package_sem : statefulset.Assumptions}.
-Collection W := sem + package_sem.
-
-#[global] Instance : IsPkgInit (iProp Σ) statefulset :=
-  define_is_pkg_init True%I.
-#[global] Instance : GetIsPkgInitWf (iProp Σ) statefulset :=
-  build_get_is_pkg_init_wf.
-End init.
+From New.proof.controllers.statefulset Require Export statefulset_init.
 
 (* Pure desired-state definitions used by all three top-level specifications.
-   This file deliberately imports no other file from the statefulset proof
-   directory, so clients can depend on the specifications without importing
-   their proofs. *)
+   Apart from package initialization, this file imports no other statefulset
+   proof, so clients can depend on the specifications without their proofs. *)
 
 Definition pvc_claim_template_names (sts : StatefulSetV.t) : list go_string :=
   (λ claim_template,
@@ -334,6 +309,12 @@ Proof. unfold pod_has_int32_member_key. apply _. Defined.
 Definition missing_pod_keys sts (pods : list PodV.t) : list KKey.t :=
   filter (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts).
 
+Definition living_pods (all_pods : list PodV.t) : list PodV.t :=
+  filter is_pod_alive all_pods.
+
+Definition pod_reservation_identity (pod : PodV.t) : KKey.t * types.UID.t :=
+  (PodV.key pod, pod.(PodV.ObjectMeta').(ObjectMetaV.UID')).
+
 Definition needed_pods sts pods : list PodV.t :=
   filter (λ pod, pod_key_is_desired sts (PodV.key pod)) pods.
 
@@ -350,8 +331,8 @@ Definition condemned_pods sts pods : list PodV.t :=
 
 Definition pod_distance sts pods : nat :=
   length (missing_pod_keys sts pods) +
-  2 * length (filter is_pod_alive (outdated_pods sts pods)) +
-  length (filter is_pod_alive (condemned_pods sts pods)) +
+  2 * length (outdated_pods sts pods) +
+  length (condemned_pods sts pods) +
   length (bad_name_pods sts pods).
 
 Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) :
@@ -362,8 +343,9 @@ Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) :
 Definition pvc_distance sts pvcs : nat :=
   length (missing_pvc_keys sts pvcs).
 
-Definition match_distance sts pods pvcs : nat :=
-  pod_distance sts pods + pvc_distance sts pvcs.
+(* TODO: remove living_pods *)
+Definition match_distance sts all_pods pvcs : nat :=
+  pod_distance sts (living_pods all_pods) + pvc_distance sts pvcs.
 
 Definition pods_match sts pods : Prop :=
   PodV.key <$> pods ≡ₚ desired_pod_keys sts ∧
@@ -464,117 +446,145 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Definition syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs :
-    iProp Σ :=
+(* TODO: rename snapshot_fractions to all_fractions *)
+Record snapshot_fractions := {
+  sts_dq : dfrac;
+  pod_dq : dfrac;
+  children_dq : dfrac;
+  pvc_dq : dfrac;
+}.
+
+Definition mutating_fractions dq : snapshot_fractions :=
+  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
+
+Definition stability_fractions dq : snapshot_fractions :=
+  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
+
+Definition own_occupied_pods γ (pods : list PodV.t) : iProp Σ :=
+  [∗ list] pod ∈ pods,
+    own_occupied_reserved_frag γ (PodV.key pod)
+      pod.(PodV.ObjectMeta').(ObjectMetaV.UID').
+
+(* TODO: inline own_occupied_pod_identity *)
+Definition own_occupied_pod_identity γ
+    (identity : KKey.t * types.UID.t) : iProp Σ :=
+  own_occupied_reserved_frag γ identity.1 identity.2.
+
+Definition own_occupied_pvcs γ
+    (pvcs : list PersistentVolumeClaimV.t) : iProp Σ :=
+  [∗ list] pvc ∈ pvcs,
+    own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID').
+
+Definition own_missing_pod_reservations γ sts pods : iProp Σ :=
+  ([∗ set] key ∈ list_to_set (C:=gset KKey.t) (missing_pod_keys sts pods),
+    own_available_frag γ key ∨
+    ∃ uid, own_deleting_reserved_frag γ key uid)%I.
+
+Definition own_missing_pvc_reservations γ sts pvcs : iProp Σ :=
+  [∗ set] key ∈ list_to_set (C:=gset KKey.t) (missing_pvc_keys sts pvcs),
+    own_available_frag γ key.
+
+Definition own_started_deletion γ
+    (deletion : option (KKey.t * types.UID.t)) : iProp Σ :=
+  match deletion with
+  | None => emp
+  | Some (key, uid) => own_deleting_reserved_frag γ key uid
+  end.
+
+Definition deletion_phase (deletion : option (KKey.t * types.UID.t)) :=
+  match deletion with
+  | None => Quiescent
+  | Some _ => Mutable
+  end.
+
+Definition phase_after_deletion phase
+    (deletion : option (KKey.t * types.UID.t)) :=
+  match deletion with
+  | None => phase
+  | Some _ => Mutable
+  end.
+
+Definition statefulset_owned_resources γ sts fractions pods pvcs terminating_phase : iProp Σ :=
+  "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
+  "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq)
+      (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+  "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
+    own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq)
+      pod.(PodV.ObjectMeta') ∗
+    own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq)
+      (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+  "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(children_dq) (list_to_set (PodV.key <$> pods)) ∗
+  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key sts)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_phase ∗
+  "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
+    own_meta_frag γ (PersistentVolumeClaimV.key pvc)
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') fractions.(pvc_dq)
+      pvc.(PersistentVolumeClaimV.ObjectMeta')).
+
+Definition syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs phase : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods)) ∗
-      "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
-      "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
-      "%Hpending_pods_empty" ∷ ⌜ filter (pending_pod sts) pods = [] ⌝ ∗
+      "Hresources" ∷ statefulset_owned_resources γ sts (mutating_fractions dq) pods pvcs phase ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
+      "Hreserved_pods" ∷ own_missing_pod_reservations γ sts pods ∗
+      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ sts pvcs ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝
+      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t)
-      (err : interface.t), RET #err;
-      ⌜ current_state_matches sts pods' pvcs' ∨
-        pods_progress_observed pods pods' ∧
-          match_distance sts pods' pvcs' < match_distance sts pods pvcs ⌝ ∗
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod ∈ pods',
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs',
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods'))
+  {{{ pods' pvcs' phase' (err : interface.t), RET #err;
+      statefulset_owned_resources γ sts (mutating_fractions dq) pods' pvcs' phase' ∗
+      own_occupied_pods γ pods' ∗
+      own_occupied_pvcs γ pvcs' ∗
+      own_missing_pod_reservations γ sts pods' ∗
+      own_missing_pvc_reservations γ sts pvcs' ∗
+      ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
   }}}.
 
-Definition syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs :
-    iProp Σ :=
+Definition syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods)) ∗
+      "Hresources" ∷ statefulset_owned_resources γ sts (mutating_fractions dq) pods pvcs Quiescent ∗
+      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_available_frag γ key) ∗
+      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ sts pvcs ∗
+      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! statefulset.syncStatefulSet #namespace #name
+  {{{ pods' pvcs' phase' (err : interface.t), RET #err;
+      statefulset_owned_resources γ sts (mutating_fractions dq) pods' pvcs' phase' ∗
+      own_occupied_pods γ pods' ∗
+      own_occupied_pvcs γ pvcs' ∗
+      own_missing_pod_reservations γ sts pods' ∗
+      own_missing_pvc_reservations γ sts pvcs' ∗
+      (* TODO: this filter (pending_pod sts) pods' = [] condition seems to be redundant? *)
+      ⌜ (current_state_matches sts pods' pvcs' ∧ filter (pending_pod sts) pods' = []) ∨
+        (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
+  }}}.
+
+Definition syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hresources" ∷ statefulset_owned_resources γ sts (stability_fractions dq) pods pvcs Quiescent ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (list_to_set (PodV.key <$> pods))
-  }}}.
-
-Definition syncStatefulSet_preservation_spec γ l namespace name sts dq
-    pending_dqs pods pvcs : iProp Σ :=
-  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      "Hown_terminating_pod_frags" ∷
-        ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
-          own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
-          own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_other_pod_frags" ∷
-        ([∗ list] pod ∈ filter (λ pod, not (pending_pod sts pod)) pods,
-          own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-          own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods)) ∗
-      "Hown_reserved_missing_pod_keys" ∷ ([∗ list] key ∈ missing_pod_keys sts pods, own_reserved_frag γ key) ∗
-      "Hown_reserved_missing_pvc_keys" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs, own_reserved_frag γ key) ∗
-      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      "%Hpending_nonempty" ∷ ⌜ filter (pending_pod sts) pods ≠ [] ⌝ ∗
-      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝
-  }}}
-    @! statefulset.syncStatefulSet #namespace #name
-  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t)
-      (err : interface.t), RET #err;
-      ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝ ∗
-      ⌜ filter (pending_pod sts) pods ⊆ filter (pending_pod sts) pods' ⌝ ∗
-      own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq sts.(StatefulSetV.ObjectMeta') ∗
-      own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-      ([∗ list] pod;pending_dq ∈ filter (pending_pod sts) pods;pending_dqs,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pending_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pod ∈ filter (λ pod,
-          PodV.key pod ∉ PodV.key <$> filter (pending_pod sts) pods) pods',
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
-        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      ([∗ list] pvc ∈ pvcs',
-        own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> pods'))
+      statefulset_owned_resources γ sts (stability_fractions dq) pods pvcs Quiescent
   }}}.
 
 End specs.

@@ -58,7 +58,7 @@ Proof. Admitted.
   rewrite /delete_options_with_uid /DeleteOptionsV.deepown /PreconditionsV.deepown /=.
   iFrame.
   iPureIntro.
-  split_and!; naive_solver.
+  split_and!; Timeout 10 naive_solver.
 Qed. *)
 
 Lemma deepown_preserves_deletion_timestamp_activeness pod pure_pod dq:
@@ -193,6 +193,9 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
       "Hown_children_frag" ∷
         own_children_frag γ (owner_ref_key owner_kind meta)
           meta.(ObjectMetaV.UID') children_dq children_keys ∗
+      "Hown_terminating_children_frag" ∷
+        own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') Quiescent ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) = filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
       "%Hslash_free" ∷ ⌜ slash_free owner_kind ∧
@@ -214,7 +217,9 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
           pod_dq pod.(PodV.ObjectMeta')) ∗
       own_children_frag γ (owner_ref_key owner_kind meta)
-        meta.(ObjectMetaV.UID') children_dq children_keys
+        meta.(ObjectMetaV.UID') children_dq children_keys ∗
+      own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') Quiescent
   }}}.
 Proof.
   wp_start as "H". iNamed "H". subst. wp_auto.
@@ -233,7 +238,8 @@ Proof.
   iNamedPrefix "Hdeepown_meta" "Htemp_".
   wp_apply (wp_State__ByIndex_podController
     _ _ _ _ pod_dqs _ _ _ children_dq
-    with "[$Hown_pod_meta_frags $Hown_children_frag]").
+    with "[$Hown_pod_meta_frags $Hown_children_frag
+      $Hown_terminating_children_frag]").
   { iFrame "#". iFrame "%". iPureIntro. rewrite Htemp_Hdeepown_namespace. rewrite Htemp_Hdeepown_name.
     rewrite Htemp_Hdeepown_uid. done. }
   iCombineNamed "Htemp_*" as "H".
@@ -310,12 +316,12 @@ Proof.
 Qed.
 
 Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
-    pods pod_dqs children_dq children_keys :
+    living_pods pod_dqs children_dq children_keys phase :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+      "Hown_pod_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -325,8 +331,11 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
       "Hown_children_frag" ∷
         own_children_frag γ (owner_ref_key owner_kind meta)
           meta.(ObjectMetaV.UID') children_dq children_keys ∗
-      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) =
+      "Hown_terminating_children_frag" ∷
+        own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') phase ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> living_pods) =
         filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
       "%Hslash_free" ∷ ⌜ slash_free owner_kind ∧
         slash_free meta.(ObjectMetaV.Namespace') ∧
@@ -338,7 +347,10 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
         PodV.deepown_l ptr pod dq') ∗
-      ⌜ pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> pods ⌝ ∗
+      ⌜ pod_storage_view <$> filter is_pod_alive pods' ≡ₚ
+        pod_storage_view <$> living_pods ⌝ ∗
+      ⌜ phase = Quiescent →
+        pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> living_pods ⌝ ∗
       ⌜ Forall PodV.valid pods' ⌝ ∗
       ⌜ Forall (λ pod,
         meta_parent_ref pod.(PodV.ObjectMeta') =
@@ -346,7 +358,9 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
             meta.(ObjectMetaV.UID'))) pods' ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
-      ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
+      ([∗ list] pod ∈ terminating_pods pods',
+        own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -354,7 +368,9 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       own_children_frag γ (owner_ref_key owner_kind meta)
-        meta.(ObjectMetaV.UID') children_dq children_keys
+        meta.(ObjectMetaV.UID') children_dq children_keys ∗
+      own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') phase
   }}}.
 Proof.
   wp_start as "H". iNamed "H". subst. wp_auto.
@@ -376,10 +392,10 @@ Proof.
   iEval (rewrite big_sepL2_sep) in "Hown_pod_frags".
   iDestruct "Hown_pod_frags" as
     "[Hown_pod_meta_frags Hown_pod_spec_frags]".
-  wp_apply (wp_State__ByIndex_podController_with_spec
+  wp_apply (wp_State__ByIndex_podController_combined_with_spec
     _ _ _ _ pod_dqs _ _ _ children_dq
     with "[$Hown_pod_meta_frags $Hown_pod_spec_frags
-      $Hown_children_frag]").
+      $Hown_children_frag $Hown_terminating_children_frag]").
   { iFrame "#". iFrame "%". iPureIntro.
     rewrite Htemp_Hdeepown_namespace Htemp_Hdeepown_name
       Htemp_Hdeepown_uid. done. }
@@ -492,12 +508,12 @@ Proof.
 Qed.
 
 Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
-    pods pod_dq children_dq children_keys :
+    living_pods pod_dq children_dq children_keys phase :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
-      "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
+      "Hown_pod_frags" ∷ ([∗ list] pod ∈ living_pods,
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -507,8 +523,11 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
       "Hown_children_frag" ∷
         own_children_frag γ (owner_ref_key owner_kind meta)
           meta.(ObjectMetaV.UID') children_dq children_keys ∗
-      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
-      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> pods) =
+      "Hown_terminating_children_frag" ∷
+        own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') phase ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> living_pods) =
         filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
       "%Hslash_free" ∷ ⌜ slash_free owner_kind ∧
         slash_free meta.(ObjectMetaV.Namespace') ∧
@@ -520,7 +539,10 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
         PodV.deepown_l ptr pod dq') ∗
-      ⌜ pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> pods ⌝ ∗
+      ⌜ pod_storage_view <$> filter is_pod_alive pods' ≡ₚ
+        pod_storage_view <$> living_pods ⌝ ∗
+      ⌜ phase = Quiescent →
+        pod_storage_view <$> pods' ≡ₚ pod_storage_view <$> living_pods ⌝ ∗
       ⌜ Forall PodV.valid pods' ⌝ ∗
       ⌜ Forall (λ pod,
         meta_parent_ref pod.(PodV.ObjectMeta') =
@@ -528,7 +550,9 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
             meta.(ObjectMetaV.UID'))) pods' ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
-      ([∗ list] pod ∈ pods',
+      ([∗ list] pod ∈ terminating_pods pods',
+        own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      ([∗ list] pod ∈ filter is_pod_alive pods',
         own_meta_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           pod.(PodV.ObjectMeta') ∗
@@ -536,16 +560,19 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       own_children_frag γ (owner_ref_key owner_kind meta)
-        meta.(ObjectMetaV.UID') children_dq children_keys
+        meta.(ObjectMetaV.UID') children_dq children_keys ∗
+      own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') phase
   }}}.
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
     "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
       Hown_pod_frags & Hown_children_frag &
+      Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
-  set pod_dqs := replicate (length pods) pod_dq.
-  iAssert (([∗ list] pod;dq ∈ pods;pod_dqs,
+  set pod_dqs := replicate (length living_pods) pod_dq.
+  iAssert (([∗ list] pod;dq ∈ living_pods;pod_dqs,
       own_meta_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
         pod.(PodV.ObjectMeta') ∗
@@ -556,17 +583,19 @@ Proof.
   { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
     iExact "Hown_pod_frags". }
   iApply (wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
-    pods pod_dqs children_dq children_keys with "[-HΦ]").
+    living_pods pod_dqs children_dq children_keys phase with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }
   iNext. iIntros (sl ptrs pods' dq') "H".
   iDestruct "H" as
-    "(Hsl & Hpods & %Hstorage_perm & %Hpods_valid & %Hparent_refs &
-      %Hpods_nodup & Hdeepown_l_meta & Hown_pod_frags &
-      Hown_children_frag)".
+    "(Hsl & Hpods & %Hstorage_perm & %Hquiescent_storage_perm &
+      %Hpods_valid & %Hparent_refs & %Hpods_nodup & Hdeepown_l_meta &
+      #Hown_deletion_observed_frags &
+      Hown_pod_frags & Hown_children_frag &
+      Hown_terminating_children_frag)".
   subst pod_dqs.
   iEval (rewrite big_sepL2_replicate_r; [done|])
     in "Hown_pod_frags".
-  iAssert (([∗ list] pod ∈ pods',
+  iAssert (([∗ list] pod ∈ filter is_pod_alive pods',
       own_meta_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
         pod.(PodV.ObjectMeta') ∗
@@ -574,15 +603,20 @@ Proof.
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq
         (ObjectSpecV.PodSpec pod.(PodV.Spec'))))%I
     with "[Hown_pod_frags]" as "Hown_pod_frags".
-  { rewrite (own_pod_frags_as_storage_views γ pod_dq pods').
+  { rewrite (own_pod_frags_as_storage_views γ pod_dq
+      (filter is_pod_alive pods')).
     rewrite (big_sepL_permutation
       (own_pod_storage_view_frag γ pod_dq)
-      (pod_storage_view <$> pods') (pod_storage_view <$> pods)
+      (pod_storage_view <$> filter is_pod_alive pods')
+      (pod_storage_view <$> living_pods)
       Hstorage_perm).
-    iEval (rewrite (own_pod_frags_as_storage_views γ pod_dq pods))
+    iEval (rewrite (own_pod_frags_as_storage_views γ pod_dq living_pods))
       in "Hown_pod_frags".
     iExact "Hown_pod_frags". }
-  iApply "HΦ". iFrame. iFrame "%".
+  iApply "HΦ".
+  iFrame "Hsl Hpods Hdeepown_l_meta Hown_deletion_observed_frags
+    Hown_pod_frags Hown_children_frag Hown_terminating_children_frag".
+  iFrame "%".
 Qed.
 
 Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
@@ -598,6 +632,9 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
       "Hown_children_frag" ∷
         own_children_frag γ (owner_ref_key owner_kind meta)
           meta.(ObjectMetaV.UID') dq2 children_keys ∗
+      "Hown_terminating_children_frag" ∷
+        own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') Quiescent ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hdom_eq" ∷
         ⌜ list_to_set (PodV.key <$> pods) =
@@ -625,13 +662,16 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2
           pod.(PodV.ObjectMeta')) ∗
       own_children_frag γ (owner_ref_key owner_kind meta)
-        meta.(ObjectMetaV.UID') dq2 children_keys
+        meta.(ObjectMetaV.UID') dq2 children_keys ∗
+      own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') Quiescent
   }}}.
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
     "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
       Hown_pod_meta_frags & Hown_children_frag &
+      Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
   set pod_dqs := replicate (length pods) dq2.
   iAssert (([∗ list] pod;pod_dq ∈ pods;pod_dqs,
@@ -650,7 +690,8 @@ Proof.
   iIntros (sl ptrs pods' dq') "H".
   iDestruct "H" as
     "(Hsl & Hpods & %Hmeta_perm & %Hpods_valid & %Hpods_nodup &
-      Hdeepown_l_meta & Hown_pod_meta_frags & Hown_children_frag)".
+      Hdeepown_l_meta & Hown_pod_meta_frags & Hown_children_frag &
+      Hown_terminating_children_frag)".
   subst pod_dqs.
   iEval (rewrite big_sepL2_replicate_r; [done|])
     in "Hown_pod_meta_frags".

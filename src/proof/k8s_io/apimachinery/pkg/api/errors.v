@@ -17,6 +17,8 @@ Axiom not_found_error_dec: ∀ err, Decision (not_found_error err).
 Global Existing Instance not_found_error_dec.
 Axiom not_found_error_not_nil:
   ∀ err, not_found_error err → err ≠ interface.nil.
+Axiom not_found_error_not_conflict:
+  ∀ err, not_found_error err → ¬ conflict_error err.
 
 Axiom already_exists_error: interface.t → Prop.
 Axiom already_exists_error_dec: ∀ err, Decision (already_exists_error err).
@@ -89,6 +91,19 @@ Lemma wp_NewNotFound (resource : schema.GroupResource.t) (name : go_string) :
     @! api_errors.NewNotFound #resource #name
   {{{ (err_l : loc), RET #err_l;
       ⌜ not_found_error
+          (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) ⌝
+  }}}.
+Proof.
+Admitted.
+
+(* Trusted boundary for the untranslated Kubernetes StatusError
+   representation and constructor. *)
+Lemma wp_NewAlreadyExistsError
+    (resource : schema.GroupResource.t) (name : go_string) :
+  {{{ is_pkg_init api_errors_pkg.errors }}}
+    @! api_errors.NewAlreadyExists #resource #name
+  {{{ (err_l : loc), RET #err_l;
+      ⌜ already_exists_error
           (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) ⌝
   }}}.
 Proof.

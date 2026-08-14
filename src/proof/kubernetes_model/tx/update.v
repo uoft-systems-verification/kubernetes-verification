@@ -16,8 +16,7 @@ Lemma wp_State__updateTx_au γ l kind namespace i kobj :
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
-    "%Huid_nonempty" ∷
-      ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+    "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
     "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
     "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -242,8 +241,7 @@ Lemma wp_State__updateTx γ l kind namespace i kobj key uid kmeta kspec :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
-      "%Huid_nonempty" ∷
-        ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+      "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
       "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
       "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
@@ -297,21 +295,13 @@ Lemma wp_State__PodUpdateTx γ l namespace pod_l pod key uid kmeta kspec :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ PodV.valid_named_create namespace pod ⌝ ∗
-      "%Huid_nonempty" ∷
-        ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
-      "%Hns_matches" ∷
-        ⌜ namespace = pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Huid_nonempty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+      "%Hns_matches" ∷ ⌜ namespace = pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
-      "%Huid_eq" ∷
-        ⌜ uid = pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_meta_update" ∷
-        ⌜ ObjectMetaV.valid_simple_update
-            kmeta pod.(PodV.ObjectMeta') ⌝ ∗
-      "%Hvalid_spec_update" ∷
-        ⌜ ObjectSpecV.valid_update kspec
-            (ObjectSpecV.PodSpec pod.(PodV.Spec')) ⌝ ∗
-      "%Hno_deletion_timestamp" ∷
-        ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta pod.(PodV.ObjectMeta') ⌝ ∗
+      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (ObjectSpecV.PodSpec pod.(PodV.Spec')) ⌝ ∗
+      "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
@@ -320,21 +310,14 @@ Lemma wp_State__PodUpdateTx γ l namespace pod_l pod key uid kmeta kspec :
       "PodUpdateTx" #namespace #pod_l
   {{{ pod_l' pod', RET (#pod_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
-      "%Hmeta_updated" ∷
-        ⌜ ObjectMetaV.updated
-            pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
       "%Hspec_updated" ∷
-        ⌜ ObjectSpecV.updated
-            (ObjectSpecV.PodSpec pod.(PodV.Spec'))
-            (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
+        ⌜ ObjectSpecV.updated (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
-      "%Huid_eq'" ∷
-        ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
+      "%Huid_eq'" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1
-        pod'.(PodV.ObjectMeta') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1
-        (ObjectSpecV.PodSpec pod'.(PodV.Spec'))
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec'))
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".

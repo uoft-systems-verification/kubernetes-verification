@@ -142,6 +142,8 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+    iPoseProof (kview.own_meta_living Hlookup_abs with
+      "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
     exfalso.
     rewrite Huid_eq in Huid_obj. symmetry in Huid_obj. done.
   }
@@ -195,6 +197,8 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+    iPoseProof (kview.own_meta_living Hlookup_abs with
+      "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
     iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
     assert (KObjectV.status old_kobj = kstatus) as Hstatus_eq.
     { eapply Hstatus_found; done. }
@@ -337,6 +341,13 @@ Proof.
     "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_status_frag]")
     as "(Hinv_Hown_abs & Hown_meta_frag & Hown_status_frag)".
   { exact Hvalid_kuid_new. }
+  { assert (Hdeletion_timestamp :
+        (KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp') =
+        (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp')).
+    { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+      eapply valid_simple_update_updated_set_resource_version_deletion_timestamp;
+        done. }
+    rewrite -Hdeletion_timestamp. exact Hdecide''. }
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     eapply valid_simple_update_updated_set_resource_version_no_speculative_parent_reference;
@@ -364,6 +375,38 @@ Proof.
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     symmetry. eapply valid_simple_update_updated_set_resource_version_uid; done. }
+  iMod (terminating_children.update_same_parent_vs
+    γ.(γ_terminating_children) abs_state key old_kobj new_kobj with
+    "Hinv_Hown_terminating_children") as
+    "Hinv_Hown_terminating_children".
+  { exact Hlookup_abs. }
+  { unfold terminating_children.terminating_obj_parent_ref, obj_parent_ref.
+    assert (Hdeletion_timestamp :
+        (KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp') =
+        (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp')).
+    { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+      eapply valid_simple_update_updated_set_resource_version_deletion_timestamp;
+        done. }
+    rewrite Hdeletion_timestamp.
+    destruct ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp'));
+      [|done].
+    unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+    eapply valid_simple_update_updated_set_resource_version_parent_ref; done. }
+  iMod (deletion_observation.update_vs key old_kobj new_kobj with
+    "Hinv_Hown_deletion_observations") as
+    "Hinv_Hown_deletion_observations".
+  { exact Hlookup_abs. }
+  { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+    symmetry.
+    eapply valid_simple_update_updated_set_resource_version_uid; done. }
+  { intros Hold_terminating.
+    assert (Hdeletion_timestamp :
+        (KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp') =
+        (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp')).
+    { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+      eapply valid_simple_update_updated_set_resource_version_deletion_timestamp;
+        done. }
+    rewrite -Hdeletion_timestamp. exact Hold_terminating. }
   assert (KObjectV.same_kind kobj new_kobj) as Hsame_kind_new.
   { unfold new_kobj. destruct kobj, updated_kobj; done. }
   assert (KObjectV.valid new_kobj) as Hvalid_new_kobj.
@@ -391,7 +434,7 @@ Proof.
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
   { iNamed "H".
-    iFrame "#". iFrame. iPureIntro. split_and!.
+    iFrame "#". iFrame. iNext. iFrame. iPureIntro. split_and!.
     all: try done.
   }
   iExact "HΦ".

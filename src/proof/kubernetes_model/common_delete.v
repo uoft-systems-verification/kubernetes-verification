@@ -472,12 +472,10 @@ Lemma wp_checkGracefulDelete i l o options_l options :
       RET (#graceful, #pendingGraceful, #interface.nil);
       KObjectV.deepown_l l o 1 ∗
       DeleteOptionsV.deepown_l options_l options' 1 ∗
-      ⌜ pendingGraceful = true →
-        (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
+      ⌜ pendingGraceful = true → (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
       ⌜ graceful = delete_graceful o options ⌝ ∗
       ⌜ pendingGraceful = delete_pending_graceful o ⌝ ∗
-      ⌜ options' = (options <| DeleteOptionsV.GracePeriodSeconds' :=
-        delete_new_grace_period_seconds o options |>) ⌝
+      ⌜ options' = (options <| DeleteOptionsV.GracePeriodSeconds' := delete_new_grace_period_seconds o options |>) ⌝
   }}}.
 Proof.
 Admitted.

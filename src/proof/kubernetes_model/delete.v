@@ -8,15 +8,16 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 Lemma delete_key_kobj_vs γ state used_uid key uid meta :
-  ¬ reserved_key_pred key →
   own_kview_auth γ state used_uid -∗
-  own_meta_frag γ key uid 1 meta ==∗
-    own_kview_auth γ (delete key state) used_uid.
+  own_meta_frag γ key uid 1 meta -∗
+  own_unreserved_key_frag γ key ==∗
+    own_kview_auth γ (delete key state) used_uid ∗
+    own_unreserved_key_frag γ key.
 Proof.
-  iIntros (Hkey_not_reserved) "Hauth Hmeta".
-  iMod (kview.delete_kobj_vs with "Hauth Hmeta") as "Hauth".
-  { exact Hkey_not_reserved. }
-  iModIntro. iFrame.
+  iIntros "Hauth Hmeta #Hunreserved".
+  iMod (kview.delete_kobj_vs with "Hauth Hmeta Hunreserved") as
+    "(Hauth & #Hunreserved_ret)".
+  iModIntro. iFrame "Hauth Hunreserved_ret".
 Qed.
 
 (* TODO: specifies in which case the object is deleted from the state map *)
@@ -26,56 +27,31 @@ Lemma wp_State__delete_au γ l key options_c options:
     is_kubernetes γ l ∗
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
-    ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children terminating_children,
+    ( |={⊤,∅}=> ∃ uid kmeta parent_key parent_uid children phase,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "%Hkey_not_reserved" ∷ ⌜ ¬ reserved_key_pred key ⌝ ∗
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷
-        own_terminating_children_frag γ parent_key parent_uid 1 terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase ∗
       "Hclose" ∷ (
         if decide (delete_options_preconditions_resource_version_none options) then
-          ∀ kmeta',
-            ( "Hown_children_frag" ∷
-                own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-              ( (* the object is marked as deleting but still exists *)
-                "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-                "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
-                "Hown_terminating_children_frag" ∷
-                  own_terminating_children_frag γ parent_key parent_uid 1
-                    (terminating_children ∪ {[key]})
-                ∨
-                (* the object is deleted *)
-                "Hown_terminating_children_frag" ∷
-                  own_terminating_children_frag γ parent_key parent_uid 1
-                    terminating_children
-              )
-            )
-              ={∅,⊤}=∗ ▷ Φ #interface.nil
+          ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+            "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+            "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+          )
+            ={∅,⊤}=∗ ▷ Φ #interface.nil
         else
-          ∀ err kmeta',
+          ∀ err,
             ( ( ⌜ err = interface.nil ⌝ ∗
-                ( "Hown_children_frag" ∷
-                    own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-                  ( (* the object is marked as deleting but still exists *)
-                    "Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-                    "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
-                    "Hown_terminating_children_frag" ∷
-                      own_terminating_children_frag γ parent_key parent_uid 1
-                        (terminating_children ∪ {[key]})
-                    ∨
-                    (* the object is deleted *)
-                    "Hown_terminating_children_frag" ∷
-                      own_terminating_children_frag γ parent_key parent_uid 1
-                        terminating_children
-                  )
+                ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+                  "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+                  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
                 )) ∨
               ( ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
                 own_children_frag γ parent_key parent_uid 1 children ∗
-                own_terminating_children_frag γ parent_key parent_uid 1
-                  terminating_children)
+                own_terminating_children_frag γ parent_key parent_uid phase)
             )
               ={∅,⊤}=∗ ▷ Φ #err
       )%I
@@ -105,7 +81,7 @@ Proof.
     assert (abs_state !! key = None) as Hlookup_abs.
     { apply not_elem_of_dom. rewrite <- Hdom_eq. apply not_elem_of_dom. done. }
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
       as "(%obj & %Hlookup_abs' & %Huid_obj & %Hmeta_eq & %Huid_in)".
     assert (abs_state !! key ≠ None) as Hlookup_abs''.
@@ -140,13 +116,13 @@ Proof.
     2: { exfalso. apply Herr0. done. }
     wp_auto.
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     destruct (decide (delete_options_preconditions_resource_version_none options)) as [Hrv_none|Hrv_some].
     { exfalso. apply Hdelete_preconditions_not_match.
       eapply delete_preconditions_match_of_uid_rv_none; done. }
-    iMod ("Hclose" $! (interface.ok err0) (KObjectV.objectmeta kobj)
+    iMod ("Hclose" $! (interface.ok err0)
       with "[Hown_meta_frag Hown_children_frag
         Hown_terminating_children_frag]") as "HΦ".
     { iRight. iSplit; first done. iFrame. }
@@ -174,9 +150,9 @@ Proof.
     eqn:Hvalid_kmeta_finalizers.
   2: {
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_full".
-    destruct Hmeta_valid_full as (_ & _ & _ & Hvalid_kmeta).
+    destruct Hmeta_valid_full as (_ & _ & _ & Hvalid_kmeta & _).
     pose proof (ObjectMetaV.valid_finalizers_of_valid _ Hvalid_kmeta) as Hvalid_finalizers.
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%Hmeta_exists".
     1: done.
@@ -190,7 +166,7 @@ Proof.
   { assert (ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj) ≠ None) as Hdt_not_none.
     { apply Hif_pendinggraceful. done. }
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (cview.own_auth_frag_lookup key kobj Hlookup_abs Hkey_in with
       "Hinv_Hown_children Hown_children_frag") as "%Hliving_parent".
     apply cview.living_obj_parent_ref_eq_some in Hliving_parent as
@@ -280,12 +256,12 @@ Proof.
   destruct should_delete; wp_auto.
   { wp_apply (wp_map_delete _ _ key apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (kview.own_auth_valid2 with "Hinv_Hown_abs")
       as "%Hauth_valid_delete". 1: done.
     destruct Hauth_valid_delete as (_ & _ & _ & _ & Hunique_id).
     iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_delete".
-    destruct Hmeta_valid_delete as (_ & _ & -> & _).
+    destruct Hmeta_valid_delete as (_ & _ & -> & _ & _).
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     iPoseProof (cview.own_auth_frag_lookup key kobj Hlookup_abs Hkey_in with
@@ -293,31 +269,41 @@ Proof.
     pose proof Hliving_parent as Hliving_parent_info.
     apply cview.living_obj_parent_ref_eq_some in Hliving_parent_info as
       [Hdeletion_timestamp_none _].
+    iMod (terminating_children.set_mutable_vs
+      γ.(γ_terminating_children) abs_state
+      parent_key parent_uid phase with
+      "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
+      "(Hinv_Hown_terminating_children & Hown_terminating_children_frag)".
     iMod (delete_key_kobj_vs with
-      "Hinv_Hown_abs Hown_meta_frag") as "Hinv_Hown_abs".
-    { exact Hkey_not_reserved. }
+      "Hinv_Hown_abs Hown_meta_frag Hown_unreserved_key_frag") as
+      "(Hinv_Hown_abs & #Hown_unreserved_key_frag_ret)".
+    iMod (deletion_observation.delete_vs key with
+      "Hinv_Hown_deletion_observations") as
+      "Hinv_Hown_deletion_observations".
+    iMod (deletion_observation.observe_vs key
+      kmeta.(ObjectMetaV.UID') with
+      "Hinv_Hown_deletion_observations") as
+      "(Hinv_Hown_deletion_observations & Hdeletion_observed_frag)".
+    { exact Huid_in. }
+    { intros obj Hlookup _.
+      apply lookup_delete_Some in Hlookup as [Hneq _].
+      exfalso. exact (Hneq eq_refl). }
     iMod (cview.delete_child_vs2 key with "[$Hinv_Hown_children] [$Hown_children_frag]")
       as "(Hinv_Hown_children & Hown_children_frag)". 1: done.
-    iMod (terminating_cview.delete_orphan_vs key kobj with
+    iMod (terminating_children.delete_vs
+      γ.(γ_terminating_children) abs_state key with
       "Hinv_Hown_terminating_children") as
       "Hinv_Hown_terminating_children".
-    { exact Hlookup_abs. }
-    { unfold terminating_cview.terminating_obj_parent_ref.
-      rewrite Hdeletion_timestamp_none. done. }
     iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
-      with "[Hclose Hown_children_frag
+      with "[Hclose Hown_children_frag Hdeletion_observed_frag
         Hown_terminating_children_frag]"
       as "HΦ_fupd".
     { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
-      - iApply ("Hclose" $! (KObjectV.objectmeta kobj)).
-        iSplitL "Hown_children_frag".
-        + iFrame.
-        + iRight. iFrame.
-      - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta kobj)).
+      - iApply "Hclose".
+        iFrame.
+      - iApply ("Hclose" $! interface.nil).
         iLeft. iSplit; first done.
-        iSplitL "Hown_children_frag".
-        + iFrame.
-        + iRight. iFrame.
+        iFrame.
     }
     iMod "HΦ_fupd" as "HΦ".
     iModIntro.
@@ -488,7 +474,7 @@ Proof.
       storage_object_normalize kobj) as Hstorage_eq.
     { apply Hv. done. }
     iApply fupd_wp.
-    iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+    iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (cview.own_auth_frag_lookup key kobj Hlookup_abs Hkey_in with
       "Hinv_Hown_children Hown_children_frag") as "%Hliving_parent".
     apply cview.living_obj_parent_ref_eq_some in Hliving_parent as
@@ -520,18 +506,26 @@ Proof.
   { iFrame. iPureIntro. destruct kobj. all: done. }
   set new_kobj := KObjectV.update_objectmeta kobj new_kmeta1.
   iApply fupd_wp.
-  iMod "Hau" as (uid kmeta parent_key parent_uid children) "H". iNamed "H".
+  iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid2 key kobj with
     "Hinv_Hown_abs") as "%Hauth_valid_update". 1: done.
   destruct Hauth_valid_update as
     (-> & Hvalid_kobj & Huid_in &
       Hno_speculative_parent_reference & _).
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_update".
-  destruct Hmeta_valid_update as (_ & _ & -> & _).
+  destruct Hmeta_valid_update as (_ & _ & -> & _ & _).
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%Hmeta_exists_update". 1: done.
   destruct Hmeta_exists_update as (Huid_obj & Hmeta_eq & _).
-  iMod (kview.update_meta_kobj_vs kobj new_kobj with "[$Hinv_Hown_abs] [$Hown_meta_frag]")
-    as "(Hinv_Hown_abs & Hown_meta_frag)".
+  assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') ≠ None)
+    as Hnew_deletion_timestamp.
+  { unfold new_kobj, new_kmeta1, new_kmeta.
+    rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
+    destruct kobj; done. }
+  iMod (kview.mark_terminating_kobj_vs
+    (k := KObjectV.key kobj) (uid := kmeta.(ObjectMetaV.UID'))
+    (meta := kmeta) (old_obj := kobj) (new_obj := new_kobj)
+    with "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_unreserved_key_frag]") as
+    "(Hinv_Hown_abs & #Hown_unreserved_key_frag_ret)".
   { split_and!.
     - unfold new_kobj, new_kmeta1, new_kmeta.
       rewrite /KObjectV.key KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
@@ -554,6 +548,7 @@ Proof.
       + destruct kobj; done.
       + destruct kobj; done.
   }
+  { exact Hnew_deletion_timestamp. }
   { unfold new_kobj, new_kmeta1, new_kmeta.
     rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
     unfold no_speculative_parent_reference in *.
@@ -563,8 +558,21 @@ Proof.
     all: eapply Hno_speculative_parent_reference; exact Hparent.
   }
   { done. }
-  { destruct kobj; done. }
-  { destruct kobj; done. }
+  iMod (deletion_observation.update_vs (KObjectV.key kobj) kobj new_kobj
+    with "Hinv_Hown_deletion_observations") as
+    "Hinv_Hown_deletion_observations".
+  { exact Hlookup_abs. }
+  { unfold new_kobj, new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
+    destruct kobj; simpl in *; done. }
+  { intros _. exact Hnew_deletion_timestamp. }
+  iMod (deletion_observation.observe_vs (KObjectV.key kobj)
+    kmeta.(ObjectMetaV.UID') with
+    "Hinv_Hown_deletion_observations") as
+    "(Hinv_Hown_deletion_observations & Hdeletion_observed_frag)".
+  { rewrite -Huid_obj. exact Huid_in. }
+  { intros obj Hlookup Huid.
+    rewrite lookup_insert_eq in Hlookup. injection Hlookup as <-.
+    exact Hnew_deletion_timestamp. }
   iPoseProof (cview.own_auth_frag_lookup (KObjectV.key kobj) kobj
     Hlookup_abs Hkey_in with "Hinv_Hown_children Hown_children_frag")
     as "%Hold_living_parent".
@@ -572,13 +580,13 @@ Proof.
   apply cview.living_obj_parent_ref_eq_some in Hold_living_parent_info as
     [Hold_deletion_timestamp_none Hold_parent].
   assert (Hold_terminating_parent_none :
-      terminating_cview.terminating_obj_parent_ref kobj = None).
-  { unfold terminating_cview.terminating_obj_parent_ref.
+      terminating_children.terminating_obj_parent_ref kobj = None).
+  { unfold terminating_children.terminating_obj_parent_ref.
     rewrite Hold_deletion_timestamp_none. done. }
   assert (Hnew_terminating_parent :
-      terminating_cview.terminating_obj_parent_ref new_kobj =
+      terminating_children.terminating_obj_parent_ref new_kobj =
         Some (parent_key, parent_uid)).
-  { unfold terminating_cview.terminating_obj_parent_ref, new_kobj,
+  { unfold terminating_children.terminating_obj_parent_ref, new_kobj,
       new_kmeta1, new_kmeta.
     rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq. simpl.
     unfold obj_parent_ref, meta_parent_ref in Hold_parent |- *.
@@ -597,30 +605,29 @@ Proof.
     rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
     destruct kobj; done.
   }
-  iMod (terminating_cview.adopt_orphan_vs (KObjectV.key kobj) kobj new_kobj
-    with "[$Hinv_Hown_terminating_children]
-      [$Hown_terminating_children_frag]") as
+  iMod (terminating_children.set_mutable_vs
+    γ.(γ_terminating_children) abs_state
+    parent_key parent_uid phase with
+    "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
+    "(Hinv_Hown_terminating_children & Hown_terminating_children_frag)".
+  iMod (terminating_children.update_introduce_mutable_vs
+    γ.(γ_terminating_children) abs_state (KObjectV.key kobj)
+    kobj new_kobj parent_key parent_uid with
+    "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
     "(Hinv_Hown_terminating_children & Hown_terminating_children_frag)".
   { exact Hlookup_abs. }
   { exact Hold_terminating_parent_none. }
   { exact Hnew_terminating_parent. }
-  { unfold new_kobj, new_kmeta1, new_kmeta.
-    rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
-    destruct kobj; done. }
   iAssert (|={∅,⊤}=> ▷ Φ #interface.nil)%I
-    with "[Hclose Hown_meta_frag Hown_children_frag
+    with "[Hclose Hown_children_frag Hdeletion_observed_frag
       Hown_terminating_children_frag]"
     as "HΦ_fupd".
   { destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|_].
-    - iApply ("Hclose" $! (KObjectV.objectmeta new_kobj)).
-      iSplitL "Hown_children_frag".
-      + iFrame.
-      + iLeft. iFrame. iPureIntro. destruct kobj; done.
-    - iApply ("Hclose" $! interface.nil (KObjectV.objectmeta new_kobj)).
+    - iApply "Hclose".
+      iFrame.
+    - iApply ("Hclose" $! interface.nil).
       iLeft. iSplit; first done.
-      iSplitL "Hown_children_frag".
-      + iFrame.
-      + iLeft. iFrame. iPureIntro. destruct kobj; done.
+      iFrame.
   }
   iMod "HΦ_fupd" as "HΦ".
   iModIntro.
@@ -641,41 +648,29 @@ Proof.
 Qed.
 
 Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_uid
-    children terminating_children :
+    children phase :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
       "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
-      "%Hdelete_preconditions_rv_none" ∷
-        ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
+      "%Hdelete_preconditions_rv_none" ∷ ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match options kmeta ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "%Hkey_not_reserved" ∷ ⌜ ¬ reserved_key_pred key ⌝ ∗
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷
-        own_terminating_children_frag γ parent_key parent_uid 1 terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}
     l @! (go.PointerType apimodel.State) @! "delete" #key #options_c
-  {{{ kmeta', RET #interface.nil;
-      ( "Hown_children_frag" ∷
-          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-        ( "%Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
-          "Hown_terminating_children_frag" ∷
-            own_terminating_children_frag γ parent_key parent_uid 1
-              (terminating_children ∪ {[key]})
-          ∨
-          "Hown_terminating_children_frag" ∷
-            own_terminating_children_frag γ parent_key parent_uid 1
-              terminating_children
-        )
-      )
+  {{{ RET #interface.nil;
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid".
-  destruct Hmeta_valid as (_ & _ & Huid_eq & _).
+  destruct Hmeta_valid as (_ & _ & Huid_eq & _ & _).
   pose proof (delete_preconditions_match_uid_of_match options uid kmeta Huid_eq
     Hdelete_preconditions) as Hdelete_preconditions_uid.
   iApply wp_State__delete_au.
@@ -685,14 +680,14 @@ Proof.
   iIntros "Hmask".
   destruct (decide (delete_options_preconditions_resource_version_none options)) as [_|Hrv_some].
   2: { exfalso. apply Hrv_some. done. }
-  iIntros (kmeta') "Hpost".
+  iIntros "Hpost".
   iMod "Hmask" as "_".
   iModIntro. iNext.
-  iApply ("HΦ" $! kmeta' with "Hpost").
+  iApply ("HΦ" with "Hpost").
 Qed.
 
 Lemma wp_State__PodDelete γ l key namespace name options_c options uid kmeta
-    parent_key parent_uid children terminating_children :
+    parent_key parent_uid children phase :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
@@ -704,40 +699,28 @@ Lemma wp_State__PodDelete γ l key namespace name options_c options uid kmeta
       |} ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match options kmeta ⌝ ∗
-      "%Hdelete_preconditions_rv_none" ∷
-        ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
+      "%Hdelete_preconditions_rv_none" ∷ ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "%Hkey_not_reserved" ∷ ⌜ ¬ reserved_key_pred key ⌝ ∗
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷
-        own_terminating_children_frag γ parent_key parent_uid 1 terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}
     l @! (go.PointerType apimodel.State) @! "PodDelete" #namespace #name #options_c
-  {{{ kmeta', RET #interface.nil;
-      ( "Hown_children_frag" ∷
-          own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-        ( "%Hdeletion_timestamp" ∷ ⌜ kmeta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta' ∗
-          "Hown_terminating_children_frag" ∷
-            own_terminating_children_frag γ parent_key parent_uid 1
-              (terminating_children ∪ {[key]})
-          ∨
-          "Hown_terminating_children_frag" ∷
-            own_terminating_children_frag γ parent_key parent_uid 1
-              terminating_children
-        )
-      )
+  {{{ RET #interface.nil;
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call. rewrite /apimodel.State__PodDeleteⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__delete γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
-    options_c options uid kmeta parent_key parent_uid children terminating_children
+    options_c options uid kmeta parent_key parent_uid children phase
     with "[$Hinit $Hisk $Hdeepown_options $Hown_meta_frag
-      $Hown_children_frag $Hown_terminating_children_frag]").
+      $Hown_unreserved_key_frag $Hown_children_frag $Hown_terminating_children_frag]").
   { iFrame "%". }
-  iIntros (kmeta') "Hpost".
+  iIntros "Hpost".
   wp_auto.
   iApply ("HΦ" with "Hpost").
 Qed.

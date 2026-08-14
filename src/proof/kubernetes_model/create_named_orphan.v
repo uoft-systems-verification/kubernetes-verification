@@ -21,29 +21,25 @@ Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj :
     |} ⌝ ∗
     "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-    "Hown_reserved_frag" ∷ own_reserved_frag γ key Available ∗
+    "Hown_reserved_frag" ∷ own_available_frag γ key ∗
     |={⊤,∅}=>
       "Hclose" ∷ (∀ i' kobj' uid,
         ⌜ KObjectV.valid kobj' ⌝ ∗
         ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-        ⌜ ObjectMetaV.named_created namespace
-            (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-        ⌜ ObjectSpecV.created
-            (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-        ⌜ ObjectStatusV.created
-            (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        ⌜ ObjectMetaV.named_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+        ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+        ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
         ⌜ key = KObjectV.key kobj' ⌝ ∗
         ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
         KObjectV.deepown_i i' kobj' 1 ∗
         own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
         own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
         own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-        own_reserved_frag γ key Unavailable ∗
+        own_occupied_reserved_frag γ key uid ∗
         own_children_frag γ key uid 1 ∅
           ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V)
   ) -∗
-  WP l @! (go.PointerType apimodel.State) @!
-    "create" #kind #namespace #(interface.ok i) {{ Φ }}.
+  WP l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)".
   iNamed "Hau". iNamed "Hkinv".
@@ -203,12 +199,18 @@ Proof.
       simpl in Hparent_none |- *; done. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
     as "%Habs_state_valid".
+  assert (generated_uid ∉ used_uid) as Hgenerated_uid_fresh.
+  { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid.
+    apply not_elem_of_dom. done. }
+  assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.UID') = generated_uid)
+    as Hkobj2_uid.
+  { subst kobj2. destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
   iMod (kview.create_reserved_kobj_vs key generated_uid kobj2
     with "[$Hinv_Hown_abs] [$Hown_reserved_frag]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status & Hown_reserved_frag)".
   { exact Hkey_not_in_abs. }
-  { rewrite Hinv_Hused_uid_eq_dom_phys_used_uid.
-    apply not_elem_of_dom. done. }
+  { exact Hgenerated_uid_fresh. }
   { unfold kview.valid_k_uid_obj.
     rewrite Hkey_eq.
     subst kobj2.
@@ -216,9 +218,11 @@ Proof.
     - destruct Hvalid as (Hkind_eq & _).
       destruct kobj; destruct kobj1; try done;
         rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
-    - destruct kobj; destruct kobj1; try done;
-        rewrite Hm_eq; done.
+    - symmetry. exact Hkobj2_uid.
     - exact Hvalid2. }
+  { subst kobj2.
+    destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
   { intros kind' name' uid' Hparent.
     unfold obj_parent_ref, meta_parent_ref_is in Hparent_none2, Hparent.
     rewrite Hparent_none2 in Hparent.
@@ -248,6 +252,21 @@ Proof.
     apply Huid_fresh.
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     done. }
+  assert (Hobj_ref : obj_ref key kobj2 = (key, generated_uid)).
+  { unfold obj_ref.
+    subst kobj2.
+    rewrite Hkey_eq.
+    destruct kobj; destruct kobj1;
+      simpl in Hsame_kind, Hm_eq |- *;
+      try done; rewrite Hm_eq; reflexivity. }
+  iMod (terminating_children.create_living_vs
+    γ.(γ_terminating_children) abs_state key kobj2 with
+    "Hinv_Hown_terminating_children") as
+    "Hinv_Hown_terminating_children".
+  { exact Hkey_not_in_abs. }
+  { unfold terminating_children.terminating_obj_parent_ref.
+    subst kobj2. destruct kobj; destruct kobj1; try done;
+      rewrite Hm_eq; done. }
   iMod ("Hclose" $! i2 kobj2 generated_uid
     with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
       $Hown_reserved_frag $Hown_children]") as "HΦ".
@@ -279,6 +298,10 @@ Proof.
       destruct kobj; destruct kobj1;
         simpl in Hm_eq |- *;
         try done; rewrite Hm_eq; done. }
+  iMod (deletion_observation.create_vs key generated_uid kobj2
+    Hgenerated_uid_fresh Hkobj2_uid with
+    "Hinv_Hown_deletion_observations") as
+    "Hinv_Hown_deletion_observations".
   iModIntro.
   iAssert (([∗ map] i; obj ∈
       <[key:=interface.ok i1]> phys_state;
@@ -297,19 +320,14 @@ Proof.
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
     with "[$Hown_Mutex H]").
-  { iNamed "H". iFrame. iFrame "#". iPureIntro. split_and!.
+  { iNamed "H". iFrame. iFrame "#".
+    iNext. iFrame.
+    iPureIntro. split_and!.
     - rewrite dom_insert_L.
       rewrite Hinv_Hused_uid_eq_dom_phys_used_uid.
       rewrite union_comm_L.
       done.
-    - assert (Hobj_ref :
-        obj_ref key kobj2 = (key, generated_uid)).
-      { unfold obj_ref.
-        subst kobj2.
-        rewrite Hkey_eq.
-        destruct kobj; destruct kobj1;
-          simpl in Hsame_kind, Hm_eq |- *;
-          try done; rewrite Hm_eq; reflexivity. }
+    -
       assert (Hobj_uid :
           generated_uid = snd (obj_ref key kobj2)).
       { rewrite Hobj_ref. done. }
@@ -326,8 +344,7 @@ Qed.
 Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷
-        ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = {|
@@ -337,33 +354,23 @@ Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
       |} ⌝ ∗
       "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_reserved_frag" ∷ own_reserved_frag γ key Available
+      "Hown_reserved_frag" ∷ own_available_frag γ key
   }}}
-    l @! (go.PointerType apimodel.State) @!
-      "create" #kind #namespace #(interface.ok i)
+    l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
   {{{ i' kobj' uid, RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
       "%Hmeta_created" ∷
-        ⌜ ObjectMetaV.named_created namespace
-            (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hspec_created" ∷
-        ⌜ ObjectSpecV.created
-            (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-      "%Hstatus_created" ∷
-        ⌜ ObjectStatusV.created
-            (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        ⌜ ObjectMetaV.named_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
+      "%Hspec_created" ∷ ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
+      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ key = KObjectV.key kobj' ⌝ ∗
-      "%Huid_eq" ∷
-        ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷
-        own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec_frag" ∷
-        own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
-      "Hown_status_frag" ∷
-        own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      "Hown_reserved_frag" ∷ own_reserved_frag γ key Unavailable ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
@@ -380,60 +387,43 @@ Proof.
   iApply ("HΦ" $! i' kobj' uid with "Hpost").
 Qed.
 
-Lemma wp_State__PersistentVolumeClaimCreate_named_orphan
-    γ l namespace key pvc_l pvc :
+Lemma wp_State__PersistentVolumeClaimCreate_named_orphan γ l namespace key pvc_l pvc :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷
-        ⌜ PersistentVolumeClaimV.valid_named_create namespace pvc ⌝ ∗
+      "%Hvalid" ∷ ⌜ PersistentVolumeClaimV.valid_named_create namespace pvc ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = {|
         KKey.Kind' := PersistentVolumeClaimV.kind;
-        KKey.Name' :=
-          pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name');
+        KKey.Name' := pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name');
         KKey.Namespace' := namespace
       |} ⌝ ∗
-      "%Hparent_none" ∷
-        ⌜ obj_parent_ref (KObjectV.PersistentVolumeClaim pvc) = None ⌝ ∗
+      "%Hparent_none" ∷ ⌜ obj_parent_ref (KObjectV.PersistentVolumeClaim pvc) = None ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
-      "Hown_reserved_frag" ∷ own_reserved_frag γ key Available
+      "Hown_reserved_frag" ∷ own_available_frag γ key
   }}}
-    l @! (go.PointerType apimodel.State) @!
-      "PersistentVolumeClaimCreate" #namespace #pvc_l
+    l @! (go.PointerType apimodel.State) @! "PersistentVolumeClaimCreate" #namespace #pvc_l
   {{{ pvc_l' pvc' uid, RET (#pvc_l', #interface.nil);
-      "%Hvalid'" ∷
-        ⌜ PersistentVolumeClaimV.valid pvc' ⌝ ∗
-      "%Hmeta_created" ∷
-        ⌜ ObjectMetaV.named_created namespace
-            pvc.(PersistentVolumeClaimV.ObjectMeta')
-            pvc'.(PersistentVolumeClaimV.ObjectMeta') ⌝ ∗
+      "%Hvalid'" ∷ ⌜ PersistentVolumeClaimV.valid pvc' ⌝ ∗
+      "%Hmeta_created" ∷ ⌜ ObjectMetaV.named_created namespace pvc.(PersistentVolumeClaimV.ObjectMeta')
+          pvc'.(PersistentVolumeClaimV.ObjectMeta') ⌝ ∗
       "%Hspec_created" ∷
         ⌜ ObjectSpecV.created
-            (ObjectSpecV.PersistentVolumeClaimSpec
-              pvc.(PersistentVolumeClaimV.Spec'))
-            (ObjectSpecV.PersistentVolumeClaimSpec
-              pvc'.(PersistentVolumeClaimV.Spec')) ⌝ ∗
+          (ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec'))
+          (ObjectSpecV.PersistentVolumeClaimSpec pvc'.(PersistentVolumeClaimV.Spec')) ⌝ ∗
       "%Hstatus_created" ∷
         ⌜ ObjectStatusV.created
-            (ObjectStatusV.PersistentVolumeClaimStatus
-              pvc.(PersistentVolumeClaimV.Status'))
-            (ObjectStatusV.PersistentVolumeClaimStatus
-              pvc'.(PersistentVolumeClaimV.Status')) ⌝ ∗
+          (ObjectStatusV.PersistentVolumeClaimStatus pvc.(PersistentVolumeClaimV.Status'))
+          (ObjectStatusV.PersistentVolumeClaimStatus pvc'.(PersistentVolumeClaimV.Status')) ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ key = PersistentVolumeClaimV.key pvc' ⌝ ∗
-      "%Huid_eq" ∷
-        ⌜ uid =
-          pvc'.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = pvc'.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l' pvc' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1
-        pvc'.(PersistentVolumeClaimV.ObjectMeta') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1
-        (ObjectSpecV.PersistentVolumeClaimSpec
-          pvc'.(PersistentVolumeClaimV.Spec')) ∗
-      "Hown_status_frag" ∷ own_status_frag γ key uid 1
-        (ObjectStatusV.PersistentVolumeClaimStatus
-          pvc'.(PersistentVolumeClaimV.Status')) ∗
-      "Hown_reserved_frag" ∷ own_reserved_frag γ key Unavailable ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pvc'.(PersistentVolumeClaimV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷
+        own_spec_frag γ key uid 1 (ObjectSpecV.PersistentVolumeClaimSpec pvc'.(PersistentVolumeClaimV.Spec')) ∗
+      "Hown_status_frag" ∷
+        own_status_frag γ key uid 1 (ObjectStatusV.PersistentVolumeClaimStatus pvc'.(PersistentVolumeClaimV.Status')) ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.

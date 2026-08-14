@@ -212,10 +212,6 @@ func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, er
 	return items, nil
 }
 
-func newNotFoundError(kind string, name string) error {
-	return errors.NewNotFound(schema.GroupResource{Resource: kind}, name)
-}
-
 func (s *State) get(key KKey) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -224,7 +220,8 @@ func (s *State) get(key KKey) (interface{}, error) {
 	if exists {
 		return deepCopy(item), nil
 	} else {
-		return nil, newNotFoundError(key.Kind, key.Name)
+		return nil, errors.NewNotFound(
+			schema.GroupResource{Resource: key.Kind}, key.Name)
 	}
 }
 

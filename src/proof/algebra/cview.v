@@ -107,6 +107,17 @@ Global Instance own_frag_timeless γ key uid dq ks :
   Timeless (own_frag γ key uid dq ks).
 Proof. unfold own_frag. apply _. Qed.
 
+Lemma init :
+  ⊢ |==> ∃ γ,
+    own_auth γ (∅ : gmap KKey.t KObjectV.t)
+      (∅ : gset (KKey.t * types.UID.t)).
+Proof.
+  unfold own_auth.
+  iApply (@reversed_reference.init
+    KKey.t _ _ (KKey.t * types.UID.t) _ _ KObjectV.t
+    obj_parent_ref_set obj_ref Σ _).
+Qed.
+
 Lemma own_auth_frag_valid {γ state used_reference pk puid dq ks}:
   own_auth γ state used_reference -∗
   own_frag γ pk puid dq ks -∗
@@ -168,6 +179,14 @@ Proof.
   destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
     as [[idx oref]|] eqn:Hfind; simpl in Hparent; [|discriminate].
   inversion Hparent; done.
+Qed.
+
+Lemma extend_used_reference_vs {γ state used_reference} reference :
+  own_auth γ state used_reference ==∗
+    own_auth γ state (used_reference ∪ {[reference]}).
+Proof.
+  unfold own_auth.
+  apply reversed_reference.extend_used_reference_vs.
 Qed.
 
 

@@ -1,4 +1,3 @@
-From New.proof.controllers.statefulset Require Import top_level.
 From New.proof.map Require Import for_range.
 From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.

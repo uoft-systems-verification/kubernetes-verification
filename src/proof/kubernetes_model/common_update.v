@@ -40,6 +40,16 @@ Proof.
   destruct m, m'; simpl; intuition congruence.
 Qed.
 
+Lemma objectmeta_updated_set_resource_version_deletion_timestamp m m' rv :
+  ObjectMetaV.updated m m' →
+  ObjectMetaV.DeletionTimestamp'
+      (m' <| ObjectMetaV.ResourceVersion' := rv |>) =
+    ObjectMetaV.DeletionTimestamp' m.
+Proof.
+  rewrite /ObjectMetaV.updated.
+  destruct m, m'; simpl; intuition congruence.
+Qed.
+
 Lemma valid_simple_update_updated_set_resource_version_uid m_old m_input m_updated rv :
   ObjectMetaV.valid_simple_update m_old m_input →
   ObjectMetaV.updated m_input m_updated →

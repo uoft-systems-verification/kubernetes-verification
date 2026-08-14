@@ -1,5 +1,4 @@
 From New.proof.controllers.statefulset Require Export reconcile_stability.
-From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.kubernetes_model Require Import get.
 
 Section proof.
@@ -39,7 +38,11 @@ Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
   ⊢ syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs.
 Proof.
   unfold syncStatefulSet_stability_spec.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". iNamed "Hresources".
+  iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag")
+    as "%Hsts_meta_valid".
+  destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
+  wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
@@ -104,7 +107,8 @@ Proof.
       apply list_elem_of_fmap_1 in Hkey as (pod & -> & _).
       rewrite /PodV.key /PodV.meta_key /PodV.kind //.
     - intros [_ Hkey]. exact Hkey. }
-  iEval (rewrite Hset_key Hset_uid) in "Hown_children_frag".
+  iEval (rewrite Hset_key Hset_uid) in
+    "Hown_children_frag Hown_terminating_children_frag".
 
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_meta &
@@ -112,12 +116,24 @@ Proof.
   wp_apply (common.wp_FilterPodsByOwner_uniform_with_spec
     _ _ _ _ _ _ pods dq dq
     (list_to_set (PodV.key <$> pods))
-    with "[$Hset_meta $Hown_pod_frags $Hown_children_frag]").
+    with "[$Hset_meta $Hown_pod_frags $Hown_children_frag
+      $Hown_terminating_children_frag]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods pod_dq)
-    "(Hall_sl & Hall_pods & %Hall_storage_perm & %Hall_valid &
-      %Hall_parent_refs & %Hall_nodup & Hset_meta &
-      Hall_frags & Hown_children_frag)".
+    "(Hall_sl & Hall_pods & %Hall_living_storage_perm &
+      %Hall_quiescent_storage_perm & %Hall_valid & %Hall_parent_refs &
+      %Hall_nodup & Hset_meta & #Hall_deletion_observed &
+      Hall_frags & Hown_children_frag & Hown_terminating_children_frag)".
+  pose proof (Hall_quiescent_storage_perm eq_refl) as Hall_storage_perm.
+  assert (filter is_pod_alive all_pods = all_pods) as Hall_living_result.
+  { assert (Forall is_pod_alive all_pods) as Hall.
+    { apply (filter_length_eq_Forall is_pod_alive all_pods).
+      pose proof (Permutation_length Hall_living_storage_perm) as Hliving_len.
+      pose proof (Permutation_length Hall_storage_perm) as Hall_len.
+      rewrite !map_length in Hliving_len, Hall_len. lia. }
+    apply filter_all. intros pod Hpod. rewrite Forall_forall in Hall.
+    apply Hall. by rewrite -list_elem_of_In. }
+  iEval (rewrite Hall_living_result) in "Hall_frags".
   pose proof (pod_storage_view_perm_keys _ _ Hall_storage_perm)
     as Hall_key_perm.
   assert (Hall_name_lengths : Forall
@@ -240,9 +256,16 @@ Proof.
     iExact "Hpod_view_frags". }
   iEval (rewrite Hall_key_perm -Hset_key -Hset_uid) in
     "Hown_children_frag".
+  iAssert (own_terminating_children_frag γ (StatefulSetV.key sts)
+      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') Quiescent)
+    with "[Hown_terminating_children_frag]"
+    as "Hown_terminating_children_frag".
+  { rewrite Hset_key Hset_uid. iExact "Hown_terminating_children_frag". }
   iApply ("HΦ" $! interface.nil).
+  rewrite /statefulset_owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
-    Hown_pod_frags Hown_pvc_frags Hown_children_frag".
+    Hown_pod_frags Hown_pvc_frags Hown_children_frag
+    Hown_terminating_children_frag".
 Qed.
 
 End proof.

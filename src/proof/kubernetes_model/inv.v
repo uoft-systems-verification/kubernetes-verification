@@ -5,12 +5,14 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.big_op Require Export big_sepL big_sepM.
-From New.proof.algebra Require Export kview cview terminating_cview.
+From New.proof.algebra Require Export
+  kview cview terminating_children deletion_observation.
 
 Class kubernetesModelG Σ := {
   #[global] kubernetes_model_kviewG :: kviewG Σ;
   #[global] kubernetes_model_cviewG :: cviewG Σ;
-  #[global] kubernetes_model_terminating_cviewG :: terminating_cviewG Σ;
+  #[global] kubernetes_model_terminating_childrenG :: terminatingChildrenG Σ;
+  #[global] kubernetes_model_deletion_observationG :: deletionObservationG Σ;
 }.
 
 Section spec.
@@ -23,6 +25,7 @@ Record KubernetesGname := mk_γk {
   γ_state : gname;
   γ_children : gname;
   γ_terminating_children : gname;
+  γ_deletion_observation : gname;
 }.
 
 Definition own_kview_auth γ state used_uid : iProp Σ :=
@@ -37,20 +40,38 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   kview.own_status_frag γ.(γ_state) k uid dq st.
 
+Definition own_unreserved_key_frag γ key : iProp Σ :=
+  kview.own_unreserved_frag γ.(γ_state) key.
+
+Definition own_reserved_frag γ key status : iProp Σ :=
+  kview.own_reservation_frag γ.(γ_state) key status.
+
+Definition own_available_frag γ key : iProp Σ :=
+  own_reserved_frag γ key Available.
+
+Definition own_occupied_reserved_frag γ key uid : iProp Σ :=
+  own_reserved_frag γ key (Occupied uid).
+
+Definition own_deleting_reserved_frag γ key uid : iProp Σ :=
+  own_reserved_frag γ key (Deleting uid).
+
 Definition own_children_auth γ state used_reference : iProp Σ :=
   cview.own_auth γ.(γ_children) state used_reference.
 
 Definition own_children_frag γ key uid dq keys : iProp Σ :=
   cview.own_frag γ.(γ_children) key uid dq keys.
 
-Definition own_terminating_children_auth γ state used_reference : iProp Σ :=
-  terminating_cview.own_auth γ.(γ_terminating_children) state used_reference.
+Definition own_terminating_children_auth γ state : iProp Σ :=
+  terminating_children.own_auth γ.(γ_terminating_children) state.
 
-Definition own_terminating_children_frag γ key uid dq keys : iProp Σ :=
-  terminating_cview.own_frag γ.(γ_terminating_children) key uid dq keys.
+Definition own_terminating_children_frag γ key uid control_phase : iProp Σ :=
+  terminating_children.own_frag γ.(γ_terminating_children) key uid control_phase.
 
-Definition own_reserved_frag γ key status : iProp Σ :=
-  kview.own_reservation_frag γ.(γ_state) key status.
+Definition own_deletion_observation_auth γ state used_uid : iProp Σ :=
+  deletion_observation.own_auth γ.(γ_deletion_observation) state used_uid.
+
+Definition own_deletion_observed_frag γ key uid : iProp Σ :=
+  deletion_observation.own_frag γ.(γ_deletion_observation) key uid.
 
 Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
@@ -65,7 +86,8 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "Hown_used_rv" ∷ phys_used_rv_l ↦$ phys_used_rv ∗
     "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
-    "Hown_terminating_children" ∷ own_terminating_children_auth γ abs_state used_reference ∗
+    "Hown_terminating_children" ∷ own_terminating_children_auth γ abs_state ∗
+    "Hown_deletion_observations" ∷ own_deletion_observation_auth γ abs_state used_uid ∗
     "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
