@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export update_release.
+From New.proof.kubernetes_model Require Export update_release update_release_terminating.
 From New.proof.kubernetes_model Require Import get get_observed.
 From New.proof.kubernetes_model.tx Require Import common_update.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.

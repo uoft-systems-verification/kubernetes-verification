@@ -795,8 +795,7 @@ Local Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         ⌜ Forall PodV.valid pods' ⌝ ∗
         ⌜ Forall (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods' ⌝ ∗
         ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
-        (* TODO: remove this iProp name *)
-        "Hown_deletion_observed_frags" ∷ ([∗ list] pod ∈ terminating_pods pods',
+        ([∗ list] pod ∈ terminating_pods pods',
           own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
         ([∗ list] pod;pod_dq ∈ living_pods;living_pod_dqs,
           own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
