@@ -1,6 +1,6 @@
 From New.proof.controllers.statefulset Require Export distance.
 From New.proof.controllers.statefulset Require Import pod create_pod create_pvc
-  update_pod condemned outdated delete_pod.
+  update_pod condemned outdated delete_pod common.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

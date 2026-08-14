@@ -343,7 +343,10 @@ Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) :
 Definition pvc_distance sts pvcs : nat :=
   length (missing_pvc_keys sts pvcs).
 
-(* TODO: remove living_pods *)
+(* Although the Pod snapshots in the top-level specs are living, this metric
+   is also applied to raw index results and intermediate lists containing
+   terminating Pods. A Pod stops contributing as soon as deletion starts, so
+   that transition decreases the distance without waiting for physical removal. *)
 Definition match_distance sts all_pods pvcs : nat :=
   pod_distance sts (living_pods all_pods) + pvc_distance sts pvcs.
 
@@ -446,29 +449,23 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* TODO: rename snapshot_fractions to all_fractions *)
-Record snapshot_fractions := {
+Record all_fractions := {
   sts_dq : dfrac;
   pod_dq : dfrac;
   children_dq : dfrac;
   pvc_dq : dfrac;
 }.
 
-Definition mutating_fractions dq : snapshot_fractions :=
+Definition mutating_fractions dq : all_fractions :=
   {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
 
-Definition stability_fractions dq : snapshot_fractions :=
+Definition stability_fractions dq : all_fractions :=
   {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
 
 Definition own_occupied_pods γ (pods : list PodV.t) : iProp Σ :=
   [∗ list] pod ∈ pods,
     own_occupied_reserved_frag γ (PodV.key pod)
       pod.(PodV.ObjectMeta').(ObjectMetaV.UID').
-
-(* TODO: inline own_occupied_pod_identity *)
-Definition own_occupied_pod_identity γ
-    (identity : KKey.t * types.UID.t) : iProp Σ :=
-  own_occupied_reserved_frag γ identity.1 identity.2.
 
 Definition own_occupied_pvcs γ
     (pvcs : list PersistentVolumeClaimV.t) : iProp Σ :=
@@ -484,26 +481,6 @@ Definition own_missing_pod_reservations γ sts pods : iProp Σ :=
 Definition own_missing_pvc_reservations γ sts pvcs : iProp Σ :=
   [∗ set] key ∈ list_to_set (C:=gset KKey.t) (missing_pvc_keys sts pvcs),
     own_available_frag γ key.
-
-Definition own_started_deletion γ
-    (deletion : option (KKey.t * types.UID.t)) : iProp Σ :=
-  match deletion with
-  | None => emp
-  | Some (key, uid) => own_deleting_reserved_frag γ key uid
-  end.
-
-Definition deletion_phase (deletion : option (KKey.t * types.UID.t)) :=
-  match deletion with
-  | None => Quiescent
-  | Some _ => Mutable
-  end.
-
-Definition phase_after_deletion phase
-    (deletion : option (KKey.t * types.UID.t)) :=
-  match deletion with
-  | None => phase
-  | Some _ => Mutable
-  end.
 
 Definition statefulset_owned_resources γ sts fractions pods pvcs terminating_phase : iProp Σ :=
   "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
@@ -568,8 +545,7 @@ Definition syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs : 
       own_occupied_pvcs γ pvcs' ∗
       own_missing_pod_reservations γ sts pods' ∗
       own_missing_pvc_reservations γ sts pvcs' ∗
-      (* TODO: this filter (pending_pod sts) pods' = [] condition seems to be redundant? *)
-      ⌜ (current_state_matches sts pods' pvcs' ∧ filter (pending_pod sts) pods' = []) ∨
+      ⌜ current_state_matches sts pods' pvcs' ∨
         (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
   }}}.
 

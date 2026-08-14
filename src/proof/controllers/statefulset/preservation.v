@@ -288,7 +288,7 @@ Proof.
     as Hall_reservation_identities.
   iAssert (own_occupied_pods γ living_all) with "[Hoccupied_pods]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
-    rewrite (big_sepL_permutation (own_occupied_pod_identity γ)
+    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ identity.1 identity.2)
       (pod_reservation_identity <$> living_all)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
     iExact "Hoccupied_pods". }

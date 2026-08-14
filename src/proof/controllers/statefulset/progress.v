@@ -162,7 +162,7 @@ Proof.
     as Hall_reservation_identities.
   iAssert (own_occupied_pods γ all_pods) with "[Hoccupied_pods]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
-    rewrite (big_sepL_permutation (own_occupied_pod_identity γ)
+    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ identity.1 identity.2)
       (pod_reservation_identity <$> all_pods)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
     iExact "Hoccupied_pods". }
@@ -396,11 +396,7 @@ Proof.
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
         Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
-      iPureIntro. left. split; first exact Hcomplete_sts.
-      apply filter_none. intros pod Hpod [Hnot_alive _].
-      destruct Hcomplete_sts as [[_ [Hall_alive _]] _].
-      rewrite Forall_forall in Hall_alive. apply Hnot_alive, Hall_alive.
-      by rewrite -list_elem_of_In.
+      iPureIntro. left. exact Hcomplete_sts.
     + assert (pod_storage_view <$> good_pods ≡ₚ
         pod_storage_view <$> pods) as Hgood_storage_perm.
       { rewrite Hgood_eq. exact Hall_storage_perm. }

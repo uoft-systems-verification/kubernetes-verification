@@ -1,15 +1,29 @@
 From New.proof.controllers.statefulset Require Export top_level.
 
+Definition phase_after_deletion phase
+    (deletion : option (KKey.t * types.UID.t)) :=
+  match deletion with
+  | None => phase
+  | Some _ => Mutable
+  end.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Definition own_started_deletion γ
+    (deletion : option (KKey.t * types.UID.t)) : iProp Σ :=
+  match deletion with
+  | None => emp
+  | Some (key, uid) => own_deleting_reserved_frag γ key uid
+  end.
+
 Lemma own_occupied_pods_as_identities γ pods :
   own_occupied_pods γ pods ⊣⊢
     [∗ list] identity ∈ pod_reservation_identity <$> pods,
-      own_occupied_pod_identity γ identity.
+      own_occupied_reserved_frag γ identity.1 identity.2.
 Proof.
-  rewrite big_sepL_fmap /own_occupied_pods /own_occupied_pod_identity.
+  rewrite big_sepL_fmap /own_occupied_pods.
   done.
 Qed.
 
