@@ -18,13 +18,14 @@ Definition own_started_deletion γ
   | Some (key, uid) => own_deleting_reserved_frag γ key uid
   end.
 
-Lemma own_occupied_pods_as_identities γ pods :
-  own_occupied_pods γ pods ⊣⊢
+Lemma own_occupied_pods_as_identities γ dq pods :
+  ([∗ list] pod ∈ pods,
+    own_occupied_reserved_frag γ dq (PodV.key pod)
+      pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ⊣⊢
     [∗ list] identity ∈ pod_reservation_identity <$> pods,
-      own_occupied_reserved_frag γ identity.1 identity.2.
+      own_occupied_reserved_frag γ dq identity.1 identity.2.
 Proof.
-  rewrite big_sepL_fmap /own_occupied_pods.
-  done.
+  rewrite big_sepL_fmap. done.
 Qed.
 
 Lemma own_pod_frags_living γ dq pods :

@@ -264,7 +264,7 @@ Proof.
   iApply ("HΦ" $! interface.nil).
   rewrite /statefulset_owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
-    Hown_pod_frags Hown_pvc_frags Hown_children_frag
+    Hown_pod_frags Hoccupied_pods Hown_pvc_frags Hoccupied_pvcs Hown_children_frag
     Hown_terminating_children_frag".
 Qed.
 

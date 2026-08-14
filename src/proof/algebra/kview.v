@@ -1,7 +1,7 @@
 From New.proof Require Import prelude.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
-From iris.algebra Require Import cmra csum excl gset gmap.
+From iris.algebra Require Import cmra csum gset gmap.
 From iris.base_logic.lib Require Import own.
 
 (* Reserved names are classified statically. In particular, API-server
@@ -24,11 +24,13 @@ Definition metaUR : ucmra := gmapUR (KKey.t * types.UID.t) (prodR dfracR (agreeR
 Definition specUR : ucmra := gmapUR (KKey.t * types.UID.t) (prodR dfracR (agreeR (leibnizO ObjectSpecV.t))).
 Definition statusUR : ucmra := gmapUR (KKey.t * types.UID.t) (prodR dfracR (agreeR (leibnizO ObjectStatusV.t))).
 (* One map classifies keys. [Unreserved] uses an idempotent agreement token and
-   is therefore persistent; [Reserved status] uses an exclusive token and
-   tracks the reserved-name lifecycle. The sum makes the two classifications
-   incompatible for the same key. *)
+   is therefore persistent; [Reserved status] uses fractional agreement so
+   readers can share the current lifecycle status while a full fraction remains
+   necessary to change it. The sum makes the two classifications incompatible
+   for the same key. *)
 Canonical Structure key_classificationR : cmra :=
-  csumR (agreeR (leibnizO unit)) (exclR (leibnizO reservation_status)).
+  csumR (agreeR (leibnizO unit))
+    (prodR dfracR (agreeR (leibnizO reservation_status))).
 Definition key_classificationUR : ucmra := gmapUR KKey.t key_classificationR.
 Definition fragUR : ucmra :=
   prodUR metaUR (prodUR specUR (prodUR statusUR key_classificationUR)).
@@ -87,7 +89,10 @@ Local Definition compatible_kfrag b a : Prop :=
     ✓ classification ∧
     match classification with
     | Cinl _ => ¬ reserved_key_pred k
-    | Cinr (Excl status) =>
+    | Cinr (dq, agree_status) =>
+        ∃ status,
+          agree_status ≡ to_agree status ∧
+          ✓ dq ∧
           reserved_key_pred k ∧
           match status with
           | Available => proj_state a !! k = None
@@ -305,15 +310,28 @@ Proof.
         apply Some_csum_includedN in Hlookup_incl.
         destruct Hlookup_incl as
           [Hinvalid|[(agree2 & agree1 & Heq2 & Heq1 & Hincluded)|
-            (excl2 & excl1 & Heq2 & Heq1 & Hincluded)]].
+            (reservation2 & reservation1 & Heq2 & Heq1 & Hincluded)]].
         { rewrite Hinvalid in Hvalid1. exact (False_rect _ Hvalid1). }
         { subst classification2 classification1. exact Hcompatible. }
         { subst classification2 classification1.
-          destruct excl1 as [status1|]; [|done].
-          destruct excl2 as [status2|]; [|done].
-          apply Excl_includedN in Hincluded.
-          apply leibniz_equiv in Hincluded. subst status2.
-          exact Hcompatible. }
+          destruct reservation1 as [dq1 agree1].
+          destruct reservation2 as [dq2 agree2].
+          destruct Hcompatible as
+            (status & Hagree1 & Hvdq1 & Hreserved & Hreservation_state).
+          assert (Hvdq2 : ✓ dq2).
+          { apply (proj1 (pair_valid dq2 agree2)). exact Hvalid2. }
+          pose proof (Some_pair_includedN _ _ _ _ _ Hincluded) as
+            [_ Hagree_opt_incl].
+          pose proof (proj1 (Some_includedN_total n2 agree2 agree1)
+            Hagree_opt_incl) as Hagree_incl.
+          assert (Hagree1_n2 : ✓{n2} agree1).
+          { rewrite Hagree1. done. }
+          pose proof (agree_valid_includedN n2 agree2 agree1 Hagree1_n2 Hagree_incl)
+            as Hagree2_n2.
+          exists status. split_and!; try done.
+          apply (proj2 (discrete_iff n2 agree2
+            (to_agree (A := leibnizO reservation_status) status))).
+          etrans; [exact Hagree2_n2|exact (Hagree1 n2)]. }
 Qed.
 
 Local Lemma view_rel_raw_valid n a b :
@@ -401,9 +419,10 @@ Definition mk_spec_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectSpe
   (∅, ({[(k, uid) := (dq, to_agree s)]}, (∅, ∅))).
 Definition mk_status_frag (k: KKey.t) (uid: types.UID.t) (dq: dfrac) (s: ObjectStatusV.t) : fragUR :=
   (∅, (∅, ({[(k, uid) := (dq, to_agree s)]}, ∅))).
-Definition mk_reservation_frag (k: KKey.t) (status: reservation_status) : fragUR :=
+Definition mk_reservation_frag (k: KKey.t) (dq : dfrac)
+    (status: reservation_status) : fragUR :=
   (∅, (∅, (∅,
-    ({[k := Cinr (Excl status)]} : key_classificationUR)))).
+    ({[k := Cinr (dq, to_agree status)]} : key_classificationUR)))).
 Definition mk_unreserved_frag (k : KKey.t) : fragUR :=
   (∅, (∅, (∅,
     ({[k := Cinl (to_agree (A := leibnizO unit) ())]} : key_classificationUR)))).
@@ -694,8 +713,8 @@ Proof.
   eapply Hspec_obj; eauto.
 Qed.
 
-Lemma auth_reservation_valid a k status:
-  ✓ (●K a ⋅ ◯K (mk_reservation_frag k status)) →
+Lemma auth_reservation_valid a k dq status:
+  ✓ (●K a ⋅ ◯K (mk_reservation_frag k dq status)) →
   reserved_key_pred k ∧
   match status with
   | Available => proj_state a !! k = None
@@ -713,31 +732,36 @@ Lemma auth_reservation_valid a k status:
   end.
 Proof.
   intros Hvalid.
-  pose proof (auth_frag_valid 0%nat a (mk_reservation_frag k status)
+  pose proof (auth_frag_valid 0%nat a (mk_reservation_frag k dq status)
     Hvalid 0%nat) as Hrel.
   destruct Hrel as [_ [_ [_ [_ Hclassification]]]].
   assert (Hlookup :
-    proj_key_classification (mk_reservation_frag k status) !! k =
-      Some (Cinr (Excl status))).
+    proj_key_classification (mk_reservation_frag k dq status) !! k =
+      Some (Cinr (dq, to_agree status))).
   { rewrite /proj_key_classification /mk_reservation_frag /= lookup_singleton_eq //. }
-  destruct (Hclassification _ _ Hlookup) as [_ Hcompatible].
-  exact Hcompatible.
+  destruct (Hclassification _ _ Hlookup) as
+    [_ (status' & Hagree & _ & Hreserved & Hcompatible)].
+  assert (Hstatus_eqv : (status : leibnizO reservation_status) ≡ status').
+  { apply (inj (to_agree : leibnizO reservation_status →
+      agree (leibnizO reservation_status))). exact Hagree. }
+  apply leibniz_equiv in Hstatus_eqv. subst status'.
+  split; done.
 Qed.
 
-Lemma meta_reservation_valid k uid dq meta status :
+Lemma meta_reservation_valid k uid dq meta reservation_dq status :
   ✓{0} (◯K (mk_meta_frag k uid dq meta) ⋅
-    ◯K (mk_reservation_frag k status)) →
+    ◯K (mk_reservation_frag k reservation_dq status)) →
   status = Occupied uid.
 Proof.
   intros Hvalid.
   rewrite /kview_frag -view_frag_op in Hvalid.
   pose proof (proj1 (view_frag_validN view_rel 0%nat
-    (mk_meta_frag k uid dq meta ⋅ mk_reservation_frag k status))
+    (mk_meta_frag k uid dq meta ⋅ mk_reservation_frag k reservation_dq status))
     Hvalid) as [a Hrel].
   destruct Hrel as [_ [Hmeta [_ [_ Hreservation]]]].
   assert (Hmeta_lookup :
       proj_meta (mk_meta_frag k uid dq meta ⋅
-        mk_reservation_frag k status) !! (k, uid) =
+        mk_reservation_frag k reservation_dq status) !! (k, uid) =
       Some (dq, to_agree (A := leibnizO ObjectMetaV.t)
         (ObjectMetaV.without_resource_version meta))).
   { rewrite /proj_meta /mk_meta_frag /mk_reservation_frag /=
@@ -746,12 +770,16 @@ Proof.
     (meta' & _ & _ & obj & Hobj & Hobj_uid & Hobj_living & _).
   assert (Hreservation_lookup :
       proj_key_classification (mk_meta_frag k uid dq meta ⋅
-        mk_reservation_frag k status) !! k =
-      Some (Cinr (Excl status))).
+        mk_reservation_frag k reservation_dq status) !! k =
+      Some (Cinr (reservation_dq, to_agree status))).
   { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=.
     rewrite left_id lookup_singleton_eq //. }
   destruct (Hreservation _ _ Hreservation_lookup) as
-    [_ [_ Hstatus]].
+    [_ (status' & Hagree & _ & _ & Hstatus)].
+  assert (Hstatus_eqv : (status : leibnizO reservation_status) ≡ status').
+  { apply (inj (to_agree : leibnizO reservation_status →
+      agree (leibnizO reservation_status))). exact Hagree. }
+  apply leibniz_equiv in Hstatus_eqv. subst status'.
   destruct status as [|reserved_uid|reserved_uid].
   - rewrite Hobj in Hstatus. discriminate.
   - destruct Hstatus as (obj' & Hobj' & Hobj'_uid & _).
@@ -1148,10 +1176,11 @@ Proof.
       destruct (Hreservation _ _ Hlookup_old) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hreservation_state].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
       assert (Hneq : k' ≠ k) by (intros ->; contradiction).
       destruct reservation as [|reserved_uid|reserved_uid].
       * simpl. rewrite lookup_insert_ne //.
@@ -1197,9 +1226,9 @@ Proof.
           rewrite Hagree_f.
           rewrite to_agree_op_valid. done. }
         { exact Hnot_reserved. }
-      * destruct excl_f as [status_f|].
-        { destruct Hcompatible_f as [Hreserved _]. contradiction. }
-        { done. }
+      * destruct excl_f as [dq_f agree_status_f].
+        destruct Hcompatible_f as (status_f & Hagree_status_f & Hvalid_dq_f & Hreserved & Hstate_f).
+        contradiction.
       * done.
     + intros Hclassification. inversion Hclassification. subst classification.
       split; [done|exact Hnot_reserved].
@@ -1213,12 +1242,12 @@ Lemma create_reserved_kobj a k uid obj:
   valid_k_uid_obj k uid obj →
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
   no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) →
-  (●K a ⋅ ◯K (mk_reservation_frag k Available)) ~~>
+  (●K a ⋅ ◯K (mk_reservation_frag k 1 Available)) ~~>
     (●K ((<[k := obj]> (proj_state a)), ((proj_used_uid a) ∪ {[uid]})) ⋅
         ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj)) ⋅
         ◯K (mk_spec_frag k uid 1 (KObjectV.spec obj)) ⋅
         ◯K (mk_status_frag k uid 1 (KObjectV.status obj)) ⋅
-        ◯K (mk_reservation_frag k (Occupied uid))).
+        ◯K (mk_reservation_frag k 1 (Occupied uid))).
 Proof.
   intros Hak Huid_fresh Hkuid_obj Hdeletion_timestamp Hno_spec.
   destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
@@ -1234,29 +1263,30 @@ Proof.
       last done.
     exfalso.
     assert (Hlookup :
-      proj_key_classification (mk_reservation_frag k Available ⋅ bf) !! k =
-        Some ((Cinr (Excl Available) : key_classificationR) ⋅
+      proj_key_classification (mk_reservation_frag k 1 Available ⋅ bf) !! k =
+        Some ((Cinr (DfracOwn 1, to_agree Available) : key_classificationR) ⋅
           classification_f)).
     { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
         lookup_singleton_eq Hbf Some_op_opM //. }
     destruct (Hreservation _ _ Hlookup) as [Hclassification_valid _].
-    exact (exclusive_l (Cinr (Excl Available) : key_classificationR)
+    exact (exclusive_l (Cinr (DfracOwn 1, to_agree Available) : key_classificationR)
       classification_f Hclassification_valid).
   }
   assert (Hreservation_pred : reserved_key_pred k).
   { assert (Hlookup :
-      proj_key_classification (mk_reservation_frag k Available ⋅ bf) !! k =
-        (Some (Cinr (Excl Available)) : option key_classificationR)).
+      proj_key_classification (mk_reservation_frag k 1 Available ⋅ bf) !! k =
+        (Some (Cinr (DfracOwn 1, to_agree Available)) : option key_classificationR)).
     { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
         lookup_singleton_eq Hreservation_bf_none right_id //. }
-    destruct (Hreservation _ _ Hlookup) as [_ [Hpred _]].
+    destruct (Hreservation _ _ Hlookup) as
+      [_ (status & Hagree & Hvalid_dq & Hpred & Hstate)].
     exact Hpred.
   }
   assert (Htarget_meta :
     proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        (mk_status_frag k uid 1 (KObjectV.status obj) ⋅
-        mk_reservation_frag k (Occupied uid))) ⋅ bf) =
+        mk_reservation_frag k 1 (Occupied uid))) ⋅ bf) =
     proj_meta (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        mk_status_frag k uid 1 (KObjectV.status obj)) ⋅ bf)).
@@ -1266,7 +1296,7 @@ Proof.
     proj_spec (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        (mk_status_frag k uid 1 (KObjectV.status obj) ⋅
-        mk_reservation_frag k (Occupied uid))) ⋅ bf) =
+        mk_reservation_frag k 1 (Occupied uid))) ⋅ bf) =
     proj_spec (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        mk_status_frag k uid 1 (KObjectV.status obj)) ⋅ bf)).
@@ -1276,7 +1306,7 @@ Proof.
     proj_status (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        (mk_status_frag k uid 1 (KObjectV.status obj) ⋅
-        mk_reservation_frag k (Occupied uid))) ⋅ bf) =
+        mk_reservation_frag k 1 (Occupied uid))) ⋅ bf) =
     proj_status (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
       (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
        mk_status_frag k uid 1 (KObjectV.status obj)) ⋅ bf)).
@@ -1287,8 +1317,8 @@ Proof.
       (mk_meta_frag k uid 1 (KObjectV.objectmeta obj) ⋅
        (mk_spec_frag k uid 1 (KObjectV.spec obj) ⋅
         (mk_status_frag k uid 1 (KObjectV.status obj) ⋅
-         mk_reservation_frag k (Occupied uid))) ⋅ bf) =
-    proj_key_classification (mk_reservation_frag k (Occupied uid) ⋅ bf)).
+         mk_reservation_frag k 1 (Occupied uid))) ⋅ bf) =
+    proj_key_classification (mk_reservation_frag k 1 (Occupied uid) ⋅ bf)).
   { rewrite /proj_key_classification /mk_meta_frag /mk_spec_frag /mk_status_frag
       /mk_reservation_frag /= !left_id. done. }
   assert (Hmeta_bf_none : proj_meta bf !! (k, uid) = None).
@@ -1597,13 +1627,14 @@ Proof.
     + intros k' classification Hlookup_new.
       destruct (decide (k' = k)) as [->|Hneq].
       * assert (Hlookup_target :
-          proj_key_classification (mk_reservation_frag k (Occupied uid) ⋅ bf) !! k =
-          (Some (Cinr (Excl (Occupied uid))) : option key_classificationR)).
+          proj_key_classification (mk_reservation_frag k 1 (Occupied uid) ⋅ bf) !! k =
+          (Some (Cinr (DfracOwn 1, to_agree (Occupied uid))) : option key_classificationR)).
         { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
             lookup_singleton_eq Hreservation_bf_none right_id //. }
         rewrite Htarget_reservation Hlookup_target in Hlookup_new.
         inversion Hlookup_new. subst classification.
-        split; [done|]. split; [exact Hreservation_pred|].
+        split; [done|].
+        exists (Occupied uid). split_and!; try done.
         exists obj. split_and!;
           [rewrite lookup_insert_eq; done
           |symmetry; done
@@ -1616,7 +1647,7 @@ Proof.
             lookup_singleton_ne // left_id in Hlookup_new.
           exact Hlookup_new. }
         assert (Hlookup_old :
-          proj_key_classification (mk_reservation_frag k Available ⋅ bf) !! k' =
+          proj_key_classification (mk_reservation_frag k 1 Available ⋅ bf) !! k' =
             Some classification).
         { assert (Hneq' : k ≠ k') by (intros ->; apply Hneq; done).
           rewrite /proj_key_classification /mk_reservation_frag /= lookup_op.
@@ -1624,10 +1655,11 @@ Proof.
         destruct (Hreservation _ _ Hlookup_old) as
           [Hclassification_valid Hcompatible].
         split; [exact Hclassification_valid|].
-        destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-        destruct excl as [reservation|]; [|done].
-        destruct Hcompatible as [Hreserved Hreservation_state].
-        split; [exact Hreserved|].
+        destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+        destruct reservation_info as [reservation_dq agree_status].
+        destruct Hcompatible as
+          (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+        exists reservation. split_and!; try done.
         destruct reservation as [|reserved_uid|reserved_uid].
         { simpl. rewrite lookup_insert_ne //. }
         { destruct Hreservation_state as [obj' Hobj'].
@@ -1758,10 +1790,11 @@ Proof.
       destruct (Hreservation _ _ Hlookup_old) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hreservation_state].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
       assert (Hneq : k' ≠ k) by (intros ->; contradiction).
       destruct reservation as [|reserved_uid|reserved_uid].
       * simpl. rewrite lookup_delete_ne //.
@@ -1775,28 +1808,28 @@ Qed.
 
 Lemma delete_reserved_kobj a k uid meta:
   (●K a ⋅ ◯K (mk_meta_frag k uid 1 meta) ⋅
-    ◯K (mk_reservation_frag k (Occupied uid))) ~~>
+    ◯K (mk_reservation_frag k 1 (Occupied uid))) ~~>
     (●K (delete k (proj_state a), proj_used_uid a) ⋅
-      ◯K (mk_reservation_frag k (Deleting uid))).
+      ◯K (mk_reservation_frag k 1 (Deleting uid))).
 Proof.
   rewrite -!assoc -!view_frag_op.
   apply view_update.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
   assert (Hsource_meta :
     proj_meta ((mk_meta_frag k uid 1 meta ⋅
-      mk_reservation_frag k (Occupied uid)) ⋅ bf) =
+      mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) =
     proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)).
   { rewrite /proj_meta /mk_meta_frag /mk_reservation_frag /= !right_id.
     done. }
   assert (Hsource_spec :
     proj_spec ((mk_meta_frag k uid 1 meta ⋅
-      mk_reservation_frag k (Occupied uid)) ⋅ bf) =
+      mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) =
     proj_spec (mk_meta_frag k uid 1 meta ⋅ bf)).
   { rewrite /proj_spec /mk_meta_frag /mk_reservation_frag /= !left_id.
     done. }
   assert (Hsource_status :
     proj_status ((mk_meta_frag k uid 1 meta ⋅
-      mk_reservation_frag k (Occupied uid)) ⋅ bf) =
+      mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) =
     proj_status (mk_meta_frag k uid 1 meta ⋅ bf)).
   { rewrite /proj_status /mk_meta_frag /mk_reservation_frag /= !left_id.
     done. }
@@ -1810,35 +1843,36 @@ Proof.
     exfalso.
     assert (Hlookup :
       proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-        mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k =
-        Some ((Cinr (Excl (Occupied uid)) : key_classificationR) ⋅
+        mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k =
+        Some ((Cinr (DfracOwn 1, to_agree (Occupied uid)) : key_classificationR) ⋅
           classification_f)).
     { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
         !lookup_op !lookup_empty !left_id lookup_singleton_eq Hbf
         Some_op_opM //. }
     destruct (Hreservation _ _ Hlookup) as [Hclassification_valid _].
-    exact (exclusive_l (Cinr (Excl (Occupied uid)) : key_classificationR)
+    exact (exclusive_l (Cinr (DfracOwn 1, to_agree (Occupied uid)) : key_classificationR)
       classification_f Hclassification_valid).
   }
   assert (Hreservation_pred : reserved_key_pred k).
   { assert (Hlookup :
       proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-        mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k =
-        (Some (Cinr (Excl (Occupied uid))) : option key_classificationR)).
+        mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k =
+        (Some (Cinr (DfracOwn 1, to_agree (Occupied uid))) : option key_classificationR)).
     { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
         !lookup_op !lookup_empty !left_id lookup_singleton_eq
         Hreservation_bf_none right_id //. }
-    destruct (Hreservation _ _ Hlookup) as [_ [Hpred _]].
+    destruct (Hreservation _ _ Hlookup) as
+      [_ (status & Hagree & Hvalid_dq & Hpred & Hstate)].
     exact Hpred.
   }
   assert (Htarget_meta :
-    proj_meta (mk_reservation_frag k (Deleting uid) ⋅ bf) = proj_meta bf).
+    proj_meta (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) = proj_meta bf).
   { rewrite /proj_meta /mk_reservation_frag /= left_id //. }
   assert (Htarget_spec :
-    proj_spec (mk_reservation_frag k (Deleting uid) ⋅ bf) = proj_spec bf).
+    proj_spec (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) = proj_spec bf).
   { rewrite /proj_spec /mk_reservation_frag /= left_id //. }
   assert (Htarget_status :
-    proj_status (mk_reservation_frag k (Deleting uid) ⋅ bf) = proj_status bf).
+    proj_status (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) = proj_status bf).
   { rewrite /proj_status /mk_reservation_frag /= left_id //. }
   assert (Hbf_none : proj_meta bf !! (k, uid) = None).
   { destruct (proj_meta bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
@@ -1949,13 +1983,14 @@ Proof.
     + intros k' classification Hlookup_new.
       destruct (decide (k' = k)) as [->|Hneq].
       * assert (Hlookup_target :
-          proj_key_classification (mk_reservation_frag k (Deleting uid) ⋅ bf) !! k =
-          (Some (Cinr (Excl (Deleting uid))) : option key_classificationR)).
+          proj_key_classification (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) !! k =
+          (Some (Cinr (DfracOwn 1, to_agree (Deleting uid))) : option key_classificationR)).
         { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
             lookup_singleton_eq Hreservation_bf_none right_id //. }
         rewrite Hlookup_target in Hlookup_new.
         inversion Hlookup_new. subst classification.
-        split; [done|]. split; [exact Hreservation_pred|].
+        split; [done|].
+        exists (Deleting uid). split_and!; try done.
         left. simpl. apply lookup_delete_eq.
       * assert (Hneq' : k ≠ k') by (intros ->; apply Hneq; done).
         assert (Hlookup_bf :
@@ -1965,7 +2000,7 @@ Proof.
           exact Hlookup_new. }
         assert (Hlookup_old :
           proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-            mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k' =
+            mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k' =
             Some classification).
         { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
             !lookup_op !lookup_empty !left_id lookup_singleton_ne //
@@ -1973,10 +2008,11 @@ Proof.
         destruct (Hreservation _ _ Hlookup_old) as
           [Hclassification_valid Hcompatible].
         split; [exact Hclassification_valid|].
-        destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-        destruct excl as [reservation|]; [|done].
-        destruct Hcompatible as [Hreserved Hreservation_state].
-        split; [exact Hreserved|].
+        destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+        destruct reservation_info as [reservation_dq agree_status].
+        destruct Hcompatible as
+          (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+        exists reservation. split_and!; try done.
         destruct reservation as [|reserved_uid|reserved_uid].
         { simpl. rewrite lookup_delete_ne //. }
         { destruct Hreservation_state as [obj' Hobj'].
@@ -1990,8 +2026,8 @@ Qed.
 
 Lemma recover_available a k uid :
   proj_state a !! k = None →
-  (●K a ⋅ ◯K (mk_reservation_frag k (Deleting uid))) ~~>
-    (●K a ⋅ ◯K (mk_reservation_frag k Available)).
+  (●K a ⋅ ◯K (mk_reservation_frag k 1 (Deleting uid))) ~~>
+    (●K a ⋅ ◯K (mk_reservation_frag k 1 Available)).
 Proof.
   intros Habsent.
   apply view_update.
@@ -2001,21 +2037,22 @@ Proof.
       last done.
     exfalso.
     assert (Hsource_lookup :
-        proj_key_classification (mk_reservation_frag k (Deleting uid) ⋅ bf) !! k =
-          Some ((Cinr (Excl (Deleting uid)) : key_classificationR) ⋅
+        proj_key_classification (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) !! k =
+          Some ((Cinr (DfracOwn 1, to_agree (Deleting uid)) : key_classificationR) ⋅
             classification_f)).
     { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
         lookup_singleton_eq Hlookup Some_op_opM //. }
     destruct (Hreservation _ _ Hsource_lookup) as [Hclassification_valid _].
-    exact (exclusive_l (Cinr (Excl (Deleting uid)) : key_classificationR)
+    exact (exclusive_l (Cinr (DfracOwn 1, to_agree (Deleting uid)) : key_classificationR)
       classification_f Hclassification_valid). }
   assert (Hreserved : reserved_key_pred k).
   { assert (Hsource_lookup :
-        proj_key_classification (mk_reservation_frag k (Deleting uid) ⋅ bf) !! k =
-          (Some (Cinr (Excl (Deleting uid))) : option key_classificationR)).
+        proj_key_classification (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) !! k =
+          (Some (Cinr (DfracOwn 1, to_agree (Deleting uid))) : option key_classificationR)).
     { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
         lookup_singleton_eq Hbf_none right_id //. }
-    destruct (Hreservation _ _ Hsource_lookup) as [_ [Hreserved _]].
+    destruct (Hreservation _ _ Hsource_lookup) as
+      [_ (status & Hagree & Hvalid_dq & Hreserved & Hstate)].
     exact Hreserved. }
   split; first exact Hvalid.
   split_and!.
@@ -2030,14 +2067,15 @@ Proof.
     + rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
         lookup_singleton_eq Hbf_none right_id in Hlookup_target.
       inversion Hlookup_target. subst classification.
-      split; [done|]. split; [exact Hreserved|exact Habsent].
+      split; [done|].
+      exists Available. split_and!; try done.
     + assert (Hlookup_bf : proj_key_classification bf !! k' =
           Some classification).
       { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
           lookup_singleton_ne // left_id in Hlookup_target.
         exact Hlookup_target. }
       assert (Hlookup_source :
-          proj_key_classification (mk_reservation_frag k (Deleting uid) ⋅ bf) !! k' =
+          proj_key_classification (mk_reservation_frag k 1 (Deleting uid) ⋅ bf) !! k' =
             Some classification).
       { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
           lookup_singleton_ne // Hlookup_bf left_id //. }
@@ -2098,10 +2136,10 @@ Proof.
       destruct (Hreservation _ _ Hfrag) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hstate].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hstate).
+      exists reservation. split_and!; try done.
       destruct reservation as [|reserved_uid|reserved_uid].
       * assert (k' ≠ k) as Hneq.
         { intros ->. rewrite Hlookup in Hstate. done. }
@@ -2196,10 +2234,10 @@ Proof.
       destruct (Hreservation _ _ Hfrag) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hstate].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hstate).
+      exists reservation. split_and!; try done.
       destruct reservation as [|reserved_uid|reserved_uid].
       * assert (k' ≠ k) as Hneq.
         { intros ->. rewrite Hlookup in Hstate. done. }
@@ -2352,10 +2390,10 @@ Proof.
       destruct (Hreservation _ _ Hsource) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hstate].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hstate).
+      exists reservation. split_and!; try done.
       assert (k' ≠ k) as Hneq.
       { intros ->. exact (Hnot_reserved Hreserved). }
       destruct reservation as [|reserved_uid|reserved_uid].
@@ -2375,9 +2413,9 @@ Lemma mark_terminating_reserved_kobj a k uid meta old_obj new_obj :
     (proj_used_uid a) →
   proj_state a !! k = Some old_obj →
   (●K a ⋅ ◯K (mk_meta_frag k uid 1 meta) ⋅
-    ◯K (mk_reservation_frag k (Occupied uid))) ~~>
+    ◯K (mk_reservation_frag k 1 (Occupied uid))) ~~>
     (●K (<[k := new_obj]> (proj_state a), proj_used_uid a) ⋅
-      ◯K (mk_reservation_frag k (Deleting uid))).
+      ◯K (mk_reservation_frag k 1 (Deleting uid))).
 Proof.
   intros (Hkey_new & Huid_new & Hvalid_new)
     Hnew_terminating Hno_spec Hlookup.
@@ -2386,16 +2424,16 @@ Proof.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
   assert (Hmeta_source :
       proj_meta ((mk_meta_frag k uid 1 meta ⋅
-        mk_reservation_frag k (Occupied uid)) ⋅ bf) =
+        mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) =
       proj_meta (mk_meta_frag k uid 1 meta ⋅ bf)).
   { rewrite /proj_meta /mk_meta_frag /mk_reservation_frag /= !right_id //. }
   assert (Hspec_source :
       proj_spec ((mk_meta_frag k uid 1 meta ⋅
-        mk_reservation_frag k (Occupied uid)) ⋅ bf) = proj_spec bf).
+        mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) = proj_spec bf).
   { rewrite /proj_spec /mk_meta_frag /mk_reservation_frag /= !left_id //. }
   assert (Hstatus_source :
       proj_status ((mk_meta_frag k uid 1 meta ⋅
-        mk_reservation_frag k (Occupied uid)) ⋅ bf) = proj_status bf).
+        mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) = proj_status bf).
   { rewrite /proj_status /mk_meta_frag /mk_reservation_frag /= !left_id //. }
   rewrite Hmeta_source in Hmeta.
   rewrite Hspec_source in Hspec.
@@ -2422,14 +2460,14 @@ Proof.
     exfalso.
     assert (Hsource :
         proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-          mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k =
-          Some ((Cinr (Excl (Occupied uid)) : key_classificationR) ⋅
+          mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k =
+          Some ((Cinr (DfracOwn 1, to_agree (Occupied uid)) : key_classificationR) ⋅
             classification_f)).
     { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
         !lookup_op !lookup_empty !left_id lookup_singleton_eq Hbf
         Some_op_opM //. }
     destruct (Hreservation _ _ Hsource) as [Hclassification_valid _].
-    exact (exclusive_l (Cinr (Excl (Occupied uid)) : key_classificationR)
+    exact (exclusive_l (Cinr (DfracOwn 1, to_agree (Occupied uid)) : key_classificationR)
       classification_f Hclassification_valid). }
   assert (Hsource_meta :
       proj_meta (mk_meta_frag k uid 1 meta ⋅ bf) !! (k, uid) =
@@ -2517,28 +2555,32 @@ Proof.
       * rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
           lookup_singleton_eq Hreservation_bf_none right_id in Hfrag.
         inversion Hfrag. subst classification.
-        split; [done|]. split.
-        -- assert (Hsource :
+        assert (Hreserved : reserved_key_pred k).
+        { assert (Hsource :
               proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-                mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k =
-                (Some (Cinr (Excl (Occupied uid))) :
+                mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k =
+                (Some (Cinr (DfracOwn 1, to_agree (Occupied uid))) :
                   option key_classificationR)).
            { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
                !lookup_op !lookup_empty !left_id lookup_singleton_eq
                Hreservation_bf_none right_id //. }
-           destruct (Hreservation _ _ Hsource) as
-             [_ [Hreserved _]]. exact Hreserved.
-        -- right. exists new_obj. split_and!.
-           ++ simpl. rewrite lookup_insert_eq //.
-           ++ symmetry. exact Huid_new.
-           ++ exact Hnew_terminating.
+          destruct (Hreservation _ _ Hsource) as
+            [_ (reservation_status' & Hagree_reservation' &
+              Hvalid_reservation_dq' & Hreserved & Hreservation_state')].
+          exact Hreserved. }
+        split; [done|].
+        exists (Deleting uid). split_and!; try done.
+        right. exists new_obj. split_and!;
+          [simpl; rewrite lookup_insert_eq
+          |symmetry
+          |exact Hnew_terminating]; done.
       * assert (Hlookup_bf : proj_key_classification bf !! k' =
             Some classification).
         { rewrite /proj_key_classification /mk_reservation_frag /= lookup_op
             lookup_singleton_ne // left_id in Hfrag. exact Hfrag. }
         assert (Hsource :
             proj_key_classification ((mk_meta_frag k uid 1 meta ⋅
-              mk_reservation_frag k (Occupied uid)) ⋅ bf) !! k' =
+              mk_reservation_frag k 1 (Occupied uid)) ⋅ bf) !! k' =
               Some classification).
         { rewrite /proj_key_classification /mk_meta_frag /mk_reservation_frag /=
             !lookup_op !lookup_empty !left_id lookup_singleton_ne //
@@ -2546,10 +2588,10 @@ Proof.
         destruct (Hreservation _ _ Hsource) as
           [Hclassification_valid Hcompatible].
         split; [exact Hclassification_valid|].
-        destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-        destruct excl as [reservation|]; [|done].
-        destruct Hcompatible as [Hreserved Hstate].
-        split; [exact Hreserved|].
+        destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+        destruct reservation_info as [reservation_dq agree_status].
+        destruct Hcompatible as (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hstate).
+        exists reservation. split_and!; try done.
         destruct reservation as [|reserved_uid|reserved_uid].
         -- rewrite lookup_insert_ne //.
         -- destruct Hstate as (obj' & Hobj' & Huid' & Hliving).
@@ -2788,10 +2830,11 @@ Proof.
       destruct (Hreservation _ _ Hlookup_old) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hreservation_state].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
       destruct reservation as [|reserved_uid|reserved_uid].
       * assert (Hneq : k' ≠ k).
         { intros ->. rewrite Hak in Hreservation_state. done. }
@@ -3115,10 +3158,11 @@ Proof.
       destruct (Hreservation _ _ Hlookup_old) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hreservation_state].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
       destruct reservation as [|reserved_uid|reserved_uid].
       * assert (Hneq : k' ≠ k).
         { intros ->. rewrite Hak in Hreservation_state. done. }
@@ -3443,10 +3487,11 @@ Proof.
       destruct (Hreservation _ _ Hlookup_old) as
         [Hclassification_valid Hcompatible].
       split; [exact Hclassification_valid|].
-      destruct classification as [agree|excl|]; [exact Hcompatible| |done].
-      destruct excl as [reservation|]; [|done].
-      destruct Hcompatible as [Hreserved Hreservation_state].
-      split; [exact Hreserved|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
       destruct reservation as [|reserved_uid|reserved_uid].
       * assert (Hneq : k' ≠ k).
         { intros ->. rewrite Hak in Hreservation_state. done. }
@@ -3505,8 +3550,8 @@ Definition own_spec_frag γ k uid dq sp : iProp Σ :=
 Definition own_status_frag γ k uid dq st : iProp Σ :=
   own γ (◯K (mk_status_frag k uid dq st)).
 
-Definition own_reservation_frag γ k status : iProp Σ :=
-  own γ (◯K (mk_reservation_frag k status)).
+Definition own_reservation_frag γ k dq status : iProp Σ :=
+  own γ (◯K (mk_reservation_frag k dq status)).
 
 Definition own_unreserved_frag γ k : iProp Σ :=
   own γ (◯K (mk_unreserved_frag k)).
@@ -3630,9 +3675,9 @@ Proof.
   exact (auth_valid_forall (state, used_uid) Hvalid).
 Qed.
 
-Lemma own_reservation_valid {γ state used_uid k status}:
+Lemma own_reservation_valid {γ state used_uid k dq status}:
   own_auth γ state used_uid -∗
-  own_reservation_frag γ k status -∗
+  own_reservation_frag γ k dq status -∗
   ⌜ reserved_key_pred k ∧
     match status with
     | Available => state !! k = None
@@ -3655,27 +3700,27 @@ Proof.
   iPureIntro.
   rewrite /own_auth /own_reservation_frag /kview_auth /kview_frag in Hvalid0.
   pose proof (proj1 (view_both_validN view_rel 0%nat
-    (state, used_uid) (mk_reservation_frag k status)) Hvalid0) as Hrel0.
+    (state, used_uid) (mk_reservation_frag k dq status)) Hvalid0) as Hrel0.
   assert (Hvalid :
-    ✓ (●K (state, used_uid) ⋅ ◯K (mk_reservation_frag k status))).
+    ✓ (●K (state, used_uid) ⋅ ◯K (mk_reservation_frag k dq status))).
   { rewrite /kview_auth /kview_frag.
     apply (proj2 (view_both_valid view_rel
-      (state, used_uid) (mk_reservation_frag k status))).
+      (state, used_uid) (mk_reservation_frag k dq status))).
     intros n. exact Hrel0. }
-  apply (auth_reservation_valid (state, used_uid) k status).
+  apply (auth_reservation_valid (state, used_uid) k dq status).
   exact Hvalid.
 Qed.
 
-Lemma own_meta_reservation_valid {γ k uid dq meta status} :
+Lemma own_meta_reservation_valid {γ k uid dq meta reservation_dq status} :
   own_meta_frag γ k uid dq meta -∗
-  own_reservation_frag γ k status -∗
+  own_reservation_frag γ k reservation_dq status -∗
   ⌜ status = Occupied uid ⌝.
 Proof.
   iIntros "Hmeta Hreservation".
   iDestruct (own_valid_2 with "Hmeta Hreservation") as "Hvalid".
   iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid.
   iPureIntro.
-  exact (meta_reservation_valid k uid dq meta status Hvalid).
+  exact (meta_reservation_valid k uid dq meta reservation_dq status Hvalid).
 Qed.
 
 Lemma own_unreserved_frag_valid {γ k} :
@@ -4126,12 +4171,12 @@ Lemma create_reserved_kobj_vs {γ state used_uid} k uid obj:
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
   no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
   own_auth γ state used_uid -∗
-  own_reservation_frag γ k Available ==∗
+  own_reservation_frag γ k 1 Available ==∗
     own_auth γ (<[k := obj]> state) (used_uid ∪ {[uid]}) ∗
     own_meta_frag γ k uid 1 (KObjectV.objectmeta obj) ∗
     own_spec_frag γ k uid 1 (KObjectV.spec obj) ∗
     own_status_frag γ k uid 1 (KObjectV.status obj) ∗
-    own_reservation_frag γ k (Occupied uid).
+    own_reservation_frag γ k 1 (Occupied uid).
 Proof.
   iIntros (Hak Hfresh Hkuid_obj Hdeletion_timestamp Hno_spec) "Hauth Hreservation".
   iMod (own_update_2 with "Hauth Hreservation") as "H".
@@ -4161,9 +4206,9 @@ Qed.
 Lemma delete_reserved_kobj_vs {γ state used_uid k uid meta}:
   own_auth γ state used_uid -∗
   own_meta_frag γ k uid 1 meta -∗
-    own_reservation_frag γ k (Occupied uid) ==∗
+    own_reservation_frag γ k 1 (Occupied uid) ==∗
     own_auth γ (delete k state) used_uid ∗
-    own_reservation_frag γ k (Deleting uid).
+    own_reservation_frag γ k 1 (Deleting uid).
 Proof.
   iIntros "Hauth Hmeta Hreservation".
   iMod (own_update_3 with "Hauth Hmeta Hreservation") as "H".
@@ -4176,9 +4221,9 @@ Qed.
 Lemma recover_available_vs {γ state used_uid k uid} :
   state !! k = None →
   own_auth γ state used_uid -∗
-  own_reservation_frag γ k (Deleting uid) ==∗
+  own_reservation_frag γ k 1 (Deleting uid) ==∗
     own_auth γ state used_uid ∗
-    own_reservation_frag γ k Available.
+    own_reservation_frag γ k 1 Available.
 Proof.
   iIntros (Habsent) "Hauth Hreservation".
   iMod (own_update_2 with "Hauth Hreservation") as "H".
@@ -4196,12 +4241,12 @@ Lemma create_reserved_from_deleting_kobj_vs
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
   no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
   own_auth γ state used_uid -∗
-  own_reservation_frag γ k (Deleting old_uid) ==∗
+  own_reservation_frag γ k 1 (Deleting old_uid) ==∗
     own_auth γ (<[k := obj]> state) (used_uid ∪ {[new_uid]}) ∗
     own_meta_frag γ k new_uid 1 (KObjectV.objectmeta obj) ∗
     own_spec_frag γ k new_uid 1 (KObjectV.spec obj) ∗
     own_status_frag γ k new_uid 1 (KObjectV.status obj) ∗
-    own_reservation_frag γ k (Occupied new_uid).
+    own_reservation_frag γ k 1 (Occupied new_uid).
 Proof.
   iIntros (Habsent Hfresh Hvalid Hliving Hno_spec) "Hauth Hdeleting".
   iMod (recover_available_vs Habsent with "Hauth Hdeleting") as
@@ -4269,9 +4314,9 @@ Lemma mark_terminating_reserved_kobj_vs
   state !! k = Some old_obj →
   own_auth γ state used_uid -∗
   own_meta_frag γ k uid 1 meta -∗
-  own_reservation_frag γ k (Occupied uid) ==∗
+  own_reservation_frag γ k 1 (Occupied uid) ==∗
     own_auth γ (<[k := new_obj]> state) used_uid ∗
-    own_reservation_frag γ k (Deleting uid).
+    own_reservation_frag γ k 1 (Deleting uid).
 Proof.
   iIntros (Hvalid Hterminating Hno_spec Hlookup)
     "Hauth Hmeta Hreservation".

@@ -1345,7 +1345,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_occupied" ∷ ([∗ list] pod ∈ filter BadLiving pods,
-        own_occupied_reserved_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+        own_occupied_reserved_frag γ 1 (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "#Hown_deletion_observed_frag" ∷ ([∗ list] pod ∈ terminating_pods pods,
         own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
@@ -1373,7 +1373,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_occupied" ∷ ([∗ list] pod ∈ filter BadLiving (drop n pods),
-        own_occupied_reserved_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+        own_occupied_reserved_frag γ 1 (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (children ∖ list_to_set (PodV.key <$> filter BadLiving (take n pods))) ∗
@@ -1405,7 +1405,7 @@ Proof.
       own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
     "Hown_occupied_todo" ∷ ([∗ list] pod ∈ filter BadLiving (drop (sint.nat i) pods),
-      own_occupied_reserved_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      own_occupied_reserved_frag γ 1 (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
     "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (children ∖ list_to_set (PodV.key <$> filter BadLiving (take (sint.nat i) pods))) ∗

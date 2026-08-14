@@ -23,7 +23,7 @@ Lemma wp_State__create_named_au γ l kind namespace key i kobj parent_key parent
     "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
     "%Hreservation_status" ∷ ⌜ reservation = Available ∨ ∃ old_uid, reservation = Deleting old_uid ⌝ ∗
-    "Hown_reserved_frag" ∷ own_reserved_frag γ key reservation ∗
+    "Hown_reserved_frag" ∷ own_reserved_frag γ key 1 reservation ∗
     |={⊤,∅}=> ∃ children,
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷
@@ -40,7 +40,7 @@ Lemma wp_State__create_named_au γ l kind namespace key i kobj parent_key parent
           own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
           own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
           own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-          own_occupied_reserved_frag γ key uid ∗
+          own_occupied_reserved_frag γ 1 key uid ∗
           own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
           own_children_frag γ key uid 1 ∅
             ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
@@ -289,7 +289,7 @@ Proof.
       own_meta_frag γ key generated_uid 1 (KObjectV.objectmeta kobj2) ∗
       own_spec_frag γ key generated_uid 1 (KObjectV.spec kobj2) ∗
       own_status_frag γ key generated_uid 1 (KObjectV.status kobj2) ∗
-      own_occupied_reserved_frag γ key generated_uid)%I
+      own_occupied_reserved_frag γ 1 key generated_uid)%I
     with "[Hinv_Hown_abs Hown_reserved_frag]" as
       ">(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status &
         Hown_reserved_frag)".
@@ -475,7 +475,7 @@ Lemma wp_State__create_named_available γ l kind namespace key i kobj parent_key
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
       "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
@@ -534,7 +534,7 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
         own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
         own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
         own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-        own_occupied_reserved_frag γ key uid ∗
+        own_occupied_reserved_frag γ 1 key uid ∗
         own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
         own_children_frag γ key uid 1 ∅) ∨
       (⌜ ret = interface.nil ⌝ ∗
@@ -602,7 +602,7 @@ Lemma wp_State__PodCreate_named_available γ l namespace key pod_l pod parent_ke
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
-      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
       "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
@@ -676,7 +676,7 @@ Lemma wp_State__PodCreate_named γ l namespace key pod_l pod parent_key parent_u
         own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
         own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ∗
         own_status_frag γ key uid 1 (ObjectStatusV.PodStatus pod'.(PodV.Status')) ∗
-        own_occupied_reserved_frag γ key uid ∗
+        own_occupied_reserved_frag γ 1 key uid ∗
         own_children_frag γ parent_key parent_uid 1 (children ∪ {[key]}) ∗
         own_children_frag γ key uid 1 ∅) ∨
       (⌜ ret = null ⌝ ∗

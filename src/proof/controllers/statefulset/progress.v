@@ -160,9 +160,12 @@ Proof.
   iEval (rewrite Hall_living) in "Hall_frags".
   pose proof (pod_storage_view_perm_reservation_identities _ _ Hall_storage_perm)
     as Hall_reservation_identities.
-  iAssert (own_occupied_pods γ all_pods) with "[Hoccupied_pods]" as "Hall_occupied".
+  iAssert ([∗ list] pod ∈ all_pods,
+      own_occupied_reserved_frag γ 1 (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
+    with "[Hoccupied_pods]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
-    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ identity.1 identity.2)
+    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ 1 identity.1 identity.2)
       (pod_reservation_identity <$> all_pods)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
     iExact "Hoccupied_pods". }

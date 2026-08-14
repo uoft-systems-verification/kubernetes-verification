@@ -286,9 +286,12 @@ Proof.
     as Hall_key_perm.
   pose proof (pod_storage_view_perm_reservation_identities _ _ Hall_living_storage_perm)
     as Hall_reservation_identities.
-  iAssert (own_occupied_pods γ living_all) with "[Hoccupied_pods]" as "Hall_occupied".
+  iAssert ([∗ list] pod ∈ living_all,
+      own_occupied_reserved_frag γ 1 (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
+    with "[Hoccupied_pods]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
-    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ identity.1 identity.2)
+    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ 1 identity.1 identity.2)
       (pod_reservation_identity <$> living_all)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
     iExact "Hoccupied_pods". }
@@ -572,8 +575,11 @@ Proof.
       with "[Hremaining_frags]" as "Hremaining_frags".
     { rewrite /remaining_pods big_sepL_app. iFrame. }
     iCombine "Hgood_occupied Hrelease_Hown_occupied" as "Hremaining_occupied".
-    iAssert (own_occupied_pods γ remaining_pods) with "[Hremaining_occupied]" as "Hremaining_occupied".
-    { rewrite /own_occupied_pods /remaining_pods big_sepL_app. iFrame. }
+    iAssert ([∗ list] pod ∈ remaining_pods,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
+      with "[Hremaining_occupied]" as "Hremaining_occupied".
+    { rewrite /remaining_pods big_sepL_app. iFrame. }
     iAssert (own_missing_pod_reservations γ sts remaining_pods)
       with "[Hreserved_pods]" as "Hreserved_pods".
     { unfold own_missing_pod_reservations. rewrite Hmissing_remaining. iFrame. }

@@ -254,7 +254,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
                 set claim_template ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
               claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-            "Hreserved" ∷ own_occupied_reserved_frag γ
+            "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (new_persistent_volume_claim_key set claim_template ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
          ("Hreserved" ∷ own_available_frag γ
@@ -293,7 +293,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
               set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
             claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-          "Hreserved" ∷ own_occupied_reserved_frag γ
+          "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
   }}}.
@@ -451,7 +451,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
                 set claim_template ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
               claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-            "Hreserved" ∷ own_occupied_reserved_frag γ
+            "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (new_persistent_volume_claim_key set claim_template ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
          ("Hreserved" ∷ own_available_frag γ
@@ -488,7 +488,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
               set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
             claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-          "Hreserved" ∷ own_occupied_reserved_frag γ
+          "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
   }}}.
@@ -580,7 +580,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
               claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-            "Hreserved" ∷ own_occupied_reserved_frag γ
+            "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
           (own_available_frag γ
@@ -605,7 +605,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
               claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-            "Hreserved" ∷ own_occupied_reserved_frag γ
+            "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
   }}}.
@@ -651,7 +651,7 @@ Proof.
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
         claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-      "Hreserved" ∷ own_occupied_reserved_frag γ
+      "Hreserved" ∷ own_occupied_reserved_frag γ 1
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
     (own_available_frag γ
@@ -669,7 +669,7 @@ Proof.
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
         claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-      "Hreserved" ∷ own_occupied_reserved_frag γ
+      "Hreserved" ∷ own_occupied_reserved_frag γ 1
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))%I.
   assert (Hclaim_templates_pure_dom :
@@ -786,7 +786,7 @@ Proof.
               set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
             claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-          "Hreserved" ∷ own_occupied_reserved_frag γ
+          "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
        (own_available_frag γ

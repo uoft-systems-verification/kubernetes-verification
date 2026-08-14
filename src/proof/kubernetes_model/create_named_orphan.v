@@ -35,7 +35,7 @@ Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj :
         own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
         own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
         own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-        own_occupied_reserved_frag γ key uid ∗
+        own_occupied_reserved_frag γ 1 key uid ∗
         own_children_frag γ key uid 1 ∅
           ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V)
   ) -∗
@@ -370,7 +370,7 @@ Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (KObjectV.spec kobj') ∗
       "Hown_status_frag" ∷ own_status_frag γ key uid 1 (KObjectV.status kobj') ∗
-      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.
@@ -423,7 +423,7 @@ Lemma wp_State__PersistentVolumeClaimCreate_named_orphan γ l namespace key pvc_
         own_spec_frag γ key uid 1 (ObjectSpecV.PersistentVolumeClaimSpec pvc'.(PersistentVolumeClaimV.Spec')) ∗
       "Hown_status_frag" ∷
         own_status_frag γ key uid 1 (ObjectStatusV.PersistentVolumeClaimStatus pvc'.(PersistentVolumeClaimV.Status')) ∗
-      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅
   }}}.
 Proof.

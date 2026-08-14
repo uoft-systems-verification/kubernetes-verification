@@ -10,7 +10,7 @@ Local Set Default Proof Using "All".
 Lemma delete_reserved_key_kobj_vs γ state used_uid key uid meta :
   own_kview_auth γ state used_uid -∗
   own_meta_frag γ key uid 1 meta -∗
-  own_occupied_reserved_frag γ key uid ==∗
+  own_occupied_reserved_frag γ 1 key uid ==∗
     own_kview_auth γ (delete key state) used_uid ∗
     own_deleting_reserved_frag γ key uid.
 Proof.
@@ -32,7 +32,7 @@ Lemma wp_State__delete_reserved_au γ l key options_c options:
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
-      "Hkey_reservation" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hkey_reservation" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase ∗
       "Hclose" ∷ (
@@ -52,7 +52,7 @@ Lemma wp_State__delete_reserved_au γ l key options_c options:
               ( ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
                 own_spec_frag γ key uid 1 kspec ∗
-                own_occupied_reserved_frag γ key uid ∗
+                own_occupied_reserved_frag γ 1 key uid ∗
                 own_children_frag γ parent_key parent_uid 1 children ∗
                 own_terminating_children_frag γ parent_key parent_uid phase)
             )
@@ -645,7 +645,7 @@ Lemma wp_State__delete_reserved γ l key options_c options uid kmeta kspec paren
       "%Hdelete_preconditions" ∷ ⌜ delete_preconditions_match options kmeta ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
-      "Hkey_reservation" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hkey_reservation" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}
@@ -690,7 +690,7 @@ Lemma wp_State__PodDelete_reserved γ l key namespace name options_c options uid
       "%Hdelete_preconditions_rv_none" ∷ ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec ∗
-      "Hkey_reservation" ∷ own_occupied_reserved_frag γ key uid ∗
+      "Hkey_reservation" ∷ own_occupied_reserved_frag γ 1 key uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}

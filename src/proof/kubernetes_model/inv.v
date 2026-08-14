@@ -43,17 +43,17 @@ Definition own_status_frag γ k uid dq st : iProp Σ :=
 Definition own_unreserved_key_frag γ key : iProp Σ :=
   kview.own_unreserved_frag γ.(γ_state) key.
 
-Definition own_reserved_frag γ key status : iProp Σ :=
-  kview.own_reservation_frag γ.(γ_state) key status.
+Definition own_reserved_frag γ key dq status : iProp Σ :=
+  kview.own_reservation_frag γ.(γ_state) key dq status.
 
 Definition own_available_frag γ key : iProp Σ :=
-  own_reserved_frag γ key Available.
+  own_reserved_frag γ key 1 Available.
 
-Definition own_occupied_reserved_frag γ key uid : iProp Σ :=
-  own_reserved_frag γ key (Occupied uid).
+Definition own_occupied_reserved_frag γ dq key uid : iProp Σ :=
+  own_reserved_frag γ key dq (Occupied uid).
 
 Definition own_deleting_reserved_frag γ key uid : iProp Σ :=
-  own_reserved_frag γ key (Deleting uid).
+  own_reserved_frag γ key 1 (Deleting uid).
 
 Definition own_children_auth γ state used_reference : iProp Σ :=
   cview.own_auth γ.(γ_children) state used_reference.

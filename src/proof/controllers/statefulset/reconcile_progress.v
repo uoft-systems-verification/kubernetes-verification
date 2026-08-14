@@ -282,7 +282,7 @@ Definition own_pvc_map γ
     own_meta_frag γ key
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
       pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-    own_occupied_reserved_frag γ key
+    own_occupied_reserved_frag γ 1 key
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))%I.
 
 Lemma own_pvc_list_as_map γ pvcs :
@@ -291,7 +291,7 @@ Lemma own_pvc_list_as_map γ pvcs :
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
       pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-    own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+    own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ⊣⊢
   own_pvc_map γ (pvc_map_of_list pvcs).
 Proof.
@@ -313,7 +313,7 @@ Lemma own_pvc_map_as_list γ pvc_map :
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
       pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-    own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+    own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')).
 Proof.
   intros Hwf.
@@ -335,7 +335,7 @@ Definition pvc_ready γ set ordinal claim_template_name claim_template :
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
         claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-      own_occupied_reserved_frag γ
+      own_occupied_reserved_frag γ 1
         (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
    (own_available_frag γ
@@ -352,7 +352,7 @@ Definition pvc_done γ set ordinal claim_template_name : iProp Σ :=
       (desired_pvc_key set claim_template_name ordinal)
       claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
       claim.(PersistentVolumeClaimV.ObjectMeta') ∗
-    own_occupied_reserved_frag γ
+    own_occupied_reserved_frag γ 1
       (desired_pvc_key set claim_template_name ordinal)
       claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))%I.
 
@@ -2785,12 +2785,16 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
+      "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
+          pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -2825,12 +2829,16 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods',
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs' ∗
+      "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
+          pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -2876,7 +2884,7 @@ Proof.
     PersistentVolumeClaimV.key PersistentVolumeClaimV.ObjectMeta'
     with "Hown_pvcs") as "%Hpvc_keys_nodup".
   iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
-  iEval (rewrite /own_occupied_pvcs -big_sepL_sep) in "Hown_pvcs".
+  iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
   set initial_pvc_map := pvc_map_of_list pvcs.
   iEval (rewrite (own_pvc_list_as_map γ pvcs Hpvc_keys_nodup))
     in "Hown_pvcs".
@@ -2925,7 +2933,9 @@ Proof.
       own_spec_frag γ (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-    "Hoccupied_pods" ∷ own_occupied_pods γ current_pods ∗
+    "Hoccupied_pods" ∷ ([∗ list] pod ∈ current_pods,
+      own_occupied_reserved_frag γ 1 (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
     "Hown_pvcs" ∷ own_pvc_map γ pvc_map ∗
     "Hown_children" ∷ own_children_frag γ
       (StatefulSetV.key set)
@@ -3139,7 +3149,7 @@ Proof.
       iDestruct "Hown_pods" as
         "[[Hmeta_before [Hlocal_meta Hmeta_after]]
           [Hspec_before [Hlocal_spec Hspec_after]]]".
-      iEval (rewrite /own_occupied_pods Hcurrent_decomp
+      iEval (rewrite Hcurrent_decomp
         big_sepL_app big_sepL_cons) in "Hoccupied_pods".
       iDestruct "Hoccupied_pods" as
         "[Hoccupied_before [Hlocal_occupied Hoccupied_after]]".
@@ -3210,11 +3220,12 @@ Proof.
         rewrite Hupdate_Hpod_key Hupdate_Hpod_uid. iFrame. }
       iCombine "Hown_meta Hown_spec" as "Hown_pods".
       iEval (rewrite -big_sepL_sep) in "Hown_pods".
-      iAssert (own_occupied_pods γ
-          (current_before ++ stored_pod' :: current_after))
+      iAssert ([∗ list] pod ∈ current_before ++ stored_pod' :: current_after,
+          own_occupied_reserved_frag γ 1 (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
         with "[Hoccupied_before Hlocal_occupied Hoccupied_after]"
         as "Hoccupied_pods".
-      { rewrite /own_occupied_pods big_sepL_app big_sepL_cons
+      { rewrite big_sepL_app big_sepL_cons
           Hupdate_Hpod_key Hupdate_Hpod_uid. iFrame. }
       iAssert (own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3435,11 +3446,13 @@ Proof.
         as "Hown_pods".
       { unfold current_pods'. rewrite big_sepL_app big_sepL_singleton.
         rewrite -Hcreate_Hpod_key -Hcreate_Huid. iFrame. }
-      iAssert (own_occupied_pods γ current_pods')
+      iAssert ([∗ list] pod ∈ current_pods',
+          own_occupied_reserved_frag γ 1 (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
         with "[Hoccupied_pods Hcreate_Hpod_reserved]"
         as "Hoccupied_pods".
       { unfold current_pods'.
-        rewrite /own_occupied_pods big_sepL_app big_sepL_singleton.
+        rewrite big_sepL_app big_sepL_singleton.
         rewrite -Hcreate_Hpod_key -Hcreate_Huid. iFrame. }
       iAssert (own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3538,7 +3551,9 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3581,7 +3596,9 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods',
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3732,7 +3749,7 @@ Proof.
       "[Hmeta_before [Hstored_meta Hmeta_after]]".
     iDestruct "Hown_spec" as
       "[Hspec_before [Hstored_spec Hspec_after]]".
-    iEval (rewrite /own_occupied_pods Hpods_decomp
+    iEval (rewrite Hpods_decomp
       big_sepL_app big_sepL_cons) in "Hoccupied_pods".
     iDestruct "Hoccupied_pods" as
       "[Hoccupied_before [Hstored_occupied Hoccupied_after]]".
@@ -3773,9 +3790,11 @@ Proof.
       apply elem_of_app in Hpod as [Hpod|Hpod].
       - apply elem_of_app. left. exact Hpod.
       - apply elem_of_app. right. apply elem_of_cons. right. exact Hpod. }
-    iAssert (own_occupied_pods γ (before ++ after))
+    iAssert ([∗ list] pod ∈ before ++ after,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
       with "[Hoccupied_before Hoccupied_after]" as "Hoccupied_pods".
-    { rewrite /own_occupied_pods big_sepL_app. iFrame. }
+    { rewrite big_sepL_app. iFrame. }
     assert (NoDup (PodV.key <$> (before ++ stored_pod :: after)))
       as Hdecomp_nodup.
     { rewrite -Hpods_decomp. exact Hstored_nodup. }
@@ -3844,7 +3863,9 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -3887,7 +3908,9 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods',
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -4043,7 +4066,7 @@ Proof.
       "[Hmeta_before [Hstored_meta Hmeta_after]]".
     iDestruct "Hown_spec" as
       "[Hspec_before [Hstored_spec Hspec_after]]".
-    iEval (rewrite /own_occupied_pods Hpods_decomp
+    iEval (rewrite Hpods_decomp
       big_sepL_app big_sepL_cons) in "Hoccupied_pods".
     iDestruct "Hoccupied_pods" as
       "[Hoccupied_before [Hstored_occupied Hoccupied_after]]".
@@ -4090,9 +4113,11 @@ Proof.
         apply elem_of_app in Hpod as [Hpod|Hpod].
         - apply elem_of_app. left. exact Hpod.
         - apply elem_of_app. right. apply elem_of_cons. right. exact Hpod. }
-      iAssert (own_occupied_pods γ (before ++ after))
+      iAssert ([∗ list] pod ∈ before ++ after,
+          own_occupied_reserved_frag γ 1 (PodV.key pod)
+            pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
         with "[Hoccupied_before Hoccupied_after]" as "Hoccupied_pods".
-      { rewrite /own_occupied_pods big_sepL_app. iFrame. }
+      { rewrite big_sepL_app. iFrame. }
       assert (NoDup (PodV.key <$> (before ++ stored_pod :: after)))
         as Hdecomp_nodup.
       { rewrite -Hpods_decomp. exact Hstored_nodup. }
@@ -4166,12 +4191,16 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods,
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs ∗
+      "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
+          pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -4206,12 +4235,16 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_spec_frag γ (PodV.key pod)
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-      "Hoccupied_pods" ∷ own_occupied_pods γ pods' ∗
+      "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods',
+        own_occupied_reserved_frag γ 1 (PodV.key pod)
+          pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-      "Hoccupied_pvcs" ∷ own_occupied_pvcs γ pvcs' ∗
+      "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs',
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
+          pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1

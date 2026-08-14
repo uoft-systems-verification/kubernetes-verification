@@ -56,7 +56,7 @@ Definition own_unreserved_pods γ (reserved pods : list PodV.t) : iProp Σ :=
     own_spec_frag γ (PodV.key pod)
       pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
       (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
-    own_occupied_reserved_frag γ (PodV.key pod)
+    own_occupied_reserved_frag γ 1 (PodV.key pod)
       pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I.
 
 Lemma unreserved_pods_nil pods :
@@ -152,7 +152,7 @@ Lemma wp_reconcileDesiredPods_preservation γ model_l set_l pods_sl
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
@@ -1237,7 +1237,7 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
@@ -1269,7 +1269,7 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
         own_meta_frag γ (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1
           pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
-        own_occupied_reserved_frag γ (PersistentVolumeClaimV.key pvc)
+        own_occupied_reserved_frag γ 1 (PersistentVolumeClaimV.key pvc)
           pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_children" ∷ own_children_frag γ
         (StatefulSetV.key set)
