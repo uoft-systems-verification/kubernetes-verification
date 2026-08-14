@@ -114,14 +114,6 @@ Proof.
   { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid.
     exact Hget_Hmeta_eq. }
 
-  iEval (rewrite big_sepL_sep) in "Hown_pod_frags".
-  iDestruct "Hown_pod_frags" as
-    "[Hown_pod_meta_frags Hown_pod_spec_frags]".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hown_pod_meta_frags") as "%Hpods_nodup".
-  iCombine "Hown_pod_meta_frags Hown_pod_spec_frags" as
-    "Hown_pod_frags".
-  iEval (rewrite -big_sepL_sep) in "Hown_pod_frags".
   assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
       filter (λ key, key.(KKey.Kind') = "Pod"%go)
         (list_to_set (C:=gset KKey.t) (PodV.key <$> pods))) as Hdom_eq.
@@ -350,7 +342,16 @@ Proof.
       $Hown_terminating_children_frag $Hreserved_pods $Hreserved_pvcs]").
   { iFrame "#". iFrame "%". }
   iIntros (pods' pvcs' deletion) "Hreconcile".
-  iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto.
+  iNamedPrefix "Hreconcile" "Hreconcile_".
+  iEval (rewrite big_sepL_sep) in "Hreconcile_Hown_pods".
+  iDestruct "Hreconcile_Hown_pods" as
+    "[Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec]".
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
+    with "Hreconcile_Hown_pod_meta") as "%Hpods'_nodup".
+  iCombine "Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec" as
+    "Hreconcile_Hown_pods".
+  iEval (rewrite -big_sepL_sep) in "Hreconcile_Hown_pods".
+  wp_auto.
 
   assert (Hinitial_distance :
       match_distance set all_pods pvcs = match_distance sts pods pvcs).
@@ -399,7 +400,8 @@ Proof.
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
         Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
-      iPureIntro. left. exact Hcomplete_sts.
+      iPureIntro. split; first exact Hpods'_nodup.
+      left. exact Hcomplete_sts.
     + assert (pod_storage_view <$> good_pods ≡ₚ
         pod_storage_view <$> pods) as Hgood_storage_perm.
       { rewrite Hgood_eq. exact Hall_storage_perm. }
@@ -419,7 +421,8 @@ Proof.
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
         Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
-      iPureIntro. right. split; done.
+      iPureIntro. split; first exact Hpods'_nodup.
+      right. split; done.
   - assert (Hbad_distance :
       match_distance set all_pods pvcs =
         (match_distance set good_pods pvcs + length bad_pods)%nat).
@@ -481,7 +484,8 @@ Proof.
       Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
       Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
       Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
-    iPureIntro. right. split; done.
+    iPureIntro. split; first exact Hpods'_nodup.
+    right. split; done.
 Qed.
 
 End proof.

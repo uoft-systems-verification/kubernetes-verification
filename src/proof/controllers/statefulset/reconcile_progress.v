@@ -3985,16 +3985,15 @@ Proof.
     { eapply local_pods_match_stored_alive_all; done. }
     assert (match_distance set pods pvcs = 0%nat) as Hdistance_zero.
     { eapply desired_objects_reconciled_distance_zero; done. }
-    iEval (rewrite big_sepL_sep) in "Hown_pods".
-    iDestruct "Hown_pods" as "[Hown_meta Hown_spec]".
-    iPoseProof (match_distance_zero_matches γ set pods pvcs
+    assert (NoDup (PodV.key <$> pods)) as Hstored_nodup.
+    { rewrite -(local_pods_match_stored_keys _ _ Hlocal_stored).
+      exact Hlocal_pods_nodup. }
+    pose proof (match_distance_zero_matches_of_living_nodup set pods pvcs
       ltac:(intros pod Hpod; rewrite Forall_forall in Hstored_alive;
         apply Hstored_alive; by rewrite -list_elem_of_In)
-      with "Hown_meta") as "%Hzero_matches".
+      Hstored_nodup) as Hzero_matches.
     assert (current_state_matches set pods pvcs) as Hmatches.
     { apply (proj1 Hzero_matches). exact Hdistance_zero. }
-    iCombine "Hown_meta Hown_spec" as "Hown_pods".
-    iEval (rewrite -big_sepL_sep) in "Hown_pods".
     assert (living_pods pods = pods) as Hliving.
     { unfold living_pods. apply filter_all.
       rewrite Forall_forall in Hstored_alive.

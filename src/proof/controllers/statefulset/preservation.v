@@ -194,12 +194,6 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag") as "%Hsts_meta_valid".
   destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
   iPoseProof (own_pod_frags_living with "Hown_pod_frags") as "%Hpods_living".
-  iEval (rewrite big_sepL_sep) in "Hown_pod_frags".
-  iDestruct "Hown_pod_frags" as "[Hown_pod_meta_frags Hown_pod_spec_frags]".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hown_pod_meta_frags") as "%Hpods_nodup".
-  iCombine "Hown_pod_meta_frags Hown_pod_spec_frags" as "Hown_pod_frags".
-  iEval (rewrite -big_sepL_sep) in "Hown_pod_frags".
   wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
@@ -574,6 +568,12 @@ Proof.
           (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I)
       with "[Hremaining_frags]" as "Hremaining_frags".
     { rewrite /remaining_pods big_sepL_app. iFrame. }
+    iEval (rewrite big_sepL_sep) in "Hremaining_frags".
+    iDestruct "Hremaining_frags" as "[Hremaining_meta Hremaining_spec]".
+    iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
+      with "Hremaining_meta") as "%Hremaining_nodup".
+    iCombine "Hremaining_meta Hremaining_spec" as "Hremaining_frags".
+    iEval (rewrite -big_sepL_sep) in "Hremaining_frags".
     iCombine "Hgood_occupied Hrelease_Hown_occupied" as "Hremaining_occupied".
     iAssert ([∗ list] pod ∈ remaining_pods,
         own_occupied_reserved_frag γ 1 (PodV.key pod)
@@ -594,7 +594,7 @@ Proof.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
       Hown_pvc_frags Hoccupied_pvcs Hremaining_children Hrelease_Hown_terminating_children_frag
       Hreserved_pods Hreserved_pvcs".
-    done. }
+    iPureIntro. split; done. }
   specialize (Hrelease_Hdone eq_refl). subst released. wp_auto.
   assert (Htake_all_pods : take (length all_pods) all_pods = all_pods).
   { apply take_ge. lia. }
@@ -700,6 +700,8 @@ Proof.
     "Hreconcile_Hown_pods".
   iDestruct "Hreconcile_Hown_pods" as
     "[Hfinal_meta [Hfinal_spec Hfinal_occupied]]".
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
+    with "Hfinal_meta") as "%Hpods'_nodup".
   iCombine "Hfinal_meta Hfinal_spec" as "Hfinal_pod_frags".
   iEval (rewrite -big_sepL_sep) in "Hfinal_pod_frags".
   iPoseProof (own_pod_frags_living with "Hfinal_pod_frags") as "%Hpods'_living".
@@ -787,7 +789,7 @@ Proof.
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children
     Hreconcile_Hown_terminating_children_frag Hreconcile_Hreserved_pods
     Hreconcile_Hreserved_pvcs".
-  done.
+  iPureIntro. split; done.
 Qed.
 
 End proof.

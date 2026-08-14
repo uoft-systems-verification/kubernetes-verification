@@ -495,7 +495,8 @@ Definition statefulset_owned_resources γ sts fractions pods pvcs terminating_ph
       pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
   "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
     own_occupied_reserved_frag γ fractions.(pvc_dq) (PersistentVolumeClaimV.key pvc)
-      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')).
+      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
+  "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
 Definition syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs phase : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗

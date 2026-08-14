@@ -668,15 +668,12 @@ Proof.
   by rewrite (pod_view_distance_perm _ _ _ Hliving_perm).
 Qed.
 
-Lemma match_distance_zero_matches γ sts pods pvcs :
+Lemma match_distance_zero_matches_of_living_nodup sts pods pvcs :
   (∀ pod, pod ∈ pods → is_pod_alive pod) →
-  ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) -∗
-  ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
+  NoDup (PodV.key <$> pods) →
+  match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs.
 Proof.
-  iIntros (Hpods_alive) "Hpod_meta_frags".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hpod_meta_frags") as "%Hpods_nodup".
-  iPureIntro.
+  intros Hpods_alive Hpods_nodup.
   assert (Hdesired_pods_nodup : NoDup (desired_pod_keys sts)).
   { unfold desired_pod_keys, desired_ordinals.
     apply NoDup_fmap_2.

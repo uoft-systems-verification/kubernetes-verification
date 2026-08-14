@@ -95,9 +95,6 @@ Proof.
   { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid.
     exact Hget_Hmeta_eq. }
 
-  assert (NoDup (PodV.key <$> pods)) as Hpods_nodup.
-  { pose proof (proj1 (proj1 Hmatch)) as Hkeys.
-    rewrite Hkeys. apply desired_pod_keys_nodup. }
   assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
       filter (λ key, key.(KKey.Kind') = "Pod"%go)
         (list_to_set (C:=gset KKey.t) (PodV.key <$> pods))) as Hdom_eq.
@@ -266,6 +263,7 @@ Proof.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
     Hown_pod_frags Hoccupied_pods Hown_pvc_frags Hoccupied_pvcs Hown_children_frag
     Hown_terminating_children_frag".
+  iPureIntro. exact Hpods_nodup.
 Qed.
 
 End proof.
