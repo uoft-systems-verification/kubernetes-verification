@@ -72,7 +72,7 @@ Lemma wp_deletePod γ model_l pod_l
     @! statefulset.deletePod #pod_l
   {{{ RET #interface.nil;
       "Hpod" ∷ PodV.deepown_l pod_l local_pod dq_pod ∗
-      "Hreservation" ∷ own_deleting_reserved_frag γ (PodV.key stored_pod)
+      "Hreservation" ∷ own_deleting_reserved_frag γ 1 (PodV.key stored_pod)
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
       "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
         (children ∖ {[PodV.key stored_pod]}) ∗

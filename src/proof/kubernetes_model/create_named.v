@@ -47,7 +47,7 @@ Lemma wp_State__create_named_au γ l kind namespace key i kobj parent_key parent
         (∀ old_uid err,
           ⌜ reservation = Deleting old_uid ⌝ ∗
           ⌜ already_exists_error err ⌝ ∗
-          own_deleting_reserved_frag γ key old_uid ∗
+          own_deleting_reserved_frag γ 1 key old_uid ∗
           own_children_frag γ parent_key parent_uid 1 children
             ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V))
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i) {{ Φ }}.
@@ -457,7 +457,7 @@ Lemma wp_State__create_named_available γ l kind namespace key i kobj parent_key
       |} ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key ∗
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
@@ -514,7 +514,7 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
       |} ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ key old_uid ∗
+      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ 1 key old_uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
@@ -539,7 +539,7 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
         own_children_frag γ key uid 1 ∅) ∨
       (⌜ ret = interface.nil ⌝ ∗
         ⌜ already_exists_error err ⌝ ∗
-        own_deleting_reserved_frag γ key old_uid ∗
+        own_deleting_reserved_frag γ 1 key old_uid ∗
         own_children_frag γ parent_key parent_uid 1 children)
   }}}.
 Proof.
@@ -582,7 +582,7 @@ Lemma wp_State__PodCreate_named_available γ l namespace key pod_l pod parent_ke
       |} ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key ∗
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @! (go.PointerType apimodel.State) @! "PodCreate" #namespace #pod_l
@@ -655,7 +655,7 @@ Lemma wp_State__PodCreate_named γ l namespace key pod_l pod parent_key parent_u
       |} ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
-      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ key old_uid ∗
+      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ 1 key old_uid ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
   }}}
     l @! (go.PointerType apimodel.State) @! "PodCreate" #namespace #pod_l
@@ -681,7 +681,7 @@ Lemma wp_State__PodCreate_named γ l namespace key pod_l pod parent_key parent_u
         own_children_frag γ key uid 1 ∅) ∨
       (⌜ ret = null ⌝ ∗
         ⌜ already_exists_error err ⌝ ∗
-        own_deleting_reserved_frag γ key old_uid ∗
+        own_deleting_reserved_frag γ 1 key old_uid ∗
         own_children_frag γ parent_key parent_uid 1 children)
   }}}.
 Proof.

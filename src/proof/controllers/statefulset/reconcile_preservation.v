@@ -158,8 +158,10 @@ Lemma wp_reconcileDesiredPods_preservation γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> unreserved_pods reserved pods)) ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods) ∗
-      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set pvcs ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
+      "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
+        own_available_reserved_frag γ 1 key) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -183,8 +185,10 @@ Lemma wp_reconcileDesiredPods_preservation γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> unreserved_pods reserved pods')) ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods') ∗
-      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set (pvc_list_of_map pvc_map') ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods'),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
+      "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set (pvc_list_of_map pvc_map'),
+        own_available_reserved_frag γ 1 key) ∗
       "%Hpvc_wf" ∷ ⌜ ∀ key claim,
         pvc_map' !! key = Some claim →
         PersistentVolumeClaimV.key claim = key ⌝ ∗
@@ -241,8 +245,6 @@ Proof.
     as Hinitial_reserved_pvcs_nodup.
   { unfold missing_pvc_keys. apply list.NoDup_filter.
     unfold desired_pvc_keys. apply NoDup_elements. }
-  iEval (rewrite /own_missing_pvc_reservations
-    (big_sepS_list_to_set _ _ Hinitial_reserved_pvcs_nodup)) in "Hreserved_pvcs".
   assert (∀ key, key ∈ required_pvcs →
       key ∈ dom initial_pvc_map ∨
       key ∈ missing_pvc_keys set pvcs) as Hinitial_pvc_coverage.
@@ -274,9 +276,10 @@ Proof.
       (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
       (list_to_set (PodV.key <$> unreserved_pods reserved current_pods)) ∗
-    "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved current_pods) ∗
+    "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved current_pods),
+      own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
     "Hreserved_pvcs" ∷ ([∗ list] key ∈ reserved_pvcs,
-      own_available_frag γ key) ∗
+      own_available_reserved_frag γ 1 key) ∗
     "%Hordinal_range" ∷ ⌜ 0 ≤ sint.Z ordinal ∧
       sint.Z ordinal ≤ Z.of_nat (statefulset_replicas set) ⌝ ∗
     "%Hpvc_wf" ∷ ⌜ ∀ key claim, pvc_map !! key = Some claim →
@@ -628,13 +631,10 @@ Proof.
           (filter_remove_reserved _ _ _ _ Hlocal_unreserved)
           (filter_replace_reserved _ _ _ _ _ Hlocal_unreserved Hupdate_Hpod_key).
         rewrite !fmap_app /= Hupdate_Hpod_key. done. }
-      assert (list_to_set (C:=gset KKey.t)
-          (missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods)) =
-          list_to_set
-            (missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods')))
-        as Hmissing_set.
-      { by apply missing_pod_key_set_fmap_eq. }
-      iEval (rewrite /own_missing_pod_reservations Hmissing_set) in "Hreserved_pods".
+      assert (missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods) =
+          missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods')) as Hmissing.
+      { by apply missing_pod_key_fmap_eq. }
+      iEval (rewrite Hmissing) in "Hreserved_pods".
       assert (filter (pending_pod set) pods ⊆ current_pods')
         as Hreserved_subset'.
       { unfold current_pods'.
@@ -724,8 +724,11 @@ Proof.
             (missing_pod_keys set
               (unreserved_pods (filter (pending_pod set) pods) current_pods))) as Hmissing_current_set.
       { by rewrite elem_of_list_to_set. }
-      iEval (rewrite /own_missing_pod_reservations
-        (big_sepS_delete _ _ _ Hmissing_current_set)) in "Hreserved_pods".
+      assert (NoDup (missing_pod_keys set
+          (unreserved_pods (filter (pending_pod set) pods) current_pods))) as Hmissing_current_nodup.
+      { unfold missing_pod_keys. apply list.NoDup_filter. apply desired_pod_keys_nodup. }
+      iEval (rewrite -(big_sepS_list_to_set _ _ Hmissing_current_nodup)) in "Hreserved_pods".
+      iEval (rewrite (big_sepS_delete _ _ _ Hmissing_current_set)) in "Hreserved_pods".
       iDestruct "Hreserved_pods" as "[Hpod_reserved Hreserved_pods]".
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
@@ -779,10 +782,11 @@ Proof.
       iDestruct "Hcreate" as "[Hcreated|Hdeleting]".
       2: {
         iDestruct "Hdeleting" as (old_uid) "[Hpod_reserved Hown_children]".
-        iAssert (own_missing_pod_reservations γ set
-            (unreserved_pods (filter (pending_pod set) pods) current_pods))
+        iAssert (([∗ list] key ∈
+              missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods),
+            own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
           with "[Hpod_reserved Hreserved_pods]" as "Hreserved_pods".
-        { rewrite /own_missing_pod_reservations
+        { rewrite -(big_sepS_list_to_set _ _ Hmissing_current_nodup)
             (big_sepS_delete _ _ _ Hmissing_current_set).
           iSplitL "Hpod_reserved".
           - iRight. iExists old_uid. iFrame.
@@ -873,10 +877,11 @@ Proof.
           apply list_elem_of_filter in Hstored_missing_current as [Hfresh _].
           exact (Hfresh Hkey_current).
         - apply NoDup_singleton. }
-      iAssert (own_missing_pod_reservations γ set
-          (unreserved_pods (filter (pending_pod set) pods) current_pods'))
+      iAssert (([∗ list] key ∈
+            missing_pod_keys set (unreserved_pods (filter (pending_pod set) pods) current_pods'),
+          own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
         with "[Hreserved_pods]" as "Hreserved_pods".
-      { rewrite /own_missing_pod_reservations /current_pods'.
+      { rewrite /current_pods'.
         assert (unreserved_pods (filter (pending_pod set) pods) (current_pods ++ [stored_pod']) =
             unreserved_pods (filter (pending_pod set) pods) current_pods ++ [stored_pod'])
           as Hunreserved_snoc.
@@ -903,7 +908,12 @@ Proof.
         { apply missing_pod_key_set_snoc.
           - by rewrite Hstored_pod_key.
           - exact Hfresh. }
-        rewrite Hunreserved_snoc Hmissing_snoc Hstored_pod_key.
+        assert (NoDup (missing_pod_keys set
+            (unreserved_pods (filter (pending_pod set) pods) current_pods ++ [stored_pod'])))
+          as Hmissing_snoc_nodup.
+        { unfold missing_pod_keys. apply list.NoDup_filter. apply desired_pod_keys_nodup. }
+        rewrite Hunreserved_snoc -(big_sepS_list_to_set _ _ Hmissing_snoc_nodup)
+          Hmissing_snoc Hstored_pod_key.
         iExact "Hreserved_pods". }
       assert (filter (pending_pod set) pods ⊆ current_pods')
         as Hreserved_subset'.
@@ -962,7 +972,8 @@ Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods) ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hlocal_pods_valid" ∷ ⌜ Forall PodV.valid local_pods ⌝ ∗
       "%Hlocal_pods_members" ∷ ⌜ Forall
@@ -994,7 +1005,8 @@ Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods') ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods'),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "%Hdistance" ∷ ⌜ match_distance set pods' pvcs ≤
         match_distance set local_pods initial_pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -1156,13 +1168,14 @@ Proof.
     { unfold own_unreserved_pods, unreserved_pods.
       rewrite list.filter_app big_sepL_app.
       iFrame. }
-    iAssert (own_missing_pod_reservations γ set
-        (unreserved_pods (filter (pending_pod set) local_pods) (before ++ after)))
+    iAssert (([∗ list] key ∈
+          missing_pod_keys set (unreserved_pods (filter (pending_pod set) local_pods) (before ++ after)),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
       with "[Hreserved_pods]" as "Hreserved_pods".
     { set P := pod_key_not_reserved (filter (pending_pod set) local_pods).
-      iEval (rewrite /own_missing_pod_reservations /unreserved_pods Hpods_decomp
+      iEval (rewrite /unreserved_pods Hpods_decomp
         (filter_remove_reserved _ before stored_pod after Hstored_unreserved)) in "Hreserved_pods".
-      rewrite /own_missing_pod_reservations /unreserved_pods list.filter_app.
+      rewrite /unreserved_pods list.filter_app.
       assert (missing_pod_keys set (filter P before ++ filter P after) =
           missing_pod_keys set (filter P before ++ stored_pod :: filter P after)) as Hmissing.
       { unfold missing_pod_keys. rewrite !fmap_app /=.
@@ -1246,8 +1259,10 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods) ∗
-      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set pvcs ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
+      "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
+        own_available_reserved_frag γ 1 key) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -1278,8 +1293,10 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
-      "Hreserved_pods" ∷ own_missing_pod_reservations γ set (unreserved_pods reserved pods') ∗
-      "Hreserved_pvcs" ∷ own_missing_pvc_reservations γ set pvcs' ∗
+      "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods'),
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
+      "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs',
+        own_available_reserved_frag γ 1 key) ∗
       "%Hdistance" ∷ ⌜ match_distance set pods' pvcs' ≤
         match_distance set pods pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -1340,9 +1357,12 @@ Proof.
             %Hdeletion_desired & %Hdistance3 & %Hmembers3 & %Hnodup3 &
             %Hmissing_pods3 & %Hprogress3)".
         iClear "Hreserved_pods".
-        iAssert (own_missing_pod_reservations γ set pods3)
+        iAssert (([∗ list] key ∈ missing_pod_keys set pods3,
+            own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
           with "[Hstarted_deletion]" as "Hreserved_pods".
-        { rewrite /own_missing_pod_reservations Hmissing_pods3.
+        { assert (NoDup (missing_pod_keys set pods3)) as Hmissing_pods3_nodup.
+          { unfold missing_pod_keys. apply list.NoDup_filter. apply desired_pod_keys_nodup. }
+          rewrite -(big_sepS_list_to_set _ _ Hmissing_pods3_nodup) Hmissing_pods3.
           destruct deletion3 as [[key uid]|]; simpl.
           - rewrite big_sepS_singleton /own_started_deletion /=.
             iRight. by iExists uid.
@@ -1365,13 +1385,13 @@ Proof.
       * iDestruct "Hcondemned_stop" as
           "(%Hcontinue_condemned & %Hdeletion2_some & %Hprogress2)".
         subst continue_condemned. wp_auto. iClear "Hstarted_deletion".
-        iAssert (own_missing_pod_reservations γ set pods2)
+        iAssert (([∗ list] key ∈ missing_pod_keys set pods2,
+            own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
           with "[Hreserved_pods]" as "Hreserved_pods".
         { destruct Hdesired_reconciled as (Hmissing1 & _ & _).
           destruct Hdesired_reconciled2 as (Hmissing2 & _ & _).
-          iEval (rewrite /own_missing_pod_reservations unreserved_pods_nil
-            Hmissing1) in "Hreserved_pods".
-          rewrite /own_missing_pod_reservations Hmissing2. iFrame. }
+          iEval (rewrite unreserved_pods_nil Hmissing1) in "Hreserved_pods".
+          rewrite Hmissing2. iFrame. }
         iAssert (own_unreserved_pods γ [] pods2)
           with "[Hown_pods Hoccupied_pods]" as "Hown_pods".
         { rewrite /own_unreserved_pods unreserved_pods_nil !big_sepL_sep.

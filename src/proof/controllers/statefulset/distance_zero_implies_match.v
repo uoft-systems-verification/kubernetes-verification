@@ -9,8 +9,8 @@ Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma distance_zero_implies_match γ sts dqs pods pvcs phase :
-  statefulset_owned_resources γ sts dqs pods pvcs phase -∗
+Lemma distance_zero_implies_match γ sts pods pvcs dqs ready :
+  statefulset_owned_resources γ sts pods pvcs dqs ready -∗
   ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
 Proof.
   iIntros "Hresources". iNamed "Hresources".

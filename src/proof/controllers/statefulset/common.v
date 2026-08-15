@@ -15,7 +15,7 @@ Definition own_started_deletion γ
     (deletion : option (KKey.t * types.UID.t)) : iProp Σ :=
   match deletion with
   | None => emp
-  | Some (key, uid) => own_deleting_reserved_frag γ key uid
+  | Some (key, uid) => own_deleting_reserved_frag γ 1 key uid
   end.
 
 Lemma own_occupied_pods_as_identities γ dq pods :

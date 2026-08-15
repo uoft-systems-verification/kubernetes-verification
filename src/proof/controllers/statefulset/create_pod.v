@@ -77,7 +77,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "Hpod_reserved" ∷
-        own_available_frag γ (desired_pod_key set ordinal) ∗
+        own_available_reserved_frag γ 1 (desired_pod_key set ordinal) ∗
       "Hown_children" ∷
         own_children_frag γ
           (StatefulSetV.key set)
@@ -98,7 +98,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
             "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
-          (own_available_frag γ
+          (own_available_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal) ∗
            ⌜ PersistentVolumeClaimV.valid_named_create
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -231,7 +231,7 @@ Definition stateful_pod_create_pvc_inputs γ set ordinal : iProp Σ :=
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 claim.(PersistentVolumeClaimV.ObjectMeta') ∗
       own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
-    (own_available_frag γ (desired_pvc_key set claim_template_name ordinal) ∗
+    (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
      ⌜ PersistentVolumeClaimV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
         (new_persistent_volume_claim set claim_template ordinal) ⌝).
 
@@ -283,7 +283,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
         ⌜ PodV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
       "%Hpod_parent" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
-      "Hpod_reserved" ∷ own_deleting_reserved_frag γ (desired_pod_key set ordinal) old_uid ∗
+      "Hpod_reserved" ∷ own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
       "Hpvc_states" ∷ ([∗ map] claim_template_name↦claim_template ∈
@@ -295,7 +295,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 claim.(PersistentVolumeClaimV.ObjectMeta') ∗
           "Hreserved" ∷ own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
-        (own_available_frag γ (desired_pvc_key set claim_template_name ordinal) ∗
+        (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
          ⌜ PersistentVolumeClaimV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template ordinal) ⌝))
   }}}
@@ -326,7 +326,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
         "Hpod_reserved" ∷ own_occupied_reserved_frag γ 1 (desired_pod_key set ordinal) uid ∗
         "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 (children ∪ {[desired_pod_key set ordinal]})) ∨
-       ("Hpod_reserved" ∷ own_deleting_reserved_frag γ (desired_pod_key set ordinal) old_uid ∗
+       ("Hpod_reserved" ∷ own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗
         "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children))
   }}}.
@@ -414,8 +414,8 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
         ⌜ PodV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
       "%Hpod_parent" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
-      "Hpod_reserved" ∷ (own_available_frag γ (desired_pod_key set ordinal) ∨
-        ∃ old_uid, own_deleting_reserved_frag γ (desired_pod_key set ordinal) old_uid) ∗
+      "Hpod_reserved" ∷ (own_available_reserved_frag γ 1 (desired_pod_key set ordinal) ∨
+        ∃ old_uid, own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid) ∗
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_inputs γ set ordinal
@@ -426,7 +426,7 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
       "Hpvc_states" ∷ stateful_pod_create_pvc_outputs γ set ordinal ∗
       (stateful_pod_created γ set pod ordinal children ∨
        ∃ old_uid,
-        own_deleting_reserved_frag γ (desired_pod_key set ordinal) old_uid ∗
+        own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗
         own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children)
   }}}.

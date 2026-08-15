@@ -262,7 +262,7 @@ Proof.
   rewrite /statefulset_owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
     Hown_pod_frags Hoccupied_pods Hown_pvc_frags Hoccupied_pvcs Hown_children_frag
-    Hown_terminating_children_frag".
+    Hown_terminating_children_frag Hreserved_pods Hreserved_pvcs".
   iPureIntro. exact Hpods_nodup.
 Qed.
 

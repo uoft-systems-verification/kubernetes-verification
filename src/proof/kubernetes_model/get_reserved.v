@@ -10,15 +10,15 @@ Local Set Default Proof Using "All".
 (* An Available reservation fragment entails that the key is absent from the
    authoritative object map. Therefore lookup takes the concrete NotFound
    branch and preserves the fragment for a subsequent named create. *)
-Lemma wp_State__get_reserved_au γ l key :
+Lemma wp_State__get_reserved_au γ l key dq :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     |={⊤,∅}=>
-      "Hown_reserved_frag" ∷ own_available_frag γ key ∗
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key ∗
       "Hclose" ∷ (∀ err,
         ⌜ not_found_error err ⌝ ∗
-        own_available_frag γ key
+        own_available_reserved_frag γ dq key
           ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
   ) -∗
   WP l @! (go.PointerType apimodel.State) @! "get" #key {{ Φ }}.
@@ -71,15 +71,15 @@ Proof.
   iApply "HΦ".
 Qed.
 
-Lemma wp_State__get_reserved γ l key :
+Lemma wp_State__get_reserved γ l key dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}
     l @! (go.PointerType apimodel.State) @! "get" #key
   {{{ err, RET (#interface.nil, #err);
       "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hisk & Hown_reserved_frag) HΦ".
@@ -100,7 +100,7 @@ Lemma wp_State__get_deleting_reserved_au γ l key uid :
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     |={⊤,∅}=>
-      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ key uid ∗
+      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ 1 key uid ∗
       "Hclose" ∷
         ((∀ i kobj,
           ⌜ KObjectV.valid kobj ⌝ ∗
@@ -108,11 +108,11 @@ Lemma wp_State__get_deleting_reserved_au γ l key uid :
           ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid ⌝ ∗
           ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
           KObjectV.deepown_i i kobj 1 ∗
-          own_deleting_reserved_frag γ key uid
+          own_deleting_reserved_frag γ 1 key uid
             ={∅,⊤}=∗ ▷ Φ (#(interface.ok i), #interface.nil)%V) ∧
         (∀ err,
           ⌜ not_found_error err ⌝ ∗
-          own_available_frag γ key
+          own_available_reserved_frag γ 1 key
             ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V))
   ) -∗
   WP l @! (go.PointerType apimodel.State) @! "get" #key {{ Φ }}.
@@ -206,7 +206,7 @@ Qed.
 Lemma wp_State__get_deleting_reserved γ l key uid :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ key uid
+      "Hown_reserved_frag" ∷ own_deleting_reserved_frag γ 1 key uid
   }}}
     l @! (go.PointerType apimodel.State) @! "get" #key
   {{{ ret err, RET (#ret, #err);
@@ -218,10 +218,10 @@ Lemma wp_State__get_deleting_reserved γ l key uid :
         ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid ⌝ ∗
         ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
         KObjectV.deepown_i i kobj 1 ∗
-        own_deleting_reserved_frag γ key uid) ∨
+        own_deleting_reserved_frag γ 1 key uid) ∨
       (⌜ ret = interface.nil ⌝ ∗
         ⌜ not_found_error err ⌝ ∗
-        own_available_frag γ key)
+        own_available_reserved_frag γ 1 key)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hisk & Hown_reserved_frag) HΦ".
@@ -242,7 +242,7 @@ Proof.
     iRight. iFrame. done.
 Qed.
 
-Lemma wp_State__PersistentVolumeClaimMutGet_reserved γ l key namespace name :
+Lemma wp_State__PersistentVolumeClaimMutGet_reserved γ l key namespace name dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -250,13 +250,13 @@ Lemma wp_State__PersistentVolumeClaimMutGet_reserved γ l key namespace name :
         KKey.Namespace' := namespace;
         KKey.Name' := name
       |} ⌝ ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}
     l @! (go.PointerType apimodel.State) @!
       "PersistentVolumeClaimMutGet" #namespace #name
   {{{ err, RET (#null, #err);
       "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hisk & %Hkey_def & Hown_reserved_frag) HΦ".
@@ -267,7 +267,7 @@ Proof.
   wp_apply (wp_State__get_reserved γ l
     {| KKey.Kind' := "PersistentVolumeClaim"%go;
        KKey.Namespace' := namespace;
-       KKey.Name' := name |}
+       KKey.Name' := name |} dq
     with "[$Hinit $Hisk $Hown_reserved_frag]").
   iIntros (err) "Hpost". iNamed "Hpost".
   destruct err as [err_v|].
@@ -279,7 +279,7 @@ Qed.
 
 (* The public typed Get wrapper preserves the concrete NotFound result returned
    by [PersistentVolumeClaimMutGet]. *)
-Lemma wp_State__PersistentVolumeClaimGet_reserved γ l key namespace name :
+Lemma wp_State__PersistentVolumeClaimGet_reserved γ l key namespace name dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -287,13 +287,13 @@ Lemma wp_State__PersistentVolumeClaimGet_reserved γ l key namespace name :
         KKey.Namespace' := namespace;
         KKey.Name' := name
       |} ⌝ ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}
     l @! (go.PointerType apimodel.State) @!
       "PersistentVolumeClaimGet" #namespace #name
   {{{ err, RET (#null, #err);
       "%Hnot_found" ∷ ⌜ not_found_error err ⌝ ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ dq key
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & #Hisk & %Hkey_def & Hown_reserved_frag) HΦ".
@@ -301,7 +301,7 @@ Proof.
   rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
   wp_call. wp_auto.
   wp_apply (wp_State__PersistentVolumeClaimMutGet_reserved
-    γ l key namespace name
+    γ l key namespace name dq
     with "[$Hinit $Hisk $Hown_reserved_frag]").
   { iPureIntro. exact Hkey_def. }
   iIntros (err) "Hpost".

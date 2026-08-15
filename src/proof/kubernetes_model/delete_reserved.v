@@ -12,7 +12,7 @@ Lemma delete_reserved_key_kobj_vs γ state used_uid key uid meta :
   own_meta_frag γ key uid 1 meta -∗
   own_occupied_reserved_frag γ 1 key uid ==∗
     own_kview_auth γ (delete key state) used_uid ∗
-    own_deleting_reserved_frag γ key uid.
+    own_deleting_reserved_frag γ 1 key uid.
 Proof.
   iIntros "Hauth Hmeta Hreservation".
   iMod (kview.delete_reserved_kobj_vs with "Hauth Hmeta Hreservation")
@@ -38,7 +38,7 @@ Lemma wp_State__delete_reserved_au γ l key options_c options:
       "Hclose" ∷ (
         if decide (delete_options_preconditions_resource_version_none options) then
           ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-            "Hkey_reservation" ∷ own_deleting_reserved_frag γ key uid ∗
+            "Hkey_reservation" ∷ own_deleting_reserved_frag γ 1 key uid ∗
             "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
           )
             ={∅,⊤}=∗ ▷ Φ #interface.nil
@@ -46,7 +46,7 @@ Lemma wp_State__delete_reserved_au γ l key options_c options:
           ∀ err,
             ( ( ⌜ err = interface.nil ⌝ ∗
                 ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-                  "Hkey_reservation" ∷ own_deleting_reserved_frag γ key uid ∗
+                  "Hkey_reservation" ∷ own_deleting_reserved_frag γ 1 key uid ∗
                   "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
                 )) ∨
               ( ⌜ conflict_error err ⌝ ∗
@@ -652,7 +652,7 @@ Lemma wp_State__delete_reserved γ l key options_c options uid kmeta kspec paren
     l @! (go.PointerType apimodel.State) @! "delete" #key #options_c
   {{{ RET #interface.nil;
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-      "Hkey_reservation" ∷ own_deleting_reserved_frag γ key uid ∗
+      "Hkey_reservation" ∷ own_deleting_reserved_frag γ 1 key uid ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.
@@ -697,7 +697,7 @@ Lemma wp_State__PodDelete_reserved γ l key namespace name options_c options uid
     l @! (go.PointerType apimodel.State) @! "PodDelete" #namespace #name #options_c
   {{{ RET #interface.nil;
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-      "Hkey_reservation" ∷ own_deleting_reserved_frag γ key uid ∗
+      "Hkey_reservation" ∷ own_deleting_reserved_frag γ 1 key uid ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.

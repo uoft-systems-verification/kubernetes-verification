@@ -180,8 +180,8 @@ Proof.
   by rewrite -list_elem_of_In.
 Qed.
 
-Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs phase :
-  ⊢ syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs phase.
+Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs :
+  ⊢ syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs.
 Proof.
   unfold syncStatefulSet_preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -190,6 +190,7 @@ Proof.
   iEval (simpl) in "Hown_pod_frags".
   iEval (simpl) in "Hown_children_frag".
   iEval (simpl) in "Hown_terminating_children_frag".
+  iDestruct "Hown_terminating_children_frag" as (phase) "Hown_terminating_children_frag".
   iEval (simpl) in "Hown_pvc_frags".
   iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag") as "%Hsts_meta_valid".
   destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
@@ -580,16 +581,21 @@ Proof.
           pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
       with "[Hremaining_occupied]" as "Hremaining_occupied".
     { rewrite /remaining_pods big_sepL_app. iFrame. }
-    iAssert (own_missing_pod_reservations γ sts remaining_pods)
+    iAssert (([∗ list] key ∈ missing_pod_keys sts remaining_pods,
+        own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
       with "[Hreserved_pods]" as "Hreserved_pods".
-    { unfold own_missing_pod_reservations. rewrite Hmissing_remaining. iFrame. }
+    { rewrite Hmissing_remaining. iFrame. }
     iAssert (own_children_frag γ (StatefulSetV.key sts)
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> remaining_pods)))
       with "[Hrelease_Hown_children]" as "Hremaining_children".
     { rewrite Hset_key Hset_uid Hremaining_children. iFrame. }
     iEval (rewrite -Hset_key -Hset_uid) in "Hrelease_Hown_terminating_children_frag".
-    iApply ("HΦ" $! remaining_pods pvcs phase (interface.ok err_ok)).
+    iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      with "[Hrelease_Hown_terminating_children_frag]" as "Hrelease_Hown_terminating_children_frag".
+    { iExists phase. iFrame. }
+    iApply ("HΦ" $! remaining_pods pvcs (interface.ok err_ok)).
     rewrite /statefulset_owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
       Hown_pvc_frags Hoccupied_pvcs Hremaining_children Hrelease_Hown_terminating_children_frag
@@ -677,9 +683,9 @@ Proof.
       missing_pvc_keys set pvcs = missing_pvc_keys sts pvcs).
   { apply statefulset_storage_view_missing_pvc_keys.
     symmetry. exact Hset_view. }
-  iEval (rewrite /own_missing_pod_reservations -Hmissing_pods) in "Hreserved_pods".
+  iEval (rewrite -Hmissing_pods) in "Hreserved_pods".
   iEval (rewrite -Hgood_unreserved) in "Hreserved_pods".
-  iEval (rewrite /own_missing_pvc_reservations -Hmissing_pvcs) in "Hreserved_pvcs".
+  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvcs".
   iCombine "Hown_pvc_frags Hoccupied_pvcs" as "Hown_pvcs".
   iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
   wp_auto.
@@ -777,13 +783,17 @@ Proof.
   { apply statefulset_storage_view_missing_pod_keys. symmetry. exact Hset_view. }
   assert (Hmissing_pvcs_final : missing_pvc_keys set pvcs' = missing_pvc_keys sts pvcs').
   { apply statefulset_storage_view_missing_pvc_keys. symmetry. exact Hset_view. }
-  iEval (rewrite /own_missing_pod_reservations Hmissing_final) in
+  iEval (rewrite Hmissing_final) in
     "Hreconcile_Hreserved_pods".
-  iEval (rewrite /own_missing_pvc_reservations Hmissing_pvcs_final) in
+  iEval (rewrite Hmissing_pvcs_final) in
     "Hreconcile_Hreserved_pvcs".
   iEval (rewrite -Hset_key -Hset_uid) in
     "Hreconcile_Hown_children Hreconcile_Hown_terminating_children_frag".
-  iApply ("HΦ" $! pods' pvcs' phase' interface.nil).
+  iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
+      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+    with "[Hreconcile_Hown_terminating_children_frag]" as "Hreconcile_Hown_terminating_children_frag".
+  { iExists phase'. iFrame. }
+  iApply ("HΦ" $! pods' pvcs' interface.nil).
   rewrite /statefulset_owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hfinal_pod_frags Hfinal_occupied
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children

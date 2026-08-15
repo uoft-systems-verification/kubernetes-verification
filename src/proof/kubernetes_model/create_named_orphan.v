@@ -21,7 +21,7 @@ Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj :
     |} ⌝ ∗
     "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-    "Hown_reserved_frag" ∷ own_available_frag γ key ∗
+    "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
     |={⊤,∅}=>
       "Hclose" ∷ (∀ i' kobj' uid,
         ⌜ KObjectV.valid kobj' ⌝ ∗
@@ -354,7 +354,7 @@ Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
       |} ⌝ ∗
       "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key
   }}}
     l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
   {{{ i' kobj' uid, RET (#(interface.ok i'), #interface.nil);
@@ -400,7 +400,7 @@ Lemma wp_State__PersistentVolumeClaimCreate_named_orphan γ l namespace key pvc_
       |} ⌝ ∗
       "%Hparent_none" ∷ ⌜ obj_parent_ref (KObjectV.PersistentVolumeClaim pvc) = None ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
-      "Hown_reserved_frag" ∷ own_available_frag γ key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key
   }}}
     l @! (go.PointerType apimodel.State) @! "PersistentVolumeClaimCreate" #namespace #pvc_l
   {{{ pvc_l' pvc' uid, RET (#pvc_l', #interface.nil);
