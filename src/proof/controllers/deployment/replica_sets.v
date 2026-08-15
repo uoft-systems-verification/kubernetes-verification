@@ -1,4 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
+From New.proof.map Require Import for_range.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
@@ -432,6 +433,65 @@ Proof.
       eapply (Hnot_found j r); [|exact Hlookup|exact HP].
       rewrite Hi_len. apply lookup_lt_Some in Hlookup. lia. }
     iApply ("HΦ" $! null). rewrite Hfind. iFrame. done.
+Qed.
+
+(* cloneAndAddLabel returns a fresh map holding [existing] plus one binding.
+   [existing] is only read, and a nil map ranges as empty, hence [default ∅].
+   The result is fully owned: it is a map literal the callee just built. *)
+Lemma wp_cloneAndAddLabel existing_l (existing : option (gmap go_string go_string))
+    (key value : go_string) dq :
+  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
+      "Hexisting" ∷ labels_opt_own existing_l existing dq
+  }}}
+    @! deployment.cloneAndAddLabel #existing_l #key #value
+  {{{ (result_l : loc), RET #result_l;
+      labels_opt_own existing_l existing dq ∗
+      result_l ↦$ (<[key := value]> (default ∅ existing))
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply wp_map_make1. iIntros (result_l) "Hresult".
+  wp_auto.
+  destruct existing as [m|].
+  - (* The copy loop fills [result] with the map_prefix of the keys seen so far. *)
+    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
+      (λ (keys : list go_string) i,
+        ∃ (last_value last_key : go_string),
+          "v" ∷ v_ptr ↦ last_value ∗
+          "k" ∷ k_ptr ↦ last_key ∗
+          "result" ∷ result_ptr ↦ result_l ∗
+          "Hresult" ∷ result_l ↦$ map_prefix keys i m)%I
+      with "Hexisting").
+    { done. }
+    iIntros (keys) "%Hkeys".
+    iSplitL "v k result Hresult".
+    { iExists ""%go, ""%go. iFrame. rewrite map_prefix_empty. iFrame. }
+    iSplitL "".
+    { iModIntro. iIntros (i k0 v0) "%Hiter Hloop".
+      destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+      destruct Hiter as [Hi_bounds [Hkey_lookup Hvalue_lookup]].
+      destruct Hi_bounds as [Hi_nonneg Hi_upper].
+      iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+      wp_pures. simpl subst'. wp_auto.
+      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string result_l (map_prefix keys i m) k0 v0 with "Hresult") as "Hresult".
+      iRight. iSplit; [done|].
+      iExists v0, k0. iFrame.
+      rewrite -map_prefix_insert; done. }
+    iIntros "Hexisting Hloop".
+    iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+    destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+    rewrite (map_prefix_all keys m Hkeys_dom Hkeys_len).
+    wp_auto.
+    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      go.string result_l m key value with "Hresult") as "Hresult".
+    iApply ("HΦ" $! result_l). iFrame.
+  - (* A nil source map ranges zero times, leaving [result] empty. *)
+    iDestruct "Hexisting" as %->.
+    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      go.string result_l ∅ key value with "Hresult") as "Hresult".
+    iApply ("HΦ" $! result_l). iFrame. done.
 Qed.
 
 End proof.
