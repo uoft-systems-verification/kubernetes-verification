@@ -471,7 +471,6 @@ Proof.
               Hown_unreserved_key_frag Hown_terminating_children_frag]").
 	      { iFrame "#".
 	        iSplitL "Hdeepown_do"; [iExact "Hdeepown_do"|].
-	        iSplit; [iPureIntro; exact Hvalid_do|].
 	        iSplit; [iPureIntro; rewrite /PodV.key /PodV.meta_key /=; done|].
 	        iSplit.
 	        { iPureIntro.

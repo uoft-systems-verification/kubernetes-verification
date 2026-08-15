@@ -110,7 +110,7 @@ Proof.
       Hown_terminating_children_frag]").
   { iFrame "#".
     iSplitL "Hoptions"; [iExact "Hoptions"|].
-    iSplit; [iPureIntro; exact Hvalid_options|].
+    iSplit; [done|].
     iSplit.
     { iPureIntro. rewrite -Hkey /PodV.key /PodV.meta_key /=. done. }
     iSplit; [iPureIntro; exact Hkey_in|].

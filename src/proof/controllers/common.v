@@ -44,22 +44,22 @@ Lemma wp_NewDeleteOptionsWithUID uid :
       DeleteOptionsV.deepown options (delete_options_with_uid uid) 1 ∗
       ⌜ DeleteOptionsV.valid (delete_options_with_uid uid)⌝
   }}}.
-Proof. Admitted.
-  (* wp_start as "H".
+Proof.
+  wp_start as "H".
   wp_alloc uid_ptr as "Huid_ptr".
   wp_auto.
   wp_alloc preconditions_ptr as "Hpreconditions_ptr".
   wp_auto.
   iAssert (⌜ uid_ptr ≠ null ⌝%I) as "%Huid_ptr_not_null".
-  { iDestruct (typed_pointsto_not_null with "Huid_ptr") as %H; [done|]. done. }
+  { iDestruct (typed_pointsto_not_null with "Huid_ptr") as %Huid_ptr_not_null. done. }
   iAssert (⌜ preconditions_ptr ≠ null ⌝%I) as "%Hpreconditions_ptr_not_null".
-  { iDestruct (typed_pointsto_not_null with "Hpreconditions_ptr") as %H; [done|]. done. }
+  { iDestruct (typed_pointsto_not_null with "Hpreconditions_ptr") as %Hpreconditions_ptr_not_null. done. }
   iApply "HΦ".
   rewrite /delete_options_with_uid /DeleteOptionsV.deepown /PreconditionsV.deepown /=.
   iFrame.
   iPureIntro.
-  split_and!; Timeout 10 naive_solver.
-Qed. *)
+  split_and!; try done.
+Qed.
 
 Lemma deepown_preserves_deletion_timestamp_activeness pod pure_pod dq:
   PodV.deepown pod pure_pod dq -∗
