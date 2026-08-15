@@ -494,4 +494,72 @@ Proof.
     iApply ("HΦ" $! result_l). iFrame. done.
 Qed.
 
+(* cloneSelectorAndAddLabel deep-copies the selector and sets one MatchLabels
+   binding on the copy, allocating MatchLabels first if it was nil.  The source
+   is only read; the returned selector is fully owned. *)
+Lemma wp_cloneSelectorAndAddLabel selector_l (selector : LabelSelectorV.t)
+    (key value : go_string) dq :
+  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
+      "Hselector" ∷ LabelSelectorV.deepown_l selector_l selector dq
+  }}}
+    @! deployment.cloneSelectorAndAddLabel #selector_l #key #value
+  {{{ (result_l : loc), RET #result_l;
+      LabelSelectorV.deepown_l selector_l selector dq ∗
+      LabelSelectorV.deepown_l result_l
+        (selector_with_label selector key value) 1
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  (* meta/v1's proof module is not imported here — apps/v1 owns the [v1]
+     shorthand — so the DeepCopy contract is named in full. *)
+  iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1)
+    as "#Hmeta_v1".
+  { iPkgInit. }
+  wp_apply (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_LabelSelector__DeepCopy
+    with "[$Hmeta_v1 $Hselector]").
+  iIntros (copy_l) "[Hcopy Hselector]".
+  wp_auto.
+  iDestruct "Hcopy" as (copy_c) "[Hcopy_l Hcopy]".
+  iNamed "Hcopy".
+  destruct selector.(LabelSelectorV.MatchLabels') as [ml|] eqn:Hml.
+  - (* MatchLabels was already allocated: insert straight into the copy's map. *)
+    iDestruct "Hdeepown_matchlabels_some" as (mlc) "[Hmlc ->]".
+    assert (copy_c.(v1.LabelSelector.MatchLabels') ≠ null) as Hnn.
+    { intros Hn. apply Hdeepown_matchlabels_none in Hn. congruence. }
+    wp_auto.
+    wp_if_destruct.
+    + exfalso. apply Hnn. exact e.
+    + wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string (v1.LabelSelector.MatchLabels' copy_c) ml key value
+        with "Hmlc") as "Hmlc".
+      iApply ("HΦ" $! copy_l). iFrame "Hselector".
+      iExists copy_c. iFrame "Hcopy_l".
+      rewrite /LabelSelectorV.deepown /selector_with_label Hml /=.
+      iSplit.
+      { iPureIntro.
+        split; [intros Hn; exfalso; apply Hnn; exact Hn|discriminate]. }
+      iSplitL "Hmlc"; [iExists (<[key:=value]> ml); iFrame "Hmlc"; done|].
+      iFrame "%". iFrame.
+  - (* MatchLabels was nil: the copy gets a fresh map first. *)
+    assert (v1.LabelSelector.MatchLabels' copy_c = null) as Hnull.
+    { apply Hdeepown_matchlabels_none. done. }
+    wp_auto.
+    wp_if_destruct.
+    + wp_apply wp_map_make1. iIntros (new_ml_l) "Hnew_ml".
+      iDestruct (own_map_not_nil with "Hnew_ml") as %Hnew_ml_nn.
+      wp_auto.
+      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string new_ml_l ∅ key value with "Hnew_ml") as "Hnew_ml".
+      iApply ("HΦ" $! copy_l). iFrame "Hselector".
+      iExists (copy_c <| v1.LabelSelector.MatchLabels' := new_ml_l |>).
+      iFrame "Hcopy_l".
+      rewrite /LabelSelectorV.deepown /selector_with_label Hml /=.
+      iSplit.
+      { iPureIntro.
+        split; [intros Hn; exfalso; apply Hnew_ml_nn; exact Hn|discriminate]. }
+      iSplitL "Hnew_ml"; [iExists (<[key:=value]> ∅); iFrame "Hnew_ml"; done|].
+      iFrame "%". iFrame.
+    + exfalso. apply n. exact Hnull.
+Qed.
+
 End proof.
