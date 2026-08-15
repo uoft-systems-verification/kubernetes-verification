@@ -1577,7 +1577,7 @@ Proof.
         - discriminate. }
       done. }
     + rewrite execute_val_unseal /execute_val_def. wp_auto.
-      wp_apply wp_map_make1 as (old_set_l) "Hold_set".
+      wp_apply wp_map_make1 as "%old_set_l Hold_set".
       rewrite execute_val_unseal /execute_val_def. wp_auto.
       wp_alloc old_f_ptr as "Hold_f". wp_auto.
       wp_alloc old_i_ptr as "Hold_i". wp_auto.

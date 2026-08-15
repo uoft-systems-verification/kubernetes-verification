@@ -18,19 +18,19 @@ Proof.
   unshelve wp_apply (wp_map_make1
     (K := KKey.t) (V := interface.t)
     apimodel.KKey (go.InterfaceType [])) as
-    (phys_state_l) "Hown_phys"; try tc_solve.
+    "%phys_state_l Hown_phys"; try tc_solve.
   wp_bind (#(functions go.make1
     [go.MapType types.UID (go.StructType [])]) #())%E.
   unshelve wp_apply (wp_map_make1
     (K := types.UID.t) (V := unit)
     types.UID (go.StructType [])) as
-    (phys_used_uid_l) "Hown_used_uid"; try tc_solve.
+    "%phys_used_uid_l Hown_used_uid"; try tc_solve.
   wp_bind (#(functions go.make1
     [go.MapType go.string (go.StructType [])]) #())%E.
   unshelve wp_apply (wp_map_make1
     (K := go_string) (V := unit)
     go.string (go.StructType [])) as
-    (phys_used_rv_l) "Hown_used_rv"; try tc_solve.
+    "%phys_used_rv_l Hown_used_rv"; try tc_solve.
   wp_alloc mu_l as "Hmu".
   wp_auto.
   wp_alloc l as "Hl".
