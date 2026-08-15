@@ -75,6 +75,16 @@ Definition labels_opt_own (l : loc)
   | None => ⌜ l = null ⌝
   end.
 
+(* cloneSelectorAndAddLabel returns a copy of [selector] whose MatchLabels are
+   [selector]'s plus one binding.  A nil MatchLabels is first replaced by a fresh
+   empty map, so the result's MatchLabels is always Some. *)
+Definition selector_with_label (selector : LabelSelectorV.t)
+    (key value : go_string) : LabelSelectorV.t :=
+  LabelSelectorV.mk
+    (Some (<[key := value]>
+      (default ∅ selector.(LabelSelectorV.MatchLabels'))))
+    selector.(LabelSelectorV.MatchExpressions').
+
 Definition rs_uid (rs : ReplicaSetV.t) : types.UID.t :=
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID').
 
