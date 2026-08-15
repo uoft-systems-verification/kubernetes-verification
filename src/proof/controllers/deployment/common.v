@@ -65,6 +65,16 @@ Definition rs_opt_own (l : loc) (rs_o : option ReplicaSetV.t) dq : iProp Σ :=
   | None => ⌜ l = null ⌝
   end.
 
+(* Ownership of a possibly-nil map[string]string argument.  ObjectMetaV models
+   an absent label/annotation map as None, and Go ranges over a nil map without
+   faulting, so cloneAndAddLabel must accept both. *)
+Definition labels_opt_own (l : loc)
+    (m_o : option (gmap go_string go_string)) dq : iProp Σ :=
+  match m_o with
+  | Some m => l ↦${dq} m
+  | None => ⌜ l = null ⌝
+  end.
+
 Definition rs_uid (rs : ReplicaSetV.t) : types.UID.t :=
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID').
 
