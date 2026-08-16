@@ -1118,6 +1118,24 @@ Class Deployment_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCo
   #[global] Deployment_set_Spec (x : Deployment.t) y :: ⟦StructFieldSet (Deploymentⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|Deployment.Spec' := y|>);
   #[global] Deployment_get_Status (x : Deployment.t) :: ⟦StructFieldGet (Deploymentⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(Deployment.Status');
   #[global] Deployment_set_Status (x : Deployment.t) y :: ⟦StructFieldSet (Deploymentⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|Deployment.Status' := y|>);
+  #[global] Deployment'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGenerateName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetLabels" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetSelfLink" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
 }.
 
 Module RollingUpdateDeployment.

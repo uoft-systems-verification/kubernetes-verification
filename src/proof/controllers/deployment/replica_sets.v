@@ -239,26 +239,26 @@ Proof.
       * (* Same UID as newRS: skip it, so the filter drops this entry. *)
         iApply wp_for_post_continue. wp_auto.
         assert (¬ Q (this_ptr, this_rs)) as HnotQ by (intros Hne; apply Hne; exact e).
-        assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =
-          filter Q (take (sint.nat i) (zip ptrs rss))) as Hfilter_eq.
-        { rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
-          rewrite (filter_singleton_False Q (this_ptr, this_rs) [] HnotQ) app_nil_r. done. }
         iFrame "Hsl HΦ".
         iExists (word.add i (W64 1)), this_ptr, old_sl.
-        rewrite Hfilter_eq. iFrame. iPureIntro. word.
+        (* Rewrite the goal rather than transporting a separately elaborated
+           equation: [filter]'s decision instance there is the one [I] was
+           elaborated with, and a fresh [assert] need not pick the same one. *)
+        rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
+        rewrite filter_cons_False; [exact HnotQ|].
+        rewrite filter_nil app_nil_r.
+        iFrame. iPureIntro. word.
       * wp_apply wp_slice_literal. iSplitR; first done.
         iIntros (one_sl) "[Hone_sl _]". wp_auto.
         wp_apply (wp_slice_append with "[$Hold_sl $Hold_cap $Hone_sl]").
         iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto.
         iApply wp_for_post_do. wp_auto.
         assert (Q (this_ptr, this_rs)) as HQ by exact n.
-        assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =
-          filter Q (take (sint.nat i) (zip ptrs rss)) ++ [(this_ptr, this_rs)]) as Hfilter_eq.
-        { rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
-          rewrite (filter_singleton_True Q (this_ptr, this_rs) [] HQ). done. }
         iFrame "Hsl HΦ".
         iExists (word.add i (W64 1)), this_ptr, old_sl'.
-        rewrite Hfilter_eq fmap_app. iFrame. iPureIntro. word.
+        rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
+        rewrite filter_cons_True; [exact HQ|].
+        rewrite filter_nil fmap_app. iFrame. iPureIntro. word.
     + (* newRS is nil: the guard is false without touching it, so every entry
          is kept, matching rs_is_old None = True. *)
       iDestruct "Hnew" as %Hnew_null.

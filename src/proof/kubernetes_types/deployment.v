@@ -165,8 +165,6 @@ Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom created : t → t → Prop.
-Axiom updated : t → t → Prop.
 Axiom deepown : v1.DeploymentStatus.t → t → dfrac → iProp Σ.
 
 (* PrepareForCreate discards any submitted status, so the stored status is

@@ -63,7 +63,7 @@ Proof.
   wp_auto.
   wp_apply wp_slice_literal. iSplitR; first done.
   iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto.
-  wp_apply wp_map_make1 as (seen_l) "Hseen".
+  wp_apply wp_map_make1 as "%seen_l Hseen".
   iDestruct (own_slice_len with "Hrelated_sets_sl") as
     %(Hrelated_sets_len1 & Hrelated_sets_len2).
   iDestruct (big_sepL2_length with "Hrelated_sets") as
