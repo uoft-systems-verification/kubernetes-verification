@@ -3,7 +3,7 @@ From New.proof.kubernetes_model Require Export get index create delete.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
-From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof.controllers.replicaset Require Export top_level.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
@@ -47,12 +47,6 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
-
-Definition current_state_matches rs pods : Prop :=
-  match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with
-  | Some replicas => length (filter is_pod_alive pods) = sint.nat replicas
-  | None => False
-  end.
 
 Lemma list_to_set_app_singleton_kkey (x : KKey.t) (l1 l2 l3 : list KKey.t) :
   list_to_set (C:=gset KKey.t) (l1 ++ ((l2 ++ [x]) ++ l3)) =
@@ -558,44 +552,16 @@ Proof.
       rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet γ l namespace name rs dq pods :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-        rs.(ReplicaSetV.ObjectMeta') ∗
-      "Hown_rs_spec_frag" ∷ own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-        (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
-      "Hown_pod_meta_frags" ∷ ([∗ list] k ↦ pod ∈ pods,
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
-      "#Hown_pod_unreserved_key_frags" ∷
-        ([∗ list] pod ∈ pods, own_unreserved_key_frag γ (PodV.key pod)) ∗
-      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-        (list_to_set (PodV.key <$> pods)) ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') Quiescent ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hdeletion_timestamp_eq" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝
-  }}}
-    @! replicaset.syncReplicaSet #namespace #name
-  {{{ (pods' : list PodV.t), RET #interface.nil;
-      ⌜ current_state_matches rs pods' ⌝ ∗
-      own_meta_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-        rs.(ReplicaSetV.ObjectMeta') ∗
-      own_spec_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-        (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
-      ([∗ list] pod ∈ pods',
-        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
-      ([∗ list] pod ∈ pods', own_unreserved_key_frag γ (PodV.key pod)) ∗
-      own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-        (list_to_set (PodV.key <$> pods')) ∗
-      ∃ phase', own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase'
-  }}}.
+Lemma wp_syncReplicaSet_progress γ l namespace name rs dq pods :
+  ⊢ progress_spec γ l namespace name rs dq pods.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  unfold progress_spec.
+  wp_start as "H". iNamed "H". iNamed "Hresources".
+  iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_pod_meta_frags
+    Hown_children_frag Hown_terminating_children_frag".
+  unfold input_requirement in Hinput_requirement.
+  rename Hinput_requirement into Hrs_name_short.
+  wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
@@ -622,7 +588,7 @@ Proof.
   iPoseProof (ReplicaSetV.deepown_l_split with "Hdeepown_l_rs") as
     "(%Hrs_l_not_null & Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
-  destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid & _).
+  destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid & Hdeletion_timestamp_eq).
   assert (ObjectMetaV.valid ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
   { eapply ObjectMetaV.equiv_except_resource_version_valid.
     - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
@@ -636,7 +602,6 @@ Proof.
   pose proof (valid_namespace_slash_free _ Hrs_namespace_valid) as Hrs_namespace_slash_free.
   pose proof (valid_name_slash_free _ Hrs_name_valid) as Hrs_name_slash_free.
   pose proof (valid_uid_slash_free _ Hrs_uid_valid) as Hrs_uid_slash_free.
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta' with "Hown_pod_meta_frags") as "%Hpods_nodup".
   assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
       filter (λ key, key.(KKey.Kind') = "Pod"%go)
         (list_to_set (C:=gset KKey.t) (PodV.key <$> pods))) as Hdom_eq.
@@ -759,9 +724,19 @@ Proof.
   { rewrite big_sepL_app. iFrame "#". }
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
+    with "Hpod_meta_frags_post") as "%Hpods'_nodup".
+  iAssert (∃ phase, own_terminating_children_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+    with "[Hown_terminating_children_frag]" as "Hown_terminating_children_frag".
+  { iExists phase'. iFrame. }
   iApply ("HΦ" $! (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)).
-  iSplit.
-  { iPureIntro.
+  rewrite /owned_resources /=.
+  iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post
+    Hpod_unreserved_key_frags_post Hown_children_frag Hown_terminating_children_frag".
+  iPureIntro. split; first exact Hpods'_nodup.
+  left.
+  {
     unfold current_state_matches.
     rewrite Hreplicas_eq.
     simpl.
@@ -772,9 +747,6 @@ Proof.
       exact Hnot_alive. }
     rewrite Hfilter_inactive app_nil_r.
     exact Hmanaged_len. }
-  iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post Hpod_unreserved_key_frags_post
-    Hown_children_frag".
-  iExists phase'. iFrame.
 Qed.
 
 End proof.
