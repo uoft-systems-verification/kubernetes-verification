@@ -267,12 +267,14 @@ Defined.
 Proof.
   unfold pod_view_storage_matches.
   destruct view as [meta spec]. simpl.
-  destruct spec as [pod_spec|replicaset_spec|pvc_spec|statefulset_spec].
+  destruct spec as
+    [pod_spec|replicaset_spec|pvc_spec|statefulset_spec|deployment_spec].
   - destruct parse_pod_ordinal as [ordinal|].
     + apply and_dec.
       * solve_decision.
       * apply _.
     + right. simpl. tauto.
+  - right. simpl. tauto.
   - right. simpl. tauto.
   - right. simpl. tauto.
   - right. simpl. tauto.

@@ -529,8 +529,9 @@ Proof.
     apply elem_of_map_to_list in Hin.
     apply map_lookup_filter_Some in Hin as [Hlookup_abs [Hkind _]].
     pose proof (Habs_valid key obj Hlookup_abs) as [Hkey_eq _].
-    destruct obj as [pod|rs|pvc|sts].
+    destruct obj as [pod|rs|pvc|sts|d].
     - eexists. done.
+    - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.

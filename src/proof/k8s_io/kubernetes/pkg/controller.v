@@ -226,7 +226,7 @@ Proof.
   rewrite go.make1_underlying.
   rewrite (go.is_underlying (t := labels.Set')
     (tunder := labels.Set'ⁱᵐᵖˡ)).
-  wp_apply wp_map_make1 as (labels_l) "Hlabels".
+  wp_apply wp_map_make1 as "%labels_l Hlabels".
   wp_pures.
   iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
   iAssert (typed_pointsto_def
@@ -420,8 +420,8 @@ Proof.
     "(Hfinalizers & Hfinalizers_cap & %Hfinalizers_non_nil)".
   iEval (rewrite -Hfinalizers_len) in "Hfinalizers".
   wp_auto.
-  wp_apply (wp_slice_copy with "[$Hfinalizers $Hfinalizers_src]") as (n)
-    "(%Hcopied & Hfinalizers & Hfinalizers_src)".
+  wp_apply (wp_slice_copy with "[$Hfinalizers $Hfinalizers_src]") as
+    "%n (%Hcopied & Hfinalizers & Hfinalizers_src)".
   iAssert (finalizers_sl ↦* default []
       template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))
     with "[Hfinalizers]" as "Hfinalizers".
@@ -504,7 +504,7 @@ Proof.
   rewrite go.make1_underlying.
   rewrite (go.is_underlying (t := labels.Set')
     (tunder := labels.Set'ⁱᵐᵖˡ)).
-  wp_apply wp_map_make1 as (annotations_l) "Hannotations".
+  wp_apply wp_map_make1 as "%annotations_l Hannotations".
   wp_pures.
   iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
   iAssert (typed_pointsto_def

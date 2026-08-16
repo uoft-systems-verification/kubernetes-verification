@@ -54,7 +54,7 @@ Lemma wp_getPodsRankedByRelatedPodsOnSameNode pods_sl pods_ptrs pods
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply wp_map_make1 as (pods_on_node_l) "Hpods_on_node".
+  wp_apply wp_map_make1 as "%pods_on_node_l Hpods_on_node".
   iDestruct (own_slice_len with "Hrelated_sl") as %(Hrelated_len1 & Hrelated_len2).
   iDestruct (big_sepL2_length with "Hrelated") as %Hrelated_len.
   set I := (∃ (i : w64) (pod_l : loc) (counts : gmap go_string w64),

@@ -54,6 +54,7 @@ Proof.
     destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        ?/DeploymentV.valid_status_update
         /ObjectMetaV.valid_update in Hvalid_status_update;
       try contradiction; tauto.
   }
@@ -212,6 +213,7 @@ Proof.
     { destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
         rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
           ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+          ?/DeploymentV.valid_status_update
           in Hvalid_status_update;
         try contradiction; tauto. }
     assert (key0 = key) as ->.
@@ -263,6 +265,7 @@ Proof.
   { destruct old_kobj, kobj; rewrite /KObjectV.valid_status_update /=;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        ?/DeploymentV.valid_status_update
         /ObjectMetaV.valid_update;
       simpl in Hvalid_meta_update_actual, Hvalid_status_old;
       try contradiction; tauto. }
@@ -274,7 +277,8 @@ Proof.
     - exact Hkey_old_new.
     - rewrite <-e0.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
+        [tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]]; destruct meta; done. }
   wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_ok _ _ _ _ _ _ _
     (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') kobj
     with "[$Hdeepown_l $Hdeepown_old_l]").
@@ -308,7 +312,8 @@ Proof.
       Huid_updated & Hdeletion_timestamp_updated).
   { destruct kobj, updated_kobj;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /=
+        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
+        /DeploymentV.status_updated /=
         in Hstatus_updated_kobj |- *; try contradiction.
     all: split_and!; try done.
     all: try (f_equal; tauto).
@@ -474,7 +479,8 @@ Proof.
       Hdeletion_timestamp_new).
   { destruct kobj, new_kobj;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /=
+        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
+        /DeploymentV.status_updated /=
         in Hstatus_updated_new |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hstatus_updated_new |- *; tauto. }
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.UID') =
