@@ -35,9 +35,9 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
-  ⊢ syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs.
+  ⊢ stability_spec γ l namespace name sts dq pods pvcs.
 Proof.
-  unfold syncStatefulSet_stability_spec.
+  unfold stability_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag")
     as "%Hsts_meta_valid".
@@ -259,10 +259,10 @@ Proof.
     as "Hown_terminating_children_frag".
   { rewrite Hset_key Hset_uid. iExact "Hown_terminating_children_frag". }
   iApply ("HΦ" $! interface.nil).
-  rewrite /statefulset_owned_resources /=.
+  rewrite /owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
-    Hown_pod_frags Hoccupied_pods Hown_pvc_frags Hoccupied_pvcs Hown_children_frag
-    Hown_terminating_children_frag Hreserved_pods Hreserved_pvcs".
+    Hown_pod_frags Hoccupied_pod_frags Hown_pvc_frags Hoccupied_pvc_frags Hown_children_frag
+    Hown_terminating_children_frag Hreserved_pod_frags Hreserved_pvc_frags".
   iPureIntro. exact Hpods_nodup.
 Qed.
 

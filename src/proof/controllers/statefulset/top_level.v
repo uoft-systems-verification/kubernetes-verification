@@ -462,7 +462,7 @@ Definition mutating_fractions dq : all_fractions :=
 Definition stability_fractions dq : all_fractions :=
   {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
 
-Definition statefulset_owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
+Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
   "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
     sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
   "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts)
@@ -473,10 +473,10 @@ Definition statefulset_owned_resources γ sts pods pvcs fractions (ready : bool)
       pod.(PodV.ObjectMeta') ∗
     own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq)
       (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-  "Hoccupied_pods" ∷ ([∗ list] pod ∈ pods,
+  "Hoccupied_pod_frags" ∷ ([∗ list] pod ∈ pods,
     own_occupied_reserved_frag γ fractions.(pod_dq) (PodV.key pod)
       pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
-  "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys sts pods,
+  "Hreserved_pod_frags" ∷ ([∗ list] key ∈ missing_pod_keys sts pods,
     if ready then
       own_available_reserved_frag γ fractions.(pod_dq) key
     else
@@ -495,58 +495,58 @@ Definition statefulset_owned_resources γ sts pods pvcs fractions (ready : bool)
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') fractions.(pvc_dq)
       pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-  "Hoccupied_pvcs" ∷ ([∗ list] pvc ∈ pvcs,
+  "Hoccupied_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
     own_occupied_reserved_frag γ fractions.(pvc_dq) (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-  "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs,
+  "Hreserved_pvc_frags" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs,
     own_available_reserved_frag γ fractions.(pvc_dq) key) ∗
   (* Fractional pod fragments allow duplicate entries to own compatible shares; match_distance cannot detect duplicates.
      Record key uniqueness explicitly because current_state_matches compares the full key list up to permutation. *)
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
-Definition syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ statefulset_owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
-      statefulset_owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
       ⌜ current_state_matches sts pods' pvcs' ∨
         (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
   }}}.
 
-Definition syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ statefulset_owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
-      statefulset_owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
   }}}.
 
-Definition syncStatefulSet_stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ statefulset_owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;
-      statefulset_owned_resources γ sts pods pvcs (stability_fractions dq) true
+      owned_resources γ sts pods pvcs (stability_fractions dq) true
   }}}.
 
 End specs.

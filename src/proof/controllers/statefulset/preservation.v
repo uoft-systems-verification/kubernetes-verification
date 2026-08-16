@@ -181,9 +181,9 @@ Proof.
 Qed.
 
 Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs :
-  ⊢ syncStatefulSet_preservation_spec γ l namespace name sts dq pods pvcs.
+  ⊢ preservation_spec γ l namespace name sts dq pods pvcs.
 Proof.
-  unfold syncStatefulSet_preservation_spec.
+  unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_sts_meta_frag".
   iEval (simpl) in "Hown_sts_spec_frag".
@@ -284,12 +284,12 @@ Proof.
   iAssert ([∗ list] pod ∈ living_all,
       own_occupied_reserved_frag γ 1 (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
-    with "[Hoccupied_pods]" as "Hall_occupied".
+    with "[Hoccupied_pod_frags]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
     rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ 1 identity.1 identity.2)
       (pod_reservation_identity <$> living_all)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
-    iExact "Hoccupied_pods". }
+    iExact "Hoccupied_pod_frags". }
   assert (Hall_namespaces : Forall
       (λ pod,
         pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
@@ -583,7 +583,7 @@ Proof.
     { rewrite /remaining_pods big_sepL_app. iFrame. }
     iAssert (([∗ list] key ∈ missing_pod_keys sts remaining_pods,
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
-      with "[Hreserved_pods]" as "Hreserved_pods".
+      with "[Hreserved_pod_frags]" as "Hreserved_pod_frags".
     { rewrite Hmissing_remaining. iFrame. }
     iAssert (own_children_frag γ (StatefulSetV.key sts)
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -596,10 +596,10 @@ Proof.
       with "[Hrelease_Hown_terminating_children_frag]" as "Hrelease_Hown_terminating_children_frag".
     { iExists phase. iFrame. }
     iApply ("HΦ" $! remaining_pods pvcs (interface.ok err_ok)).
-    rewrite /statefulset_owned_resources /=.
+    rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
-      Hown_pvc_frags Hoccupied_pvcs Hremaining_children Hrelease_Hown_terminating_children_frag
-      Hreserved_pods Hreserved_pvcs".
+      Hown_pvc_frags Hoccupied_pvc_frags Hremaining_children Hrelease_Hown_terminating_children_frag
+      Hreserved_pod_frags Hreserved_pvc_frags".
     iPureIntro. split; done. }
   specialize (Hrelease_Hdone eq_refl). subst released. wp_auto.
   assert (Htake_all_pods : take (length all_pods) all_pods = all_pods).
@@ -683,17 +683,17 @@ Proof.
       missing_pvc_keys set pvcs = missing_pvc_keys sts pvcs).
   { apply statefulset_storage_view_missing_pvc_keys.
     symmetry. exact Hset_view. }
-  iEval (rewrite -Hmissing_pods) in "Hreserved_pods".
-  iEval (rewrite -Hgood_unreserved) in "Hreserved_pods".
-  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvcs".
-  iCombine "Hown_pvc_frags Hoccupied_pvcs" as "Hown_pvcs".
+  iEval (rewrite -Hmissing_pods) in "Hreserved_pod_frags".
+  iEval (rewrite -Hgood_unreserved) in "Hreserved_pod_frags".
+  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
+  iCombine "Hown_pvc_frags Hoccupied_pvc_frags" as "Hown_pvcs".
   iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
   wp_auto.
   wp_apply (wp_reconcileReplicas_preservation γ l set_l good_sl set
     good_ptrs good_pods pending_actual pvcs 1 pod_dq phase
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_owned
       $Hown_pvcs $Hgood_children $Hrelease_Hown_terminating_children_frag
-      $Hreserved_pods $Hreserved_pvcs]").
+      $Hreserved_pod_frags $Hreserved_pvc_frags]").
   { iFrame "#". iPureIntro. split_and!; try done. }
   iIntros (pods1 pvcs' phase') "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto.
@@ -794,7 +794,7 @@ Proof.
     with "[Hreconcile_Hown_terminating_children_frag]" as "Hreconcile_Hown_terminating_children_frag".
   { iExists phase'. iFrame. }
   iApply ("HΦ" $! pods' pvcs' interface.nil).
-  rewrite /statefulset_owned_resources /=.
+  rewrite /owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hfinal_pod_frags Hfinal_occupied
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children
     Hreconcile_Hown_terminating_children_frag Hreconcile_Hreserved_pods

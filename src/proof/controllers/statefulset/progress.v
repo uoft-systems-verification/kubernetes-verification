@@ -43,9 +43,9 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 Lemma wp_syncStatefulSet_progress γ l namespace name sts dq pods pvcs :
-  ⊢ syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs.
+  ⊢ progress_spec γ l namespace name sts dq pods pvcs.
 Proof.
-  unfold syncStatefulSet_progress_spec.
+  unfold progress_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_sts_meta_frag".
   iEval (simpl) in "Hown_sts_spec_frag".
@@ -155,12 +155,12 @@ Proof.
   iAssert ([∗ list] pod ∈ all_pods,
       own_occupied_reserved_frag γ 1 (PodV.key pod)
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
-    with "[Hoccupied_pods]" as "Hall_occupied".
+    with "[Hoccupied_pod_frags]" as "Hall_occupied".
   { rewrite !own_occupied_pods_as_identities.
     rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ 1 identity.1 identity.2)
       (pod_reservation_identity <$> all_pods)
       (pod_reservation_identity <$> pods) Hall_reservation_identities).
-    iExact "Hoccupied_pods". }
+    iExact "Hoccupied_pod_frags". }
   pose proof (pod_storage_view_perm_keys _ _ Hall_storage_perm)
     as Hall_key_perm.
   assert (Hall_namespaces : Forall
@@ -328,14 +328,14 @@ Proof.
       missing_pvc_keys set pvcs = missing_pvc_keys sts pvcs).
   { apply statefulset_storage_view_missing_pvc_keys.
     symmetry. exact Hset_view. }
-  iEval (rewrite /= -Hmissing_pods) in "Hreserved_pods".
-  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvcs".
+  iEval (rewrite /= -Hmissing_pods) in "Hreserved_pod_frags".
+  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
   wp_auto.
   wp_apply (wp_reconcileReplicas_progress γ l set_l good_sl set
     good_ptrs good_pods pvcs 1 pod_dq Quiescent
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_frags
-      $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvcs $Hgood_children
-      $Hown_terminating_children_frag $Hreserved_pods $Hreserved_pvcs]").
+      $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvc_frags $Hgood_children
+      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags]").
   { iFrame "#". iFrame "%". }
   iIntros (pods' pvcs' deletion) "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_".
@@ -394,7 +394,7 @@ Proof.
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (phase_after_deletion Quiescent deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
-      rewrite /statefulset_owned_resources /=.
+      rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
@@ -419,7 +419,7 @@ Proof.
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (phase_after_deletion Quiescent deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
-      rewrite /statefulset_owned_resources /=.
+      rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
@@ -486,7 +486,7 @@ Proof.
       with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
     { iExists (phase_after_deletion Quiescent deletion). iFrame. }
     iApply ("HΦ" $! pods' pvcs' interface.nil).
-    rewrite /statefulset_owned_resources /=.
+    rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
       Hreconcile_Hown_pods Hreconcile_Hown_pvcs
       Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
