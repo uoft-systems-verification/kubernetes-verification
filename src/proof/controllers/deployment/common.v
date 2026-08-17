@@ -210,4 +210,42 @@ Definition is_new_replica_set (d : DeploymentV.t) (rs : ReplicaSetV.t) : Prop :=
   rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector') = new_rs_selector d ∧
   rs_template rs = new_rs_template d.
 
+(* ---------------------------------------------------------------- *)
+(* Top-level predicates                                              *)
+(* ---------------------------------------------------------------- *)
+
+(* At most one of [rss] matches the deployment's template.
+
+   This is a precondition, not a theorem: [findNewReplicaSet] returns the
+   *first* match, so with two matching ReplicaSets a sync could pick either and
+   the choice would not be stable across syncs. See notes/deployment-spec.md
+   §2b. Carried by [wp_rollout] and [wp_syncDeployment]. *)
+Definition unique_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
+    : Prop :=
+  ∀ i j rs_i rs_j,
+    rss !! i = Some rs_i → rss !! j = Some rs_j →
+    template_matches (rs_template rs_i) (deployment_template d) →
+    template_matches (rs_template rs_j) (deployment_template d) →
+    i = j.
+
+(* The deployment's desired state is realized by [rss]: some ReplicaSet carries
+   the deployment's template and sits at its replica count, and every other one
+   is drained to zero.
+
+   Deliberately scoped to template and replica count only. It does *not*
+   constrain the pod-template-hash selector/label machinery — [is_new_replica_set]
+   covers that for the objects this controller creates, but a ReplicaSet adopted
+   from the API server need not satisfy it. This is exactly what [wp_rollout]'s
+   postcondition delivers. *)
+Definition deployment_realized (d : DeploymentV.t) (rss : list ReplicaSetV.t)
+    : Prop :=
+  ∃ new_rs,
+    new_rs ∈ rss ∧
+    template_matches (rs_template new_rs) (deployment_template d) ∧
+    new_rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') =
+      Some (deployment_replicas d) ∧
+    Forall (λ rs,
+      ReplicaSetV.key rs = ReplicaSetV.key new_rs ∨
+      rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)) rss.
+
 End proof.

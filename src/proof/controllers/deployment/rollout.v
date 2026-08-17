@@ -264,11 +264,7 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
       (* The no-collision assumption, made explicit. Without it findNewReplicaSet
          may pick either of two matching ReplicaSets and stability fails —
          see notes/deployment-spec.md §2b. *)
-      "%Hunique_new" ∷ ⌜ ∀ i j rs_i rs_j,
-          rss !! i = Some rs_i → rss !! j = Some rs_j →
-          template_matches (rs_template rs_i) (deployment_template d) →
-          template_matches (rs_template rs_j) (deployment_template d) →
-          i = j ⌝ ∗
+      "%Hunique_new" ∷ ⌜ unique_new_replica_set d rss ⌝ ∗
       "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
       "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
         d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
