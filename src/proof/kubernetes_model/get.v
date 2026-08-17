@@ -527,4 +527,97 @@ Proof.
   iApply ("HΦ" with "Hpost").
 Qed.
 
+Lemma wp_State__DeploymentMutGet γ l key namespace name uid dq kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "Deployment"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.DeploymentSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "DeploymentMutGet"
+      #namespace #name
+  {{{ d_l d, RET (#d_l, #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Deployment d) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = DeploymentV.key d ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version d.(DeploymentV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = d.(DeploymentV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ DeploymentV.deepown_l d_l d 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.DeploymentSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
+  wp_method_call.
+  rewrite /apimodel.State__DeploymentMutGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__get_some γ l
+    {| KKey.Kind' := "Deployment"%go;
+       KKey.Namespace' := namespace;
+       KKey.Name' := name |}
+    uid dq kmeta (Some (ObjectSpecV.DeploymentSpec kspec)) None
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  iIntros (i kobj) "Hpost". iNamed "Hpost".
+  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
+  destruct kobj as [pod|rs|pvc|sts|d];
+    try solve [simpl in Hspec_eq; done].
+  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
+  assert (Hspec_eq' : kspec = d.(DeploymentV.Spec')) by congruence.
+  clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
+  iDestruct "Hdeepown_i" as (d_l) "[%Hi Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  change (go.PointerType api_apps_v1.Deployment)
+    with (go.PointerType v1.Deployment).
+  cbn [interface.ty interface.v].
+  replace (if decide
+      (go.PointerType v1.Deployment = go.PointerType v1.Deployment)
+    then #d_l else #null)%V with (#d_l)%V by
+    (rewrite decide_True; done).
+  replace (bool_decide
+      (go.PointerType v1.Deployment = go.PointerType v1.Deployment))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+Qed.
+
+Lemma wp_State__DeploymentGet γ l key namespace name uid dq kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "Deployment"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.DeploymentSpec kspec)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "DeploymentGet"
+      #namespace #name
+  {{{ d_l d, RET (#d_l, #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.Deployment d) ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = DeploymentV.key d ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version d.(DeploymentV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = d.(DeploymentV.Spec') ⌝ ∗
+      "Hdeepown_l" ∷ DeploymentV.deepown_l d_l d 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.DeploymentSpec kspec)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call.
+  rewrite /apimodel.State__DeploymentGetⁱᵐᵖˡ.
+  wp_call. wp_auto.
+  wp_apply (wp_State__DeploymentMutGet
+    γ l key namespace name uid dq kmeta kspec
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  { iPureIntro. done. }
+  iIntros (d_l d) "Hpost".
+  wp_auto.
+  iApply ("HΦ" with "Hpost").
+Qed.
+
 End proof.
