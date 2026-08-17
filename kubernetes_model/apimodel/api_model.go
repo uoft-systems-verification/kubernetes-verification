@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -31,14 +32,17 @@ import (
 	appsv1defaults "k8s.io/kubernetes/pkg/apis/apps/v1"
 	"k8s.io/kubernetes/pkg/apis/core"
 	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
+	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/controller"
 	deploymentstrategy "k8s.io/kubernetes/pkg/registry/apps/deployment"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
 	pvcstrategy "k8s.io/kubernetes/pkg/registry/core/persistentvolumeclaim"
 	podstrategy "k8s.io/kubernetes/pkg/registry/core/pod"
+	clusterrolestrategy "k8s.io/kubernetes/pkg/registry/rbac/clusterrole"
 
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
+	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
 )
 
 // What's missing in this model:
@@ -99,6 +103,8 @@ func deepCopy(obj interface{}) interface{} {
 	case *appsv1.StatefulSet:
 		return o.DeepCopy()
 	case *appsv1.Deployment:
+		return o.DeepCopy()
+	case *rbacv1.ClusterRole:
 		return o.DeepCopy()
 	default:
 		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
@@ -275,9 +281,8 @@ func (s *State) generateNewRVAndUpdate() string {
 // validateObjectMeta validates the ObjectMeta fields using generic Kubernetes validation.
 // This matches the API server's generic metadata validation that happens in BeforeCreate.
 func validateObjectMeta(metadata metav1.Object, kind string) error {
-	// For now, we assume all resources are namespaced (Pod, ReplicaSet, etc.)
-	// Cluster-scoped resources like Node, Namespace would set requiresNamespace = false
-	requiresNamespace := true
+	// All currently supported resources except ClusterRole are namespaced.
+	requiresNamespace := kind != "ClusterRole"
 
 	// Validate using the generic Kubernetes metadata validator
 	// This validates: Name, Namespace, Labels, Annotations, OwnerReferences, Finalizers, etc.
@@ -408,6 +413,12 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.Deployment to internal Deployment: %v", err))
 		}
 		return internalDeployment, nil
+	case *rbacv1.ClusterRole:
+		internalClusterRole := &rbac.ClusterRole{}
+		if err := legacyscheme.Scheme.Convert(typed, internalClusterRole, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert rbacv1.ClusterRole to internal ClusterRole: %v", err))
+		}
+		return internalClusterRole, nil
 	default:
 		return nil, fmt.Errorf("unsupported versioned object type for conversion: %T", obj)
 	}
@@ -435,6 +446,8 @@ func applySchemaDefaults(obj interface{}) error {
 		appsv1defaults.SetObjectDefaults_StatefulSet(typed)
 	case *appsv1.Deployment:
 		appsv1defaults.SetObjectDefaults_Deployment(typed)
+	case *rbacv1.ClusterRole:
+		// ClusterRole has no schema defaults.
 	default:
 		return fmt.Errorf("unsupported object type for schema defaults: %T", obj)
 	}
@@ -454,6 +467,8 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		stsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.Deployment:
 		deploymentstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *rbac.ClusterRole:
+		clusterrolestrategy.Strategy.PrepareForCreate(ctx, typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -475,6 +490,8 @@ func applyAdmissionMutate(obj interface{}) error {
 	case *apps.StatefulSet:
 		return nil
 	case *apps.Deployment:
+		return nil
+	case *rbac.ClusterRole:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
@@ -513,6 +530,8 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 	case *apps.StatefulSet:
 		return nil
 	case *apps.Deployment:
+		return nil
+	case *rbac.ClusterRole:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for post-prepare create defaults: %T", obj)
@@ -566,6 +585,8 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 		return nil
 	case *apps.Deployment:
 		return nil
+	case *rbac.ClusterRole:
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for update admission mutation: %T", obj)
 	}
@@ -592,6 +613,9 @@ func applyAdmissionValidate(obj interface{}) error {
 	case *apps.Deployment:
 		// This model does not mirror any Deployment-specific validating admission plugins.
 		return nil
+	case *rbac.ClusterRole:
+		// This model does not mirror any ClusterRole-specific validating admission plugins.
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
 	}
@@ -599,7 +623,7 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment":
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ClusterRole":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
@@ -607,6 +631,7 @@ func allowUnconditionalUpdate(kind string) (bool, error) {
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/strategy.go#L159-L160
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/statefulset/strategy.go#L191-L193
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L148-L150
+		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/rbac/clusterrole/strategy.go#L100-L102
 		return true, nil
 	default:
 		return false, fmt.Errorf("unsupported kind for update: %s", kind)
@@ -637,6 +662,8 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 		return stsstrategy.Strategy, nil
 	case *apps.Deployment:
 		return deploymentstrategy.Strategy, nil
+	case *rbac.ClusterRole:
+		return clusterrolestrategy.Strategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for update strategy: %T", obj)
 	}
@@ -682,6 +709,10 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := deploymentstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "Deployment"}, name, errs)
 		}
+	case *rbac.ClusterRole:
+		if errs := clusterrolestrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole"}, name, errs)
+		}
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -700,6 +731,8 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		stsstrategy.Strategy.Canonicalize(typed)
 	case *apps.Deployment:
 		deploymentstrategy.Strategy.Canonicalize(typed)
+	case *rbac.ClusterRole:
+		clusterrolestrategy.Strategy.Canonicalize(typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -2042,4 +2075,81 @@ func (s *State) DeploymentUpdateStatus(namespace string, d *appsv1.Deployment) (
 func (s *State) DeploymentDelete(namespace, name string, options metav1.DeleteOptions) error {
 	key := KKey{Kind: "Deployment", Namespace: namespace, Name: name}
 	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ClusterRoleGet(name string) (*rbacv1.ClusterRole, error) {
+	return s.ClusterRoleMutGet(name)
+}
+
+func (s *State) ClusterRoleMutGet(name string) (*rbacv1.ClusterRole, error) {
+	key := KKey{
+		Kind:      "ClusterRole",
+		Namespace: metav1.NamespaceNone,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, errors.NewNotFound(rbacv1.Resource("clusterrole"), name)
+	}
+
+	cr, ok := obj.(*rbacv1.ClusterRole)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for clusterrole %s is not a *v1.ClusterRole", name)
+	}
+
+	return cr, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ClusterRoleList(selector labels.Selector) ([]*rbacv1.ClusterRole, error) {
+	return s.ClusterRoleMutList(selector)
+}
+
+func (s *State) ClusterRoleMutList(selector labels.Selector) ([]*rbacv1.ClusterRole, error) {
+	objs, err := s.objListBySelector("ClusterRole", metav1.NamespaceAll, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterRoles := make([]*rbacv1.ClusterRole, 0, len(objs))
+	for _, obj := range objs {
+		cr, ok := obj.(*rbacv1.ClusterRole)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.ClusterRole")
+		}
+		clusterRoles = append(clusterRoles, cr)
+	}
+
+	return clusterRoles, nil
+}
+
+func (s *State) ClusterRoleCreate(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+	obj, err := s.create("ClusterRole", metav1.NamespaceNone, cr)
+	if err != nil {
+		return nil, err
+	}
+
+	createdCR, ok := obj.(*rbacv1.ClusterRole)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdCR, nil
+}
+
+func (s *State) ClusterRoleUpdate(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+	obj, err := s.update("ClusterRole", metav1.NamespaceNone, cr)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedCR, ok := obj.(*rbacv1.ClusterRole)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedCR, nil
 }
