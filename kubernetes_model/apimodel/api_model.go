@@ -95,6 +95,8 @@ func deepCopy(obj interface{}) interface{} {
 		return o.DeepCopy()
 	case *corev1.PersistentVolumeClaim:
 		return o.DeepCopy()
+	case *corev1.Namespace:
+		return o.DeepCopy()
 	case *corev1.ServiceAccount:
 		return o.DeepCopy()
 	case *appsv1.ReplicaSet:
@@ -215,10 +217,6 @@ func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, er
 	return items, nil
 }
 
-func newNotFoundError(kind string, name string) error {
-	return errors.NewNotFound(schema.GroupResource{Resource: kind}, name)
-}
-
 func (s *State) get(key KKey) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -227,7 +225,8 @@ func (s *State) get(key KKey) (interface{}, error) {
 	if exists {
 		return deepCopy(item), nil
 	} else {
-		return nil, newNotFoundError(key.Kind, key.Name)
+		return nil, errors.NewNotFound(
+			schema.GroupResource{Resource: key.Kind}, key.Name)
 	}
 }
 
@@ -2069,6 +2068,24 @@ func (s *State) DeploymentUpdateStatus(namespace string, d *appsv1.Deployment) (
 func (s *State) DeploymentDelete(namespace, name string, options metav1.DeleteOptions) error {
 	key := KKey{Kind: "Deployment", Namespace: namespace, Name: name}
 	return s.delete(key, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) NamespaceGet(name string) (*corev1.Namespace, error) {
+	key := KKey{Kind: "Namespace", Name: name}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	namespace, ok := obj.(*corev1.Namespace)
+	if !ok {
+		// This should never happen.
+		return nil, fmt.Errorf("state entry for namespace %s is not a *v1.Namespace", name)
+	}
+
+	return namespace, nil
 }
 
 // Returned value must be treated as read-only.

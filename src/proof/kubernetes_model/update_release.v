@@ -18,11 +18,8 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
   is_pkg_init apimodel ∗
   is_kubernetes γ l ∗
   "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
-  "%Huid_nonempty" ∷
-    ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
-  "%Hrv_valid" ∷
-    ⌜ valid_resource_version
-        (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ⌝ ∗
+  "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+  "%Hrv_valid" ∷ ⌜ valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ⌝ ∗
   "%Hkind_matches" ∷ ⌜ kind = KObjectV.kind kobj ⌝ ∗
   "%Hns_matches" ∷ ⌜ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ⌝ ∗
   "%Hnew_parent" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
@@ -40,9 +37,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
          references. ResourceVersion is omitted because metadata fragments
          abstract over that server-managed field. *)
       ⌜ ObjectMetaV.equiv_except_resource_version
-          (old_meta <| ObjectMetaV.OwnerReferences' :=
-            (KObjectV.objectmeta kobj).(
-              ObjectMetaV.OwnerReferences') |>)
+          (old_meta <| ObjectMetaV.OwnerReferences' := (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') |>)
           (KObjectV.objectmeta kobj) ⌝ ∗
     "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
     "Hclose" ∷ (
@@ -55,12 +50,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
           "%Hkey_eq'" ∷ ⌜ KObjectV.key kobj' = key ⌝ ∗
           "%Huid_eq'" ∷ ⌜ (KObjectV.objectmeta kobj').(ObjectMetaV.UID') = uid ⌝ ∗ 
           "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-          "Hown_children_frag" ∷
-            own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
-          ( "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
-            "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec
-            ∨
-            "Hown_tombstone_frag" ∷ own_tombstone_frag γ uid))
+          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}))
         ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
       (∀ err,
         ( "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
@@ -168,6 +158,8 @@ Proof.
     iPoseProof (kview.own_meta_exists2 with
       "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+    iPoseProof (kview.own_meta_living Hlookup_abs with
+      "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
     exfalso. rewrite Huid_eq in Huid_obj. symmetry in Huid_obj. done.
   }
   wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
@@ -195,7 +187,8 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with
-      "[Hown_meta_frag Hown_spec_frag Hown_children_frag]") as "HΦ".
+      "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
+      as "HΦ".
     { iFrame. iPureIntro. exact Herr_conflict. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
@@ -230,6 +223,8 @@ Proof.
     iPoseProof (kview.own_meta_exists2 with
       "Hinv_Hown_abs Hown_meta_frag")
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+    iPoseProof (kview.own_meta_living Hlookup_abs with
+      "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
     iPoseProof (kview.own_spec_exists with
       "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
     assert (KObjectV.spec old_kobj = old_spec) as Hstored_spec_eq.
@@ -293,111 +288,18 @@ Proof.
     "[$Hdeepown_l $Hdeepown_old_l]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (should_delete)
-    "(Hdeepown_l & Hdeepown_old_l)".
+    "(Hdeepown_l & Hdeepown_old_l & %Hshould_delete)".
   destruct should_delete; wp_auto.
   {
-    wp_apply (wp_map_delete _ _ key apimodel.KKey
-      (go.InterfaceType []) with "[$Hinv_Hown_phys]").
-    iIntros "Hinv_Hown_phys". wp_auto.
-    iAssert (KObjectV.deepown_i i1 updated_kobj 1)
-      with "[Hdeepown_l]" as "Hdeepown_i1".
-    { iExists l1. iSplit; [done|]. iFrame. }
     iApply fupd_wp.
     iMod "Hau" as
       (key0 uid old_meta old_spec children) "H".
     iNamed "H".
     assert (key0 = key) as ->.
     { rewrite Hkey_eq. symmetry. exact Hkey_new. }
-    iPoseProof (kview.own_auth_valid2 key old_kobj with
-      "Hinv_Hown_abs") as "%Hauth_old". 1: done.
-    destruct Hauth_old as
-      (Hkey_old' & Hvalid_old_kobj' & Huid_old_in' &
-        Hno_speculative_parent_reference_old' & Huid_unique_old').
-    iPoseProof (kview.own_meta_valid with
-      "Hown_meta_frag") as "%Hmeta_valid_delete".
-    destruct Hmeta_valid_delete as (_ & _ & Huid_meta & _).
-    iPoseProof (kview.own_meta_exists2 with
-      "Hinv_Hown_abs Hown_meta_frag")
-      as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
-    iPoseProof (kview.own_spec_exists with
-      "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
-    assert (KObjectV.spec old_kobj = old_spec)
-      as Hstored_spec_eq.
-    { eapply Hspec_found; done. }
-    assert (obj_parent_ref updated_kobj = None)
-      as Hupdated_parent_none.
-    { rewrite /ObjectMetaV.updated in Hupdated_meta.
-      rewrite /obj_parent_ref /meta_parent_ref in Hnew_parent |- *.
-      destruct (KObjectV.objectmeta kobj),
-        (KObjectV.objectmeta updated_kobj); simpl in *.
-      decompose [and] Hupdated_meta. subst. done. }
-    assert (KObjectV.key updated_kobj = key)
-      as Hupdated_key.
-    { rewrite <-Hsame_key. rewrite <-Hkey_old'.
-      exact Hkey_new. }
-    assert ((KObjectV.objectmeta updated_kobj).(
-        ObjectMetaV.UID') = uid) as Hupdated_uid.
-    { rewrite Huid_eq.
-      rewrite /ObjectMetaV.updated in Hupdated_meta.
-      destruct (KObjectV.objectmeta kobj),
-        (KObjectV.objectmeta updated_kobj); simpl in *.
-      tauto. }
-    iMod (kview.delete_kobj_vs with
-      "[$Hinv_Hown_abs] [$Hown_meta_frag]")
-      as "Hinv_Hown_abs".
-    iMod (cview.delete_child_vs2 key with
-      "[$Hinv_Hown_children] [$Hown_children_frag]")
-      as "(Hinv_Hown_children & Hown_children_frag)".
-    { exact Hchild. }
-    iMod (tombstone.insert_vs
-      (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID')
-      with "[$Hinv_Hown_tombstone]")
-      as "(Hinv_Hown_tombstone & Hown_tombstone_frag)".
-    rewrite Huid_obj.
-    iDestruct "Hclose" as "[Hclose_success _]".
-    iMod ("Hclose_success" $! i1 updated_kobj with
-      "[Hdeepown_i1 Hown_tombstone_frag Hown_children_frag]")
-      as "HΦ".
-    { iSplit; first done.
-      iSplit.
-      { iPureIntro.
-        destruct kobj, updated_kobj; simpl in *; simplify_eq; done. }
-      iSplit; first done.
-      iSplit.
-      { iPureIntro.
-        exact (eq_trans Hspec_updated_old Hstored_spec_eq). }
-      iSplit; first done.
-      iSplit; first done.
-      iSplit; first done.
-      iFrame. }
-    iModIntro.
-    iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
-      match i with
-      | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
-      | interface.nil => False%I
-      end)%I)
-      with "[Hdeepown_old_i Hother_rep]"
-      as "Hinv_Hphys_abs_rep".
-    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _
-        Hlookup_phys Hlookup_abs). iFrame. }
-    iCombineNamed "Hinv_*" as "H".
-    rewrite return_val_unseal /return_val_def. wp_auto.
-    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
-      with "[$Hown_Mutex H]").
-    { iNamed "H". iFrame. iFrame "#". iModIntro. iSplitL.
-      { iDestruct (big_sepM2_delete _ phys_state abs_state key _ _
-          Hlookup_phys Hlookup_abs with
-          "Hinv_Hphys_abs_rep") as "[_ H]".
-        done. }
-      iPureIntro. split_and!. all: try done.
-      - rewrite <-Huid_obj.
-        eapply tombed_uid_delete_eq_used_uid_sub;
-          [done|done| |done].
-        exact Huid_old_in'.
-      - rewrite dom_delete_L.
-        Timeout 10 set_solver.
-    }
-    iExact "HΦ".
+    iPoseProof (kview.own_meta_living Hlookup_abs with
+      "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
+    exfalso. apply (Hshould_delete eq_refl). exact Hold_living.
   }
   wp_apply (wp_storageObjectDeepEqual with
     "[$Hdeepown_l $Hdeepown_old_l]").
@@ -467,6 +369,8 @@ Proof.
   iPoseProof (kview.own_meta_exists2 with
     "Hinv_Hown_abs Hown_meta_frag")
     as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
+  iPoseProof (kview.own_meta_living Hlookup_abs with
+    "Hinv_Hown_abs Hown_meta_frag") as "%Hold_living".
   iPoseProof (kview.own_spec_exists with
     "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
   assert (KObjectV.spec old_kobj = old_spec) as Hstored_spec_eq.
@@ -494,10 +398,29 @@ Proof.
     destruct (KObjectV.objectmeta kobj),
       (KObjectV.objectmeta updated_kobj); simpl in *.
     decompose [and] Hupdated_meta. subst. done. }
+  iPoseProof (kview.own_meta_living Hlookup_abs with
+    "Hinv_Hown_abs Hown_meta_frag") as "%Hold_deletion_timestamp_none".
+  assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') =
+      None) as Hnew_deletion_timestamp_none.
+  { assert (Hold_meta_none : old_meta.(ObjectMetaV.DeletionTimestamp') = None).
+    { rewrite <-(ObjectMetaV.equiv_except_resource_version_deletion_timestamp
+        _ _ Hmeta_eq). exact Hold_deletion_timestamp_none. }
+    assert (Hrequest_none :
+        (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') = None).
+    { pose proof (ObjectMetaV.equiv_except_resource_version_deletion_timestamp
+        _ _ Howner_references_only) as Hdt.
+      change (ObjectMetaV.DeletionTimestamp' old_meta =
+        ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj)) in Hdt.
+      rewrite -Hdt. exact Hold_meta_none. }
+    unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+    rewrite (objectmeta_updated_set_resource_version_deletion_timestamp
+      _ _ _ Hupdated_meta).
+    exact Hrequest_none. }
   iMod (kview.update_meta_kobj_vs old_kobj new_kobj with
     "[$Hinv_Hown_abs] [$Hown_meta_frag]")
     as "(Hinv_Hown_abs & Hown_meta_frag)".
   { exact Hvalid_kuid_new. }
+  { exact Hnew_deletion_timestamp_none. }
   { unfold no_speculative_parent_reference.
     intros kind' name' uid' Hparent.
     unfold meta_parent_ref_is in Hparent.
@@ -508,24 +431,52 @@ Proof.
     symmetry. exact Hspec_updated_old. }
   { unfold new_kobj. rewrite KObjectV.status_update_objectmeta.
     symmetry. exact Hstatus_eq. }
+  iPoseProof (cview.own_auth_frag_lookup key old_kobj Hlookup_abs Hchild with
+    "Hinv_Hown_children Hown_children_frag") as "%Hold_living_parent".
+  assert (Hold_terminating_parent_none :
+      terminating_children.terminating_obj_parent_ref old_kobj = None).
+  { unfold terminating_children.terminating_obj_parent_ref.
+    rewrite Hold_deletion_timestamp_none. done. }
+  assert (Hnew_terminating_parent_none :
+      terminating_children.terminating_obj_parent_ref new_kobj = None).
+  { unfold terminating_children.terminating_obj_parent_ref.
+    destruct ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp'));
+      [exact Hnew_parent_none|done]. }
   iMod (cview.release_child_vs key old_kobj new_kobj with
     "[$Hinv_Hown_children] [$Hown_children_frag]")
     as "(Hinv_Hown_children & Hown_children_frag)".
   { exact Hlookup_abs. }
-  { exact Hold_parent_old. }
-  { exact Hnew_parent_none. }
+  { exact Hold_living_parent. }
+  { unfold living_obj_parent_ref.
+    destruct ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp'));
+      [done|exact Hnew_parent_none]. }
   { unfold new_kobj, new_kmeta.
     rewrite objectmeta_update_objectmeta.
     rewrite Huid_obj Huid_eq.
     symmetry. eapply objectmeta_updated_set_resource_version_uid.
     done. }
+  iMod (terminating_children.update_same_parent_vs
+    γ.(γ_terminating_children) abs_state key old_kobj new_kobj with
+    "Hinv_Hown_terminating_children") as
+    "Hinv_Hown_terminating_children".
+  { exact Hlookup_abs. }
+  { rewrite Hold_terminating_parent_none Hnew_terminating_parent_none. done. }
+  iMod (deletion_observation.update_vs key old_kobj new_kobj with
+    "Hinv_Hown_deletion_observations") as
+    "Hinv_Hown_deletion_observations".
+  { exact Hlookup_abs. }
+  { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
+    rewrite Huid_obj Huid_eq. symmetry.
+    eapply objectmeta_updated_set_resource_version_uid. done. }
+  { intros Hold_terminating.
+    exfalso. apply Hold_terminating. exact Hold_deletion_timestamp_none. }
   assert (KObjectV.same_kind kobj new_kobj) as Hsame_kind_new.
   { unfold new_kobj.
     destruct kobj, updated_kobj; simpl in *; simplify_eq; done. }
+  iClear "Hown_meta_frag Hown_spec_frag".
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
-    "[Hdeepown_i1' Hown_meta_frag Hown_spec_frag
-      Hown_children_frag]") as "HΦ".
+    "[Hdeepown_i1' Hown_children_frag]") as "HΦ".
   { iSplit.
     { iPureIntro. unfold new_kobj, new_kmeta.
       eapply valid_update_objectmeta_set_resource_version; done. }
@@ -547,7 +498,7 @@ Proof.
     { iPureIntro. unfold new_kobj, new_kmeta.
       rewrite objectmeta_update_objectmeta Huid_eq.
       eapply objectmeta_updated_set_resource_version_uid. done. }
-    iFrame. iLeft. iFrame. }
+    iFrame "Hdeepown_i1' Hown_children_frag". }
   iModIntro.
   iAssert (([∗ map] i; obj ∈
       <[key:=interface.ok i1]> phys_state;
@@ -563,15 +514,6 @@ Proof.
     with "[$Hown_Mutex H]").
   { iNamed "H". iFrame "#". iFrame.
     iPureIntro. split_and!. all: try done.
-    - eapply update_tombed_uid_update_eq_used_uid_sub;
-        [done|done|].
-      unfold new_kobj, new_kmeta.
-      rewrite objectmeta_update_objectmeta Huid_obj Huid_eq.
-      eapply objectmeta_updated_set_resource_version_uid. done.
-    - rewrite dom_insert_L.
-      assert (key ∈ dom abs_state) as Hkey_in_abs.
-      { apply elem_of_dom. eexists. exact Hlookup_abs. }
-      Timeout 10 set_solver.
   }
   iExact "HΦ".
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem.

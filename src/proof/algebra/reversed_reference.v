@@ -121,6 +121,31 @@ Global Instance own_frag_timeless γ r dq ks :
   Timeless (own_frag γ r dq ks).
 Proof. apply _. Qed.
 
+Lemma init :
+  ⊢ |==> ∃ γ,
+    own_auth γ (∅ : gmap K V) (∅ : gset R).
+Proof.
+  unfold own_auth.
+  iApply (@counted_reversed_reference.init
+    K _ _ R _ _ V extract_reference_count to_reference Σ _).
+Qed.
+
+Lemma extend_used_reference_vs {γ state used_reference} reference :
+  own_auth γ state used_reference ==∗
+    own_auth γ state (used_reference ∪ {[reference]}).
+Proof.
+  unfold own_auth.
+  iApply (@counted_reversed_reference.generic_update_from_old_obj_vs
+    K _ _ R _ _ V extract_reference_count to_reference Σ _).
+  - intros Hobjects.
+    rewrite map_Forall_lookup in Hobjects |- *.
+    intros key value Hlookup.
+    apply elem_of_union_l. exact (Hobjects key value Hlookup).
+  - intros existing_reference Hused.
+    apply elem_of_union_l. exact Hused.
+  - intros existing_reference Hused. reflexivity.
+Qed.
+
 Definition map_reverse_index (state : gmap K V) (r : R) : gset K :=
   dom (filter (λ '(_, v), r ∈ extract_reference_set v) state).
 

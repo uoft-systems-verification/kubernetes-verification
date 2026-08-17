@@ -40,6 +40,16 @@ Proof.
   destruct m, m'; simpl; intuition congruence.
 Qed.
 
+Lemma objectmeta_updated_set_resource_version_deletion_timestamp m m' rv :
+  ObjectMetaV.updated m m' →
+  ObjectMetaV.DeletionTimestamp'
+      (m' <| ObjectMetaV.ResourceVersion' := rv |>) =
+    ObjectMetaV.DeletionTimestamp' m.
+Proof.
+  rewrite /ObjectMetaV.updated.
+  destruct m, m'; simpl; intuition congruence.
+Qed.
+
 Lemma valid_simple_update_updated_set_resource_version_uid m_old m_input m_updated rv :
   ObjectMetaV.valid_simple_update m_old m_input →
   ObjectMetaV.updated m_input m_updated →
@@ -57,6 +67,21 @@ Lemma valid_simple_update_updated_set_resource_version_parent_ref m_old m_input 
     meta_parent_ref (m_updated <| ObjectMetaV.ResourceVersion' := rv |>).
 Proof.
   rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated /meta_parent_ref.
+  destruct m_old, m_input, m_updated; simpl.
+  intros Hvalid Hupdated.
+  decompose [and] Hvalid. decompose [and] Hupdated. subst.
+  done.
+Qed.
+
+Lemma valid_simple_update_updated_set_resource_version_deletion_timestamp
+    m_old m_input m_updated rv :
+  ObjectMetaV.valid_simple_update m_old m_input →
+  ObjectMetaV.updated m_input m_updated →
+  m_old.(ObjectMetaV.DeletionTimestamp') =
+    (m_updated <| ObjectMetaV.ResourceVersion' := rv |>).(
+      ObjectMetaV.DeletionTimestamp').
+Proof.
+  rewrite /ObjectMetaV.valid_simple_update /ObjectMetaV.updated.
   destruct m_old, m_input, m_updated; simpl.
   intros Hvalid Hupdated.
   decompose [and] Hvalid. decompose [and] Hupdated. subst.

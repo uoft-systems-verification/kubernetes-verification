@@ -18,13 +18,27 @@ Definition serviceAccountsToEnsure {ext : ffi_syntax} {go_gctx : GoGlobalContext
 Definition syncNamespace {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/serviceaccount.syncNamespace"%go.
 
 (* syncNamespace ensures that an active namespace has each configured ServiceAccount.
-   A nil namespace represents a namespace that is no longer present.
 
-   go: service_account.go:23:6 *)
+   go: service_account.go:21:6 *)
 Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "namespace",
-    exception_do (let: "namespace" := (GoAlloc (go.PointerType core_v1.Namespace) "namespace") in
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType core_v1.Namespace] "namespace") =⟨go.PointerType core_v1.Namespace⟩ (Convert go.untyped_nil (go.PointerType core_v1.Namespace) UntypedNil)) || ((![core_v1.NamespacePhase] (StructFieldRef core_v1.NamespaceStatus "Phase"%go (StructFieldRef core_v1.Namespace "Status"%go (![go.PointerType core_v1.Namespace] "namespace")))) ≠⟨core_v1.NamespacePhase⟩ core_v1.NamespaceActive))
+  λ: "key",
+    exception_do (let: "key" := (GoAlloc go.string "key") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "namespace" := (GoAlloc (go.PointerType core_v1.Namespace) (GoZeroVal (go.PointerType core_v1.Namespace) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "key") in
+    (MethodResolve (go.PointerType apimodel.State) "NamespaceGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("namespace" <-[go.PointerType core_v1.Namespace] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: let: "$a0" := (![go.error] "err") in
+    (FuncResolve errors.IsNotFound [] #()) "$a0"
+    then return: (Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (![go.error] "err")
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool ((![core_v1.NamespacePhase] (StructFieldRef core_v1.NamespaceStatus "Phase"%go (StructFieldRef core_v1.Namespace "Status"%go (![go.PointerType core_v1.Namespace] "namespace")))) ≠⟨core_v1.NamespacePhase⟩ core_v1.NamespaceActive)
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     let: "$range" := (![go.SliceType core_v1.ServiceAccount] (GlobalVarAddr serviceAccountsToEnsure #())) in

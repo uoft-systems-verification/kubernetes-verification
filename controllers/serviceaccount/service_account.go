@@ -9,7 +9,6 @@ import (
 )
 
 // A simplified serviceaccount controller. The following features are not included:
-// * namespace lookup; callers pass the current namespace object
 // * controller construction; the managed service accounts are listed below
 // * creation error aggregation; the first error is returned
 // * event handling and workqueue retry
@@ -19,9 +18,15 @@ var serviceAccountsToEnsure = []v1.ServiceAccount{
 }
 
 // syncNamespace ensures that an active namespace has each configured ServiceAccount.
-// A nil namespace represents a namespace that is no longer present.
-func syncNamespace(namespace *v1.Namespace) error {
-	if namespace == nil || namespace.Status.Phase != v1.NamespaceActive {
+func syncNamespace(key string) error {
+	namespace, err := apimodel.ModelState.NamespaceGet(key)
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if namespace.Status.Phase != v1.NamespaceActive {
 		return nil
 	}
 
