@@ -137,4 +137,77 @@ Definition find_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     : option (nat * ReplicaSetV.t) :=
   list_find (λ rs, template_matches (rs_template rs) (deployment_template d)) rss.
 
+(* ---------------------------------------------------------------- *)
+(* Model of the state-touching helpers                               *)
+(* ---------------------------------------------------------------- *)
+
+Definition deployment_unique_label_key : go_string := "pod-template-hash"%go.
+
+(* TODO: un-axiomatize alongside [template_matches]. controller.ComputeHash is
+   goose-translated but has no WP spec, so the hash it returns is trusted here
+   the same way template equality is. The only property the controller relies on
+   is that matching templates hash equally, which is what makes the deterministic
+   RS name stable across syncs — that is [template_hash_respects_matches]. *)
+Parameter template_hash : PodTemplateSpecV.t → go_string.
+Axiom template_hash_respects_matches : ∀ t1 t2,
+  template_matches t1 t2 → template_hash t1 = template_hash t2.
+
+(* scaleReplicaSet rewrites only the replica count. *)
+Definition rs_scaled_spec (rs : ReplicaSetV.t) (n : w32) : ReplicaSetSpecV.t :=
+  ReplicaSetSpecV.mk
+    (Some n)
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.MinReadySeconds')
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector')
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').
+
+(* The labels getNewReplicaSet stamps onto the new ReplicaSet's template, and
+   the selector it derives, both add the pod-template-hash binding. *)
+Definition new_rs_labels (d : DeploymentV.t) : gmap go_string go_string :=
+  <[deployment_unique_label_key := template_hash (deployment_template d)]>
+    (default ∅
+      (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')).
+
+Definition new_rs_selector (d : DeploymentV.t) : option LabelSelectorV.t :=
+  (λ selector, selector_with_label selector
+     deployment_unique_label_key (template_hash (deployment_template d)))
+  <$> d.(DeploymentV.Spec').(DeploymentSpecV.Selector').
+
+Definition new_rs_name (d : DeploymentV.t) : go_string :=
+  d.(DeploymentV.ObjectMeta').(ObjectMetaV.Name') ++ "-"%go ++
+    template_hash (deployment_template d).
+
+Definition new_rs_key (d : DeploymentV.t) : KKey.t :=
+  {|
+    KKey.Kind' := ReplicaSetV.kind;
+    KKey.Namespace' := d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace');
+    KKey.Name' := new_rs_name d
+  |}.
+
+(* The template stamped onto the new ReplicaSet: the deployment's, with the
+   pod-template-hash label added. Note ComputeHash runs on the deep copy
+   *before* the label is added, so the hash is of the deployment's template. *)
+Definition new_rs_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
+  PodTemplateSpecV.mk
+    ((deployment_template d).(PodTemplateSpecV.ObjectMeta')
+       <| ObjectMetaV.Labels' := Some (new_rs_labels d) |>)
+    (deployment_template d).(PodTemplateSpecV.Spec').
+
+(* Characterizes the ReplicaSet getNewReplicaSet submits. Stated field-by-field
+   because that is what the callers need: [rollout] only ever reads back the
+   replica count and the template. *)
+Definition is_new_replica_set (d : DeploymentV.t) (rs : ReplicaSetV.t) : Prop :=
+  rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') = new_rs_name d ∧
+  rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') =
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ∧
+  rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Labels') = Some (new_rs_labels d) ∧
+  obj_parent_ref_is (KObjectV.ReplicaSet rs) DeploymentV.kind
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.Name')
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') ∧
+  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') =
+    Some (deployment_replicas d) ∧
+  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.MinReadySeconds') =
+    d.(DeploymentV.Spec').(DeploymentSpecV.MinReadySeconds') ∧
+  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector') = new_rs_selector d ∧
+  rs_template rs = new_rs_template d.
+
 End proof.
