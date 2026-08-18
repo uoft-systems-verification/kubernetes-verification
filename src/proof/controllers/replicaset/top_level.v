@@ -119,6 +119,9 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
+(* Progress spec states that the controller either makes progress toward the desired state or has already reached the
+  desired state, assuming that the cluster state is *ready* for the controller to make progress.
+  Here, ready means none of the controller's children objects (Pods) are terminating. *)
 Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -135,6 +138,10 @@ Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
         (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
   }}}.
 
+(* Preservation spec states that the controller does not increase the distance between the current cluster state and its
+  desired state (or, does not cancel its previous progress) when the cluster state is *unready* for the controller to
+  make progress. Here, unready means the controller has some terminating children objects, so the controller might need
+  to wait for termination before making progress. *)
 Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -150,6 +157,8 @@ Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
   }}}.
 
+(* Stability spec states that the controller does not modify the cluster state if the state already matches the desired
+  state. We use fractional ownerships owned_resources so the controller has no permission to modify the state. *)
 Definition stability_spec γ l namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
