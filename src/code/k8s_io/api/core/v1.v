@@ -1643,8 +1643,6 @@ Axiom Serviceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, g
 
 Axiom ServiceListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ServiceAccountⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom ServiceAccountListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom Endpointsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -8192,17 +8190,48 @@ Class ServiceList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalC
 Module ServiceAccount.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ObjectMeta' : v1.ObjectMeta.t;
+  Secrets' : slice.t;
+  ImagePullSecrets' : slice.t;
+  AutomountServiceAccountToken' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End ServiceAccount.
+
+Definition ServiceAccount'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.FieldDecl "Secrets"%go (go.SliceType ObjectReference));
+  (go.FieldDecl "ImagePullSecrets"%go (go.SliceType LocalObjectReference));
+  (go.FieldDecl "AutomountServiceAccountToken"%go (go.PointerType go.bool))
+].
+Program Definition ServiceAccount'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ServiceAccount'fds_unsealed).
+Global Instance equals_unfold_ServiceAccount {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ServiceAccount'fds =→ ServiceAccount'fds_unsealed.
+Proof. rewrite /ServiceAccount'fds seal_eq //. Qed.
+
+Definition ServiceAccountⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ServiceAccount'fds).
 
 Class ServiceAccount_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ServiceAccount_type_repr  :: go.TypeReprUnderlying ServiceAccountⁱᵐᵖˡ ServiceAccount.t;
   #[global] ServiceAccount_underlying :: (ServiceAccount) <u (ServiceAccountⁱᵐᵖˡ);
-  #[global] ServiceAccountⁱᵐᵖˡ_underlying :: (ServiceAccountⁱᵐᵖˡ) ↓u (ServiceAccountⁱᵐᵖˡ);
+  #[global] ServiceAccount_get_TypeMeta (x : ServiceAccount.t) :: ⟦StructFieldGet (ServiceAccountⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(ServiceAccount.TypeMeta');
+  #[global] ServiceAccount_set_TypeMeta (x : ServiceAccount.t) y :: ⟦StructFieldSet (ServiceAccountⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|ServiceAccount.TypeMeta' := y|>);
+  #[global] ServiceAccount_get_ObjectMeta (x : ServiceAccount.t) :: ⟦StructFieldGet (ServiceAccountⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(ServiceAccount.ObjectMeta');
+  #[global] ServiceAccount_set_ObjectMeta (x : ServiceAccount.t) y :: ⟦StructFieldSet (ServiceAccountⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|ServiceAccount.ObjectMeta' := y|>);
+  #[global] ServiceAccount_get_Secrets (x : ServiceAccount.t) :: ⟦StructFieldGet (ServiceAccountⁱᵐᵖˡ) "Secrets", #x⟧ ⤳[under] #x.(ServiceAccount.Secrets');
+  #[global] ServiceAccount_set_Secrets (x : ServiceAccount.t) y :: ⟦StructFieldSet (ServiceAccountⁱᵐᵖˡ) "Secrets", (#x, #y)⟧ ⤳[under] #(x <|ServiceAccount.Secrets' := y|>);
+  #[global] ServiceAccount_get_ImagePullSecrets (x : ServiceAccount.t) :: ⟦StructFieldGet (ServiceAccountⁱᵐᵖˡ) "ImagePullSecrets", #x⟧ ⤳[under] #x.(ServiceAccount.ImagePullSecrets');
+  #[global] ServiceAccount_set_ImagePullSecrets (x : ServiceAccount.t) y :: ⟦StructFieldSet (ServiceAccountⁱᵐᵖˡ) "ImagePullSecrets", (#x, #y)⟧ ⤳[under] #(x <|ServiceAccount.ImagePullSecrets' := y|>);
+  #[global] ServiceAccount_get_AutomountServiceAccountToken (x : ServiceAccount.t) :: ⟦StructFieldGet (ServiceAccountⁱᵐᵖˡ) "AutomountServiceAccountToken", #x⟧ ⤳[under] #x.(ServiceAccount.AutomountServiceAccountToken');
+  #[global] ServiceAccount_set_AutomountServiceAccountToken (x : ServiceAccount.t) y :: ⟦StructFieldSet (ServiceAccountⁱᵐᵖˡ) "AutomountServiceAccountToken", (#x, #y)⟧ ⤳[under] #(x <|ServiceAccount.AutomountServiceAccountToken' := y|>);
 }.
 
 Module ServiceAccountList.
