@@ -1226,6 +1226,73 @@ Proof.
   iFrame "%".
 Qed.
 
+(* General metadata-only owner-index rule: the returned Go slice contains
+   every matching Pod, while metadata ownership remains attached only to the
+   living projection. The opaque terminating-children phase is framed. *)
+Lemma wp_State__ByIndex_podController_combined γ l indexed_value
+    living_pods pod_dqs parent_key parent_uid children_keys children_dq phase :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
+      "%Hindexed_value_eq" ∷ ⌜ indexed_value =
+        parent_key.(KKey.Namespace') ++ "/"%go ++
+        parent_key.(KKey.Kind') ++ "/"%go ++
+        parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> living_pods) =
+        filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧
+        slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧
+        slash_free parent_uid ⌝
+  }}}
+    l @! (go.PointerType apimodel.State) @! "ByIndex" #"Pod"%go #"podController"%go #indexed_value
+  {{{ sl interfaces all_pods dq', RET (#sl, #interface.nil);
+      "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
+      "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;all_pods, KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      "%Hliving_meta_perm" ∷ ⌜ ObjectMetaV.without_resource_version <$>
+        (PodV.ObjectMeta' <$> filter pod_is_living all_pods) ≡ₚ
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
+      "%Hquiescent_meta_perm" ∷ ⌜ phase = Quiescent →
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> all_pods) ≡ₚ
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
+      "%Hpods_valid" ∷ ⌜ Forall PodV.valid all_pods ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) all_pods ⌝ ∗
+      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
+      "Hown_deletion_observed_frags" ∷ ([∗ list] pod ∈ terminating_pods all_pods,
+        own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iApply wp_State__ByIndex_podController_au.
+  iFrame "#".
+  iApply fupd_mask_intro.
+  { Timeout 10 set_solver. }
+  iIntros "Hmask".
+  iExists living_pods, pod_dqs, false, phase, parent_key, parent_uid,
+    children_keys, children_dq.
+  simpl. iFrame "%". iFrame.
+  iIntros (sl interfaces all_pods dq') "Hpost".
+  iDestruct "Hpost" as
+    "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm &
+      %Hpods_valid & %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags & _ &
+      Hown_children_frag & Hown_terminating_children_frag)".
+  iMod "Hmask" as "_".
+  iModIntro. iNext.
+  iApply ("HΦ" $! sl interfaces all_pods dq').
+  iFrame "Hsl Hpods Hown_meta_frags Hown_children_frag
+    Hown_terminating_children_frag Hown_deletion_observed_frags".
+  iFrame "%".
+Qed.
+
 (* General owner-index rule: the returned Go slice contains every matching
    Pod, while linear metadata/specification ownership remains attached only to
    the living projection.  The opaque terminating-control phase is framed. *)
@@ -1492,6 +1559,70 @@ Proof.
   iModIntro. iNext.
   iApply "HΦ".
   iFrame "Hsl Hpods Hown_pod_frags Hown_children_frag
+    Hown_terminating_children_frag Hown_deletion_observed_frags".
+  iFrame "%".
+Qed.
+
+Lemma wp_State__ByIndex_podController_uniform_combined γ l indexed_value living_pods parent_key parent_uid
+    children_keys pod_dq children_dq phase :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "Hown_meta_frags" ∷ ([∗ list] pod ∈ living_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
+      "%Hindexed_value_eq" ∷ ⌜ indexed_value =
+        parent_key.(KKey.Namespace') ++ "/"%go ++
+        parent_key.(KKey.Kind') ++ "/"%go ++
+        parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> living_pods) =
+        filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧
+        slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧ slash_free parent_uid ⌝
+  }}}
+    l @! (go.PointerType apimodel.State) @! "ByIndex" #"Pod"%go #"podController"%go #indexed_value
+  {{{ sl interfaces all_pods dq', RET (#sl, #interface.nil);
+      "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
+      "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;all_pods, KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
+      "%Hliving_meta_perm" ∷ ⌜ ObjectMetaV.without_resource_version <$>
+        (PodV.ObjectMeta' <$> filter pod_is_living all_pods) ≡ₚ
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
+      "%Hpods_valid" ∷ ⌜ Forall PodV.valid all_pods ⌝ ∗
+      "%Hparent_refs" ∷ ⌜ Forall (λ pod,
+        obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) all_pods ⌝ ∗
+      "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
+      "Hown_deletion_observed_frags" ∷ ([∗ list] pod ∈ terminating_pods all_pods,
+        own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_living_meta_frags" ∷ ([∗ list] pod ∈ filter pod_is_living all_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  set pod_dqs := replicate (length living_pods) pod_dq.
+  iAssert (([∗ list] pod;dq ∈ living_pods;pod_dqs,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta')))%I
+    with "[Hown_meta_frags]" as "Hown_meta_frags".
+  { subst pod_dqs. rewrite big_sepL2_replicate_r; [done|].
+    iExact "Hown_meta_frags". }
+  wp_apply (wp_State__ByIndex_podController_combined
+    γ l indexed_value living_pods pod_dqs parent_key parent_uid
+    children_keys children_dq phase with "[-HΦ]").
+  { iFrame "#". iFrame "%". iFrame. }
+  iIntros (sl interfaces all_pods dq') "H". iNamed "H".
+  subst pod_dqs.
+  iEval (rewrite big_sepL2_replicate_r; [done|]) in "Hown_meta_frags".
+  iEval (rewrite own_meta_frag_list_as_erased_metas) in "Hown_meta_frags".
+  iAssert (([∗ list] pod ∈ filter pod_is_living all_pods,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')))%I
+    with "[Hown_meta_frags]" as "Hown_living_meta_frags".
+  { rewrite own_meta_frag_list_as_erased_metas Hliving_meta_perm.
+    iExact "Hown_meta_frags". }
+  iApply "HΦ".
+  iFrame "Hsl Hpods Hown_living_meta_frags Hown_children_frag
     Hown_terminating_children_frag Hown_deletion_observed_frags".
   iFrame "%".
 Qed.

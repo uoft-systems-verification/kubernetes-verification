@@ -135,6 +135,21 @@ Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
         (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
   }}}.
 
+Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
+  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
+      "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! replicaset.syncReplicaSet #namespace #name
+  {{{ (pods' : list PodV.t), RET #interface.nil;
+      owned_resources γ rs pods' (mutating_fractions dq) false ∗
+      ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
+  }}}.
+
 Definition stability_spec γ l namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
