@@ -1,4 +1,3 @@
-From New.proof.controllers.statefulset Require Import top_level.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export statefulset_init.

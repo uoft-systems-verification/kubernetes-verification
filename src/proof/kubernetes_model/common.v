@@ -305,20 +305,17 @@ Lemma wp_parseResourceVersion rv :
   }}}.
 Proof. Admitted.
 
-(* [newNotFoundError] isolates the opaque Kubernetes API error constructor.
-   Its clients reason only about the semantic class observed by
-   [errors.IsNotFound]. *)
-Lemma wp_newNotFoundError (kind name : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newNotFoundError #kind #name
-  {{{ err, RET #err;
-      ⌜ not_found_error err ⌝
-  }}}.
-Proof. Admitted.
-
 Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
+  {{{ err, RET #err;
+      ⌜ conflict_error err ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_newUpdateUIDConflictError (kind name existing_uid uid : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.newUpdateUIDConflictError #kind #name #existing_uid #uid
   {{{ err, RET #err;
       ⌜ conflict_error err ⌝
   }}}.
@@ -385,6 +382,43 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
       ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj →
         KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
       ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝
+  }}}.
+Proof. Admitted.
+
+(** Unlike the strong-reference update rules, a terminating-object update can
+    race with changes to the stored object.  This general contract therefore
+    exposes validation failure while preserving both input objects. *)
+Lemma wp_applyValidationAndDefaultingOnUpdate_general
+    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid_named_create (KObjectV.kind new_obj) namespace new_obj ⌝ ∗
+      ⌜ valid_resource_version (KObjectV.objectmeta new_obj).(ObjectMetaV.ResourceVersion') ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
+      ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
+      ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ (err : interface.t), RET #err;
+      (⌜ err = interface.nil ⌝ ∗
+        ∃ updated_obj,
+          KObjectV.deepown_l new_l updated_obj 1 ∗
+          KObjectV.deepown_l old_l old_obj dq ∗
+          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+          ⌜ KObjectV.valid updated_obj ⌝ ∗
+          ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
+          ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
+          ⌜ ObjectMetaV.updated (KObjectV.objectmeta new_obj) (KObjectV.objectmeta updated_obj) ⌝ ∗
+          ⌜ ObjectSpecV.updated (KObjectV.spec new_obj) (KObjectV.spec updated_obj) ⌝ ∗
+          ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj → KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
+          ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝) ∨
+      (⌜ err ≠ interface.nil ⌝ ∗
+        ⌜ ¬ conflict_error err ⌝ ∗
+        KObjectV.deepown_l new_l new_obj 1 ∗
+        KObjectV.deepown_l old_l old_obj dq)
   }}}.
 Proof. Admitted.
 
@@ -456,7 +490,9 @@ Lemma wp_shouldDeleteDuringUpdate_general
       #(interface.ok new_i) #(interface.ok old_i)
   {{{ (should_delete : bool), RET #should_delete;
       KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ should_delete = true →
+        (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
   }}}.
 Proof. Admitted.
 

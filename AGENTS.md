@@ -32,6 +32,13 @@ inequalities, prefer targeted unfolding followed by structural tactics such as
 `discriminate` or `inversion` so proof checking does not evaluate unrelated
 definitions.
 
+## Rocq Specification Formatting
+
+Avoid frequent line breaks in Rocq program specifications. Keep each complete
+precondition or postcondition conjunct on one line when it fits within 120
+columns. Break genuinely longer conjuncts at logical or application boundaries,
+while preserving the surrounding quantified, record, and disjunctive structure.
+
 ## Fast Rocq Proof Checks
 
 When asked to "Run fast proof check" or to use a fast Rocq proof check, always

@@ -82,7 +82,15 @@ Definition deepown_i i v dq: iProp Σ :=
   ∃ l, ⌜ valid_interface i l ⌝ ∗ deepown_l l v dq.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L157 *)
-Axiom valid : t -> Prop.
+Definition valid (options : t) : Prop :=
+  match options.(OrphanDependents'), options.(PropagationPolicy') with
+  | Some _, Some _ => False
+  | _, Some policy =>
+      policy = "Foreground"%go ∨
+      policy = "Background"%go ∨
+      policy = "Orphan"%go
+  | _, None => True
+  end.
 
 End def.
 End DeleteOptionsV.

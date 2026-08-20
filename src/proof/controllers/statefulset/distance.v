@@ -1,5 +1,4 @@
 From New.proof.controllers.statefulset Require Export pod.
-From New.proof.controllers.statefulset Require Export top_level.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -158,6 +157,10 @@ Definition pod_view_key
     (view : ObjectMetaV.t * ObjectSpecV.t) : KKey.t :=
   PodV.meta_key (pod_view_meta view).
 
+Definition pod_view_reservation_identity
+    (view : ObjectMetaV.t * ObjectSpecV.t) : KKey.t * types.UID.t :=
+  (pod_view_key view, (pod_view_meta view).(ObjectMetaV.UID')).
+
 Definition pod_view_alive
     (view : ObjectMetaV.t * ObjectSpecV.t) : Prop :=
   (pod_view_meta view).(ObjectMetaV.DeletionTimestamp') = None.
@@ -307,8 +310,8 @@ Definition condemned_pod_views sts views :
 Definition pod_view_distance sts views : nat :=
   length (filter
     (λ key, key ∉ pod_view_key <$> views) (desired_pod_keys sts)) +
-  2 * length (filter pod_view_alive (outdated_pod_views sts views)) +
-  length (filter pod_view_alive (condemned_pod_views sts views)) +
+  2 * length (outdated_pod_views sts views) +
+  length (condemned_pod_views sts views) +
   length (bad_name_pod_views sts views).
 
 Lemma pod_view_desired_is_member sts view :
@@ -515,23 +518,18 @@ Proof.
     apply filter_fmap_comm. intros pod.
     pose proof ((proj2 (proj2 (Hobs pod))) sts) as Hpod.
     tauto. }
-  assert (Halive_outdated :
-      filter pod_view_alive
-        (outdated_pod_views sts (pod_storage_view <$> pods)) =
-      pod_storage_view <$>
-        filter is_pod_alive (outdated_pods sts pods)).
-  { rewrite Houtdated. apply filter_fmap_comm.
-    intros pod. symmetry. exact (proj1 (proj2 (Hobs pod))). }
-  assert (Halive_condemned :
-      filter pod_view_alive
-        (condemned_pod_views sts (pod_storage_view <$> pods)) =
-      pod_storage_view <$>
-        filter is_pod_alive (condemned_pods sts pods)).
-  { rewrite Hcondemned. apply filter_fmap_comm.
-    intros pod. symmetry. exact (proj1 (proj2 (Hobs pod))). }
   unfold pod_distance, pod_view_distance.
-  rewrite Hkeys Halive_outdated Halive_condemned Hbad !map_length.
+  rewrite Hkeys Houtdated Hcondemned Hbad !map_length.
   done.
+Qed.
+
+Lemma pod_storage_view_living_pods pods :
+  pod_storage_view <$> living_pods pods =
+    filter pod_view_alive (pod_storage_view <$> pods).
+Proof.
+  unfold living_pods.
+  symmetry. apply filter_fmap_comm. intros pod.
+  symmetry. exact (proj1 (proj2 (pod_storage_view_observations pod))).
 Qed.
 
 Lemma pod_storage_view_filter_int32_members sts (pods : list PodV.t) :
@@ -652,10 +650,8 @@ Proof.
   { apply perm_filter. exact Hperm. }
   unfold pod_view_distance.
   rewrite Hmissing.
-  pose proof (Permutation_length (perm_filter pod_view_alive _ _ Houtdated))
-    as Houtdated_len.
-  pose proof (Permutation_length (perm_filter pod_view_alive _ _ Hcondemned))
-    as Hcondemned_len.
+  pose proof (Permutation_length Houtdated) as Houtdated_len.
+  pose proof (Permutation_length Hcondemned) as Hcondemned_len.
   pose proof (Permutation_length Hbad) as Hbad_len.
   lia.
 Qed.
@@ -665,20 +661,19 @@ Lemma match_distance_storage_view_perm sts pods1 pods2 pvcs :
   match_distance sts pods1 pvcs = match_distance sts pods2 pvcs.
 Proof.
   intros Hperm.
+  pose proof (perm_filter pod_view_alive _ _ Hperm) as Hliving_perm.
   unfold match_distance.
   rewrite !pod_distance_as_storage_views.
-  by rewrite (pod_view_distance_perm _ _ _ Hperm).
+  rewrite !pod_storage_view_living_pods.
+  by rewrite (pod_view_distance_perm _ _ _ Hliving_perm).
 Qed.
 
-Lemma match_distance_zero_matches γ sts pods pvcs :
+Lemma match_distance_zero_matches_of_living_nodup sts pods pvcs :
   (∀ pod, pod ∈ pods → is_pod_alive pod) →
-  ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) -∗
-  ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
+  NoDup (PodV.key <$> pods) →
+  match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs.
 Proof.
-  iIntros (Hpods_alive) "Hpod_meta_frags".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hpod_meta_frags") as "%Hpods_nodup".
-  iPureIntro.
+  intros Hpods_alive Hpods_nodup.
   assert (Hdesired_pods_nodup : NoDup (desired_pod_keys sts)).
   { unfold desired_pod_keys, desired_ordinals.
     apply NoDup_fmap_2.
@@ -693,13 +688,15 @@ Proof.
     - apply NoDup_seq. }
   split.
   - intros Hdist.
+    assert (living_pods pods = pods) as Hliving.
+    { unfold living_pods. apply filter_all. intros pod Hpod.
+      by apply Hpods_alive. }
     unfold match_distance, pod_distance, pvc_distance in Hdist.
+    rewrite Hliving in Hdist.
     assert (Hmissing_pods : length (missing_pod_keys sts pods) = 0%nat) by lia.
-    assert (Halive_outdated_pods :
-        length (filter is_pod_alive (outdated_pods sts pods)) = 0%nat) by lia.
+    assert (Houtdated_pods : length (outdated_pods sts pods) = 0%nat) by lia.
     assert (Hbad_name_pods : length (bad_name_pods sts pods) = 0%nat) by lia.
-    assert (Halive_condemned_pods :
-        length (filter is_pod_alive (condemned_pods sts pods)) = 0%nat) by lia.
+    assert (Hcondemned_pods : length (condemned_pods sts pods) = 0%nat) by lia.
     assert (Hmissing_pvcs : length (missing_pvc_keys sts pvcs) = 0%nat) by lia.
     assert (Hpod_good_name : ∀ pod,
         pod ∈ pods → pod_has_int32_member_key sts pod).
@@ -725,9 +722,11 @@ Proof.
       assert (Hpod_condemned : pod ∈ condemned_pods sts pods).
       { unfold condemned_pods.
         apply list_elem_of_filter. split; [split; [by apply Hpod_good_name|exact Hnot_desired]|exact Hpod]. }
-      eapply (filter_length_zero_not_elem
-        is_pod_alive (condemned_pods sts pods) pod);
-        [exact Halive_condemned_pods|exact Hpod_condemned|by apply Hpods_alive]. }
+      assert (condemned_pods sts pods = []) as Hcondemned_nil.
+      { destruct (condemned_pods sts pods); [done|].
+        simpl in Hcondemned_pods. lia. }
+      rewrite Hcondemned_nil elem_of_nil in Hpod_condemned.
+      exact Hpod_condemned. }
     assert (Hpods_perm : PodV.key <$> pods ≡ₚ desired_pod_keys sts).
     { apply NoDup_Permutation; [exact Hpods_nodup|exact Hdesired_pods_nodup|].
       intros key. split.
@@ -751,11 +750,11 @@ Proof.
         assert (Hpod_outdated : pod ∈ outdated_pods sts pods).
         { unfold outdated_pods.
           apply list_elem_of_filter. split; [exact Hnot_match|exact Hpod_needed]. }
-        eapply (filter_length_zero_not_elem
-          is_pod_alive
-          (outdated_pods sts pods) pod);
-          [exact Halive_outdated_pods|exact Hpod_outdated|].
-        by apply Hpods_alive.
+        assert (outdated_pods sts pods = []) as Houtdated_nil.
+        { destruct (outdated_pods sts pods); [done|].
+          simpl in Houtdated_pods. lia. }
+        rewrite Houtdated_nil elem_of_nil in Hpod_outdated.
+        exact Hpod_outdated.
     + intros key Hdesired.
       destruct (decide (key ∈ PersistentVolumeClaimV.key <$> pvcs)) as [Hactual|Hnot_actual]; [done|].
       exfalso.
@@ -763,7 +762,13 @@ Proof.
         (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts) key);
         [exact Hmissing_pvcs|exact Hdesired|exact Hnot_actual].
   - intros [[Hpods_perm [Hpods_alive_forall Hpods_match_forall]] Hpvcs_match].
+    assert (living_pods pods = pods) as Hliving.
+    { unfold living_pods. apply filter_all.
+      rewrite Forall_forall in Hpods_alive_forall.
+      intros pod Hpod. apply Hpods_alive_forall.
+      by rewrite -list_elem_of_In. }
     unfold match_distance, pod_distance, pvc_distance.
+    rewrite Hliving.
     assert (Hmissing_pods_nil : missing_pod_keys sts pods = []).
     { unfold missing_pod_keys.
       apply filter_none. intros key Hdesired Hnot_actual.
@@ -795,10 +800,9 @@ Proof.
           pose proof (statefulset_replicas_le_go_int32_max sts).
           lia.
         + apply (f_equal KKey.Name') in Hkey_eq. exact Hkey_eq. }
-    assert (Halive_condemned_pods_nil : filter is_pod_alive (condemned_pods sts pods) = []).
-    { apply filter_none. intros pod Hpod Halive.
-      unfold condemned_pods in Hpod.
-      apply list_elem_of_filter in Hpod as ((_ & Hnot_desired) & Hpod).
+    assert (Hcondemned_pods_nil : condemned_pods sts pods = []).
+    { unfold condemned_pods. apply filter_none.
+      intros pod Hpod (_ & Hnot_desired).
       apply Hnot_desired.
       unfold pod_key_is_desired.
       rewrite -Hpods_perm. by apply list_elem_of_fmap_2. }
@@ -807,7 +811,7 @@ Proof.
       apply filter_none. intros key Hdesired Hnot_actual.
       apply Hnot_actual. by apply Hpvcs_match. }
     rewrite Hmissing_pods_nil Houtdated_pods_nil Hbad_name_pods_nil
-      Halive_condemned_pods_nil Hmissing_pvcs_nil.
+      Hcondemned_pods_nil Hmissing_pvcs_nil.
     done.
 Qed.
 
@@ -925,6 +929,20 @@ Proof.
     pose proof (pod_storage_view_observations pod) as Hobs.
     rewrite (proj1 Hobs). f_equal. exact IH. }
   rewrite !Hkeys. by apply Permutation_map.
+Qed.
+
+Lemma pod_storage_view_perm_reservation_identities pods1 pods2 :
+  pod_storage_view <$> pods1 ≡ₚ pod_storage_view <$> pods2 →
+  pod_reservation_identity <$> pods1 ≡ₚ pod_reservation_identity <$> pods2.
+Proof.
+  intros Hperm.
+  assert (Hidentities : ∀ pods : list PodV.t,
+      pod_reservation_identity <$> pods =
+      pod_view_reservation_identity <$> (pod_storage_view <$> pods)).
+  { intros pods. induction pods as [|pod pods IH]; simpl; first done.
+    destruct pod as [typemeta meta spec status]. destruct meta; simpl in *.
+    f_equal. exact IH. }
+  rewrite !Hidentities. by apply Permutation_map.
 Qed.
 
 Lemma missing_pod_keys_storage_view_perm sts pods1 pods2 :

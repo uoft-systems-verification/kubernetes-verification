@@ -1,4 +1,3 @@
-From New.proof.controllers.statefulset Require Import top_level.
 From New.proof.controllers.statefulset Require Export reconcile_progress.
 From New.proof.controllers.statefulset Require Import create_pvc update_pod
   release condemned outdated.

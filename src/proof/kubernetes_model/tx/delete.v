@@ -390,13 +390,17 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
     is_kubernetes γ l ∗
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
-    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children,
+    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children phase,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
-    }> @ ⊤, ∅ <{ ∀∀ kmeta',
-      delete_success_post γ key uid parent_key parent_uid children kmeta',
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+    }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable,
       COMM ▷ Φ #interface.nil
     }>
     -∗ WP l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c {{ Φ }}.
@@ -407,13 +411,17 @@ Proof.
   set I := (∃ options_c_orig,
     "Hoptions_ptr" ∷ options_ptr ↦ options_c_orig ∗
     "Hdeepown_options_orig" ∷ DeleteOptionsV.deepown options_c_orig options 1 ∗
-    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children,
+    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children phase,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
-    }> @ ⊤, ∅ <{ ∀∀ kmeta',
-      delete_success_post γ key uid parent_key parent_uid children kmeta',
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+    }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable,
       COMM ▷ Φ #interface.nil
     }>
   )%I.
@@ -428,7 +436,7 @@ Proof.
   wp_auto.
   wp_apply (wp_State__get_some_au γ l key).
   iFrame "#".
-  iMod "Hau" as (uid kmeta parent_key parent_uid children) "[Hau_pre Hclose]".
+  iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "[Hau_pre Hclose]".
   iNamed "Hau_pre".
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
@@ -439,14 +447,14 @@ Proof.
   iIntros (i kobj) "Hget".
   iDestruct "Hget" as "(%Hvalid_kobj & %Hkey_eq & %Hmeta_eq & Hdeepown_i & Hown_meta_frag & _ & _)".
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid".
-  iMod ("Habort" with "[Hown_meta_frag Hown_children_frag]") as "Hau".
-  { iFrame. iFrame "%". }
+  iMod ("Habort" with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]") as "Hau".
+  { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
   iModIntro. iNext. wp_auto.
   iDestruct "Hdeepown_i" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
   wp_apply wp_Accessor. 1: iPureIntro; done.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
-  destruct Hmeta_valid as (_ & _ & Huid_kmeta & _).
+  destruct Hmeta_valid as (_ & _ & Huid_kmeta & _ & _).
   assert (Huid_kobj : uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID')).
   { rewrite Huid_kmeta.
     symmetry. apply (ObjectMetaV.equiv_except_resource_version_uid _ _ Hmeta_eq). }
@@ -491,11 +499,12 @@ Proof.
   iFrame "#".
   iFrame "Hdeepown_options_rv".
   iSplit; first done.
-  iMod "Hau" as (uid' kmeta' parent_key' parent_uid' children') "[Hau_pre Hclose]".
+  iMod "Hau" as (uid' kmeta' parent_key' parent_uid' children' phase') "[Hau_pre Hclose]".
+  iRename "Hown_unreserved_key_frag" into "Hown_unreserved_key_frag_outer".
   iNamed "Hau_pre".
   iModIntro.
-  iExists uid', kmeta', parent_key', parent_uid', children'.
-  iFrame "Hown_meta_frag Hown_children_frag".
+  iExists uid', kmeta', parent_key', parent_uid', children', phase'.
+  iFrame "Hown_meta_frag Hown_children_frag Hown_terminating_children_frag".
   iSplit; first done.
   iSplit.
   { iPureIntro.
@@ -507,11 +516,11 @@ Proof.
     subst options_rv.
     apply delete_tx_options_with_rv_preconditions_resource_version_not_none in Hrv_none.
     done. }
-  iIntros (err' kmeta'') "Hdelete_post".
+  iIntros (err') "Hdelete_post".
   iDestruct "Hdelete_post" as "[Hsuccess|Hconflict]".
   - iDestruct "Hsuccess" as "[%Herr Hpost]". subst err'.
     iDestruct "Hclose" as "[_ Hcommit]".
-    iMod ("Hcommit" $! kmeta'' with "Hpost") as "HΦ".
+    iMod ("Hcommit" $! tt with "Hpost") as "HΦ".
     iModIntro. iNext.
     wp_auto.
     wp_apply (wp_IsConflict interface.nil with "[]").
@@ -521,10 +530,10 @@ Proof.
     wp_for_post.
     iApply "HΦ".
   - iDestruct "Hconflict" as
-      "(%Hconflict & Hown_meta_frag & Hown_children_frag)".
+      "(%Hconflict & Hown_meta_frag & Hown_children_frag & Hown_terminating_children_frag)".
     iDestruct "Hclose" as "[Habort _]".
-    iMod ("Habort" with "[Hown_meta_frag Hown_children_frag]") as "Hau".
-    { iFrame. iFrame "%". }
+    iMod ("Habort" with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]") as "Hau".
+    { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
     iModIntro. iNext.
     wp_auto.
     wp_apply (wp_IsConflict err' with "[]").
@@ -536,7 +545,7 @@ Proof.
     iExists options_c'. iFrame.
 Qed.
 
-Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_uid children :
+Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_uid children phase :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
@@ -544,11 +553,15 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+      "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}
     l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c
-  {{{ kmeta', RET #interface.nil;
-      delete_success_post γ key uid parent_key parent_uid children kmeta'
+  {{{ RET #interface.nil;
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ".
@@ -562,16 +575,19 @@ Proof.
   iAssert (("%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
     "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
     "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)%I)
-    with "[Hown_meta_frag Hown_children_frag]" as "Hpre".
-  { iFrame. iFrame "%". }
+    "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
+    "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+    "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase)%I)
+    with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]" as "Hpre".
+  { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
   iAaccIntro with "Hpre".
   - iIntros "Hpre".
+    iRename "Hown_unreserved_key_frag" into "Hown_unreserved_key_frag_outer".
     iNamed "Hpre".
     iFrame. done.
-  - iIntros (kmeta') "Hpost".
+  - iIntros (_) "Hpost".
     iModIntro. iNext.
-    iApply ("HΦ" $! kmeta' with "Hpost").
+    iApply ("HΦ" with "Hpost").
 Qed.
 
 End proof.

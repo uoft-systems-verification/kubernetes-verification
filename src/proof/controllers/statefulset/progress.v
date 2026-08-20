@@ -1,5 +1,5 @@
 From New.proof.controllers.statefulset Require Export reconcile_progress.
-From New.proof.controllers.statefulset Require Export top_level.
+From New.proof.controllers.statefulset Require Import common.
 From New.proof.controllers.statefulset Require Import release.
 From New.proof.kubernetes_model Require Import get.
 
@@ -43,10 +43,26 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 Lemma wp_syncStatefulSet_progress γ l namespace name sts dq pods pvcs :
-  ⊢ syncStatefulSet_progress_spec γ l namespace name sts dq pods pvcs.
+  ⊢ progress_spec γ l namespace name sts dq pods pvcs.
 Proof.
-  unfold syncStatefulSet_progress_spec.
-  wp_start as "H". iNamed "H". wp_auto.
+  unfold progress_spec.
+  wp_start as "H". iNamed "H". iNamed "Hresources".
+  iEval (simpl) in "Hown_sts_meta_frag".
+  iEval (simpl) in "Hown_sts_spec_frag".
+  iEval (simpl) in "Hown_pod_frags".
+  iEval (simpl) in "Hown_children_frag".
+  iEval (simpl) in "Hown_terminating_children_frag".
+  iEval (simpl) in "Hown_pvc_frags".
+  iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag")
+    as "%Hsts_meta_valid".
+  destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
+  iPoseProof (own_pod_frags_living with "Hown_pod_frags")
+    as "%Hpods_living".
+  assert (filter (pending_pod sts) pods = []) as Hpending_pods_empty.
+  { apply filter_none. intros pod Hpod [Hnot_alive _].
+    rewrite Forall_forall in Hpods_living. apply Hnot_alive, Hpods_living.
+    by rewrite -list_elem_of_In. }
+  wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
@@ -98,14 +114,6 @@ Proof.
   { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid.
     exact Hget_Hmeta_eq. }
 
-  iEval (rewrite big_sepL_sep) in "Hown_pod_frags".
-  iDestruct "Hown_pod_frags" as
-    "[Hown_pod_meta_frags Hown_pod_spec_frags]".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hown_pod_meta_frags") as "%Hpods_nodup".
-  iCombine "Hown_pod_meta_frags Hown_pod_spec_frags" as
-    "Hown_pod_frags".
-  iEval (rewrite -big_sepL_sep) in "Hown_pod_frags".
   assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
       filter (λ key, key.(KKey.Kind') = "Pod"%go)
         (list_to_set (C:=gset KKey.t) (PodV.key <$> pods))) as Hdom_eq.
@@ -115,7 +123,8 @@ Proof.
       apply list_elem_of_fmap_1 in Hkey as (pod & -> & _).
       rewrite /PodV.key /PodV.meta_key /PodV.kind //.
     - intros [_ Hkey]. exact Hkey. }
-  iEval (rewrite Hset_key Hset_uid) in "Hown_children_frag".
+  iEval (rewrite Hset_key Hset_uid) in
+    "Hown_children_frag Hown_terminating_children_frag".
 
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_meta &
@@ -123,12 +132,35 @@ Proof.
   wp_apply (common.wp_FilterPodsByOwner_uniform_with_spec
     _ _ _ _ _ _ pods 1 1
     (list_to_set (PodV.key <$> pods))
-    with "[$Hset_meta $Hown_pod_frags $Hown_children_frag]").
+    with "[$Hset_meta $Hown_pod_frags $Hown_children_frag
+      $Hown_terminating_children_frag]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods pod_dq)
-    "(Hall_sl & Hall_pods & %Hall_storage_perm & %Hall_valid &
-      %Hall_parent_refs & %Hall_nodup & Hset_meta &
-      Hall_frags & Hown_children_frag)".
+    "(Hall_sl & Hall_pods & %Hall_living_storage_perm &
+      %Hall_quiescent_storage_perm & %Hall_valid & %Hall_parent_refs &
+      %Hall_nodup & Hset_meta & #Hall_deletion_observed &
+      Hall_frags & Hown_children_frag & Hown_terminating_children_frag)".
+  pose proof (Hall_quiescent_storage_perm eq_refl) as Hall_storage_perm.
+  assert (filter is_pod_alive all_pods = all_pods) as Hall_living.
+  { assert (Forall is_pod_alive all_pods) as Hall.
+    { apply (filter_length_eq_Forall is_pod_alive all_pods).
+      pose proof (Permutation_length Hall_living_storage_perm) as Hliving_len.
+      pose proof (Permutation_length Hall_storage_perm) as Hall_len.
+      rewrite !map_length in Hliving_len, Hall_len. lia. }
+    apply filter_all. intros pod Hpod. rewrite Forall_forall in Hall.
+    apply Hall. by rewrite -list_elem_of_In. }
+  iEval (rewrite Hall_living) in "Hall_frags".
+  pose proof (pod_storage_view_perm_reservation_identities _ _ Hall_storage_perm)
+    as Hall_reservation_identities.
+  iAssert ([∗ list] pod ∈ all_pods,
+      own_occupied_reserved_frag γ 1 (PodV.key pod)
+        pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))%I
+    with "[Hoccupied_pod_frags]" as "Hall_occupied".
+  { rewrite !own_occupied_pods_as_identities.
+    rewrite (big_sepL_permutation (λ identity, own_occupied_reserved_frag γ 1 identity.1 identity.2)
+      (pod_reservation_identity <$> all_pods)
+      (pod_reservation_identity <$> pods) Hall_reservation_identities).
+    iExact "Hoccupied_pod_frags". }
   pose proof (pod_storage_view_perm_keys _ _ Hall_storage_perm)
     as Hall_key_perm.
   assert (Hall_namespaces : Forall
@@ -199,7 +231,9 @@ Proof.
     with "Hall_meta_frags") as "[Hgood_meta Hbad_meta]".
   iDestruct (big_sepL_filter_partition Good _ all_pods
     with "Hall_spec_frags") as "[Hgood_spec Hbad_spec]".
-  iEval (fold good_pods) in "Hgood_meta Hgood_spec".
+  iDestruct (big_sepL_filter_partition Good _ all_pods
+    with "Hall_occupied") as "[Hgood_occupied Hbad_occupied]".
+  iEval (fold good_pods) in "Hgood_meta Hgood_spec Hgood_occupied".
   iEval (fold bad_pods) in "Hbad_meta Hbad_spec".
   assert (Hbad_definition : bad_pods = pods_with_bad_names set all_pods).
   { unfold bad_pods, pods_with_bad_names, Good. done. }
@@ -294,17 +328,26 @@ Proof.
       missing_pvc_keys set pvcs = missing_pvc_keys sts pvcs).
   { apply statefulset_storage_view_missing_pvc_keys.
     symmetry. exact Hset_view. }
-  iEval (rewrite -Hmissing_pods) in "Hown_reserved_missing_pod_keys".
-  iEval (rewrite -Hmissing_pvcs) in "Hown_reserved_missing_pvc_keys".
+  iEval (rewrite /= -Hmissing_pods) in "Hreserved_pod_frags".
+  iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
   wp_auto.
   wp_apply (wp_reconcileReplicas_progress γ l set_l good_sl set
-    good_ptrs good_pods pvcs 1 pod_dq
+    good_ptrs good_pods pvcs 1 pod_dq Quiescent
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_frags
-      $Hown_pvc_frags $Hgood_children
-      $Hown_reserved_missing_pod_keys $Hown_reserved_missing_pvc_keys]").
+      $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvc_frags $Hgood_children
+      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags]").
   { iFrame "#". iFrame "%". }
-  iIntros (pods' pvcs') "Hreconcile".
-  iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto.
+  iIntros (pods' pvcs' deletion) "Hreconcile".
+  iNamedPrefix "Hreconcile" "Hreconcile_".
+  iEval (rewrite big_sepL_sep) in "Hreconcile_Hown_pods".
+  iDestruct "Hreconcile_Hown_pods" as
+    "[Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec]".
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
+    with "Hreconcile_Hown_pod_meta") as "%Hpods'_nodup".
+  iCombine "Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec" as
+    "Hreconcile_Hown_pods".
+  iEval (rewrite -big_sepL_sep) in "Hreconcile_Hown_pods".
+  wp_auto.
 
   assert (Hinitial_distance :
       match_distance set all_pods pvcs = match_distance sts pods pvcs).
@@ -315,6 +358,16 @@ Proof.
   assert (Hfinal_distance :
       match_distance sts pods' pvcs' = match_distance set pods' pvcs').
   { apply statefulset_storage_view_match_distance. exact Hset_view. }
+  assert (Hmissing_pods_final :
+      missing_pod_keys set pods' = missing_pod_keys sts pods').
+  { apply statefulset_storage_view_missing_pod_keys. symmetry. exact Hset_view. }
+  assert (Hmissing_pvcs_final :
+      missing_pvc_keys set pvcs' = missing_pvc_keys sts pvcs').
+  { apply statefulset_storage_view_missing_pvc_keys. symmetry. exact Hset_view. }
+  iEval (rewrite Hmissing_pods_final) in
+    "Hreconcile_Hreserved_pods".
+  iEval (rewrite Hmissing_pvcs_final) in
+    "Hreconcile_Hreserved_pvcs".
   destruct (decide (bad_pods = [])) as [Hbad_empty|Hbad_nonempty].
   - assert (Hall_good : Forall Good all_pods).
     { apply Forall_forall. intros pod Hpod.
@@ -335,12 +388,20 @@ Proof.
             pods' pvcs' Hset_view)).
         exact Hcomplete. }
       iEval (rewrite -Hset_key -Hset_uid) in
-        "Hreconcile_Hown_children".
+        "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
+      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+        with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
+      { iExists (phase_after_deletion Quiescent deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
+      rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
-        Hreconcile_Hown_children".
-      iPureIntro. by left.
+        Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
+        Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+      iPureIntro. split; first exact Hpods'_nodup.
+      left. exact Hcomplete_sts.
     + assert (pod_storage_view <$> good_pods ≡ₚ
         pod_storage_view <$> pods) as Hgood_storage_perm.
       { rewrite Hgood_eq. exact Hall_storage_perm. }
@@ -352,16 +413,33 @@ Proof.
       { rewrite Hfinal_distance -Hinitial_distance.
         rewrite Hgood_eq in Hstrict. exact Hstrict. }
       iEval (rewrite -Hset_key -Hset_uid) in
-        "Hreconcile_Hown_children".
+        "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
+      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+        with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
+      { iExists (phase_after_deletion Quiescent deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
+      rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
-        Hreconcile_Hown_children".
-      iPureIntro. right. split; done.
+        Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
+        Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+      iPureIntro. split; first exact Hpods'_nodup.
+      right. split; done.
   - assert (Hbad_distance :
       match_distance set all_pods pvcs =
         (match_distance set good_pods pvcs + length bad_pods)%nat).
-    { unfold match_distance. rewrite pod_distance_filter_int32_members.
+    { assert (living_pods good_pods = good_pods) as Hgood_living.
+      { unfold living_pods. apply filter_all. intros pod Hpod.
+        unfold good_pods in Hpod.
+        apply list_elem_of_filter in Hpod as [_ Hpod].
+        assert (pod ∈ filter is_pod_alive all_pods) as Halive.
+        { rewrite Hall_living. exact Hpod. }
+        by apply list_elem_of_filter in Halive as [Halive _]. }
+      change (filter is_pod_alive good_pods = good_pods) in Hgood_living.
+      unfold match_distance, living_pods. rewrite Hall_living Hgood_living.
+      rewrite pod_distance_filter_int32_members.
       assert (filter (pod_has_int32_member_key set) all_pods = good_pods)
         as Hgood_filter.
       { rewrite -(filter_int32_member_names_eq set all_pods Hall_namespaces).
@@ -402,12 +480,20 @@ Proof.
       unfold PodV.key, PodV.meta_key in Hname. simpl in Hname.
       rewrite Hname. exact (proj2 Hfinal_good). }
     iEval (rewrite -Hset_key -Hset_uid) in
-      "Hreconcile_Hown_children".
+      "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
+    iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
+    { iExists (phase_after_deletion Quiescent deletion). iFrame. }
     iApply ("HΦ" $! pods' pvcs' interface.nil).
+    rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
       Hreconcile_Hown_pods Hreconcile_Hown_pvcs
-      Hreconcile_Hown_children".
-    iPureIntro. right. split; done.
+      Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
+      Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
+      Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+    iPureIntro. split; first exact Hpods'_nodup.
+    right. split; done.
 Qed.
 
 End proof.

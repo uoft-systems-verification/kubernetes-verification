@@ -39,6 +39,7 @@ import (
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
 	pvcstrategy "k8s.io/kubernetes/pkg/registry/core/persistentvolumeclaim"
 	podstrategy "k8s.io/kubernetes/pkg/registry/core/pod"
+	serviceaccountstrategy "k8s.io/kubernetes/pkg/registry/core/serviceaccount"
 	clusterrolestrategy "k8s.io/kubernetes/pkg/registry/rbac/clusterrole"
 
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
@@ -97,6 +98,10 @@ func deepCopy(obj interface{}) interface{} {
 	case *corev1.Pod:
 		return o.DeepCopy()
 	case *corev1.PersistentVolumeClaim:
+		return o.DeepCopy()
+	case *corev1.Namespace:
+		return o.DeepCopy()
+	case *corev1.ServiceAccount:
 		return o.DeepCopy()
 	case *appsv1.ReplicaSet:
 		return o.DeepCopy()
@@ -218,10 +223,6 @@ func (s *State) ByIndex(kind, indexName, indexedValue string) ([]interface{}, er
 	return items, nil
 }
 
-func newNotFoundError(kind string, name string) error {
-	return errors.NewNotFound(schema.GroupResource{Resource: kind}, name)
-}
-
 func (s *State) get(key KKey) (interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -230,7 +231,8 @@ func (s *State) get(key KKey) (interface{}, error) {
 	if exists {
 		return deepCopy(item), nil
 	} else {
-		return nil, newNotFoundError(key.Kind, key.Name)
+		return nil, errors.NewNotFound(
+			schema.GroupResource{Resource: key.Kind}, key.Name)
 	}
 }
 
@@ -395,6 +397,12 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.PersistentVolumeClaim to internal PersistentVolumeClaim: %v", err))
 		}
 		return internalPVC, nil
+	case *corev1.ServiceAccount:
+		internalServiceAccount := &core.ServiceAccount{}
+		if err := legacyscheme.Scheme.Convert(typed, internalServiceAccount, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.ServiceAccount to internal ServiceAccount: %v", err))
+		}
+		return internalServiceAccount, nil
 	case *appsv1.ReplicaSet:
 		internalRS := &apps.ReplicaSet{}
 		if err := legacyscheme.Scheme.Convert(typed, internalRS, nil); err != nil {
@@ -437,6 +445,9 @@ func applySchemaDefaults(obj interface{}) error {
 		corev1defaults.SetObjectDefaults_Pod(typed)
 	case *corev1.PersistentVolumeClaim:
 		corev1defaults.SetObjectDefaults_PersistentVolumeClaim(typed)
+	case *corev1.ServiceAccount:
+		// ServiceAccount has no schema defaults in release-1.34.
+		return nil
 	case *appsv1.ReplicaSet:
 		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
 		// - ReplicaSet.Spec.Replicas defaults to 1
@@ -461,6 +472,8 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		podstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *core.PersistentVolumeClaim:
 		pvcstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *core.ServiceAccount:
+		serviceaccountstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.StatefulSet:
@@ -485,6 +498,8 @@ func applyAdmissionMutate(obj interface{}) error {
 		applyPriorityAdmission(typed)
 	case *core.PersistentVolumeClaim:
 		applyPersistentVolumeClaimProtectionAdmission(typed)
+	case *core.ServiceAccount:
+		return nil
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
@@ -525,6 +540,8 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 		if typed.Status.Phase == "" {
 			typed.Status.Phase = core.ClaimPending
 		}
+	case *core.ServiceAccount:
+		return nil
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
@@ -603,6 +620,9 @@ func applyAdmissionValidate(obj interface{}) error {
 		return nil
 	case *core.PersistentVolumeClaim:
 		// This model does not mirror any PVC-specific validating admission plugins.
+		return nil
+	case *core.ServiceAccount:
+		// This model does not mirror any ServiceAccount-specific validating admission plugins.
 		return nil
 	case *apps.ReplicaSet:
 		// This model does not mirror any ReplicaSet-specific validating admission plugins.
@@ -697,6 +717,10 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := pvcstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "PersistentVolumeClaim"}, name, errs)
 		}
+	case *core.ServiceAccount:
+		if errs := serviceaccountstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "ServiceAccount"}, name, errs)
+		}
 	case *apps.ReplicaSet:
 		if errs := rsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, name, errs)
@@ -725,6 +749,8 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		podstrategy.Strategy.Canonicalize(typed)
 	case *core.PersistentVolumeClaim:
 		pvcstrategy.Strategy.Canonicalize(typed)
+	case *core.ServiceAccount:
+		serviceaccountstrategy.Strategy.Canonicalize(typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.Canonicalize(typed)
 	case *apps.StatefulSet:
@@ -2078,6 +2104,60 @@ func (s *State) DeploymentDelete(namespace, name string, options metav1.DeleteOp
 }
 
 // Returned value must be treated as read-only.
+func (s *State) NamespaceGet(name string) (*corev1.Namespace, error) {
+	key := KKey{Kind: "Namespace", Name: name}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	namespace, ok := obj.(*corev1.Namespace)
+	if !ok {
+		// This should never happen.
+		return nil, fmt.Errorf("state entry for namespace %s is not a *v1.Namespace", name)
+	}
+
+	return namespace, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ServiceAccountGet(namespace, name string) (*corev1.ServiceAccount, error) {
+	key := KKey{
+		Kind:      "ServiceAccount",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccount, ok := obj.(*corev1.ServiceAccount)
+	if !ok {
+		// This should never happen.
+		return nil, fmt.Errorf("state entry for serviceaccount %s/%s is not a *v1.ServiceAccount", namespace, name)
+	}
+
+	return serviceAccount, nil
+}
+
+func (s *State) ServiceAccountCreate(namespace string, serviceAccount *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+	obj, err := s.create("ServiceAccount", namespace, serviceAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	createdServiceAccount, ok := obj.(*corev1.ServiceAccount)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdServiceAccount, nil
+}
+
+// Returned value must be treated as read-only.
 func (s *State) ClusterRoleGet(name string) (*rbacv1.ClusterRole, error) {
 	return s.ClusterRoleMutGet(name)
 }
@@ -2136,7 +2216,6 @@ func (s *State) ClusterRoleCreate(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, 
 	if !ok {
 		return nil, fmt.Errorf("create returned unexpected type %T", obj)
 	}
-
 	return createdCR, nil
 }
 

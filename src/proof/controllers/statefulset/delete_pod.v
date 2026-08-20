@@ -1,6 +1,6 @@
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
-From New.proof.kubernetes_model Require Export delete.
+From New.proof.kubernetes_model Require Export delete_reserved.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -42,13 +42,11 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* The Pod is known to exist through its metadata fragment.  Kubernetes may
-   implement deletion either by first setting deletionTimestamp or by removing
-   the Pod immediately.  In both cases [deletePod] treats the request as
-   successful and leaves the caller's local Pod unchanged. *)
+(* StatefulSet Pod names are reserved.  Deletion consumes the occupied
+   reservation and returns it in the deleting state. *)
 Lemma wp_deletePod γ model_l pod_l
     (local_pod stored_pod : PodV.t)
-    parent_key parent_uid (children : gset KKey.t) dq_pod :
+    parent_key parent_uid (children : gset KKey.t) phase dq_pod :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -63,22 +61,22 @@ Lemma wp_deletePod γ model_l pod_l
       "Hown_meta" ∷ own_meta_frag γ (PodV.key stored_pod)
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         stored_pod.(PodV.ObjectMeta') ∗
-      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children
+      "Hown_spec" ∷ own_spec_frag γ (PodV.key stored_pod)
+        stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.PodSpec stored_pod.(PodV.Spec')) ∗
+      "Hreservation" ∷ own_occupied_reserved_frag γ 1 (PodV.key stored_pod)
+        stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
+      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
   }}}
     @! statefulset.deletePod #pod_l
-  {{{ (pod_meta' : ObjectMetaV.t), RET #interface.nil;
+  {{{ RET #interface.nil;
       "Hpod" ∷ PodV.deepown_l pod_l local_pod dq_pod ∗
-      ( ("%Hdeletion_timestamp" ∷
-            ⌜ pod_meta'.(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-          "Hown_meta" ∷ own_meta_frag γ (PodV.key stored_pod)
-            stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod_meta' ∗
-          "Hown_children" ∷
-            own_children_frag γ parent_key parent_uid 1 children)
-        ∨
-        ("Hown_tombstone" ∷ own_tombstone_frag γ
-            stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
-         "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
-            (children ∖ {[PodV.key stored_pod]})))
+      "Hreservation" ∷ own_deleting_reserved_frag γ 1 (PodV.key stored_pod)
+        stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
+      "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
+        (children ∖ {[PodV.key stored_pod]}) ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -98,7 +96,7 @@ Proof.
   wp_auto.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
-  wp_apply (wp_State__PodDelete γ model_l
+  wp_apply (wp_State__PodDelete_reserved γ model_l
     (PodV.key stored_pod)
     local_pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')
     local_pod.(PodV.ObjectMeta').(ObjectMetaV.Name')
@@ -106,11 +104,13 @@ Proof.
     (delete_options_with_uid
       local_pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))
     stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
-    stored_pod.(PodV.ObjectMeta') parent_key parent_uid children
-    with "[Hoptions Hown_meta Hown_children]").
+    stored_pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec stored_pod.(PodV.Spec'))
+    parent_key parent_uid children phase
+    with "[Hoptions Hown_meta Hown_spec Hreservation Hown_children
+      Hown_terminating_children_frag]").
   { iFrame "#".
     iSplitL "Hoptions"; [iExact "Hoptions"|].
-    iSplit; [iPureIntro; exact Hvalid_options|].
+    iSplit; [done|].
     iSplit.
     { iPureIntro. rewrite -Hkey /PodV.key /PodV.meta_key /=. done. }
     iSplit; [iPureIntro; exact Hkey_in|].
@@ -124,7 +124,8 @@ Proof.
         /delete_options_with_uid /=.
       done. }
     iFrame. }
-  iIntros (pod_meta') "Hdelete".
+  iIntros "Hdelete".
+  iNamed "Hdelete".
   wp_auto.
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
   iAssert (ObjectMetaV.deepown pod_meta_c

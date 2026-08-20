@@ -588,6 +588,26 @@ Definition own_auth γ (a : auth) : iProp Σ :=
 Definition own_frag γ r dq ks : iProp Σ :=
   own γ (◯RR (mk_frag r dq ks)).
 
+Lemma init :
+  ⊢ |==> ∃ γ,
+    own_auth γ ((∅ : gmap K V), (∅ : gset R)).
+Proof.
+  unfold own_auth.
+  iMod (own_alloc (●RR
+    ((∅ : gmap K V), (∅ : gset R)))) as (γ) "Hauth".
+  { apply (proj2 (view_auth_dfrac_valid view_rel 1
+      ((∅ : gmap K V), (∅ : gset R)))).
+    split; [done|].
+    intros n.
+    change (view_rel_raw n
+      ((∅ : gmap K V), (∅ : gset R)) ε).
+    rewrite /view_rel_raw /proj_state /proj_used_reference_set /=.
+    split_and!.
+    all: rewrite map_Forall_lookup; intros i x Hlookup;
+      rewrite lookup_empty in Hlookup; done. }
+  iModIntro. iExists γ. iExact "Hauth".
+Qed.
+
 Lemma own_auth_frag_valid {γ a r dq ks} :
   own_auth γ a -∗
   own_frag γ r dq ks -∗
@@ -675,6 +695,25 @@ Proof.
   iIntros (Hobj Hused Hindex) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
   { eapply generic_update; done. }
+  iModIntro. iExact "Hauth".
+Qed.
+
+Lemma generic_update_from_old_obj_vs {γ a a'} :
+  (map_Forall
+      (λ k v, to_reference k v ∈ proj_used_reference_set a)
+      (proj_state a) →
+    map_Forall
+      (λ k v, to_reference k v ∈ proj_used_reference_set a')
+      (proj_state a')) →
+  (∀ r, r ∈ proj_used_reference_set a →
+    r ∈ proj_used_reference_set a') →
+  (∀ r, r ∈ proj_used_reference_set a →
+    reverse_index (proj_state a') r = reverse_index (proj_state a) r) →
+  own_auth γ a ==∗ own_auth γ a'.
+Proof.
+  iIntros (Hobj Hused Hindex) "Hauth".
+  iMod (own_update with "Hauth") as "Hauth".
+  { eapply generic_update_from_old_obj; done. }
   iModIntro. iExact "Hauth".
 Qed.
 
