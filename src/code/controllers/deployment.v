@@ -196,7 +196,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "updated" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rsCopy")))) in
     let: "$a1" := (![go.PointerType apps_v1.ReplicaSet] "rsCopy") in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdateTx"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("updated" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;

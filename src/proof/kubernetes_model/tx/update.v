@@ -404,4 +404,80 @@ Proof.
   iFrame. iFrame "%".
 Qed.
 
+Lemma wp_State__ReplicaSetUpdateTx γ l namespace rs_l rs key uid kmeta kspec :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hvalid" ∷ ⌜ ReplicaSetV.valid_named_create namespace rs ⌝ ∗
+      "%Huid_nonempty" ∷ ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
+      "%Hns_matches" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hvalid_meta_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update kspec (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ⌝ ∗
+      "%Hno_deletion_timestamp" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
+      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
+  }}}
+    l @! (go.PointerType apimodel.State) @!
+      "ReplicaSetUpdateTx" #namespace #rs_l
+  {{{ rs_l' rs', RET (#rs_l', #interface.nil);
+      "%Hvalid'" ∷ ⌜ ReplicaSetV.valid rs' ⌝ ∗
+      "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated rs.(ReplicaSetV.ObjectMeta') rs'.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hspec_updated" ∷
+        ⌜ ObjectSpecV.updated (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝ ∗
+      "%Hkey_eq'" ∷ ⌜ ReplicaSetV.key rs' = key ⌝ ∗
+      "%Huid_eq'" ∷ ⌜ rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
+      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l' rs' 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 rs'.(ReplicaSetV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec'))
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call. rewrite /apimodel.State__ReplicaSetUpdateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  iAssert (KObjectV.deepown_i
+      (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
+      (KObjectV.ReplicaSet rs) 1)
+    with "[Hdeepown_l]" as "Hdeepown_i".
+  { iExists rs_l. iSplit; [done|]. iFrame. }
+  assert (KObjectV.valid_named_create ReplicaSetV.kind namespace
+      (KObjectV.ReplicaSet rs)) as Hvalid_kobj.
+  { rewrite /KObjectV.valid_named_create /=. split; done. }
+  wp_apply (wp_State__updateTx γ l ReplicaSetV.kind namespace
+    (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
+    (KObjectV.ReplicaSet rs) key uid kmeta kspec
+    with "[$Hinit $Hisk $Hdeepown_i $Hown_meta_frag $Hown_spec_frag]").
+  { iPureIntro.
+    split_and!; done. }
+  iIntros (i' kobj') "Hpost". iNamed "Hpost".
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
+  cbn [interface.ty interface.v].
+  replace
+    (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
+     then #rs_l' else #null)%V
+    with (#rs_l')%V by (rewrite decide_True; done).
+  replace
+    (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  assert (ReplicaSetV.key rs' = key) as Hkey_eq'.
+  { rewrite Hkey_eq /ReplicaSetV.key /ReplicaSetV.meta_key.
+    destruct Hmeta_updated as
+      (Hname & _ & Hnamespace & _).
+    rewrite Hname Hnamespace. done. }
+  assert (rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = uid)
+    as Huid_eq'.
+  { rewrite Huid_eq.
+    destruct Hmeta_updated as
+      (_ & _ & _ & _ & Huid & _).
+    exact Huid. }
+  iApply "HΦ". iFrame. iPureIntro.
+  rewrite KObjectV.valid_eq_valid2 /= in Hvalid'.
+  split_and!; done.
+Qed.
+
 End proof.

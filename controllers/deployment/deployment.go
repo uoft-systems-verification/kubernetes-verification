@@ -106,7 +106,7 @@ func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSe
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := apimodel.ModelState.ReplicaSetUpdate(rsCopy.Namespace, rsCopy)
+	updated, err := apimodel.ModelState.ReplicaSetUpdateTx(rsCopy.Namespace, rsCopy)
 	if err != nil {
 		return false, rs, err
 	}
