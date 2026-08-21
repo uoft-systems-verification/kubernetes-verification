@@ -36,8 +36,12 @@ definitions.
 
 Avoid frequent line breaks in Rocq program specifications. Keep each complete
 precondition or postcondition conjunct on one line when it fits within 120
-columns. Break genuinely longer conjuncts at logical or application boundaries,
-while preserving the surrounding quantified, record, and disjunctive structure.
+columns, but put distinct separating (`∗`) conjuncts on separate lines instead
+of combining them. Break genuinely longer conjuncts at logical or application
+boundaries while preserving the surrounding quantified, record, and disjunctive
+structure. Put the closing `}}}` on its own line for a multiline precondition or
+postcondition; keep it inline only when the entire precondition or postcondition
+is on one line.
 
 ## Fast Rocq Proof Checks
 

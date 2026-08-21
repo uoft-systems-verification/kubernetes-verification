@@ -1502,6 +1502,7 @@ Class ReplicaSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCo
   #[global] ReplicaSet_set_Spec (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Spec' := y|>);
   #[global] ReplicaSet_get_Status (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(ReplicaSet.Status');
   #[global] ReplicaSet_set_Status (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Status' := y|>);
+  #[global] ReplicaSet'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
 }.
 
 Module ReplicaSetList.

@@ -5,8 +5,11 @@ Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
 Require Export New.generatedproof.kubernetes_model.apimodel.
+Require Export New.generatedproof.sort.
 Require Export New.golang.theory.
 Require Export New.code.controllers.replicaset.
 

@@ -1017,6 +1017,51 @@ Definition Convert_url_Values_To_v1_UpdateOptions {ext : ffi_syntax} {go_gctx : 
 
 Definition RegisterDefaults {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1.RegisterDefaults"%go.
 
+(* GetControllerOf returns a pointer to a copy of the controllerRef if controllee has a controller
+
+   go: controller_ref.go:34:6 *)
+Definition GetControllerOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "controllee",
+    exception_do (let: "controllee" := (GoAlloc Object "controllee") in
+    let: "ref" := (GoAlloc (go.PointerType OwnerReference) (GoZeroVal (go.PointerType OwnerReference) #())) in
+    let: "$r0" := (let: "$a0" := (![Object] "controllee") in
+    (FuncResolve GetControllerOfNoCopy [] #()) "$a0") in
+    do:  ("ref" <-[go.PointerType OwnerReference] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType OwnerReference] "ref") =⟨go.PointerType OwnerReference⟩ (Convert go.untyped_nil (go.PointerType OwnerReference) UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType OwnerReference) UntypedNil)
+    else do:  #());;;
+    let: "cp" := (GoAlloc OwnerReference (GoZeroVal OwnerReference #())) in
+    let: "$r0" := (![OwnerReference] (![go.PointerType OwnerReference] "ref")) in
+    do:  ("cp" <-[OwnerReference] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![go.bool] (![go.PointerType go.bool] (StructFieldRef OwnerReference "Controller"%go (![go.PointerType OwnerReference] "ref")))) in
+    (FuncResolve ptr.To [go.bool] #()) "$a0") in
+    do:  ((StructFieldRef OwnerReference "Controller"%go "cp") <-[go.PointerType go.bool] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.bool] (StructFieldRef OwnerReference "BlockOwnerDeletion"%go (![go.PointerType OwnerReference] "ref"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil))
+    then
+      let: "$r0" := (let: "$a0" := (![go.bool] (![go.PointerType go.bool] (StructFieldRef OwnerReference "BlockOwnerDeletion"%go (![go.PointerType OwnerReference] "ref")))) in
+      (FuncResolve ptr.To [go.bool] #()) "$a0") in
+      do:  ((StructFieldRef OwnerReference "BlockOwnerDeletion"%go "cp") <-[go.PointerType go.bool] "$r0")
+    else do:  #());;;
+    return: ("cp")).
+
+(* GetControllerOfNoCopy returns a pointer to the controllerRef if controllee has a controller
+
+   go: controller_ref.go:48:6 *)
+Definition GetControllerOfNoCopyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "controllee",
+    exception_do (let: "controllee" := (GoAlloc Object "controllee") in
+    let: "refs" := (GoAlloc (go.SliceType OwnerReference) (GoZeroVal (go.SliceType OwnerReference) #())) in
+    let: "$r0" := ((MethodResolve Object "GetOwnerReferences"%go (![Object] "controllee")) #()) in
+    do:  ("refs" <-[go.SliceType OwnerReference] "$r0");;;
+    let: "$range" := (![go.SliceType OwnerReference] "refs") in
+    (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    slice.for_range OwnerReference "$range" (λ: "$key" "$value",
+      do:  ("i" <-[go.int] "$key");;;
+      (if: ((![go.PointerType go.bool] (StructFieldRef OwnerReference "Controller"%go (IndexRef (go.SliceType OwnerReference) (![go.SliceType OwnerReference] "refs", ![go.int] "i")))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)) && (![go.bool] (![go.PointerType go.bool] (StructFieldRef OwnerReference "Controller"%go (IndexRef (go.SliceType OwnerReference) (![go.SliceType OwnerReference] "refs", ![go.int] "i")))))
+      then return: (IndexRef (go.SliceType OwnerReference) (![go.SliceType OwnerReference] "refs", ![go.int] "i"))
+      else do:  #())));;;
+    return: (Convert go.untyped_nil (go.PointerType OwnerReference) UntypedNil)).
+
 (* NewControllerRef creates an OwnerReference pointing to the given owner.
 
    go: controller_ref.go:59:6 *)
@@ -2766,6 +2811,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Condition_instance :: Condition_Assumptions;
   #[global] WatchEvent_instance :: WatchEvent_Assumptions;
   #[global] InternalEvent_instance :: InternalEvent_Assumptions;
+  #[global] GetControllerOf_unfold :: FuncUnfold GetControllerOf [] (GetControllerOfⁱᵐᵖˡ);
+  #[global] GetControllerOfNoCopy_unfold :: FuncUnfold GetControllerOfNoCopy [] (GetControllerOfNoCopyⁱᵐᵖˡ);
   #[global] NewControllerRef_unfold :: FuncUnfold NewControllerRef [] (NewControllerRefⁱᵐᵖˡ);
   #[global] import_schema_Assumption :: schema.Assumptions;
   #[global] import_ptr_Assumption :: ptr.Assumptions;

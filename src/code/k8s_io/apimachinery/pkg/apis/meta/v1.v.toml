@@ -42,6 +42,8 @@ translate = [
     "ObjectMeta.SetOwnerReferences",
     "ObjectMeta.GetManagedFields",
     "ObjectMeta.SetManagedFields",
+    "GetControllerOf",
+    "GetControllerOfNoCopy",
     "NewControllerRef",
     "NamespaceDefault",
     "NamespaceAll",

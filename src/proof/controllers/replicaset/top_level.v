@@ -42,8 +42,11 @@ Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
   pod_spec_changed pods pods'.
 
 Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
-  (* ReplicaSet-generated Pod names append a hyphen and five-character suffix. *)
-  length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58.
+  (* ReplicaSet-generated Pod names append a hyphen and five-character suffix;
+     copied template finalizers must also be valid on the generated Pod. *)
+  length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ∧
+  valid_finalizers
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers').
 
 Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

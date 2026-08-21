@@ -15,6 +15,14 @@ Definition Deref {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "
 
 Definition Equal {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/utils/ptr.Equal"%go.
 
+(* To returns a pointer to the given value.
+
+   go: ptr.go:50:6 *)
+Definition Toⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (T : go.type) : val :=
+  λ: "v",
+    exception_do (let: "v" := (GoAlloc T "v") in
+    return: ("v")).
+
 #[global] Instance info' : PkgInfo pkg_id.ptr :=
 {|
   pkg_imported_pkgs := []
@@ -30,5 +38,6 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
+  #[global] To_unfold T :: FuncUnfold To [T] (Toⁱᵐᵖˡ T);
 }.
 End ptr.

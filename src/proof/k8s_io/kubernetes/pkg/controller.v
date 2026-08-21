@@ -1,4 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
+From New.proof Require Export sort.
 From New.proof.map Require Import for_range.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.k8s_io.api.core Require Export v1.
@@ -18,6 +19,93 @@ Local Set Default Proof Using "All".
 
 #[local] Existing Instance controller_core_v1_sem.
 #[local] Existing Instance controller_meta_v1_sem.
+
+(** An abstract sortable element keeps a pod, its pointer, and its rank
+    together, matching the coupled swaps performed by [ActivePodsWithRanks]. *)
+Record active_pod_with_rank := {
+  active_pod_ptr : loc;
+  active_pod_value : PodV.t;
+  active_pod_rank : w64;
+}.
+
+Fixpoint active_pods_with_ranks_entries
+    (ptrs : list loc) (pods : list PodV.t) (ranks : list w64) : list active_pod_with_rank :=
+  match ptrs, pods, ranks with
+  | ptr :: ptrs, pod :: pods, rank :: ranks =>
+      {| active_pod_ptr := ptr; active_pod_value := pod; active_pod_rank := rank |} ::
+        active_pods_with_ranks_entries ptrs pods ranks
+  | _, _, _ => []
+  end.
+
+Lemma active_pods_with_ranks_entries_ptrs ptrs pods ranks :
+  length ptrs = length pods → length ptrs = length ranks →
+  active_pod_ptr <$> active_pods_with_ranks_entries ptrs pods ranks = ptrs.
+Proof.
+  revert pods ranks. induction ptrs as [|ptr ptrs IH]; intros [|pod pods] [|rank ranks];
+    simpl; intros; try congruence.
+  f_equal. apply IH; lia.
+Qed.
+
+Lemma active_pods_with_ranks_entries_pods ptrs pods ranks :
+  length ptrs = length pods → length ptrs = length ranks →
+  active_pod_value <$> active_pods_with_ranks_entries ptrs pods ranks = pods.
+Proof.
+  revert pods ranks. induction ptrs as [|ptr ptrs IH]; intros [|pod pods] [|rank ranks];
+    simpl; intros; try congruence.
+  f_equal. apply IH; lia.
+Qed.
+
+Lemma active_pods_with_ranks_entries_ranks ptrs pods ranks :
+  length ptrs = length pods → length ptrs = length ranks →
+  active_pod_rank <$> active_pods_with_ranks_entries ptrs pods ranks = ranks.
+Proof.
+  revert pods ranks. induction ptrs as [|ptr ptrs IH]; intros [|pod pods] [|rank ranks];
+    simpl; intros; try congruence.
+  f_equal. apply IH; lia.
+Qed.
+
+Definition active_pods_with_ranks_contents dq
+    (ranked : controller.ActivePodsWithRanks.t) (entries : list active_pod_with_rank) : iProp Σ :=
+  ranked.(controller.ActivePodsWithRanks.Pods') ↦* (active_pod_ptr <$> entries) ∗
+  ranked.(controller.ActivePodsWithRanks.Rank') ↦* (active_pod_rank <$> entries) ∗
+  ([∗ list] ptr;pod ∈ (active_pod_ptr <$> entries);(active_pod_value <$> entries),
+    PodV.deepown_l ptr pod dq).
+
+(** The model API omits these Kubernetes method bodies, so their method-level
+    contracts are the controller-specific trusted boundary. *)
+Lemma wp_active_pods_with_ranks_len dq ranked entries :
+  {{{ active_pods_with_ranks_contents dq ranked entries }}}
+    (MethodResolve controller.ActivePodsWithRanks "Len"%go #ranked) #()
+  {{{ (n : w64), RET #n; active_pods_with_ranks_contents dq ranked entries ∗
+      ⌜ sint.nat n = length entries ∧ 0 ≤ sint.Z n ⌝
+  }}}.
+Proof. Admitted.
+
+Lemma wp_active_pods_with_ranks_less dq ranked entries (i j : w64) :
+  0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
+  {{{ active_pods_with_ranks_contents dq ranked entries }}}
+    (MethodResolve controller.ActivePodsWithRanks "Less"%go #ranked) #i #j
+  {{{ (b : bool), RET #b; active_pods_with_ranks_contents dq ranked entries }}}.
+Proof. Admitted.
+
+Lemma wp_active_pods_with_ranks_swap dq ranked entries (i j : w64) :
+  0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
+  {{{ active_pods_with_ranks_contents dq ranked entries }}}
+    (MethodResolve controller.ActivePodsWithRanks "Swap"%go #ranked) #i #j
+  {{{ RET #(); active_pods_with_ranks_contents dq ranked
+      (list_swap entries (sint.nat i) (sint.nat j))
+  }}}.
+Proof. Admitted.
+
+#[global] Instance active_pods_with_ranks_sort_interface dq :
+  SortInterfaceSpec controller.ActivePodsWithRanks
+    (active_pods_with_ranks_contents dq).
+Proof.
+  constructor.
+  - apply wp_active_pods_with_ranks_len.
+  - apply wp_active_pods_with_ranks_less.
+  - apply wp_active_pods_with_ranks_swap.
+Qed.
 
 Definition pod_from_template (template : PodTemplateSpecV.t) (pod : PodV.t) : Prop :=
   pod.(PodV.Spec') = template.(PodTemplateSpecV.Spec') ∧
@@ -47,6 +135,67 @@ Definition generated_pod (template : PodTemplateSpecV.t)
   PodV.mk (zero_val v1.TypeMeta.t)
     (generated_pod_meta template parent_name owners)
     template.(PodTemplateSpecV.Spec') PodStatusV.zero.
+
+Lemma generated_pod_parent_ref template parent_name ref kind uid :
+  OwnerReferenceV.refers_to_controller ref kind parent_name uid →
+  obj_parent_ref_is (KObjectV.Pod (generated_pod template parent_name (Some [ref])))
+    kind parent_name uid.
+Proof.
+  intros (Hkind & Hname & Huid & _ & Hcontroller).
+  rewrite /obj_parent_ref_is /meta_parent_ref_is /meta_parent_ref
+    /generated_pod /generated_pod_meta /=.
+  rewrite Hcontroller /= Hkind Hname Huid. done.
+Qed.
+
+Lemma generated_pod_valid_nameless_create template parent_name ref namespace :
+  PodTemplateSpecV.valid template →
+  valid_dns1123_subdomain parent_name →
+  length parent_name < 58 →
+  valid_finalizers template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') →
+  OwnerReferenceV.valid ref →
+  KObjectV.valid_nameless_create "Pod"%go namespace
+    (KObjectV.Pod (generated_pod template parent_name (Some [ref]))).
+Proof.
+  intros (Hlabels & Hannotations & Hspec) Hname Hlen Hfinalizers Href.
+  rewrite /KObjectV.valid_nameless_create /= /PodV.valid_nameless_create
+    /generated_pod /generated_pod_meta /=.
+  split_and!.
+  - done.
+  - apply zero_typemeta_valid_create.
+  - rewrite /ObjectMetaV.valid_nameless_create /=.
+    split_and!.
+    + apply valid_generate_name_of_valid_prefix.
+      exists parent_name. split_and!; [done| |].
+      * intros ->. inversion Hname as [Hsyntax _]. inversion Hsyntax.
+      * unfold valid_name, PodV.kind. right. split; [left; done|exact Hname].
+    + rewrite length_app /=. lia.
+    + done.
+    + left. done.
+    + destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') as [labels|];
+        simpl in *; [exact Hlabels|apply map_Forall_empty].
+    + destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') as [annotations|];
+        simpl in *; [destruct Hannotations as [Hannotations _]; exact Hannotations|apply map_Forall_empty].
+    + destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') as [annotations|];
+        simpl in *; [destruct Hannotations as [_ Hannotations]; exact Hannotations|done].
+    + intros i1 i2 or1 or2 H1 H2 _ _.
+      pose proof (lookup_lt_Some _ _ _ H1) as Hi1.
+      pose proof (lookup_lt_Some _ _ _ H2) as Hi2. simpl in Hi1, Hi2. lia.
+    + intros owner Howner. rewrite list_elem_of_singleton in Howner. subst owner. exact Href.
+    + destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') as [finalizers|];
+        simpl in *; [exact Hfinalizers|constructor].
+    + apply valid_managed_fields_none.
+  - exact Hspec.
+Qed.
+
+(** Trusted because [PodStatusV] deliberately keeps the status fields opaque,
+    while the imported Kubernetes implementation reads [status.phase]. *)
+Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
+  {{{ is_pkg_init controller ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq
+  }}}
+    @! controller.IsPodActive #pod_l
+  {{{ (active : bool), RET #active; PodV.deepown_l pod_l pod dq }}}.
+Proof. Admitted.
 
 Lemma wp_getPodsLabelSet template_l template dq :
   {{{ "Hinit" ∷ is_pkg_init controller ∗
@@ -514,36 +663,5 @@ Proof.
     iApply ("HΦ" $! pod_l).
     iFrame "Hpod Htemplate Hparent_meta".
 Qed.
-
-Lemma wp_GetPodFromTemplate_ReplicaSet template_l obj controller_ref_l
-  dq (template_c : v1.core_v1.PodTemplateSpec.t) template rs_l meta controller_ref:
-  {{{ is_pkg_init controller ∗
-      template_l ↦{dq} template_c ∗
-      PodTemplateSpecV.deepown template_c template dq ∗
-      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq ∗
-      OwnerReferenceV.deepown_l controller_ref_l controller_ref 1 ∗
-      ⌜ PodTemplateSpecV.valid template ⌝ ∗
-      ⌜ obj = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
-      ⌜ ObjectMetaV.valid ReplicaSetV.kind meta ⌝ ∗
-      (* [generated_pod] appends ["-"] to the ReplicaSet name, while our
-         strengthened [ObjectMetaV.valid_nameless_create] requires the complete
-         generate name to have length at most 58. Upstream validation does not
-         require this bound: [SimpleNameGenerator] truncates longer bases before
-         adding its five-byte suffix:
-         https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L42-L53 *)
-      ⌜ length meta.(ObjectMetaV.Name') < 58 ⌝ ∗
-      ⌜ OwnerReferenceV.refers_to_controller controller_ref "ReplicaSet"%go
-        meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝
-  }}}
-    @! controller.GetPodFromTemplate #template_l #obj #controller_ref_l
-  {{{ pod_l pod, RET (#pod_l, #interface.nil);
-      PodV.deepown_l pod_l pod 1 ∗
-      ⌜ obj_parent_ref_is (KObjectV.Pod pod) "ReplicaSet"%go meta.(ObjectMetaV.Name') meta.(ObjectMetaV.UID') ⌝ ∗
-      ⌜ KObjectV.valid_nameless_create "Pod"%go meta.(ObjectMetaV.Namespace') (KObjectV.Pod pod) ⌝ ∗
-      template_l ↦{dq} template_c ∗
-      PodTemplateSpecV.deepown template_c template dq ∗
-      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) meta dq
-  }}}.
-Proof. Admitted.
 
 End proof.

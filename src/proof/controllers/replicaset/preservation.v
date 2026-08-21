@@ -48,7 +48,7 @@ Proof.
     Hown_children_frag Hown_terminating_children_frag".
   iDestruct "Hown_terminating_children_frag" as (phase) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
-  rename Hinput_requirement into Hrs_name_short.
+  destruct Hinput_requirement as [Hrs_name_short Hrs_template_finalizers_valid].
   wp_auto.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
@@ -176,6 +176,10 @@ Proof.
   assert (length rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58) as Hrs_get_name_short.
   { rewrite (ObjectMetaV.equiv_except_resource_version_name _ _ Hget_Hmeta_eq).
     exact Hrs_name_short. }
+  assert (valid_finalizers
+      rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))
+    as Hrs_get_template_finalizers_valid.
+  { rewrite <-Hget_Hspec_eq. exact Hrs_template_finalizers_valid. }
   assert (NoDup (PodV.key <$> filter is_pod_alive all_pods)) as Hactive_nodup.
   { eapply sublist_NoDup; first exact Hall_nodup.
     apply fmap_sublist, sublist_filter. }
@@ -190,8 +194,8 @@ Proof.
       apply list_elem_of_filter in Hpod as [Halive _].
       exact Halive.
     - rewrite app_nil_r. exact Hactive_nodup. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hphase & Hactive_sl &
-    Hactive_deepown_pods & Hdeepown_l_rs & Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
+  iIntros (pods_managed) "(%Hmanaged_len & Hphase & Hdeepown_l_rs &
+    Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
   iDestruct "Hphase" as (phase') "Hown_terminating_children_frag".
   wp_auto.

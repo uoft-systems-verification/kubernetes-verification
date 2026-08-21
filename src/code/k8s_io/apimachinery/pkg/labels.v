@@ -187,6 +187,13 @@ Definition SelectorFromValidatedSet {ext : ffi_syntax} {go_gctx : GoGlobalContex
 
 Definition ParseToRequirements {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/labels.ParseToRequirements"%go.
 
+(* Everything returns a selector that matches all labels.
+
+   go: selector.go:95:6 *)
+Definition Everythingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: <>,
+    exception_do (return: (![Selector] (GlobalVarAddr sharedEverythingSelector #()))).
+
 #[global] Instance info' : PkgInfo pkg_id.labels :=
 {|
   pkg_imported_pkgs := []
@@ -445,5 +452,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Parser_instance :: Parser_Assumptions;
   #[global] ParserContext_instance :: ParserContext_Assumptions;
   #[global] ValidatedSetSelector_instance :: ValidatedSetSelector_Assumptions;
+  #[global] Everything_unfold :: FuncUnfold Everything [] (Everythingⁱᵐᵖˡ);
 }.
 End labels.

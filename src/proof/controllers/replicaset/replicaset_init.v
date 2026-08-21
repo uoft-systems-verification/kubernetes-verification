@@ -1,5 +1,6 @@
 From New.proof Require Export fmt.
 From New.proof Require Export prelude.
+From New.proof Require Export sort_init.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.controllers Require Export common.

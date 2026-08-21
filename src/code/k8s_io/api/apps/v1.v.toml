@@ -1,5 +1,6 @@
 translate = [
     "ReplicaSet",
+    "ReplicaSet.GetOwnerReferences",
     "ReplicaSetSpec",
     "ReplicaSetStatus",
     "ReplicaSetCondition",
