@@ -44,6 +44,7 @@ translate = [
     "ObjectMeta.SetManagedFields",
     "GetControllerOf",
     "GetControllerOfNoCopy",
+    "LabelSelectorAsSelector",
     "NewControllerRef",
     "NamespaceDefault",
     "NamespaceAll",
@@ -61,7 +62,10 @@ translate = [
 ]
 
 imports = [
+    "fmt",
     "time",
+    "k8s.io/apimachinery/pkg/labels",
+    "k8s.io/apimachinery/pkg/selection",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/utils/ptr",

@@ -75,7 +75,7 @@ Definition active_pods_with_ranks_contents dq
     contracts are the controller-specific trusted boundary. *)
 Lemma wp_active_pods_with_ranks_len dq ranked entries :
   {{{ active_pods_with_ranks_contents dq ranked entries }}}
-    (MethodResolve controller.ActivePodsWithRanks "Len"%go #ranked) #()
+    ranked @! controller.ActivePodsWithRanks @! "Len" #()
   {{{ (n : w64), RET #n; active_pods_with_ranks_contents dq ranked entries ∗
       ⌜ sint.nat n = length entries ∧ 0 ≤ sint.Z n ⌝
   }}}.
@@ -84,14 +84,14 @@ Proof. Admitted.
 Lemma wp_active_pods_with_ranks_less dq ranked entries (i j : w64) :
   0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
   {{{ active_pods_with_ranks_contents dq ranked entries }}}
-    (MethodResolve controller.ActivePodsWithRanks "Less"%go #ranked) #i #j
+    ranked @! controller.ActivePodsWithRanks @! "Less" #i #j
   {{{ (b : bool), RET #b; active_pods_with_ranks_contents dq ranked entries }}}.
 Proof. Admitted.
 
 Lemma wp_active_pods_with_ranks_swap dq ranked entries (i j : w64) :
   0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
   {{{ active_pods_with_ranks_contents dq ranked entries }}}
-    (MethodResolve controller.ActivePodsWithRanks "Swap"%go #ranked) #i #j
+    ranked @! controller.ActivePodsWithRanks @! "Swap" #i #j
   {{{ RET #(); active_pods_with_ranks_contents dq ranked
       (list_swap entries (sint.nat i) (sint.nat j))
   }}}.

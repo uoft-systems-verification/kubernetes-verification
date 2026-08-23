@@ -1,0 +1,9 @@
+translate = [
+    "IsQualifiedName",
+    "IsValidLabelValue",
+]
+
+imports = [
+    "regexp",
+    "strings",
+]

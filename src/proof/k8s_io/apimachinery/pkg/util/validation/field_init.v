@@ -1,5 +1,6 @@
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.validation.field.
 From New.proof Require Import proof_prelude.
+From New.proof.k8s_io.apimachinery.pkg.util Require Export errors_init.
 
 
 Section proof.

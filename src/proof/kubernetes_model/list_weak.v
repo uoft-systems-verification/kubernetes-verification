@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export list.
+From New.proof.k8s_io.apimachinery.pkg Require Export labels.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -63,16 +64,77 @@ Proof.
   iApply "HΦ". iFrame. done.
 Qed.
 
-(** The weak property required of a selector by the fragment-free list API.
-    It deliberately exposes no matching semantics: filtering may retain any
-    subset, but it must preserve ownership, validity, and object kind. *)
-Definition weak_selector (selector : labels.Selector.t) : Prop :=
-  ∀ (kind : go_string) sl interfaces objs,
+(** Borrow the labels map from an owned ObjectMeta. The wand returns the map
+    ownership to the enclosing metadata object after [Matches] has inspected
+    it. *)
+Lemma wp_ObjectMeta__GetLabels_deepown meta_l meta dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.deepown_l meta_l meta dq
+  }}}
+    meta_l @! (go.PointerType v1.ObjectMeta) @! "GetLabels" #()
+  {{{ labels_l, RET #labels_l;
+      labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq ∗
+      (labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq -∗
+        ObjectMetaV.deepown_l meta_l meta dq)
+  }}}.
+Proof.
+  wp_start as "Hmeta".
+  iDestruct "Hmeta" as (meta_c) "[Hmeta_l Hmeta]".
+  iDestruct (struct_fields_split (V:=v1.ObjectMeta.t) with "Hmeta_l") as
+    "[Hmeta_fields %Hmeta_nonnull]".
+  iNamedPrefix "Hmeta_fields" "Hfield_".
+  iNamed "Hmeta".
+  wp_auto.
+  iApply "HΦ".
+  destruct meta.(ObjectMetaV.Labels') as [label_map|] eqn:Hlabels.
+  - iDestruct "Hdeepown_labels_some" as (label_map_c)
+      "[Hlabel_map %Hlabel_map]". subst label_map_c.
+    iAssert (labels_set_rep meta_c.(v1.ObjectMeta.Labels')
+      (Some label_map) dq) with "[Hlabel_map]" as "Hlabels_rep".
+    { rewrite /labels_set_rep. iFrame.
+      iPureIntro. exact Hdeepown_labels_none. }
+    iFrame "Hlabels_rep".
+    iIntros "Hlabels_rep_back".
+    iEval (rewrite /labels_set_rep) in "Hlabels_rep_back".
+    iDestruct "Hlabels_rep_back" as "[_ Hlabel_map]".
+    iCombineNamed "Hfield_*" as "Hmeta_fields".
+    iAssert (typed_pointsto_def meta_l meta_c dq) with
+      "[Hmeta_fields]" as "Hmeta_l".
+    { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
+    iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t) meta_l meta_c dq
+      Hmeta_nonnull with "Hmeta_l") as "Hmeta_l".
+    iExists meta_c. iFrame "Hmeta_l".
+    rewrite /ObjectMetaV.deepown /named Hlabels. iFrame. iFrame "%".
+    done.
+  - iAssert (labels_set_rep meta_c.(v1.ObjectMeta.Labels') None dq)
+      as "Hlabels_rep".
+    { rewrite /labels_set_rep. iSplit; last done.
+      iPureIntro. split; [intros _; done|].
+      intros _. apply Hdeepown_labels_none. done. }
+    iFrame "Hlabels_rep".
+    iIntros "_".
+    iCombineNamed "Hfield_*" as "Hmeta_fields".
+    iAssert (typed_pointsto_def meta_l meta_c dq) with
+      "[Hmeta_fields]" as "Hmeta_l".
+    { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
+    iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t) meta_l meta_c dq
+      Hmeta_nonnull with "Hmeta_l") as "Hmeta_l".
+    iExists meta_c. iFrame "Hmeta_l".
+    rewrite /ObjectMetaV.deepown /named Hlabels. iFrame. iFrame "%".
+Qed.
+
+(** Filtering uses the semantic selector representation from the labels
+    package. The weak list API intentionally forgets which valid objects
+    matched once the filter has run. *)
+Lemma wp_filterByLabelSelector_weak (kind : go_string) sl interfaces objs
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
   Forall KObjectV.valid objs →
   Forall (λ obj, KObjectV.kind obj = kind) objs →
   {{{ is_pkg_init apimodel ∗
-      sl ↦* (interface.ok <$> interfaces) ∗
-      ([∗ list] i;obj ∈ interfaces;objs, KObjectV.deepown_i i obj 1)
+      "#Hselector" ∷ is_selector selector P ∗
+      "Hitems" ∷ sl ↦* (interface.ok <$> interfaces) ∗
+      "Hobjects" ∷ ([∗ list] i;obj ∈ interfaces;objs,
+        KObjectV.deepown_i i obj 1)
   }}}
     @! apimodel.filterByLabelSelector #sl #selector
   {{{ sl' interfaces' objs', RET (#sl', #interface.nil);
@@ -81,24 +143,138 @@ Definition weak_selector (selector : labels.Selector.t) : Prop :=
       ⌜ Forall KObjectV.valid objs' ⌝ ∗
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) objs' ⌝
   }}}.
-
-(** [Everything] returns the immutable empty selector. Its generated global
-    initializer is opaque, so this is the single trusted bridge from that
-    package boundary to the fragment-free selector interface. *)
-(** TODO: Revisit this specification so it captures that [Everything]
-    preserves every input object, and prove it by modeling the opaque global
-    empty selector instead of admitting the result. *)
-Lemma wp_Everything_weak :
-  {{{ is_pkg_init labels }}}
-    @! labels.Everything #()
-  {{{ selector, RET #selector; ⌜ weak_selector selector ⌝ }}}.
-Proof. Admitted.
+Proof.
+  intros Hvalid Hkind.
+  wp_start as "H". iNamed "H".
+  iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta)
+    as "#Hmeta_init".
+  { iPkgInit. }
+  iAssert (is_pkg_init v1) as "#Hv1_init".
+  { iPkgInit. }
+  wp_auto.
+  iDestruct (own_slice_len with "Hitems") as %[Hitems_len Hitems_nonneg].
+  rewrite map_length in Hitems_len.
+  iDestruct (big_sepL2_length with "Hobjects") as %Hobjects_len.
+  iPoseProof (own_slice_nil (V:=interface.t)) as "Hfiltered".
+  iPoseProof (own_slice_cap_nil (V:=interface.t)) as "Hfiltered_cap".
+  set I := (∃ (i : w64) (val : interface.t) (filtered_sl : slice.t)
+      (filtered_interfaces : list interface.t_ok)
+      (filtered_objs : list KObjectV.t),
+    "Hi" ∷ i_ptr ↦ i ∗
+    "Hval" ∷ val_ptr ↦ val ∗
+    "Hfiltered_items" ∷ filtered_items_ptr ↦ filtered_sl ∗
+    "Hfiltered" ∷ filtered_sl ↦* (interface.ok <$> filtered_interfaces) ∗
+    "Hfiltered_cap" ∷ own_slice_cap interface.t filtered_sl (DfracOwn 1) ∗
+    "Hremaining" ∷ ([∗ list] interface_i;obj ∈
+      drop (sint.nat i) interfaces;drop (sint.nat i) objs,
+      KObjectV.deepown_i interface_i obj 1) ∗
+    "Hfiltered_objects" ∷ ([∗ list] interface_i;obj ∈
+      filtered_interfaces;filtered_objs, KObjectV.deepown_i interface_i obj 1) ∗
+    "%Hi_bounds" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝ ∗
+    "%Hfiltered_valid" ∷ ⌜ Forall KObjectV.valid filtered_objs ⌝ ∗
+    "%Hfiltered_kind" ∷
+      ⌜ Forall (λ obj, KObjectV.kind obj = kind) filtered_objs ⌝)%I.
+  iAssert I with
+    "[i val filtered_items Hfiltered Hfiltered_cap Hobjects]"
+    as "Hloop".
+  { iExists (W64 0), (zero_val interface.t), slice.nil, [], [].
+    rewrite !drop_0 !big_sepL2_nil /=.
+    iFrame "i val filtered_items Hfiltered Hfiltered_cap Hobjects".
+    iPureIntro. repeat split; try constructor; word. }
+  iClear "Hfiltered Hfiltered_cap".
+  wp_for "Hloop". wp_if_destruct.
+  -
+    assert (0 ≤ sint.Z i < sint.Z (slice.len sl)) as Hibounds by word.
+    list_elem interfaces (sint.Z i) as this_interface.
+    assert (∃ this_obj, objs !! sint.nat i = Some this_obj) as
+      [this_obj Hthis_obj_lookup].
+    { apply lookup_lt_is_Some_2. rewrite -Hobjects_len Hitems_len. word. }
+    assert ((interface.ok <$> interfaces) !! sint.nat i =
+      Some (interface.ok this_interface)) as Hthis_value_lookup.
+    { rewrite list_lookup_fmap Hthis_interface_lookup. done. }
+    rewrite decide_True.
+    { exact Hibounds. }
+    wp_apply (wp_load_slice_index (V:=interface.t)
+      (t:=go.InterfaceType []) sl (sint.Z i)
+      (interface.ok <$> interfaces) (DfracOwn 1)
+      (interface.ok this_interface) with "[$Hitems]");
+      [word|iPureIntro; exact Hthis_value_lookup|].
+    iIntros "Hitems". wp_auto.
+    assert (drop (sint.nat i) interfaces =
+      this_interface :: drop (S (sint.nat i)) interfaces) as Hdrop_interfaces.
+    { apply drop_S. exact Hthis_interface_lookup. }
+    assert (drop (sint.nat i) objs =
+      this_obj :: drop (S (sint.nat i)) objs) as Hdrop_objs.
+    { apply drop_S. exact Hthis_obj_lookup. }
+    iEval (rewrite Hdrop_interfaces Hdrop_objs) in "Hremaining".
+    iDestruct "Hremaining" as "[Hthis Hremaining]".
+    iDestruct "Hthis" as (this_l) "[%Hthis_interface Hthis]".
+    wp_apply wp_Accessor; first (iPureIntro; exact Hthis_interface).
+    iPoseProof (KObjectV.deepown_l_split with "Hthis") as
+      "(%Hthis_l_nonnull & Hthis_type & Hthis_meta & Hthis_spec & Hthis_status)".
+    wp_apply (wp_ObjectMeta__GetLabels_deepown with "[$Hv1_init $Hthis_meta]").
+    iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto.
+    wp_bind ((match selector with
+      | interface.ok selector_i =>
+          Val (#(methods selector_i.(interface.ty) "Matches"
+            selector_i.(interface.v)))
+      | interface.nil => Panic "nil interface"
+      end)
+      #(interface.ok (interface.mk labels.Set' #labels_l)))%E.
+    iApply (wp_Selector__Matches_resolved selector P labels_l
+      (KObjectV.objectmeta this_obj).(ObjectMetaV.Labels') 1
+      with "[$Hselector $Hlabels]").
+    iNext. iIntros (matches) "(#Hselector_again & Hlabels & %Hmatches)".
+    iPoseProof ("Hrestore_meta" with "Hlabels") as "Hthis_meta".
+    iPoseProof (KObjectV.deepown_l_restore _ _ _ Hthis_l_nonnull with
+      "[$Hthis_type $Hthis_meta $Hthis_spec $Hthis_status]") as "Hthis".
+    iAssert (KObjectV.deepown_i this_interface this_obj 1)
+      with "[Hthis]" as "Hthis".
+    { iExists this_l. iFrame "Hthis". iPureIntro. exact Hthis_interface. }
+    destruct matches.
+    + wp_auto.
+      wp_apply wp_slice_literal. iSplitR; first done.
+      iIntros (one_sl) "[Hone _]". wp_auto.
+      wp_apply (wp_slice_append with
+        "[$Hfiltered $Hfiltered_cap $Hone]").
+      iIntros (filtered_sl') "(Hfiltered & Hfiltered_cap & Hone)".
+      wp_auto. iApply wp_for_post_do. wp_auto.
+      iFrame "HΦ Hitems selector".
+      iExists (word.add i (W64 1)), (interface.ok this_interface),
+        filtered_sl', (filtered_interfaces ++ [this_interface]),
+        (filtered_objs ++ [this_obj]).
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext by word.
+      rewrite Hnext fmap_app /=.
+      iFrame.
+      simpl.
+      iPureIntro. repeat split; try word.
+      * apply Forall_app. split; [done|constructor; [|constructor]].
+        rewrite Forall_forall in Hvalid. apply Hvalid.
+        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
+        exact Hthis_obj_lookup.
+      * apply Forall_app. split; [done|constructor; [|constructor]].
+        rewrite Forall_forall in Hkind. apply Hkind.
+        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
+        exact Hthis_obj_lookup.
+    + wp_auto. iApply wp_for_post_do. wp_auto.
+      iFrame "HΦ Hitems selector".
+      iExists (word.add i (W64 1)), (interface.ok this_interface),
+        filtered_sl, filtered_interfaces, filtered_objs.
+      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      iFrame. simpl. iFrame. iPureIntro.
+      repeat split; try word; done.
+  -
+    assert (sint.nat i = length interfaces) as Hi_len.
+    { rewrite Hitems_len. word. }
+    iApply ("HΦ" $! filtered_sl filtered_interfaces filtered_objs).
+    iFrame. done.
+Qed.
 
 (** Type-general weak Hoare specification for selector-based list calls. *)
 Lemma wp_State__objListBySelector_weak γ l (kind namespace : go_string)
-    (selector : labels.Selector.t) :
-  weak_selector selector →
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
   {{{ is_pkg_init apimodel ∗
+      "#Hselector" ∷ is_selector selector P ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
     l @! (go.PointerType apimodel.State) @! "objListBySelector" #kind #namespace #selector
@@ -109,8 +285,7 @@ Lemma wp_State__objListBySelector_weak γ l (kind namespace : go_string)
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) objs ⌝
   }}}.
 Proof.
-  intros Hselector.
-  iIntros (Φ) "(#Hpkg & #Hisk) HΦ".
+  iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__objListBySelectorⁱᵐᵖˡ. wp_call.
   wp_auto.
   wp_apply (wp_State__objList_weak γ l kind namespace with
@@ -118,8 +293,8 @@ Proof.
   iIntros (sl interfaces objs) "(Hsl & Hobjs & %Hvalid & %Hkind)".
   wp_auto.
   wp_bind (@! apimodel.filterByLabelSelector #sl #selector)%E.
-  iApply (Hselector kind sl interfaces objs Hvalid Hkind with
-    "[$Hpkg $Hsl $Hobjs]").
+  iApply (wp_filterByLabelSelector_weak kind sl interfaces objs selector P
+    Hvalid Hkind with "[$Hpkg $Hselector $Hsl $Hobjs]").
   iNext. iIntros (sl' interfaces' objs') "Hpost". wp_auto.
   iApply "HΦ". iExact "Hpost".
 Qed.
@@ -157,9 +332,9 @@ Proof.
 Qed.
 
 Local Lemma wp_State__ReplicaSetMutList_weak γ l (namespace : go_string)
-    (selector : labels.Selector.t) :
-  weak_selector selector →
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
   {{{ is_pkg_init apimodel ∗
+      "#Hselector" ∷ is_selector selector P ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
     l @! (go.PointerType apimodel.State) @! "ReplicaSetMutList" #namespace #selector
@@ -169,12 +344,11 @@ Local Lemma wp_State__ReplicaSetMutList_weak γ l (namespace : go_string)
       ⌜ Forall ReplicaSetV.valid replica_sets ⌝
   }}}.
 Proof.
-  intros Hselector.
-  iIntros (Φ) "(#Hpkg & #Hisk) HΦ".
+  iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__ReplicaSetMutListⁱᵐᵖˡ. wp_call.
   wp_auto.
   wp_apply (wp_State__objListBySelector_weak γ l ReplicaSetV.kind
-    namespace selector Hselector with "[$Hpkg $Hisk]").
+    namespace selector P with "[$Hpkg $Hselector $Hisk]").
   iIntros (objs_sl interfaces objs)
     "(Hobjs_sl & Hobjs & %Hvalid & %Hkind)".
   destruct (kobject_list_to_replica_sets objs Hkind) as [replica_sets ->].
@@ -257,9 +431,9 @@ Qed.
 (** Weak typed list specification used by controllers that only inspect the
     returned deep copies and rely on their API validity. *)
 Lemma wp_State__ReplicaSetList_weak γ l (namespace : go_string)
-    (selector : labels.Selector.t) :
-  weak_selector selector →
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
   {{{ is_pkg_init apimodel ∗
+      "#Hselector" ∷ is_selector selector P ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
     l @! (go.PointerType apimodel.State) @! "ReplicaSetList" #namespace #selector
@@ -269,15 +443,167 @@ Lemma wp_State__ReplicaSetList_weak γ l (namespace : go_string)
       ⌜ Forall ReplicaSetV.valid replica_sets ⌝
   }}}.
 Proof.
-  intros Hselector.
-  iIntros (Φ) "(#Hpkg & #Hisk) HΦ".
+  iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__ReplicaSetListⁱᵐᵖˡ. wp_call.
   wp_auto.
   wp_bind (l @! (go.PointerType apimodel.State) @! "ReplicaSetMutList"
     #namespace #selector)%E.
-  iApply (wp_State__ReplicaSetMutList_weak γ l namespace selector
-    Hselector with "[$Hpkg $Hisk]").
+  iApply (wp_State__ReplicaSetMutList_weak γ l namespace selector P
+    with "[$Hpkg $Hselector $Hisk]").
   iNext. iIntros (sl ptrs replica_sets) "Hpost". wp_auto.
+  iApply "HΦ". iExact "Hpost".
+Qed.
+
+Lemma kobject_list_to_pods objs :
+  Forall (λ obj, KObjectV.kind obj = PodV.kind) objs →
+  ∃ pods, objs = KObjectV.Pod <$> pods.
+Proof.
+  induction 1 as [|obj objs Hkind _ [pods ->]].
+  - exists []. done.
+  - destruct obj as [pod|replica_set|pvc|stateful_set];
+      simpl in Hkind; try discriminate.
+    exists (pod :: pods). done.
+Qed.
+
+Lemma pod_interfaces_to_ptrs interfaces pods :
+  ([∗ list] i;pod ∈ interfaces;pods,
+    KObjectV.deepown_i i (KObjectV.Pod pod) 1) -∗
+  ∃ ptrs,
+    ⌜ interfaces = (λ ptr, interface.mk
+      (go.PointerType v1.Pod) #ptr) <$> ptrs ⌝ ∗
+    ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod 1).
+Proof.
+  revert pods.
+  induction interfaces as [|i interfaces IH]; intros [|pod pods]; simpl.
+  - iIntros "_". iExists []. iSplit; done.
+  - iIntros "H". iDestruct "H" as %[].
+  - iIntros "H". iDestruct "H" as %[].
+  - iIntros "[Hi Hrest]".
+    iDestruct "Hi" as (ptr) "[%Hi Hpod]".
+    simpl in Hi. subst i.
+    iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
+    iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
+Qed.
+
+Local Lemma wp_State__PodMutList_weak γ l (namespace : go_string)
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
+  {{{ is_pkg_init apimodel ∗
+      "#Hselector" ∷ is_selector selector P ∗
+      "#Hisk" ∷ is_kubernetes γ l
+  }}}
+    l @! (go.PointerType apimodel.State) @! "PodMutList" #namespace #selector
+  {{{ sl ptrs pods, RET (#sl, #interface.nil);
+      sl ↦* ptrs ∗
+      ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod 1) ∗
+      ⌜ Forall PodV.valid pods ⌝
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
+  wp_method_call. rewrite /apimodel.State__PodMutListⁱᵐᵖˡ. wp_call.
+  wp_auto.
+  wp_apply (wp_State__objListBySelector_weak γ l PodV.kind
+    namespace selector P with "[$Hpkg $Hselector $Hisk]").
+  iIntros (objs_sl interfaces objs)
+    "(Hobjs_sl & Hobjs & %Hvalid & %Hkind)".
+  destruct (kobject_list_to_pods objs Hkind) as [pods ->].
+  rewrite Forall_fmap in Hvalid.
+  iEval (rewrite big_sepL2_fmap_r) in "Hobjs".
+  iDestruct (pod_interfaces_to_ptrs with "Hobjs") as
+    (ptrs) "[%Hinterfaces Hpods]".
+  subst interfaces.
+  wp_auto.
+  iDestruct (own_slice_len with "Hobjs_sl") as %(Hobjs_len1 & Hobjs_len2).
+  rewrite !map_length in Hobjs_len1.
+  iDestruct (own_slice_wf with "Hobjs_sl") as %Hobjs_cap.
+  iDestruct (big_sepL2_length with "Hpods") as %Hptrs_len.
+  wp_apply (wp_slice_make3 (V:=loc) (t:=go.PointerType v1.Pod)); first word.
+  iIntros (pods_sl) "(Hpods_sl & Hpods_cap & %Hpods_cap_eq)".
+  wp_auto.
+  set I := (∃ (i : w64) (obj : interface.t) (pods_sl' : slice.t)
+      (ptrs' : list loc),
+    "Hi_ptr" ∷ i_ptr ↦ i ∗
+    "Hobj_ptr" ∷ obj_ptr ↦ obj ∗
+    "Hpods_ptr" ∷ pods_ptr ↦ pods_sl' ∗
+    "Hpods_sl" ∷ pods_sl' ↦* ptrs' ∗
+    "Hpods_cap" ∷ own_slice_cap loc pods_sl' (DfracOwn 1) ∗
+    "%Hptrs'" ∷ ⌜ ptrs' = take (sint.nat i) ptrs ⌝ ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len objs_sl) ⌝)%I.
+  iAssert I with "[i obj pods Hpods_sl Hpods_cap]" as "Hloop".
+  { iExists (W64 0), (zero_val interface.t), pods_sl, [].
+    iFrame. iPureIntro. split; [done|word]. }
+  wp_for "Hloop". wp_if_destruct.
+  1: {
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len objs_sl))) as
+      [_|Hbounds]; last word.
+    assert (∃ this_ptr, ptrs !! sint.nat i = Some this_ptr) as
+      [this_ptr Hthis_ptr_lookup].
+    { apply lookup_lt_is_Some_2. rewrite Hobjs_len1. word. }
+    assert ((interface.ok <$> ((λ ptr, interface.mk
+        (go.PointerType v1.Pod) #ptr) <$> ptrs)) !! sint.nat i =
+      Some (interface.ok (interface.mk
+        (go.PointerType v1.Pod) #this_ptr))) as Hinterface_lookup.
+    { rewrite !list_lookup_fmap Hthis_ptr_lookup. done. }
+    wp_apply (wp_load_slice_index (V:=interface.t) (t:=go.InterfaceType [])
+      objs_sl (sint.Z i)
+      (interface.ok <$> ((λ ptr, interface.mk
+        (go.PointerType v1.Pod) #ptr) <$> ptrs))
+      (DfracOwn 1)
+      (interface.ok (interface.mk
+        (go.PointerType v1.Pod) #this_ptr)) with "[$Hobjs_sl]");
+      [word|iPureIntro; exact Hinterface_lookup|].
+    iIntros "Hobjs_sl". wp_auto.
+    rewrite decide_True;
+      [change (go.PointerType api_core_v1.Pod)
+        with (go.PointerType v1.Pod); reflexivity|].
+    wp_auto.
+    rewrite bool_decide_true;
+      [change (go.PointerType api_core_v1.Pod)
+        with (go.PointerType v1.Pod); reflexivity|].
+    wp_auto.
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (sl_one) "[Hsl_one _]". wp_auto.
+    wp_apply (wp_slice_append with "[$Hpods_sl $Hpods_cap $Hsl_one]").
+    iIntros (pods_sl'') "(Hpods_sl & Hpods_cap & Hsl_one)". wp_auto.
+    iApply wp_for_post_do. wp_auto.
+    iFrame "Hobjs_sl HΦ Hpods".
+    iExists (word.add i (W64 1)),
+      (interface.ok (interface.mk (go.PointerType v1.Pod) #this_ptr)),
+      pods_sl'', (take (sint.nat i) ptrs ++ [this_ptr]).
+    iFrame.
+    iPureIntro. split.
+    + assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite (take_S_r _ _ this_ptr Hthis_ptr_lookup). done.
+    + word. }
+  clear I.
+  assert (sint.nat i = length ptrs) as Hi_len.
+  { rewrite Hobjs_len1. word. }
+  assert (take (sint.nat i) ptrs = ptrs) as Htake by (apply take_ge; lia).
+  iApply ("HΦ" $! pods_sl' ptrs pods).
+  iEval (rewrite Htake) in "Hpods_sl".
+  iFrame. done.
+Qed.
+
+Lemma wp_State__PodList_weak γ l (namespace : go_string)
+    (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
+  {{{ is_pkg_init apimodel ∗
+      "#Hselector" ∷ is_selector selector P ∗
+      "#Hisk" ∷ is_kubernetes γ l
+  }}}
+    l @! (go.PointerType apimodel.State) @! "PodList" #namespace #selector
+  {{{ sl ptrs pods, RET (#sl, #interface.nil);
+      sl ↦* ptrs ∗
+      ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod 1) ∗
+      ⌜ Forall PodV.valid pods ⌝
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
+  wp_method_call. rewrite /apimodel.State__PodListⁱᵐᵖˡ. wp_call.
+  wp_auto.
+  wp_bind (l @! (go.PointerType apimodel.State) @! "PodMutList"
+    #namespace #selector)%E.
+  iApply (wp_State__PodMutList_weak γ l namespace selector P
+    with "[$Hpkg $Hselector $Hisk]").
+  iNext. iIntros (sl ptrs pods) "Hpost". wp_auto.
   iApply "HΦ". iExact "Hpost".
 Qed.
 

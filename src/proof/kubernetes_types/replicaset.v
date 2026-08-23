@@ -27,7 +27,10 @@ Definition valid_create (rs : t) : Prop :=
   0 ≤ sint.Z rs.(MinReadySeconds') ∧
   (∃ selector,
     rs.(Selector') = Some selector ∧
-    LabelSelectorV.valid selector ∧
+    (* TODO: Replace this with [LabelSelectorV.valid]. Introduce a separate
+       predicate for conditions, such as [go_size_safe], that the Kubernetes
+       API server does not enforce but verified controllers still require. *)
+    LabelSelectorV.executable selector ∧
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧

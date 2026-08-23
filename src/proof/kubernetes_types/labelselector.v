@@ -86,6 +86,14 @@ Definition valid (selector : t) : Prop :=
   Forall LabelSelectorRequirementV.valid
     (match_expressions_list selector).
 
+Definition go_size_safe (selector : t) : Prop :=
+  Z.of_nat
+    (size (default ∅ selector.(MatchLabels')) +
+      length (match_expressions_list selector)) ≤ 2 ^ 63 - 1.
+
+Definition executable (selector : t) : Prop :=
+  valid selector ∧ go_size_safe selector.
+
 Definition empty (selector : t) : Prop :=
   (selector.(MatchLabels') = None ∨ selector.(MatchLabels') = Some ∅) ∧
   match_expressions_list selector = [].
@@ -114,20 +122,18 @@ Definition selected_label
 Definition requirement_matches
     (labels : option (gmap go_string go_string))
     (requirement : LabelSelectorRequirementV.t) : Prop :=
-  (requirement.(LabelSelectorRequirementV.Operator') =
-      "In"%go ∧
-      ∃ label_value,
-        selected_label labels requirement.(LabelSelectorRequirementV.Key') =
-          Some label_value ∧
-        label_value ∈
-          LabelSelectorRequirementV.values_list requirement) ∨
-  (requirement.(LabelSelectorRequirementV.Operator') =
-      "NotIn"%go ∧
-      ∀ label_value,
-        selected_label labels requirement.(LabelSelectorRequirementV.Key') =
-          Some label_value →
-        label_value ∉
-          LabelSelectorRequirementV.values_list requirement) ∨
+  (requirement.(LabelSelectorRequirementV.Operator') = "In"%go ∧
+    match selected_label labels requirement.(LabelSelectorRequirementV.Key') with
+    | Some label_value =>
+        label_value ∈ LabelSelectorRequirementV.values_list requirement
+    | None => False
+    end) ∨
+  (requirement.(LabelSelectorRequirementV.Operator') = "NotIn"%go ∧
+    match selected_label labels requirement.(LabelSelectorRequirementV.Key') with
+    | Some label_value =>
+        label_value ∉ LabelSelectorRequirementV.values_list requirement
+    | None => True
+    end) ∨
   (requirement.(LabelSelectorRequirementV.Operator') =
       "Exists"%go ∧
       is_Some
@@ -136,10 +142,36 @@ Definition requirement_matches
       "DoesNotExist"%go ∧
       selected_label labels requirement.(LabelSelectorRequirementV.Key') = None).
 
+Global Instance requirement_matches_dec labels requirement :
+  Decision (requirement_matches labels requirement).
+Proof.
+  unfold requirement_matches, selected_label.
+  destruct labels as [label_map|].
+  - destruct (label_map !! requirement.(LabelSelectorRequirementV.Key'));
+      simpl; apply _.
+  - apply _.
+Defined.
+
 Definition matches
     (selector : t) (labels : option (gmap go_string go_string)) : Prop :=
   match_labels selector.(MatchLabels') labels ∧
   Forall (requirement_matches labels) (match_expressions_list selector).
+
+Global Instance match_labels_dec required labels :
+  Decision (match_labels required labels).
+Proof.
+  unfold match_labels.
+  destruct required as [required|]; last (left; done).
+  destruct labels as [labels|].
+  - destruct (decide (required ⊆ labels)) as [Hsubset|Hnot_subset].
+    + left. rewrite map_subseteq_spec in Hsubset. exact Hsubset.
+    + right. intros Hmatches. apply Hnot_subset.
+      rewrite map_subseteq_spec. exact Hmatches.
+  - apply _.
+Defined.
+
+Global Instance matches_dec selector labels : Decision (matches selector labels).
+Proof. unfold matches. apply _. Defined.
 
 Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_matchlabels_none" ∷

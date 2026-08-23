@@ -1,8 +1,9 @@
 From New.proof Require Export prelude.
 From New.proof.k8s_io.apimachinery.pkg Require Export types_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export labels_init selection_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.utils Require Export ptr_init.
-From New.proof Require Export time.
+From New.proof Require Export fmt time.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 From New.proof Require Import proof_prelude.
 

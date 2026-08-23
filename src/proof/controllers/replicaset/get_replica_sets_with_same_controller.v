@@ -45,6 +45,7 @@ Lemma wp_getReplicaSetsWithSameController γ model_l rs_l rs dq :
   {{{ sl ptrs replica_sets dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;replica_set ∈ ptrs;replica_sets, ReplicaSetV.deepown_l ptr replica_set dq') ∗
+      ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
       ReplicaSetV.deepown_l rs_l rs dq
   }}}.
 Proof.
@@ -66,7 +67,7 @@ Proof.
   - subst controller_ref_l. wp_auto.
     iApply ("HΦ" $! slice.nil [] [] (DfracOwn 1)).
     iPoseProof (own_slice_nil (V:=loc) (DfracOwn 1)) as "Hnil".
-    simpl. iFrame. iExact "Hnil".
+    simpl. iFrame "Hnil Hrs". done.
   - iDestruct "Hcontroller_ref" as (controller_ref)
       "(%Hcontroller_ref & Hcontroller_ref)".
     destruct Hcontroller_ref as
@@ -94,11 +95,11 @@ Proof.
     wp_auto.
     rewrite Hrs_meta_deepown_Hdeepown_namespace.
     wp_bind (@! labels.Everything #())%E.
-    wp_apply (wp_Everything_weak with "[$Hlabels_init]").
-    iIntros (selector) "%Hselector". wp_auto.
+    wp_apply (wp_Everything with "[$Hlabels_init]").
+    iIntros (selector) "#Hselector". wp_auto.
     wp_apply (wp_State__ReplicaSetList_weak γ model_l
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') selector
-      Hselector with "[$Hapimodel_init $Hisk]").
+      everything_matches with "[$Hapimodel_init $Hselector $Hisk]").
     iIntros (replica_sets_sl replica_set_ptrs replica_sets)
       "(Hreplica_sets_sl & Hreplica_sets & %Hreplica_sets_valid)".
     wp_auto.
@@ -147,6 +148,7 @@ Proof.
           drop (sint.nat i) replica_sets,
           ReplicaSetV.deepown_l ptr replica_set 1) ∗
       "Hrelated_cap" ∷ own_slice_cap loc result_sl (DfracOwn 1) ∗
+      "%Hresult_valid" ∷ ⌜ Forall ReplicaSetV.valid result_replica_sets ⌝ ∗
       "%Hi_bound" ∷
         ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len replica_sets_sl) ⌝)%I.
     iAssert I with
@@ -154,7 +156,7 @@ Proof.
         Hreplica_sets]" as "Hloop".
     { iExists (W64 0), null, related_sl, [], [].
       iFrame. rewrite !big_sepL2_nil. iFrame.
-      iPureIntro. word. }
+      iPureIntro. split; [done|]. split; [constructor|word]. }
     wp_for "Hloop". wp_if_destruct.
     + list_elem replica_set_ptrs (sint.Z i) as this_ptr.
       destruct (decide
@@ -167,6 +169,12 @@ Proof.
         [this_rs Hthis_rs_lookup].
       { apply lookup_lt_is_Some_2.
         rewrite -Hreplica_sets_len Hreplica_sets_len1. word. }
+      assert (ReplicaSetV.valid this_rs) as Hthis_valid.
+      { rewrite Forall_forall in Hreplica_sets_valid.
+        apply Hreplica_sets_valid.
+        rewrite <-list_elem_of_In.
+        apply list_elem_of_lookup_2 with (i:=sint.nat i).
+        exact Hthis_rs_lookup. }
       iPoseProof (big_sepL2_head_tail _ _ _ this_ptr this_rs with
         "Hreplica_sets_post") as "[Hthis Hother]".
       { split. all: rewrite lookup_drop Nat.add_0_r; done. }
@@ -187,7 +195,8 @@ Proof.
           result_ptrs, result_replica_sets.
         assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as
           -> by word.
-        rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro. word.
+        rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro.
+        split; [done|word].
       * iDestruct "Hrelated_controller_ref" as (related_controller_ref)
           "(%Hrelated_controller_ref & Hrelated_controller_ref)".
         destruct Hrelated_controller_ref as
@@ -233,7 +242,9 @@ Proof.
            assert (sint.nat (word.add i (W64 1)) = S (sint.nat i))
              as -> by word.
            rewrite !drop_drop Nat.add_1_r.
-           iFrame. iPureIntro. word.
+           iFrame. iPureIntro. split.
+           ++ rewrite Forall_app. split; [done|]. constructor; done.
+           ++ word.
         -- iApply wp_for_post_do. wp_auto.
            iFrame "Hreplica_sets_sl HΦ Hrs Hcontroller_var Hcontroller_uid
              Hcontroller_rest".
@@ -241,11 +252,12 @@ Proof.
              result_ptrs, result_replica_sets.
            assert (sint.nat (word.add i (W64 1)) = S (sint.nat i))
              as -> by word.
-           rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro. word.
+           rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro.
+           split; [done|word].
     + clear I.
       iApply ("HΦ" $! result_sl result_ptrs result_replica_sets
         (DfracOwn 1)).
-      iFrame.
+      iFrame. done.
 Qed.
 
 End proof.

@@ -57,7 +57,9 @@ Proof.
       "[$Hpods_sl $Hpods $Hrelated_sl $Hrelated]").
     iIntros (ranked ranks)
       "(%Hranked_pods & %Hranked_len & Hranks & Hpods_sl & Hpods & Hrelated_sl & Hrelated)".
-    wp_auto.
+    (* Stop before the intentionally opaque [sort.Sort]; [wp_Sort] below is
+       its trusted semantic boundary. *)
+    wp_pures. wp_store. wp_pures. wp_load.
     iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.
     iDestruct (own_slice_len with "Hranks") as %(Hranks_len1 & Hranks_len2).
     assert (Hptrs_ranks_len : length pods_ptrs = length ranks).

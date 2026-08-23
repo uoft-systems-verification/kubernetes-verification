@@ -1,0 +1,14 @@
+translate = [
+    "Operator",
+    "DoesNotExist",
+    "Equals",
+    "DoubleEquals",
+    "In",
+    "NotEquals",
+    "NotIn",
+    "Exists",
+    "GreaterThan",
+    "LessThan",
+]
+
+imports = ["!*"]

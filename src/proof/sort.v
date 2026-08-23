@@ -9,9 +9,27 @@ Collection W := sem + package_sem.
     unchanged; the [Swap] specification below requires both indices in bounds. *)
 Definition list_swap {A} (xs : list A) (i j : nat) : list A :=
   match xs !! i, xs !! j with
-  | Some xi, Some xj => <[i := xj]> (<[j := xi]> xs)
+  | Some xi, Some xj => <[j := xi]> (<[i := xj]> xs)
   | _, _ => xs
   end.
+
+Lemma list_swap_fmap {A B} (f : A → B) xs i j :
+  f <$> list_swap xs i j = list_swap (f <$> xs) i j.
+Proof.
+  rewrite /list_swap !list_lookup_fmap.
+  destruct (xs !! i) as [xi|] eqn:Hi;
+    destruct (xs !! j) as [xj|] eqn:Hj; simpl; try done.
+  rewrite !list_fmap_insert. done.
+Qed.
+
+Lemma list_swap_permutation {A} (xs : list A) i j :
+  xs ≡ₚ list_swap xs i j.
+Proof.
+  rewrite /list_swap.
+  destruct (xs !! i) as [xi|] eqn:Hi;
+    destruct (xs !! j) as [xj|] eqn:Hj; try done.
+  symmetry. eapply Permutation_insert_swap; eauto.
+Qed.
 
 (** The part of Go's [sort.Interface] protocol needed to show that sorting is
     a permutation. [Less] may return either result, but must preserve the data. *)
@@ -20,7 +38,7 @@ Class SortInterfaceSpec {A D : Type} (T : go.type)
     (contents : D → list A → iProp Σ) : Prop := {
   wp_sort_len (data : D) (xs : list A) :
     {{{ contents data xs }}}
-      (MethodResolve T "Len"%go #data) #()
+      data @! T @! "Len" #()
     {{{ (n : w64), RET #n;
         contents data xs ∗
         ⌜ sint.nat n = length xs ∧ 0 ≤ sint.Z n ⌝
@@ -28,12 +46,12 @@ Class SortInterfaceSpec {A D : Type} (T : go.type)
   wp_sort_less (data : D) (xs : list A) (i j : w64) :
     0 ≤ sint.Z i < length xs → 0 ≤ sint.Z j < length xs →
     {{{ contents data xs }}}
-      (MethodResolve T "Less"%go #data) #i #j
+      data @! T @! "Less" #i #j
     {{{ (b : bool), RET #b; contents data xs }}};
   wp_sort_swap (data : D) (xs : list A) (i j : w64) :
     0 ≤ sint.Z i < length xs → 0 ≤ sint.Z j < length xs →
     {{{ contents data xs }}}
-      (MethodResolve T "Swap"%go #data) #i #j
+      data @! T @! "Swap" #i #j
     {{{ RET #(); contents data (list_swap xs (sint.nat i) (sint.nat j)) }}}
 }.
 

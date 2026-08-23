@@ -1,6 +1,7 @@
 rocq = "src"
 go_path = "./kubernetes/"
 packages = [
+    "regexp",
     "./pkg/api/legacyscheme",
     "./pkg/api/v1/pod",
     "./pkg/apis/apps",
@@ -29,11 +30,14 @@ packages = [
     "./staging/src/k8s.io/apimachinery/pkg/apis/meta/v1",
     "./staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation",
     "./staging/src/k8s.io/apimachinery/pkg/labels",
+    "./staging/src/k8s.io/apimachinery/pkg/selection",
     "./staging/src/k8s.io/apimachinery/pkg/runtime",
     "./staging/src/k8s.io/apimachinery/pkg/runtime/schema",
     "./staging/src/k8s.io/apimachinery/pkg/types",
     "./staging/src/k8s.io/apimachinery/pkg/util/intstr",
+    "./staging/src/k8s.io/apimachinery/pkg/util/errors",
     "./staging/src/k8s.io/apimachinery/pkg/util/runtime",
+    "./staging/src/k8s.io/apimachinery/pkg/util/validation",
     "./staging/src/k8s.io/apimachinery/pkg/watch",
     "./staging/src/k8s.io/apimachinery/pkg/util/uuid",
     "./staging/src/k8s.io/apimachinery/pkg/util/validation/field",
