@@ -412,6 +412,8 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_general
           ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
           ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
           ⌜ ObjectMetaV.updated (KObjectV.objectmeta new_obj) (KObjectV.objectmeta updated_obj) ⌝ ∗
+          ⌜ ObjectSpecV.valid_update
+              (KObjectV.spec old_obj) (KObjectV.spec new_obj) ⌝ ∗
           ⌜ ObjectSpecV.updated (KObjectV.spec new_obj) (KObjectV.spec updated_obj) ⌝ ∗
           ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj → KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
           ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝) ∨

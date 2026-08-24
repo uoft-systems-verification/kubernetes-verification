@@ -207,6 +207,10 @@ Proof.
   1: done.
   destruct Hauth_old as (Hkey_old & Hvalid_old_kobj & Huid_old_in &
     Hno_speculative_parent_reference_old & Huid_unique_old).
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid old_kobj) as Hextra_valid_old.
+  { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
   wp_apply (wp_applyValidationAndDefaultingOnUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
@@ -306,6 +310,13 @@ Proof.
   iMod "Hau" as (key0 uid kmeta kspec) "H". iNamed "H".
   assert (key0 = key) as ->.
   { rewrite Hkey_eq. symmetry. exact Hkey_new. }
+  iPoseProof (kview.own_spec_exists with
+    "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
+  assert (KObjectV.spec old_kobj = kspec) as Hspec_eq.
+  { eapply Hspec_found.
+    - exact Hlookup_abs.
+    - rewrite Huid_eq. symmetry. exact e.
+    - exact Hdecide''. }
   assert (kview.valid_k_uid_obj key uid new_kobj) as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj.
     split.
@@ -319,8 +330,16 @@ Proof.
         rewrite objectmeta_update_objectmeta.
         rewrite Huid_eq.
         symmetry. eapply objectmeta_updated_set_resource_version_uid. done.
-      + unfold new_kobj, new_kmeta.
-        eapply valid_update_objectmeta_set_resource_version; done.
+      + split.
+        * unfold new_kobj, new_kmeta.
+          eapply valid_update_objectmeta_set_resource_version; done.
+        * unfold new_kobj.
+          apply KObjectV.extra_valid_update_objectmeta.
+          rewrite /KObjectV.extra_valid.
+          eapply ObjectSpecV.extra_valid_updated.
+          -- exact Hextra_valid_old.
+          -- rewrite Hspec_eq. exact Hvalid_spec_update.
+          -- exact Hupdated_spec.
   }
   iMod (kview.update_kobj_vs old_kobj new_kobj with
     "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_spec_frag]")

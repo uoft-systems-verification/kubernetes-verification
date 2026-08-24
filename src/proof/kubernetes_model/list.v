@@ -182,6 +182,23 @@ Proof.
   exact (proj1 (proj2 (Hvalid k obj Hlookup))).
 Qed.
 
+Lemma filtered_map_values_extra_valid kind namespace
+    (abs_state : gmap KKey.t KObjectV.t) :
+  (∀ k obj, abs_state !! k = Some obj → KObjectV.extra_valid obj) →
+  Forall KObjectV.extra_valid
+    (map_to_list (filter (obj_list_match kind namespace) abs_state)).*2.
+Proof.
+  intros Hextra.
+  rewrite Forall_forall.
+  intros obj Hobj_in.
+  rewrite <-list_elem_of_In in Hobj_in.
+  apply list_elem_of_fmap_1 in Hobj_in as [[k obj'] [Hobj_eq Hkv_in]].
+  simpl in Hobj_eq. subst obj'.
+  apply elem_of_map_to_list in Hkv_in.
+  apply map_lookup_filter_Some in Hkv_in as [Hlookup _].
+  exact (Hextra k obj Hlookup).
+Qed.
+
 Lemma filtered_map_values_key_eq kind namespace
     (abs_state : gmap KKey.t KObjectV.t) (used_uid : gset types.UID.t) :
   (∀ k obj, abs_state !! k = Some obj →
@@ -248,6 +265,7 @@ Lemma wp_State__objListLocked γ l (kind namespace : go_string) phys_state_l phy
           (λ kv, kv.1.(KKey.Kind') = kind ∧ v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')))
           abs_state)).*2 ⌝ ∗
       ⌜ Forall KObjectV.valid objs ⌝ ∗
+      ⌜ Forall KObjectV.extra_valid objs ⌝ ∗
       ⌜ NoDup (KObjectV.key <$> objs) ⌝ ∗
       l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
       phys_state_l ↦$ phys_state ∗
@@ -263,6 +281,8 @@ Proof.
   iNamed "H".
   iPoseProof (kview.own_auth_valid_forall with "Hown_abs")
     as "%Habs_valid".
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hown_abs")
+    as "%Habs_extra_valid".
   wp_auto.
   iPoseProof (own_slice_nil (V:=interface.t)) as "Hslice_nil".
   iPoseProof (own_slice_cap_nil (V:=interface.t)) as "Hcap_nil".
@@ -453,6 +473,8 @@ Proof.
   - exact Hperm.
   - eapply Permutation_Forall; [symmetry; exact Hperm|].
     exact (filtered_map_values_valid kind namespace abs_state used_uid Habs_valid).
+  - eapply Permutation_Forall; [symmetry; exact Hperm|].
+    exact (filtered_map_values_extra_valid kind namespace abs_state Habs_extra_valid).
   - rewrite (list_fmap_map KObjectV.key objs).
     rewrite (Permutation_map KObjectV.key Hperm).
     rewrite -(list_fmap_map KObjectV.key
@@ -493,7 +515,8 @@ Proof.
   iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
   wp_apply (wp_State__objListLocked with "[$Hstate_m_addr $Hown_phys $Hown_abs $Hphys_abs_rep]").
   iIntros (sl interfaces objs)
-    "(Hsl & Hlist & %Hperm & %Hvalid & %Hnodup & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
+    "(Hsl & Hlist & %Hperm & %Hvalid & %Hextra_valid & %Hnodup &
+      Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
   iPoseProof (kview.own_auth_valid_forall with "Hown_abs")
     as "%Habs_valid".
   assert (Forall (λ obj, ∃ pod, obj = KObjectV.Pod pod) objs) as Hobjs_are_pods.

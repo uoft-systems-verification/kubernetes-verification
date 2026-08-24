@@ -263,6 +263,10 @@ Proof.
   destruct Hauth_old as
     (Hkey_old & Hvalid_old_kobj & Huid_old_in &
       Hno_speculative_parent_reference_old & Huid_unique_old).
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid old_kobj) as Hextra_valid_old.
+  { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
   wp_apply (wp_applyValidationAndDefaultingOnUpdate with
@@ -387,8 +391,13 @@ Proof.
         rewrite objectmeta_update_objectmeta Huid_eq.
         symmetry. eapply objectmeta_updated_set_resource_version_uid.
         done.
-      + unfold new_kobj, new_kmeta.
-        eapply valid_update_objectmeta_set_resource_version; done.
+      + split.
+        * unfold new_kobj, new_kmeta.
+          eapply valid_update_objectmeta_set_resource_version; done.
+        * unfold new_kobj.
+          apply KObjectV.extra_valid_update_objectmeta.
+          rewrite /KObjectV.extra_valid Hspec_updated_old.
+          exact Hextra_valid_old.
   }
   assert (obj_parent_ref new_kobj = None) as Hnew_parent_none.
   { unfold new_kobj, new_kmeta, obj_parent_ref.

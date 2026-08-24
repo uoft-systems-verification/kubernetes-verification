@@ -55,7 +55,10 @@ Local Definition valid_kauth a : Prop :=
     map_Forall (λ k' obj',
       (* Each obj has unique uid *)
       (KObjectV.objectmeta obj).(ObjectMetaV.UID') = (KObjectV.objectmeta obj').(ObjectMetaV.UID') → k = k'
-    ) (proj_state a)
+    ) (proj_state a) ∧
+    (* Requirements of the verified controller implementations that are not
+       guaranteed by Kubernetes API admission. *)
+    KObjectV.extra_valid obj
   ) (proj_state a).
 
 Local Definition compatible_kfrag b a : Prop :=
@@ -152,8 +155,8 @@ Proof.
     rewrite map_Forall_lookup.
     intros k obj Hlookup.
     pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as Hobj_valid.
-    destruct Hobj_valid as (Hkey & Hwf & Huid_in & Hno_spec & Huniq).
-    split_and!; [done|done| | |done].
+    destruct Hobj_valid as (Hkey & Hwf & Huid_in & Hno_spec & Huniq & Hextra).
+    split_and!; [done|done| | |done|done].
     - apply (proj1 (Hused_elem _)). done.
     - intros kind name uid Hparent.
       apply (proj1 (Hused_elem uid)).
@@ -468,7 +471,8 @@ Proof.
   destruct Hrel as [Hvalid_a _].
   rewrite /valid_kauth in Hvalid_a.
   pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup) as Hobj_valid.
-  exact Hobj_valid.
+  destruct Hobj_valid as (Hkey & Hwf & Huid & Hparent & Hunique & _).
+  split_and!; done.
 Qed.
 
 Lemma auth_valid_forall a:
@@ -486,6 +490,33 @@ Lemma auth_valid_forall a:
 Proof.
   intros Hvalid k obj Hlookup.
   eapply (auth_valid a k obj); done.
+Qed.
+
+Lemma auth_extra_valid a k obj :
+  ✓ (●K a) →
+  (proj_state a) !! k = Some obj →
+  KObjectV.extra_valid obj.
+Proof.
+  intros Hvalid Hlookup.
+  rewrite /kview_auth in Hvalid.
+  pose proof (proj1 (view_auth_dfrac_valid view_rel 1 a) Hvalid) as [_ Hrel].
+  specialize (Hrel 0%nat).
+  change (view_rel_raw 0%nat a ε) in Hrel.
+  destruct Hrel as [Hvalid_a _].
+  rewrite /valid_kauth in Hvalid_a.
+  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup) as Hobj_valid.
+  destruct Hobj_valid as (_ & _ & _ & _ & _ & Hextra).
+  exact Hextra.
+Qed.
+
+Lemma auth_extra_valid_forall a :
+  ✓ (●K a) →
+  ∀ k obj,
+  (proj_state a) !! k = Some obj →
+  KObjectV.extra_valid obj.
+Proof.
+  intros Hvalid k obj Hlookup.
+  eapply (auth_extra_valid a k obj); done.
 Qed.
 
 Lemma auth_frag_valid (n: nat) a b:
@@ -520,7 +551,7 @@ Proof.
 	  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
 	  destruct Hobj as (obj & Hlookup_obj & Huid_obj & Hliving & Hobj_meta).
 	  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
-	  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _).
+	  destruct Hobj_valid as (Hkey_obj & Hwf_obj & _ & _ & _ & _).
 	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
 	  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
 	    exact Hagree.
@@ -565,7 +596,7 @@ Proof.
 	  destruct (Hmeta _ _ Hlookup) as (meta0 & Hagree & _ & Hobj).
 	  destruct Hobj as (obj & Hlookup_obj & Huid_obj & _ & Hobj_meta).
 	  pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid_a Hlookup_obj) as Hobj_valid.
-	  destruct Hobj_valid as (_ & _ & Huid_in & _ & _).
+	  destruct Hobj_valid as (_ & _ & Huid_in & _ & _ & _).
 	  assert (Hmeta_eqv : (ObjectMetaV.without_resource_version meta : leibnizO ObjectMetaV.t) ≡ meta0).
 	  { apply (inj (to_agree : leibnizO ObjectMetaV.t → agree (leibnizO ObjectMetaV.t))).
 	    exact Hagree.
@@ -810,7 +841,8 @@ Qed.
 Definition valid_k_uid_obj k uid obj: Prop :=
   k = KObjectV.key obj ∧
   uid = (KObjectV.objectmeta obj).(ObjectMetaV.UID') ∧
-  KObjectV.valid obj.
+  KObjectV.valid obj ∧
+  KObjectV.extra_valid obj.
 
 Lemma extend_used_uid a uid :
   ●K a ~~>
@@ -822,7 +854,7 @@ Proof.
   - rewrite /valid_kauth map_Forall_lookup in Hvalid |- *.
     intros key obj Hlookup.
     destruct (Hvalid key obj Hlookup) as
-      (Hkey & Hobj_valid & Huid_used & Hno_spec & Huid_unique).
+      (Hkey & Hobj_valid & Huid_used & Hno_spec & Huid_unique & Hextra).
     split_and!; try done.
     + apply elem_of_union_l. exact Huid_used.
     + intros kind name parent_uid Hparent.
@@ -863,7 +895,7 @@ Lemma create_kobj a k uid obj:
         ◯K (mk_status_frag k uid 1 (KObjectV.status obj))).
 Proof.
   intros Hak Hnot_reserved Huid_fresh Hkuid_obj Hdeletion_timestamp Hno_spec.
-  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
   rewrite -!assoc -!view_frag_op.
   apply view_update_alloc.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
@@ -908,7 +940,7 @@ Proof.
         destruct Hlookup_new2 as [[Hk_eq _]|[Hk_neq Hlookup_old2]].
         { congruence. }
         pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old2) as Hkobj_old2.
-        destruct Hkobj_old2 as (_ & _ & Huid_in_old2 & _ & _).
+        destruct Hkobj_old2 as (_ & _ & Huid_in_old2 & _ & _ & _).
         exfalso.
         apply Huid_fresh.
         rewrite Huid_obj.
@@ -919,7 +951,8 @@ Proof.
       destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
       { congruence. }
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
-      destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
       split_and!. all: try done.
       * apply elem_of_union_l. exact Huid_old_in.
       * intros kind name uid0 Hparent.
@@ -1250,7 +1283,7 @@ Lemma create_reserved_kobj a k uid obj:
         ◯K (mk_reservation_frag k 1 (Occupied uid))).
 Proof.
   intros Hak Huid_fresh Hkuid_obj Hdeletion_timestamp Hno_spec.
-  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
   rewrite -!assoc -!view_frag_op.
   apply view_update.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
@@ -1362,7 +1395,7 @@ Proof.
         destruct Hlookup_new2 as [[Hk_eq _]|[Hk_neq Hlookup_old2]].
         { congruence. }
         pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old2) as Hkobj_old2.
-        destruct Hkobj_old2 as (_ & _ & Huid_in_old2 & _ & _).
+        destruct Hkobj_old2 as (_ & _ & Huid_in_old2 & _ & _ & _).
         exfalso.
         apply Huid_fresh.
         rewrite Huid_obj.
@@ -1373,7 +1406,8 @@ Proof.
       destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
       { congruence. }
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
-      destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
       split_and!. all: try done.
       * apply elem_of_union_l. exact Huid_old_in.
       * intros kind name uid0 Hparent.
@@ -1715,7 +1749,7 @@ Proof.
     simpl in Hlookup.
     apply lookup_delete_Some in Hlookup as [_ Hlookup].
     pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as Hkobj.
-    destruct Hkobj as (Hkey & Hwf & Huid_in & Hno_spec & Huniq).
+    destruct Hkobj as (Hkey & Hwf & Huid_in & Hno_spec & Huniq & Hextra).
     split_and!. all: try done.
     apply map_Forall_delete. done.
   - split_and!.
@@ -1911,7 +1945,7 @@ Proof.
     simpl in Hlookup.
     apply lookup_delete_Some in Hlookup as [_ Hlookup].
     pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as Hkobj.
-    destruct Hkobj as (Hkey & Hwf & Huid_in & Hno_spec & Huniq).
+    destruct Hkobj as (Hkey & Hwf & Huid_in & Hno_spec & Huniq & Hextra).
     split_and!. all: try done.
     apply map_Forall_delete. done.
   - split_and!.
@@ -2098,7 +2132,7 @@ Proof.
     simpl in Hlookup'.
     apply lookup_delete_Some in Hlookup' as [_ Hlookup'].
     pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup') as
-      (Hkey & Hwf & Huid & Hparent & Hunique).
+      (Hkey & Hwf & Huid & Hparent & Hunique & Hextra).
     split_and!; try done.
     simpl. apply map_Forall_delete. done.
   - split_and!.
@@ -2167,12 +2201,12 @@ Lemma update_terminating_kobj a k uid old_obj new_obj :
   (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None →
   ●K a ~~> ●K (<[k := new_obj]> (proj_state a), proj_used_uid a).
 Proof.
-  intros (Hkey_new & Huid_new & Hvalid_new) Hnew_terminating Hno_spec
+  intros (Hkey_new & Huid_new & Hvalid_new & Hextra_new) Hnew_terminating Hno_spec
     Hlookup Hold_uid Hold_terminating.
   apply view_update_auth.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
   pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as
-    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old).
+    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old & Hextra_old).
   assert (Huid_old_new :
       (KObjectV.objectmeta old_obj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta new_obj).(ObjectMetaV.UID')).
@@ -2192,7 +2226,7 @@ Proof.
         rewrite Huid_old_new. exact Huid_eq.
     + rewrite lookup_insert_ne // in Hlookup_new.
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_new) as
-        (Hkey & Hwf & Huid & Hparent & Hunique).
+        (Hkey & Hwf & Huid & Hparent & Hunique & Hextra).
       split_and!; try done.
       rewrite map_Forall_lookup. intros k'' obj'' Hlookup'' Huid_eq.
       destruct (decide (k'' = k)) as [->|Hneq''].
@@ -2272,7 +2306,7 @@ Lemma mark_terminating_kobj_raw a k uid meta old_obj new_obj :
   (●K a ⋅ ◯K (mk_meta_frag k uid 1 meta)) ~~>
     ●K (<[k := new_obj]> (proj_state a), proj_used_uid a).
 Proof.
-  intros Hnot_reserved (Hkey_new & Huid_new & Hvalid_new)
+  intros Hnot_reserved (Hkey_new & Huid_new & Hvalid_new & Hextra_new)
     Hnew_terminating Hno_spec Hlookup.
   apply view_update_dealloc.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
@@ -2308,7 +2342,7 @@ Proof.
       (KObjectV.objectmeta new_obj).(ObjectMetaV.UID')).
   { rewrite Hold_uid -Huid_new //. }
   pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as
-    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old).
+    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old & Hextra_old).
   split.
   - rewrite /valid_kauth map_Forall_lookup.
     intros k' obj' Hlookup_new. simpl in Hlookup_new.
@@ -2323,7 +2357,7 @@ Proof.
         rewrite Huid_old_new. exact Huid_eq.
     + rewrite lookup_insert_ne // in Hlookup_new.
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_new) as
-        (Hkey & Hwf & Huid_in' & Hparent & Hunique).
+        (Hkey & Hwf & Huid_in' & Hparent & Hunique & Hextra).
       split_and!; try done.
       rewrite map_Forall_lookup. intros k'' obj'' Hlookup'' Huid_eq.
       destruct (decide (k'' = k)) as [->|Hneq''].
@@ -2417,7 +2451,7 @@ Lemma mark_terminating_reserved_kobj a k uid meta old_obj new_obj :
     (●K (<[k := new_obj]> (proj_state a), proj_used_uid a) ⋅
       ◯K (mk_reservation_frag k 1 (Deleting uid))).
 Proof.
-  intros (Hkey_new & Huid_new & Hvalid_new)
+  intros (Hkey_new & Huid_new & Hvalid_new & Hextra_new)
     Hnew_terminating Hno_spec Hlookup.
   rewrite -!assoc -!view_frag_op.
   apply view_update.
@@ -2485,7 +2519,7 @@ Proof.
       (KObjectV.objectmeta new_obj).(ObjectMetaV.UID')).
   { rewrite Hold_uid -Huid_new //. }
   pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as
-    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old).
+    (Hkey_old & Hvalid_old & Huid_in & Hno_spec_old & Hunique_old & Hextra_old).
   split.
   - rewrite /valid_kauth map_Forall_lookup.
     intros k' obj' Hlookup_new. simpl in Hlookup_new.
@@ -2500,7 +2534,7 @@ Proof.
         rewrite Huid_old_new. exact Huid_eq.
     + rewrite lookup_insert_ne // in Hlookup_new.
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_new) as
-        (Hkey & Hwf & Huid_in' & Hparent & Hunique).
+        (Hkey & Hwf & Huid_in' & Hparent & Hunique & Hextra).
       split_and!; try done.
       rewrite map_Forall_lookup. intros k'' obj'' Hlookup'' Huid_eq.
       destruct (decide (k'' = k)) as [->|Hneq''].
@@ -2614,7 +2648,7 @@ Lemma update_meta_kobj a k uid meta prev_obj obj:
       ◯K (mk_meta_frag k uid 1 (KObjectV.objectmeta obj))).
 Proof.
   intros Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hspec_eq Hstatus_eq.
-  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
   apply view_update.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
   assert (Hmeta_bf_none : proj_meta bf !! (k, uid) = None).
@@ -2689,7 +2723,8 @@ Proof.
       destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
       { congruence. }
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
-      destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
       split_and!. all: try done.
       * eapply map_Forall_lookup_2.
         intros k'' obj'' Hlookup_new2 Huid_eq.
@@ -2876,7 +2911,7 @@ Lemma update_kobj a k uid meta spec prev_obj obj:
       ◯K (mk_spec_frag k uid 1 (KObjectV.spec obj))).
 Proof.
   intros Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hstatus_eq.
-  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
   rewrite -!assoc -!view_frag_op.
   apply view_update.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
@@ -2969,7 +3004,8 @@ Proof.
       destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
       { congruence. }
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
-      destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
       split_and!. all: try done.
       * eapply map_Forall_lookup_2.
         intros k'' obj'' Hlookup_new2 Huid_eq.
@@ -3204,7 +3240,7 @@ Lemma update_status_kobj a k uid meta status prev_obj obj:
       ◯K (mk_status_frag k uid 1 (KObjectV.status obj))).
 Proof.
   intros Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hspec_eq.
-  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj).
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
   rewrite -!assoc -!view_frag_op.
   apply view_update.
   intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
@@ -3297,7 +3333,8 @@ Proof.
       destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
       { congruence. }
       pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
-      destruct Hkobj_old as (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old).
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
       split_and!. all: try done.
       * eapply map_Forall_lookup_2.
         intros k'' obj'' Hlookup_new2 Huid_eq.
@@ -3673,6 +3710,28 @@ Proof.
     exact Hrel0.
   }
   exact (auth_valid_forall (state, used_uid) Hvalid).
+Qed.
+
+Lemma own_auth_extra_valid_forall {γ state used_uid} :
+  own_auth γ state used_uid -∗
+  ⌜∀ k obj,
+    state !! k = Some obj →
+    KObjectV.extra_valid obj⌝.
+Proof.
+  iIntros "Hauth".
+  iDestruct (own_valid with "Hauth") as "Hvalid".
+  iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid0.
+  iPureIntro.
+  pose proof (proj1 (view_auth_dfrac_validN view_rel 0%nat 1
+    (state, used_uid)) Hvalid0) as [_ Hrel0].
+  assert (Hvalid : ✓ (●K (state, used_uid))).
+  { rewrite /kview_auth.
+    apply (proj2 (view_auth_dfrac_valid view_rel 1 (state, used_uid))).
+    split; [done|].
+    intros n.
+    change (view_rel_raw n (state, used_uid) ε).
+    exact Hrel0. }
+  exact (auth_extra_valid_forall (state, used_uid) Hvalid).
 Qed.
 
 Lemma own_reservation_valid {γ state used_uid k dq status}:

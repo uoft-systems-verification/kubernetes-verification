@@ -151,7 +151,7 @@ Proof.
   iSplit; first done.
   iIntros (existing_i existing_kobj) "Hget".
   iDestruct "Hget" as
-    "(%Hvalid_existing & %Hkey_existing & %Hmeta_eq &
+    "(%Hvalid_existing & %Hextra_valid_existing & %Hkey_existing & %Hmeta_eq &
       Hdeepown_existing_i & Hown_meta_frag & _ & _)".
   iMod ("Habort" with
     "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
@@ -570,7 +570,8 @@ Proof.
     wp_auto. wp_for_post.
     iApply ("HΦ" $! interface.nil (interface.ok get_err_ok)). iRight. done. }
   iDestruct "Hget" as (existing_i existing_kobj)
-    "[(%Hret & %Hget_err & %Hvalid_existing & %Hkey_existing & %Hexisting_terminating) Hdeepown_existing_i]".
+    "[(%Hret & %Hget_err & %Hvalid_existing & %Hextra_valid_existing &
+      %Hkey_existing & %Hexisting_terminating) Hdeepown_existing_i]".
   subst existing_ret get_err. wp_auto.
   iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
   wp_apply wp_Accessor. 1: iPureIntro; done.

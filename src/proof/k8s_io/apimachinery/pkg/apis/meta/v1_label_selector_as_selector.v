@@ -26,9 +26,10 @@ Proof.
 Qed.
 
 Lemma wp_LabelSelectorAsSelector selector_l selector dq :
-  LabelSelectorV.executable selector →
-  {{{ is_pkg_init v1 ∗
-      LabelSelectorV.deepown_l selector_l selector dq
+  {{{ "#Hinit" ∷ is_pkg_init v1 ∗
+      "%Hvalid" ∷ ⌜ LabelSelectorV.valid selector ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ LabelSelectorV.extra_valid selector ⌝ ∗
+      "Hselector" ∷ LabelSelectorV.deepown_l selector_l selector dq
   }}}
     @! v1.LabelSelectorAsSelector #selector_l
   {{{ converted, RET (#converted, #interface.nil);
@@ -36,8 +37,9 @@ Lemma wp_LabelSelectorAsSelector selector_l selector dq :
       is_selector converted (LabelSelectorV.matches selector)
   }}}.
 Proof.
-  intros ((Hlabels_valid & Hexpressions_valid) & Hsize).
-  wp_start as "Hselector".
+  wp_start as "H". iNamed "H".
+  destruct Hvalid as (Hlabels_valid & Hexpressions_valid).
+  rename Hextra_valid into Hsize.
   iAssert (is_pkg_init labels) as "#Hlabels_init".
   { iPkgInit. }
   iDestruct "Hselector" as (selector_c) "[Hselector_l Hselector]".
@@ -83,7 +85,7 @@ Proof.
         as "Hexpressions";
       [rewrite /expressions_c /expressions big_sepL2_nil; done|]
   end.
-  all: unfold LabelSelectorV.go_size_safe in Hsize.
+  all: unfold LabelSelectorV.extra_valid in Hsize.
   all: rewrite Hlabels_opt /LabelSelectorV.match_expressions_list
     Hexpressions_opt /= in Hsize.
   all: try (rewrite Hlabels_opt /= in Hlabels_valid).

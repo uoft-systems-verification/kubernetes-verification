@@ -225,6 +225,10 @@ Proof.
   1: done.
   destruct Hauth_old as (Hkey_old & Hvalid_old_kobj & Huid_old_in &
     Hno_speculative_parent_reference_old & Huid_unique_old).
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid old_kobj) as Hextra_valid_old.
+  { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
   wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate with "[$Hdeepown_l $Hdeepown_old_l]").
@@ -335,7 +339,11 @@ Proof.
       + rewrite objectmeta_update_objectmeta.
         rewrite Huid_eq.
         symmetry. eapply objectmeta_updated_set_resource_version_uid. done.
-      + eapply valid_update_objectmeta_set_resource_version; done.
+      + split.
+        * eapply valid_update_objectmeta_set_resource_version; done.
+        * apply KObjectV.extra_valid_update_objectmeta.
+          rewrite /KObjectV.extra_valid Hspec_eq.
+          exact Hextra_valid_old.
   }
   iMod (kview.update_status_kobj_vs old_kobj new_kobj with
     "[$Hinv_Hown_abs] [$Hown_meta_frag] [$Hown_status_frag]")
@@ -410,7 +418,7 @@ Proof.
   assert (KObjectV.same_kind kobj new_kobj) as Hsame_kind_new.
   { unfold new_kobj. destruct kobj, updated_kobj; done. }
   assert (KObjectV.valid new_kobj) as Hvalid_new_kobj.
-  { destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj). done. }
+  { destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj & _). done. }
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
     "[Hdeepown_i1' Hown_meta_frag Hown_status_frag]") as "HΦ".

@@ -58,7 +58,8 @@ Proof.
   wp_apply (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
     "[$Hrs $Hisk $Hglobal_l]").
   iIntros (related_sets_sl related_set_ptrs related_sets related_dq)
-    "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid & Hrs)".
+    "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid &
+      %Hrelated_sets_extra_valid & Hrs)".
   wp_auto.
   wp_apply wp_slice_literal. iSplitR; first done.
   iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto.
@@ -109,6 +110,12 @@ Proof.
       rewrite <-list_elem_of_In.
       apply list_elem_of_lookup_2 with (i:=sint.nat i).
       exact Hthis_rs_lookup. }
+    assert (ReplicaSetV.extra_valid this_rs) as Hthis_rs_extra_valid.
+    { rewrite Forall_forall in Hrelated_sets_extra_valid.
+      apply Hrelated_sets_extra_valid.
+      rewrite <-list_elem_of_In.
+      apply list_elem_of_lookup_2 with (i:=sint.nat i).
+      exact Hthis_rs_lookup. }
     iDestruct (big_sepL2_lookup_acc with "Hrelated_sets") as
       "[Hthis_rs Hrestore_related_sets]";
       [exact Hthis_rs_l_lookup|exact Hthis_rs_lookup|].
@@ -131,7 +138,10 @@ Proof.
     wp_auto.
     wp_apply (wp_LabelSelectorAsSelector with
       "[$Hmeta_init
-        $Hthis_rs_spec_deepown_Hdeepown_selector_some]"); first done.
+        $Hthis_rs_spec_deepown_Hdeepown_selector_some]").
+    { iSplit.
+      - iPureIntro. exact Hapi_selector_valid.
+      - iPureIntro. apply Hthis_rs_extra_valid. exact Hapi_selector_eq. }
     iIntros (selector)
       "(Hthis_rs_spec_deepown_Hdeepown_selector_some & #Hselector)".
     iCombineNamed "Hthis_rs_spec_field_*" as "Hthis_rs_spec_fields".

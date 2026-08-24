@@ -108,7 +108,8 @@ Proof.
   iFrame "Hown_meta_frag Hown_spec_frag".
   iSplit; first done.
   iIntros (existing_i existing_kobj) "Hget".
-  iDestruct "Hget" as "(%Hvalid_existing & %Hkey_existing & %Hmeta_eq &
+  iDestruct "Hget" as "(%Hvalid_existing & %Hextra_valid_existing &
+    %Hkey_existing & %Hmeta_eq &
     Hdeepown_existing_i & Hown_meta_frag & (Hown_spec_frag & %Hspec_eq) & _)".
   iMod ("Habort" with "[Hown_meta_frag Hown_spec_frag]") as "Hau".
   { iFrame. iFrame "%". }

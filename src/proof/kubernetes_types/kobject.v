@@ -59,6 +59,12 @@ Definition valid (v : t) : Prop :=
   | StatefulSetSpec sts => StatefulSetSpecV.valid sts
   end.
 
+Definition extra_valid (v : t) : Prop :=
+  match v with
+  | ReplicaSetSpec rs => ReplicaSetSpecV.extra_valid rs
+  | _ => True
+  end.
+
 Definition valid_create (v : t) : Prop :=
   match v with
   | PodSpec p => PodSpecV.valid_create p
@@ -113,6 +119,25 @@ Definition updated (input stored : t) : Prop :=
       StatefulSetSpecV.updated input stored
   | _, _ => False
   end.
+
+Lemma extra_valid_created input stored :
+  extra_valid input →
+  created input stored →
+  extra_valid stored.
+Proof.
+  destruct input, stored; simpl; try done.
+  apply ReplicaSetSpecV.extra_valid_created.
+Qed.
+
+Lemma extra_valid_updated old input stored :
+  extra_valid old →
+  valid_update old input →
+  updated input stored →
+  extra_valid stored.
+Proof.
+  destruct old, input, stored; simpl; try done.
+  apply ReplicaSetSpecV.extra_valid_updated.
+Qed.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
@@ -280,6 +305,17 @@ Proof. destruct o; done. Qed.
 Lemma status_update_objectmeta :
   ∀ o m, status (update_objectmeta o m) = status o.
 Proof. destruct o; done. Qed.
+
+(* Controller-implementation requirements that are not guaranteed by API
+   admission. The authoritative Kubernetes model deliberately ranges only over
+   stored objects satisfying this predicate as well as [valid]. *)
+Definition extra_valid o : Prop :=
+  ObjectSpecV.extra_valid (spec o).
+
+Lemma extra_valid_update_objectmeta o m :
+  extra_valid o →
+  extra_valid (update_objectmeta o m).
+Proof. rewrite /extra_valid spec_update_objectmeta //. Qed.
 
 (* [valid] is the complete invariant guaranteed for an object stored by the
    API server. It combines Kubernetes validity with the normalization facts

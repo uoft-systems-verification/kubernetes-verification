@@ -12,6 +12,7 @@ Lemma wp_State__create_named_au γ l kind namespace key i kobj parent_key parent
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+    "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
     "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
     "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
     "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
@@ -228,6 +229,14 @@ Proof.
       Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec
       Hvalid_status.
   }
+  assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
+  { subst kobj2.
+    apply KObjectV.extra_valid_update_objectmeta.
+    rewrite /KObjectV.extra_valid.
+    eapply ObjectSpecV.extra_valid_created.
+    - exact Hextra_valid.
+    - rewrite KObjectV.spec_update_objectmeta in Hcreated_spec.
+      exact Hcreated_spec. }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
     as "%Habs_state_valid".
   assert (generated_uid ∉ used_uid) as Hgenerated_uid_fresh.
@@ -248,6 +257,7 @@ Proof.
       rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - symmetry. exact Hkobj2_uid.
     - exact Hvalid2.
+    - exact Hextra_valid2.
   }
   assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.DeletionTimestamp') =
       None) as Hliving.
@@ -447,6 +457,7 @@ Lemma wp_State__create_named_available γ l kind namespace key i kobj parent_key
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
@@ -504,6 +515,7 @@ Lemma wp_State__create_named γ l kind namespace key i kobj parent_key parent_ui
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
