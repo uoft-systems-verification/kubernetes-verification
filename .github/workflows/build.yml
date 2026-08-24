@@ -30,7 +30,7 @@ jobs:
           opam pin add --no-action -k path .
           opam install --deps-only .
       - name: Rocq build
-        run: make -j4
+        run: make -j2
       - name: opam install
         run: opam install --assume-built .
       - name: opam uninstall
