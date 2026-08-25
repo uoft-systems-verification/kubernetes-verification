@@ -1,0 +1,3 @@
+translate = ["NameGenerator", "simpleNameGenerator", "SimpleNameGenerator"]
+
+imports = ["!*"]

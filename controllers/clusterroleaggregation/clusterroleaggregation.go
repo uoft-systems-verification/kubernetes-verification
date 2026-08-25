@@ -6,21 +6,20 @@ import (
 	"kubernetes_model/apimodel"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-	// A simplified clusterroleaggregation controller. The following features are not included:
-	// * informer event handling and workqueue scheduling
-	// * cache-key parsing and controller worker lifecycle
-	// * real API-server apply/patch machinery
-	//
-	// A sync operates directly on apimodel.ModelState. The core aggregation semantics are
-	// preserved: selectors are processed in order, matching ClusterRoles are sorted by name
-	// within each selector, the aggregating ClusterRole itself is excluded, duplicate
-	// PolicyRules are removed, and the ClusterRole is updated only when its rules differ
-	// from the desired rules.
+// A simplified clusterroleaggregation controller. The following features are not included:
+// * informer event handling and workqueue scheduling
+// * cache-key parsing and controller worker lifecycle
+// * real API-server apply/patch machinery
+//
+// A sync operates directly on apimodel.ModelState. The core aggregation semantics are
+// preserved: selectors are processed in order, matching ClusterRoles are sorted by name
+// within each selector, the aggregating ClusterRole itself is excluded, duplicate
+// PolicyRules are removed, and the ClusterRole is updated only when its rules differ
+// from the desired rules.
 
 func syncClusterRole(name string) error {
 	sharedClusterRole, err := apimodel.ModelState.ClusterRoleGet(name)
@@ -61,7 +60,7 @@ func syncClusterRole(name string) error {
 		}
 	}
 
-	if equality.Semantic.DeepEqual(newPolicyRules, sharedClusterRole.Rules) {
+	if policyRulesEqual(newPolicyRules, sharedClusterRole.Rules) {
 		return nil
 	}
 
@@ -88,9 +87,45 @@ func (r byName) Swap(i, j int) {
 
 func ruleExists(rules []rbacv1.PolicyRule, rule rbacv1.PolicyRule) bool {
 	for i := range rules {
-		if equality.Semantic.DeepEqual(rules[i], rule) {
+		if policyRuleEqual(rules[i], rule) {
 			return true
 		}
 	}
 	return false
+}
+
+func stringSliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func policyRuleEqual(a, b rbacv1.PolicyRule) bool {
+	return stringSliceEqual(a.Verbs, b.Verbs) &&
+		stringSliceEqual(a.APIGroups, b.APIGroups) &&
+		stringSliceEqual(a.Resources, b.Resources) &&
+		stringSliceEqual(a.ResourceNames, b.ResourceNames) &&
+		stringSliceEqual(a.NonResourceURLs, b.NonResourceURLs)
+}
+
+func policyRulesEqual(a, b []rbacv1.PolicyRule) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if !policyRuleEqual(a[i], b[i]) {
+			return false
+		}
+	}
+
+	return true
 }

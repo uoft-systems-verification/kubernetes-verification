@@ -2,7 +2,6 @@
 Require Export New.code.sort.
 Require Export New.code.kubernetes_model.apimodel.
 Require Export New.code.k8s_io.api.rbac.v1.
-Require Export New.code.k8s_io.apimachinery.pkg.api.equality.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Module rbac_v1 := code.k8s_io.api.rbac.v1.v1.
@@ -23,7 +22,13 @@ Definition syncClusterRole {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_s
 
 Definition ruleExists {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/clusterroleaggregation.ruleExists"%go.
 
-(* go: clusterroleaggregation.go:25:6 *)
+Definition stringSliceEqual {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/clusterroleaggregation.stringSliceEqual"%go.
+
+Definition policyRuleEqual {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/clusterroleaggregation.policyRuleEqual"%go.
+
+Definition policyRulesEqual {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/clusterroleaggregation.policyRulesEqual"%go.
+
+(* go: clusterroleaggregation.go:24:6 *)
 Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -102,9 +107,9 @@ Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
             (FuncResolve go.append [go.SliceType rbac_v1.PolicyRule] #()) "$a0" "$a1") in
             do:  ("newPolicyRules" <-[go.SliceType rbac_v1.PolicyRule] "$r0")
           else do:  #())))))));;;
-    (if: let: "$a0" := (Convert (go.SliceType rbac_v1.PolicyRule) (go.InterfaceType []) (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules")) in
-    let: "$a1" := (Convert (go.SliceType rbac_v1.PolicyRule) (go.InterfaceType []) (![go.SliceType rbac_v1.PolicyRule] (StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole")))) in
-    (MethodResolve (go.PointerType conversion.Equalities) "DeepEqual"%go (GlobalVarAddr equality.Semantic #())) "$a0" "$a1"
+    (if: let: "$a0" := (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules") in
+    let: "$a1" := (![go.SliceType rbac_v1.PolicyRule] (StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole"))) in
+    (FuncResolve policyRulesEqual [] #()) "$a0" "$a1"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     let: "updated" := (GoAlloc (go.PointerType rbac_v1.ClusterRole) (GoZeroVal (go.PointerType rbac_v1.ClusterRole) #())) in
@@ -120,14 +125,14 @@ Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* go: clusterroleaggregation.go:77:17 *)
+(* go: clusterroleaggregation.go:76:17 *)
 Definition byName__Lenⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" <>,
     exception_do (let: "r" := (GoAlloc byName "r") in
     return: (let: "$a0" := (![byName] "r") in
      (FuncResolve go.len [byName] #()) "$a0")).
 
-(* go: clusterroleaggregation.go:81:17 *)
+(* go: clusterroleaggregation.go:80:17 *)
 Definition byName__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" "i" "j",
     exception_do (let: "r" := (GoAlloc byName "r") in
@@ -135,7 +140,7 @@ Definition byName__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     let: "i" := (GoAlloc go.int "i") in
     return: ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i")))))) <⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j")))))))).
 
-(* go: clusterroleaggregation.go:85:17 *)
+(* go: clusterroleaggregation.go:84:17 *)
 Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" "i" "j",
     exception_do (let: "r" := (GoAlloc byName "r") in
@@ -147,7 +152,7 @@ Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     do:  ((IndexRef byName (![byName] "r", ![go.int] "j")) <-[go.PointerType rbac_v1.ClusterRole] "$r1");;;
     return: #()).
 
-(* go: clusterroleaggregation.go:89:6 *)
+(* go: clusterroleaggregation.go:88:6 *)
 Definition ruleExistsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rules" "rule",
     exception_do (let: "rule" := (GoAlloc rbac_v1.PolicyRule "rule") in
@@ -156,16 +161,73 @@ Definition ruleExistsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
     (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
     slice.for_range rbac_v1.PolicyRule "$range" (λ: "$key" "$value",
       do:  ("i" <-[go.int] "$key");;;
-      (if: let: "$a0" := (Convert rbac_v1.PolicyRule (go.InterfaceType []) (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] "rules", ![go.int] "i")))) in
-      let: "$a1" := (Convert rbac_v1.PolicyRule (go.InterfaceType []) (![rbac_v1.PolicyRule] "rule")) in
-      (MethodResolve (go.PointerType conversion.Equalities) "DeepEqual"%go (GlobalVarAddr equality.Semantic #())) "$a0" "$a1"
+      (if: let: "$a0" := (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] "rules", ![go.int] "i"))) in
+      let: "$a1" := (![rbac_v1.PolicyRule] "rule") in
+      (FuncResolve policyRuleEqual [] #()) "$a0" "$a1"
       then return: (#true)
       else do:  #())));;;
     return: (#false)).
 
+(* go: clusterroleaggregation.go:97:6 *)
+Definition stringSliceEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "a" "b",
+    exception_do (let: "b" := (GoAlloc (go.SliceType go.string) "b") in
+    let: "a" := (GoAlloc (go.SliceType go.string) "a") in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "a") in
+    (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ (let: "$a0" := (![go.SliceType go.string] "b") in
+    (FuncResolve go.len [go.SliceType go.string] #()) "$a0"))
+    then return: (#false)
+    else do:  #());;;
+    let: "$range" := (![go.SliceType go.string] "a") in
+    (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    slice.for_range go.string "$range" (λ: "$key" "$value",
+      do:  ("i" <-[go.int] "$key");;;
+      (if: Convert go.untyped_bool go.bool ((![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "a", ![go.int] "i"))) ≠⟨go.string⟩ (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "b", ![go.int] "i"))))
+      then return: (#false)
+      else do:  #())));;;
+    return: (#true)).
+
+(* go: clusterroleaggregation.go:111:6 *)
+Definition policyRuleEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "a" "b",
+    exception_do (let: "b" := (GoAlloc rbac_v1.PolicyRule "b") in
+    let: "a" := (GoAlloc rbac_v1.PolicyRule "a") in
+    return: (((((let: "$a0" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "Verbs"%go "a")) in
+     let: "$a1" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "Verbs"%go "b")) in
+     (FuncResolve stringSliceEqual [] #()) "$a0" "$a1") && (let: "$a0" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "APIGroups"%go "a")) in
+     let: "$a1" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "APIGroups"%go "b")) in
+     (FuncResolve stringSliceEqual [] #()) "$a0" "$a1")) && (let: "$a0" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "Resources"%go "a")) in
+     let: "$a1" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "Resources"%go "b")) in
+     (FuncResolve stringSliceEqual [] #()) "$a0" "$a1")) && (let: "$a0" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "ResourceNames"%go "a")) in
+     let: "$a1" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "ResourceNames"%go "b")) in
+     (FuncResolve stringSliceEqual [] #()) "$a0" "$a1")) && (let: "$a0" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "NonResourceURLs"%go "a")) in
+     let: "$a1" := (![go.SliceType go.string] (StructFieldRef rbac_v1.PolicyRule "NonResourceURLs"%go "b")) in
+     (FuncResolve stringSliceEqual [] #()) "$a0" "$a1"))).
+
+(* go: clusterroleaggregation.go:119:6 *)
+Definition policyRulesEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "a" "b",
+    exception_do (let: "b" := (GoAlloc (go.SliceType rbac_v1.PolicyRule) "b") in
+    let: "a" := (GoAlloc (go.SliceType rbac_v1.PolicyRule) "a") in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType rbac_v1.PolicyRule] "a") in
+    (FuncResolve go.len [go.SliceType rbac_v1.PolicyRule] #()) "$a0") ≠⟨go.int⟩ (let: "$a0" := (![go.SliceType rbac_v1.PolicyRule] "b") in
+    (FuncResolve go.len [go.SliceType rbac_v1.PolicyRule] #()) "$a0"))
+    then return: (#false)
+    else do:  #());;;
+    let: "$range" := (![go.SliceType rbac_v1.PolicyRule] "a") in
+    (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    slice.for_range rbac_v1.PolicyRule "$range" (λ: "$key" "$value",
+      do:  ("i" <-[go.int] "$key");;;
+      (if: (⟨go.bool⟩! (let: "$a0" := (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] "a", ![go.int] "i"))) in
+      let: "$a1" := (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] "b", ![go.int] "i"))) in
+      (FuncResolve policyRuleEqual [] #()) "$a0" "$a1"))
+      then return: (#false)
+      else do:  #())));;;
+    return: (#true)).
+
 #[global] Instance info' : PkgInfo pkg_id.clusterroleaggregation :=
 {|
-  pkg_imported_pkgs := [code.sort.pkg_id.sort; code.kubernetes_model.apimodel.pkg_id.apimodel; code.k8s_io.api.rbac.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.equality.pkg_id.equality; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1]
+  pkg_imported_pkgs := [code.sort.pkg_id.sort; code.kubernetes_model.apimodel.pkg_id.apimodel; code.k8s_io.api.rbac.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -173,7 +235,6 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
     package.init pkg_id.clusterroleaggregation (λ: <>,
       exception_do (do:  (meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
-      do:  (equality.initialize' #());;;
       do:  (rbac_v1.initialize' #());;;
       do:  (apimodel.initialize' #());;;
       do:  (sort.initialize' #()))
@@ -205,10 +266,12 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] byName_instance :: byName_Assumptions;
   #[global] syncClusterRole_unfold :: FuncUnfold syncClusterRole [] (syncClusterRoleⁱᵐᵖˡ);
   #[global] ruleExists_unfold :: FuncUnfold ruleExists [] (ruleExistsⁱᵐᵖˡ);
+  #[global] stringSliceEqual_unfold :: FuncUnfold stringSliceEqual [] (stringSliceEqualⁱᵐᵖˡ);
+  #[global] policyRuleEqual_unfold :: FuncUnfold policyRuleEqual [] (policyRuleEqualⁱᵐᵖˡ);
+  #[global] policyRulesEqual_unfold :: FuncUnfold policyRulesEqual [] (policyRulesEqualⁱᵐᵖˡ);
   #[global] import_sort_Assumption :: sort.Assumptions;
   #[global] import_apimodel_Assumption :: apimodel.Assumptions;
   #[global] import_rbac_v1_Assumption :: rbac_v1.Assumptions;
-  #[global] import_equality_Assumption :: equality.Assumptions;
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
 }.
