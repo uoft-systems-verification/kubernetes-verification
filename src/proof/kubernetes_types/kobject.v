@@ -103,6 +103,9 @@ Definition created (input stored : t) : Prop :=
   | _, _ => False
   end.
 
+(* TODO: Revisit the update model to distinguish the submitted object, the
+   intermediate objects produced by normalization/defaulting, the objects
+   checked by update validation and admission, and the final stored object. *)
 (* The API server's update-defaulting relation from a create-valid submitted
    spec to the normalized stored spec. Keeping this dispatch resource-specific
    prevents facts about a fully modeled resource, such as exact preservation
