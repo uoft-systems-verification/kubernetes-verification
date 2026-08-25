@@ -86,13 +86,10 @@ Definition valid (selector : t) : Prop :=
   Forall LabelSelectorRequirementV.valid
     (match_expressions_list selector).
 
-Definition go_size_safe (selector : t) : Prop :=
+Definition extra_valid (selector : t) : Prop :=
   Z.of_nat
     (size (default ∅ selector.(MatchLabels')) +
       length (match_expressions_list selector)) ≤ 2 ^ 63 - 1.
-
-Definition executable (selector : t) : Prop :=
-  valid selector ∧ go_size_safe selector.
 
 Definition empty (selector : t) : Prop :=
   (selector.(MatchLabels') = None ∨ selector.(MatchLabels') = Some ∅) ∧

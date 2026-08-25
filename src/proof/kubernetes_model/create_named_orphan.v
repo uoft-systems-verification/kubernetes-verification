@@ -12,6 +12,7 @@ Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj :
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+    "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
     "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
     "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
     "%Hkey_eq" ∷ ⌜ key = {|
@@ -181,6 +182,14 @@ Proof.
     all: solve_update_objectmeta_valid
       Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta
       Hvalid_spec Hvalid_status. }
+  assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
+  { subst kobj2.
+    apply KObjectV.extra_valid_update_objectmeta.
+    rewrite /KObjectV.extra_valid.
+    eapply ObjectSpecV.extra_valid_created.
+    - exact Hextra_valid.
+    - rewrite KObjectV.spec_update_objectmeta in Hcreated_spec.
+      exact Hcreated_spec. }
   assert (Hparent_none2 : obj_parent_ref kobj2 = None).
   { unfold obj_parent_ref in Hparent_none |- *.
     subst kobj2.
@@ -219,7 +228,8 @@ Proof.
       destruct kobj; destruct kobj1; try done;
         rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - symmetry. exact Hkobj2_uid.
-    - exact Hvalid2. }
+    - exact Hvalid2.
+    - exact Hextra_valid2. }
   { subst kobj2.
     destruct kobj; destruct kobj1; try done;
       rewrite Hm_eq; done. }
@@ -345,6 +355,7 @@ Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_named_create kind namespace kobj ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = {|

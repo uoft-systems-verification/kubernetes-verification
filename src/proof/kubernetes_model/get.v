@@ -23,6 +23,7 @@ Lemma wp_State__get_some_au γ l key :
       end ∗
       "Hclose" ∷ (∀ i kobj,
         ⌜ KObjectV.valid kobj ⌝ ∗
+        ⌜ KObjectV.extra_valid kobj ⌝ ∗
         ⌜ key = KObjectV.key kobj ⌝ ∗
         ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
         KObjectV.deepown_i i kobj 1 ∗
@@ -80,6 +81,10 @@ Proof.
   iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid kobj) as Hextra_valid.
+  { exact (Habs_extra_valid key kobj Hlookup_abs). }
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag")
     as "(%Hname_eq & %Hns_eq & %Huid_eq & %Hmeta_wf & %Hmeta_living)".
   iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag")
@@ -126,6 +131,7 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
     l @! (go.PointerType apimodel.State) @! "get" #key
   {{{ i kobj, RET (#(interface.ok i), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = KObjectV.key kobj ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -257,6 +263,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
     l @! (go.PointerType apimodel.State) @! "ReplicaSetMutGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
@@ -306,6 +313,7 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
     l @! (go.PointerType apimodel.State) @! "ReplicaSetGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗

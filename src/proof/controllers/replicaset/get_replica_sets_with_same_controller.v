@@ -46,6 +46,7 @@ Lemma wp_getReplicaSetsWithSameController γ model_l rs_l rs dq :
       sl ↦* ptrs ∗
       ([∗ list] ptr;replica_set ∈ ptrs;replica_sets, ReplicaSetV.deepown_l ptr replica_set dq') ∗
       ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
+      ⌜ Forall ReplicaSetV.extra_valid replica_sets ⌝ ∗
       ReplicaSetV.deepown_l rs_l rs dq
   }}}.
 Proof.
@@ -101,7 +102,8 @@ Proof.
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') selector
       everything_matches with "[$Hapimodel_init $Hselector $Hisk]").
     iIntros (replica_sets_sl replica_set_ptrs replica_sets)
-      "(Hreplica_sets_sl & Hreplica_sets & %Hreplica_sets_valid)".
+      "(Hreplica_sets_sl & Hreplica_sets & %Hreplica_sets_valid &
+        %Hreplica_sets_extra_valid)".
     wp_auto.
     iCombineNamed "Hrs_meta_field_*" as "Hrs_meta_fields".
     iAssert (typed_pointsto_def (ReplicaSetV.objectmeta_ptr rs_l)
@@ -149,6 +151,8 @@ Proof.
           ReplicaSetV.deepown_l ptr replica_set 1) ∗
       "Hrelated_cap" ∷ own_slice_cap loc result_sl (DfracOwn 1) ∗
       "%Hresult_valid" ∷ ⌜ Forall ReplicaSetV.valid result_replica_sets ⌝ ∗
+      "%Hresult_extra_valid" ∷
+        ⌜ Forall ReplicaSetV.extra_valid result_replica_sets ⌝ ∗
       "%Hi_bound" ∷
         ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len replica_sets_sl) ⌝)%I.
     iAssert I with
@@ -156,7 +160,8 @@ Proof.
         Hreplica_sets]" as "Hloop".
     { iExists (W64 0), null, related_sl, [], [].
       iFrame. rewrite !big_sepL2_nil. iFrame.
-      iPureIntro. split; [done|]. split; [constructor|word]. }
+      iPureIntro. split; [done|].
+      split; [constructor|]. split; [constructor|word]. }
     wp_for "Hloop". wp_if_destruct.
     + list_elem replica_set_ptrs (sint.Z i) as this_ptr.
       destruct (decide
@@ -172,6 +177,12 @@ Proof.
       assert (ReplicaSetV.valid this_rs) as Hthis_valid.
       { rewrite Forall_forall in Hreplica_sets_valid.
         apply Hreplica_sets_valid.
+        rewrite <-list_elem_of_In.
+        apply list_elem_of_lookup_2 with (i:=sint.nat i).
+        exact Hthis_rs_lookup. }
+      assert (ReplicaSetV.extra_valid this_rs) as Hthis_extra_valid.
+      { rewrite Forall_forall in Hreplica_sets_extra_valid.
+        apply Hreplica_sets_extra_valid.
         rewrite <-list_elem_of_In.
         apply list_elem_of_lookup_2 with (i:=sint.nat i).
         exact Hthis_rs_lookup. }
@@ -196,7 +207,7 @@ Proof.
         assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as
           -> by word.
         rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro.
-        split; [done|word].
+        split; [done|]. split; [done|word].
       * iDestruct "Hrelated_controller_ref" as (related_controller_ref)
           "(%Hrelated_controller_ref & Hrelated_controller_ref)".
         destruct Hrelated_controller_ref as
@@ -244,7 +255,9 @@ Proof.
            rewrite !drop_drop Nat.add_1_r.
            iFrame. iPureIntro. split.
            ++ rewrite Forall_app. split; [done|]. constructor; done.
-           ++ word.
+           ++ split.
+              ** rewrite Forall_app. split; [done|]. constructor; done.
+              ** word.
         -- iApply wp_for_post_do. wp_auto.
            iFrame "Hreplica_sets_sl HΦ Hrs Hcontroller_var Hcontroller_uid
              Hcontroller_rest".
@@ -253,7 +266,7 @@ Proof.
            assert (sint.nat (word.add i (W64 1)) = S (sint.nat i))
              as -> by word.
            rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro.
-           split; [done|word].
+           split; [done|]. split; [done|word].
     + clear I.
       iApply ("HΦ" $! result_sl result_ptrs result_replica_sets
         (DfracOwn 1)).

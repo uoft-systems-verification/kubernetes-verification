@@ -21,7 +21,8 @@ Lemma wp_State__get_observed γ l key uid :
       (⌜ ret = interface.nil ∧ not_found_error err ⌝ ∨
       ∃ i kobj,
         ⌜ ret = interface.ok i ∧ err = interface.nil ∧
-          KObjectV.valid kobj ∧ key = KObjectV.key kobj ∧
+          KObjectV.valid kobj ∧ KObjectV.extra_valid kobj ∧
+          key = KObjectV.key kobj ∧
           ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid →
             (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') ≠ None) ⌝ ∧
         KObjectV.deepown_i i kobj 1)%I
@@ -52,6 +53,10 @@ Proof.
     iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hvalid_obj".
     specialize (Hvalid_obj Hlookup_abs).
     destruct Hvalid_obj as [Hkey [Hvalid _]].
+    iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+      as "%Habs_extra_valid".
+    assert (KObjectV.extra_valid kobj) as Hextra_valid.
+    { exact (Habs_extra_valid key kobj Hlookup_abs). }
     iPoseProof (deletion_observation.auth_frag_valid with
       "Hinv_Hown_deletion_observations Hown_deletion_observed_frag") as "%Hobserved".
     destruct Hobserved as [_ Hterminating].

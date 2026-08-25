@@ -104,6 +104,7 @@ Lemma wp_State__get_deleting_reserved_au γ l key uid :
       "Hclose" ∷
         ((∀ i kobj,
           ⌜ KObjectV.valid kobj ⌝ ∗
+          ⌜ KObjectV.extra_valid kobj ⌝ ∗
           ⌜ key = KObjectV.key kobj ⌝ ∗
           ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid ⌝ ∗
           ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
@@ -155,6 +156,10 @@ Proof.
       "Hinv_Hown_abs") as "%Hvalid_obj".
     specialize (Hvalid_obj Hlookup_abs).
     destruct Hvalid_obj as [Hkey [Hvalid _]].
+    iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+      as "%Habs_extra_valid".
+    assert (KObjectV.extra_valid kobj) as Hextra_valid.
+    { exact (Habs_extra_valid key kobj Hlookup_abs). }
     iDestruct "Hclose" as "[Hclose _]".
     iMod ("Hclose" $! i' kobj with
       "[Hdeepown_i' Hown_reserved_frag]") as "HΦ".
@@ -214,6 +219,7 @@ Lemma wp_State__get_deleting_reserved γ l key uid :
         ⌜ ret = interface.ok i ⌝ ∗
         ⌜ err = interface.nil ⌝ ∗
         ⌜ KObjectV.valid kobj ⌝ ∗
+        ⌜ KObjectV.extra_valid kobj ⌝ ∗
         ⌜ key = KObjectV.key kobj ⌝ ∗
         ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid ⌝ ∗
         ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗

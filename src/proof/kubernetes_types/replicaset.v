@@ -27,14 +27,18 @@ Definition valid_create (rs : t) : Prop :=
   0 ≤ sint.Z rs.(MinReadySeconds') ∧
   (∃ selector,
     rs.(Selector') = Some selector ∧
-    (* TODO: Replace this with [LabelSelectorV.valid]. Introduce a separate
-       predicate for conditions, such as [go_size_safe], that the Kubernetes
-       API server does not enforce but verified controllers still require. *)
-    LabelSelectorV.executable selector ∧
+    LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
+
+(* Conditions required by verified controller implementations but not enforced
+   by Kubernetes API admission. Keep this separate from [valid_create]. *)
+Definition extra_valid (rs : t) : Prop :=
+  ∀ selector,
+    rs.(Selector') = Some selector →
+    LabelSelectorV.extra_valid selector.
 
 (* A stored ReplicaSet spec satisfies admission validation, and schema
    defaulting has additionally made [Replicas'] non-nil.
@@ -71,6 +75,29 @@ Definition created (input stored : t) : Prop :=
    a create-valid submitted spec need not already satisfy [valid]. *)
 Definition updated (input stored : t) : Prop :=
   created input stored.
+
+Lemma extra_valid_created input stored :
+  extra_valid input →
+  created input stored →
+  extra_valid stored.
+Proof.
+  intros Hextra (_ & _ & Hselector & _) selector Hselector_stored.
+  apply Hextra.
+  rewrite -Hselector. exact Hselector_stored.
+Qed.
+
+Lemma extra_valid_updated old input stored :
+  extra_valid old →
+  valid_update old input →
+  updated input stored →
+  extra_valid stored.
+Proof.
+  intros Hextra Hvalid_update Hupdated.
+  apply (extra_valid_created input stored); [|exact Hupdated].
+  intros selector Hselector.
+  apply Hextra.
+  rewrite -Hvalid_update. exact Hselector.
+Qed.
 
 Lemma valid_replicas :
   ∀ v, valid v →
@@ -168,6 +195,9 @@ Definition valid (rs: t) : Prop :=
   ObjectMetaV.valid kind rs.(ObjectMeta') ∧
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
+
+Definition extra_valid (rs : t) : Prop :=
+  ReplicaSetSpecV.extra_valid rs.(Spec').
 
 Definition valid_nameless_create ns (rs : t) : Prop :=
   valid_create_typemeta kind rs.(TypeMeta') ∧

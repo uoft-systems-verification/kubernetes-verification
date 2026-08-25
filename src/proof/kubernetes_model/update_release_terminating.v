@@ -174,6 +174,10 @@ Proof.
   iPoseProof (kview.own_auth_valid2 key old_kobj with "Hinv_Hown_abs") as "%Hauth_old". 1: done.
   destruct Hauth_old as
     (Hkey_old & Hvalid_old_kobj & Huid_old_in & Hno_speculative_parent_reference_old & Huid_unique_old).
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid old_kobj) as Hextra_valid_old.
+  { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new by (rewrite <-Hkey_old; exact Hkey_new).
   iPoseProof (deletion_observation.auth_frag_valid with
     "Hinv_Hown_deletion_observations Hown_deletion_observed_frag") as "%Hobserved".
@@ -207,7 +211,8 @@ Proof.
   subst err.
   iDestruct "Hvalidation" as (updated_kobj)
     "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hvalid_updated_kobj & %Hsame_key &
-      %Htypemeta_eq & %Hupdated_meta & %Hupdated_spec & %Hspec_eq_if_unchanged & %Hstatus_eq)".
+      %Htypemeta_eq & %Hupdated_meta & %Hvalid_spec_update &
+      %Hupdated_spec & %Hspec_eq_if_unchanged & %Hstatus_eq)".
   wp_auto.
   wp_apply (wp_shouldDeleteDuringUpdate_general with "[$Hdeepown_l $Hdeepown_old_l]").
   { iFrame "#". iPureIntro. split_and!; done. }
@@ -286,7 +291,16 @@ Proof.
     - split.
       + unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
         rewrite <-e. symmetry. eapply objectmeta_updated_set_resource_version_uid. done.
-      + unfold new_kobj, new_kmeta. eapply valid_update_objectmeta_set_resource_version; done. }
+      + split.
+        * unfold new_kobj, new_kmeta.
+          eapply valid_update_objectmeta_set_resource_version; done.
+        * unfold new_kobj.
+          apply KObjectV.extra_valid_update_objectmeta.
+          rewrite /KObjectV.extra_valid.
+          eapply ObjectSpecV.extra_valid_updated.
+          -- exact Hextra_valid_old.
+          -- exact Hvalid_spec_update.
+          -- exact Hupdated_spec. }
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') ≠ None) as Hnew_terminating.
   { unfold new_kobj, new_kmeta. rewrite objectmeta_update_objectmeta.
     rewrite (objectmeta_updated_set_resource_version_deletion_timestamp _ _ _ Hupdated_meta). exact Hterminating. }

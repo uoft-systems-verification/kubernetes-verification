@@ -445,7 +445,8 @@ Proof.
   iSplit; first done.
   iSplit; first done.
   iIntros (i kobj) "Hget".
-  iDestruct "Hget" as "(%Hvalid_kobj & %Hkey_eq & %Hmeta_eq & Hdeepown_i & Hown_meta_frag & _ & _)".
+  iDestruct "Hget" as "(%Hvalid_kobj & %Hextra_valid_kobj & %Hkey_eq &
+    %Hmeta_eq & Hdeepown_i & Hown_meta_frag & _ & _)".
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid".
   iMod ("Habort" with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]") as "Hau".
   { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }

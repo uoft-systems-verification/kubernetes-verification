@@ -20,6 +20,7 @@ Lemma wp_State__objList_weak γ l (kind namespace : go_string) :
       sl ↦* (interface.ok <$> interfaces) ∗
       ([∗ list] i;obj ∈ interfaces;objs, KObjectV.deepown_i i obj 1) ∗
       ⌜ Forall KObjectV.valid objs ⌝ ∗
+      ⌜ Forall KObjectV.extra_valid objs ⌝ ∗
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) objs ⌝
   }}}.
 Proof.
@@ -40,7 +41,8 @@ Proof.
     "[$Hpkg $Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
       $Hinv_Hphys_abs_rep]").
   iIntros (sl interfaces objs)
-    "(Hsl & Hobjs & %Hperm & %Hvalid & %Hnodup & Hinv_Hstate_m_addr &
+    "(Hsl & Hobjs & %Hperm & %Hvalid & %Hextra_valid & %Hnodup &
+      Hinv_Hstate_m_addr &
       Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)".
   iPoseProof (kview.own_auth_valid_forall with "Hinv_Hown_abs")
     as "%Habs_valid".
@@ -129,6 +131,7 @@ Qed.
 Lemma wp_filterByLabelSelector_weak (kind : go_string) sl interfaces objs
     (selector : labels.Selector.t) P `{!∀ ls, Decision (P ls)} :
   Forall KObjectV.valid objs →
+  Forall KObjectV.extra_valid objs →
   Forall (λ obj, KObjectV.kind obj = kind) objs →
   {{{ is_pkg_init apimodel ∗
       "#Hselector" ∷ is_selector selector P ∗
@@ -141,10 +144,11 @@ Lemma wp_filterByLabelSelector_weak (kind : go_string) sl interfaces objs
       sl' ↦* (interface.ok <$> interfaces') ∗
       ([∗ list] i;obj ∈ interfaces';objs', KObjectV.deepown_i i obj 1) ∗
       ⌜ Forall KObjectV.valid objs' ⌝ ∗
+      ⌜ Forall KObjectV.extra_valid objs' ⌝ ∗
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) objs' ⌝
   }}}.
 Proof.
-  intros Hvalid Hkind.
+  intros Hvalid Hextra_valid Hkind.
   wp_start as "H". iNamed "H".
   iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta)
     as "#Hmeta_init".
@@ -172,6 +176,8 @@ Proof.
       filtered_interfaces;filtered_objs, KObjectV.deepown_i interface_i obj 1) ∗
     "%Hi_bounds" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝ ∗
     "%Hfiltered_valid" ∷ ⌜ Forall KObjectV.valid filtered_objs ⌝ ∗
+    "%Hfiltered_extra_valid" ∷
+      ⌜ Forall KObjectV.extra_valid filtered_objs ⌝ ∗
     "%Hfiltered_kind" ∷
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) filtered_objs ⌝)%I.
   iAssert I with
@@ -253,6 +259,10 @@ Proof.
         rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
         exact Hthis_obj_lookup.
       * apply Forall_app. split; [done|constructor; [|constructor]].
+        rewrite Forall_forall in Hextra_valid. apply Hextra_valid.
+        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
+        exact Hthis_obj_lookup.
+      * apply Forall_app. split; [done|constructor; [|constructor]].
         rewrite Forall_forall in Hkind. apply Hkind.
         rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
         exact Hthis_obj_lookup.
@@ -282,6 +292,7 @@ Lemma wp_State__objListBySelector_weak γ l (kind namespace : go_string)
       sl ↦* (interface.ok <$> interfaces) ∗
       ([∗ list] i;obj ∈ interfaces;objs, KObjectV.deepown_i i obj 1) ∗
       ⌜ Forall KObjectV.valid objs ⌝ ∗
+      ⌜ Forall KObjectV.extra_valid objs ⌝ ∗
       ⌜ Forall (λ obj, KObjectV.kind obj = kind) objs ⌝
   }}}.
 Proof.
@@ -290,11 +301,12 @@ Proof.
   wp_auto.
   wp_apply (wp_State__objList_weak γ l kind namespace with
     "[$Hpkg $Hisk]").
-  iIntros (sl interfaces objs) "(Hsl & Hobjs & %Hvalid & %Hkind)".
+  iIntros (sl interfaces objs)
+    "(Hsl & Hobjs & %Hvalid & %Hextra_valid & %Hkind)".
   wp_auto.
   wp_bind (@! apimodel.filterByLabelSelector #sl #selector)%E.
   iApply (wp_filterByLabelSelector_weak kind sl interfaces objs selector P
-    Hvalid Hkind with "[$Hpkg $Hselector $Hsl $Hobjs]").
+    Hvalid Hextra_valid Hkind with "[$Hpkg $Hselector $Hsl $Hobjs]").
   iNext. iIntros (sl' interfaces' objs') "Hpost". wp_auto.
   iApply "HΦ". iExact "Hpost".
 Qed.
@@ -341,7 +353,8 @@ Local Lemma wp_State__ReplicaSetMutList_weak γ l (namespace : go_string)
   {{{ sl ptrs replica_sets, RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;rs ∈ ptrs;replica_sets, ReplicaSetV.deepown_l ptr rs 1) ∗
-      ⌜ Forall ReplicaSetV.valid replica_sets ⌝
+      ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
+      ⌜ Forall ReplicaSetV.extra_valid replica_sets ⌝
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
@@ -350,9 +363,11 @@ Proof.
   wp_apply (wp_State__objListBySelector_weak γ l ReplicaSetV.kind
     namespace selector P with "[$Hpkg $Hselector $Hisk]").
   iIntros (objs_sl interfaces objs)
-    "(Hobjs_sl & Hobjs & %Hvalid & %Hkind)".
+    "(Hobjs_sl & Hobjs & %Hvalid & %Hextra_valid & %Hkind)".
   destruct (kobject_list_to_replica_sets objs Hkind) as [replica_sets ->].
   rewrite Forall_fmap in Hvalid.
+  rewrite Forall_fmap in Hextra_valid.
+  change (Forall ReplicaSetV.extra_valid replica_sets) in Hextra_valid.
   iEval (rewrite big_sepL2_fmap_r) in "Hobjs".
   iDestruct (replica_set_interfaces_to_ptrs with "Hobjs") as
     (ptrs) "[%Hinterfaces Hreplica_sets]".
@@ -440,7 +455,8 @@ Lemma wp_State__ReplicaSetList_weak γ l (namespace : go_string)
   {{{ sl ptrs replica_sets, RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;rs ∈ ptrs;replica_sets, ReplicaSetV.deepown_l ptr rs 1) ∗
-      ⌜ Forall ReplicaSetV.valid replica_sets ⌝
+      ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
+      ⌜ Forall ReplicaSetV.extra_valid replica_sets ⌝
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
@@ -504,7 +520,7 @@ Proof.
   wp_apply (wp_State__objListBySelector_weak γ l PodV.kind
     namespace selector P with "[$Hpkg $Hselector $Hisk]").
   iIntros (objs_sl interfaces objs)
-    "(Hobjs_sl & Hobjs & %Hvalid & %Hkind)".
+    "(Hobjs_sl & Hobjs & %Hvalid & %Hextra_valid & %Hkind)".
   destruct (kobject_list_to_pods objs Hkind) as [pods ->].
   rewrite Forall_fmap in Hvalid.
   iEval (rewrite big_sepL2_fmap_r) in "Hobjs".

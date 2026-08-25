@@ -509,6 +509,10 @@ Proof.
   iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid2 key kobj with
     "Hinv_Hown_abs") as "%Hauth_valid_update". 1: done.
+  iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
+    as "%Habs_extra_valid".
+  assert (KObjectV.extra_valid kobj) as Hextra_valid_kobj.
+  { exact (Habs_extra_valid key kobj Hlookup_abs). }
   destruct Hauth_valid_update as
     (-> & Hvalid_kobj & Huid_in &
       Hno_speculative_parent_reference & _).
@@ -547,6 +551,8 @@ Proof.
         destruct kobj; done.
       + destruct kobj; done.
       + destruct kobj; done.
+    - apply KObjectV.extra_valid_update_objectmeta.
+      exact Hextra_valid_kobj.
   }
   { exact Hnew_deletion_timestamp. }
   { unfold new_kobj, new_kmeta1, new_kmeta.

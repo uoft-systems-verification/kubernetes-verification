@@ -12,6 +12,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+    "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
     "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
     "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
     "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
@@ -147,6 +148,14 @@ Proof.
       Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec
       Hvalid_status.
   }
+  assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
+  { subst kobj2.
+    apply KObjectV.extra_valid_update_objectmeta.
+    rewrite /KObjectV.extra_valid.
+    eapply ObjectSpecV.extra_valid_created.
+    - exact Hextra_valid.
+    - rewrite KObjectV.spec_update_objectmeta in Hcreated_spec.
+      exact Hcreated_spec. }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
   assert (¬ reserved_key_pred key) as Hkey_not_reserved.
@@ -178,6 +187,7 @@ Proof.
       rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
     - symmetry. exact Hkobj2_uid.
     - exact Hvalid2.
+    - exact Hextra_valid2.
   }
   { subst kobj2.
     destruct kobj; destruct kobj1; try done;
@@ -364,6 +374,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
       "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
       "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗

@@ -385,6 +385,9 @@ Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l ol
   }}}.
 Proof. Admitted.
 
+(* TODO: Revisit this specification after modeling the update pipeline's
+   normalization and validation stages explicitly, rather than relating the
+   submitted object directly to the final stored object. *)
 (** Unlike the strong-reference update rules, a terminating-object update can
     race with changes to the stored object.  This general contract therefore
     exposes validation failure while preserving both input objects. *)
@@ -412,6 +415,8 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_general
           ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
           ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
           ⌜ ObjectMetaV.updated (KObjectV.objectmeta new_obj) (KObjectV.objectmeta updated_obj) ⌝ ∗
+          ⌜ ObjectSpecV.valid_update
+              (KObjectV.spec old_obj) (KObjectV.spec new_obj) ⌝ ∗
           ⌜ ObjectSpecV.updated (KObjectV.spec new_obj) (KObjectV.spec updated_obj) ⌝ ∗
           ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj → KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
           ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝) ∨

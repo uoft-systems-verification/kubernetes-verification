@@ -60,12 +60,30 @@ one after preparation and canonicalization.
 | `KObjectV.valid_named_create` / `valid_nameless_create` | The full request-level condition: correct resource kind, create-compatible TypeMeta and metadata, and a create-valid spec. |
 | `V.valid_update old new` | The cross-object rules for an update, especially immutable fields. The existing `old` value need only satisfy request-stage `valid_create`, not post-defaulting `valid`. |
 | `V.valid stored` | The stronger invariant guaranteed of the modeled part of an object after it has been prepared, defaulted/normalized, and stored by the API server. |
+| `V.extra_valid stored` | A condition not enforced by the API server but required by verified controllers. It is expected to hold for realistic objects; violating it would generally require impractically large values. |
 | `V.created input stored` | The relation between a create request projection and the projection that the server stores. |
 | `V.updated input stored` | The normalization/defaulting relation from a create-valid update request to the value produced by update preparation. |
 
 These are Rocq propositions used in specifications. Some are executable
 definitions with `Decision` instances; others are axiomatized where the
 corresponding Go fields have not yet been translated.
+
+### Controller requirements are separate from API validity
+
+`KObjectV.valid` contains properties attributed to API validation and storage
+normalization. `KObjectV.extra_valid` separately records assumptions required
+by verified controller implementations that Kubernetes admission does not
+enforce. The authoritative `kview` invariant requires both for every stored
+object, so the modeled state is the supported subset on which the verified
+controllers execute safely; `extra_valid` must not be cited as an admission
+guarantee about arbitrary real clusters.
+
+The ReplicaSet branch currently requires every present selector to satisfy
+`LabelSelectorV.extra_valid`, the Go-size bound needed by
+`LabelSelectorAsSelector`. Structural selector validity remains in ordinary API
+validity. Other object kinds currently reduce to `True`. Adding a nontrivial
+branch requires proving it at every model transition that can store that kind
+and exposing it from the relevant read specifications.
 
 ### Create validity is intentionally weaker than stored validity
 
