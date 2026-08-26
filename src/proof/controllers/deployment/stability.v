@@ -8,7 +8,7 @@ From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.controllers.deployment Require Export
-  common replica_sets rollout sync_deployment.
+  common replica_sets rollout sync_deployment top_level.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
@@ -47,68 +47,13 @@ Local Set Default Proof Using "All".
 (* at the *same* fraction [dq], and a write needs the full fraction.  *)
 (* If the proof goes through at all, no write happened.               *)
 (*                                                                   *)
-(* The progress half (H1) lives in sync_deployment.v as               *)
-(* [wp_syncDeployment], stated inline rather than through a           *)
-(* [progress_spec] definition — this controller has no top_level.v.   *)
-(* The fragment bundle is therefore defined here rather than shared.  *)
+(* The progress half (H1) is [progress_spec] in top_level.v,          *)
+(* discharged by [wp_syncDeployment] in sync_deployment.v. Both       *)
+(* triples share [owned_resources] from that file.                    *)
 (* ---------------------------------------------------------------- *)
 
-(* Everything the controller touches, at a uniform fraction.
-
-   Compare [wp_syncDeployment]'s precondition, which holds the ReplicaSet
-   fragments and the children fragment at 1 because it writes through them.
-   Here they are all [dq] — that is the entire mechanism of this spec. *)
-Definition stability_resources γ (d : DeploymentV.t)
-    (rss : list ReplicaSetV.t) (children_keys : gset KKey.t)
-    uid kmeta dq : iProp Σ :=
-  "Hown_d_meta" ∷ own_meta_frag γ (DeploymentV.key d) uid dq kmeta ∗
-  "Hown_d_spec" ∷ own_spec_frag γ (DeploymentV.key d) uid dq
-    (ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')) ∗
-  "Hreserved" ∷ own_available_reserved_frag γ dq (new_rs_key d) ∗
-  "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-    uid dq children_keys ∗
-  "Hown_frags" ∷ ([∗ list] rs ∈ rss,
-    own_meta_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-      rs.(ReplicaSetV.ObjectMeta') ∗
-    own_spec_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-      (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
-  "%Hkeys_nodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝.
-
-(* [deployment_realized] is this controller's [current_state_matches]. Unlike
-   the ReplicaSet controller there is no [match_distance] to go with it: PR #7
-   dropped surge pacing, so the controller converges in one sync and the
-   distance would be two-valued. See notes/questions-08-20.md Q6. *)
-
-Definition stability_spec γ model_l (namespace name : go_string)
-    (d : DeploymentV.t) (rss : list ReplicaSetV.t)
-    (children_keys : gset KKey.t) uid kmeta dq : iProp Σ :=
-  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "#Hisk" ∷ is_kubernetes γ model_l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
-      "Hresources" ∷ stability_resources γ d rss children_keys uid kmeta dq ∗
-      "%Hkey_def" ∷ ⌜ DeploymentV.key d = {|
-        KKey.Kind' := DeploymentV.kind;
-        KKey.Namespace' := namespace;
-        KKey.Name' := name
-      |} ⌝ ∗
-      "%Hd_valid" ∷ ⌜ DeploymentV.valid d ⌝ ∗
-      "%Hnamespace_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
-      "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
-      "%Hrss_valid" ∷ ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
-      "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
-          filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ⌝ ∗
-      (* The no-collision assumption, as on the progress triple. Without it
-         findNewReplicaSet may pick either of two matching ReplicaSets, and
-         stability is false as stated — notes/questions-08-20.md Q2. *)
-      "%Hunique_new" ∷ ⌜ unique_new_replica_set d rss ⌝ ∗
-      "%Hmatch" ∷ ⌜ deployment_realized d rss ⌝
-  }}}
-    @! deployment.syncDeployment #namespace #name
-  {{{ (err : interface.t), RET #err;
-      stability_resources γ d rss children_keys uid kmeta dq
-  }}}.
+(* [owned_resources], [stability_fractions] and [stability_spec] now live in
+   top_level.v, shared with the progress triple. *)
 
 (* scaleReplicaSet is a no-op when the count already matches: deployment.go:104
    returns before [rsCopy := rs.DeepCopy()], so the ReplicaSetUpdateTx call is
@@ -369,61 +314,57 @@ Proof.
   - unfold rs_replicas. rewrite Hzero. done.
 Qed.
 
-(* rollout under fractional ownership. The deployment is already realized, so
-   getNewReplicaSet adopts rather than creates — which is why the reserved
-   fragment comes back [own_available_reserved_frag] unchanged rather than
-   splitting on adopted/created the way [wp_rollout] does.
+(* rollout under fractional ownership.
 
-   TRUSTED — Admitted. Discharging it needs stability variants of
-   [wp_getNewReplicaSet], [wp_reconcileNewReplicaSet] and
-   [wp_reconcileOldReplicaSets], each of which is the corresponding lemma in
-   rollout.v with 1 replaced by [dq] and the post-state equal to the
-   pre-state. Those are no-ops for the same reason this is: with [dq] the
-   scale path cannot be taken, because [scaleReplicaSet] writes. *)
-Lemma wp_rollout_stability γ model_l d_l (d : DeploymentV.t)
-    sl ptrs (rss : list ReplicaSetV.t) (children_keys : gset KKey.t)
-    uid dq_d dq_sl dq_rss dq :
-  {{{ "#Hpkg" ∷ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "#Hisk" ∷ is_kubernetes γ model_l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+   Note what is *absent*: no fragments, no [is_kubernetes], no global address.
+   Under [deployment_realized] every one of rollout's four calls takes an
+   early-return path, so the model is never touched — the strongest possible
+   statement of "this does nothing". *)
+Lemma wp_rollout_stability d_l (d : DeploymentV.t)
+    sl ptrs (rss : list ReplicaSetV.t) dq_d dq_sl dq :
+  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq_d ∗
       "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
-      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq_rss) ∗
-      "%Hd_valid" ∷ ⌜ DeploymentV.valid d ⌝ ∗
-      "%Hrss_valid" ∷ ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
+      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq) ∗
       "%Hkeys_nodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
-      "%Hnamespace_valid" ∷ ⌜ valid_namespace
-          d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
       "%Hunique_new" ∷ ⌜ unique_new_replica_set d rss ⌝ ∗
-      "%Hmatch" ∷ ⌜ deployment_realized d rss ⌝ ∗
-      "Hreserved" ∷ own_available_reserved_frag γ dq (new_rs_key d) ∗
-      "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-        uid dq children_keys ∗
-      "Hown_frags" ∷ ([∗ list] rs ∈ rss,
-        own_meta_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-          rs.(ReplicaSetV.ObjectMeta') ∗
-        own_spec_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')))
+      "%Hmatch" ∷ ⌜ deployment_realized d rss ⌝
   }}}
     @! deployment.rollout #d_l #sl
   {{{ RET #interface.nil;
       "Hd" ∷ DeploymentV.deepown_l d_l d dq_d ∗
       "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
-      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq_rss) ∗
-      "Hreserved" ∷ own_available_reserved_frag γ dq (new_rs_key d) ∗
-      "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-        uid dq children_keys ∗
-      "Hown_frags" ∷ ([∗ list] rs ∈ rss,
-        own_meta_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-          rs.(ReplicaSetV.ObjectMeta') ∗
-        own_spec_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
-          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')))
+      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq)
   }}}.
+(* BLOCKED — not on Q3, and not on anything in this file.
+
+   Every ingredient is proved: [wp_getNewReplicaSet_stability],
+   [wp_findOldReplicaSets] (replica_sets.v, Qed),
+   [wp_reconcileNewReplicaSet_stability], [wp_reconcileOldReplicaSets_stability],
+   plus [realized_found_at_count] / [realized_old_drained] /
+   [big_sepL2_filter_acc] above. The proof gets as far as findOldReplicaSets and
+   stops there for a structural reason:
+
+   [wp_findOldReplicaSets] wants the whole list at [dq2] *and* the new
+   ReplicaSet at [dq3] (its [rs_opt_own] argument). getNewReplicaSet returns a
+   pointer that is already in [ptrs] (index [i], [Hptr] above), so discharging
+   both needs [ReplicaSetV.deepown_l new_rs_l found_rs dq] twice — i.e. a way to
+   split [dq].
+
+   There is no [Fractional] instance for [deepown_l] anywhere in
+   kubernetes_types/. Two ways out, both infrastructure rather than proof:
+
+     (a) give [ReplicaSetV.deepown_l] a Fractional instance, then take [dq/2]
+         for the list copy and [dq/2] for the [rs_opt_own] argument; or
+     (b) add an in-list variant of [wp_findOldReplicaSets] taking
+         [ptrs !! i = Some new_rs_l] and [rss !! i = Some new_rs] and only the
+         one [big_sepL2], so the new ReplicaSet is never owned separately.
+
+   (b) is local to replica_sets.v; (a) is reusable but touches the type layer.
+
+   The same blocker applies to [wp_rollout] on the progress side: its
+   precondition has the identical shape ([Hrss] at [dq_rss], newRS drawn from
+   that list), so whichever fix lands unblocks both. *)
 Proof.
 Admitted.
 
