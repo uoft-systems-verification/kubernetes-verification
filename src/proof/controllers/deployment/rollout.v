@@ -10,7 +10,7 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.controllers.deployment Require Export common replica_sets.
 
 Section proof.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.deployment.deployment.Assumptions}.
 Collection W := sem + package_sem.
