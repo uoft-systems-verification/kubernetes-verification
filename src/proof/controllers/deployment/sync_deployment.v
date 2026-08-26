@@ -7,7 +7,8 @@ From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
-From New.proof.controllers.deployment Require Export common replica_sets rollout.
+From New.proof.controllers.deployment Require Export
+  common replica_sets rollout top_level.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
@@ -130,75 +131,9 @@ Admitted.
    during the sync, in which case it is not among the [rss] the caller framed. *)
 Lemma wp_syncDeployment γ model_l (namespace name : go_string)
     (d : DeploymentV.t) (rss : list ReplicaSetV.t)
-    (children_keys : gset KKey.t) uid dq_d children_dq kmeta :
-  {{{ "#Hpkg" ∷ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "#Hisk" ∷ is_kubernetes γ model_l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
-      "%Hkey_def" ∷ ⌜ DeploymentV.key d = {|
-        KKey.Kind' := DeploymentV.kind;
-        KKey.Namespace' := namespace;
-        KKey.Name' := name
-      |} ⌝ ∗
-      "%Hd_valid" ∷ ⌜ DeploymentV.valid d ⌝ ∗
-      "%Hnamespace_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
-      "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
-      "%Hrss_valid" ∷ ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
-      "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
-      "%Hunique_new" ∷ ⌜ unique_new_replica_set d rss ⌝ ∗
-      "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
-          filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ⌝ ∗
-      (* Fragments for the deployment itself, so DeploymentGet succeeds. *)
-      "Hown_d_meta" ∷ own_meta_frag γ (DeploymentV.key d) uid dq_d kmeta ∗
-      "Hown_d_spec" ∷ own_spec_frag γ (DeploymentV.key d) uid dq_d
-        (ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')) ∗
-      "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
-      "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-        uid children_dq children_keys ∗
-      "Hown_frags" ∷ ([∗ list] rs ∈ rss,
-        own_meta_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          rs.(ReplicaSetV.ObjectMeta') ∗
-        own_spec_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')))
-  }}}
-    @! deployment.syncDeployment #namespace #name
-  {{{ (rss_post : list ReplicaSetV.t), RET #interface.nil;
-      "Hown_d_meta" ∷ own_meta_frag γ (DeploymentV.key d) uid dq_d kmeta ∗
-      "Hown_d_spec" ∷ own_spec_frag γ (DeploymentV.key d) uid dq_d
-        (ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')) ∗
-      "Hown_frags" ∷ ([∗ list] rs ∈ rss_post,
-        own_meta_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          rs.(ReplicaSetV.ObjectMeta') ∗
-        own_spec_frag γ (ReplicaSetV.key rs)
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
-      ( (* Deleting: the controller returns early and touches nothing. *)
-        ( "%Hdeleting" ∷ ⌜ is_Some
-              kmeta.(ObjectMetaV.DeletionTimestamp') ∧ rss_post = rss ⌝ ∗
-          "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
-          "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-            uid children_dq children_keys)
-        ∨
-        (* Live: one sync realizes the deployment. *)
-        ( "%Hnot_deleting" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-          "%Hrealized" ∷ ⌜ deployment_realized d rss_post ⌝ ∗
-          "%Hunique_new'" ∷ ⌜ unique_new_replica_set d rss_post ⌝ ∗
-          (* Either the new ReplicaSet was adopted from [rss], or it was created
-             and [rss_post] has it on top. *)
-          ( ( "%Hadopted" ∷ ⌜ rss_post = rss ⌝ ∗
-              "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
-              "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid children_dq children_keys)
-            ∨
-            ( "%Hcreated" ∷ ⌜ ∃ new_rs, rss_post = rss ++ [new_rs] ∧
-                  ReplicaSetV.key new_rs = new_rs_key d ⌝ ∗
-              "Hreserved" ∷ own_occupied_reserved_frag γ 1 (new_rs_key d)
-                d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') ∗
-              "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid children_dq ({[ new_rs_key d ]} ∪ children_keys)))))
-  }}}.
+    (children_keys : gset KKey.t) uid kmeta dq_d children_dq :
+  ⊢ progress_spec γ model_l namespace name d rss children_keys uid kmeta
+      dq_d children_dq.
 Proof.
 Admitted.
 
