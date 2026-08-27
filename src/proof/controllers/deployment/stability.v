@@ -337,7 +337,75 @@ Lemma wp_rollout_stability d_l (d : DeploymentV.t)
       "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq)
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_getNewReplicaSet_stability d_l d sl ptrs rss dq_d dq_sl dq
+    with "[$Hd $Hsl $Hrss]").
+  { iPureIntro. exact Hmatch. }
+  iIntros (new_rs_l i found_rs) "(%Hfound & %Hptr & Hd & Hsl & Hrss)".
+  iNamed "Hd". iNamed "Hsl". iNamed "Hrss".
+  assert (rss !! i = Some found_rs) as Hrss_i.
+  { unfold find_new_replica_set in Hfound.
+    apply list_find_Some in Hfound as (H1 & _ & _). exact H1. }
+  wp_auto_lc 1.
+  (* Reading newRS.UID needs the new ReplicaSet open, but only until the read
+     is done — findOldReplicaSets takes the bare UID, so nothing is owned twice. *)
+  iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+    [exact Hptr|exact Hrss_i|].
+  iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
+    "(%Hnn & Htm & Hom & Hsp & Hst)".
+  iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
+  iNamedPrefix "Hmeta" "Hm_".
+  wp_auto.
+  rewrite Hm_Hdeepown_uid.
+  iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
+  iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' found_rs) dq)
+    with "[Hmeta_parts]" as "Hmeta".
+  { iNamed "Hmeta_parts". iFrame. done. }
+  iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
+    with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hthis".
+  { iExists meta_c. iFrame. }
+  iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+  wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid found_rs) dq_sl dq
+    with "[$Hsl $Hrss]").
+  iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+  wp_auto.
+  (* reconcileNewReplicaSet: the new ReplicaSet is already at the deployment's
+     count, so scaleReplicaSet takes its no-op path. *)
+  iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+    [exact Hptr|exact Hrss_i|].
+  wp_apply (wp_reconcileNewReplicaSet_stability new_rs_l found_rs d_l d dq dq_d
+    with "[$Hthis $Hd]").
+  { iPureIntro. eapply realized_found_at_count; eassumption. }
+  iIntros "(Hthis & Hd)".
+  iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+  wp_auto_lc 1.
+  (* reconcileOldReplicaSets: every old ReplicaSet is already drained. *)
+  assert (Forall (λ rs, rs_replicas rs = W32 0)
+      ((old_replica_set_pairs ptrs rss (rs_uid found_rs)).*2)) as Hdrained.
+  { apply Forall_lookup. intros k rs Hk.
+    rewrite list_lookup_fmap in Hk.
+    apply fmap_Some in Hk as (pr & Hpr & ->).
+    destruct pr as [pr_l pr_rs]. simpl in *.
+    assert ((pr_l, pr_rs) ∈ old_replica_set_pairs ptrs rss (rs_uid found_rs)) as Hpr_in
+      by (eapply list_elem_of_lookup_2; exact Hpr).
+    unfold old_replica_set_pairs in Hpr_in.
+    apply list_elem_of_filter in Hpr_in as [HQ Hpr_zip].
+    eapply realized_old_drained;
+      [exact Hmatch|exact Hunique_new|exact Hkeys_nodup|exact Hfound| |exact HQ].
+    eapply elem_of_zip_r. exact Hpr_zip. }
+  iDestruct (big_sepL2_filter_acc (λ rs, rs_is_old (rs_uid found_rs) rs)
+    (λ ptr rs, ReplicaSetV.deepown_l ptr rs dq) ptrs rss
+    with "Hrss") as "[Hold Hrss_restore]".
+  wp_apply (wp_reconcileOldReplicaSets_stability old_sl
+    (old_replica_set_pairs ptrs rss (rs_uid found_rs)).*1
+    (old_replica_set_pairs ptrs rss (rs_uid found_rs)).*2 (DfracOwn 1) dq
+    with "[$Hold_sl $Hold]").
+  { iPureIntro. exact Hdrained. }
+  iIntros "(Hold_sl & Hold)".
+  iDestruct ("Hrss_restore" with "Hold") as "Hrss".
+  wp_auto_lc 1.
+  iApply "HΦ". iFrame.
+Qed.
 
 (* The deletion branch needs no hypothesis: if DeletionTimestamp is set the
    controller returns before rollout, and if it is not set the state is
