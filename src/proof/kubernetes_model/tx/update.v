@@ -453,7 +453,7 @@ Proof.
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
   iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
   cbn [interface.ty interface.v].
   replace
