@@ -10,6 +10,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -68,11 +69,17 @@ func findNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) *apps.Repl
 	return nil
 }
 
-// findOldReplicaSets returns every ReplicaSet other than newRS.
-func findOldReplicaSets(rsList []*apps.ReplicaSet, newRS *apps.ReplicaSet) []*apps.ReplicaSet {
+// findOldReplicaSets returns every ReplicaSet whose UID differs from
+// newRSUID.
+//
+// Takes the UID rather than the *apps.ReplicaSet it came from: the only thing
+// the loop needs is a value to compare against, and taking the pointer would
+// oblige a caller that already owns newRS through rsList to own it a second
+// time. See notes/deployment-spec-aug-26.md §3.1.
+func findOldReplicaSets(rsList []*apps.ReplicaSet, newRSUID types.UID) []*apps.ReplicaSet {
 	old := []*apps.ReplicaSet{}
 	for _, rs := range rsList {
-		if newRS != nil && rs.UID == newRS.UID {
+		if rs.UID == newRSUID {
 			continue
 		}
 		old = append(old, rs)
@@ -182,7 +189,7 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	if err != nil {
 		return err
 	}
-	oldRSs := findOldReplicaSets(rsList, newRS)
+	oldRSs := findOldReplicaSets(rsList, newRS.UID)
 
 	_, err = reconcileNewReplicaSet(newRS, d)
 	if err != nil {

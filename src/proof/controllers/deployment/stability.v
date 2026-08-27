@@ -288,7 +288,7 @@ Lemma realized_old_drained d rss i found_rs rs :
   NoDup (ReplicaSetV.key <$> rss) →
   find_new_replica_set d rss = Some (i, found_rs) →
   rs ∈ rss →
-  rs_is_old (Some found_rs) rs →
+  rs_is_old (rs_uid found_rs) rs →
   rs_replicas rs = W32 0.
 Proof.
   intros Hrealized Huniq Hnodup Hfound Hrs_in Hold.
@@ -336,35 +336,6 @@ Lemma wp_rollout_stability d_l (d : DeploymentV.t)
       "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
       "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq)
   }}}.
-(* BLOCKED — not on Q3, and not on anything in this file.
-
-   Every ingredient is proved: [wp_getNewReplicaSet_stability],
-   [wp_findOldReplicaSets] (replica_sets.v, Qed),
-   [wp_reconcileNewReplicaSet_stability], [wp_reconcileOldReplicaSets_stability],
-   plus [realized_found_at_count] / [realized_old_drained] /
-   [big_sepL2_filter_acc] above. The proof gets as far as findOldReplicaSets and
-   stops there for a structural reason:
-
-   [wp_findOldReplicaSets] wants the whole list at [dq2] *and* the new
-   ReplicaSet at [dq3] (its [rs_opt_own] argument). getNewReplicaSet returns a
-   pointer that is already in [ptrs] (index [i], [Hptr] above), so discharging
-   both needs [ReplicaSetV.deepown_l new_rs_l found_rs dq] twice — i.e. a way to
-   split [dq].
-
-   There is no [Fractional] instance for [deepown_l] anywhere in
-   kubernetes_types/. Two ways out, both infrastructure rather than proof:
-
-     (a) give [ReplicaSetV.deepown_l] a Fractional instance, then take [dq/2]
-         for the list copy and [dq/2] for the [rs_opt_own] argument; or
-     (b) add an in-list variant of [wp_findOldReplicaSets] taking
-         [ptrs !! i = Some new_rs_l] and [rss !! i = Some new_rs] and only the
-         one [big_sepL2], so the new ReplicaSet is never owned separately.
-
-   (b) is local to replica_sets.v; (a) is reusable but touches the type layer.
-
-   The same blocker applies to [wp_rollout] on the progress side: its
-   precondition has the identical shape ([Hrss] at [dq_rss], newRS drawn from
-   that list), so whichever fix lands unblocks both. *)
 Proof.
 Admitted.
 

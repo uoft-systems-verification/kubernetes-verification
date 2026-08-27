@@ -569,7 +569,7 @@ Proof.
   clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (d_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.Deployment)
     with (go.PointerType v1.Deployment).
   cbn [interface.ty interface.v].

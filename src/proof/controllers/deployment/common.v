@@ -88,27 +88,22 @@ Definition selector_with_label (selector : LabelSelectorV.t)
 Definition rs_uid (rs : ReplicaSetV.t) : types.UID.t :=
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID').
 
-(* findOldReplicaSets keeps every ReplicaSet other than the new one (matched
-   by UID). *)
-Definition rs_is_old (new_rs_o : option ReplicaSetV.t) (rs : ReplicaSetV.t) : Prop :=
-  match new_rs_o with
-  | Some new_rs => rs_uid rs ≠ rs_uid new_rs
-  | None => True
-  end.
+(* findOldReplicaSets keeps every ReplicaSet whose UID differs from the new
+   one's. Keyed on the bare UID rather than the ReplicaSet it came from,
+   matching the Go: the loop only ever needs a value to compare against, and
+   taking the object would oblige a caller that already owns it through the
+   list to own it a second time — which [deepown_l] cannot supply, since three
+   of the predicates under it are opaque Axioms. See
+   notes/deployment-spec-aug-26.md §3.1. *)
+Definition rs_is_old (new_rs_uid : types.UID.t) (rs : ReplicaSetV.t) : Prop :=
+  rs_uid rs ≠ new_rs_uid.
 
-#[global] Instance rs_is_old_dec new_rs_o rs : Decision (rs_is_old new_rs_o rs).
-Proof.
-  unfold rs_is_old.
-  destruct new_rs_o as [new_rs|].
-  - destruct (decide (rs_uid rs = rs_uid new_rs)) as [Huid|Huid].
-    + right. intros Hneq. exact (Hneq Huid).
-    + left. exact Huid.
-  - left. done.
-Defined.
+#[global] Instance rs_is_old_dec new_rs_uid rs : Decision (rs_is_old new_rs_uid rs).
+Proof. unfold rs_is_old. apply _. Defined.
 
 Definition old_replica_set_pairs (ptrs : list loc) (rss : list ReplicaSetV.t)
-    (new_rs_o : option ReplicaSetV.t) : list (loc * ReplicaSetV.t) :=
-  filter (λ pr, rs_is_old new_rs_o pr.2) (zip ptrs rss).
+    (new_rs_uid : types.UID.t) : list (loc * ReplicaSetV.t) :=
+  filter (λ pr, rs_is_old new_rs_uid pr.2) (zip ptrs rss).
 
 (* TODO: un-axiomatize. Once PodTemplateSpecV carries enough structure to state
    template equality, template_matches should become a Definition (equality of
