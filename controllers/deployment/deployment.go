@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/controller"
 )
@@ -200,19 +199,29 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	return err
 }
 
-// filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
-// whose controller reference points at the deployment.
+// filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
+// points at the deployment.
+//
+// Fetched through the replicaSetController index rather than by listing the
+// namespace and filtering in Go, mirroring controllers/common's
+// FilterPodsByOwner. Listing cannot be related back to the deployment's
+// children fragment — the list spec is fragment-free — whereas the index is
+// keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
+// §3.2.
 func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
-	all, err := apimodel.ModelState.ReplicaSetList(d.Namespace, labels.Everything())
+	result := []*apps.ReplicaSet{}
+	key := controller.PodControllerIndexKey(d.Namespace,
+		&metav1.OwnerReference{Name: d.Name, Kind: "Deployment", UID: d.UID})
+	items, err := apimodel.ModelState.ByIndex("ReplicaSet", apimodel.ReplicaSetControllerIndex, key)
 	if err != nil {
 		return nil, err
 	}
-	result := []*apps.ReplicaSet{}
-	for _, rs := range all {
-		ref := metav1.GetControllerOf(rs)
-		if ref != nil && ref.UID == d.UID {
-			result = append(result, rs)
+	for _, obj := range items {
+		rs, ok := obj.(*apps.ReplicaSet)
+		if !ok {
+			continue
 		}
+		result = append(result, rs)
 	}
 	return result, nil
 }
