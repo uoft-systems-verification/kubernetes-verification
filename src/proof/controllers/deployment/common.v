@@ -75,6 +75,59 @@ Definition labels_opt_own (l : loc)
   | None => ⌜ l = null ⌝
   end.
 
+(* [ObjectMetaV.deepown] stores the label map as a nullable pair; these move
+   between that shape and the argument shape [cloneAndAddLabel] wants, so the
+   metadata can be taken apart for the call and put back afterwards. *)
+Definition labels_field_own (c : loc)
+    (v : option (gmap go_string go_string)) dq : iProp Σ :=
+  match v with
+  | Some vl => ∃ cl, c ↦${dq} cl ∗ ⌜ cl = vl ⌝
+  | None => True
+  end.
+
+Lemma labels_opt_own_of_field c v dq :
+  ⌜ c = null ↔ v = None ⌝ -∗
+  labels_field_own c v dq -∗
+  labels_opt_own c v dq.
+Proof.
+  iIntros "%Hnone Hfield". rewrite /labels_opt_own /labels_field_own.
+  destruct v as [vl|].
+  - iDestruct "Hfield" as (cl) "[Hcl ->]". iFrame.
+  - iPureIntro. apply Hnone. done.
+Qed.
+
+Lemma labels_field_own_of_opt c v dq :
+  labels_opt_own c v dq -∗ labels_field_own c v dq.
+Proof.
+  iIntros "H". rewrite /labels_opt_own /labels_field_own.
+  destruct v as [vl|]; [iExists vl; iFrame; done|done].
+Qed.
+
+(* Lend a pod template's label map to [cloneAndAddLabel] and take it back.
+   Both calls in getNewReplicaSet read the deployment's own template, so the
+   metadata has to be opened and closed around each. *)
+Lemma podtemplate_labels_acc c v dq :
+  PodTemplateSpecV.deepown c v dq -∗
+  labels_opt_own c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels')
+    v.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') dq ∗
+  (labels_opt_own c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels')
+     v.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') dq -∗
+   PodTemplateSpecV.deepown c v dq).
+Proof.
+  iIntros "H". iNamed "H".
+  iNamedPrefix "Hdeepown_objectmeta" "Hm_".
+  iDestruct (labels_opt_own_of_field with "[] Hm_Hdeepown_labels_some")
+    as "Hlabels"; [iPureIntro; exact Hm_Hdeepown_labels_none|].
+  iFrame "Hlabels".
+  iIntros "Hlabels".
+  iDestruct (labels_field_own_of_opt with "Hlabels")
+    as "Hm_Hdeepown_labels_some".
+  rewrite /PodTemplateSpecV.deepown /named.
+  iSplitR "Hdeepown_spec"; [|iAssumption].
+  rewrite /ObjectMetaV.deepown /named.
+  iFrame "%". iFrame.
+Qed.
+
 (* cloneSelectorAndAddLabel returns a copy of [selector] whose MatchLabels are
    [selector]'s plus one binding.  A nil MatchLabels is first replaced by a fresh
    empty map, so the result's MatchLabels is always Some. *)
@@ -144,6 +197,27 @@ Definition deployment_unique_label_key : go_string := "pod-template-hash"%go.
    is that matching templates hash equally, which is what makes the deterministic
    RS name stable across syncs — that is [template_hash_respects_matches]. *)
 Parameter template_hash : PodTemplateSpecV.t → go_string.
+
+(* TRUSTED. [controller.ComputeHash] serializes the template with
+   [hashutil.DeepHashObject] and formats the FNV hash; neither the reflection
+   nor the hashing is translated, so this is a contract rather than a proof —
+   the same class as [wp_equalIgnoreHash]. It says only that the hash is a
+   function of the modeled template value, which is what
+   [template_hash_respects_matches] then relates to [template_matches].
+
+   The [collisionCount] argument is always nil here: hash-collision handling is
+   on deployment.go's excluded-features list. *)
+Lemma wp_ComputeHash tmpl_l tmpl_c tmpl dq :
+  {{{ is_pkg_init controller ∗
+      "Htmpl_l" ∷ tmpl_l ↦{dq} tmpl_c ∗
+      "Htmpl" ∷ PodTemplateSpecV.deepown tmpl_c tmpl dq
+  }}}
+    @! controller.ComputeHash #tmpl_l #null
+  {{{ RET #(template_hash tmpl);
+      "Htmpl_l" ∷ tmpl_l ↦{dq} tmpl_c ∗
+      "Htmpl" ∷ PodTemplateSpecV.deepown tmpl_c tmpl dq
+  }}}.
+Proof. Admitted.
 Axiom template_hash_respects_matches : ∀ t1 t2,
   template_matches t1 t2 → template_hash t1 = template_hash t2.
 
@@ -286,6 +360,53 @@ Definition is_new_replica_set (d : DeploymentV.t) (rs : ReplicaSetV.t) : Prop :=
     d.(DeploymentV.Spec').(DeploymentSpecV.MinReadySeconds') ∧
   rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector') = new_rs_selector d ∧
   rs_template rs = new_rs_template d.
+
+(* The ReplicaSet [getNewReplicaSet] submits, as a Gallina value. Parameterised
+   by the owner reference because [NewControllerRef] is specified relationally
+   rather than as a function, so the reference is not computable here. Every
+   field the composite literal at deployment.go:135 leaves out is the zero
+   value; the status is [ReplicaSetStatusV.zero], the model's stand-in for a
+   zero-initialized status. *)
+Definition new_replica_set (d : DeploymentV.t) (ref : OwnerReferenceV.t)
+    : ReplicaSetV.t :=
+  ReplicaSetV.mk
+    (zero_val _)
+    (ObjectMetaV.mk
+      (new_rs_name d)
+      ""%go
+      d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace')
+      ""%go
+      ""%go
+      ""%go
+      (W64 0)
+      TimeV.zero
+      None
+      None
+      (Some (new_rs_labels d))
+      None
+      (Some [ref])
+      None
+      None)
+    (ReplicaSetSpecV.mk
+      (Some (deployment_replicas d))
+      d.(DeploymentV.Spec').(DeploymentSpecV.MinReadySeconds')
+      (new_rs_selector d)
+      (new_rs_template d))
+    ReplicaSetStatusV.zero.
+
+Lemma new_replica_set_is_new d ref :
+  OwnerReferenceV.refers_to_controller ref DeploymentV.kind
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.Name')
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') →
+  is_new_replica_set d (new_replica_set d ref).
+Proof.
+  intros (Hkind & Hname & Huid & _ & Hcontroller).
+  rewrite /is_new_replica_set /new_replica_set /rs_template /=.
+  split_and!; try done.
+  rewrite /obj_parent_ref_is /meta_parent_ref_is /meta_parent_ref /=.
+  rewrite decide_True; first exact Hcontroller.
+  rewrite Hkind Hname Huid. done.
+Qed.
 
 (* ---------------------------------------------------------------- *)
 (* Top-level predicates                                              *)

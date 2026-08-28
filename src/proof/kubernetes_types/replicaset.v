@@ -155,8 +155,17 @@ Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
 Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
-Axiom created : t → t → Prop.
-Axiom updated : t → t → Prop.
+
+(* ReplicaSetStatus is opaque in this model; expose only the zero value needed
+   when a controller constructs a fresh ReplicaSet, mirroring [PodStatusV]. *)
+Axiom zero : t.
+Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.ReplicaSetStatus.t) zero dq.
+
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
