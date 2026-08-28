@@ -152,6 +152,16 @@ func (s *State) objListBySelector(kind, namespace string, selector labels.Select
 	return filterByLabelSelector(s.objList(kind, namespace), selector)
 }
 
+// ReplicaSetControllerIndex is the name for the ReplicaSet store's index
+// function, mirroring controller.PodControllerIndex for Pods. It is defined
+// here rather than in k8s.io/kubernetes/pkg/controller because that tree is a
+// submodule and is not modified.
+//
+// The key function is shared: controller.PodControllerIndexKey builds
+// namespace/Kind/Name/UID from any OwnerReference and does not depend on the
+// indexed object being a Pod.
+const ReplicaSetControllerIndex = "replicaSetController"
+
 func index_of(indexName string, obj interface{}) ([]string, error) {
 	if indexName == "podController" {
 		pod, ok := obj.(*v1.Pod)
@@ -171,6 +181,12 @@ func index_of(indexName string, obj interface{}) ([]string, error) {
 			return nil, nil
 		}
 		return []string{string(controllerRef.UID)}, nil
+	} else if indexName == ReplicaSetControllerIndex {
+		rs, ok := obj.(*appsv1.ReplicaSet)
+		if !ok {
+			return nil, nil
+		}
+		return []string{controller.PodControllerIndexKey(rs.Namespace, metav1.GetControllerOf(rs))}, nil
 	} else {
 		return nil, fmt.Errorf("index %q does not exist", indexName)
 	}
