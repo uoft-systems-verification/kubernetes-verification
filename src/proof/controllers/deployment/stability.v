@@ -413,13 +413,102 @@ Qed.
    postcondition is the precondition either way and the spec does not have to
    split on it — unlike [wp_syncDeployment], whose two branches differ.
 
-   TRUSTED — Admitted. Beyond [wp_rollout_stability] this needs a stability
-   variant of [wp_filterReplicaSetsByOwner], which is itself trusted by
-   decision pending notes/questions-08-20.md Q3. *)
+   In fact only one path is reachable: [kview.own_meta_valid] says an object
+   whose metadata fragment we hold has no deletion timestamp, so the guard at
+   deployment.go:246 is always false here.
+
+   H2 is now complete. Its only remaining assumption inside this tree is
+   [wp_State__ByIndex_replicaSetController] (kubernetes_model/index_replicaset.v),
+   which is where Q3's semantic core was deliberately isolated. *)
 Lemma wp_syncDeployment_stability γ model_l namespace name
     d rss children_keys uid kmeta dq :
   ⊢ stability_spec γ model_l namespace name d rss children_keys uid kmeta dq.
 Proof.
-Admitted.
+  unfold stability_spec.
+  wp_start as "H". iNamed "H". iNamed "Hresources".
+  destruct Hinput as (Hkey_def & Hd_valid & Hnamespace_valid & Hnew_name_valid &
+    Hrss_valid & Hdom_eq & Hunique).
+  wp_auto.
+  iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
+  (* The metadata fragment pins the UID and rules out a deletion timestamp. *)
+  iPoseProof (kview.own_meta_valid with "Hown_d_meta") as "%Hd_frag_valid".
+  destruct Hd_frag_valid as
+    (Hk_name & Hk_ns & Huid_eq & Hkmeta_valid & Hkdeletion).
+  wp_apply (wp_State__DeploymentGet γ model_l (DeploymentV.key d) namespace name
+    uid dq kmeta d.(DeploymentV.Spec') with "[$Hown_d_meta $Hown_d_spec]").
+  { iFrame "#". iPureIntro. exact Hkey_def. }
+  iIntros (d_l d_get) "Hget". iNamedPrefix "Hget" "Hget_".
+  wp_auto.
+  wp_apply (wp_IsNotFound interface.nil with "[]").
+  replace (bool_decide (not_found_error interface.nil)) with false by
+    (symmetry; apply bool_decide_false; exact not_found_error_nil).
+  wp_auto.
+  (* The index key is built from the deployment's own kind, namespace, name
+     and UID, so all four have to be slash-free for it to parse back. *)
+  destruct Hget_Hvalid' as
+    (Hd_get_typemeta & Hd_get_rv & Hd_get_meta_valid & Hd_get_spec & Hd_get_status).
+  destruct Hd_get_typemeta as (_ & Hd_kind_valid & _).
+  pose proof (valid_kind_slash_free _ Hd_kind_valid) as Hkind_slash_free.
+  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hd_get_meta_valid)
+    as Hns_valid.
+  pose proof (ObjectMetaV.valid_name_of_valid _ Hd_get_meta_valid) as Hname_valid.
+  pose proof (ObjectMetaV.valid_uid_of_valid _ Hd_get_meta_valid) as Huid_valid.
+  pose proof (valid_namespace_slash_free _ Hns_valid) as Hns_slash_free.
+  pose proof (valid_name_slash_free _ Hname_valid) as Hname_slash_free.
+  pose proof (valid_uid_slash_free _ Huid_valid) as Huid_slash_free.
+  (* Retarget the children fragment at the value that came back from the
+     store: same key, same UID, only the resource version differs. *)
+  assert (DeploymentV.key d = DeploymentV.key d_get) as Hkey_eq
+    by exact Hget_Hkey_eq.
+  assert (uid = d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.UID')) as Huid_get.
+  { rewrite Huid_eq. symmetry.
+    apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
+  iEval (rewrite Hkey_eq Huid_get) in "Hown_children".
+  iDestruct (big_sepL_sep with "Hown_frags") as "[Hown_meta_frags Hown_spec_frags]".
+  wp_apply (wp_filterReplicaSetsByOwner γ model_l d_l d_get rss children_keys
+    1 dq dq with "[$Hget_Hdeepown_l $Hown_children $Hown_meta_frags $Hown_spec_frags]").
+  { iFrame "#". iPureIntro. split_and!; done. }
+  iIntros (sl ptrs rss' dq') "Hfilter". iNamedPrefix "Hfilter" "Hf_".
+  wp_auto.
+  (* The deletion guard. The pure field equality comes out of the deepown
+     without disturbing it: the conclusion is pure, so the context survives. *)
+  iDestruct "Hf_Hd" as (d_c) "[Hdptr Hdeepown_d]".
+  assert (d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
+    as Hdel_none.
+  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _
+      Hget_Hmeta_eq). exact Hkdeletion. }
+  iAssert ⌜ d_c.(v1.Deployment.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp')
+      = null ⌝%I as %Hdel_null.
+  { iNamedPrefix "Hdeepown_d" "Hdep_".
+    iNamedPrefix "Hdep_Hdeepown_objectmeta" "Hdm_".
+    iPureIntro. apply Hdm_Hdeepown_deletiontimestamp_none. exact Hdel_none. }
+  wp_auto.
+  rewrite Hdel_null.
+  wp_auto.
+  iAssert (DeploymentV.deepown_l d_l d_get 1) with "[Hdptr Hdeepown_d]" as "Hd".
+  { iExists d_c. iFrame. }
+  (* [rollout] sees the objects the index returned, not the ones the caller
+     framed. Both predicates it needs read only specs, and the two lists agree
+     on storage views, so both transfer. *)
+  assert (deployment_realized d_get rss') as Hmatch'.
+  { eapply deployment_realized_spec_eq; [exact Hget_Hspec_eq|].
+    eapply deployment_realized_view_perm; [exact Hf_Hview_perm|exact Hmatch]. }
+  assert (unique_new_replica_set d_get rss') as Hunique'.
+  { eapply unique_new_replica_set_spec_eq; [exact Hget_Hspec_eq|].
+    eapply unique_new_replica_set_view_perm;
+      [exact Hf_Hview_perm|exact Hf_Hnodup'|exact Hunique]. }
+  wp_apply (wp_rollout_stability d_l d_get sl ptrs rss' 1 (DfracOwn 1) dq'
+    with "[$Hd $Hf_Hsl $Hf_Hrss']").
+  { iPureIntro. split_and!; done. }
+  iIntros "(Hd & Hsl & Hrss')".
+  wp_auto.
+  (* Nothing moved: hand the same bundle back. *)
+  iApply ("HΦ" $! interface.nil).
+  rewrite /owned_resources /=.
+  iEval (rewrite -Hkey_eq -Huid_get) in "Hf_Hown_children".
+  iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hreserved Hf_Hown_children".
+  iSplitL; [|iPureIntro; exact Hkeys_nodup].
+  iApply big_sepL_sep. iFrame "Hf_Hown_meta_frags Hf_Hown_spec_frags".
+Qed.
 
 End proof.
