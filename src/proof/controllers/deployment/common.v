@@ -155,6 +155,88 @@ Definition rs_scaled_spec (rs : ReplicaSetV.t) (n : w32) : ReplicaSetSpecV.t :=
     rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector')
     rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').
 
+(* The ReplicaSet [scaleReplicaSet] submits: the deep copy with nothing but the
+   replica count overwritten. *)
+Definition rs_scaled (rs : ReplicaSetV.t) (n : w32) : ReplicaSetV.t :=
+  rs <| ReplicaSetV.Spec' := rs_scaled_spec rs n |>.
+
+(* Rescaling preserves everything admission looks at. The replica count is the
+   only field that changes, and a non-negative count is still admissible. *)
+Lemma rs_scaled_spec_valid_create rs n :
+  ReplicaSetSpecV.valid_create rs.(ReplicaSetV.Spec') →
+  0 ≤ sint.Z n →
+  ReplicaSetSpecV.valid_create (rs_scaled_spec rs n).
+Proof.
+  rewrite /ReplicaSetSpecV.valid_create /rs_scaled_spec /=.
+  intros (_ & Hmin & Hsel & Htmpl) Hn. split_and!; done.
+Qed.
+
+Lemma rs_scaled_extra_valid rs n :
+  ReplicaSetV.extra_valid rs →
+  ReplicaSetV.extra_valid (rs_scaled rs n).
+Proof.
+  rewrite /ReplicaSetV.extra_valid /ReplicaSetSpecV.extra_valid
+    /rs_scaled /rs_scaled_spec /=. done.
+Qed.
+
+Lemma rs_scaled_valid_named_create ns rs n :
+  ReplicaSetV.valid rs →
+  0 ≤ sint.Z n →
+  ns = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') →
+  ReplicaSetV.valid_named_create ns (rs_scaled rs n).
+Proof.
+  rewrite /ReplicaSetV.valid /ReplicaSetV.valid_named_create /rs_scaled /=.
+  intros (Htm & _ & Hmeta & Hspec & _) Hn ->.
+  split_and!.
+  - eapply valid_typemeta_valid_create_typemeta. exact Htm.
+  - eapply ObjectMetaV.valid_named_create_of_valid; done.
+  - apply rs_scaled_spec_valid_create; [exact (proj1 Hspec)|exact Hn].
+Qed.
+
+(* A stored ReplicaSet always has an explicit replica count, so [rs_replicas]
+   determines the field rather than merely defaulting it. *)
+Lemma rs_replicas_of_valid rs :
+  ReplicaSetV.valid rs →
+  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (rs_replicas rs).
+Proof.
+  intros (_ & _ & _ & Hspec & _).
+  destruct Hspec as (_ & replicas & Hreplicas & _).
+  rewrite /rs_replicas Hreplicas. done.
+Qed.
+
+(* [updated] is [created], which pins the stored count to the submitted one
+   after defaulting. The submitted count is explicit here, so nothing defaults. *)
+Lemma rs_scaled_spec_updated_replicas rs n stored :
+  ReplicaSetSpecV.updated (rs_scaled_spec rs n) stored →
+  stored.(ReplicaSetSpecV.Replicas') = Some n.
+Proof.
+  rewrite /ReplicaSetSpecV.updated /ReplicaSetSpecV.created /rs_scaled_spec /=.
+  intros (Hreplicas & _). exact Hreplicas.
+Qed.
+
+Lemma deployment_replicas_nonneg d :
+  DeploymentV.valid d →
+  0 ≤ sint.Z (deployment_replicas d).
+Proof.
+  intros (_ & _ & _ & Hspec & _).
+  destruct Hspec as ((replicas & Hreplicas & Hnonneg) & _).
+  rewrite /deployment_replicas Hreplicas. exact Hnonneg.
+Qed.
+
+(* Stepping a prefix scan one element forward. *)
+Lemma exists_take_S {A} (P : A → Prop) (l : list A) i x :
+  l !! i = Some x →
+  Exists P (take (S i) l) ↔ Exists P (take i l) ∨ P x.
+Proof.
+  intros Hx. rewrite (take_S_r _ _ _ Hx) Exists_app Exists_cons Exists_nil.
+  tauto.
+Qed.
+
+(* An update that leaves the metadata alone is always admissible. *)
+Lemma valid_simple_update_refl (m : ObjectMetaV.t) :
+  ObjectMetaV.valid_simple_update m m.
+Proof. rewrite /ObjectMetaV.valid_simple_update. split_and!; done. Qed.
+
 (* The labels getNewReplicaSet stamps onto the new ReplicaSet's template, and
    the selector it derives, both add the pod-template-hash binding. *)
 Definition new_rs_labels (d : DeploymentV.t) : gmap go_string go_string :=

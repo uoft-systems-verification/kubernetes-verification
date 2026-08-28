@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get create_named update.
+From New.proof.kubernetes_model.tx Require Export update.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
@@ -93,7 +94,100 @@ Lemma wp_scaleReplicaSet γ model_l rs_l (rs : ReplicaSetV.t)
               (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝))
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_replicasOfRS rs_l (Some rs) dq with "[$Hrs]").
+  iIntros "Hrs". simpl. wp_auto.
+  wp_if_destruct.
+  - (* Already at the target count: deployment.go:104 returns before the deep
+       copy, so no fragment at 1 is needed and nothing is written. *)
+    iApply ("HΦ" $! false rs_l rs). iFrame.
+    iSplit; [iPureIntro; done|]. iSplit; [iPureIntro; done|].
+    iLeft. iPureIntro. split_and!; done.
+  - iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happsv1".
+    { iPkgInit. }
+    iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
+    iEval (rewrite /named) in "Hrs".
+    iDestruct "Hrs" as (rs_phy) "[Hrs_ptr Hrs_deep]".
+    wp_apply (wp_ReplicaSet__DeepCopy rs_l rs_phy rs dq dq
+      with "[$Happsv1 $Hrs_ptr $Hrs_deep]").
+    iIntros (copy_l) "(Hcopy & Hrs_ptr & Hrs_deep)".
+    iAssert (ReplicaSetV.deepown_l rs_l rs dq) with "[Hrs_ptr Hrs_deep]" as "Hrs".
+    { iExists rs_phy. iFrame. }
+    wp_auto.
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hcopy") as
+      "(%Hcopy_nn & Hc_tm & Hc_om & Hc_spec & Hc_st)".
+    iDestruct "Hc_spec" as (spec_c) "[Hspec_field Hspec]".
+    iNamedPrefix "Hspec" "Hsp_".
+    wp_auto.
+    (* The store put the *local* newScale cell into the copy's Spec.Replicas
+       field, so ownership of that local moves into the object. Nothing reads
+       it again. *)
+    iAssert ⌜ newScale_ptr ≠ null ⌝%I as %Hscale_ptr_nn.
+    { iApply (typed_pointsto_not_null with "newScale"). }
+    iAssert (ReplicaSetSpecV.deepown
+        (spec_c <| v1.ReplicaSetSpec.Replicas' := newScale_ptr |>)
+        (rs_scaled_spec rs new_scale) 1)
+      with "[newScale Hsp_Hdeepown_selector_some Hsp_Hdeepown_template]"
+      as "Hspec_new".
+    { rewrite /ReplicaSetSpecV.deepown /rs_scaled_spec /=.
+      iFrame "Hsp_Hdeepown_selector_some Hsp_Hdeepown_template".
+      iSplit; [iPureIntro; split;
+        [intros Hnull; exfalso; exact (Hscale_ptr_nn Hnull)
+        |intros Hcontra; discriminate]|].
+      iSplitL "newScale"; [iExists new_scale; iFrame; done|].
+      iPureIntro. split_and!; done. }
+    iAssert (ReplicaSetSpecV.deepown_l (ReplicaSetV.spec_ptr copy_l)
+        (rs_scaled rs new_scale).(ReplicaSetV.Spec') 1)
+      with "[Hspec_field Hspec_new]" as "Hc_spec".
+    { iExists (spec_c <| v1.ReplicaSetSpec.Replicas' := newScale_ptr |>).
+      iFrame. }
+    (* The namespace argument is read off the copy; the equality is pure, so
+       the metadata stays sealed. *)
+    iDestruct "Hc_om" as (meta_c) "[Hmeta_field Hmeta]".
+    iAssert ⌜ meta_c.(v1.ObjectMeta.Namespace') =
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝%I as %Hns.
+    { iNamed "Hmeta". iPureIntro. exact Hdeepown_namespace. }
+    wp_auto.
+    rewrite Hns.
+    iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr copy_l)
+        (rs_scaled rs new_scale).(ReplicaSetV.ObjectMeta') 1)
+      with "[Hmeta_field Hmeta]" as "Hc_om".
+    { iExists meta_c. iFrame. }
+    iPoseProof (ReplicaSetV.deepown_l_restore _ (rs_scaled rs new_scale) _
+      Hcopy_nn with "[$Hc_tm $Hc_om $Hc_spec $Hc_st]") as "Hcopy".
+    (* Holding the metadata fragment rules out a deletion timestamp, which is
+       what the update needs. *)
+    iPoseProof (kview.own_meta_valid with "Hown_meta") as "%Hmeta_frag_valid".
+    destruct Hmeta_frag_valid as (_ & _ & _ & Hmeta_valid & Hdeletion).
+    destruct Hrs_valid as (Htm_valid & Hrv_valid & Hom_valid & Hspec_valid & Hst_valid).
+    wp_apply (wp_State__ReplicaSetUpdateTx γ model_l
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      copy_l (rs_scaled rs new_scale) (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
+      rs.(ReplicaSetV.ObjectMeta')
+      (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
+      with "[$Hcopy $Hown_meta $Hown_spec]").
+    { iFrame "#". iPureIntro. split_and!.
+      - apply rs_scaled_valid_named_create; [split_and!; done|done|done].
+      - eapply valid_uid_non_empty. eapply ObjectMetaV.valid_uid_of_valid.
+        exact Hom_valid.
+      - done.
+      - done.
+      - done.
+      - apply valid_simple_update_refl.
+      - rewrite /ObjectSpecV.valid_update /ReplicaSetSpecV.valid_update
+          /rs_scaled /rs_scaled_spec /=. done.
+      - exact Hdeletion. }
+    iIntros (rs'_l rs') "Hupd". iNamedPrefix "Hupd" "Hu_".
+    wp_auto.
+    iApply ("HΦ" $! true rs'_l rs').
+    iFrame "Hrs Hu_Hown_meta_frag Hu_Hown_spec_frag".
+    iSplit; [iPureIntro; exact Hu_Hkey_eq'|].
+    iSplit; [iPureIntro; exact Hu_Huid_eq'|].
+    iRight. iFrame "Hu_Hdeepown_l". iSplit.
+    + iPureIntro. split; [exact n|done].
+    + iPureIntro. exact Hu_Hspec_updated.
+Qed.
 
 (* getNewReplicaSet adopts the existing template-matching ReplicaSet if there is
    one, and otherwise creates it under the deterministic name [new_rs_name d].
@@ -197,7 +291,36 @@ Lemma wp_reconcileNewReplicaSet γ model_l new_rs_l d_l
       "%Hscaled" ∷ ⌜ scaled = bool_decide (rs_replicas new_rs ≠ deployment_replicas d) ⌝
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_replicasOf d_l d dq_d with "[$Hd]").
+  iIntros "Hd". wp_auto.
+  wp_apply (wp_scaleReplicaSet γ model_l new_rs_l new_rs (deployment_replicas d) dq_rs
+    with "[$Hnew_rs $Hown_meta $Hown_spec]").
+  { iFrame "#". iPureIntro. split; [done|].
+    apply deployment_replicas_nonneg. exact Hd_valid. }
+  iIntros (scaled rs'_l new_rs')
+    "(Hrs & %Hkey & %Huid & Hown_meta & Hown_spec & Hdisj)".
+  wp_auto.
+  iApply ("HΦ" $! scaled new_rs').
+  (* The fragments already come back keyed on [new_rs], which is what the
+     caller frames. *)
+  iFrame "Hrs Hd Hown_meta Hown_spec".
+  iDestruct "Hdisj" as "[%Hnoop|(%Hscaled & Hrs' & %Hspec_updated)]".
+  - (* Already at the deployment's count: nothing was written, and validity
+       says the stored count is explicit rather than defaulted. *)
+    destruct Hnoop as (Hcount & -> & -> & _).
+    iPureIntro. split.
+    + rewrite (rs_replicas_of_valid _ Hnew_rs_valid) Hcount. done.
+    + assert (bool_decide (rs_replicas new_rs ≠ deployment_replicas d) = false)
+        as ->; [|done].
+      apply bool_decide_eq_false_2. intros Hcontra. exact (Hcontra Hcount).
+  - destruct Hscaled as (Hne & ->).
+    iPureIntro. split.
+    + eapply rs_scaled_spec_updated_replicas. exact Hspec_updated.
+    + assert (bool_decide (rs_replicas new_rs ≠ deployment_replicas d) = true)
+        as ->; [|done].
+      apply bool_decide_eq_true_2. exact Hne.
+Qed.
 
 (* reconcileOldReplicaSets drains every old ReplicaSet to zero in one pass. *)
 Lemma wp_reconcileOldReplicaSets γ model_l sl ptrs
@@ -240,7 +363,138 @@ Lemma wp_reconcileOldReplicaSets γ model_l sl ptrs
           bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0) old_rss) ⌝
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
+  iDestruct (big_sepL2_length with "Hrss") as %Hlen_eq.
+  (* The loop has drained [old_rss] up to [i]; [done_rss] accumulates the
+     post-states, which is what the postcondition's [big_sepL2] is over. *)
+  set FRAG := (λ (rs rs' : ReplicaSetV.t),
+    (own_meta_frag γ (ReplicaSetV.key rs)
+       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+       rs'.(ReplicaSetV.ObjectMeta') ∗
+     own_spec_frag γ (ReplicaSetV.key rs)
+       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+       (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')))%I).
+  set I := (∃ (i : w64) (done_rss : list ReplicaSetV.t) (rs_v : loc),
+    "Hi_ptr" ∷ i_ptr ↦ i ∗
+    "Hrs_ptr" ∷ rs_ptr ↦ rs_v ∗
+    "HscaledDown" ∷ scaledDown_ptr ↦
+      (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0)
+        (take (sint.nat i) old_rss))) ∗
+    "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
+    "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;old_rss, ReplicaSetV.deepown_l ptr rs dq_rss) ∗
+    "%Hdone_len" ∷ ⌜ length done_rss = sint.nat i ⌝ ∗
+    "%Hdone_drained" ∷ ⌜ Forall (λ rs',
+        rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
+        done_rss ⌝ ∗
+    "Hdone" ∷ ([∗ list] rs;rs' ∈ take (sint.nat i) old_rss;done_rss, FRAG rs rs') ∗
+    "Hrest" ∷ ([∗ list] rs ∈ drop (sint.nat i) old_rss, FRAG rs rs) ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝
+  )%I.
+  iAssert I with "[i rs scaledDown Hsl Hrss Hown_frags]" as "Hloop_inv".
+  { iExists (W64 0), [], null. rewrite /named !drop_0 !take_0.
+    replace (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0) [])) with false
+      by (symmetry; apply bool_decide_eq_false_2; inversion 1).
+    iFrame "i rs scaledDown Hsl Hrss Hown_frags".
+    iSplit; [iPureIntro; done|].
+    iSplit; [iPureIntro; constructor|].
+    iSplit; [done|].
+    iPureIntro. word. }
+  wp_for "Hloop_inv".
+  wp_if_destruct.
+  - assert (∃ this_ptr, ptrs !! sint.nat i = Some this_ptr) as
+      [this_ptr Hthis_ptr].
+    { apply lookup_lt_is_Some_2. rewrite Hsl_len1. word. }
+    assert (∃ this_rs, old_rss !! sint.nat i = Some this_rs) as [this_rs Hthis_rs].
+    { apply lookup_lt_is_Some_2. rewrite -Hlen_eq.
+      pose proof (lookup_lt_Some _ _ _ Hthis_ptr). done. }
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr. }
+    iIntros "Hsl". wp_auto.
+    (* Lend the element's deepown and its fragments for one scale call. *)
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hthis_ptr|exact Hthis_rs|].
+    rewrite (drop_S _ _ _ Hthis_rs).
+    iDestruct "Hrest" as "[Hthis_frag Hrest]".
+    iDestruct "Hthis_frag" as "[Hthis_meta Hthis_spec]".
+    assert (ReplicaSetV.valid this_rs) as Hthis_valid.
+    { rewrite Forall_lookup in Hrss_valid. eapply Hrss_valid. exact Hthis_rs. }
+    wp_apply (wp_scaleReplicaSet γ model_l this_ptr this_rs (W32 0) dq_rss
+      with "[$Hthis $Hthis_meta $Hthis_spec]").
+    { iFrame "#". iPureIntro. split; [done|word]. }
+    iIntros (scaled rs'_l this_rs')
+      "(Hthis & %Hkey & %Huid & Hthis_meta & Hthis_spec & Hdisj)".
+    iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+    wp_auto.
+    (* Either way the element is now at zero, and [scaled] reports whether it
+       had to be moved. *)
+    iAssert ⌜ this_rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)
+        ∧ scaled = bool_decide (rs_replicas this_rs ≠ W32 0) ⌝%I
+      as %[Hzero Hscaled_eq].
+    { iDestruct "Hdisj" as "[%Hnoop|(%Hscaled & _ & %Hspec_updated)]".
+      - destruct Hnoop as (Hcount & -> & -> & _). iPureIntro. split.
+        + rewrite (rs_replicas_of_valid _ Hthis_valid) Hcount. done.
+        + symmetry. apply bool_decide_eq_false_2. intros Hne. exact (Hne Hcount).
+      - destruct Hscaled as (Hne & ->). iPureIntro. split.
+        + eapply rs_scaled_spec_updated_replicas. exact Hspec_updated.
+        + symmetry. apply bool_decide_eq_true_2. exact Hne. }
+    (* The accumulator advances by exactly this element's contribution. *)
+    assert (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0)
+        (take (sint.nat (word.add i (W64 1))) old_rss))
+      = orb (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0)
+          (take (sint.nat i) old_rss))) scaled) as Hacc.
+    { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite (bool_decide_ext _ _ (exists_take_S _ _ _ _ Hthis_rs)).
+      rewrite bool_decide_or -Hscaled_eq. done. }
+    iAssert (([∗ list] rs;rs' ∈ take (sint.nat (word.add i (W64 1))) old_rss;
+        done_rss ++ [this_rs'], FRAG rs rs') ∗
+      ([∗ list] rs ∈ drop (sint.nat (word.add i (W64 1))) old_rss, FRAG rs rs))%I
+      with "[Hdone Hthis_meta Hthis_spec Hrest]" as "[Hdone Hrest]".
+    { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite (take_S_r _ _ _ Hthis_rs).
+      iFrame "Hrest".
+      iApply (big_sepL2_app with "[$Hdone]").
+      unfold FRAG. rewrite big_sepL2_singleton. iFrame. }
+    assert (length (done_rss ++ [this_rs']) = sint.nat (word.add i (W64 1)))
+      as Hdone_len'.
+    { rewrite app_length Hdone_len /=. word. }
+    assert (Forall (λ rs',
+        rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
+        (done_rss ++ [this_rs'])) as Hdrained'.
+    { apply Forall_app. split; [exact Hdone_drained|].
+      constructor; [exact Hzero|constructor]. }
+    destruct scaled.
+    + wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      iAssert I with "[Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest]"
+        as "Hloop_inv".
+      { iExists (word.add i (W64 1)), (done_rss ++ [this_rs']), this_ptr.
+        rewrite Hacc orb_true_r.
+        iFrame "Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest".
+        iPureIntro. split_and!;
+          [exact Hdone_len'|exact Hdrained'|word|word]. }
+      iFrame.
+    + wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      iAssert I with "[Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest]"
+        as "Hloop_inv".
+      { iExists (word.add i (W64 1)), (done_rss ++ [this_rs']), this_ptr.
+        rewrite Hacc orb_false_r.
+        iFrame "Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest".
+        iPureIntro. split_and!;
+          [exact Hdone_len'|exact Hdrained'|word|word]. }
+      iFrame.
+  - (* Done: the whole list is drained. *)
+    assert (take (sint.nat i) old_rss = old_rss) as Htake.
+    { apply take_ge. word. }
+    iEval (rewrite Htake) in "Hdone".
+    iApply ("HΦ" $! _ done_rss).
+    iFrame "Hsl Hrss Hdone". iPureIntro. split_and!.
+    + word.
+    + exact Hdone_drained.
+    + rewrite Htake. done.
+Qed.
 
 (* rollout performs one reconciliation step: ensure the new ReplicaSet exists
    and sits at the deployment's replica count, and drain every other one.
