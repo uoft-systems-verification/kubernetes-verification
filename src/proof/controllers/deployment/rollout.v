@@ -253,6 +253,180 @@ Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
             ({[ new_rs_key d ]} ∪ children)))
   }}}.
 Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_findNewReplicaSet d_l d sl ptrs rss dq_d dq_rss dq_rss
+    with "[$Hd $Hsl $Hrss]").
+  iIntros (rs_l) "[Hm (Hd & Hsl & Hrss)]".
+  destruct (find_new_replica_set d rss) as [[i found_rs]|] eqn:Hfind.
+  - (* Adopted: an existing ReplicaSet already carries the template, so the
+       create path is never entered and nothing is written. *)
+    iDestruct "Hm" as %Hlookup. wp_auto.
+    assert (rss !! i = Some found_rs ∧
+        template_matches (rs_template found_rs) (deployment_template d))
+      as [Hrss_i Hmatches].
+    { unfold find_new_replica_set in Hfind.
+      apply list_find_Some in Hfind as (H1 & H2 & _). done. }
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hlookup|exact Hrss_i|].
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
+      "(%Hnn & Ht & Hm & Hs & Hst)".
+    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
+      with "[$Ht $Hm $Hs $Hst]") as "Hthis".
+    iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+    rewrite (bool_decide_eq_false_2 _ Hnn). simpl.
+    wp_auto.
+    iApply ("HΦ" $! rs_l found_rs). iFrame "Hd Hsl Hrss".
+    iSplit; [iPureIntro; exact Hmatches|].
+    iLeft. iFrame "Hreserved Hown_children".
+    iPureIntro. exists i. done.
+  - (* Created: no ReplicaSet matched, so one is built and submitted. *)
+    iDestruct "Hm" as %->.
+    wp_auto.
+    iAssert (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1) as "#Hcorev1".
+    { iPkgInit. }
+    iAssert (is_pkg_init controller) as "#Hcontroller". { iPkgInit. }
+    iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
+    (* The template is deep-copied out of the deployment's spec, so the spec
+       struct has to be opened far enough to name the Template field. *)
+    iPoseProof (DeploymentV.deepown_l_split with "Hd") as
+      "(%Hd_nn & Hd_tm & Hd_om & Hd_spec & Hd_st)".
+    iDestruct "Hd_spec" as (dspec_c) "[Hdspec_field Hdspec]".
+    iNamedPrefix "Hdspec" "Hds_".
+    iDestruct (struct_fields_split (V:=v1.DeploymentSpec.t) with "Hdspec_field")
+      as "[Hdfields %Hdspec_nn]".
+    iNamedPrefix "Hdfields" "Hf_".
+    wp_apply (wp_PodTemplateSpec__DeepCopy
+      (DeploymentV.spec_ptr d_l).[v1.DeploymentSpec.t, "Template"]
+      dspec_c.(v1.DeploymentSpec.Template') (deployment_template d) dq_d dq_d
+      with "[$Hcorev1 $Hf_Template $Hds_Hdeepown_template]").
+    iIntros (copy_l copy_c) "(Hcopy_l & Hcopy & Hf_Template & Hds_Hdeepown_template)".
+    wp_auto.
+    (* The hash is taken of the copy, before the label is stamped on. *)
+    wp_apply (wp_ComputeHash newRSTemplate_ptr copy_c (deployment_template d) 1
+      with "[$Hcontroller $newRSTemplate $Hcopy]").
+    iIntros "(HnewRSTemplate & Hcopy)".
+    wp_auto.
+    (* cloneAndAddLabel reads the deployment's own template labels. *)
+    iNamedPrefix "Hds_Hdeepown_template" "Ht_".
+    iNamedPrefix "Ht_Hdeepown_objectmeta" "Htm_".
+    iDestruct (labels_opt_own_of_field with "[] Htm_Hdeepown_labels_some")
+      as "Hlabels"; [iPureIntro; exact Htm_Hdeepown_labels_none|].
+    wp_apply (wp_cloneAndAddLabel _
+      (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
+      deployment_unique_label_key (template_hash (deployment_template d)) dq_d
+      with "[$Hlabels]").
+    iIntros (labels_l) "[Hlabels Hnew_labels]".
+    iDestruct (labels_field_own_of_opt with "Hlabels")
+      as "Htm_Hdeepown_labels_some".
+    wp_auto.
+    (* The selector is present because the deployment is valid. *)
+    destruct Hd_valid as (Hd_tm_valid & Hd_rv_valid & Hd_meta_valid &
+      Hd_spec_valid & Hd_status_valid).
+    pose proof Hd_spec_valid as (Hd_replicas_v & Hd_min_v &
+      (dsel & Hdsel & Hdsel_valid & Hdsel_ne & Hdsel_matches) & Hd_tmpl_v).
+    iAssert (LabelSelectorV.deepown_l
+        dspec_c.(v1.DeploymentSpec.Selector') dsel dq_d)
+      with "[Hds_Hdeepown_selector_some]" as "Hselector".
+    { rewrite Hdsel. iDestruct "Hds_Hdeepown_selector_some" as (sc) "[Hsc Hs]".
+      iExists sc. iFrame. }
+    wp_apply (wp_cloneSelectorAndAddLabel _ dsel deployment_unique_label_key
+      (template_hash (deployment_template d)) dq_d with "[$Hselector]").
+    iIntros (sel_l) "[Hselector Hnew_selector]".
+    iAssert (match d.(DeploymentV.Spec').(DeploymentSpecV.Selector') with
+      | Some selector => ∃ selector_c,
+          dspec_c.(v1.DeploymentSpec.Selector') ↦{dq_d} selector_c ∗
+          LabelSelectorV.deepown selector_c selector dq_d
+      | None => True
+      end)%I with "[Hselector]" as "Hds_Hdeepown_selector_some".
+    { rewrite Hdsel. iDestruct "Hselector" as (sc) "[Hsc Hs]".
+      iExists sc. iFrame. }
+    (* Reassemble the deployment: replicasOf takes it whole. *)
+    iCombineNamed "Htm_*" as "Htm".
+    iAssert (ObjectMetaV.deepown
+        (dspec_c.(v1.DeploymentSpec.Template')).(v1.PodTemplateSpec.ObjectMeta')
+        (deployment_template d).(PodTemplateSpecV.ObjectMeta') dq_d)
+      with "[Htm]" as "Ht_Hdeepown_objectmeta".
+    { iNamed "Htm". iFrame "%". iFrame. }
+    wp_auto.
+    (* Folded [deepown]s do not unfold for [iFrame]; reassemble by hand. *)
+    iAssert (PodTemplateSpecV.deepown
+        dspec_c.(v1.DeploymentSpec.Template') (deployment_template d) dq_d)
+      with "[Ht_Hdeepown_objectmeta Ht_Hdeepown_spec]"
+      as "Hds_Hdeepown_template".
+    { rewrite /PodTemplateSpecV.deepown /named.
+      iSplitL "Ht_Hdeepown_objectmeta"; iAssumption. }
+    iAssert (typed_pointsto_def (DeploymentV.spec_ptr d_l) dspec_c dq_d)
+      with "[Hf_Replicas Hf_Selector Hf_Strategy Hf_MinReadySeconds
+        Hf_RevisionHistoryLimit Hf_Paused Hf_ProgressDeadlineSeconds
+        Hf_Template]" as "Hfields".
+    { simpl. iFrame. }
+    iDestruct (struct_fields_combine (V:=v1.DeploymentSpec.t)
+      (DeploymentV.spec_ptr d_l) dspec_c dq_d Hdspec_nn with "Hfields")
+      as "Hdspec_field".
+    iAssert (DeploymentSpecV.deepown_l (DeploymentV.spec_ptr d_l)
+        d.(DeploymentV.Spec') dq_d)
+      with "[Hdspec_field Hds_Hdeepown_replicas_some
+        Hds_Hdeepown_selector_some Hds_Hdeepown_template]" as "Hd_spec".
+    { iExists dspec_c. iFrame "Hdspec_field".
+      rewrite /DeploymentSpecV.deepown /named.
+      iSplitR; [iPureIntro; assumption|].
+      iSplitL "Hds_Hdeepown_replicas_some"; [iAssumption|].
+      iSplitR; [iPureIntro; assumption|].
+      iSplitR; [iPureIntro; assumption|].
+      iSplitL "Hds_Hdeepown_selector_some"; iAssumption. }
+    iPoseProof (DeploymentV.deepown_l_restore _ _ _ Hd_nn
+      with "[$Hd_tm $Hd_om $Hd_spec $Hd_st]") as "Hd".
+    wp_apply (wp_replicasOf d_l d dq_d with "[$Hd]").
+    iIntros "Hd".
+    (* The literal reads the deployment's name, namespace, template labels and
+       MinReadySeconds, and takes a controller reference to it, so the
+       deployment is opened once more and stays open until it is handed back. *)
+    iPoseProof (DeploymentV.deepown_l_split with "Hd") as
+      "(_ & Hd_tm & Hd_om & Hd_spec & Hd_st)".
+    iDestruct "Hd_om" as (dmeta_c) "[Hdmeta_field Hdmeta]".
+    iAssert ⌜ dmeta_c.(v1.ObjectMeta.Name') =
+          d.(DeploymentV.ObjectMeta').(ObjectMetaV.Name') ∧
+        dmeta_c.(v1.ObjectMeta.Namespace') =
+          d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝%I
+      as %[Hdname Hdns].
+    { iNamed "Hdmeta". iPureIntro. split; done. }
+    wp_auto.
+    rewrite Hdname.
+    iAssert (ObjectMetaV.deepown_l (DeploymentV.objectmeta_ptr d_l)
+        d.(DeploymentV.ObjectMeta') dq_d)
+      with "[Hdmeta_field Hdmeta]" as "Hd_om".
+    { iExists dmeta_c. iFrame. }
+    iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happsv1".
+    { iPkgInit. }
+    iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1)
+      as "#Hmetav1". { iPkgInit. }
+    wp_apply (wp_SchemeGroupVersion__WithKind with "[$Happsv1]").
+    iIntros (gvk) "%Hgvk".
+    (* STOPS HERE. What remains, in order:
+
+       1. [NewControllerRef]. The call sits under a dereference, so it needs a
+          [wp_bind] before [wp_apply], and the owner argument is still a
+          [Convert ... meta_v1.Object ...] rather than the [interface.mk_ok]
+          the pattern in statefulset/pod.v:147 matches. Bridging that is the
+          immediate obstacle; [wp_NewControllerRef_Deployment] itself is
+          stated and ready.
+       2. The second [cloneAndAddLabel], for the ReplicaSet's own labels —
+          [podtemplate_labels_acc] in common.v is there for it.
+       3. Building [ReplicaSetV.deepown] for the composite literal at
+          deployment.go:136. This is the bulk. [new_replica_set] in common.v
+          is the value it has to be built at, and every piece of ownership it
+          needs is now in hand: [TimeV.deepown_zero] and
+          [ReplicaSetStatusV.deepown_zero] for the opaque zero fields, the
+          cloned label map, the cloned selector, the [replicas] local, the
+          owner-reference slice, and the copied template.
+       4. [wp_State__ReplicaSetCreate_named_available], whose side conditions
+          are [new_replica_set_is_new] plus the validity facts already
+          destructed above.
+
+       Note for step 3: the labels map used to be *shared* between the
+       ReplicaSet's own metadata and its template's, which no deep-ownership
+       predicate can hold twice. That is now fixed in the Go — see the comment
+       at deployment.go:139. *)
 Admitted.
 
 (* reconcileNewReplicaSet scales the new ReplicaSet straight to the
