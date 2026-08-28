@@ -227,11 +227,31 @@ Definition unique_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
    the deployment's template and sits at its replica count, and every other one
    is drained to zero.
 
-   Deliberately scoped to template and replica count only. It does *not*
-   constrain the pod-template-hash selector/label machinery — [is_new_replica_set]
-   covers that for the objects this controller creates, but a ReplicaSet adopted
-   from the API server need not satisfy it. This is exactly what [wp_rollout]'s
-   postcondition delivers. *)
+   SCOPE — decided, not an oversight. Reviewed 2026-08-27 (questions-08-20.md
+   Q1) and deliberately left as template + replica count.
+
+   What this does NOT say: nothing about the pod-template-hash machinery. A
+   ReplicaSet satisfying [deployment_realized] need not carry the right name,
+   labels, selector, or owner reference. [is_new_replica_set] below pins all
+   eight fields, but it applies only to ReplicaSets this controller *creates*.
+
+   Why it is not strengthened: a ReplicaSet adopted from the API server has
+   whatever labels and selector its creator gave it, and this controller has no
+   adoption logic to fix them up — adoption/release is on deployment.go's
+   excluded-features list. Strengthening the predicate would therefore require
+   either adding that logic or assuming adopted ReplicaSets already conform.
+
+   What this costs, stated so a reader does not have to discover it: the
+   top-level guarantee is convergence *up to template and replica count*. It
+   does not by itself establish that the converged ReplicaSet selects the right
+   Pods, which is where the end-to-end story would need it (Q10 — composition
+   onto the ReplicaSet controller's triple). Any writeup should say this
+   plainly; a reviewer will otherwise notice the gap unaided.
+
+   Both top-level triples are stated over this predicate
+   ([progress_spec] and [stability_spec] in top_level.v), as are
+   [realized_found_at_count] and [realized_old_drained] in stability.v.
+   Rescoping it means redoing those. *)
 Definition deployment_realized (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     : Prop :=
   ∃ new_rs,
