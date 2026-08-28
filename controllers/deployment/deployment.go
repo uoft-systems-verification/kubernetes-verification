@@ -138,7 +138,11 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 			Name:            d.Name + "-" + podTemplateSpecHash,
 			Namespace:       d.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(d, apps.SchemeGroupVersion.WithKind("Deployment"))},
-			Labels:          newRSTemplate.Labels,
+			// A second clone rather than newRSTemplate.Labels: upstream shares
+			// one map between the ReplicaSet's own labels and its template's,
+			// but a deep-ownership predicate cannot hold the same map twice.
+			// The contents are identical either way.
+			Labels: cloneAndAddLabel(d.Spec.Template.Labels, deploymentUniqueLabelKey, podTemplateSpecHash),
 		},
 		Spec: apps.ReplicaSetSpec{
 			Replicas:        &replicas,

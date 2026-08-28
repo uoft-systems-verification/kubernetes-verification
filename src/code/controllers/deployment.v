@@ -259,7 +259,10 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     (MethodResolve (go.PointerType schema.GroupVersion) "WithKind"%go (GlobalVarAddr apps_v1.SchemeGroupVersion #())) "$a0") in
     (FuncResolve meta_v1.NewControllerRef [] #()) "$a0" "$a1")) in
     CompositeLiteral (go.SliceType meta_v1.OwnerReference) (LiteralValue [KeyedElement None (ElementExpression meta_v1.OwnerReference "$v0")])) in
-    let: "$v3" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go "newRSTemplate"))) in
+    let: "$v3" := (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (StructFieldRef apps_v1.DeploymentSpec "Template"%go (StructFieldRef apps_v1.Deployment "Spec"%go (![go.PointerType apps_v1.Deployment] "d")))))) in
+    let: "$a1" := (Convert go.untyped_string go.string deploymentUniqueLabelKey) in
+    let: "$a2" := (![go.string] "podTemplateSpecHash") in
+    (FuncResolve cloneAndAddLabel [] #()) "$a0" "$a1" "$a2") in
     CompositeLiteral meta_v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "OwnerReferences"%go)) (ElementExpression (go.SliceType meta_v1.OwnerReference) "$v2"); KeyedElement (Some (KeyField "Labels"%go)) (ElementExpression (go.MapType go.string go.string) "$v3")])) in
     let: "$v1" := (let: "$v0" := "replicas" in
     let: "$v1" := (![go.int32] (StructFieldRef apps_v1.DeploymentSpec "MinReadySeconds"%go (StructFieldRef apps_v1.Deployment "Spec"%go (![go.PointerType apps_v1.Deployment] "d")))) in
@@ -293,7 +296,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:165:6 *)
+   go: deployment.go:169:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -314,7 +317,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:171:6 *)
+   go: deployment.go:175:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "oldRSs") in
@@ -349,7 +352,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:186:6 *)
+   go: deployment.go:190:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -399,7 +402,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
    keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
    §3.2.
 
-   go: deployment.go:211:6 *)
+   go: deployment.go:215:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -449,7 +452,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:229:6 *)
+(* go: deployment.go:233:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
