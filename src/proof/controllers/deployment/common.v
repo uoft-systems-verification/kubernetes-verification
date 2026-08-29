@@ -436,6 +436,189 @@ Proof.
   rewrite Hkind Hname Huid. done.
 Qed.
 
+(* TRUSTED, and in the same family as [template_hash_respects_matches]:
+   controller.ComputeHash formats an FNV-32a hash through
+   rand.SafeEncodeString, which yields a short alphanumeric string. That the
+   result is a legal label value is a property of code goose does not
+   translate. *)
+Axiom template_hash_valid_label_value :
+  ∀ t, valid_label_value (template_hash t).
+
+Lemma deployment_unique_label_key_valid :
+  valid_label_name deployment_unique_label_key.
+Proof.
+  left.
+  unfold valid_qualified_name, qualified_name_syntax.
+  cbn. repeat split.
+  all: unfold label_alphanumeric, label_extended_character,
+    byte_underscore, byte_dot, byte_dash.
+  Timeout 20 all: vm_compute.
+  (* The true disjunct is the "neither Lt nor Gt" one; [intuition] commits to
+     an earlier branch, so point at it. *)
+  all: try (right; right; split; discriminate).
+  all: try (left; right; right; split; discriminate).
+  all: try (right; left; reflexivity).
+  all: try discriminate.
+  all: try done.
+Qed.
+
+Lemma new_rs_labels_valid d :
+  valid_labels
+    (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') →
+  valid_labels (Some (new_rs_labels d)).
+Proof.
+  rewrite /valid_labels /new_rs_labels. intros Hlabels.
+  apply map_Forall_insert_2.
+  - split; [apply deployment_unique_label_key_valid
+           |apply template_hash_valid_label_value].
+  - destruct ((deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels'))
+      as [m|]; [exact Hlabels|apply map_Forall_empty].
+Qed.
+
+(* The deployment's selector must not constrain the pod-template-hash label.
+
+   This is a real precondition, not a technicality. getNewReplicaSet stamps
+   that label onto the new ReplicaSet's template, and the API server checks
+   that a ReplicaSet's selector matches its own template's labels. A match
+   expression keyed on pod-template-hash — [DoesNotExist], or [NotIn] the value
+   the hash happens to take — would be satisfied by the deployment's template
+   and violated by the ReplicaSet's, so the create would be rejected. Upstream
+   Kubernetes has the same hazard and avoids it by convention. *)
+Definition selector_avoids_hash_label (selector : LabelSelectorV.t) : Prop :=
+  ∀ req, req ∈ LabelSelectorV.match_expressions_list selector →
+    req.(LabelSelectorRequirementV.Key') ≠ deployment_unique_label_key.
+
+Lemma selected_label_new_rs_labels d k :
+  k ≠ deployment_unique_label_key →
+  LabelSelectorV.selected_label (Some (new_rs_labels d)) k =
+  LabelSelectorV.selected_label
+    (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') k.
+Proof.
+  intros Hk.
+  assert (deployment_unique_label_key ≠ k) as Hk'
+    by (intros Hc; apply Hk; symmetry; exact Hc).
+  rewrite /LabelSelectorV.selected_label /new_rs_labels.
+  rewrite (lookup_insert_ne _ _ _ _ Hk').
+  destruct ((deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels'))
+    as [m|]; [done|apply lookup_empty].
+Qed.
+
+Lemma requirement_matches_selected_label labels1 labels2 req :
+  LabelSelectorV.selected_label labels1 req.(LabelSelectorRequirementV.Key') =
+  LabelSelectorV.selected_label labels2 req.(LabelSelectorRequirementV.Key') →
+  LabelSelectorV.requirement_matches labels1 req →
+  LabelSelectorV.requirement_matches labels2 req.
+Proof.
+  rewrite /LabelSelectorV.requirement_matches. intros Heq. rewrite Heq. done.
+Qed.
+
+Lemma valid_dns1123_subdomain_non_empty s :
+  valid_dns1123_subdomain s → s ≠ ""%go.
+Proof.
+  intros [Hsyntax _]. destruct s as [|b s]; [contradiction|discriminate].
+Qed.
+
+(* The selector stamped onto the new ReplicaSet still matches its template:
+   the same binding is added to both, and by [selector_avoids_hash_label] no
+   match expression is watching that key. *)
+Lemma new_rs_selector_matches d dsel :
+  d.(DeploymentV.Spec').(DeploymentSpecV.Selector') = Some dsel →
+  LabelSelectorV.matches dsel
+    (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') →
+  selector_avoids_hash_label dsel →
+  LabelSelectorV.matches
+    (selector_with_label dsel deployment_unique_label_key
+       (template_hash (deployment_template d)))
+    (new_rs_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels').
+Proof.
+  intros Hdsel [Hml Hreq] Havoid.
+  rewrite /new_rs_template /=. split.
+  - rewrite /selector_with_label /LabelSelectorV.match_labels /=.
+    intros key value Hkey.
+    destruct (decide (key = deployment_unique_label_key)) as [->|Hne].
+    + rewrite lookup_insert in Hkey. rewrite /new_rs_labels lookup_insert.
+      exact Hkey.
+    + assert (deployment_unique_label_key ≠ key) as Hne'
+        by (intros Hc; apply Hne; symmetry; exact Hc).
+      rewrite (lookup_insert_ne _ _ _ _ Hne') in Hkey.
+      rewrite /new_rs_labels (lookup_insert_ne _ _ _ _ Hne').
+      rewrite /LabelSelectorV.match_labels in Hml.
+      destruct (dsel.(LabelSelectorV.MatchLabels')) as [req_m|] eqn:Hdm;
+        simpl in Hkey.
+      * destruct ((deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels'))
+          as [m|] eqn:Hlm; simpl.
+        -- exact (Hml key value Hkey).
+        -- rewrite Hml lookup_empty in Hkey. discriminate.
+      * rewrite lookup_empty in Hkey. discriminate.
+  - rewrite /selector_with_label /LabelSelectorV.match_expressions_list /=.
+    apply Forall_forall. intros req Hin.
+    eapply requirement_matches_selected_label.
+    { symmetry. apply selected_label_new_rs_labels. apply Havoid.
+      rewrite list_elem_of_In. exact Hin. }
+    rewrite Forall_forall in Hreq. apply Hreq.
+    rewrite /LabelSelectorV.match_expressions_list. exact Hin.
+Qed.
+
+(* The ReplicaSet getNewReplicaSet submits passes admission. *)
+Lemma new_replica_set_valid_named_create d ref dsel :
+  DeploymentV.valid d →
+  valid_dns1123_subdomain (new_rs_name d) →
+  d.(DeploymentV.Spec').(DeploymentSpecV.Selector') = Some dsel →
+  selector_avoids_hash_label dsel →
+  OwnerReferenceV.valid ref →
+  ReplicaSetV.valid_named_create
+    d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') (new_replica_set d ref).
+Proof.
+  intros Hd_valid Hname Hdsel Havoid Href.
+  pose proof Hd_valid as (Htm & _ & Hmeta & Hspec & _).
+  pose proof Hspec as (Hrepl & Hmin &
+    (dsel0 & Hdsel0 & Hsel_valid & Hsel_ne & Hsel_match) & Htmpl).
+  assert (dsel0 = dsel) as ->
+    by (rewrite Hdsel in Hdsel0; injection Hdsel0; auto).
+  rewrite /ReplicaSetV.valid_named_create /new_replica_set /=.
+  split_and!.
+  - apply zero_typemeta_valid_create.
+  - rewrite /ObjectMetaV.valid_named_create /=. split_and!.
+    + intros Hc. done.
+    + apply valid_dns1123_subdomain_non_empty. exact Hname.
+    + right. split; [right; left; done|exact Hname].
+    + right. split; [|done].
+      apply (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
+    + apply new_rs_labels_valid. exact (proj1 Htmpl).
+    + done.
+    + intros i1 i2 or1 or2 H1 H2 _ _.
+      apply lookup_lt_Some in H1. apply lookup_lt_Some in H2.
+      simpl in H1, H2. lia.
+    + intros or Hin. apply list_elem_of_singleton in Hin as ->. exact Href.
+    + done.
+    + apply valid_managed_fields_none.
+  - rewrite /ReplicaSetSpecV.valid_create /=. split_and!.
+    + apply deployment_replicas_nonneg. exact Hd_valid.
+    + exact Hmin.
+    + exists (selector_with_label dsel deployment_unique_label_key
+        (template_hash (deployment_template d))).
+      rewrite /new_rs_selector Hdsel /=. split_and!.
+      * done.
+      * rewrite /LabelSelectorV.valid /selector_with_label /=. split.
+        -- rewrite /valid_labels. apply map_Forall_insert_2;
+             [split; [apply deployment_unique_label_key_valid
+                     |apply template_hash_valid_label_value]|].
+           pose proof (proj1 Hsel_valid) as Hsl.
+           rewrite /valid_labels in Hsl.
+           destruct (dsel.(LabelSelectorV.MatchLabels')) as [m|];
+             [exact Hsl|apply map_Forall_empty].
+        -- exact (proj2 Hsel_valid).
+      * rewrite /LabelSelectorV.empty /selector_with_label /=.
+        intros [[Hc|Hc] _]; [discriminate|].
+        injection Hc as Hc. exact (insert_non_empty _ _ _ Hc).
+      * apply new_rs_selector_matches;
+          [exact Hdsel|exact Hsel_match|exact Havoid].
+    + rewrite /PodTemplateSpecV.valid /new_rs_template /=. split_and!.
+      * apply new_rs_labels_valid. exact (proj1 Htmpl).
+      * exact (proj1 (proj2 Htmpl)).
+      * exact (proj2 (proj2 Htmpl)).
+Qed.
+
 (* ---------------------------------------------------------------- *)
 (* Top-level predicates                                              *)
 (* ---------------------------------------------------------------- *)
