@@ -427,7 +427,7 @@ Proof.
   unfold stability_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   destruct Hinput as (Hkey_def & Hd_valid & Hnamespace_valid & Hnew_name_valid &
-    Hrss_valid & Hdom_eq & Hunique).
+    Hsel_adm & Hrss_valid & Hdom_eq & Hunique).
   wp_auto.
   iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
   (* The metadata fragment pins the UID and rules out a deletion timestamp. *)
