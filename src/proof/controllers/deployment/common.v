@@ -186,6 +186,97 @@ Definition old_replica_set_pairs (ptrs : list loc) (rss : list ReplicaSetV.t)
     (new_rs_uid : types.UID.t) : list (loc * ReplicaSetV.t) :=
   filter (λ pr, rs_is_old new_rs_uid pr.2) (zip ptrs rss).
 
+Definition rs_is_new (new_rs_uid : types.UID.t) (rs : ReplicaSetV.t) : Prop :=
+  ¬ rs_is_old new_rs_uid rs.
+
+#[global] Instance rs_is_new_dec new_rs_uid rs : Decision (rs_is_new new_rs_uid rs).
+Proof. unfold rs_is_new. apply _. Defined.
+
+(* Interleaving post-states back into positional order.
+
+   [rollout] scales the new ReplicaSet and, separately, every old one, so it
+   ends up holding post-states for two disjoint sublists. Its postcondition is
+   positional over the list it was given, so the two have to be merged back.
+   [big_sepL2_filter_acc] cannot do this: it is an accessor that restores what
+   it lent out, which is all the stability proof needs because nothing there is
+   written.
+
+   [merge_old_posts] walks the original list, taking each old ReplicaSet's
+   post-state from [posts] in order and using [new_post] for the one that is
+   not old. *)
+Fixpoint merge_old_posts (new_rs_uid : types.UID.t) (rss : list ReplicaSetV.t)
+    (new_post : ReplicaSetV.t) (posts : list ReplicaSetV.t)
+    : list ReplicaSetV.t :=
+  match rss with
+  | [] => []
+  | rs :: rest =>
+      if decide (rs_is_old new_rs_uid rs)
+      then match posts with
+           | p :: posts' => p :: merge_old_posts new_rs_uid rest new_post posts'
+           | [] => rs :: merge_old_posts new_rs_uid rest new_post []
+           end
+      else new_post :: merge_old_posts new_rs_uid rest new_post posts
+  end.
+
+Lemma merge_old_posts_length uid rss new_post posts :
+  length (merge_old_posts uid rss new_post posts) = length rss.
+Proof.
+  revert posts. induction rss as [|rs rest IH]; intros posts; first done.
+  simpl. destruct (decide (rs_is_old uid rs)).
+  - destruct posts as [|p posts']; simpl; by rewrite IH.
+  - simpl. by rewrite IH.
+Qed.
+
+(* Anything true of [new_post] and of every old post-state (and, for the
+   degenerate short-[posts] case, of the originals) is true of the merge. *)
+Lemma merge_old_posts_Forall uid rss new_post posts (Q : ReplicaSetV.t → Prop) :
+  Q new_post →
+  Forall Q posts →
+  Forall Q rss →
+  Forall Q (merge_old_posts uid rss new_post posts).
+Proof.
+  intros Hnew. revert posts.
+  induction rss as [|rs rest IH]; intros posts Hposts Hrss;
+    first apply Forall_nil_2.
+  apply Forall_cons_1 in Hrss as [Hrs Hrest].
+  simpl. destruct (decide (rs_is_old uid rs)).
+  - destruct posts as [|p posts'].
+    + apply Forall_cons_2; [exact Hrs|].
+      apply IH; [apply Forall_nil_2|exact Hrest].
+    + apply Forall_cons_1 in Hposts as [Hp Hposts'].
+      apply Forall_cons_2; [exact Hp|apply IH; [exact Hposts'|exact Hrest]].
+  - apply Forall_cons_2; [exact Hnew|apply IH; [exact Hposts|exact Hrest]].
+Qed.
+
+(* The recombination itself: post-states held separately for the old sublist
+   and for the one ReplicaSet that is not old go back together positionally. *)
+Lemma big_sepL2_merge_old_posts uid (rss : list ReplicaSetV.t)
+    (new_post : ReplicaSetV.t) (posts : list ReplicaSetV.t)
+    (P : ReplicaSetV.t → ReplicaSetV.t → iProp Σ) :
+  ([∗ list] rs ∈ filter (rs_is_new uid) rss, P rs new_post) -∗
+  ([∗ list] rs;p ∈ filter (rs_is_old uid) rss; posts, P rs p) -∗
+  ([∗ list] rs;rs' ∈ rss; merge_old_posts uid rss new_post posts, P rs rs').
+Proof.
+  revert posts. induction rss as [|rs rest IH]; intros posts.
+  { iIntros "_ _". done. }
+  rewrite !filter_cons /=.
+  destruct (decide (rs_is_old uid rs)) as [Hold|Hnot].
+  - destruct (decide (rs_is_new uid rs)) as [Hcontra|_];
+      first (exfalso; exact (Hcontra Hold)).
+    iIntros "Hnewpart Holds".
+    destruct posts as [|p posts'].
+    { iDestruct (big_sepL2_nil_inv_r with "Holds") as %Hc. discriminate. }
+    iDestruct "Holds" as "[Hp Holds]".
+    iSplitL "Hp"; [iExact "Hp"|].
+    iApply (IH posts' with "Hnewpart Holds").
+  - destruct (decide (rs_is_new uid rs)) as [_|Hcontra];
+      last (exfalso; exact (Hcontra Hnot)).
+    iIntros "Hnewpart Holds".
+    iDestruct "Hnewpart" as "[Hn Hnewpart]".
+    iSplitL "Hn"; [iExact "Hn"|].
+    iApply (IH posts with "Hnewpart Holds").
+Qed.
+
 (* TODO: un-axiomatize. Once PodTemplateSpecV carries enough structure to state
    template equality, template_matches should become a Definition (equality of
    the templates after deleting the pod-template-hash label from each
