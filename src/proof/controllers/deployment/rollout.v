@@ -218,6 +218,7 @@ Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
       "%Hnamespace_valid" ∷ ⌜ valid_namespace
           d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
+      "%Hsel_adm" ∷ ⌜ deployment_selector_admissible d ⌝ ∗
       "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
       "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
         d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') 1 children
@@ -327,7 +328,7 @@ Proof.
       as "Htm_Hdeepown_labels_some".
     wp_auto.
     (* The selector is present because the deployment is valid. *)
-    destruct Hd_valid as (Hd_tm_valid & Hd_rv_valid & Hd_meta_valid &
+    pose proof Hd_valid as (Hd_tm_valid & Hd_rv_valid & Hd_meta_valid &
       Hd_spec_valid & Hd_status_valid).
     pose proof Hd_spec_valid as (Hd_replicas_v & Hd_min_v &
       (dsel & Hdsel & Hdsel_valid & Hdsel_ne & Hdsel_matches) & Hd_tmpl_v).
@@ -511,29 +512,69 @@ Proof.
           as "Htmpl".
         rewrite /new_rs_template. destruct (deployment_template d). iExact "Htmpl". }
       iApply ReplicaSetStatusV.deepown_zero. }
-    (* STOPS HERE, at the create call, with the submitted ReplicaSet's
-       ownership fully assembled as [new_replica_set d ref].
-
-       [wp_State__ReplicaSetCreate_named_available] applies; what is left is
-       its seven pure side conditions. Five are immediate (namespace
-       non-empty and valid, the key shape, the parent reference from
-       [new_replica_set_is_new] using [Href_controller]). The two that need
-       work are [ReplicaSetV.valid_named_create] and [ReplicaSetV.extra_valid]
-       for the constructed object, which bottom out in:
-
-         - [valid_labels (Some (new_rs_labels d))], and with it the fact that
-           [template_hash] returns a valid label value. [template_hash] is an
-           axiomatized parameter, so that is a new axiom about it rather than
-           something provable — in the same family as
-           [template_hash_respects_matches].
-         - validity of [selector_with_label dsel deployment_unique_label_key
-           (template_hash ...)]: valid and non-empty are straightforward, and
-           it still matches the new template's labels because the same binding
-           is added to both the selector and the labels.
-
-       After the create returns, the postcondition is assembled from
-       [new_replica_set_is_new] and the wrapper's [ObjectSpecV.created]. *)
-Admitted.
+    destruct Hgvk as (Hg & Hv & Hk).
+    rewrite Hk in Href_controller.
+    wp_apply (wp_State__ReplicaSetCreate_named_available γ model_l
+      d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') (new_rs_key d)
+      newRS_l (new_replica_set d ref) (DeploymentV.key d)
+      d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') children
+      with "[$Hapimodel $Hisk $HnewRS_deep $Hreserved $Hown_children]").
+    { iPureIntro. split_and!.
+      - eapply new_replica_set_valid_named_create;
+          [exact Hd_valid|exact Hnew_rs_name_valid|exact Hdsel
+          |exact (proj1 (Hsel_adm dsel Hdsel))|exact Href_valid].
+      - apply new_replica_set_extra_valid. exact Hsel_adm.
+      - apply valid_namespace_non_empty. exact Hnamespace_valid.
+      - exact Hnamespace_valid.
+      - done.
+      - done.
+      - pose proof (new_replica_set_is_new d ref Href_controller) as
+          (_ & _ & _ & Hpr & _). exact Hpr. }
+    iIntros (rs_l' rs' uid) "Hc". iNamedPrefix "Hc" "Hc_".
+    subst uid.
+    wp_auto.
+    wp_apply (wp_IsAlreadyExists interface.nil with "[]").
+    replace (bool_decide (already_exists_error interface.nil)) with false by
+      (symmetry; apply bool_decide_false; exact already_exists_error_nil).
+    wp_auto.
+    (* Put the deployment back together for the caller. *)
+    iAssert (DeploymentSpecV.deepown_l (DeploymentV.spec_ptr d_l)
+        d.(DeploymentV.Spec') dq_d)
+      with "[Hdspec_field2 Hds2_Hdeepown_replicas_some
+        Hds2_Hdeepown_selector_some Hds2_Hdeepown_template]" as "Hd_spec".
+    { iExists dspec_c2. iFrame "Hdspec_field2".
+      rewrite /DeploymentSpecV.deepown /named.
+      iSplitR; [iPureIntro; assumption|].
+      iSplitL "Hds2_Hdeepown_replicas_some"; [iAssumption|].
+      iSplitR; [iPureIntro; assumption|].
+      iSplitR; [iPureIntro; assumption|].
+      iSplitL "Hds2_Hdeepown_selector_some"; iAssumption. }
+    iPoseProof (DeploymentV.deepown_l_restore _ _ _ Hd_nn
+      with "[$Hd_tm $Hd_om $Hd_spec $Hd_st]") as "Hd".
+    iApply ("HΦ" $! rs_l' rs').
+    iFrame "Hd Hsl Hrss".
+    pose proof (new_replica_set_is_new d ref Href_controller) as Hshape.
+    assert (template_matches (rs_template rs') (deployment_template d))
+      as Hmatches'.
+    { rewrite /rs_template.
+      rewrite /ObjectSpecV.created /ReplicaSetSpecV.created in Hc_Hspec_created.
+      destruct Hc_Hspec_created as (_ & _ & _ & Htmpl_eq).
+      rewrite Htmpl_eq.
+      pose proof Hshape as (_ & _ & _ & _ & _ & _ & _ & Htmpl_new).
+      rewrite /rs_template in Htmpl_new. rewrite Htmpl_new.
+      apply template_matches_new_rs_template. }
+    iSplit; [iPureIntro; exact Hmatches'|].
+    iRight.
+    iEval (rewrite union_comm_L) in "Hc_Hown_children_frag".
+    iFrame "Hc_Hdeepown_l Hc_Hown_meta_frag Hc_Hown_spec_frag
+      Hc_Hown_reserved_frag Hc_Hown_children_frag".
+    iPureIntro. split_and!.
+    + done.
+    + exact Hc_Hvalid'.
+    + symmetry. exact Hc_Hkey_eq'.
+    + exists (new_replica_set d ref).
+      split; [exact Hshape|exact Hc_Hspec_created].
+Qed.
 
 (* reconcileNewReplicaSet scales the new ReplicaSet straight to the
    deployment's replica count — there is no surge pacing in this controller. *)
