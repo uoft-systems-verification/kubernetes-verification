@@ -22,6 +22,13 @@ Collection W := sem + package_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
+(* Without this [wp_auto] cannot step the [Convert ... meta_v1.Object ...] that
+   packages the deployment pointer for [NewControllerRef], and stalls there.
+   [replicaset/stability.v:26] declares the same instance for the same reason. *)
+#[local] Instance meta_object_underlying_eq :
+  code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object ≤u
+  code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Objectⁱᵐᵖˡ.
+Proof using package_sem. apply _. Qed.
 #[local] Instance object_apps_v1_sem :
     code.k8s_io.api.apps.v1.v1.Assumptions :=
   apimodel.import_api_apps_v1_Assumption.
@@ -402,31 +409,130 @@ Proof.
       as "#Hmetav1". { iPkgInit. }
     wp_apply (wp_SchemeGroupVersion__WithKind with "[$Happsv1]").
     iIntros (gvk) "%Hgvk".
-    (* STOPS HERE. What remains, in order:
+    (* Step the [let: "$a1" := #gvk] so the call itself is the redex. *)
+    wp_auto.
+    change (deployment.meta_v1.NewControllerRef) with
+      (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NewControllerRef).
+    wp_apply (wp_NewControllerRef_Deployment
+      (interface.mk_ok (go.PointerType apps_v1.Deployment) #d_l) gvk d_l
+      d.(DeploymentV.ObjectMeta') dq_d with "[$Hmetav1 $Hd_om]").
+    { iPureIntro. destruct Hgvk as (Hg & Hv & Hk).
+      split_and!; [done|exact Hg|exact Hv|exact Hk|exact Hd_meta_valid]. }
+    iIntros (ref_l ref) "(Href & %Href_controller & %Href_valid & Hd_om)".
+    (* The literal dereferences the returned pointer straight away. *)
+    iDestruct "Href" as (ref_c) "[Href_l Href_own]".
+    (* Reopen the spec: the literal reads the template's labels and
+       MinReadySeconds out of it. *)
+    iDestruct "Hd_spec" as (dspec_c2) "[Hdspec_field2 Hdspec2]".
+    iNamedPrefix "Hdspec2" "Hds2_".
+    iDestruct (podtemplate_labels_acc with "Hds2_Hdeepown_template")
+      as "[Hlabels2 Hlabels2_back]".
+    wp_auto.
+    (* Allocate the one-element ownerReferences slice. *)
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (refs_sl) "[Hrefs_sl Hrefs_cap]".
+    wp_auto.
+    wp_apply (wp_cloneAndAddLabel _
+      (deployment_template d).(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
+      deployment_unique_label_key (template_hash (deployment_template d)) dq_d
+      with "[$Hlabels2]").
+    iIntros (labels2_l) "[Hlabels2 Hnew_labels2]".
+    iDestruct ("Hlabels2_back" with "Hlabels2") as "Hds2_Hdeepown_template".
+    wp_auto.
+    wp_alloc newRS_l as "HnewRS".
+    wp_auto.
+    (* The namespace argument is read off the deployment once more. *)
+    iDestruct "Hd_om" as (dmeta_c2) "[Hdmeta_field2 Hdmeta2]".
+    iAssert ⌜ dmeta_c2.(v1.ObjectMeta.Namespace') =
+        d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝%I as %Hdns2.
+    { iNamed "Hdmeta2". iPureIntro. exact Hdeepown_namespace. }
+    wp_auto.
+    rewrite Hdns2.
+    iAssert (ObjectMetaV.deepown_l (DeploymentV.objectmeta_ptr d_l)
+        d.(DeploymentV.ObjectMeta') dq_d)
+      with "[Hdmeta_field2 Hdmeta2]" as "Hd_om".
+    { iExists dmeta_c2. iFrame. }
+    (* Assemble ownership of the ReplicaSet just built. *)
+    iDestruct (own_map_not_nil with "Hnew_labels2") as %Hlabels2_nn.
+    iAssert (ReplicaSetV.deepown_l newRS_l (new_replica_set d ref) 1)
+      with "[HnewRS Hnew_labels2 Hrefs_sl Href_own replicas Hnew_selector Hcopy
+        Hnew_labels]"
+      as "HnewRS_deep".
+    { iExists _. iFrame "HnewRS".
+      rewrite /new_replica_set /ReplicaSetV.deepown /=.
+      iSplit; [iPureIntro; done|].
+      iSplitL "Hnew_labels2 Hrefs_sl Href_own".
+      { rewrite /ObjectMetaV.deepown /=.
+        repeat (iSplit; first (iPureIntro;
+          first [ rewrite /new_rs_name -app_assoc; done
+                | exact Hdns
+                | done ])).
+        iSplitR; [iApply TimeV.deepown_zero|].
+        iSplit; [iPureIntro; done|].
+        iSplit; [done|].
+        iSplit; [iPureIntro; done|].
+        iSplit; [done|].
+        iSplit; [iPureIntro; split;
+          [ intros Hc; exfalso; exact (Hlabels2_nn Hc) | intros Hc; discriminate ]|].
+        iSplitL "Hnew_labels2"; [iExists _; iFrame; done|].
+        iSplit; [iPureIntro; done|].
+        iSplit; [done|].
+        iSplit; [iPureIntro; split;
+          [ intros Hc; exfalso;
+            pose proof (f_equal slice.len Hc) as Hlen;
+            cbv [go.array_literal_size] in Hlen; simpl in Hlen; word
+          | intros Hc; discriminate ]|].
+        iSplitL "Hrefs_sl Href_own".
+        { iExists [ref_c]. iFrame "Hrefs_sl".
+          rewrite big_sepL2_singleton. iExact "Href_own". }
+        iSplit; [iPureIntro; done|].
+        iSplit; [done|].
+        iSplit; [iPureIntro; done|].
+        done. }
+      (* Spec. *)
+      iSplitR "".
+      { rewrite /ReplicaSetSpecV.deepown /=.
+        iAssert ⌜ replicas_ptr ≠ null ⌝%I as %Hrep_nn.
+        { iApply (typed_pointsto_not_null with "replicas"). }
+        iDestruct (own_map_not_nil with "Hnew_labels") as %Hlabels_nn.
+        iDestruct "Hnew_selector" as (sel_c) "[Hsel_l Hsel_own]".
+        iAssert ⌜ sel_l ≠ null ⌝%I as %Hsel_nn.
+        { iApply (typed_pointsto_not_null with "Hsel_l"). }
+        iSplit; [iPureIntro; split;
+          [intros Hc; exfalso; exact (Hrep_nn Hc)|intros Hc; discriminate]|].
+        iSplitL "replicas"; [iExists _; iFrame; done|].
+        iSplit; [iPureIntro; exact Hds2_Hdeepown_minreadyseconds|].
+        rewrite /new_rs_selector Hdsel /=.
+        iSplit; [iPureIntro; split;
+          [intros Hc; exfalso; exact (Hsel_nn Hc)|intros Hc; discriminate]|].
+        iSplitL "Hsel_l Hsel_own"; [iExists sel_c; iFrame|].
+        iPoseProof (podtemplate_replace_labels copy_c (deployment_template d)
+          labels_l (new_rs_labels d) Hlabels_nn with "Hcopy Hnew_labels")
+          as "Htmpl".
+        rewrite /new_rs_template. destruct (deployment_template d). iExact "Htmpl". }
+      iApply ReplicaSetStatusV.deepown_zero. }
+    (* STOPS HERE, at the create call, with the submitted ReplicaSet's
+       ownership fully assembled as [new_replica_set d ref].
 
-       1. [NewControllerRef]. The call sits under a dereference, so it needs a
-          [wp_bind] before [wp_apply], and the owner argument is still a
-          [Convert ... meta_v1.Object ...] rather than the [interface.mk_ok]
-          the pattern in statefulset/pod.v:147 matches. Bridging that is the
-          immediate obstacle; [wp_NewControllerRef_Deployment] itself is
-          stated and ready.
-       2. The second [cloneAndAddLabel], for the ReplicaSet's own labels —
-          [podtemplate_labels_acc] in common.v is there for it.
-       3. Building [ReplicaSetV.deepown] for the composite literal at
-          deployment.go:136. This is the bulk. [new_replica_set] in common.v
-          is the value it has to be built at, and every piece of ownership it
-          needs is now in hand: [TimeV.deepown_zero] and
-          [ReplicaSetStatusV.deepown_zero] for the opaque zero fields, the
-          cloned label map, the cloned selector, the [replicas] local, the
-          owner-reference slice, and the copied template.
-       4. [wp_State__ReplicaSetCreate_named_available], whose side conditions
-          are [new_replica_set_is_new] plus the validity facts already
-          destructed above.
+       [wp_State__ReplicaSetCreate_named_available] applies; what is left is
+       its seven pure side conditions. Five are immediate (namespace
+       non-empty and valid, the key shape, the parent reference from
+       [new_replica_set_is_new] using [Href_controller]). The two that need
+       work are [ReplicaSetV.valid_named_create] and [ReplicaSetV.extra_valid]
+       for the constructed object, which bottom out in:
 
-       Note for step 3: the labels map used to be *shared* between the
-       ReplicaSet's own metadata and its template's, which no deep-ownership
-       predicate can hold twice. That is now fixed in the Go — see the comment
-       at deployment.go:139. *)
+         - [valid_labels (Some (new_rs_labels d))], and with it the fact that
+           [template_hash] returns a valid label value. [template_hash] is an
+           axiomatized parameter, so that is a new axiom about it rather than
+           something provable — in the same family as
+           [template_hash_respects_matches].
+         - validity of [selector_with_label dsel deployment_unique_label_key
+           (template_hash ...)]: valid and non-empty are straightforward, and
+           it still matches the new template's labels because the same binding
+           is added to both the selector and the labels.
+
+       After the create returns, the postcondition is assembled from
+       [new_replica_set_is_new] and the wrapper's [ObjectSpecV.created]. *)
 Admitted.
 
 (* reconcileNewReplicaSet scales the new ReplicaSet straight to the
