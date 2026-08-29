@@ -115,6 +115,11 @@ Definition input_requirement (d : DeploymentV.t) (rss : list ReplicaSetV.t)
   DeploymentV.valid d ∧
   valid_namespace namespace ∧
   valid_dns1123_subdomain (new_rs_name d) ∧
+  (* The selector must leave the pod-template-hash label alone and stay inside
+     the model's size bound once it is stamped -- see
+     [deployment_selector_admissible]. Without it getNewReplicaSet can build a
+     ReplicaSet the API server rejects. *)
+  deployment_selector_admissible d ∧
   Forall ReplicaSetV.valid rss ∧
   list_to_set (ReplicaSetV.key <$> rss) =
     filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ∧

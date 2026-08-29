@@ -836,6 +836,7 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
       "%Hnamespace_valid" ∷ ⌜ valid_namespace
           d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
+      "%Hsel_adm" ∷ ⌜ deployment_selector_admissible d ⌝ ∗
       (* The no-collision assumption, made explicit. Without it findNewReplicaSet
          may pick either of two matching ReplicaSets and stability fails —
          see notes/deployment-spec.md §2b. *)
