@@ -902,6 +902,34 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
             ({[ new_rs_key d ]} ∪ children)))
   }}}.
 Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_getNewReplicaSet γ model_l d_l d sl ptrs rss children
+    dq_d dq_sl dq_rss with "[$Hd $Hsl $Hrss $Hreserved $Hown_children]").
+  { iFrame "#". iPureIntro. split_and!; done. }
+  iIntros (new_rs_l new_rs) "(Hd & Hsl & Hrss & %Hnew_rs_matches & Hdisj)".
+  wp_auto_lc 1.
+  (* STOPS HERE, with the new ReplicaSet in hand and the adopted/created
+     disjunction still to split.
+
+     From here the shape is [wp_rollout_stability]'s: read newRS.UID out of the
+     new ReplicaSet, call findOldReplicaSets, then reconcileNewReplicaSet on
+     the new one and reconcileOldReplicaSets on the rest. The ownership
+     differs by branch — adopted takes the new ReplicaSet's deepown and
+     fragments out of [rss], created gets them from the create — but that part
+     is bookkeeping.
+
+     The piece that needs building first is the recombination. This
+     postcondition hands back [big_sepL2] over [rss;rss'], the post-state of
+     exactly the ReplicaSets passed in. [reconcileOldReplicaSets] returns
+     post-states for the *filtered* old sublist, and [reconcileNewReplicaSet]
+     returns one for the new ReplicaSet, so closing the proof means
+     interleaving two post-lists back into positional order along the filter.
+     [big_sepL2_filter_acc] in stability.v is an accessor: it restores the same
+     values it lent out, which is all the stability proof needed because
+     nothing there is written. A progress-side version has to carry a merge
+     function on the value lists and a lemma that the merge is the positional
+     post-state. That is the missing infrastructure, and it belongs next to
+     [big_sepL2_filter_acc] rather than inside this proof. *)
 Admitted.
 
 End proof.
