@@ -207,12 +207,12 @@ Qed.
    third outcome — see deployment.go's header and notes/deployment-spec.md §2b. *)
 Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
     sl ptrs (rss : list ReplicaSetV.t) (children : gset KKey.t)
-    dq_d dq_rss :
+    dq_d dq_sl dq_rss :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq_d ∗
-      "Hsl" ∷ sl ↦*{dq_rss} ptrs ∗
+      "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
       "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq_rss) ∗
       "%Hd_valid" ∷ ⌜ DeploymentV.valid d ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ valid_namespace
@@ -227,7 +227,7 @@ Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
   {{{ (new_rs_l : loc) (new_rs : ReplicaSetV.t),
       RET (#new_rs_l, #interface.nil);
       "Hd" ∷ DeploymentV.deepown_l d_l d dq_d ∗
-      "Hsl" ∷ sl ↦*{dq_rss} ptrs ∗
+      "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
       "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq_rss) ∗
       "%Hnew_rs_matches" ∷ ⌜ template_matches (rs_template new_rs)
           (deployment_template d) ⌝ ∗
@@ -262,7 +262,7 @@ Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply (wp_findNewReplicaSet d_l d sl ptrs rss dq_d dq_rss dq_rss
+  wp_apply (wp_findNewReplicaSet d_l d sl ptrs rss dq_d dq_sl dq_rss
     with "[$Hd $Hsl $Hrss]").
   iIntros (rs_l) "[Hm (Hd & Hsl & Hrss)]".
   destruct (find_new_replica_set d rss) as [[i found_rs]|] eqn:Hfind.
