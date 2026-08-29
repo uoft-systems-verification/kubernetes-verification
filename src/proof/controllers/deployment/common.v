@@ -371,6 +371,13 @@ Definition new_rs_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
        <| ObjectMetaV.Labels' := Some (new_rs_labels d) |>)
     (deployment_template d).(PodTemplateSpecV.Spec').
 
+(* Stamping the pod-template-hash label preserves the match. This is the whole
+   content of EqualIgnoreHash — that label is exactly the one it ignores — so
+   it belongs with [template_matches] rather than being derivable from it, and
+   it is stated here because [new_rs_template] is. *)
+Axiom template_matches_new_rs_template : ∀ d,
+  template_matches (new_rs_template d) (deployment_template d).
+
 (* Characterizes the ReplicaSet getNewReplicaSet submits. Stated field-by-field
    because that is what the callers need: [rollout] only ever reads back the
    replica count and the template. *)
@@ -512,6 +519,12 @@ Proof.
   rewrite /LabelSelectorV.requirement_matches. intros Heq. rewrite Heq. done.
 Qed.
 
+Lemma valid_namespace_non_empty ns :
+  valid_namespace ns → ns ≠ ""%go.
+Proof.
+  intros [Hsyntax _]. destruct ns as [|b ns]; [contradiction|discriminate].
+Qed.
+
 Lemma valid_dns1123_subdomain_non_empty s :
   valid_dns1123_subdomain s → s ≠ ""%go.
 Proof.
@@ -617,6 +630,33 @@ Proof.
       * apply new_rs_labels_valid. exact (proj1 Htmpl).
       * exact (proj1 (proj2 Htmpl)).
       * exact (proj2 (proj2 Htmpl)).
+Qed.
+
+(* What getNewReplicaSet needs of the deployment's selector, in one place.
+
+   The first conjunct is the pod-template-hash condition explained at
+   [selector_avoids_hash_label]. The second is a size bound: the model's
+   [extra_valid] caps a selector's label count plus expression count at
+   2^63-1, and stamping the hash adds one label, so the bound has to hold of
+   the stamped selector rather than the original. Both are conditions on the
+   deployment the controller is handed, not facts about it. *)
+Definition deployment_selector_admissible (d : DeploymentV.t) : Prop :=
+  ∀ dsel, d.(DeploymentV.Spec').(DeploymentSpecV.Selector') = Some dsel →
+    selector_avoids_hash_label dsel ∧
+    LabelSelectorV.extra_valid
+      (selector_with_label dsel deployment_unique_label_key
+         (template_hash (deployment_template d))).
+
+Lemma new_replica_set_extra_valid d ref :
+  deployment_selector_admissible d →
+  ReplicaSetV.extra_valid (new_replica_set d ref).
+Proof.
+  intros Hadm sel Hsel.
+  rewrite /new_replica_set /= /new_rs_selector in Hsel.
+  destruct (d.(DeploymentV.Spec').(DeploymentSpecV.Selector')) as [dsel|]
+    eqn:Hdsel; last done.
+  simpl in Hsel. injection Hsel as <-.
+  exact (proj2 (Hadm dsel Hdsel)).
 Qed.
 
 (* ---------------------------------------------------------------- *)
