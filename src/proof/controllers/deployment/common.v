@@ -128,6 +128,34 @@ Proof.
   iFrame "%". iFrame.
 Qed.
 
+(* getNewReplicaSet stamps the pod-template-hash label onto the deep copy of
+   the deployment's template, replacing whatever label map was there. The old
+   map's ownership is dropped; the new one is threaded in. *)
+Lemma podtemplate_replace_labels c v (l : loc) (m : gmap go_string go_string) :
+  l ≠ null →
+  PodTemplateSpecV.deepown c v 1 -∗
+  l ↦$ m -∗
+  PodTemplateSpecV.deepown
+    (c <| v1.PodTemplateSpec.ObjectMeta' :=
+       c.(v1.PodTemplateSpec.ObjectMeta') <| v1.ObjectMeta.Labels' := l |> |>)
+    (v <| PodTemplateSpecV.ObjectMeta' :=
+       v.(PodTemplateSpecV.ObjectMeta') <| ObjectMetaV.Labels' := Some m |> |>) 1.
+Proof.
+  iIntros (Hnn) "H Hm". iNamed "H".
+  iNamedPrefix "Hdeepown_objectmeta" "Hm_".
+  rewrite /PodTemplateSpecV.deepown /named /=.
+  iSplitR "Hdeepown_spec"; [|iAssumption].
+  rewrite /ObjectMetaV.deepown /named /=.
+  iFrame "%".
+  iFrame "Hm_Hdeepown_creationtimestamp Hm_Hdeepown_deletiontimestamp_some
+    Hm_Hdeepown_deletiongraceperiodseconds_some Hm_Hdeepown_annotations_some
+    Hm_Hdeepown_ownerreferences_some Hm_Hdeepown_finalizers_some
+    Hm_Hdeepown_managedfields_some".
+  iSplitR; [iPureIntro; split;
+    [intros Hc; exfalso; exact (Hnn Hc)|intros Hc; discriminate]|].
+  iExists m. iFrame. done.
+Qed.
+
 (* cloneSelectorAndAddLabel returns a copy of [selector] whose MatchLabels are
    [selector]'s plus one binding.  A nil MatchLabels is first replaced by a fresh
    empty map, so the result's MatchLabels is always Some. *)
