@@ -823,17 +823,56 @@ Proof.
           pod.(PodV.Spec')).
     { unfold release_pod_input. done. }
     assert (Hreleased_pod_valid_create :
-        PodV.valid_named_create
+        PodV.valid_create PodV.kind
           (release_pod_input set pod).(PodV.ObjectMeta').(
             ObjectMetaV.Namespace')
           (release_pod_input set pod)).
-    { eapply PodV.valid_named_create_of_valid; done. }
+    { eapply PodV.valid_create_of_valid; done. }
+    assert (Hreleased_pod_name_nonempty :
+        (release_pod_input set pod).(PodV.ObjectMeta').(
+          ObjectMetaV.Name') ≠ ""%go).
+    { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
+      eapply ObjectMetaV.valid_name_nonempty_of_valid. exact Hmeta. }
+    assert (Hreleased_pod_valid_typemeta :
+        valid_typemeta PodV.kind (release_pod_input set pod).(PodV.TypeMeta')).
+    { destruct Hreleased_pod_valid as (Htypemeta & _). exact Htypemeta. }
     assert (Hreleased_pod_uid_nonempty :
         (release_pod_input set pod).(PodV.ObjectMeta').(
           ObjectMetaV.UID') ≠ ""%go).
     { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
       eapply valid_uid_non_empty.
       eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
+    assert (Hreleased_pod_resource_version_valid :
+        valid_resource_version
+          (release_pod_input set pod).(PodV.ObjectMeta').(
+            ObjectMetaV.ResourceVersion')).
+    { destruct Hreleased_pod_valid as (_ & Hresource_version & _).
+      exact Hresource_version. }
+    assert (Hreleased_pod_meta_valid_update :
+        ObjectMetaV.valid_update pod.(PodV.ObjectMeta')
+          (release_pod_input set pod).(PodV.ObjectMeta')).
+    { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
+      rewrite /ObjectMetaV.valid_update.
+      destruct Hmeta as (_ & _ & _ & _ & _ & _ & Hreleased_meta_labels_valid &
+        Hreleased_meta_annotations_valid & Hreleased_meta_owner_references_valid &
+        Hreleased_meta_finalizers_valid & Hreleased_meta_managed_fields_valid & _).
+      split.
+      - right. exact Hreleased_pod_meta_update.
+      - split_and!; done. }
+    assert (Hreleased_pod_spec_valid_update :
+        PodSpecV.valid_update pod.(PodV.Spec')
+          (release_pod_input set pod).(PodV.Spec')).
+    { rewrite Hreleased_pod_spec.
+      apply PodSpecV.valid_update_refl.
+      destruct Hreleased_pod_valid as (_ & _ & _ & Hspec & _).
+      exact Hspec. }
+    assert (Hreleased_pod_valid_update :
+        KObjectV.valid_update PodV.kind
+          (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
+          pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+          (KObjectV.Pod (release_pod_input set pod))).
+    { rewrite /KObjectV.valid_update /= /PodV.valid_update.
+      split_and!; done. }
     rewrite HupdatedPod_meta_Hdeepown_namespace.
     iAssert (is_pkg_init apimodel) as "#Hapimodel".
     { iPkgInit. }

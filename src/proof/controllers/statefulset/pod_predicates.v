@@ -109,15 +109,15 @@ Proof.
   by apply ObjectMetaV.valid_name_of_valid.
 Qed.
 
-Lemma pod_name_length_le_go_int_max_of_valid_named_create namespace pod :
-  PodV.valid_named_create namespace pod →
+Lemma pod_name_length_le_go_int_max_of_valid_create namespace pod :
+  PodV.valid_create PodV.kind namespace pod →
+  pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go →
   Z.of_nat
     (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤ go_int_max.
 Proof.
-  intros (_ & Hmeta & _).
+  intros (_ & _ & _ & _ & Hmeta & _) Hname_nonempty.
   apply pod_name_length_le_go_int_max_of_valid_name.
-  unfold ObjectMetaV.valid_named_create in Hmeta.
-  tauto.
+  eapply ObjectMetaV.valid_name_of_valid_create; done.
 Qed.
 
 Example pod_has_member_name_accepts_one sts pod :

@@ -11,10 +11,9 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+    "%Hvalid" ∷ ⌜ KObjectV.valid_create kind namespace kobj ⌝ ∗
+    "%Hname_empty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') = ""%go ⌝ ∗
     "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
-    "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
-    "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
     "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
     "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -22,10 +21,7 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hclose" ∷ ( ∀ i' kobj' key uid,
         ⌜ KObjectV.valid kobj' ⌝ ∗
-        ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-        ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-        ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-        ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+        ⌜ KObjectV.created namespace kobj kobj' ⌝ ∗
         ⌜ key = (KObjectV.key kobj') ⌝ ∗
         ⌜ key ∉ children ⌝ ∗
         ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
@@ -41,6 +37,13 @@ Lemma wp_State__create_nameless_au γ l kind namespace i kobj parent_key parent_
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
+  assert (kind = KObjectV.kind kobj ∧ namespace ≠ ""%go ∧ valid_namespace namespace ∧
+      ObjectMetaV.valid_create (KObjectV.kind kobj) namespace (KObjectV.objectmeta kobj)) as
+    (Hkind_matches & Hns_nonempty & Hns_valid & Hvalid_meta_create).
+  { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
+      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create in Hvalid;
+      tauto. }
   wp_method_call. rewrite /apimodel.State__createⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
@@ -55,8 +58,8 @@ Proof.
   iIntros (time) "Hdeepown_m_l". wp_auto.
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_m_l]").
   { iPureIntro.
-    destruct Hvalid as (_ & _ & Hmeta & _).
-    destruct Hmeta as (_ & _ & _ & Hns & _).
+    rewrite /ObjectMetaV.valid_create Hname_empty in Hvalid_meta_create.
+    destruct Hvalid_meta_create as (_ & Hns & _).
     destruct Hns as [Hns|(_ & Hns)]; rewrite Hns; auto.
   }
   iIntros "Hdeepown_m_l". wp_auto.
@@ -67,43 +70,41 @@ Proof.
   wp_apply (wp_SetUID_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetGenerateName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
-  assert ((KObjectV.objectmeta kobj).(ObjectMetaV.Name') = ""%go) as ->.
-  { destruct Hvalid as (_ & _ & Hmeta & _). destruct Hmeta as (_ & _ & Hn & _ & _). done. }
+  rewrite Hname_empty.
   rewrite bool_decide_true //. wp_auto.
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.GenerateName') ≠ ""%go) as Hgn_nonempty.
-  { destruct Hvalid as (_ & _ & Hmeta & _).
-    destruct Hmeta as (Hgn & _ & _ & _ & _).
+  { rewrite /ObjectMetaV.valid_create Hname_empty in Hvalid_meta_create.
+    destruct Hvalid_meta_create as ((Hgn & _) & _).
     by apply valid_generate_name_nonempty in Hgn.
   }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_State__generateNewName with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys]").
-  { destruct Hvalid as (Hkind & _ & Hmeta & _).
-    destruct Hmeta as (Hgn1 & Hgn2 & _ & _ & _). rewrite Hkind. done. }
+  { rewrite /ObjectMetaV.valid_create Hname_empty in Hvalid_meta_create.
+    destruct Hvalid_meta_create as ((Hgn & Hlen) & _).
+    rewrite Hkind_matches. done. }
   iIntros (new_name) "(%Hnn_nonempty & %Hnn_valid & %Hnn_fresh & %Hnn_not_reservedP & Hinv_Hstate_m_addr & Hinv_Hown_phys)". wp_auto.
   wp_apply (wp_SetName_deepown with "[$Hdeepown_m_l]"). iIntros "Hdeepown_m_l". wp_auto.
   iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hl1_not_null with "[$Hdeepown_t_l $Hdeepown_m_l $Hdeepown_s_l $Hdeepown_st_l]") as "Hdeepown_l".
-  wp_apply (wp_applyValidationAndDefaulting with "[Hdeepown_l]").
-  { iFrame.
-    iPureIntro.
-    destruct Hvalid as (Hkind & Hvalid_create_typemeta & Hmeta & _).
-    destruct Hmeta as (Hgn_valid & _ & _ & _ & Hlabels & Hannotations & Howner_refs & Hfinalizers & Hmanaged_fields).
-    split.
+  wp_apply (wp_applyValidationAndDefaulting_ok _ _ _ kind namespace new_name kobj
+    with "[Hdeepown_l]").
+  { iFrame "#". iFrame. iPureIntro. split_and!.
     - destruct kobj; done.
-    - split.
-      + rewrite KObjectV.kind_update_objectmeta
-          KObjectV.typemeta_update_objectmeta.
-        exact Hvalid_create_typemeta.
-      + destruct kobj; simpl in Hkind |- *; subst kind; split_and!; done.
+    - exact Hvalid.
+    - rewrite /create_prepared_for_helper /= Hname_empty.
+      rewrite Hkind_matches in Hnn_valid.
+      destruct kobj; simpl in *; split_and!; try done.
   }
-  iIntros (kobj1) "(Hdeepown_l & %Hsame_kind & %Hvalid_meta & %Hvalid_spec & %Hvalid_status & %Hvalid_typemeta & %Hm_eq &
-    %Hcreated_spec & %Hcreated_status)". wp_auto.
+  iIntros (kobj1) "(Hdeepown_l & %Hvalid_interface1 & %Hhelper_result)". wp_auto.
+  destruct Hhelper_result as
+    (Hcreated1 & Hvalid_without_rv1 & Hname1 & Huid1).
+  pose proof Hvalid_without_rv1 as
+    (Hvalid_typemeta & Hvalid_meta & Hvalid_spec & Hvalid_status).
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hl1_not_null1 & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   assert (KObjectV.objectmeta_ptr l1 kobj = KObjectV.objectmeta_ptr l1 kobj1) as ->.
   { destruct kobj, kobj1; done. }
   assert (KObjectV.kind kobj1 = kind) as Hkind1.
-  { destruct Hvalid as (Hkind & _).
-    destruct kobj, kobj1; simpl in *; subst; done. }
+  { destruct kobj, kobj1; simpl in *; subst; done. }
   wp_apply (wp_validateObjectMeta with "[$Hdeepown_m_l]").
   { iSplit; first done. iPureIntro.
     rewrite -Hkind1. exact Hvalid_meta. }
@@ -140,22 +141,34 @@ Proof.
   iPoseProof (cview.own_auth_frag_valid (pk := parent_key) (puid := parent_uid)
     with "[$Hinv_Hown_children] [$Hown_children_frag]")
     as "[%Hchildren_eq_dom %Hin_used_reference]".
-  assert (KObjectV.valid kobj2) as Hvalid2.
-  { subst kobj2.
-    destruct Hvalid as (Hkind_eq & _).
-    destruct kobj; destruct kobj1; try done.
-    all: solve_update_objectmeta_valid
-      Hvalid_typemeta Hgenerated_rv_valid Hvalid_meta Hvalid_spec
-      Hvalid_status.
-  }
+  assert (create_stored_from_helper_result kobj1 kobj2) as Hstored2.
+  { subst kobj2. rewrite /create_stored_from_helper_result.
+    destruct kobj1; simpl; split_and!; try done.
+    all: rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version; destruct ObjectMeta'; done. }
+  pose proof (create_stored_from_helper_result_created
+    namespace kobj kobj1 kobj2 Hcreated1 Hstored2) as Hcreated2.
+  pose proof (create_stored_from_helper_result_valid
+    kobj1 kobj2 Hvalid_without_rv1 Hstored2) as Hvalid2.
+  assert (KObjectV.kind kobj2 = kind) as Hkind2.
+  { destruct kobj, kobj2; simpl in *; subst; done. }
+  assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.Name') = new_name) as Hname2.
+  { subst kobj2. rewrite objectmeta_update_objectmeta Hname1. destruct kobj; done. }
+  assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.Namespace') = namespace ∧
+      (KObjectV.objectmeta kobj2).(ObjectMetaV.OwnerReferences') =
+        (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
+      (KObjectV.objectmeta kobj2).(ObjectMetaV.DeletionTimestamp') = None)
+    as (Hnamespace2 & Howner_references2 & Hdeletion_timestamp2).
+  { destruct kobj, kobj2; rewrite /KObjectV.created /= in Hcreated2; try contradiction;
+      rewrite ?/PodV.created ?/ReplicaSetV.created ?/PersistentVolumeClaimV.created
+        ?/StatefulSetV.created /ObjectMetaV.created in Hcreated2;
+      simpl; tauto. }
   assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
-  { subst kobj2.
-    apply KObjectV.extra_valid_update_objectmeta.
-    rewrite /KObjectV.extra_valid.
+  { rewrite /KObjectV.extra_valid.
     eapply ObjectSpecV.extra_valid_created.
     - exact Hextra_valid.
-    - rewrite KObjectV.spec_update_objectmeta in Hcreated_spec.
-      exact Hcreated_spec. }
+    - destruct kobj, kobj2; simpl in Hcreated2 |- *; try done;
+        destruct Hcreated2 as (_ & _ & _ & Hspec_created & _); exact Hspec_created. }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
   assert (¬ reserved_key_pred key) as Hkey_not_reserved.
@@ -167,8 +180,8 @@ Proof.
     apply not_elem_of_dom. done. }
   assert ((KObjectV.objectmeta kobj2).(ObjectMetaV.UID') = generated_uid)
     as Hkobj2_uid.
-  { subst kobj2. destruct kobj; destruct kobj1; try done;
-      rewrite Hm_eq; done. }
+  { subst kobj2. rewrite objectmeta_update_objectmeta Huid1.
+    destruct kobj; done. }
   iMod (kview.create_kobj_vs key generated_uid kobj2 with "[$Hinv_Hown_abs]")
     as "(Hinv_Hown_abs & Hown_meta & Hown_spec & Hown_status & #Hown_unreserved_key_frag)".
   { fold key in Hnn_fresh.
@@ -180,39 +193,23 @@ Proof.
   { exact Hkey_not_reserved. }
   { exact Hgenerated_uid_fresh. }
   { unfold kview.valid_k_uid_obj.
-    subst kobj2 key.
+    subst key.
     split_and!.
-    - destruct Hvalid as (Hkind_eq & _).
-      destruct kobj; destruct kobj1; try done;
-      rewrite Hm_eq; simpl; rewrite Hkind_eq; done.
+    - rewrite /KObjectV.key Hkind2 Hname2 Hnamespace2. done.
     - symmetry. exact Hkobj2_uid.
     - exact Hvalid2.
     - exact Hextra_valid2.
   }
-  { subst kobj2.
-    destruct kobj; destruct kobj1; try done;
-      rewrite Hm_eq; done. }
+  { exact Hdeletion_timestamp2. }
   { intros kind' name' uid' Hparent.
     assert (uid' = parent_uid) as ->.
-    { subst kobj2.
-      destruct kobj; destruct kobj1;
-      try done.
-      all: rewrite Hm_eq in Hparent;
-        unfold obj_parent_ref_is, meta_parent_ref_is, meta_parent_ref in Hpr, Hparent;
-        simpl in Hpr, Hparent;
-        lazymatch goal with
-          | Hpr : context [ObjectMetaV.OwnerReferences' ?meta],
-            Hparent : context [ObjectMetaV.OwnerReferences' ?meta] |- _ =>
-              destruct (ObjectMetaV.OwnerReferences' meta) as [orefs|] eqn:Horefs
-          end;
-          [|done];
-        lazymatch goal with
-          | Hpr : context [list_find ?f ?orefs],
-            Hparent : context [list_find ?f ?orefs] |- _ =>
-              destruct (list_find f orefs) as [[idx oref]|] eqn:Hfind
-          end;
-          [|done];
-        inversion Hpr; inversion Hparent; done.
+    { unfold obj_parent_ref_is, meta_parent_ref_is, meta_parent_ref in Hpr, Hparent.
+      rewrite Howner_references2 in Hparent.
+      destruct ((KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences')) as [orefs|] eqn:Horefs;
+        simpl in Hpr, Hparent; [|done].
+      destruct (list_find (λ oref, oref.(OwnerReferenceV.Controller') = Some true) orefs)
+        as [[idx oref]|] eqn:Hfind; [|done].
+      inversion Hpr; inversion Hparent; done.
     }
     rewrite Hinv_Hused_uid_eq_set_map_used_reference.
     apply elem_of_map.
@@ -223,39 +220,23 @@ Proof.
     key generated_uid kobj2
     with "[$Hinv_Hown_children] [$Hown_children_frag]")
     as "(Hinv_Hown_children & Hown_children_frag & Hown_grandchildren)".
-  { subst kobj2.
-    destruct kobj; destruct kobj1;
-    try done; rewrite Hm_eq; done.
-  }
+  { symmetry. exact Hkobj2_uid. }
   { apply not_elem_of_dom.
     apply not_elem_of_dom in Hnn_fresh.
     rewrite Hdom_eq in Hnn_fresh.
     done.
   }
-  { subst kobj2.
-    destruct kobj; destruct kobj1;
-    try done.
-    all: rewrite Hm_eq;
-      unfold obj_parent_ref_is, meta_parent_ref_is, meta_parent_ref in Hpr |- *;
-      simpl in Hpr |- *;
-      lazymatch goal with
-        | Hpr : context [ObjectMetaV.OwnerReferences' ?meta] |- _ =>
-            destruct (ObjectMetaV.OwnerReferences' meta) as [orefs|] eqn:Horefs
-        end;
-        simpl in Hpr |- *;
-        [|done];
-      lazymatch goal with
-        | Hpr : context [list_find ?f ?orefs] |- _ =>
-            destruct (list_find f orefs) as [[idx oref]|] eqn:Hfind
-        end;
-        simpl in Hpr |- *;
-        [|done];
-      injection Hpr as Hkey_eq Huid_eq;
-      destruct parent_key as [pk_kind pk_name pk_namespace];
-      simpl in Hkey_eq; inversion Hkey_eq; subst;
-      unfold living_obj_parent_ref; simpl;
-      unfold obj_parent_ref, meta_parent_ref; simpl;
-      rewrite Hfind Huid_eq; done.
+  { rewrite /living_obj_parent_ref Hdeletion_timestamp2 /=
+      /obj_parent_ref /meta_parent_ref Howner_references2.
+    unfold obj_parent_ref_is, meta_parent_ref_is, meta_parent_ref in Hpr.
+    destruct ((KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences')) as [orefs|] eqn:Horefs;
+      simpl in Hpr |- *; [|done].
+    destruct (list_find (λ oref, oref.(OwnerReferenceV.Controller') = Some true) orefs)
+      as [[idx oref]|] eqn:Hfind; simpl in Hpr |- *; [|done].
+    injection Hpr as Hkey_eq Huid_eq.
+    destruct parent_key as [pk_kind pk_name pk_namespace].
+    simpl in Hkey_eq, Hns_eq. inversion Hkey_eq; subst.
+    rewrite Huid_eq. done.
   }
   { rewrite map_Forall_lookup.
     intros k' obj Hlookup.
@@ -280,34 +261,15 @@ Proof.
     rewrite Hdom_eq in Hnn_fresh.
     apply not_elem_of_dom in Hnn_fresh. exact Hnn_fresh. }
   { unfold terminating_children.terminating_obj_parent_ref.
-    subst kobj2. destruct kobj; destruct kobj1; try done;
-      rewrite Hm_eq; done. }
+    rewrite Hdeletion_timestamp2. done. }
   iMod ("Hclose" $! i2 kobj2 with
     "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
       $Hown_unreserved_key_frag $Hown_children_frag $Hown_grandchildren]") as "HΦ".
   { iSplit.
     { iPureIntro. exact Hvalid2. }
     iPureIntro. split_and!.
-    - subst kobj2.
-      destruct kobj; destruct kobj1; done.
-    - unfold ObjectMetaV.nameless_created.
-      subst kobj2.
-      destruct kobj; destruct kobj1;
-      simpl in Hm_eq |- *;
-      try done; rewrite Hm_eq; split_and!; done.
-    - subst kobj2.
-      rewrite KObjectV.spec_update_objectmeta.
-      rewrite KObjectV.spec_update_objectmeta in Hcreated_spec.
-      done.
-    - subst kobj2.
-      rewrite KObjectV.status_update_objectmeta.
-      rewrite KObjectV.status_update_objectmeta in Hcreated_status.
-      done.
-    - subst key kobj2.
-      destruct Hvalid as (Hkind_eq & _).
-      destruct kobj; destruct kobj1;
-      simpl in Hsame_kind, Hm_eq, Hkind_eq |- *;
-      try done; rewrite Hm_eq; rewrite Hkind_eq; done.
+    - exact Hcreated2.
+    - subst key. rewrite /KObjectV.key Hkind2 Hname2 Hnamespace2. done.
     - apply not_elem_of_dom in Hnn_fresh.
       rewrite Hdom_eq in Hnn_fresh.
       intro Hin.
@@ -317,10 +279,7 @@ Proof.
       apply elem_of_dom in Hin as [obj Hlookup].
       apply map_lookup_filter_Some in Hlookup as [Hlookup _].
       eexists. done.
-    - subst kobj2.
-      destruct kobj; destruct kobj1;
-      simpl in Hm_eq |- *;
-      try done; rewrite Hm_eq; done. }
+    - symmetry. exact Hkobj2_uid. }
   assert (Hkey_not_in_abs : abs_state !! key = None).
   { apply not_elem_of_dom.
     apply not_elem_of_dom in Hnn_fresh.
@@ -353,11 +312,7 @@ Proof.
       rewrite union_comm_L.
       done.
     - assert (Hobj_ref : obj_ref key kobj2 = (key, generated_uid)).
-      { unfold obj_ref. subst kobj2.
-        destruct kobj; destruct kobj1;
-        simpl in Hsame_kind, Hm_eq |- *;
-        try done; rewrite Hm_eq; reflexivity.
-      }
+      { unfold obj_ref. rewrite Hkobj2_uid. reflexivity. }
       assert (Hobj_uid : generated_uid = snd (obj_ref key kobj2)).
       { rewrite Hobj_ref. done. }
       rewrite set_map_union_L.
@@ -373,10 +328,9 @@ Qed.
 Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create kind namespace kobj ⌝ ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_create kind namespace kobj ⌝ ∗
+      "%Hname_empty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') = ""%go ⌝ ∗
       "%Hextra_valid" ∷ ⌜ KObjectV.extra_valid kobj ⌝ ∗
-      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
-      "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is kobj parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown" ∷ KObjectV.deepown_i i kobj 1 ∗
@@ -385,11 +339,7 @@ Lemma wp_State__create_nameless γ l kind namespace i kobj parent_key parent_uid
     l @! (go.PointerType apimodel.State) @! "create" #kind #namespace #(interface.ok i)
   {{{ i' kobj' key uid, RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hsame_kind" ∷ ⌜ KObjectV.same_kind kobj kobj' ⌝ ∗
-      "%Hmeta_created" ∷
-        ⌜ ObjectMetaV.nameless_created namespace (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj') ⌝ ∗
-      "%Hspec_created" ∷ ⌜ ObjectSpecV.created (KObjectV.spec kobj) (KObjectV.spec kobj') ⌝ ∗
-      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created (KObjectV.status kobj) (KObjectV.status kobj') ⌝ ∗
+      "%Hcreated" ∷ ⌜ KObjectV.created namespace kobj kobj' ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = (KObjectV.key kobj') ⌝ ∗
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = (KObjectV.objectmeta kobj').(ObjectMetaV.UID') ⌝ ∗
@@ -415,9 +365,8 @@ Qed.
 Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_uid children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ KObjectV.valid_nameless_create "Pod"%go namespace (KObjectV.Pod pod) ⌝ ∗
-      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
-      "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
+      "%Hvalid" ∷ ⌜ PodV.valid_create PodV.kind namespace pod ⌝ ∗
+      "%Hname_empty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = ""%go ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hpr" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
@@ -426,13 +375,7 @@ Lemma wp_State__PodCreate_nameless γ l namespace pod_l pod parent_key parent_ui
     l @! (go.PointerType apimodel.State) @! "PodCreate" #namespace #pod_l
   {{{ pod_l' pod' key uid, RET (#pod_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
-      "%Hmeta_created" ∷ ⌜ ObjectMetaV.nameless_created namespace pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
-      "%Hspec_created" ∷
-        ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
-      "%Hstatus_created" ∷
-        ⌜ ObjectStatusV.created
-          (ObjectStatusV.PodStatus pod.(PodV.Status'))
-          (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
+      "%Hcreated" ∷ ⌜ PodV.created namespace pod pod' ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod' ⌝ ∗
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗

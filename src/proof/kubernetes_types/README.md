@@ -55,18 +55,23 @@ one after preparation and canonicalization.
 | Proof definition | Meaning in Kubernetes |
 | --- | --- |
 | `SpecV.valid_create input` | The modeled spec is admissible as request input. It may omit fields that Kubernetes defaults before storage. |
-| `ObjectMetaV.valid_named_create kind ns meta` | A create request supplies `metadata.name`; its namespace is empty or agrees with the request URL, and its user-controlled metadata passes validation. |
-| `ObjectMetaV.valid_nameless_create kind ns meta` | A create request omits `metadata.name` and supplies a valid, short enough `generateName` from which the API server can choose a name. |
-| `KObjectV.valid_named_create` / `valid_nameless_create` | The full request-level condition: correct resource kind, create-compatible TypeMeta and metadata, and a create-valid spec. |
-| `V.valid_update old new` | The cross-object rules for an update, especially immutable fields. The existing `old` value need only satisfy request-stage `valid_create`, not post-defaulting `valid`. |
-| `V.valid stored` | The stronger invariant guaranteed of the modeled part of an object after it has been prepared, defaulted/normalized, and stored by the API server. |
+| `ObjectMetaV.valid_create kind ns meta` | Validates common create metadata and branches on whether `metadata.name` is empty; nameless requests require a valid, short enough `generateName`, while named requests require a valid name. |
+| `KObjectV.valid_create` | The full request-level condition for either name mode: create-compatible TypeMeta and metadata, and a create-valid spec. The `KObjectV` constructor determines the resource kind. Specialized operations state `metadata.name` emptiness separately when needed. |
+| `V.valid_update old input` | Top-level validation of submitted update input against the stored old value. It includes ordinary validation and accounts directly for preparation affecting represented fields. |
+| `KObjectV.created namespace input stored` | Relates the submitted create request to the object stored after a successful create. |
+| `KObjectV.updated old input stored` | Relates the existing object, submitted update, and object stored after a successful update. |
+| `KObjectV.valid_update old input` | Top-level update-validation contract over the existing stored object and submitted input; intermediate prepared objects are not exposed. |
+| `KObjectV.status_updated old input stored` | Relates the existing object and submitted status update to the object stored after a successful status update. |
+| `KObjectV.valid_status_update old input` | Top-level status-update validation over the existing stored object and submitted input. |
+| `KObjectV.valid stored` | The invariant guaranteed of the modeled part of an object stored by the API server. |
 | `V.extra_valid stored` | A condition not enforced by the API server but required by verified controllers. It is expected to hold for realistic objects; violating it would generally require impractically large values. |
-| `V.created input stored` | The relation between a create request projection and the projection that the server stores. |
-| `V.updated input stored` | The normalization/defaulting relation from a create-valid update request to the value produced by update preparation. |
+| `SpecV.created input stored` / `SpecV.updated old input stored` | Relations between the submitted component and the corresponding component of the stored object. |
+| `StatusV.created input stored` / `StatusV.updated input stored` | Relations between the submitted status and the corresponding status of the stored object. |
 
-These are Rocq propositions used in specifications. Some are executable
-definitions with `Decision` instances; others are axiomatized where the
-corresponding Go fields have not yet been translated.
+These are Rocq propositions used in specifications. The `created`, `updated`,
+and `status_updated` relations describe the complete operation from submitted
+input to stored output. They are relations because the pure views omit fields
+that can influence the exact stored value.
 
 ### Controller requirements are separate from API validity
 
@@ -100,8 +105,13 @@ Kubernetes API:
   their request predicates do not require the submitted status to be valid.
 
 By contrast, `KObjectV.valid` is the invariant used for an object in the API
-model's store. It requires valid TypeMeta and resource version, complete
-stored metadata, a stored-valid spec, and a stored-valid status.
+model's store. It requires TypeMeta to be omitted or compatible with the
+concrete type, a valid resource version, complete stored metadata, a
+stored-valid spec, and a stored-valid status.
+
+`created`, `updated`, and `status_updated` relate submitted requests directly
+to newly stored objects. They leave server-assigned values unspecified where
+the model does not need to determine those values exactly.
 
 `ObjectMetaV.valid` also includes storage normalization represented by this
 model, such as `selfLink = ""`. It deliberately does not include the resource
@@ -123,16 +133,17 @@ When adding a resource or field:
 3. Put request-admission facts in `valid_create` and persistent
    post-defaulting/normalization facts in `valid`.
 4. Add the old/new constraints enforced by Kubernetes to `valid_update`.
-5. Describe server changes in `created` and `updated`; do not silently assume
-   request and stored values are equal across a defaulting boundary.
+5. Extend `created`, `updated`, and `status_updated` as end-to-end relations. Keep intermediate
+   preparation inside the top-level validation predicates, and leave omitted
+   view fields unconstrained.
 6. Add `Decision` instances where the proposition is concrete. If a component
    must remain axiomatic, document the upstream guarantee represented by the
    axiom.
-7. Update the `ObjectSpecV`, `ObjectStatusV`, and `KObjectV` dispatchers when a
-   new resource kind is introduced.
+7. Update the `ObjectSpecV`, `ObjectStatusV`, and `KObjectV` validation and
+   normalization dispatchers when a new resource kind is introduced.
 
 The central rule is to keep three questions separate: **what pure value does
 this Go heap represent, which values may Kubernetes accept at this stage, and
 how may Kubernetes transform the value before returning or storing it?**
-`deepown`, the validity predicates, and the create/update relations answer
-those questions respectively.
+`deepown`, the validity predicates, and the create/update normalization APIs
+answer those questions respectively.

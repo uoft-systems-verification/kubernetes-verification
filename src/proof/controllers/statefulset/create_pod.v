@@ -69,7 +69,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
         ⌜ valid_namespace
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hpod_valid_create" ∷
-        ⌜ PodV.valid_named_create
+        ⌜ PodV.valid_create PodV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
       "%Hpod_parent" ∷
         ⌜ obj_parent_ref_is (KObjectV.Pod pod)
@@ -100,7 +100,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
           (own_available_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal) ∗
-           ⌜ PersistentVolumeClaimV.valid_named_create
+           ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝))
@@ -124,9 +124,11 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "%Hpod_valid" ∷ ⌜ PodV.valid pod' ⌝ ∗
       "%Hpod_meta_created" ∷
-        ⌜ ObjectMetaV.named_created
+        ⌜ ObjectMetaV.created
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-            pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+            (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
+            pod'.(PodV.ObjectMeta') ⌝ ∗
+      "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
       "%Hpod_spec_created" ∷
         ⌜ ObjectSpecV.created
             (ObjectSpecV.PodSpec pod.(PodV.Spec'))
@@ -157,9 +159,15 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  pose proof (pod_name_length_le_go_int_max_of_valid_named_create
+  assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go) as Hpod_name_nonempty.
+  { intros Hempty.
+    rewrite Hpod_name in Hempty.
+    unfold desired_pod_name in Hempty.
+    apply app_eq_nil in Hempty as [_ Hempty].
+    discriminate Hempty. }
+  pose proof (pod_name_length_le_go_int_max_of_valid_create
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-    pod Hpod_valid_create) as Hpod_name_len.
+    pod Hpod_valid_create Hpod_name_nonempty) as Hpod_name_len.
   wp_apply (wp_createPersistentVolumeClaims
     γ model_l set_l pod_l set pod ordinal dq_set 1
     with "[$Hset $Hpod $Hpvc_states]").
@@ -188,8 +196,7 @@ Proof.
     iPureIntro.
     split_and!.
     - exact Hpod_valid_create.
-    - exact Hnamespace_nonempty.
-    - exact Hnamespace_valid.
+    - exact Hpod_name_nonempty.
     - rewrite /StatefulSetV.key /StatefulSetV.meta_key /=.
       done.
     - rewrite /desired_pod_key Hpod_name.
@@ -218,7 +225,11 @@ Proof.
       $Hset_spec_l $Hset_status_l]") as "Hset".
   iApply "HΦ".
   iFrame.
-  iPureIntro. split_and!; done.
+  iPureIntro.
+  unfold PodV.created in Hcreate_Hcreated.
+  destruct Hcreate_Hcreated as
+    (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
+  split_and!; done.
 Qed.
 
 Definition stateful_pod_create_pvc_inputs γ set ordinal : iProp Σ :=
@@ -232,7 +243,7 @@ Definition stateful_pod_create_pvc_inputs γ set ordinal : iProp Σ :=
       own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
     (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
-     ⌜ PersistentVolumeClaimV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+     ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
         (new_persistent_volume_claim set claim_template ordinal) ⌝).
 
 Definition stateful_pod_create_pvc_outputs γ set ordinal : iProp Σ :=
@@ -247,8 +258,9 @@ Definition stateful_pod_create_pvc_outputs γ set ordinal : iProp Σ :=
 Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
   ∃ pod' uid,
     "%Hpod_valid" ∷ ⌜ PodV.valid pod' ⌝ ∗
-    "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.named_created set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-      pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+    "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
+    "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
     "%Hpod_spec_created" ∷
       ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
     "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
@@ -280,7 +292,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
       "%Hnamespace_nonempty" ∷ ⌜ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ≠ ""%go ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ valid_namespace set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hpod_valid_create" ∷
-        ⌜ PodV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
+        ⌜ PodV.valid_create PodV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
       "%Hpod_parent" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "Hpod_reserved" ∷ own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗
@@ -296,7 +308,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
           "Hreserved" ∷ own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
         (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
-         ⌜ PersistentVolumeClaimV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+         ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template ordinal) ⌝))
   }}}
     @! statefulset.createStatefulPod #set_l #pod_l
@@ -311,8 +323,10 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
       ((∃ pod' uid,
         "%Hpod_valid" ∷ ⌜ PodV.valid pod' ⌝ ∗
-        "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.named_created
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') ⌝ ∗
+        "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created
+          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+          (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
+        "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
         "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
           (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
         "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
@@ -332,8 +346,15 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  pose proof (pod_name_length_le_go_int_max_of_valid_named_create
-    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod Hpod_valid_create) as Hpod_name_len.
+  assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go) as Hpod_name_nonempty.
+  { intros Hempty.
+    rewrite Hpod_name in Hempty.
+    unfold desired_pod_name in Hempty.
+    apply app_eq_nil in Hempty as [_ Hempty].
+    discriminate Hempty. }
+  pose proof (pod_name_length_le_go_int_max_of_valid_create
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod Hpod_valid_create
+    Hpod_name_nonempty) as Hpod_name_len.
   wp_apply (wp_createPersistentVolumeClaims γ model_l set_l pod_l set pod ordinal dq_set 1
     with "[$Hset $Hpod $Hpvc_states]").
   { iFrame "# %". }
@@ -351,16 +372,18 @@ Proof.
     with "[$Hpod $Hpod_reserved $Hown_children]").
   { iFrame "#". iPureIntro. split_and!.
     - exact Hpod_valid_create.
-    - exact Hnamespace_nonempty.
-    - exact Hnamespace_valid.
+    - exact Hpod_name_nonempty.
     - rewrite /StatefulSetV.key /StatefulSetV.meta_key /=. done.
     - rewrite /desired_pod_key Hpod_name. done.
     - exact Hpod_parent. }
   iIntros (created err) "[Hcreate|Hexists]".
   - iDestruct "Hcreate" as (pod_l' pod' uid)
-      "(%Hcreated & %Herr & %Hpod_valid & %Hpod_meta_created & %Hpod_spec_created &
-        %Hpod_status_created & %Hpod_key & %Hpod_key_fresh & %Huid & Hpod & Hpod_meta & Hpod_spec &
+      "(%Hcreated & %Herr & %Hpod_valid & %Hpod_created &
+        %Hpod_key & %Hpod_key_fresh & %Huid & Hpod & Hpod_meta & Hpod_spec &
         Hpod_status & Hpod_reserved & Hown_children & Hown_grandchildren)".
+    unfold PodV.created in Hpod_created.
+    destruct Hpod_created as
+      (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
     subst created err. wp_auto.
     wp_apply (wp_IsAlreadyExists interface.nil with "[]").
     replace (bool_decide (already_exists_error interface.nil)) with false by
@@ -411,7 +434,7 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
       "%Hnamespace_nonempty" ∷ ⌜ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ≠ ""%go ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ valid_namespace set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hpod_valid_create" ∷
-        ⌜ PodV.valid_named_create set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
+        ⌜ PodV.valid_create PodV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ⌝ ∗
       "%Hpod_parent" ∷ ⌜ obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "Hpod_reserved" ∷ (own_available_reserved_frag γ 1 (desired_pod_key set ordinal) ∨

@@ -346,10 +346,18 @@ Proof.
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Hpr.
 	    { apply controller.generated_pod_parent_ref. exact Hcontroller_ref_valid. }
-	    assert (KObjectV.valid_nameless_create "Pod"%go
+	    assert (KObjectV.valid_create "Pod"%go
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') (KObjectV.Pod pod)) as Hvalid.
-	    { apply controller.generated_pod_valid_nameless_create; try done.
-	      apply ReplicaSetSpecV.valid_template. exact Hrs_spec_valid. }
+	    { apply controller.generated_pod_valid_create.
+	      - apply ReplicaSetSpecV.valid_template. exact Hrs_spec_valid.
+	      - exact Hrs_name_valid.
+	      - exact Hrs_name_short.
+	      - exact Hrs_template_finalizers_valid.
+	      - exact Hcontroller_ref_wf.
+	      - eapply ObjectMetaV.valid_namespace_nonempty_of_valid.
+	        exact Hrs_meta_valid.
+	      - eapply ObjectMetaV.valid_namespace_of_valid.
+	        exact Hrs_meta_valid. }
 	    wp_auto.
 	    wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_rs]") as "Hdeepown_m_l_rs".
 	    wp_apply (wp_State__PodCreate_nameless γ l
@@ -359,8 +367,7 @@ Proof.
 	      with "[Hdeepown_l_pod Hown_children_frag]").
 	    { iFrame "#".
 	      iSplit; [iPureIntro; exact Hvalid|].
-	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_nonempty_of_valid; exact Hrs_meta_valid|].
-	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_of_valid; exact Hrs_meta_valid|].
+	      iSplit; [iPureIntro; unfold pod, controller.generated_pod, controller.generated_pod_meta; done|].
 	      iSplit; [iPureIntro; rewrite /ReplicaSetV.key /ReplicaSetV.meta_key /=; done|].
 	      iSplit; [iPureIntro; exact Hpr|].
 	      iSplitL "Hdeepown_l_pod".
@@ -388,13 +395,19 @@ Proof.
               { iPureIntro. rewrite length_app /= Hlen_active_pods'.
                 word. }
               iSplit.
-              { iPureIntro. intros pod0 Hpod0.
-                apply elem_of_app in Hpod0 as [Hpod0|Hpod0].
-                - apply Hall_active. done.
-                - rewrite list_elem_of_singleton in Hpod0. subst pod0.
-                  unfold is_pod_alive.
-                  unfold ObjectMetaV.nameless_created in Hcreate_Hmeta_created.
-	                  Timeout 5 naive_solver. }
+	              { iPureIntro. intros pod0 Hpod0.
+	                apply elem_of_app in Hpod0 as [Hpod0|Hpod0].
+	                - apply Hall_active. done.
+	                - rewrite list_elem_of_singleton in Hpod0. subst pod0.
+	                  unfold is_pod_alive.
+	                  unfold PodV.created in Hcreate_Hcreated.
+	                  destruct Hcreate_Hcreated as
+	                    (_ & Hmeta_created & _ & _).
+	                  unfold ObjectMetaV.created in Hmeta_created.
+	                  simpl in Hmeta_created.
+	                  destruct Hmeta_created as
+	                    (_ & _ & _ & Hdeletion & _).
+	                  exact Hdeletion. }
               { iPureIntro. word. }
       }
 	      iFrame.

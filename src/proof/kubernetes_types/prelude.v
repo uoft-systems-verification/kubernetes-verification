@@ -7,4 +7,5 @@ From New.proof.kubernetes_types Require Export
   statefulset
   deployment
   kobject
-  delete_options.
+  delete_options
+  top_level.

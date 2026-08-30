@@ -403,7 +403,7 @@ Definition input_requirement (sts : StatefulSetV.t) : Prop :=
     (λ claim_template,
       ∀ ordinal,
         (ordinal < statefulset_replicas sts)%nat →
-        PersistentVolumeClaimV.valid_named_create
+        PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
           sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (new_persistent_volume_claim sts claim_template ordinal))
     (StatefulSetSpecV.volume_claim_templates_list

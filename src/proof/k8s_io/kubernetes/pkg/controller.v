@@ -147,29 +147,33 @@ Proof.
   rewrite Hcontroller /= Hkind Hname Huid. done.
 Qed.
 
-Lemma generated_pod_valid_nameless_create template parent_name ref namespace :
+Lemma generated_pod_valid_create template parent_name ref namespace :
   PodTemplateSpecV.valid template →
   valid_dns1123_subdomain parent_name →
   length parent_name < 58 →
   valid_finalizers template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') →
   OwnerReferenceV.valid ref →
-  KObjectV.valid_nameless_create "Pod"%go namespace
+  namespace ≠ ""%go →
+  valid_namespace namespace →
+  KObjectV.valid_create "Pod"%go namespace
     (KObjectV.Pod (generated_pod template parent_name (Some [ref]))).
 Proof.
-  intros (Hlabels & Hannotations & Hspec) Hname Hlen Hfinalizers Href.
-  rewrite /KObjectV.valid_nameless_create /= /PodV.valid_nameless_create
+  intros (Hlabels & Hannotations & Hspec) Hname Hlen Hfinalizers Href
+    Hnamespace_nonempty Hnamespace_valid.
+  rewrite /KObjectV.valid_create /= /PodV.valid_create
     /generated_pod /generated_pod_meta /=.
   split_and!.
   - done.
+  - exact Hnamespace_nonempty.
+  - exact Hnamespace_valid.
   - apply zero_typemeta_valid_create.
-  - rewrite /ObjectMetaV.valid_nameless_create /=.
+  - rewrite /ObjectMetaV.valid_create /=.
     split_and!.
     + apply valid_generate_name_of_valid_prefix.
       exists parent_name. split_and!; [done| |].
       * intros ->. inversion Hname as [Hsyntax _]. inversion Hsyntax.
       * unfold valid_name, PodV.kind. right. split; [left; done|exact Hname].
     + rewrite length_app /=. lia.
-    + done.
     + left. done.
     + destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') as [labels|];
         simpl in *; [exact Hlabels|apply map_Forall_empty].

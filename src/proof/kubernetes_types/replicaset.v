@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export labelselector pod.
+From New.proof.kubernetes_types Require Import top_level.
 
 Module ReplicaSetSpecV.
 Section def.
@@ -14,6 +15,11 @@ Record t := mk {
   Selector' : option LabelSelectorV.t;
   Template' : PodTemplateSpecV.t;
 }.
+
+(* Conditions required by verified controller implementations but not enforced
+   by Kubernetes API admission. Keep this separate from [valid_create]. *)
+Definition extra_valid (rs : t) : Prop :=
+  ∀ selector, rs.(Selector') = Some selector → LabelSelectorV.extra_valid selector.
 
 (* The admission predicate used for both create validation and the general
    validation phase of update. It deliberately permits fields that schema
@@ -33,13 +39,6 @@ Definition valid_create (rs : t) : Prop :=
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
 
-(* Conditions required by verified controller implementations but not enforced
-   by Kubernetes API admission. Keep this separate from [valid_create]. *)
-Definition extra_valid (rs : t) : Prop :=
-  ∀ selector,
-    rs.(Selector') = Some selector →
-    LabelSelectorV.extra_valid selector.
-
 (* A stored ReplicaSet spec satisfies admission validation, and schema
    defaulting has additionally made [Replicas'] non-nil.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
@@ -48,31 +47,40 @@ Definition valid (rs : t) : Prop :=
   ∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas.
 
 (* Kubernetes allows the represented replica count, minimum-ready duration,
-   and Pod template to change, but keeps the selector immutable. In particular,
-   [old] only needs to meet [valid_create], not the stronger post-defaulting
-   [valid] predicate:
+   and Pod template to change, but keeps the selector immutable. Update
+   preparation does not change the selector, so this request-level predicate
+   already accounts for preparation. In particular, [old] only needs to meet
+   [valid_create], not the stronger post-defaulting [valid] predicate:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L763-L770 *)
-Definition valid_update (old new : t) : Prop :=
-  new.(Selector') = old.(Selector').
+Definition valid_update (old input : t) : Prop :=
+  valid_create input ∧
+  input.(Selector') = old.(Selector').
 
-Global Instance valid_update_dec old new :
-  Decision (valid_update old new).
-Proof. unfold valid_update. solve_decision. Defined.
+Global Instance valid_update_dec old input :
+  Decision (valid_update old input).
+Proof.
+  unfold valid_update, valid_create.
+  apply and_dec.
+  - apply and_dec; first (destruct input.(Replicas'); apply _).
+    apply and_dec; first apply _.
+    apply and_dec; last apply _.
+    apply LabelSelectorV.exists_eq_some_dec.
+    intros selector. apply _.
+  - apply _.
+Defined.
 
 Lemma valid_update_refl spec :
-  valid_update spec spec.
+  valid_create spec → valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
-(* ReplicaSet create defaults an omitted replica count to one; the other
-   represented fields are preserved. *)
 Definition created (input stored : t) : Prop :=
   stored.(Replicas') = Some (default (W32 1) input.(Replicas')) ∧
   stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
   stored.(Selector') = input.(Selector') ∧
-  stored.(Template') = input.(Template').
+  stored.(Template') =
+    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
+      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |>.
 
-(* Update decoding applies the same represented schema default as create, so
-   a create-valid submitted spec need not already satisfy [valid]. *)
 Definition updated (input stored : t) : Prop :=
   created input stored.
 
@@ -96,19 +104,17 @@ Proof.
   apply (extra_valid_created input stored); [|exact Hupdated].
   intros selector Hselector.
   apply Hextra.
-  rewrite -Hvalid_update. exact Hselector.
+  rewrite -(proj2 Hvalid_update). exact Hselector.
 Qed.
 
-Lemma valid_replicas :
-  ∀ v, valid v →
-  ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
-Proof. intros v (_ & Hreplicas). exact Hreplicas. Qed.
+Lemma valid_replicas v :
+  valid v → ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+Proof. intros (_ & Hreplicas). exact Hreplicas. Qed.
 
-Lemma valid_template :
-  ∀ v, valid v →
-  PodTemplateSpecV.valid v.(Template').
+Lemma valid_template v :
+  valid v → PodTemplateSpecV.valid v.(Template').
 Proof.
-  intros v (Hvalid_create & _).
+  intros (Hvalid_create & _).
   destruct Hvalid_create as (_ & _ & _ & Htemplate).
   exact Htemplate.
 Qed.
@@ -116,14 +122,12 @@ Qed.
 Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.ReplicaSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-  | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
-  | None => True%I
-  end) ∗
+    | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
+    | None => True%I
+    end) ∗
   "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.ReplicaSetSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
-  "%Hdeepown_selector_none" ∷
-    ⌜c.(v1.ReplicaSetSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
-  "Hdeepown_selector_some" ∷
-    (match v.(Selector') with
+  "%Hdeepown_selector_none" ∷ ⌜c.(v1.ReplicaSetSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
+  "Hdeepown_selector_some" ∷ (match v.(Selector') with
     | Some selector =>
         ∃ selector_c,
           c.(v1.ReplicaSetSpec.Selector') ↦{dq} selector_c ∗
@@ -146,15 +150,13 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
-(* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid : t → Prop.
+Axiom valid_update : t → t → Prop.
+Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
+Global Existing Instance valid_update_dec.
 Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
-
-Definition created (_input stored : t) : Prop :=
-  valid stored.
-
-Definition updated (input stored : t) : Prop :=
-  stored = input.
+Axiom created : t → t → Prop.
+Axiom updated : t → t → Prop.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -199,19 +201,55 @@ Definition valid (rs: t) : Prop :=
 Definition extra_valid (rs : t) : Prop :=
   ReplicaSetSpecV.extra_valid rs.(Spec').
 
-Definition valid_nameless_create ns (rs : t) : Prop :=
+Definition valid_create request_kind ns (rs : t) : Prop :=
+  request_kind = kind ∧
+  ns ≠ ""%go ∧
+  valid_namespace ns ∧
   valid_create_typemeta kind rs.(TypeMeta') ∧
-  ObjectMetaV.valid_nameless_create kind ns rs.(ObjectMeta') ∧
+  ObjectMetaV.valid_create kind ns rs.(ObjectMeta') ∧
   ReplicaSetSpecV.valid_create rs.(Spec').
 
-Definition valid_named_create ns (rs : t) : Prop :=
-  valid_create_typemeta kind rs.(TypeMeta') ∧
-  ObjectMetaV.valid_named_create kind ns rs.(ObjectMeta') ∧
-  ReplicaSetSpecV.valid_create rs.(Spec').
+Definition valid_update request_kind namespace old_meta old_spec (input : t) : Prop :=
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  valid_create request_kind namespace input ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  ReplicaSetSpecV.valid_update old_spec input.(Spec').
+
+Definition valid_status_update request_kind namespace old_meta old_status (input : t) : Prop :=
+  request_kind = kind ∧
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  ReplicaSetStatusV.valid_update old_status input.(Status').
 
 Definition valid_without_meta (rs: t) : Prop :=
   ReplicaSetSpecV.valid rs.(Spec') ∧
   ReplicaSetStatusV.valid rs.(Status').
+
+Definition created (namespace : go_string) (input stored : t) : Prop :=
+  valid_typemeta kind stored.(TypeMeta') ∧
+  ObjectMetaV.created namespace input.(ObjectMeta') stored.(ObjectMeta') ∧
+  stored.(ObjectMeta').(ObjectMetaV.Generation') = W64 1 ∧
+  ReplicaSetSpecV.created input.(Spec') stored.(Spec') ∧
+  ReplicaSetStatusV.created input.(Status') stored.(Status').
+
+Definition updated (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  ReplicaSetSpecV.updated input.(Spec') stored.(Spec').
+
+Definition status_updated old_spec (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  stored.(Spec') = old_spec ∧
+  ReplicaSetStatusV.updated input.(Status') stored.(Status').
 
 Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.ReplicaSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -221,6 +259,19 @@ Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+#[global]
+Instance top_level_instance : top_level Σ t :=
+  Build_top_level Σ t ObjectMetaV.t ReplicaSetSpecV.t ReplicaSetStatusV.t
+    valid
+    extra_valid
+    valid_create
+    valid_update
+    valid_status_update
+    created
+    updated
+    status_updated
+    deepown_l.
 
 Definition typemeta_ptr l: loc :=
   struct_field_ref v1.ReplicaSet.t "TypeMeta" l.
@@ -243,9 +294,9 @@ Definition deepown_without_meta (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
-  spec_ptr l ↦{dq} c.(v1.ReplicaSet.Spec') ∗
-  status_ptr l ↦{dq} c.(v1.ReplicaSet.Status') ∗
-  deepown_without_meta c v dq.
+    spec_ptr l ↦{dq} c.(v1.ReplicaSet.Spec') ∗
+    status_ptr l ↦{dq} c.(v1.ReplicaSet.Status') ∗
+    deepown_without_meta c v dq.
 
 End def.
 

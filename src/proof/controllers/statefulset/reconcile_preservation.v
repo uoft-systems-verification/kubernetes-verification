@@ -449,7 +449,7 @@ Proof.
             (StatefulSetSpecV.volume_claim_templates_list
               set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
-          PersistentVolumeClaimV.valid_named_create
+          PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template
               (sint.nat ordinal))) as Hclaim_valid_lookup.
@@ -693,7 +693,7 @@ Proof.
           desired_pod_name
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
             (sint.nat ordinal) ∧
-        PodV.valid_named_create
+        PodV.valid_create PodV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') new_pod ∧
         obj_parent_ref_is (KObjectV.Pod new_pod) StatefulSetV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
@@ -735,7 +735,7 @@ Proof.
             (StatefulSetSpecV.volume_claim_templates_list
               set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
-          PersistentVolumeClaimV.valid_named_create
+          PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template
               (sint.nat ordinal))) as Hclaim_valid_lookup.

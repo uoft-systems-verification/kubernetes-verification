@@ -194,21 +194,6 @@ Lemma wp_deletionTimestampForDelete (graceful: bool) (gracePeriod: w64) :
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ used_uid
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewUIDAndUpdate" #()
-  {{{ uid, RET #uid;
-      ⌜ used_uid !! uid = None ⌝ ∗
-      ⌜ valid_uid uid ⌝ ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ <[uid:=()]> used_uid
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
   {{{ is_pkg_init apimodel ∗
       l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
@@ -224,28 +209,6 @@ Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string uni
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
-  {{{ is_pkg_init apimodel ∗
-      ⌜ valid_generate_name kind generate_name ⌝ ∗
-      ⌜ length generate_name ≤ 58 ⌝ ∗
-      l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewName" #kind #namespace #generate_name
-  {{{ (new_name: go_string), RET #new_name;
-      ⌜ new_name ≠ ""%go ⌝ ∗
-      ⌜ valid_name kind new_name ⌝ ∗
-      ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
-      ⌜ ∀ kind namespace,
-          ¬ reserved_key_pred {| KKey.Kind' := kind;
-                             KKey.Namespace' := namespace;
-                             KKey.Name' := new_name |} ⌝ ∗
-      l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ i = interface.mk (go.PointerType v1.ObjectMeta) #l ⌝ ∗
@@ -255,42 +218,6 @@ Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
     @! apimodel.validateObjectMeta #(interface.ok i) #kind
   {{{ RET #interface.nil;
       ObjectMetaV.deepown_l l m dq
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_applyValidationAndDefaulting i l o (name : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface i l o ⌝ ∗
-      KObjectV.deepown_l l o 1 ∗
-      ⌜ valid_create_typemeta (KObjectV.kind o) (KObjectV.typemeta o) ∧
-        let m := KObjectV.objectmeta o in
-        (m.(ObjectMetaV.GenerateName') ≠ ""%go →
-          valid_generate_name (KObjectV.kind o) m.(ObjectMetaV.GenerateName')) ∧
-        m.(ObjectMetaV.Name') ≠ ""%go ∧
-        valid_name (KObjectV.kind o) m.(ObjectMetaV.Name') ∧
-        m.(ObjectMetaV.Namespace') ≠ ""%go ∧
-        valid_namespace m.(ObjectMetaV.Namespace') ∧
-        valid_labels m.(ObjectMetaV.Labels') ∧
-        valid_annotations m.(ObjectMetaV.Annotations') ∧
-        valid_owner_references m.(ObjectMetaV.OwnerReferences') ∧
-        valid_finalizers m.(ObjectMetaV.Finalizers') ∧
-        valid_managed_fields m.(ObjectMetaV.ManagedFields') ⌝
-  }}}
-    @! apimodel.applyValidationAndDefaulting #(interface.ok i) #name
-  {{{ o', RET #interface.nil;
-      KObjectV.deepown_l l o' 1 ∗
-      ⌜ KObjectV.same_kind o o' ⌝ ∗
-      ⌜ ObjectMetaV.valid (KObjectV.kind o') (KObjectV.objectmeta o') ⌝ ∗
-      ⌜ ObjectSpecV.valid (KObjectV.spec o') ⌝ ∗
-      ⌜ ObjectStatusV.valid (KObjectV.status o') ⌝ ∗
-      (* This contract includes the omitted decoder step: a create request may
-         omit TypeMeta.kind, while the typed object returned by Kubernetes has
-         the concrete kind selected by the endpoint. *)
-      ⌜ valid_typemeta (KObjectV.kind o') (KObjectV.typemeta o') ⌝ ∗
-      ⌜ KObjectV.objectmeta o' = ((KObjectV.objectmeta o) <| ObjectMetaV.Generation' := W64 1 |>) ⌝ ∗
-      ⌜ ObjectSpecV.created (KObjectV.spec o) (KObjectV.spec o') ⌝ ∗
-      ⌜ ObjectStatusV.created (KObjectV.status o) (KObjectV.status o') ⌝
   }}}.
 Proof.
 Admitted.
@@ -334,170 +261,6 @@ Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
     @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
   {{{ err, RET #err;
       ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_allowUnconditionalUpdate (kind : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.allowUnconditionalUpdate #kind
-  {{{ (ret : bool), RET #ret;
-      True
-  }}}.
-Proof. Admitted.
-
-Lemma wp_applyValidationAndDefaultingOnUpdate new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_named_create
-          (KObjectV.kind new_obj) namespace new_obj ⌝ ∗
-      ⌜ valid_resource_version
-          (KObjectV.objectmeta new_obj).(ObjectMetaV.ResourceVersion') ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
-      ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝ ∗
-      ⌜ ObjectMetaV.valid_update
-          (KObjectV.objectmeta old_obj)
-          (KObjectV.objectmeta new_obj) ⌝ ∗
-      ⌜ ObjectSpecV.valid_update
-          (KObjectV.spec old_obj)
-          (KObjectV.spec new_obj) ⌝
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ KObjectV.valid updated_obj ⌝ ∗
-      ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
-      ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
-      ⌜ ObjectMetaV.updated
-          (KObjectV.objectmeta new_obj)
-          (KObjectV.objectmeta updated_obj) ⌝ ∗
-      ⌜ ObjectSpecV.updated
-          (KObjectV.spec new_obj)
-          (KObjectV.spec updated_obj) ⌝ ∗
-      ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj →
-        KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
-      ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝
-  }}}.
-Proof. Admitted.
-
-(* TODO: Revisit this specification after modeling the update pipeline's
-   normalization and validation stages explicitly, rather than relating the
-   submitted object directly to the final stored object. *)
-(** Unlike the strong-reference update rules, a terminating-object update can
-    race with changes to the stored object.  This general contract therefore
-    exposes validation failure while preserving both input objects. *)
-Lemma wp_applyValidationAndDefaultingOnUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_named_create (KObjectV.kind new_obj) namespace new_obj ⌝ ∗
-      ⌜ valid_resource_version (KObjectV.objectmeta new_obj).(ObjectMetaV.ResourceVersion') ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
-      ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ (err : interface.t), RET #err;
-      (⌜ err = interface.nil ⌝ ∗
-        ∃ updated_obj,
-          KObjectV.deepown_l new_l updated_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-          ⌜ KObjectV.valid updated_obj ⌝ ∗
-          ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
-          ⌜ KObjectV.typemeta updated_obj = KObjectV.typemeta new_obj ⌝ ∗
-          ⌜ ObjectMetaV.updated (KObjectV.objectmeta new_obj) (KObjectV.objectmeta updated_obj) ⌝ ∗
-          ⌜ ObjectSpecV.valid_update
-              (KObjectV.spec old_obj) (KObjectV.spec new_obj) ⌝ ∗
-          ⌜ ObjectSpecV.updated (KObjectV.spec new_obj) (KObjectV.spec updated_obj) ⌝ ∗
-          ⌜ KObjectV.spec new_obj = KObjectV.spec old_obj → KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
-          ⌜ KObjectV.status updated_obj = KObjectV.status old_obj ⌝) ∨
-      (⌜ err ≠ interface.nil ⌝ ∗
-        ⌜ ¬ conflict_error err ⌝ ∗
-        KObjectV.deepown_l new_l new_obj 1 ∗
-        KObjectV.deepown_l old_l old_obj dq)
-  }}}.
-Proof. Admitted.
-
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid new_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.key old_obj = KObjectV.key new_obj ⌝ ∗
-      ⌜ namespace = (KObjectV.objectmeta new_obj).(ObjectMetaV.Namespace') ⌝ ∗
-      ⌜ ObjectMetaV.valid_simple_update
-          (KObjectV.objectmeta old_obj)
-          (KObjectV.objectmeta new_obj) ⌝ ∗
-      ⌜ ObjectStatusV.valid_update
-          (KObjectV.status old_obj)
-          (KObjectV.status new_obj) ⌝
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ KObjectV.valid updated_obj ⌝ ∗
-      ⌜ KObjectV.key old_obj = KObjectV.key updated_obj ⌝ ∗
-      ⌜ KObjectV.same_kind new_obj updated_obj ⌝ ∗
-      ⌜ ObjectMetaV.updated
-          (KObjectV.objectmeta new_obj)
-          (KObjectV.objectmeta updated_obj) ⌝ ∗
-      ⌜ KObjectV.spec updated_obj = KObjectV.spec old_obj ⌝ ∗
-      ⌜ ObjectStatusV.updated
-          (KObjectV.status new_obj)
-          (KObjectV.status updated_obj) ⌝
-  }}}.
-Proof. Admitted.
-
-(* This is not a complete spec for shouldDeleteDuringUpdate, but it is sufficient
-   because we only need to prove that it returns false when DeletionTimestamp is nil. *)
-Lemma wp_shouldDeleteDuringUpdate_false new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') = None ⌝
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate #(interface.ok new_i) #(interface.ok old_i)
-  {{{ RET #false;
-    KObjectV.deepown_l new_l new_obj dq ∗
-    KObjectV.deepown_l old_l old_obj dq
-  }}}.
-Proof. Admitted.
-
-(* General ownership-preserving specification.  Release updates also apply to
-   terminating objects, for which Kubernetes may return either boolean.  The
-   caller handles both the update and immediate-deletion branches. *)
-Lemma wp_shouldDeleteDuringUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate
-      #(interface.ok new_i) #(interface.ok old_i)
-  {{{ (should_delete : bool), RET #should_delete;
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ should_delete = true →
-        (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
   }}}.
 Proof. Admitted.
 
