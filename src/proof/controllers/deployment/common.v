@@ -277,6 +277,135 @@ Proof.
     iApply (IH posts with "Hnewpart Holds").
 Qed.
 
+(* findOldReplicaSets hands back the *filtered* pointer slice while the caller
+   still holds deepowns for the whole list, so the bundle has to be split along
+   the same filter and put back afterwards. [util.v]'s
+   [big_sepL_filter_partition] splits but does not recombine; this is the
+   accessor form, over [big_sepL2] and specialised to the [zip] shape
+   [old_replica_set_pairs] uses. Belongs in util.v if a second caller appears. *)
+Lemma big_sepL2_filter_acc (P : ReplicaSetV.t → Prop)
+    `{∀ x, Decision (P x)} (Φ : loc → ReplicaSetV.t → iProp Σ) ptrs rss :
+  ([∗ list] ptr;rs ∈ ptrs;rss, Φ ptr rs) -∗
+  ([∗ list] ptr;rs ∈ (filter (λ pr, P pr.2) (zip ptrs rss)).*1;
+                     (filter (λ pr, P pr.2) (zip ptrs rss)).*2, Φ ptr rs) ∗
+  (([∗ list] ptr;rs ∈ (filter (λ pr, P pr.2) (zip ptrs rss)).*1;
+                      (filter (λ pr, P pr.2) (zip ptrs rss)).*2, Φ ptr rs) -∗
+   ([∗ list] ptr;rs ∈ ptrs;rss, Φ ptr rs)).
+Proof.
+  iIntros "H".
+  iInduction ptrs as [|ptr ptrs] "IH" forall (rss).
+  - iDestruct (big_sepL2_nil_inv_l with "H") as %->.
+    simpl. iSplitR; [done|]. iIntros "_". done.
+  - destruct rss as [|rs rss].
+    { iDestruct (big_sepL2_nil_inv_r with "H") as %Hcontra. done. }
+    simpl. iDestruct "H" as "[Hhd Htl]".
+    iDestruct ("IH" with "Htl") as "[Hold Hrestore]".
+    destruct (decide (P rs)) as [HP|HnP].
+    + rewrite (filter_cons_True _ (ptr, rs) _ HP). simpl.
+      iFrame "Hhd Hold". iIntros "[Hhd2 Hold2]". iFrame "Hhd2".
+      iApply "Hrestore". iFrame.
+    + rewrite (filter_cons_False _ (ptr, rs) _ HnP).
+      iFrame "Hold". iIntros "Hold2". iFrame "Hhd".
+      iApply "Hrestore". iFrame.
+Qed.
+
+(* At the position the new ReplicaSet occupied, the merge holds its
+   post-state. *)
+Lemma merge_old_posts_lookup_new uid rss new_post posts i rs :
+  rss !! i = Some rs →
+  ¬ rs_is_old uid rs →
+  merge_old_posts uid rss new_post posts !! i = Some new_post.
+Proof.
+  revert i posts. induction rss as [|x rest IH]; intros i posts Hi Hnot.
+  { rewrite lookup_nil in Hi. discriminate. }
+  destruct i as [|i]; simpl in Hi.
+  - injection Hi as ->. simpl.
+    destruct (decide (rs_is_old uid rs)) as [Hc|_]; first (exfalso; exact (Hnot Hc)).
+    done.
+  - simpl. destruct (decide (rs_is_old uid x)).
+    + destruct posts as [|p posts']; simpl; by apply IH.
+    + simpl. by apply IH.
+Qed.
+
+(* When the post-state list has the right length the degenerate branch of
+   [merge_old_posts] never fires, so nothing is needed of the originals. *)
+Lemma merge_old_posts_Forall_len uid rss new_post posts (Q : ReplicaSetV.t → Prop) :
+  length posts = length (filter (rs_is_old uid) rss) →
+  Q new_post →
+  Forall Q posts →
+  Forall Q (merge_old_posts uid rss new_post posts).
+Proof.
+  revert posts. induction rss as [|rs rest IH]; intros posts Hlen Hnew Hposts;
+    first apply Forall_nil_2.
+  simpl. destruct (decide (rs_is_old uid rs)) as [Hold|Hnot].
+  - rewrite (filter_cons_True (rs_is_old uid) rs _ Hold) in Hlen.
+    destruct posts as [|p posts']; first (simpl in Hlen; discriminate).
+    apply Forall_cons_1 in Hposts as [Hp Hposts'].
+    apply Forall_cons_2; [exact Hp|].
+    apply IH; [simpl in Hlen; lia|exact Hnew|exact Hposts'].
+  - rewrite (filter_cons_False (rs_is_old uid) rs _ Hnot) in Hlen.
+    apply Forall_cons_2; [exact Hnew|apply IH; [exact Hlen|exact Hnew|exact Hposts]].
+Qed.
+
+Lemma filter_rs_is_old_all uid (rss : list ReplicaSetV.t) :
+  Forall (λ rs, rs_uid rs ≠ uid) rss →
+  filter (rs_is_old uid) rss = rss.
+Proof.
+  induction rss as [|rs rest IH]; first done.
+  intros Hall. apply Forall_cons_1 in Hall as [Hrs Hrest].
+  rewrite (filter_cons_True (rs_is_old uid) rs _ Hrs). f_equal.
+  apply IH. exact Hrest.
+Qed.
+
+(* The old ReplicaSets, viewed through the pair filter and through the plain
+   filter, are the same list. *)
+Lemma filter_zip_snd uid (ptrs : list loc) (rss : list ReplicaSetV.t) :
+  length ptrs = length rss →
+  (filter (λ pr, rs_is_old uid pr.2) (zip ptrs rss)).*2
+    = filter (rs_is_old uid) rss.
+Proof.
+  revert rss. induction ptrs as [|ptr ptrs IH]; intros [|rs rss] Hlen;
+    simpl in *; try done; try lia.
+  destruct (decide (rs_is_old uid rs)) as [Hold|Hnot].
+  - rewrite (filter_cons_True (λ pr : loc * ReplicaSetV.t, rs_is_old uid pr.2)
+      (ptr, rs) _ Hold).
+    rewrite (filter_cons_True (rs_is_old uid) rs _ Hold).
+    simpl. f_equal. apply IH. lia.
+  - rewrite (filter_cons_False (λ pr : loc * ReplicaSetV.t, rs_is_old uid pr.2)
+      (ptr, rs) _ Hnot).
+    rewrite (filter_cons_False (rs_is_old uid) rs _ Hnot).
+    apply IH. lia.
+Qed.
+
+Lemma Forall_filter_rs {A} (P : A → Prop) `{∀ x, Decision (P x)}
+    (Q : A → Prop) (l : list A) :
+  Forall Q l → Forall Q (filter P l).
+Proof.
+  induction l as [|x l IH]; first done.
+  intros Hall. apply Forall_cons_1 in Hall as [Hx Hl].
+  rewrite filter_cons. destruct (decide (P x)).
+  - apply Forall_cons_2; [exact Hx|apply IH; exact Hl].
+  - apply IH. exact Hl.
+Qed.
+
+Lemma NoDup_fmap_filter_rs (P : ReplicaSetV.t → Prop) `{∀ x, Decision (P x)}
+    (rss : list ReplicaSetV.t) :
+  NoDup (ReplicaSetV.key <$> rss) →
+  NoDup (ReplicaSetV.key <$> filter P rss).
+Proof.
+  induction rss as [|rs rest IH]; first done.
+  rewrite fmap_cons. intros Hnodup.
+  pose proof (NoDup_cons_1_1 _ _ Hnodup) as Hnotin.
+  pose proof (NoDup_cons_1_2 _ _ Hnodup) as Hrest.
+  rewrite filter_cons. destruct (decide (P rs)).
+  - rewrite fmap_cons. apply NoDup_cons_2; [|apply IH; exact Hrest].
+    intros Hin. apply Hnotin.
+    apply list_elem_of_fmap_1 in Hin as (y & Hy & Hy_in).
+    rewrite Hy. apply list_elem_of_fmap_2.
+    apply list_elem_of_filter in Hy_in as [_ Hy_in]. exact Hy_in.
+  - apply IH. exact Hrest.
+Qed.
+
 (* [big_sepL_filter_partition] produces the complement in unfolded form. *)
 Lemma filter_not_rs_is_old uid (rss : list ReplicaSetV.t) :
   filter (λ rs, not (rs_is_old uid rs)) rss = filter (rs_is_new uid) rss.

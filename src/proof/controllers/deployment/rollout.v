@@ -1,6 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get create_named update.
 From New.proof.kubernetes_model.tx Require Export update.
+From New.proof.kubernetes_model Require Export index_replicaset.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
@@ -609,7 +610,13 @@ Lemma wp_reconcileNewReplicaSet γ model_l new_rs_l d_l
          the deployment's. This is the postcondition [rollout] actually needs. *)
       "%Hreplicas" ∷ ⌜ new_rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') =
           Some (deployment_replicas d) ⌝ ∗
-      "%Hscaled" ∷ ⌜ scaled = bool_decide (rs_replicas new_rs ≠ deployment_replicas d) ⌝
+      "%Hscaled" ∷ ⌜ scaled = bool_decide (rs_replicas new_rs ≠ deployment_replicas d) ⌝ ∗
+      (* Scaling rewrites only the replica count, so the template — which is
+         what identifies this as the deployment's new ReplicaSet — survives. *)
+      "%Htemplate" ∷ ⌜ rs_template new_rs' = rs_template new_rs ⌝ ∗
+      "%Huid" ∷ ⌜ new_rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
+          new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "%Hkey_pres" ∷ ⌜ ReplicaSetV.key new_rs' = ReplicaSetV.key new_rs ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -630,17 +637,21 @@ Proof.
   - (* Already at the deployment's count: nothing was written, and validity
        says the stored count is explicit rather than defaulted. *)
     destruct Hnoop as (Hcount & -> & -> & _).
-    iPureIntro. split.
+    iPureIntro. split_and!; [| |done|done|done].
     + rewrite (rs_replicas_of_valid _ Hnew_rs_valid) Hcount. done.
     + assert (bool_decide (rs_replicas new_rs ≠ deployment_replicas d) = false)
         as ->; [|done].
       apply bool_decide_eq_false_2. intros Hcontra. exact (Hcontra Hcount).
   - destruct Hscaled as (Hne & ->).
-    iPureIntro. split.
+    iPureIntro. split_and!; [| | |exact Huid|exact Hkey].
     + eapply rs_scaled_spec_updated_replicas. exact Hspec_updated.
     + assert (bool_decide (rs_replicas new_rs ≠ deployment_replicas d) = true)
         as ->; [|done].
       apply bool_decide_eq_true_2. exact Hne.
+    + rewrite /rs_template.
+      rewrite /ObjectSpecV.updated /ReplicaSetSpecV.updated
+        /ReplicaSetSpecV.created /rs_scaled_spec /= in Hspec_updated.
+      destruct Hspec_updated as (_ & _ & _ & Htmpl). rewrite Htmpl. done.
 Qed.
 
 (* reconcileOldReplicaSets drains every old ReplicaSet to zero in one pass. *)
@@ -913,28 +924,176 @@ Proof.
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (new_rs_l new_rs) "(Hd & Hsl & Hrss & %Hnew_rs_matches & Hdisj)".
   wp_auto_lc 1.
-  (* STOPS HERE, with the new ReplicaSet in hand and the adopted/created
-     disjunction still to split.
-
-     The recombination this proof needs now exists: [merge_old_posts] and
-     [big_sepL2_merge_old_posts] in common.v put the two post-state lists back
-     into positional order, and [merge_old_posts_Forall] discharges the
-     drained-everything-else conclusion. [util.v]'s
-     [big_sepL_filter_partition] does the corresponding split of
-     [Hown_frags].
-
-     The UID-uniqueness the merge needs is now [Huid_nodup]. It is not
-     derivable from the fragments — the store invariant states it
-     (algebra/kview.v:56-61) but seeing it requires the invariant open, which
-     this proof is not — so the index returns it and
-     [wp_filterReplicaSetsByOwner] passes it along. No burden on the top-level
-     callers: [syncDeployment] gets it from the filter it already calls.
-
-     After that the branches are bookkeeping: read newRS.UID, call
-     [wp_findOldReplicaSets], then [wp_reconcileNewReplicaSet] on the new one
-     and [wp_reconcileOldReplicaSets] on the rest, taking the new ReplicaSet's
-     deepown and fragments out of [rss] in the adopted branch and from the
-     create in the created branch. *)
-Admitted.
+  iDestruct "Hdisj" as "[(%Hadopted & Hreserved & Hown_children)|Hcr]".
+  - (* Adopted: the new ReplicaSet is already one of [rss]. *)
+    destruct Hadopted as (i & Hfind & Hptr).
+    assert (rss !! i = Some new_rs) as Hrss_i.
+    { unfold find_new_replica_set in Hfind.
+      apply list_find_Some in Hfind as (H1 & _ & _). exact H1. }
+    (* Reading newRS.UID needs the object open, but only for the read. *)
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hptr|exact Hrss_i|].
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
+      "(%Hnn & Htm & Hom & Hsp & Hst)".
+    iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
+    iNamedPrefix "Hmeta" "Hm_".
+    wp_auto.
+    rewrite Hm_Hdeepown_uid.
+    iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
+    iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' new_rs) dq_rss)
+      with "[Hmeta_parts]" as "Hmeta".
+    { iNamed "Hmeta_parts". iFrame. done. }
+    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
+      with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hthis".
+    { iExists meta_c. iFrame. }
+    iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+    wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid new_rs) dq_sl dq_rss
+      with "[$Hsl $Hrss]").
+    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+    wp_auto.
+    (* Split the fragments: the new ReplicaSet, and everything else. Distinct
+       UIDs make "not old" exactly the new one. *)
+    iDestruct (big_sepL_filter_partition (rs_is_old (rs_uid new_rs))
+      with "Hown_frags") as "[Hold_frags Hnew_frags]".
+    rewrite filter_not_rs_is_old.
+    rewrite (filter_rs_is_new_singleton rss new_rs i Huid_nodup Hrss_i).
+    iDestruct "Hnew_frags" as "[[Hnew_meta Hnew_spec] _]".
+    assert (ReplicaSetV.valid new_rs) as Hnew_valid.
+    { rewrite Forall_lookup in Hrss_valid. eapply Hrss_valid. exact Hrss_i. }
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hptr|exact Hrss_i|].
+    wp_apply (wp_reconcileNewReplicaSet γ model_l new_rs_l d_l new_rs d
+      dq_rss dq_d with "[$Hthis $Hd $Hnew_meta $Hnew_spec]").
+    { iFrame "#". iPureIntro. split; [exact Hnew_valid|exact Hd_valid]. }
+    iIntros (scaled new_rs')
+      "(Hthis & Hd & Hnew_meta & Hnew_spec & %Hreplicas & %Hscaled & %Htemplate
+        & %Huid_pres & %Hkey_pres)".
+    iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
+    wp_auto.
+    (* Drain the rest. *)
+    iDestruct (big_sepL2_length with "Hrss") as %Hlen_eq.
+    iDestruct (big_sepL2_filter_acc (rs_is_old (rs_uid new_rs))
+      (λ ptr rs, ReplicaSetV.deepown_l ptr rs dq_rss) ptrs rss
+      with "Hrss") as "[Hold Hrss_restore2]".
+    iEval (rewrite -(filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq))
+      in "Hold_frags".
+    wp_apply (wp_reconcileOldReplicaSets γ model_l old_sl
+      (filter (λ pr, rs_is_old (rs_uid new_rs) pr.2) (zip ptrs rss)).*1
+      (filter (λ pr, rs_is_old (rs_uid new_rs) pr.2) (zip ptrs rss)).*2
+      (DfracOwn 1) dq_rss with "[$Hold_sl $Hold $Hold_frags]").
+    { iFrame "#". iPureIntro.
+      rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq). split.
+      - apply Forall_filter_rs. exact Hrss_valid.
+      - apply NoDup_fmap_filter_rs. exact Hkeys_nodup. }
+    iIntros (scaled_down old_rss')
+      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd)".
+    iDestruct ("Hrss_restore2" with "Hold") as "Hrss".
+    wp_auto.
+    (* Interleave the two post-state lists back into positional order. *)
+    iApply ("HΦ" $! new_rs'
+      (merge_old_posts (rs_uid new_rs) rss new_rs' old_rss')).
+    iFrame "Hd Hsl Hrss".
+    assert (¬ rs_is_old (rs_uid new_rs) new_rs) as Hnot_old.
+    { rewrite /rs_is_old. intros Hc. exact (Hc eq_refl). }
+    iSplit.
+    { iPureIntro. rewrite Htemplate. exact Hnew_rs_matches. }
+    iSplit; [iPureIntro; exact Hreplicas|].
+    iSplit.
+    { iPureIntro.
+      apply (merge_old_posts_Forall_len _ _ _ _ _
+        (eq_trans Hold_len (f_equal length
+          (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)))).
+      - left. done.
+      - apply Forall_lookup. intros k x Hk. right.
+        rewrite Forall_lookup in Hdrained. eapply Hdrained. exact Hk. }
+    iSplitL "Hnew_meta Hnew_spec Hold_frags".
+    { iApply (big_sepL2_merge_old_posts with "[Hnew_meta Hnew_spec]").
+      - rewrite (filter_rs_is_new_singleton rss new_rs i Huid_nodup Hrss_i).
+        simpl. iFrame.
+      - iEval (rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq))
+          in "Hold_frags". iExact "Hold_frags". }
+    iLeft. iFrame "Hreserved Hown_children".
+    iPureIntro. exists i.
+    apply (merge_old_posts_lookup_new _ _ _ _ i new_rs Hrss_i Hnot_old).
+  - (* Created: the new ReplicaSet is fresh, so every entry of [rss] is old. *)
+    iDestruct "Hcr" as "(%Hcreated & Hnew_rs & %Hnew_rs_valid & %Hnew_rs_key
+      & %Hnew_rs_shape & Hnew_meta & Hnew_spec & Hreserved & Hown_children)".
+    iAssert ⌜ Forall (λ rs,
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ≠ rs_uid new_rs) rss ⌝%I
+      as %Hfresh.
+    { iDestruct (big_sepL_sep with "Hown_frags") as "[Hmetas _]".
+      iApply (own_meta_frag_uid_distinct_list with "Hmetas Hnew_meta"). }
+    rewrite /rs_uid in Hfresh.
+    iAssert ⌜ Forall (λ rs, ReplicaSetV.key rs ≠ new_rs_key d) rss ⌝%I
+      as %Hkey_fresh.
+    { iDestruct (big_sepL_sep with "Hown_frags") as "[Hmetas _]".
+      iApply (own_meta_frag_key_distinct_list with "Hmetas Hnew_meta"). }
+    iEval (rewrite -Hnew_rs_key) in "Hnew_meta".
+    iEval (rewrite -Hnew_rs_key) in "Hnew_spec".
+    (* Read newRS.UID off the created object. *)
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hnew_rs") as
+      "(%Hnn & Htm & Hom & Hsp & Hst)".
+    iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
+    iNamedPrefix "Hmeta" "Hm_".
+    wp_auto.
+    rewrite Hm_Hdeepown_uid.
+    iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
+    iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' new_rs) 1)
+      with "[Hmeta_parts]" as "Hmeta".
+    { iNamed "Hmeta_parts". iFrame. done. }
+    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
+      with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hnew_rs".
+    { iExists meta_c. iFrame. }
+    wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid new_rs) dq_sl dq_rss
+      with "[$Hsl $Hrss]").
+    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+    wp_auto.
+    wp_apply (wp_reconcileNewReplicaSet γ model_l new_rs_l d_l new_rs d
+      1 dq_d with "[$Hnew_rs $Hd $Hnew_meta $Hnew_spec]").
+    { iFrame "#". iPureIntro. split; [exact Hnew_rs_valid|exact Hd_valid]. }
+    iIntros (scaled new_rs')
+      "(Hnew_rs & Hd & Hnew_meta & Hnew_spec & %Hreplicas & %Hscaled & %Htemplate
+        & %Huid_pres & %Hkey_pres)".
+    wp_auto.
+    (* Every framed ReplicaSet is old, so the filters collapse. *)
+    iDestruct (big_sepL2_length with "Hrss") as %Hlen_eq.
+    iDestruct (big_sepL2_filter_acc (rs_is_old (rs_uid new_rs))
+      (λ ptr rs, ReplicaSetV.deepown_l ptr rs dq_rss) ptrs rss
+      with "Hrss") as "[Hold Hrss_restore2]".
+    wp_apply (wp_reconcileOldReplicaSets γ model_l old_sl
+      (filter (λ pr, rs_is_old (rs_uid new_rs) pr.2) (zip ptrs rss)).*1
+      (filter (λ pr, rs_is_old (rs_uid new_rs) pr.2) (zip ptrs rss)).*2
+      (DfracOwn 1) dq_rss with "[$Hold_sl $Hold Hown_frags]").
+    { iFrame "#".
+      rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
+        (filter_rs_is_old_all _ _ Hfresh).
+      iFrame "Hown_frags". iPureIntro. split; [exact Hrss_valid|exact Hkeys_nodup]. }
+    iIntros (scaled_down old_rss')
+      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd)".
+    iDestruct ("Hrss_restore2" with "Hold") as "Hrss".
+    wp_auto.
+    rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
+      (filter_rs_is_old_all _ _ Hfresh) in Hold_len.
+    iEval (rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
+      (filter_rs_is_old_all _ _ Hfresh)) in "Hold_frags".
+    iApply ("HΦ" $! new_rs' old_rss').
+    iFrame "Hd Hsl Hrss Hold_frags".
+    iSplit.
+    { iPureIntro. rewrite Htemplate. exact Hnew_rs_matches. }
+    iSplit; [iPureIntro; exact Hreplicas|].
+    iSplit.
+    { iPureIntro. apply Forall_lookup. intros k x Hk. right.
+      rewrite Forall_lookup in Hdrained. eapply Hdrained. exact Hk. }
+    iRight.
+    rewrite Huid_pres Hnew_rs_key.
+    iSplitR.
+    { iPureIntro. split; [rewrite Hkey_pres; exact Hnew_rs_key|].
+      intros Hin.
+      apply list_elem_of_fmap_1 in Hin as (x & Hx & Hx_in).
+      apply list_elem_of_lookup_1 in Hx_in as (k & Hk).
+      rewrite Forall_lookup in Hkey_fresh.
+      exact (Hkey_fresh k x Hk (eq_sym Hx)). }
+    iFrame "Hnew_meta Hnew_spec Hreserved Hown_children".
+Qed.
 
 End proof.

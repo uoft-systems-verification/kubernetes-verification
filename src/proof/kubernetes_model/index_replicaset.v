@@ -114,6 +114,54 @@ Lemma own_meta_frag_uid_distinct γ k1 uid1 m1 k2 uid2 m2 :
   ⌜ uid1 ≠ uid2 ⌝.
 Proof. Admitted.
 
+(* A freshly created ReplicaSet's key differs from every key already held: two
+   full-fraction metadata fragments cannot sit at one key. This needs no
+   invariant — it is immediate from the fragments. *)
+Lemma own_meta_frag_key_distinct_list γ (rss : list ReplicaSetV.t) k uid m :
+  ([∗ list] rs ∈ rss,
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      rs.(ReplicaSetV.ObjectMeta')) -∗
+  own_meta_frag γ k uid 1 m -∗
+  ⌜ Forall (λ rs, ReplicaSetV.key rs ≠ k) rss ⌝.
+Proof.
+  iIntros "Hlist Hone".
+  iInduction rss as [|rs rest] "IH".
+  - iPureIntro. apply Forall_nil_2.
+  - iDestruct "Hlist" as "[Hhead Htail]".
+    iAssert ⌜ ReplicaSetV.key rs ≠ k ⌝%I as %Hne.
+    { destruct (decide (ReplicaSetV.key rs = k)) as [Heq|Hkne];
+        last (iPureIntro; exact Hkne).
+      iDestruct (kview.own_meta_meta_false Heq with "Hhead Hone") as %[]. }
+    iDestruct ("IH" with "Htail Hone") as %Hrest.
+    iPureIntro. apply Forall_cons_2; [exact Hne|exact Hrest].
+Qed.
+
+(* The list form: a freshly created ReplicaSet's UID differs from every UID
+   already held. Each element either sits at a different key — and then
+   [own_meta_frag_uid_distinct] applies — or at the same key, which two
+   full-fraction metadata fragments rule out outright. *)
+Lemma own_meta_frag_uid_distinct_list γ (rss : list ReplicaSetV.t) k uid m :
+  ([∗ list] rs ∈ rss,
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      rs.(ReplicaSetV.ObjectMeta')) -∗
+  own_meta_frag γ k uid 1 m -∗
+  ⌜ Forall (λ rs,
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ≠ uid) rss ⌝.
+Proof.
+  iIntros "Hlist Hone".
+  iInduction rss as [|rs rest] "IH".
+  - iPureIntro. apply Forall_nil_2.
+  - iDestruct "Hlist" as "[Hhead Htail]".
+    iAssert ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ≠ uid ⌝%I as %Hne.
+    { destruct (decide (ReplicaSetV.key rs = k)) as [Heq|Hkne].
+      - iDestruct (kview.own_meta_meta_false Heq with "Hhead Hone") as %[].
+      - iApply (own_meta_frag_uid_distinct _ _ _ _ _ _ _ Hkne with "Hhead Hone"). }
+    iDestruct ("IH" with "Htail Hone") as %Hrest.
+    iPureIntro. apply Forall_cons_2; [exact Hne|exact Hrest].
+Qed.
+
 (* TRUSTED — the single remaining obligation for H2.
 
    Discharging it means writing the ReplicaSet analogue of index.v's Pod
