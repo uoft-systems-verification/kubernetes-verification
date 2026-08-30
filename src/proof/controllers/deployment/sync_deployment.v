@@ -93,6 +93,9 @@ Lemma wp_filterReplicaSetsByOwner γ model_l d_l (d : DeploymentV.t)
       "%Hview_perm" ∷ ⌜ rs_storage_view <$> rss' ≡ₚ rs_storage_view <$> rss ⌝ ∗
       "%Hrss'_valid" ∷ ⌜ Forall ReplicaSetV.valid rss' ⌝ ∗
       "%Hnodup'" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss') ⌝ ∗
+      (* Distinct UIDs, from the store invariant via the index. [rollout] needs
+         it to know the new ReplicaSet is the only one carrying its UID. *)
+      "%Huid_nodup'" ∷ ⌜ NoDup (rs_uid <$> rss') ⌝ ∗
       (* Every returned ReplicaSet is controlled by this deployment — the
          filter's whole purpose. *)
       "%Hparent_refs" ∷ ⌜ Forall (λ rs,
