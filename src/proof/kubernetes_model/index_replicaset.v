@@ -114,6 +114,141 @@ Lemma own_meta_frag_uid_distinct γ k1 uid1 m1 k2 uid2 m2 :
   ⌜ uid1 ≠ uid2 ⌝.
 Proof. Admitted.
 
+(* After a write, fragments are still keyed by the object that was there
+   before, while the metadata they hold is the new one. They can be re-keyed
+   onto the post-state: [kview.own_meta_valid] says a fragment's key and UID
+   agree with the metadata it holds, and a ReplicaSet's key is determined by
+   its metadata, so the two keyings coincide. *)
+Lemma own_rs_frags_rekey γ (rss rss' : list ReplicaSetV.t) :
+  ([∗ list] rs;rs2 ∈ rss;rss',
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      rs2.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      (ObjectSpecV.ReplicaSetSpec rs2.(ReplicaSetV.Spec'))) -∗
+  ([∗ list] rs2 ∈ rss',
+    own_meta_frag γ (ReplicaSetV.key rs2)
+      rs2.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      rs2.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs2)
+      rs2.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      (ObjectSpecV.ReplicaSetSpec rs2.(ReplicaSetV.Spec'))).
+Proof.
+  iInduction rss as [|rs rest] "IH" forall (rss').
+  - iIntros "H". iDestruct (big_sepL2_nil_inv_l with "H") as %->. done.
+  - destruct rss' as [|rs2 rest'].
+    { iIntros "H". iDestruct (big_sepL2_nil_inv_r with "H") as %Hc. done. }
+    iIntros "[[Hm Hs] Htl]".
+    iDestruct (kview.own_meta_valid with "Hm") as %(Hn & Hns & Huid & _ & _).
+    assert (ReplicaSetV.key rs = ReplicaSetV.key rs2) as Hkey.
+    { rewrite /ReplicaSetV.key /ReplicaSetV.meta_key.
+      simpl in Hn, Hns. rewrite Hn Hns. done. }
+    rewrite Hkey Huid.
+    iFrame "Hm Hs".
+    iApply ("IH" with "Htl").
+Qed.
+
+(* The pure half of [own_rs_frags_rekey]: the same [kview.own_meta_valid]
+   that lets the fragments move also says the post-state sits at the same key
+   and UID as the pre-state. Callers need this separately, to relate a list of
+   post-states back to the keys the caller framed. *)
+Lemma own_rs_frags_keys γ (rss rss' : list ReplicaSetV.t) :
+  ([∗ list] rs;rs2 ∈ rss;rss',
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      rs2.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      (ObjectSpecV.ReplicaSetSpec rs2.(ReplicaSetV.Spec'))) -∗
+  ⌜ Forall2 (λ rs rs2,
+      ReplicaSetV.key rs2 = ReplicaSetV.key rs ∧
+      rs2.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) rss rss' ⌝.
+Proof.
+  iInduction rss as [|rs rest] "IH" forall (rss').
+  - iIntros "H". iDestruct (big_sepL2_nil_inv_l with "H") as %->.
+    iPureIntro. apply Forall2_nil_2.
+  - destruct rss' as [|rs2 rest'].
+    { iIntros "H". iDestruct (big_sepL2_nil_inv_r with "H") as %Hc. done. }
+    iIntros "[[Hm Hs] Htl]".
+    iDestruct (kview.own_meta_valid with "Hm") as %(Hn & Hns & Huid & _ & _).
+    iDestruct ("IH" with "Htl") as %Htl.
+    iPureIntro. apply Forall2_cons_2; [|exact Htl].
+    split; [|by rewrite Huid].
+    rewrite /ReplicaSetV.key /ReplicaSetV.meta_key.
+    simpl in Hn, Hns. rewrite Hn Hns. done.
+Qed.
+
+(* Fragments do not see the resource version, so a list of them is determined
+   by the storage views — which is what lets a caller move its fragments along
+   the permutation the index returns. The Pod counterparts are
+   [own_meta_frag_erased_meta] and [own_pod_frags_as_storage_views]. *)
+Definition own_rs_storage_view_frag γ dq
+    (view : ObjectMetaV.t * ObjectSpecV.t) : iProp Σ :=
+  own_meta_frag γ (ReplicaSetV.meta_key view.1)
+    view.1.(ObjectMetaV.UID') dq view.1 ∗
+  own_spec_frag γ (ReplicaSetV.meta_key view.1)
+    view.1.(ObjectMetaV.UID') dq view.2.
+
+Lemma own_rs_meta_frag_erased_meta γ dq meta :
+  own_meta_frag γ (ReplicaSetV.meta_key meta) meta.(ObjectMetaV.UID') dq meta ⊣⊢
+  own_meta_frag γ
+    (ReplicaSetV.meta_key (ObjectMetaV.without_resource_version meta))
+    (ObjectMetaV.without_resource_version meta).(ObjectMetaV.UID') dq
+    (ObjectMetaV.without_resource_version meta).
+Proof.
+  rewrite /own_meta_frag /kview.own_meta_frag /kview.mk_meta_frag
+    /ObjectMetaV.without_resource_version /ReplicaSetV.meta_key.
+  destruct meta. done.
+Qed.
+
+Lemma own_rs_frags_as_storage_views γ dq (rss : list ReplicaSetV.t) :
+  ([∗ list] rs ∈ rss,
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      rs.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ⊣⊢
+  ([∗ list] view ∈ rs_storage_view <$> rss,
+    own_rs_storage_view_frag γ dq view).
+Proof.
+  rewrite -(big_sepL_fmap rs_storage_view
+    (λ _ view, own_rs_storage_view_frag γ dq view) rss).
+  apply big_sepL_proper.
+  intros i rs Hlookup.
+  rewrite /own_rs_storage_view_frag /rs_storage_view /=.
+  rewrite own_rs_meta_frag_erased_meta.
+  rewrite /own_spec_frag /kview.own_spec_frag /kview.mk_spec_frag
+    /ReplicaSetV.key /ReplicaSetV.meta_key /ObjectMetaV.without_resource_version.
+  destruct rs as [typemeta objectmeta].
+  destruct objectmeta; done.
+Qed.
+
+(* Moving a fragment list along the index's permutation. *)
+Lemma own_rs_frags_view_perm γ dq (rss rss' : list ReplicaSetV.t) :
+  rs_storage_view <$> rss' ≡ₚ rs_storage_view <$> rss →
+  ([∗ list] rs ∈ rss,
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      rs.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) -∗
+  ([∗ list] rs ∈ rss',
+    own_meta_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      rs.(ReplicaSetV.ObjectMeta') ∗
+    own_spec_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))).
+Proof.
+  intros Hperm.
+  rewrite !own_rs_frags_as_storage_views Hperm.
+  iIntros "H". iExact "H".
+Qed.
+
 (* A freshly created ReplicaSet's key differs from every key already held: two
    full-fraction metadata fragments cannot sit at one key. This needs no
    invariant — it is immediate from the fragments. *)

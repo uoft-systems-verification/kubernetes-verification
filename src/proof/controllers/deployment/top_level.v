@@ -168,17 +168,29 @@ Definition progress_spec γ model_l (namespace name : go_string)
           "%Hrealized" ∷ ⌜ deployment_realized d rss_post ⌝ ∗
           "%Hunique_new'" ∷ ⌜ unique_new_replica_set d rss_post ⌝ ∗
           (* Either the new ReplicaSet was adopted from [rss], or it was created
-             and [rss_post] has it on top. *)
-          ( ( "%Hadopted" ∷ ⌜ rss_post = rss ⌝ ∗
+             and [rss_post] carries one extra object at [new_rs_key d].
+
+             Stated over the key lists, not the objects: a sync rewrites replica
+             counts, and the objects reach the controller through the index in
+             an arbitrary order, so [rss_post] is never literally [rss]. What
+             the caller needs is which *objects* exist, and that is the keys. *)
+          ( ( "%Hadopted" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
+                  ReplicaSetV.key <$> rss ⌝ ∗
               "Hreserved" ∷ own_available_reserved_frag γ 1
                 (new_rs_key d) ∗
               "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
                 uid 1 children_keys)
             ∨
-            ( "%Hcreated" ∷ ⌜ ∃ new_rs, rss_post = rss ++ [new_rs] ∧
+            (* The created ReplicaSet is named because the reservation it fills
+               is stamped with *its* UID, not the deployment's — the store
+               records which object occupies the reserved key. *)
+            ( ∃ new_rs,
+              "%Hcreated" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
+                  (ReplicaSetV.key <$> rss) ++ [new_rs_key d] ∧
+                  new_rs ∈ rss_post ∧
                   ReplicaSetV.key new_rs = new_rs_key d ⌝ ∗
-              "Hreserved" ∷ own_occupied_reserved_frag γ 1
-                (new_rs_key d) d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') ∗
+              "Hreserved" ∷ own_occupied_reserved_frag γ 1 (new_rs_key d)
+                new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ∗
               "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
                 uid 1 ({[ new_rs_key d ]} ∪ children_keys)))))
   }}}.
