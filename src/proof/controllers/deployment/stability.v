@@ -225,37 +225,7 @@ Proof.
   iApply ("HΦ" $! rs_l i new_rs). iFrame. done.
 Qed.
 
-(* findOldReplicaSets hands back the *filtered* pointer slice while the caller
-   still holds deepowns for the whole list, so the bundle has to be split along
-   the same filter and put back afterwards. [util.v]'s
-   [big_sepL_filter_partition] splits but does not recombine; this is the
-   accessor form, over [big_sepL2] and specialised to the [zip] shape
-   [old_replica_set_pairs] uses. Belongs in util.v if a second caller appears. *)
-Lemma big_sepL2_filter_acc (P : ReplicaSetV.t → Prop)
-    `{∀ x, Decision (P x)} (Φ : loc → ReplicaSetV.t → iProp Σ) ptrs rss :
-  ([∗ list] ptr;rs ∈ ptrs;rss, Φ ptr rs) -∗
-  ([∗ list] ptr;rs ∈ (filter (λ pr, P pr.2) (zip ptrs rss)).*1;
-                     (filter (λ pr, P pr.2) (zip ptrs rss)).*2, Φ ptr rs) ∗
-  (([∗ list] ptr;rs ∈ (filter (λ pr, P pr.2) (zip ptrs rss)).*1;
-                      (filter (λ pr, P pr.2) (zip ptrs rss)).*2, Φ ptr rs) -∗
-   ([∗ list] ptr;rs ∈ ptrs;rss, Φ ptr rs)).
-Proof.
-  iIntros "H".
-  iInduction ptrs as [|ptr ptrs] "IH" forall (rss).
-  - iDestruct (big_sepL2_nil_inv_l with "H") as %->.
-    simpl. iSplitR; [done|]. iIntros "_". done.
-  - destruct rss as [|rs rss].
-    { iDestruct (big_sepL2_nil_inv_r with "H") as %Hcontra. done. }
-    simpl. iDestruct "H" as "[Hhd Htl]".
-    iDestruct ("IH" with "Htl") as "[Hold Hrestore]".
-    destruct (decide (P rs)) as [HP|HnP].
-    + rewrite (filter_cons_True _ (ptr, rs) _ HP). simpl.
-      iFrame "Hhd Hold". iIntros "[Hhd2 Hold2]". iFrame "Hhd2".
-      iApply "Hrestore". iFrame.
-    + rewrite (filter_cons_False _ (ptr, rs) _ HnP).
-      iFrame "Hold". iIntros "Hold2". iFrame "Hhd".
-      iApply "Hrestore". iFrame.
-Qed.
+
 
 (* ---------------------------------------------------------------- *)
 (* Pure consequences of [deployment_realized].                       *)
