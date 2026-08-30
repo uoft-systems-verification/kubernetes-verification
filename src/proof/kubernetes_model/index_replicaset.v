@@ -147,6 +147,13 @@ Lemma wp_State__ByIndex_replicaSetController γ l indexed_value rss rs_dqs
       "%Hparent_refs" ∷ ⌜ Forall (λ rs,
         obj_parent_ref (KObjectV.ReplicaSet rs) = Some (parent_key, parent_uid)) rss' ⌝ ∗
       "%Hnodup'" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss') ⌝ ∗
+      (* The store's invariant gives every object a distinct UID
+         (algebra/kview.v:56-61). A caller holding only fragments cannot see
+         that, so the index — which reads under the invariant — returns it.
+         The Deployment controller needs it to tell its new ReplicaSet apart
+         from the old ones by UID. *)
+      "%Huid_nodup'" ∷ ⌜ NoDup ((λ rs,
+          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) <$> rss') ⌝ ∗
       "Hown_meta_frags" ∷ ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
         own_meta_frag γ (ReplicaSetV.key rs)
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') rs_dq

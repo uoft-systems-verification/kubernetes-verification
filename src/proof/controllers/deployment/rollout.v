@@ -833,6 +833,11 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
       "%Hd_valid" ∷ ⌜ DeploymentV.valid d ⌝ ∗
       "%Hrss_valid" ∷ ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
       "%Hkeys_nodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
+      (* Distinct UIDs, which the store invariant guarantees and
+         [wp_filterReplicaSetsByOwner] returns. Needed to know the new
+         ReplicaSet is the only entry carrying its UID, so that draining
+         "everything else" is well defined. *)
+      "%Huid_nodup" ∷ ⌜ NoDup (rs_uid <$> rss) ⌝ ∗
       "%Hnamespace_valid" ∷ ⌜ valid_namespace
           d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
@@ -911,25 +916,25 @@ Proof.
   (* STOPS HERE, with the new ReplicaSet in hand and the adopted/created
      disjunction still to split.
 
-     From here the shape is [wp_rollout_stability]'s: read newRS.UID out of the
-     new ReplicaSet, call findOldReplicaSets, then reconcileNewReplicaSet on
-     the new one and reconcileOldReplicaSets on the rest. The ownership
-     differs by branch — adopted takes the new ReplicaSet's deepown and
-     fragments out of [rss], created gets them from the create — but that part
-     is bookkeeping.
+     The recombination this proof needs now exists: [merge_old_posts] and
+     [big_sepL2_merge_old_posts] in common.v put the two post-state lists back
+     into positional order, and [merge_old_posts_Forall] discharges the
+     drained-everything-else conclusion. [util.v]'s
+     [big_sepL_filter_partition] does the corresponding split of
+     [Hown_frags].
 
-     The piece that needs building first is the recombination. This
-     postcondition hands back [big_sepL2] over [rss;rss'], the post-state of
-     exactly the ReplicaSets passed in. [reconcileOldReplicaSets] returns
-     post-states for the *filtered* old sublist, and [reconcileNewReplicaSet]
-     returns one for the new ReplicaSet, so closing the proof means
-     interleaving two post-lists back into positional order along the filter.
-     [big_sepL2_filter_acc] in stability.v is an accessor: it restores the same
-     values it lent out, which is all the stability proof needed because
-     nothing there is written. A progress-side version has to carry a merge
-     function on the value lists and a lemma that the merge is the positional
-     post-state. That is the missing infrastructure, and it belongs next to
-     [big_sepL2_filter_acc] rather than inside this proof. *)
+     The UID-uniqueness the merge needs is now [Huid_nodup]. It is not
+     derivable from the fragments — the store invariant states it
+     (algebra/kview.v:56-61) but seeing it requires the invariant open, which
+     this proof is not — so the index returns it and
+     [wp_filterReplicaSetsByOwner] passes it along. No burden on the top-level
+     callers: [syncDeployment] gets it from the filter it already calls.
+
+     After that the branches are bookkeeping: read newRS.UID, call
+     [wp_findOldReplicaSets], then [wp_reconcileNewReplicaSet] on the new one
+     and [wp_reconcileOldReplicaSets] on the rest, taking the new ReplicaSet's
+     deepown and fragments out of [rss] in the adopted branch and from the
+     create in the created branch. *)
 Admitted.
 
 End proof.
