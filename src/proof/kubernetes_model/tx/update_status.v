@@ -1,7 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export update_status.
-From New.proof.kubernetes_model Require Import get.
-From New.proof.kubernetes_model.tx Require Export common_update.
+From New.proof.kubernetes_model Require Import common_update get.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From iris.bi.lib Require Import atomic.
 
@@ -165,19 +164,49 @@ Proof.
   iFrame "Hown_meta_frag Hown_status_frag".
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
-    eapply kobject_valid_status_update_set_resource_version; done. }
+    assert (ObjectMetaV.valid_update old_meta (KObjectV.objectmeta kobj)) as Hmeta.
+    { destruct old_status, kobj;
+        rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+        rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+          ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+          in Hvalid_status_update;
+        try contradiction; tauto. }
+    assert (ObjectMetaV.valid_update old_meta
+        ((KObjectV.objectmeta kobj) <| ObjectMetaV.ResourceVersion' :=
+          ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>)) as Hmeta_rv.
+    { remember (KObjectV.objectmeta kobj) as input_meta eqn:Heq_input_meta in Hmeta |- *.
+      destruct input_meta.
+      destruct Hmeta as ([Hmeta_simple | Hmeta_release] & Hmeta_labels & Hmeta_annotations & Hmeta_owners &
+        Hmeta_finalizers & Hmeta_managed_fields).
+      - split.
+        + left. revert Hmeta_simple. rewrite /ObjectMetaV.valid_simple_update.
+          destruct old_meta; simpl; intuition congruence.
+        + split_and!; done.
+      - split.
+        + right. exact Hmeta_release.
+        + split_and!; done. }
+    destruct old_status, kobj;
+      rewrite /KObjectV.valid_status_update /= in Hvalid_status_update |- *;
+      rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+        ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        /ObjectMetaV.valid_update in Hvalid_status_update |- *;
+      simpl in Hmeta_rv |- *; try contradiction; tauto. }
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
     rewrite objectmeta_update_objectmeta.
-    apply valid_simple_update_set_resource_version. exact Hvalid_simple_update. }
+    rewrite /ObjectMetaV.valid_simple_update in Hvalid_simple_update |- *.
+    destruct old_meta, (KObjectV.objectmeta kobj); simpl in *; intuition congruence. }
   iSplit.
   - iIntros (i' old_spec kobj') "Hsuccess".
     iDestruct "Hsuccess" as "(%Hvalid_updated & %Hstatus_updated & Hdeepown_i &
       Hown_meta_frag & Hown_status_frag)".
     assert (KObjectV.status_updated old_spec kobj kobj') as Hstatus_updated_original.
     { subst kobj_rv kmeta_rv.
-      eapply kobject_status_updated_unset_resource_version_input.
-      exact Hstatus_updated. }
+      revert Hstatus_updated.
+      destruct old_spec, kobj, kobj'; simpl; try done;
+        intros (Htypemeta & Hmeta & Hspec & Hstatus); split_and!; try done.
+      all: rewrite /ObjectMetaV.updated in Hmeta |- *;
+        destruct ObjectMeta', ObjectMeta'0; simpl in *; intuition congruence. }
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! i' old_spec kobj' with
       "[Hdeepown_i Hown_meta_frag Hown_status_frag]") as "HΦ".

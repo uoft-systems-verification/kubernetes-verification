@@ -1,7 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export update_release update_release_terminating.
-From New.proof.kubernetes_model Require Import get get_observed.
-From New.proof.kubernetes_model.tx Require Import common_update.
+From New.proof.kubernetes_model Require Import common_update get get_observed.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From iris.bi.lib Require Import atomic.
 
@@ -208,7 +207,56 @@ Proof.
   iFrame "Hown_meta_frag Hown_spec_frag Hown_children_frag".
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
-    eapply kobject_valid_update_set_resource_version; done. }
+    assert (KObjectV.valid_create kind namespace kobj ∧
+        (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
+        valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
+        (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
+        valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
+        namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
+        ObjectMetaV.valid_update old_meta (KObjectV.objectmeta kobj) ∧
+        ObjectSpecV.valid_update old_spec (KObjectV.spec kobj)) as
+      (Hcreate & Hname & Htypemeta & Huid & _ & Hnamespace & Hmeta & Hspec).
+    { revert Hvalid_update.
+      destruct old_spec, kobj; rewrite /KObjectV.valid_update /=;
+        rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
+          ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+          ?/PodV.valid_create ?/ReplicaSetV.valid_create
+          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+          /KObjectV.valid_create /=;
+        try contradiction; tauto. }
+    assert (KObjectV.valid_create kind namespace
+        (KObjectV.update_objectmeta kobj
+          ((KObjectV.objectmeta kobj) <| ObjectMetaV.ResourceVersion' :=
+            ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>))) as Hcreate_rv.
+    { revert Hcreate.
+      destruct kobj as [[tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]|[tm meta spec status]]; simpl;
+        rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create;
+        intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
+        split_and!; try done; destruct meta; done. }
+    assert (ObjectMetaV.valid_update old_meta
+        ((KObjectV.objectmeta kobj) <| ObjectMetaV.ResourceVersion' :=
+          ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>)) as Hmeta_rv.
+    { remember (KObjectV.objectmeta kobj) as input_meta eqn:Heq_input_meta in Hmeta |- *.
+      destruct input_meta.
+      destruct Hmeta as ([Hmeta_simple | Hmeta_release] & Hmeta_labels & Hmeta_annotations & Hmeta_owners &
+        Hmeta_finalizers & Hmeta_managed_fields).
+      - split.
+        + left. revert Hmeta_simple. rewrite /ObjectMetaV.valid_simple_update.
+          destruct old_meta; simpl; intuition congruence.
+        + split_and!; done.
+      - split.
+        + right. exact Hmeta_release.
+        + split_and!; done. }
+    destruct old_spec, kobj as [[tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]|[tm meta spec status]]; destruct meta; simpl in *;
+      rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
+        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        /KObjectV.valid_create /= in Hcreate_rv |- *;
+      try contradiction; tauto. }
   iSplit.
   { iPureIntro. exact Hchild. }
   iSplit.
@@ -220,7 +268,11 @@ Proof.
       "(%Hvalid' & %Hupdated & %Hspec_unchanged & Hdeepown_i & Hrelease_result)".
     assert (KObjectV.updated kobj kobj') as Hupdated_original.
     { subst kobj_rv kmeta_rv.
-      eapply kobject_updated_unset_resource_version_input. exact Hupdated. }
+      revert Hupdated.
+      destruct kobj, kobj'; simpl; try done;
+        intros (Htypemeta & Hmeta & Hspec); split_and!; try done.
+      all: rewrite /ObjectMetaV.updated in Hmeta |- *;
+        destruct ObjectMeta', ObjectMeta'0; simpl in *; intuition congruence. }
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! i' kobj' with
       "[Hdeepown_i Hrelease_result]") as "HΦ".
@@ -514,7 +566,13 @@ Proof.
     as Hexisting_rv_valid by (destruct Hvalid_existing as (_ & Hrv & _); done).
   assert (KObjectV.valid_create kind namespace kobj_rv) as Hvalid_create_rv.
   { subst kobj_rv kmeta_rv.
-    apply kobject_valid_create_set_resource_version; done. }
+    revert Hvalid.
+    destruct kobj as [[tm meta spec status]|[tm meta spec status]|
+      [tm meta spec status]|[tm meta spec status]]; simpl;
+      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create;
+      intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
+      split_and!; try done; destruct meta; done. }
   assert ((KObjectV.objectmeta kobj_rv).(ObjectMetaV.Name') ≠ ""%go) as Hname_nonempty_rv.
   { subst kobj_rv kmeta_rv. rewrite objectmeta_update_objectmeta. exact Hname_nonempty. }
   assert (valid_typemeta (KObjectV.kind kobj_rv) (KObjectV.typemeta kobj_rv))
