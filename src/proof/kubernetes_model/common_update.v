@@ -48,19 +48,37 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update in Hvalid_update;
       try contradiction; tauto. }
+  assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
+      (KObjectV.objectmeta old).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace'))
+    as (Hname_old & Hnamespace_old).
+  { pose proof Hmeta_eq as Hmeta_eq_fields.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_eq_fields.
+    pose proof (f_equal ObjectMetaV.Name' Hmeta_eq_fields) as Hname.
+    pose proof (f_equal ObjectMetaV.Namespace' Hmeta_eq_fields) as Hnamespace.
+    simpl in Hname, Hnamespace. done. }
+  assert ((KObjectV.objectmeta input).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
+      (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace') ∧
+      (KObjectV.objectmeta input).(ObjectMetaV.UID') = old_meta.(ObjectMetaV.UID'))
+    as (Hname_input & Hnamespace_input & Huid_input).
+  { destruct Hmeta_update as ([Hsimple | Hrelease] & _).
+    - rewrite /ObjectMetaV.valid_simple_update in Hsimple. tauto.
+    - rewrite /ObjectMetaV.equiv_except_resource_version
+        /ObjectMetaV.without_resource_version in Hrelease.
+      pose proof (f_equal ObjectMetaV.Name' Hrelease) as Hname.
+      pose proof (f_equal ObjectMetaV.Namespace' Hrelease) as Hnamespace.
+      pose proof (f_equal ObjectMetaV.UID' Hrelease) as Huid.
+      simpl in Hname, Hnamespace, Huid.
+      split_and!; symmetry; assumption. }
   iPureIntro. split_and!.
   - rewrite Hkey_old.
-    pose proof (ObjectMetaV.equiv_except_resource_version_name _ _ Hmeta_eq) as Hname_old.
-    pose proof (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hmeta_eq) as Hnamespace_old.
-    pose proof (ObjectMetaV.valid_update_name _ _ Hmeta_update) as Hname_input.
-    pose proof (ObjectMetaV.valid_update_namespace _ _ Hmeta_update) as Hnamespace_input.
     assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') =
       (KObjectV.objectmeta input).(ObjectMetaV.Name')) as Hname by congruence.
     assert ((KObjectV.objectmeta old).(ObjectMetaV.Namespace') =
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace by congruence.
     destruct old_spec, input, old; simpl in *; try contradiction; try discriminate;
       rewrite /KObjectV.key /= Hname Hnamespace //.
-  - pose proof (ObjectMetaV.valid_update_uid _ _ Hmeta_update). congruence.
+  - congruence.
   - exact Hmeta_living.
 Qed.
 
@@ -92,19 +110,37 @@ Proof.
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
         in Hvalid_update;
       try contradiction; tauto. }
+  assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
+      (KObjectV.objectmeta old).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace'))
+    as (Hname_old & Hnamespace_old).
+  { pose proof Hmeta_eq as Hmeta_eq_fields.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_eq_fields.
+    pose proof (f_equal ObjectMetaV.Name' Hmeta_eq_fields) as Hname.
+    pose proof (f_equal ObjectMetaV.Namespace' Hmeta_eq_fields) as Hnamespace.
+    simpl in Hname, Hnamespace. done. }
+  assert ((KObjectV.objectmeta input).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
+      (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace') ∧
+      (KObjectV.objectmeta input).(ObjectMetaV.UID') = old_meta.(ObjectMetaV.UID'))
+    as (Hname_input & Hnamespace_input & Huid_input).
+  { destruct Hmeta_update as ([Hsimple | Hrelease] & _).
+    - rewrite /ObjectMetaV.valid_simple_update in Hsimple. tauto.
+    - rewrite /ObjectMetaV.equiv_except_resource_version
+        /ObjectMetaV.without_resource_version in Hrelease.
+      pose proof (f_equal ObjectMetaV.Name' Hrelease) as Hname.
+      pose proof (f_equal ObjectMetaV.Namespace' Hrelease) as Hnamespace.
+      pose proof (f_equal ObjectMetaV.UID' Hrelease) as Huid.
+      simpl in Hname, Hnamespace, Huid.
+      split_and!; symmetry; assumption. }
   iPureIntro. split_and!.
   - rewrite Hkey_old.
-    pose proof (ObjectMetaV.equiv_except_resource_version_name _ _ Hmeta_eq) as Hname_old.
-    pose proof (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hmeta_eq) as Hnamespace_old.
-    pose proof (ObjectMetaV.valid_update_name _ _ Hmeta_update) as Hname_input.
-    pose proof (ObjectMetaV.valid_update_namespace _ _ Hmeta_update) as Hnamespace_input.
     assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') =
       (KObjectV.objectmeta input).(ObjectMetaV.Name')) as Hname by congruence.
     assert ((KObjectV.objectmeta old).(ObjectMetaV.Namespace') =
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace by congruence.
     destruct old_status, input, old; simpl in Hstatus_old |- *; try discriminate;
       inversion Hstatus_old; subst; rewrite /KObjectV.key /= Hname Hnamespace //.
-  - pose proof (ObjectMetaV.valid_update_uid _ _ Hmeta_update). congruence.
+  - congruence.
   - exact Hmeta_living.
 Qed.
 

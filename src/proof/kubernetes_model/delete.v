@@ -153,11 +153,15 @@ Proof.
     iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "H". iNamed "H".
     iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid_full".
     destruct Hmeta_valid_full as (_ & _ & _ & Hvalid_kmeta & _).
-    pose proof (ObjectMetaV.valid_finalizers_of_valid _ Hvalid_kmeta) as Hvalid_finalizers.
+    assert (valid_finalizers kmeta.(ObjectMetaV.Finalizers')) as Hvalid_finalizers.
+    { unfold ObjectMetaV.valid in Hvalid_kmeta. tauto. }
     iPoseProof (kview.own_meta_exists2 with "Hinv_Hown_abs Hown_meta_frag") as "%Hmeta_exists".
     1: done.
     destruct Hmeta_exists as (_ & Hmeta_eq & _).
-    rewrite <-(ObjectMetaV.equiv_except_resource_version_finalizers _ _ Hmeta_eq) in Hvalid_finalizers.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_eq.
+    pose proof (f_equal ObjectMetaV.Finalizers' Hmeta_eq) as Hfinalizers.
+    simpl in Hfinalizers. rewrite <-Hfinalizers in Hvalid_finalizers.
     apply bool_decide_eq_false in Hvalid_kmeta_finalizers.
     exfalso. apply Hvalid_kmeta_finalizers. done.
   }

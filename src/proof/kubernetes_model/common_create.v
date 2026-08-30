@@ -138,8 +138,11 @@ Proof.
           destruct helper_meta, stored_meta; simpl in *;
           inversion Hequiv; subst; exact Hcreated
       end
-    | rewrite -(ObjectMetaV.equiv_except_resource_version_generation _ _ Hmeta_eq);
-      exact Hgeneration
+    | pose proof Hmeta_eq as Hmeta_fields;
+      rewrite /ObjectMetaV.equiv_except_resource_version
+        /ObjectMetaV.without_resource_version in Hmeta_fields;
+      pose proof (f_equal ObjectMetaV.Generation' Hmeta_fields) as Hgeneration_eq;
+      simpl in Hgeneration_eq; rewrite -Hgeneration_eq; exact Hgeneration
     | injection Hspec_eq as Hspec_field_eq;
       rewrite -Hspec_field_eq; exact Hspec
     | first
@@ -168,7 +171,24 @@ Proof.
   - rewrite -Hkind_eq -Htypemeta_eq. exact Htypemeta.
   - exact Hrv.
   - rewrite -Hkind_eq.
-    eapply ObjectMetaV.equiv_except_resource_version_valid; done.
+    pose proof Hmeta_eq as Hmeta_fields.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_fields.
+    pose proof (f_equal ObjectMetaV.GenerateName' Hmeta_fields) as Hgenerate_name.
+    pose proof (f_equal ObjectMetaV.Name' Hmeta_fields) as Hname.
+    pose proof (f_equal ObjectMetaV.Namespace' Hmeta_fields) as Hnamespace.
+    pose proof (f_equal ObjectMetaV.UID' Hmeta_fields) as Huid.
+    pose proof (f_equal ObjectMetaV.Labels' Hmeta_fields) as Hlabels.
+    pose proof (f_equal ObjectMetaV.Annotations' Hmeta_fields) as Hannotations.
+    pose proof (f_equal ObjectMetaV.OwnerReferences' Hmeta_fields) as Howners.
+    pose proof (f_equal ObjectMetaV.Finalizers' Hmeta_fields) as Hfinalizers.
+    pose proof (f_equal ObjectMetaV.ManagedFields' Hmeta_fields) as Hmanaged_fields.
+    pose proof (f_equal ObjectMetaV.SelfLink' Hmeta_fields) as Hself_link.
+    simpl in Hgenerate_name, Hname, Hnamespace, Huid, Hlabels, Hannotations,
+      Howners, Hfinalizers, Hmanaged_fields, Hself_link.
+    unfold ObjectMetaV.valid in Hmeta |- *.
+    rewrite -Hgenerate_name -Hname -Hnamespace -Huid -Hlabels -Hannotations
+      -Howners -Hfinalizers -Hmanaged_fields -Hself_link. exact Hmeta.
   - rewrite -Hspec_eq. exact Hspec.
   - rewrite -Hstatus_eq. exact Hstatus.
 Qed.

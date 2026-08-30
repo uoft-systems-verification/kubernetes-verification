@@ -559,21 +559,40 @@ Proof.
 	  apply leibniz_equiv in Hmeta_eqv.
 	  assert (Hobj_meta_eq : ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta).
 	  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
+	  pose proof Hobj_meta_eq as Hobj_meta_fields.
+	  rewrite /ObjectMetaV.equiv_except_resource_version
+	    /ObjectMetaV.without_resource_version in Hobj_meta_fields.
+	  pose proof (f_equal ObjectMetaV.Name' Hobj_meta_fields) as Hname.
+	  pose proof (f_equal ObjectMetaV.Namespace' Hobj_meta_fields) as Hnamespace.
+	  pose proof (f_equal ObjectMetaV.UID' Hobj_meta_fields) as Huid.
+	  pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hobj_meta_fields) as Hdeletion_timestamp.
+	  simpl in Hname, Hnamespace, Huid, Hdeletion_timestamp.
 	  subst k.
 	  split.
 	  - rewrite /KObjectV.key /=.
-	    exact (ObjectMetaV.equiv_except_resource_version_name _ _ Hobj_meta_eq).
+	    exact Hname.
 	  - split.
 	    + rewrite /KObjectV.key /=.
-	      exact (ObjectMetaV.equiv_except_resource_version_namespace _ _ Hobj_meta_eq).
+	      exact Hnamespace.
 	    + split.
-	      * rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). symmetry. exact Huid_obj.
+	      * rewrite <-Huid. symmetry. exact Huid_obj.
 	      * split.
 	        -- destruct obj; unfold KObjectV.valid in Hwf_obj;
-	             destruct Hwf_obj as (_ & _ & Hwf_meta & _ & _);
-	             eapply ObjectMetaV.equiv_except_resource_version_valid; done.
-	        -- rewrite <-(ObjectMetaV.equiv_except_resource_version_deletion_timestamp
-	             _ _ Hobj_meta_eq).
+	             destruct Hwf_obj as (_ & _ & Hwf_meta & _ & _).
+	           all: unfold ObjectMetaV.valid in Hwf_meta |- *.
+	           all: rewrite -Hname -Hnamespace -Huid.
+	           all: pose proof (f_equal ObjectMetaV.GenerateName' Hobj_meta_fields) as Hgenerate_name.
+	           all: pose proof (f_equal ObjectMetaV.SelfLink' Hobj_meta_fields) as Hself_link.
+	           all: pose proof (f_equal ObjectMetaV.Labels' Hobj_meta_fields) as Hlabels.
+	           all: pose proof (f_equal ObjectMetaV.Annotations' Hobj_meta_fields) as Hannotations.
+	           all: pose proof (f_equal ObjectMetaV.OwnerReferences' Hobj_meta_fields) as Howners.
+	           all: pose proof (f_equal ObjectMetaV.Finalizers' Hobj_meta_fields) as Hfinalizers.
+	           all: pose proof (f_equal ObjectMetaV.ManagedFields' Hobj_meta_fields) as Hmanaged_fields.
+	           all: simpl in Hgenerate_name, Hself_link, Hlabels, Hannotations, Howners,
+	             Hfinalizers, Hmanaged_fields.
+	           all: rewrite -Hgenerate_name -Hself_link -Hlabels -Hannotations -Howners
+	             -Hfinalizers -Hmanaged_fields; exact Hwf_meta.
+	        -- rewrite <-Hdeletion_timestamp.
 	           exact Hliving.
 Qed.
 
@@ -604,11 +623,16 @@ Proof.
 	  apply leibniz_equiv in Hmeta_eqv.
 	  assert (Hobj_meta_eq : ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta).
 	  { rewrite <- Hmeta_eqv in Hobj_meta. exact Hobj_meta. }
+	  pose proof Hobj_meta_eq as Hobj_meta_fields.
+	  rewrite /ObjectMetaV.equiv_except_resource_version
+	    /ObjectMetaV.without_resource_version in Hobj_meta_fields.
+	  pose proof (f_equal ObjectMetaV.UID' Hobj_meta_fields) as Huid.
+	  simpl in Huid.
 	  exists obj. split_and!.
 	  - exact Hlookup_obj.
 	  - exact Huid_obj.
 	  - exact Hobj_meta_eq.
-	  - rewrite <- (ObjectMetaV.equiv_except_resource_version_uid _ _ Hobj_meta_eq). done.
+	  - rewrite <-Huid. done.
 Qed.
 
 Lemma auth_meta_living a k uid dq meta :

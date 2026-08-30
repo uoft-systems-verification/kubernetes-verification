@@ -351,7 +351,11 @@ Proof.
       as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
     apply bool_decide_eq_false in Hdecide''.
     exfalso. apply Hdecide''. unfold P'.
-    rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _ Hmeta_eq).
+    pose proof Hmeta_eq as Hmeta_fields.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_fields.
+    pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hmeta_fields) as Hdeletion_timestamp.
+    simpl in Hdeletion_timestamp. rewrite Hdeletion_timestamp.
     exact Hno_deletion_timestamp.
   }
   apply bool_decide_eq_true in Hdecide''. unfold P' in Hdecide''.

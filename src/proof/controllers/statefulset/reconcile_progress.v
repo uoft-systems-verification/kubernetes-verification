@@ -2312,8 +2312,13 @@ Proof.
       ""%go).
     intro Hempty. unfold desired_pvc_name in Hempty.
     apply app_eq_nil in Hempty as [_ Hempty]. discriminate Hempty. }
-  pose proof (ObjectMetaV.valid_name_of_valid_create _ Hname_nonempty Hmeta)
-    as Hname_valid.
+  assert (valid_name PersistentVolumeClaimV.kind
+      (new_persistent_volume_claim set claim ordinal).(PersistentVolumeClaimV.ObjectMeta').(
+        ObjectMetaV.Name')) as Hname_valid.
+  { unfold ObjectMetaV.valid_create in Hmeta.
+    destruct (decide
+      ((new_persistent_volume_claim set claim ordinal).(PersistentVolumeClaimV.ObjectMeta').(
+        ObjectMetaV.Name') = ""%go)); [contradiction|simpl in Hmeta; tauto]. }
   unfold new_persistent_volume_claim in Hname_valid. simpl in Hname_valid.
   unfold valid_name, PersistentVolumeClaimV.kind in Hname_valid.
   destruct Hname_valid as [[Hkind _]|[_ Hsubdomain]].
@@ -2377,7 +2382,9 @@ Proof.
   assert (valid_dns1123_label
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name'))
     as Hset_name_valid.
-  { pose proof (ObjectMetaV.valid_name_of_valid _ Hset_meta) as Hname.
+  { assert (valid_name StatefulSetV.kind
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')) as Hname.
+    { unfold ObjectMetaV.valid in Hset_meta. tauto. }
     unfold valid_name, StatefulSetV.kind in Hname.
     destruct Hname as [[_ Hname]|[Hkind _]]; first exact Hname.
     destruct Hkind as [Hkind|[Hkind|Hkind]]; discriminate Hkind. }
@@ -2475,8 +2482,8 @@ Proof.
       update_identity, PodV.update_objectmeta, controller.generated_pod. done.
   - unfold PodV.valid_create, PodV.kind. split_and!.
     + done.
-    + exact (ObjectMetaV.valid_namespace_nonempty_of_valid _ Hset_meta).
-    + exact (ObjectMetaV.valid_namespace_of_valid _ Hset_meta).
+    + unfold ObjectMetaV.valid in Hset_meta. tauto.
+    + unfold ObjectMetaV.valid in Hset_meta. tauto.
     + apply zero_typemeta_valid_create.
     + unfold ObjectMetaV.valid_create, new_statefulset_pod,
         init_storage, init_identity, update_identity, PodV.update_objectmeta,
@@ -2497,7 +2504,7 @@ Proof.
       * unfold valid_name, PodV.kind. right. split; first tauto.
         apply valid_dns1123_label_subdomain. exact Hpod_name_valid.
       * right. split.
-        -- exact (ObjectMetaV.valid_namespace_of_valid _ Hset_meta).
+        -- unfold ObjectMetaV.valid in Hset_meta. tauto.
         -- done.
       * exact Hlabels_valid.
       * exact Hannotations_keys.

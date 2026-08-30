@@ -587,12 +587,20 @@ Proof.
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') =
       None) as Hnew_deletion_timestamp_none.
   { assert (Hold_meta_none : old_meta.(ObjectMetaV.DeletionTimestamp') = None).
-    { rewrite <-(ObjectMetaV.equiv_except_resource_version_deletion_timestamp
-        _ _ Hmeta_eq). exact Hold_deletion_timestamp_none. }
+    { pose proof Hmeta_eq as Hmeta_fields.
+      rewrite /ObjectMetaV.equiv_except_resource_version
+        /ObjectMetaV.without_resource_version in Hmeta_fields.
+      pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hmeta_fields)
+        as Hdeletion_timestamp.
+      simpl in Hdeletion_timestamp. rewrite <-Hdeletion_timestamp.
+      exact Hold_deletion_timestamp_none. }
     assert (Hrequest_none :
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') = None).
-    { pose proof (ObjectMetaV.equiv_except_resource_version_deletion_timestamp
-        _ _ Howner_references_only) as Hdt.
+    { pose proof Howner_references_only as Hmeta_fields.
+      rewrite /ObjectMetaV.equiv_except_resource_version
+        /ObjectMetaV.without_resource_version in Hmeta_fields.
+      pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hmeta_fields) as Hdt.
+      simpl in Hdt.
       change (ObjectMetaV.DeletionTimestamp' old_meta =
         ObjectMetaV.DeletionTimestamp' (KObjectV.objectmeta kobj)) in Hdt.
       rewrite -Hdt. exact Hold_meta_none. }

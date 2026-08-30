@@ -603,8 +603,16 @@ Proof.
   rewrite /valid_create /=.
   intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec)
     Hname_nonempty Hname_valid.
-  pose proof (ObjectMetaV.valid_create_set_name _ _ _ _ Hmeta Hname_nonempty Hname_valid)
-    as Hmeta_named.
+  assert (ObjectMetaV.valid_create PodV.kind namespace
+      (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)) as Hmeta_named.
+  { unfold ObjectMetaV.valid_create in Hmeta |- *.
+    simpl. destruct (decide (name = ""%go)) as [Hname_empty | Hname_ne];
+      first contradiction.
+    destruct (decide (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = ""%go));
+      simpl in Hmeta;
+      destruct Hmeta as ((Hgenerate_name & _) & Hrest).
+    - split; [split; [intros _; exact Hgenerate_name|exact Hname_valid]|exact Hrest].
+    - split; [split; [exact Hgenerate_name|exact Hname_valid]|exact Hrest]. }
   split_and!; done.
 Qed.
 
@@ -779,7 +787,9 @@ Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
-  pose proof (ObjectMetaV.valid_owner_references_of_valid _ Hwf) as Hwf_ownerref.
+  assert (valid_owner_references
+      (KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as Hwf_ownerref.
+  { unfold ObjectMetaV.valid in Hwf. tauto. }
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
   - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
     assert (OwnerReferenceV.list_valid os) as Hwf_list.

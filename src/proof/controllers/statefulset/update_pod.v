@@ -140,7 +140,7 @@ Proof.
               (default ∅
                 pod.(PodV.ObjectMeta').(ObjectMetaV.Labels'))))).
     { apply valid_labels_insert.
-      - exact (ObjectMetaV.valid_labels_of_valid _ Hmeta_valid).
+      - unfold ObjectMetaV.valid in Hmeta_valid. tauto.
       - apply statefulset_pod_name_label_valid.
       - rewrite -Hpod_name.
         by apply valid_label_value_of_valid_dns1123_label. }
@@ -295,7 +295,7 @@ Proof.
           ObjectMetaV.UID') ≠ ""%go).
     { destruct Hinput_valid as (_ & _ & Hmeta & _).
       eapply valid_uid_non_empty.
-      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
     assert (Hinput_valid_update :
         KObjectV.valid_update PodV.kind
           (update_identity set pod ordinal).(PodV.ObjectMeta').(ObjectMetaV.Namespace')

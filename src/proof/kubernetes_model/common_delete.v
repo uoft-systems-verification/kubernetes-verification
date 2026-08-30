@@ -1971,7 +1971,10 @@ Proof.
   destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|]; [done|].
   destruct preconditions.(PreconditionsV.UID') as [uid|]; [|done].
   simpl in Hmatch |- *.
-  rewrite (ObjectMetaV.equiv_except_resource_version_uid _ _ Hmeta_eq).
+  rewrite /ObjectMetaV.equiv_except_resource_version
+    /ObjectMetaV.without_resource_version in Hmeta_eq.
+  pose proof (f_equal ObjectMetaV.UID' Hmeta_eq) as Huid.
+  simpl in Huid. rewrite Huid.
   exact Hmatch.
 Qed.
 

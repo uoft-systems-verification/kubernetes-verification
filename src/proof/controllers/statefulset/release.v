@@ -159,8 +159,10 @@ Proof.
   intros Howner_references Hvalid Hparent.
   destruct Hvalid as
     (Htypemeta & Hresource_version & Hmeta & Hspec & Hstatus).
-  pose proof (ObjectMetaV.valid_owner_references_of_valid
-    _ Hmeta) as Hvalid_owner_references.
+  assert (valid_owner_references
+      pod.(PodV.ObjectMeta').(ObjectMetaV.OwnerReferences'))
+    as Hvalid_owner_references.
+  { unfold ObjectMetaV.valid in Hmeta. tauto. }
   rewrite Howner_references in Hvalid_owner_references.
   pose proof (release_owner_references_facts
     pod.(PodV.ObjectMeta')
@@ -333,8 +335,10 @@ Proof.
   pose proof Hvalid_pod as Hvalid_pod_parts.
   destruct Hvalid_pod_parts as
     (_ & _ & Hvalid_pod_meta & _).
-  pose proof (ObjectMetaV.valid_owner_references_of_valid
-    _ Hvalid_pod_meta) as Hvalid_owner_references.
+  assert (valid_owner_references
+      pod.(PodV.ObjectMeta').(ObjectMetaV.OwnerReferences'))
+    as Hvalid_owner_references.
+  { unfold ObjectMetaV.valid in Hvalid_pod_meta. tauto. }
   rewrite Howner_references in Hvalid_owner_references.
   pose proof (release_owner_references_facts
     pod.(PodV.ObjectMeta')
@@ -832,7 +836,7 @@ Proof.
         (release_pod_input set pod).(PodV.ObjectMeta').(
           ObjectMetaV.Name') ≠ ""%go).
     { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
-      eapply ObjectMetaV.valid_name_nonempty_of_valid. exact Hmeta. }
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
     assert (Hreleased_pod_valid_typemeta :
         valid_typemeta PodV.kind (release_pod_input set pod).(PodV.TypeMeta')).
     { destruct Hreleased_pod_valid as (Htypemeta & _). exact Htypemeta. }
@@ -841,7 +845,7 @@ Proof.
           ObjectMetaV.UID') ≠ ""%go).
     { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
       eapply valid_uid_non_empty.
-      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
     assert (Hreleased_pod_resource_version_valid :
         valid_resource_version
           (release_pod_input set pod).(PodV.ObjectMeta').(

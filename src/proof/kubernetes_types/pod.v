@@ -346,7 +346,15 @@ Proof.
   - rewrite Hnamespace. apply Hmeta.
   - rewrite Hnamespace. apply Hmeta.
   - eapply valid_typemeta_valid_create_typemeta. exact Htypemeta.
-  - eapply ObjectMetaV.valid_create_of_valid; done.
+  - unfold ObjectMetaV.valid in Hmeta.
+    unfold ObjectMetaV.valid_create.
+    destruct Hmeta as (Hgenerate_name & Hname_nonempty & Hname & Hnamespace_nonempty &
+      Hnamespace_valid & Huid & Hlabels & Hannotations & Howner_references & Hfinalizers &
+      Hmanaged_fields & Hself_link).
+    case_decide; first contradiction.
+    split; [split; assumption|].
+    split; [right; split; [assumption|symmetry; exact Hnamespace]|].
+    repeat split; assumption.
   - exact Hspec.
 Qed.
 
