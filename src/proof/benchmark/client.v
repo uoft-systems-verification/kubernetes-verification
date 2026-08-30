@@ -26,7 +26,7 @@ Definition pod_without_name (pod : PodV.t) : PodV.t :=
 Definition input_pod_ready parent_key parent_uid (pod : PodV.t) : Prop :=
   let pod_to_create := pod_without_name pod in
   let namespace := pod_to_create.(PodV.ObjectMeta').(ObjectMetaV.Namespace') in
-  KObjectV.valid_nameless_create "Pod"%go namespace (KObjectV.Pod pod_to_create) ∧
+  KObjectV.valid_create "Pod"%go namespace (KObjectV.Pod pod_to_create) ∧
   namespace ≠ ""%go ∧
   valid_namespace namespace ∧
   namespace = parent_key.(KKey.Namespace') ∧
