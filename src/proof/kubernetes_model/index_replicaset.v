@@ -93,6 +93,27 @@ Proof.
   exists rs'. split; [exact Hin'|]. symmetry. exact Hview_eq.
 Qed.
 
+(* TRUSTED. Objects stored under distinct keys have distinct UIDs.
+
+   This is stated by the store invariant (algebra/kview.v:56-61, "Each obj has
+   unique uid"), but it is a property of the authoritative state, not of the
+   fragments: two fragments at different keys constrain independent entries, so
+   nothing in the CMRA relates their UIDs. Proving it means opening
+   [is_kubernetes], which is why it is a lemma here rather than a step inside
+   the controller proofs that need it.
+
+   The alternative would be to surface UID freshness through the create chain —
+   [wp_State__create_named_au] does establish it internally, as
+   [Hgenerated_uid_fresh] — but that means reshaping the atomic update every
+   typed create wrapper is built on, and with it the Pod and StatefulSet
+   proofs. *)
+Lemma own_meta_frag_uid_distinct γ k1 uid1 m1 k2 uid2 m2 :
+  k1 ≠ k2 →
+  own_meta_frag γ k1 uid1 1 m1 -∗
+  own_meta_frag γ k2 uid2 1 m2 -∗
+  ⌜ uid1 ≠ uid2 ⌝.
+Proof. Admitted.
+
 (* TRUSTED — the single remaining obligation for H2.
 
    Discharging it means writing the ReplicaSet analogue of index.v's Pod
