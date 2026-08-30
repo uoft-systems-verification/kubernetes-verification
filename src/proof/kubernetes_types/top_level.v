@@ -31,9 +31,10 @@ Class top_level (Σ : gFunctors) (V : Type) := {
   (* updated relates the object submitted to the update request to the object
     stored after a successful update. It does not constrain the stored status. *)
   updated : V → V → Prop;
-  (* status_updated relates the old stored spec, the submitted object, and the
-    object stored after a successful status update. *)
-  status_updated : update_spec → V → V → Prop;
+  (* status_updated relates the object submitted to the status update request
+    to the object stored after a successful status update. It does not
+    constrain the stored spec. *)
+  status_updated : V → V → Prop;
   (* deepown_l relates the view object to the Go object using a pointer. *)
   deepown_l : loc → V → dfrac → iProp Σ;
 }.

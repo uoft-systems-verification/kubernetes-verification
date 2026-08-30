@@ -364,10 +364,9 @@ Definition created (namespace : go_string) (input stored : t) : Prop :=
   PodSpecV.created input.(Spec') stored.(Spec') ∧
   PodStatusV.created input.(Status') stored.(Status').
 
-Definition status_updated old_spec (input stored : t) : Prop :=
+Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated (pod_objectmeta_after_conversion input.(ObjectMeta')) stored.(ObjectMeta') ∧
-  stored.(Spec') = old_spec ∧
   PodStatusV.updated input.(Status') stored.(Status').
 
 Definition updated (input stored : t) : Prop :=

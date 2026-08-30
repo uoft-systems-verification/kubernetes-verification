@@ -146,21 +146,21 @@ Proof.
   rewrite Hnamespace. done.
 Qed.
 
-Lemma kobject_status_updated_parent_ref old_spec input stored :
-  KObjectV.status_updated old_spec input stored →
+Lemma kobject_status_updated_parent_ref input stored :
+  KObjectV.status_updated input stored →
   obj_parent_ref stored = obj_parent_ref input.
 Proof.
   intros Hupdated. rewrite /obj_parent_ref.
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.Namespace') =
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace.
-  { destruct old_spec, input, stored;
+  { destruct input, stored;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
         /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.OwnerReferences') =
-    (KObjectV.objectmeta input).(ObjectMetaV.OwnerReferences')) as Howners.
-  { destruct old_spec, input, stored;
+      (KObjectV.objectmeta input).(ObjectMetaV.OwnerReferences')) as Howners.
+  { destruct input, stored;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
         /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
@@ -343,7 +343,8 @@ Definition applyValidationAndDefaultingOnStatusUpdate_updated
       (KObjectV.objectmeta old) (KObjectV.status old) input →
     update_prepared_for_helper namespace old input helper_input →
     update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.status_updated (KObjectV.spec old) input stored) ∧
+    KObjectV.status_updated input stored ∧
+    KObjectV.spec stored = KObjectV.spec old) ∧
   (KObjectV.valid old →
     valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
     KObjectV.valid helper_result).

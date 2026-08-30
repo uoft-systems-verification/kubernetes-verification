@@ -313,22 +313,18 @@ Definition updated input stored : Prop :=
   | _, _ => False
   end.
 
-(** [old_spec] is the existing stored spec.
-    [input] is the submitted status update.
+(** [input] is the submitted status update.
     [stored] is the object stored after the successful status update.
     This is a relation because the current views omit fields that can affect
     the exact stored value. *)
-Definition status_updated old_spec input stored : Prop :=
-  match old_spec, input, stored with
-  | ObjectSpecV.PodSpec old_spec, Pod input, Pod stored => PodV.status_updated old_spec input stored
-  | ObjectSpecV.ReplicaSetSpec old_spec, ReplicaSet input, ReplicaSet stored =>
-      ReplicaSetV.status_updated old_spec input stored
-  | ObjectSpecV.PersistentVolumeClaimSpec old_spec,
-      PersistentVolumeClaim input, PersistentVolumeClaim stored =>
-      PersistentVolumeClaimV.status_updated old_spec input stored
-  | ObjectSpecV.StatefulSetSpec old_spec, StatefulSet input, StatefulSet stored =>
-      StatefulSetV.status_updated old_spec input stored
-  | _, _, _ => False
+Definition status_updated input stored : Prop :=
+  match input, stored with
+  | Pod input, Pod stored => PodV.status_updated input stored
+  | ReplicaSet input, ReplicaSet stored => ReplicaSetV.status_updated input stored
+  | PersistentVolumeClaim input, PersistentVolumeClaim stored =>
+      PersistentVolumeClaimV.status_updated input stored
+  | StatefulSet input, StatefulSet stored => StatefulSetV.status_updated input stored
+  | _, _ => False
   end.
 
 Lemma kind_update_objectmeta :

@@ -189,13 +189,11 @@ Definition created (namespace : go_string) (input stored : t) : Prop :=
   PersistentVolumeClaimSpecV.created input.(Spec') stored.(Spec') ∧
   PersistentVolumeClaimStatusV.created input.(Status') stored.(Status').
 
-(** [old_spec] is the existing stored spec.
-    [input] is the submitted status update.
+(** [input] is the submitted status update.
     [stored] is the object stored after the successful status update. *)
-Definition status_updated old_spec (input stored : t) : Prop :=
+Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
-  stored.(Spec') = old_spec ∧
   PersistentVolumeClaimStatusV.updated input.(Status') stored.(Status').
 
 (** End-to-end relation between the existing object, submitted object, and

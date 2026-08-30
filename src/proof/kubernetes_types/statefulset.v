@@ -302,10 +302,9 @@ Definition created (namespace : go_string) (input stored : t) : Prop :=
   StatefulSetSpecV.created input.(Spec') stored.(Spec') ∧
   StatefulSetStatusV.created input.(Status') stored.(Status').
 
-Definition status_updated old_spec (input stored : t) : Prop :=
+Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
-  stored.(Spec') = old_spec ∧
   StatefulSetStatusV.updated input.(Status') stored.(Status').
 
 Definition updated (input stored : t) : Prop :=

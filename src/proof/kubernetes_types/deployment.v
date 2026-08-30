@@ -254,10 +254,9 @@ Definition updated (input stored : t) : Prop :=
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
   DeploymentSpecV.updated input.(Spec') stored.(Spec').
 
-Definition status_updated old_spec (input stored : t) : Prop :=
+Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
-  stored.(Spec') = old_spec ∧
   DeploymentStatusV.updated input.(Status') stored.(Status').
 
 Definition deepown (c: v1.Deployment.t) (v: t) dq: iProp Σ :=

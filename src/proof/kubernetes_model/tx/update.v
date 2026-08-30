@@ -271,23 +271,18 @@ Lemma wp_State__updateTx γ l kind namespace i kobj old_meta old_spec :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid_update" ∷ ⌜ KObjectV.valid_update kind namespace old_meta old_spec kobj ⌝ ∗
-      "%Hvalid_simple_update" ∷
-        ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝ ∗
+      "%Hvalid_simple_update" ∷ ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj)
-        (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj)
-        (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_spec
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_spec
   }}}
     l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
   {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
       "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj)
-        (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj)
-        (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.spec kobj')
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.spec kobj')
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ".
@@ -322,10 +317,8 @@ Lemma wp_State__PodUpdateTx γ l namespace pod_l pod key uid kmeta kspec :
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_update" ∷
-        ⌜ KObjectV.valid_update PodV.kind namespace kmeta kspec (KObjectV.Pod pod) ⌝ ∗
-      "%Hvalid_simple_update" ∷
-        ⌜ ObjectMetaV.valid_simple_update kmeta pod.(PodV.ObjectMeta') ⌝ ∗
+      "%Hvalid_update" ∷ ⌜ KObjectV.valid_update PodV.kind namespace kmeta kspec (KObjectV.Pod pod) ⌝ ∗
+      "%Hvalid_simple_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta pod.(PodV.ObjectMeta') ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
