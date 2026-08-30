@@ -60,12 +60,16 @@ Record all_fractions := {
 }.
 
 (* The progress triple writes through the ReplicaSet fragments, so those are
-   full. The children fraction stays a parameter rather than being pinned to 1:
-   that is exactly how [wp_syncDeployment] was stated before this refactor, and
-   changing it is a semantic decision, not a refactor -- see the note on the
-   created branch in sync_deployment.v. *)
-Definition mutating_fractions (dq children_dq : dfrac) : all_fractions :=
-  {| dep_dq := dq; dep_rs_dq := 1; dep_children_dq := children_dq |}.
+   full, and so is the children fraction.
+
+   That last point was left open when this bundle was written. Proving
+   [wp_syncDeployment] settles it: the sync may create a ReplicaSet, which adds
+   a key to the children set and consumes the name's reservation, and neither
+   is possible at a partial fraction. So the children fraction is 1, not a
+   parameter -- the same choice replicaset/top_level.v makes, and for the same
+   reason. *)
+Definition mutating_fractions (dq : dfrac) : all_fractions :=
+  {| dep_dq := dq; dep_rs_dq := 1; dep_children_dq := 1 |}.
 
 (* Stability holds everything at the *same* fraction. That is the entire
    mechanism of H2: a write needs the full fraction, so if the proof goes
@@ -132,12 +136,12 @@ Definition input_requirement (d : DeploymentV.t) (rss : list ReplicaSetV.t)
    created during the sync, in which case it is not among the framed [rss]. *)
 Definition progress_spec γ model_l (namespace name : go_string)
     (d : DeploymentV.t) (rss : list ReplicaSetV.t)
-    (children_keys : gset KKey.t) uid kmeta dq_d children_dq : iProp Σ :=
+    (children_keys : gset KKey.t) uid kmeta dq_d : iProp Σ :=
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
       "Hresources" ∷ owned_resources γ d rss children_keys uid kmeta
-        (mutating_fractions dq_d children_dq) ∗
+        (mutating_fractions dq_d) ∗
       "%Hinput" ∷ ⌜ input_requirement d rss children_keys namespace name ⌝
   }}}
     @! deployment.syncDeployment #namespace #name
@@ -155,9 +159,9 @@ Definition progress_spec γ model_l (namespace name : go_string)
       ( (* Deleting: the controller returns early and touches nothing. *)
         ( "%Hdeleting" ∷ ⌜ is_Some
               kmeta.(ObjectMetaV.DeletionTimestamp') ∧ rss_post = rss ⌝ ∗
-          "Hreserved" ∷ own_available_reserved_frag γ children_dq (new_rs_key d) ∗
+          "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
           "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-            uid children_dq children_keys)
+            uid 1 children_keys)
         ∨
         (* Live: one sync realizes the deployment. *)
         ( "%Hnot_deleting" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
@@ -166,17 +170,17 @@ Definition progress_spec γ model_l (namespace name : go_string)
           (* Either the new ReplicaSet was adopted from [rss], or it was created
              and [rss_post] has it on top. *)
           ( ( "%Hadopted" ∷ ⌜ rss_post = rss ⌝ ∗
-              "Hreserved" ∷ own_available_reserved_frag γ children_dq
+              "Hreserved" ∷ own_available_reserved_frag γ 1
                 (new_rs_key d) ∗
               "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid children_dq children_keys)
+                uid 1 children_keys)
             ∨
             ( "%Hcreated" ∷ ⌜ ∃ new_rs, rss_post = rss ++ [new_rs] ∧
                   ReplicaSetV.key new_rs = new_rs_key d ⌝ ∗
-              "Hreserved" ∷ own_occupied_reserved_frag γ children_dq
+              "Hreserved" ∷ own_occupied_reserved_frag γ 1
                 (new_rs_key d) d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') ∗
               "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid children_dq ({[ new_rs_key d ]} ∪ children_keys)))))
+                uid 1 ({[ new_rs_key d ]} ∪ children_keys)))))
   }}}.
 
 (* H2 -- stability. Nothing moves, so the postcondition is the precondition.
