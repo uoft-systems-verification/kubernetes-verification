@@ -332,9 +332,8 @@ Qed.
    during the sync, in which case it is not among the [rss] the caller framed. *)
 Lemma wp_syncDeployment γ model_l (namespace name : go_string)
     (d : DeploymentV.t) (rss : list ReplicaSetV.t)
-    (children_keys : gset KKey.t) uid kmeta dq_d children_dq :
-  ⊢ progress_spec γ model_l namespace name d rss children_keys uid kmeta
-      dq_d children_dq.
+    (children_keys : gset KKey.t) uid kmeta dq_d :
+  ⊢ progress_spec γ model_l namespace name d rss children_keys uid kmeta dq_d.
 Proof.
 Admitted.
 
