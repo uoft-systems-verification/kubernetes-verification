@@ -277,6 +277,62 @@ Proof.
     iApply (IH posts with "Hnewpart Holds").
 Qed.
 
+(* [big_sepL_filter_partition] produces the complement in unfolded form. *)
+Lemma filter_not_rs_is_old uid (rss : list ReplicaSetV.t) :
+  filter (λ rs, not (rs_is_old uid rs)) rss = filter (rs_is_new uid) rss.
+Proof.
+  induction rss as [|rs rest IH]; first done.
+  rewrite !filter_cons.
+  destruct (decide (not (rs_is_old uid rs))) as [Ha|Ha];
+    destruct (decide (rs_is_new uid rs)) as [Hb|Hb].
+  - by rewrite IH.
+  - exfalso. exact (Hb Ha).
+  - exfalso. exact (Ha Hb).
+  - exact IH.
+Qed.
+
+(* With distinct UIDs, "not old" picks out exactly the new ReplicaSet, which is
+   what makes [merge_old_posts] the right post-state. *)
+Lemma filter_rs_is_new_nil uid rss :
+  Forall (λ rs, rs_uid rs ≠ uid) rss →
+  filter (rs_is_new uid) rss = [].
+Proof.
+  induction rss as [|rs rest IH]; first done.
+  intros Hall. apply Forall_cons_1 in Hall as [Hrs Hrest].
+  rewrite filter_cons. destruct (decide (rs_is_new uid rs)) as [Hc|_].
+  - exfalso. exact (Hc Hrs).
+  - apply IH. exact Hrest.
+Qed.
+
+Lemma filter_rs_is_new_singleton rss new_rs i :
+  NoDup (rs_uid <$> rss) →
+  rss !! i = Some new_rs →
+  filter (rs_is_new (rs_uid new_rs)) rss = [new_rs].
+Proof.
+  revert i. induction rss as [|rs rest IH]; intros i Hnodup Hlookup.
+  { rewrite lookup_nil in Hlookup. discriminate. }
+  rewrite fmap_cons in Hnodup.
+  pose proof (NoDup_cons_1_1 _ _ Hnodup) as Hnotin.
+  pose proof (NoDup_cons_1_2 _ _ Hnodup) as Hnodup_rest.
+  assert (Forall (λ x, rs_uid x ≠ rs_uid rs) rest) as Hrest_ne.
+  { apply Forall_lookup. intros k y Hk Heq. apply Hnotin.
+    rewrite -Heq. apply list_elem_of_fmap_2.
+    eapply list_elem_of_lookup_2. exact Hk. }
+  destruct i as [|i].
+  - simpl in Hlookup. injection Hlookup as ->.
+    rewrite filter_cons. destruct (decide (rs_is_new (rs_uid new_rs) new_rs))
+      as [_|Hc]; last (exfalso; apply Hc; rewrite /rs_is_new /rs_is_old; auto).
+    rewrite (filter_rs_is_new_nil _ _ Hrest_ne). done.
+  - simpl in Hlookup.
+    assert (rs_uid rs ≠ rs_uid new_rs) as Hne.
+    { intros Heq. apply Hnotin.
+      rewrite Heq. apply list_elem_of_fmap_2.
+      eapply list_elem_of_lookup_2. exact Hlookup. }
+    rewrite filter_cons. destruct (decide (rs_is_new (rs_uid new_rs) rs))
+      as [Hc|_]; first (exfalso; apply Hc; rewrite /rs_is_old; exact Hne).
+    apply (IH i Hnodup_rest Hlookup).
+Qed.
+
 (* TODO: un-axiomatize. Once PodTemplateSpecV carries enough structure to state
    template equality, template_matches should become a Definition (equality of
    the templates after deleting the pod-template-hash label from each
