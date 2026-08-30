@@ -883,12 +883,10 @@ Proof.
       iEval (rewrite Hreleased_pod_key Hreleased_pod_uid) in "Hown_deletion_observed_frag".
       wp_apply (wp_State__PodUpdateTx_release_terminating γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
-        updatedPod_l (release_pod_input set pod) (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase
-        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag
-          $Hown_terminating_children_frag]").
+        updatedPod_l (release_pod_input set pod)
+        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag]").
       { iFrame "%". }
-      iIntros (returned_pod_l err) "Hown_terminating_children_frag". wp_auto.
+      iIntros (returned_pod_l err) "_". wp_auto.
       wp_apply (wp_IsNotFound err with "[]").
       destruct (decide (not_found_error err)) as [Hnot_found|Hnot_found].
       * replace (bool_decide (not_found_error err)) with true by
