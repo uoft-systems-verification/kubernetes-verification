@@ -335,6 +335,170 @@ Lemma wp_syncDeployment γ model_l (namespace name : go_string)
     (children_keys : gset KKey.t) uid kmeta dq_d :
   ⊢ progress_spec γ model_l namespace name d rss children_keys uid kmeta dq_d.
 Proof.
-Admitted.
+  unfold progress_spec.
+  wp_start as "H". iNamed "H". iNamed "Hresources".
+  destruct Hinput as (Hkey_def & Hd_valid & Hnamespace_valid & Hnew_name_valid &
+    Hsel_adm & Hrss_valid & Hdom_eq & Hunique).
+  wp_auto.
+  iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
+  (* The metadata fragment pins the UID and rules out a deletion timestamp, so
+     the early return at deployment.go:246 is unreachable and the postcondition
+     always takes its live branch. *)
+  iPoseProof (kview.own_meta_valid with "Hown_d_meta") as "%Hd_frag_valid".
+  destruct Hd_frag_valid as
+    (Hk_name & Hk_ns & Huid_eq & Hkmeta_valid & Hkdeletion).
+  wp_apply (wp_State__DeploymentGet γ model_l (DeploymentV.key d) namespace name
+    uid dq_d kmeta d.(DeploymentV.Spec') with "[$Hown_d_meta $Hown_d_spec]").
+  { iFrame "#". iPureIntro. exact Hkey_def. }
+  iIntros (d_l d_get) "Hget". iNamedPrefix "Hget" "Hget_".
+  wp_auto.
+  wp_apply (wp_IsNotFound interface.nil with "[]").
+  replace (bool_decide (not_found_error interface.nil)) with false by
+    (symmetry; apply bool_decide_false; exact not_found_error_nil).
+  wp_auto.
+  pose proof Hget_Hvalid' as
+    (Hd_get_typemeta & Hd_get_rv & Hd_get_meta_valid & Hd_get_spec & Hd_get_status).
+  pose proof Hd_get_typemeta as (_ & Hd_kind_valid & _).
+  pose proof (valid_kind_slash_free _ Hd_kind_valid) as Hkind_slash_free.
+  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hd_get_meta_valid) as Hns_valid.
+  pose proof (ObjectMetaV.valid_name_of_valid _ Hd_get_meta_valid) as Hname_valid.
+  pose proof (ObjectMetaV.valid_uid_of_valid _ Hd_get_meta_valid) as Huid_valid.
+  pose proof (valid_namespace_slash_free _ Hns_valid) as Hns_slash_free.
+  pose proof (valid_name_slash_free _ Hname_valid) as Hname_slash_free.
+  pose proof (valid_uid_slash_free _ Huid_valid) as Huid_slash_free.
+  assert (DeploymentV.key d = DeploymentV.key d_get) as Hkey_eq
+    by exact Hget_Hkey_eq.
+  assert (uid = d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.UID')) as Huid_get.
+  { rewrite Huid_eq. symmetry.
+    apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
+  iEval (rewrite Hkey_eq Huid_get) in "Hown_children".
+  assert (new_rs_key d = new_rs_key d_get) as Hnew_key_eq
+    by (apply new_rs_key_congr; [exact Hget_Hkey_eq|exact Hget_Hspec_eq]).
+  iEval (rewrite Hnew_key_eq) in "Hreserved".
+  iDestruct (big_sepL_sep with "Hown_frags") as "[Hown_meta_frags Hown_spec_frags]".
+  wp_apply (wp_filterReplicaSetsByOwner γ model_l d_l d_get rss children_keys
+    1 1 1 with "[$Hget_Hdeepown_l $Hown_children $Hown_meta_frags $Hown_spec_frags]").
+  { iFrame "#". iPureIntro. split_and!; done. }
+  iIntros (sl ptrs rss' dq') "Hfilter". iNamedPrefix "Hfilter" "Hf_".
+  wp_auto.
+  (* The deletion guard is unreachable: holding the metadata fragment means no
+     deletion timestamp. *)
+  iDestruct "Hf_Hd" as (d_c) "[Hdptr Hdeepown_d]".
+  assert (d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
+    as Hdel_none.
+  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _
+      Hget_Hmeta_eq). exact Hkdeletion. }
+  iAssert ⌜ d_c.(v1.Deployment.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp')
+      = null ⌝%I as %Hdel_null.
+  { iNamedPrefix "Hdeepown_d" "Hdep_".
+    iNamedPrefix "Hdep_Hdeepown_objectmeta" "Hdm_".
+    iPureIntro. apply Hdm_Hdeepown_deletiontimestamp_none. exact Hdel_none. }
+  wp_auto.
+  rewrite Hdel_null.
+  wp_auto.
+  iAssert (DeploymentV.deepown_l d_l d_get 1) with "[Hdptr Hdeepown_d]" as "Hd".
+  { iExists d_c. iFrame. }
+  (* Move the fragments onto the list the index returned. *)
+  iDestruct (own_rs_frags_view_perm _ _ _ _ Hf_Hview_perm
+    with "[Hf_Hown_meta_frags Hf_Hown_spec_frags]") as "Hown_frags'".
+  { iApply big_sepL_sep. iFrame. }
+  wp_apply (wp_rollout γ model_l d_l d_get sl ptrs rss' children_keys
+    1 (DfracOwn 1) dq'
+    with "[$Hd $Hf_Hsl $Hf_Hrss' $Hreserved $Hf_Hown_children $Hown_frags']").
+  { iFrame "#". iPureIntro. split_and!.
+    - exact Hget_Hvalid'.
+    - exact Hf_Hrss'_valid.
+    - exact Hf_Hnodup'.
+    - exact Hf_Huid_nodup'.
+    - done.
+    - rewrite -(new_rs_name_congr d d_get Hget_Hkey_eq Hget_Hspec_eq).
+      exact Hnew_name_valid.
+    - intros dsel Hdsel. rewrite -Hget_Hspec_eq in Hdsel.
+      pose proof (Hsel_adm dsel Hdsel) as [Ha Hb]. split; [exact Ha|].
+      rewrite /deployment_template -Hget_Hspec_eq. exact Hb.
+    - eapply unique_new_replica_set_spec_eq; [exact Hget_Hspec_eq|].
+      eapply unique_new_replica_set_view_perm;
+        [exact Hf_Hview_perm|exact Hf_Hnodup'|exact Hunique]. }
+  iIntros (new_rs rss_out)
+    "(Hd & Hsl & Hrss & %Hr_matches & %Hr_replicas & %Hr_drained & %Hr_templates
+      & Hr_frags & Hdisj)".
+  wp_auto.
+  (* The write left the fragments keyed by the pre-state; [own_rs_frags_keys]
+     says the two keyings agree, which is what carries the caller's key list
+     across the sync. *)
+  iDestruct (own_rs_frags_keys with "Hr_frags") as %Hr_keys.
+  iDestruct (own_rs_frags_rekey with "Hr_frags") as "Hpost_frags".
+  assert (ReplicaSetV.key <$> rss_out = ReplicaSetV.key <$> rss') as Hkeys_out.
+  { apply (Forall2_fmap_eq ReplicaSetV.key).
+    eapply Forall2_impl; last exact Hr_keys. intros a b [Hk _]. exact Hk. }
+  (* [rss'] came out of the index, so it is [rss] permuted; keys follow. *)
+  assert (ReplicaSetV.key <$> rss' ≡ₚ ReplicaSetV.key <$> rss) as Hkeys_perm.
+  { assert (∀ l : list ReplicaSetV.t, ReplicaSetV.key <$> l =
+        rs_view_key <$> (rs_storage_view <$> l)) as Hkeymap.
+    { intros l. induction l as [|x l IH]; [done|]. rewrite !fmap_cons IH. done. }
+    rewrite !Hkeymap Hf_Hview_perm. done. }
+  (* Uniqueness survives because rollout only rewrites replica counts. *)
+  assert (unique_new_replica_set d_get rss') as Huniq'.
+  { eapply unique_new_replica_set_view_perm;
+      [exact Hf_Hview_perm|exact Hf_Hnodup'|].
+    eapply unique_new_replica_set_spec_eq; [exact Hget_Hspec_eq|exact Hunique]. }
+  iDestruct "Hdisj" as
+    "[(%Hadopted & Hreserved & Hown_children)
+     |(%Hcreated & %Hno_match & Hnew_meta & Hnew_spec & Hreserved & Hown_children)]".
+  - (* Adopted: the new ReplicaSet is one of the post-states already, so
+       [rss_out] is the whole answer and no key was added. *)
+    iApply ("HΦ" $! rss_out).
+    rewrite -Hkey_eq -Huid_get -Hnew_key_eq.
+    iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hpost_frags".
+    iRight.
+    iSplitR; [iPureIntro; exact Hkdeletion|].
+    iSplitR.
+    { iPureIntro. eapply deployment_realized_spec_eq;
+        [symmetry; exact Hget_Hspec_eq|].
+      destruct Hadopted as (i & Hi).
+      exists new_rs. split_and!.
+      - eapply list_elem_of_lookup_2. exact Hi.
+      - exact Hr_matches.
+      - exact Hr_replicas.
+      - exact Hr_drained. }
+    iSplitR.
+    { iPureIntro. eapply unique_new_replica_set_spec_eq;
+        [symmetry; exact Hget_Hspec_eq|].
+      eapply unique_new_replica_set_Forall2_templates;
+        [exact Hr_templates|exact Huniq']. }
+    iLeft. iFrame "Hreserved Hown_children".
+    iPureIntro. rewrite Hkeys_out. exact Hkeys_perm.
+  - (* Created: the new ReplicaSet is not among the post-states, so it goes on
+       the end, carrying its own fragments. *)
+    destruct Hcreated as (Hnew_key & Hfresh).
+    iApply ("HΦ" $! (rss_out ++ [new_rs])).
+    rewrite -Hkey_eq -Huid_get -Hnew_key_eq.
+    iSplitL "Hget_Hown_meta_frag"; [iFrame "Hget_Hown_meta_frag"|].
+    iSplitL "Hget_Hown_spec_frag"; [iFrame "Hget_Hown_spec_frag"|].
+    iSplitL "Hpost_frags Hnew_meta Hnew_spec".
+    { iApply big_sepL_app. iFrame "Hpost_frags".
+      simpl. rewrite Hnew_key Hnew_key_eq. iFrame "Hnew_meta Hnew_spec". }
+    iRight.
+    iSplitR; [iPureIntro; exact Hkdeletion|].
+    iSplitR.
+    { iPureIntro. eapply deployment_realized_spec_eq;
+        [symmetry; exact Hget_Hspec_eq|].
+      exists new_rs. split_and!.
+      - rewrite elem_of_app. right. rewrite elem_of_cons. left. done.
+      - exact Hr_matches.
+      - exact Hr_replicas.
+      - apply Forall_app. split; [exact Hr_drained|].
+        apply Forall_cons_2; [left; done|apply Forall_nil_2]. }
+    iSplitR.
+    { iPureIntro. eapply unique_new_replica_set_spec_eq;
+        [symmetry; exact Hget_Hspec_eq|].
+      apply unique_new_replica_set_snoc. exact Hno_match. }
+    iRight. iExists new_rs. iFrame "Hreserved Hown_children".
+    iPureIntro. split_and!.
+    { rewrite fmap_app Hkeys_out Hkeys_perm /=.
+      rewrite Hnew_key Hnew_key_eq. done. }
+    { rewrite elem_of_app. right. rewrite elem_of_cons. left. done. }
+    { rewrite Hnew_key Hnew_key_eq. done. }
+Qed.
 
 End proof.

@@ -48,11 +48,9 @@ Local Set Default Proof Using "All".
 (* ---------------------------------------------------------------- *)
 (* Specs for the state-touching half of the controller.              *)
 (*                                                                   *)
-(* All five are stated and Admitted. Discharging them needs the      *)
-(* ReplicaSet-typed model wrappers (ReplicaSetUpdate / Create), which *)
-(* do not exist yet — see notes/spec-remaining.md §4.3. Stating them  *)
-(* first is deliberate: the ownership footprints below are what fix   *)
-(* the shape those wrappers have to take.                            *)
+(* All five are proved. They rest on the ReplicaSet-typed model      *)
+(* wrappers (ReplicaSetUpdate / ReplicaSetCreate_named) and on the    *)
+(* ReplicaSet owner index in kubernetes_model/index_replicaset.v.     *)
 (*                                                                   *)
 (* Convention, following the ReplicaSet and StatefulSet controllers:  *)
 (* the preconditions are strong enough to rule out API failure, so    *)
@@ -692,7 +690,11 @@ Lemma wp_reconcileOldReplicaSets γ model_l sl ptrs
           rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
           old_rss' ⌝ ∗
       "%Hscaled_down" ∷ ⌜ scaled_down =
-          bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0) old_rss) ⌝
+          bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0) old_rss) ⌝ ∗
+      (* Draining rewrites only the replica count, so templates survive. The
+         caller needs this to carry [unique_new_replica_set] across the sync. *)
+      "%Htemplates" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+          old_rss old_rss' ⌝
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -719,6 +721,8 @@ Proof.
     "%Hdone_drained" ∷ ⌜ Forall (λ rs',
         rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
         done_rss ⌝ ∗
+    "%Hdone_tmpl" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+        (take (sint.nat i) old_rss) done_rss ⌝ ∗
     "Hdone" ∷ ([∗ list] rs;rs' ∈ take (sint.nat i) old_rss;done_rss, FRAG rs rs') ∗
     "Hrest" ∷ ([∗ list] rs ∈ drop (sint.nat i) old_rss, FRAG rs rs) ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝
@@ -729,6 +733,7 @@ Proof.
       by (symmetry; apply bool_decide_eq_false_2; inversion 1).
     iFrame "i rs scaledDown Hsl Hrss Hown_frags".
     iSplit; [iPureIntro; done|].
+    iSplit; [iPureIntro; constructor|].
     iSplit; [iPureIntro; constructor|].
     iSplit; [done|].
     iPureIntro. word. }
@@ -762,15 +767,21 @@ Proof.
     (* Either way the element is now at zero, and [scaled] reports whether it
        had to be moved. *)
     iAssert ⌜ this_rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)
-        ∧ scaled = bool_decide (rs_replicas this_rs ≠ W32 0) ⌝%I
-      as %[Hzero Hscaled_eq].
+        ∧ scaled = bool_decide (rs_replicas this_rs ≠ W32 0)
+        ∧ rs_template this_rs' = rs_template this_rs ⌝%I
+      as %(Hzero & Hscaled_eq & Htmpl_this).
     { iDestruct "Hdisj" as "[%Hnoop|(%Hscaled & _ & %Hspec_updated)]".
-      - destruct Hnoop as (Hcount & -> & -> & _). iPureIntro. split.
+      - destruct Hnoop as (Hcount & -> & -> & _). iPureIntro. split_and!.
         + rewrite (rs_replicas_of_valid _ Hthis_valid) Hcount. done.
         + symmetry. apply bool_decide_eq_false_2. intros Hne. exact (Hne Hcount).
-      - destruct Hscaled as (Hne & ->). iPureIntro. split.
+        + done.
+      - destruct Hscaled as (Hne & ->). iPureIntro. split_and!.
         + eapply rs_scaled_spec_updated_replicas. exact Hspec_updated.
-        + symmetry. apply bool_decide_eq_true_2. exact Hne. }
+        + symmetry. apply bool_decide_eq_true_2. exact Hne.
+        + rewrite /rs_template.
+          rewrite /ObjectSpecV.updated /ReplicaSetSpecV.updated
+            /ReplicaSetSpecV.created /rs_scaled_spec /= in Hspec_updated.
+          destruct Hspec_updated as (_ & _ & _ & Ht). rewrite Ht. done. }
     (* The accumulator advances by exactly this element's contribution. *)
     assert (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0)
         (take (sint.nat (word.add i (W64 1))) old_rss))
@@ -791,6 +802,13 @@ Proof.
     assert (length (done_rss ++ [this_rs']) = sint.nat (word.add i (W64 1)))
       as Hdone_len'.
     { rewrite app_length Hdone_len /=. word. }
+    assert (Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+        (take (sint.nat (word.add i (W64 1))) old_rss) (done_rss ++ [this_rs']))
+      as Htmpl'.
+    { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
+      rewrite (take_S_r _ _ _ Hthis_rs).
+      apply Forall2_app; [exact Hdone_tmpl|].
+      apply Forall2_cons; [exact Htmpl_this|apply Forall2_nil]. }
     assert (Forall (λ rs',
         rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
         (done_rss ++ [this_rs'])) as Hdrained'.
@@ -805,7 +823,7 @@ Proof.
         rewrite Hacc orb_true_r.
         iFrame "Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest".
         iPureIntro. split_and!;
-          [exact Hdone_len'|exact Hdrained'|word|word]. }
+          [exact Hdone_len'|exact Hdrained'|exact Htmpl'|word|word]. }
       iFrame.
     + wp_auto.
       iApply wp_for_post_do. wp_auto.
@@ -815,7 +833,7 @@ Proof.
         rewrite Hacc orb_false_r.
         iFrame "Hi_ptr Hrs_ptr HscaledDown Hsl Hrss Hdone Hrest".
         iPureIntro. split_and!;
-          [exact Hdone_len'|exact Hdrained'|word|word]. }
+          [exact Hdone_len'|exact Hdrained'|exact Htmpl'|word|word]. }
       iFrame.
   - (* Done: the whole list is drained. *)
     assert (take (sint.nat i) old_rss = old_rss) as Htake.
@@ -826,6 +844,7 @@ Proof.
     + word.
     + exact Hdone_drained.
     + rewrite Htake. done.
+    + rewrite -Htake. exact Hdone_tmpl.
 Qed.
 
 (* rollout performs one reconciliation step: ensure the new ReplicaSet exists
@@ -886,6 +905,10 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
           ReplicaSetV.key rs' = ReplicaSetV.key new_rs ∨
           rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
           rss' ⌝ ∗
+      (* Scaling rewrites only replica counts, so templates survive; the caller
+         needs this to carry [unique_new_replica_set] across the sync. *)
+      "%Htemplates" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+          rss rss' ⌝ ∗
       (* [rss'] is the post-state of exactly the ReplicaSets passed in, so
          these fragments cover [rss] and nothing else. *)
       "Hown_frags" ∷ ([∗ list] rs;rs' ∈ rss;rss',
@@ -905,6 +928,11 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
         ∨
         ( "%Hcreated" ∷ ⌜ ReplicaSetV.key new_rs = new_rs_key d ∧
               new_rs_key d ∉ (ReplicaSetV.key <$> rss) ⌝ ∗
+          (* Creation happens precisely when nothing matched, so the caller can
+             conclude the created ReplicaSet is the only match in [rss' ++
+             [new_rs]] -- i.e. [unique_new_replica_set] survives the sync. *)
+          "%Hno_match" ∷ ⌜ Forall (λ rs, ¬ template_matches (rs_template rs)
+              (deployment_template d)) rss' ⌝ ∗
           "Hnew_rs_meta" ∷ own_meta_frag γ (new_rs_key d)
             new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
             new_rs.(ReplicaSetV.ObjectMeta') ∗
@@ -986,7 +1014,7 @@ Proof.
       - apply Forall_filter_rs. exact Hrss_valid.
       - apply NoDup_fmap_filter_rs. exact Hkeys_nodup. }
     iIntros (scaled_down old_rss')
-      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd)".
+      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd & %Htemplates)".
     iDestruct ("Hrss_restore2" with "Hold") as "Hrss".
     wp_auto.
     (* Interleave the two post-state lists back into positional order. *)
@@ -1006,6 +1034,16 @@ Proof.
       - left. done.
       - apply Forall_lookup. intros k x Hk. right.
         rewrite Forall_lookup in Hdrained. eapply Hdrained. exact Hk. }
+    iSplit.
+    { iPureIntro.
+      apply merge_old_posts_Forall2_templates.
+      - pose proof (rs_uid_eq_unique rss new_rs i Huid_nodup Hrss_i) as Huniq_uid.
+        apply Forall_lookup. intros k x Hk Hx_new.
+        rewrite Forall_lookup in Huniq_uid.
+        unfold rs_is_new, rs_is_old in Hx_new.
+        rewrite (Huniq_uid k x Hk (dec_stable Hx_new)). exact Htemplate.
+      - rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq) in Htemplates.
+        exact Htemplates. }
     iSplitL "Hnew_meta Hnew_spec Hold_frags".
     { iApply (big_sepL2_merge_old_posts with "[Hnew_meta Hnew_spec]").
       - rewrite (filter_rs_is_new_singleton rss new_rs i Huid_nodup Hrss_i).
@@ -1069,7 +1107,7 @@ Proof.
         (filter_rs_is_old_all _ _ Hfresh).
       iFrame "Hown_frags". iPureIntro. split; [exact Hrss_valid|exact Hkeys_nodup]. }
     iIntros (scaled_down old_rss')
-      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd)".
+      "(Hold_sl & Hold & %Hold_len & Hold_frags & %Hdrained & %Hsd & %Htemplates)".
     iDestruct ("Hrss_restore2" with "Hold") as "Hrss".
     wp_auto.
     rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
@@ -1084,9 +1122,22 @@ Proof.
     iSplit.
     { iPureIntro. apply Forall_lookup. intros k x Hk. right.
       rewrite Forall_lookup in Hdrained. eapply Hdrained. exact Hk. }
+    iSplit.
+    { iPureIntro.
+      rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
+        (filter_rs_is_old_all _ _ Hfresh) in Htemplates.
+      exact Htemplates. }
     iRight.
     rewrite Huid_pres Hnew_rs_key.
     iSplitR.
+    2: iSplitR.
+    2: { iPureIntro.
+         (* [Hcreated] is about the input list; the conclusion is about the
+            drained post-states, and templates carry across. *)
+         rewrite (filter_zip_snd (rs_uid new_rs) ptrs rss Hlen_eq)
+           (filter_rs_is_old_all _ _ Hfresh) in Htemplates.
+         exact (no_match_Forall2_templates _ _ _ Htemplates
+           (find_new_replica_set_None _ _ Hcreated)). }
     { iPureIntro. split; [rewrite Hkey_pres; exact Hnew_rs_key|].
       intros Hin.
       apply list_elem_of_fmap_1 in Hin as (x & Hx & Hx_in).

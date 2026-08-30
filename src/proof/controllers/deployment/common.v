@@ -357,6 +357,21 @@ Proof.
   apply IH. exact Hrest.
 Qed.
 
+(* With distinct UIDs, anything carrying the new ReplicaSet's UID is it. *)
+Lemma rs_uid_eq_unique (rss : list ReplicaSetV.t) new_rs i :
+  NoDup (rs_uid <$> rss) →
+  rss !! i = Some new_rs →
+  Forall (λ rs, rs_uid rs = rs_uid new_rs → rs = new_rs) rss.
+Proof.
+  intros Hnodup Hi. apply Forall_lookup. intros k rs Hk Heq.
+  assert ((rs_uid <$> rss) !! k = Some (rs_uid new_rs)) as Hk'.
+  { rewrite list_lookup_fmap Hk /=. by rewrite Heq. }
+  assert ((rs_uid <$> rss) !! i = Some (rs_uid new_rs)) as Hi'.
+  { rewrite list_lookup_fmap Hi /=. done. }
+  assert (k = i) as -> by (eapply NoDup_lookup; [exact Hnodup|exact Hk'|exact Hi']).
+  rewrite Hi in Hk. by injection Hk.
+Qed.
+
 (* The old ReplicaSets, viewed through the pair filter and through the plain
    filter, are the same list. *)
 Lemma filter_zip_snd uid (ptrs : list loc) (rss : list ReplicaSetV.t) :
@@ -482,6 +497,27 @@ Definition rs_template (rs : ReplicaSetV.t) : PodTemplateSpecV.t :=
 
 Definition deployment_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
   d.(DeploymentV.Spec').(DeploymentSpecV.Template').
+
+(* The merge preserves templates when both inputs do. *)
+Lemma merge_old_posts_Forall2_templates uid (rss : list ReplicaSetV.t)
+    new_post posts :
+  Forall (λ rs, rs_is_new uid rs → rs_template new_post = rs_template rs) rss →
+  Forall2 (λ a b, rs_template b = rs_template a)
+    (filter (rs_is_old uid) rss) posts →
+  Forall2 (λ a b, rs_template b = rs_template a) rss
+    (merge_old_posts uid rss new_post posts).
+Proof.
+  revert posts. induction rss as [|x rest IH]; intros posts Hnew Hold.
+  { simpl. inversion Hold. constructor. }
+  apply Forall_cons_1 in Hnew as [Hx Hnew'].
+  simpl. destruct (decide (rs_is_old uid x)) as [Hxold|Hxnew].
+  - rewrite (filter_cons_True (rs_is_old uid) x _ Hxold) in Hold.
+    destruct posts as [|p posts']; first (inversion Hold).
+    apply Forall2_cons_1 in Hold as [Hp Hold'].
+    apply Forall2_cons; [exact Hp|apply IH; [exact Hnew'|exact Hold']].
+  - rewrite (filter_cons_False (rs_is_old uid) x _ Hxnew) in Hold.
+    apply Forall2_cons; [exact (Hx Hxnew)|apply IH; [exact Hnew'|exact Hold]].
+Qed.
 
 (* findNewReplicaSet returns the first ReplicaSet whose template matches the
    deployment's, or nil. *)
@@ -646,6 +682,28 @@ Definition new_rs_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
     ((deployment_template d).(PodTemplateSpecV.ObjectMeta')
        <| ObjectMetaV.Labels' := Some (new_rs_labels d) |>)
     (deployment_template d).(PodTemplateSpecV.Spec').
+
+(* The deployment read back from the store differs from the framed one only in
+   its resource version, so it names the same new ReplicaSet. *)
+Lemma new_rs_name_congr d1 d2 :
+  DeploymentV.key d1 = DeploymentV.key d2 →
+  d1.(DeploymentV.Spec') = d2.(DeploymentV.Spec') →
+  new_rs_name d1 = new_rs_name d2.
+Proof.
+  intros Hkey Hspec.
+  pose proof (f_equal KKey.Name' Hkey) as Hn. simpl in Hn.
+  rewrite /new_rs_name /deployment_template Hspec Hn. done.
+Qed.
+
+Lemma new_rs_key_congr d1 d2 :
+  DeploymentV.key d1 = DeploymentV.key d2 →
+  d1.(DeploymentV.Spec') = d2.(DeploymentV.Spec') →
+  new_rs_key d1 = new_rs_key d2.
+Proof.
+  intros Hkey Hspec.
+  pose proof (f_equal KKey.Namespace' Hkey) as Hns. simpl in Hns.
+  rewrite /new_rs_key (new_rs_name_congr d1 d2 Hkey Hspec) Hns. done.
+Qed.
 
 (* Stamping the pod-template-hash label preserves the match. This is the whole
    content of EqualIgnoreHash — that label is exactly the one it ignores — so
@@ -952,6 +1010,67 @@ Definition unique_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     template_matches (rs_template rs_i) (deployment_template d) →
     template_matches (rs_template rs_j) (deployment_template d) →
     i = j.
+
+(* Pointwise-equal projections give equal projected lists. Used to turn the
+   key preservation [own_rs_frags_keys] hands back into an equality of key
+   lists, which is what the top-level branch conditions are stated over. *)
+Lemma Forall2_fmap_eq {A B} (f : A → B) (l1 l2 : list A) :
+  Forall2 (λ a b, f b = f a) l1 l2 → f <$> l2 = f <$> l1.
+Proof.
+  induction 1 as [|x y l1' l2' Hxy _ IH]; [done|].
+  simpl. f_equal; [exact Hxy|exact IH].
+Qed.
+
+(* Uniqueness only reads templates, so it travels along any pointwise template
+   preservation — which is what scaling gives. *)
+Lemma unique_new_replica_set_Forall2_templates d rss rss' :
+  Forall2 (λ rs rs', rs_template rs' = rs_template rs) rss rss' →
+  unique_new_replica_set d rss →
+  unique_new_replica_set d rss'.
+Proof.
+  intros Hf Hu i j rs_i rs_j Hi Hj Hmi Hmj.
+  destruct (Forall2_lookup_r _ _ _ _ _ Hf Hi) as (a & Ha & Hta).
+  destruct (Forall2_lookup_r _ _ _ _ _ Hf Hj) as (b & Hb & Htb).
+  eapply Hu; [exact Ha|exact Hb| |].
+  - rewrite -Hta. exact Hmi.
+  - rewrite -Htb. exact Hmj.
+Qed.
+
+(* Appending to a list in which nothing matches: the appended element is the
+   only possible match, so uniqueness is immediate. This is the created case —
+   [getNewReplicaSet] creates precisely when no existing ReplicaSet matched. *)
+Lemma unique_new_replica_set_snoc d rss new_rs :
+  Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss →
+  unique_new_replica_set d (rss ++ [new_rs]).
+Proof.
+  intros Hno.
+  assert (∀ k rs, (rss ++ [new_rs]) !! k = Some rs →
+      template_matches (rs_template rs) (deployment_template d) →
+      k = length rss) as Hforce.
+  { intros k rs Hk Hm.
+    apply lookup_app_Some in Hk as [Hk|[Hlen Hk]].
+    - rewrite Forall_lookup in Hno. destruct (Hno k rs Hk Hm).
+    - apply lookup_lt_Some in Hk. simpl in Hk. lia. }
+  intros i j rs_i rs_j Hi Hj Hmi Hmj.
+  rewrite (Hforce i rs_i Hi Hmi) (Hforce j rs_j Hj Hmj). done.
+Qed.
+
+(* [find_new_replica_set] returning [None] is exactly "nothing matches". *)
+Lemma find_new_replica_set_None d rss :
+  find_new_replica_set d rss = None →
+  Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss.
+Proof. rewrite /find_new_replica_set list_find_None. done. Qed.
+
+(* Templates travel, so "nothing matches" does too. *)
+Lemma no_match_Forall2_templates d rss rss' :
+  Forall2 (λ rs rs', rs_template rs' = rs_template rs) rss rss' →
+  Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss →
+  Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss'.
+Proof.
+  intros Hf Hno. apply Forall_lookup. intros k x Hk Hm.
+  destruct (Forall2_lookup_r _ _ _ _ _ Hf Hk) as (a & Ha & Hta).
+  rewrite Forall_lookup in Hno. apply (Hno k a Ha). rewrite -Hta. exact Hm.
+Qed.
 
 (* The deployment's desired state is realized by [rss]: some ReplicaSet carries
    the deployment's template and sits at its replica count, and every other one
