@@ -8,6 +8,7 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Local Set Default Proof Using "All".
 
 Lemma wp_State__updateTx_au γ l kind namespace i kobj :
@@ -98,7 +99,8 @@ Proof.
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
   { iPureIntro. split. 1: done. right. done. }
   iIntros "Hdeepown_metadata". wp_auto.
-  wp_apply (wp_GetName_deepown with "[$Hdeepown_metadata]").
+  wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto.
   rewrite bool_decide_false //. wp_auto.
   set key := {|
@@ -132,9 +134,11 @@ Proof.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
     "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
       Hdeepown_existing_status)".
-  wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_existing_metadata]").
+  wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
+    "[$Hdeepown_existing_metadata]"). 1: done.
   iIntros "Hdeepown_existing_metadata". wp_auto.
-  wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_metadata]").
+  wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto.
   assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := namespace |>) =
     KObjectV.objectmeta kobj) as Hnamespace_noop.
@@ -149,7 +153,7 @@ Proof.
   iAssert (KObjectV.deepown_i i_copy kobj_rv 1) with "[Hdeepown_l]" as
     "Hdeepown_i_copy".
   { iExists kobj_l. iSplit.
-    { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; done. }
+    { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
   assert (valid_resource_version
     (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
@@ -341,7 +345,7 @@ Proof.
       (interface.mk (go.PointerType v1.Pod) #pod_l)
       (KObjectV.Pod pod) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
-  { iExists pod_l. iSplit; [done|]. iFrame. }
+  { iExists pod_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_Pod|]. iFrame. }
   iEval (rewrite Hkey_eq Huid_eq) in "Hown_meta_frag Hown_spec_frag".
   wp_apply (wp_State__updateTx γ l PodV.kind namespace
     (interface.mk (go.PointerType v1.Pod) #pod_l)
@@ -361,7 +365,7 @@ Proof.
   destruct kobj' as [pod'|rs'|pvc'|sts']; simpl in Hupdated; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
   cbn [interface.ty interface.v].
   replace

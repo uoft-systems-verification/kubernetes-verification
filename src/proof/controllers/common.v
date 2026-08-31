@@ -292,7 +292,8 @@ Proof.
     iPoseProof (big_sepL2_head_tail _ _ _ this_interface this_pod with "Hdeepown_i_pods") as "[Hthis_i_pod Hother_i_pod]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
     iDestruct "Hthis_i_pod" as (this_ptr) "[%Hthis_i Hdeepown_l]".
-    unfold KObjectV.valid_interface in Hthis_i. rewrite Hthis_i.
+    unfold KObjectV.valid_interface in Hthis_i.
+    destruct Hthis_i as [Hthis_i _]. rewrite Hthis_i.
     rewrite decide_True; [change (go.PointerType common.core_v1.Pod) with (go.PointerType v1.Pod); reflexivity|].
     wp_auto.
     rewrite bool_decide_true; [change (go.PointerType common.core_v1.Pod) with (go.PointerType v1.Pod); reflexivity|].
@@ -465,7 +466,8 @@ Proof.
     { split; rewrite lookup_drop Nat.add_0_r; done. }
     iDestruct "Hthis_i_pod" as (this_ptr)
       "[%Hthis_i Hdeepown_l]".
-    unfold KObjectV.valid_interface in Hthis_i. rewrite Hthis_i.
+    unfold KObjectV.valid_interface in Hthis_i.
+    destruct Hthis_i as [Hthis_i _]. rewrite Hthis_i.
     rewrite decide_True;
       [change (go.PointerType common.core_v1.Pod)
         with (go.PointerType v1.Pod); reflexivity|].

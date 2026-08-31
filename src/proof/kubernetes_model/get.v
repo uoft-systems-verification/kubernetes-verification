@@ -202,7 +202,7 @@ Proof.
   rename Hstatus_eq' into Hstatus_eq.
   iDestruct "Hdeepown_i" as (pod_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
   cbn [interface.ty interface.v].
   replace (if decide (go.PointerType v1.Pod = go.PointerType v1.Pod)
@@ -287,7 +287,7 @@ Proof.
   rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (rs_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
   cbn [interface.ty interface.v].
   replace (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
@@ -383,7 +383,7 @@ Proof.
   simpl in Hvalid', Hkey_eq, Hmeta_eq.
   iDestruct "Hdeepown_i" as (pvc_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_core_v1.PersistentVolumeClaim) with
     (go.PointerType v1.PersistentVolumeClaim).
   cbn [interface.ty interface.v].
@@ -476,7 +476,7 @@ Proof.
   clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (sts_l) "[%Hi Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi. rewrite Hi.
+  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.StatefulSet)
     with (go.PointerType v1.StatefulSet).
   cbn [interface.ty interface.v].

@@ -125,6 +125,26 @@ Proof.
     rewrite /ObjectMetaV.deepown /named Hlabels. iFrame. iFrame "%".
 Qed.
 
+(** The same borrowed-labels rule after method promotion through a supported
+    Kubernetes object interface. *)
+Lemma wp_GetLabels_deepown_kobject i l o meta dq :
+  {{{ "Hinit" ∷ is_pkg_init v1 ∗
+      "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) meta dq
+  }}}
+    #(methods i.(interface.ty) "GetLabels" i.(interface.v)) #()
+  {{{ labels_l, RET #labels_l;
+      labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq ∗
+      (labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq -∗
+        ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) meta dq)
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
+    wp_pures; wp_apply (wp_ObjectMeta__GetLabels_deepown with "[$Hinit $Hmeta]");
+    iIntros (labels_l) "Hlabels"; iApply "HΦ"; iFrame.
+Qed.
+
 (** Filtering uses the semantic selector representation from the labels
     package. The weak list API intentionally forgets which valid objects
     matched once the filter has run. *)
@@ -218,7 +238,8 @@ Proof.
     wp_apply wp_Accessor; first (iPureIntro; exact Hthis_interface).
     iPoseProof (KObjectV.deepown_l_split with "Hthis") as
       "(%Hthis_l_nonnull & Hthis_type & Hthis_meta & Hthis_spec & Hthis_status)".
-    wp_apply (wp_ObjectMeta__GetLabels_deepown with "[$Hv1_init $Hthis_meta]").
+    wp_apply (wp_GetLabels_deepown_kobject this_interface this_l this_obj
+      with "[$Hv1_init $Hthis_meta]"). 1: done.
     iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto.
     wp_bind ((match selector with
       | interface.ok selector_i =>
@@ -338,7 +359,7 @@ Proof.
   - iIntros "H". iDestruct "H" as %[].
   - iIntros "[Hi Hrest]".
     iDestruct "Hi" as (ptr) "[%Hi Hrs]".
-    simpl in Hi. subst i.
+    simpl in Hi. destruct Hi as [Hi _]. subst i.
     iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
     iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
 Qed.
@@ -496,7 +517,7 @@ Proof.
   - iIntros "H". iDestruct "H" as %[].
   - iIntros "[Hi Hrest]".
     iDestruct "Hi" as (ptr) "[%Hi Hpod]".
-    simpl in Hi. subst i.
+    simpl in Hi. destruct Hi as [Hi _]. subst i.
     iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
     iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
 Qed.

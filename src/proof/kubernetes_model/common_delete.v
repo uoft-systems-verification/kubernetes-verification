@@ -87,10 +87,10 @@ Proof.
   iFrame.
 Qed.
 
-Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_string) :
+Lemma wp_validateDeletePreconditions i l o m options_l options dq (kind : go_string) :
   {{{ is_pkg_init apimodel ∗
-      "%Hi" ∷ ⌜ i = interface.mk (go.PointerType v1.ObjectMeta) #l ⌝ ∗
-      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l l m dq ∗
+      "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
     @! apimodel.validateDeletePreconditions #(interface.ok i) #options_l #kind
@@ -100,12 +100,12 @@ Lemma wp_validateDeletePreconditions i l m options_l options dq (kind : go_strin
         ¬ delete_preconditions_match options m ∧
           err ≠ interface.nil ∧
           conflict_error err ⌝ ∗
-      ObjectMetaV.deepown_l l m dq ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
 Proof.
   wp_start as "H".
-  iNamed "H". subst i.
+  iNamed "H".
   iDestruct "Hdeepown_options_l" as (options_c) "[Hoptions_l Hdeepown_options]".
   iNamed "Hdeepown_options".
   destruct options.(DeleteOptionsV.Preconditions') as [preconditions|]
@@ -137,7 +137,7 @@ Proof.
       { apply bool_decide_false. done. }
       rewrite Huid_nonnull_decide /=.
       wp_auto.
-      wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l]").
+      wp_apply (wp_GetUID_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
       iIntros "Hdeepown_m_l".
       wp_auto.
       wp_if_destruct.
@@ -162,7 +162,7 @@ Proof.
            { apply bool_decide_false. done. }
            rewrite Hrv_nonnull_decide /=.
            wp_auto.
-           wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+           wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
            wp_auto.
            wp_if_destruct.
@@ -197,10 +197,10 @@ Proof.
               left. split; [|done].
               rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
               done.
-           ++ wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l]").
+           ++ wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
               iIntros "Hdeepown_m_l".
               wp_auto.
-              wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+              wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
               iIntros "Hdeepown_m_l".
               wp_auto.
               wp_apply wp_newPreconditionRVConflictError.
@@ -269,10 +269,10 @@ Proof.
            left. split; [|done].
            rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
            done.
-      * wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l]").
+      * wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
         wp_auto.
-        wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l]").
+        wp_apply (wp_GetUID_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
         wp_auto.
         wp_apply wp_newPreconditionUIDConflictError.
@@ -330,7 +330,7 @@ Proof.
         { apply bool_decide_false. done. }
         rewrite Hrv_nonnull_decide /=.
         wp_auto.
-        wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+        wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
         wp_auto.
         wp_if_destruct.
@@ -365,10 +365,10 @@ Proof.
            left. split; [|done].
            rewrite /delete_preconditions_match Hpreconditions Huid Hrv /=.
            done.
-        -- wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l]").
+        -- wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
            wp_auto.
-           wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_m_l]").
+           wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
            wp_auto.
            wp_apply wp_newPreconditionRVConflictError.
@@ -657,20 +657,21 @@ Proof.
         -- exact Hin.
 Qed.
 
-Lemma wp_shouldOrphanDependents metadata_i metadata_l m options_l options dq :
+Lemma wp_shouldOrphanDependents metadata_i l o m options_l options dq :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
-      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
+      "%Hmetadata" ∷ ⌜ KObjectV.valid_interface metadata_i l o ⌝ ∗
+      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
     @! apimodel.shouldOrphanDependents #(interface.ok metadata_i) #options_l
   {{{ should_orphan, RET #should_orphan;
       ⌜ should_orphan = delete_should_orphan_dependents m options ⌝ ∗
-      ObjectMetaV.deepown_l metadata_l m dq ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". subst metadata_i.
+  wp_start as "H". iNamed "H".
+  set (metadata_l := KObjectV.objectmeta_ptr l o).
   iDestruct "Hdeepown_options_l" as (options_c) "[Hoptions_l Hoptions]".
   iDestruct (typed_pointsto_not_null with "Hoptions_l") as %Hoptions_l_not_null.
   assert (bool_decide (options_l = null) = false) as Hoptions_nonnull_decide.
@@ -739,8 +740,8 @@ Proof.
              repeat case_decide; try congruence; done. }
            iDestruct "Hdeepown_m_l" as (metadata_c) "[Hmetadata_l Hmetadata]".
            wp_bind.
-           wp_apply (v1.wp_GetFinalizers metadata_l metadata_c dq
-             with "[$Hmetadata_l]") as "Hmetadata_l".
+           wp_apply (wp_GetFinalizers_kobject metadata_i l o metadata_c dq
+             with "[$Hmetadata_l]") as "Hmetadata_l". 1: done.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
@@ -859,8 +860,8 @@ Proof.
           Horphan Hpolicy /=. done. }
       iDestruct "Hdeepown_m_l" as (metadata_c) "[Hmetadata_l Hmetadata]".
       wp_bind.
-      wp_apply (v1.wp_GetFinalizers metadata_l metadata_c dq
-        with "[$Hmetadata_l]") as "Hmetadata_l".
+      wp_apply (wp_GetFinalizers_kobject metadata_i l o metadata_c dq
+        with "[$Hmetadata_l]") as "Hmetadata_l". 1: done.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
@@ -960,20 +961,21 @@ Proof.
         rewrite Hshould_fallback /=. done.
 Qed.
 
-Lemma wp_shouldDeleteDependents metadata_i metadata_l m options_l options dq :
+Lemma wp_shouldDeleteDependents metadata_i l o m options_l options dq :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
-      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
+      "%Hmetadata" ∷ ⌜ KObjectV.valid_interface metadata_i l o ⌝ ∗
+      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq
   }}}
     @! apimodel.shouldDeleteDependents #(interface.ok metadata_i) #options_l
   {{{ should_delete, RET #should_delete;
       ⌜ should_delete = delete_should_delete_dependents m options ⌝ ∗
-      ObjectMetaV.deepown_l metadata_l m dq ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". subst metadata_i.
+  wp_start as "H". iNamed "H".
+  set (metadata_l := KObjectV.objectmeta_ptr l o).
   iDestruct "Hdeepown_options_l" as (options_c) "[Hoptions_l Hoptions]".
   iDestruct (typed_pointsto_not_null with "Hoptions_l") as %Hoptions_l_not_null.
   assert (bool_decide (options_l = null) = false) as Hoptions_nonnull_decide.
@@ -1042,8 +1044,8 @@ Proof.
              repeat case_decide; try congruence; done. }
            iDestruct "Hdeepown_m_l" as (metadata_c) "[Hmetadata_l Hmetadata]".
            wp_bind.
-           wp_apply (v1.wp_GetFinalizers metadata_l metadata_c dq
-             with "[$Hmetadata_l]") as "Hmetadata_l".
+           wp_apply (wp_GetFinalizers_kobject metadata_i l o metadata_c dq
+             with "[$Hmetadata_l]") as "Hmetadata_l". 1: done.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
@@ -1164,8 +1166,8 @@ Proof.
           Horphan Hpolicy /=. done. }
       iDestruct "Hdeepown_m_l" as (metadata_c) "[Hmetadata_l Hmetadata]".
       wp_bind.
-      wp_apply (v1.wp_GetFinalizers metadata_l metadata_c dq
-        with "[$Hmetadata_l]") as "Hmetadata_l".
+      wp_apply (wp_GetFinalizers_kobject metadata_i l o metadata_c dq
+        with "[$Hmetadata_l]") as "Hmetadata_l". 1: done.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
@@ -1301,10 +1303,10 @@ Proof.
   - ereplace (word.sub ?[a] ?[b]) with (?a) by word. done.
 Qed.
 
-Lemma wp_deletionFinalizersForGarbageCollection metadata_i metadata_l m options_l options dq :
+Lemma wp_deletionFinalizersForGarbageCollection metadata_i l o m options_l options dq :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
-      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l metadata_l m dq ∗
+      "%Hmetadata" ∷ ⌜ KObjectV.valid_interface metadata_i l o ⌝ ∗
+      "Hdeepown_m_l" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options dq ∗
       "%Hvalid_finalizers" ∷ ⌜ valid_finalizers m.(ObjectMetaV.Finalizers') ⌝
   }}}
@@ -1320,18 +1322,19 @@ Lemma wp_deletionFinalizersForGarbageCollection metadata_i metadata_l m options_
         | None => True%I
         end
       else True%I) ∗
-      ObjectMetaV.deepown_l metadata_l m dq ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". subst metadata_i.
+  wp_start as "H". iNamed "H".
+  set (metadata_l := KObjectV.objectmeta_ptr l o).
   wp_auto.
-  wp_apply (wp_shouldOrphanDependents with
+  wp_apply (wp_shouldOrphanDependents metadata_i l o with
     "[$Hdeepown_m_l $Hdeepown_options_l]").
   { iFrame "#". iPureIntro. done. }
   iIntros (should_orphan) "(-> & Hdeepown_m_l & Hdeepown_options_l)".
   wp_auto.
-  wp_apply (wp_shouldDeleteDependents with
+  wp_apply (wp_shouldDeleteDependents metadata_i l o with
     "[$Hdeepown_m_l $Hdeepown_options_l]").
   { iFrame "#". iPureIntro. done. }
   iIntros (should_delete) "(-> & Hdeepown_m_l & Hdeepown_options_l)".
@@ -1339,7 +1342,7 @@ Proof.
   wp_apply wp_slice_literal_non_nil. iSplitR; first done.
   iIntros (new_sl_ptr) "(Hnew_sl & Hnew_cap & %Hnew_sl_non_nil)".
   set (new_sl := slice.mk new_sl_ptr (W64 0) (W64 0)). wp_auto.
-  wp_apply (v1.wp_GetFinalizers_deepown with "[$Hdeepown_m_l]").
+  wp_apply (wp_GetFinalizers_deepown_kobject metadata_i l o with "[$Hdeepown_m_l]"). 1: done.
   iIntros (old_sl) "(%Hold_sl_nil & Hold_finalizers)".
   iAssert ("Hold_sl" ∷ old_sl ↦*{dq} default [] m.(ObjectMetaV.Finalizers') ∗
       "Hrestore_m" ∷ (old_sl ↦*{dq} default [] m.(ObjectMetaV.Finalizers') -∗
@@ -1533,7 +1536,7 @@ Proof.
     wp_auto.
     rewrite execute_val_unseal /execute_val_def. wp_auto.
     wp_bind.
-    wp_apply (v1.wp_GetFinalizers_deepown with "[$Hdeepown_m_l]").
+    wp_apply (wp_GetFinalizers_deepown_kobject metadata_i l o with "[$Hdeepown_m_l]"). 1: done.
     iIntros (old_sl') "(%Hold_sl_nil' & Hold_finalizers)".
     iAssert ("Hold_sl" ∷ old_sl' ↦*{dq} default [] m.(ObjectMetaV.Finalizers') ∗
         "Hrestore_m" ∷ (old_sl' ↦*{dq} default [] m.(ObjectMetaV.Finalizers') -∗
