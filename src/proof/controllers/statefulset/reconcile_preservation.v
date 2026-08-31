@@ -134,6 +134,8 @@ Proof.
   by iApply big_sepM_subseteq.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_reconcileDesiredPods_preservation γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods reserved : list PodV.t)

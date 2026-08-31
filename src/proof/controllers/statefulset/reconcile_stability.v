@@ -151,6 +151,8 @@ Proof.
   contradiction.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_updateStatefulPod_stability set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) dq_set dq_pod :
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗

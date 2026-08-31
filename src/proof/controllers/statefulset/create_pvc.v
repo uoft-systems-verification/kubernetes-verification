@@ -214,6 +214,8 @@ Qed.
    claim already exists, Get succeeds and its fragments are preserved.  If its
    key is reserved, the Kubernetes model guarantees that it is absent, so the
    NotFound branch creates it and consumes the reservation. *)
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
     set_l pod_l claim_template_l
     (set : StatefulSetV.t) (pod : PodV.t)

@@ -34,6 +34,8 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs :
   ⊢ stability_spec γ l namespace name sts dq pods pvcs.
 Proof.
