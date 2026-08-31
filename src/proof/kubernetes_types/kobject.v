@@ -224,6 +224,13 @@ Inductive t :=
 | PersistentVolumeClaim (pvc : PersistentVolumeClaimV.t)
 | StatefulSet (sts : StatefulSetV.t).
 
+(** These are Go interface-membership facts, not method-call specifications.
+    [go.type_set_contains] consults the semantic [method_set], while the
+    generated [MethodUnfold] instances for direct and promoted methods constrain
+    only method execution. The current generated package assumptions do not
+    connect those two parts of the semantics, so these facts cannot yet be
+    derived from them. Remove this class once Goose generates signature-bearing
+    method-set lookup facts. *)
 Class ObjectInterfaceAssumptions : Prop := {
   pod_is_object :
     go.type_set_contains (go.PointerType v1.Pod) v1.Object = true;
