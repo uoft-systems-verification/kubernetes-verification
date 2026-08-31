@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export objectmeta.
+From New.proof.kubernetes_types Require Import top_level.
 
 Module PersistentVolumeClaimSpecV.
 Section def.
@@ -9,10 +10,15 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom t : Type.
+Axiom eq_dec : EqDecision t.
+Global Existing Instance eq_dec.
+
 (* The admission predicate used for both create validation and the general
    validation phase of update. PVC schema defaulting, including the default
    VolumeMode, is not yet expressible because [t] is abstract. *)
 Axiom valid_create: t → Prop.
+Axiom valid_create_dec : ∀ spec, Decision (valid_create spec).
+Global Existing Instance valid_create_dec.
 
 (* The currently abstract fields prevent us from spelling out the two storage
    normalization relations. A standalone PVC receives both schema defaults and
@@ -27,27 +33,14 @@ Definition valid (spec : t) : Prop :=
 Definition valid_embedded (spec : t) : Prop :=
   valid_create spec ∧ embedded_storage_normalized spec.
 
-(* This is a conservative projection of PVC update validation while the PVC
-   spec remains abstract: an unchanged spec is always permitted, even when
-   [old] has not yet received the normalization required by [valid].
-   Upstream also permits controlled binding and expansion changes, but those
-   depend on currently unmodeled spec and status fields:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L2464-L2549 *)
-Definition valid_update (old new : t) : Prop :=
-  old = new.
-
-Axiom valid_update_dec :
-  ∀ old new, Decision (valid_update old new).
+(** Top-level PVC update validation over the stored old spec and submitted
+    input spec. It includes PVC's private-old preparation and input
+    normalization abstractly because the relevant fields are not represented
+    by this view. *)
+Axiom valid_update : t → t → Prop.
+Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-
-(* The conservative update predicate is equality, so its assumed decision
-   procedure also supplies equality decision for this otherwise opaque type. *)
-Global Instance eq_dec : EqDecision t.
-Proof. intros old new. exact (valid_update_dec old new). Defined.
-
-Lemma valid_update_refl spec :
-  valid_update spec spec.
-Proof. unfold valid_update. done. Qed.
+Axiom valid_update_refl : ∀ spec, valid_create spec → valid_update spec spec.
 
 (* The translated PVC spec is still abstract, so the strongest concrete
    create relation currently expressible is that the output has received all
@@ -65,7 +58,7 @@ Definition embedded_created (_input stored : t) : Prop :=
    that normalization depends on the existing PVC, so reuse the strongest
    currently expressible standalone-storage relation. *)
 Definition updated (input stored : t) : Prop :=
-  created input stored.
+  valid stored.
 
 Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
 
@@ -85,15 +78,13 @@ Context {sem : go.Semantics}
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
-(* This includes validation and feature-gated normalization of PVC status. *)
 Axiom valid: t → Prop.
+Axiom valid_update : t → t → Prop.
+Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
+Global Existing Instance valid_update_dec.
 Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
-
-Definition created (_input stored : t) : Prop :=
-  valid stored.
-
-Definition updated (input stored : t) : Prop :=
-  stored = input.
+Axiom created : t → t → Prop.
+Axiom updated : t → t → Prop.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -138,19 +129,80 @@ Definition valid (pvc: t) : Prop :=
   PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
   PersistentVolumeClaimStatusV.valid pvc.(Status').
 
-Definition valid_nameless_create ns (pvc : t) : Prop :=
+Definition extra_valid (_pvc : t) : Prop := True.
+
+Definition valid_create request_kind ns (pvc : t) : Prop :=
+  request_kind = kind ∧
+  ns ≠ ""%go ∧
+  valid_namespace ns ∧
   valid_create_typemeta kind pvc.(TypeMeta') ∧
-  ObjectMetaV.valid_nameless_create kind ns pvc.(ObjectMeta') ∧
+  ObjectMetaV.valid_create kind ns pvc.(ObjectMeta') ∧
   PersistentVolumeClaimSpecV.valid_create pvc.(Spec').
 
-Definition valid_named_create ns (pvc : t) : Prop :=
-  valid_create_typemeta kind pvc.(TypeMeta') ∧
-  ObjectMetaV.valid_named_create kind ns pvc.(ObjectMeta') ∧
-  PersistentVolumeClaimSpecV.valid_create pvc.(Spec').
+Definition valid_update request_kind namespace old_meta old_spec (input : t) : Prop :=
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  valid_create request_kind namespace input ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  PersistentVolumeClaimSpecV.valid_update old_spec input.(Spec').
+
+Definition valid_status_update request_kind namespace old_meta old_status (input : t) : Prop :=
+  request_kind = kind ∧
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  PersistentVolumeClaimStatusV.valid_update old_status input.(Status').
 
 Definition valid_without_meta (pvc: t) : Prop :=
   PersistentVolumeClaimSpecV.valid pvc.(Spec') ∧
   PersistentVolumeClaimStatusV.valid pvc.(Status').
+
+(** Add the PVC-protection finalizer exactly as the fixed mutating-admission
+    model does on create. *)
+Definition pvc_protection_finalizer : go_string :=
+  "kubernetes.io/pvc-protection"%go.
+
+(** The StorageObjectInUseProtection admission plugin leaves the finalizers
+    unchanged when the PVC-protection finalizer is already present. Otherwise,
+    it appends that finalizer; a nil slice therefore becomes a singleton list.
+    https://github.com/kubernetes/kubernetes/blob/release-1.34/plugin/pkg/admission/storage/storageobjectinuseprotection/admission.go#L120-L128 *)
+Definition add_pvc_protection_finalizer (finalizers : option (list go_string)) : option (list go_string) :=
+  if decide (pvc_protection_finalizer ∈ default [] finalizers)
+  then finalizers
+  else Some (default [] finalizers ++ [pvc_protection_finalizer]).
+
+(** [input] is the submitted create request.
+    [stored] is the object stored after the successful create. *)
+Definition created (namespace : go_string) (input stored : t) : Prop :=
+  valid_typemeta kind stored.(TypeMeta') ∧
+  ObjectMetaV.created namespace
+    (input.(ObjectMeta')
+      <| ObjectMetaV.Finalizers' := add_pvc_protection_finalizer input.(ObjectMeta').(ObjectMetaV.Finalizers') |>)
+    stored.(ObjectMeta') ∧
+  stored.(ObjectMeta').(ObjectMetaV.Generation') = input.(ObjectMeta').(ObjectMetaV.Generation') ∧
+  PersistentVolumeClaimSpecV.created input.(Spec') stored.(Spec') ∧
+  PersistentVolumeClaimStatusV.created input.(Status') stored.(Status').
+
+(** [input] is the submitted status update.
+    [stored] is the object stored after the successful status update. *)
+Definition status_updated (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  PersistentVolumeClaimStatusV.updated input.(Status') stored.(Status').
+
+(** End-to-end relation between the existing object, submitted object, and
+    stored result of a successful update. Generation and resource version are
+    intentionally left unspecified because storage manages them. *)
+Definition updated (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  PersistentVolumeClaimSpecV.updated input.(Spec') stored.(Spec').
 
 Definition deepown (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.PersistentVolumeClaim.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -160,6 +212,19 @@ Definition deepown (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+#[global]
+Instance top_level_instance : top_level Σ t :=
+  Build_top_level Σ t ObjectMetaV.t PersistentVolumeClaimSpecV.t PersistentVolumeClaimStatusV.t
+    valid
+    extra_valid
+    valid_create
+    valid_update
+    valid_status_update
+    created
+    updated
+    status_updated
+    deepown_l.
 
 Definition typemeta_ptr l: loc :=
   struct_field_ref v1.PersistentVolumeClaim.t "TypeMeta" l.
@@ -182,9 +247,9 @@ Definition deepown_without_meta (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
-  spec_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Spec') ∗
-  status_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Status') ∗
-  deepown_without_meta c v dq.
+    spec_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Spec') ∗
+    status_ptr l ↦{dq} c.(v1.PersistentVolumeClaim.Status') ∗
+    deepown_without_meta c v dq.
 
 End def.
 

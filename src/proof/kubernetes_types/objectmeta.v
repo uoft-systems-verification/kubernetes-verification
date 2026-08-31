@@ -177,13 +177,16 @@ Definition valid kind (m: t) : Prop :=
   valid_managed_fields m.(ManagedFields') ∧
   m.(SelfLink') = ""%go.
 
-Definition valid_nameless_create kind ns (m: t) : Prop :=
-  valid_generate_name kind m.(GenerateName') ∧
-  (* The max len of generate_name must be 58 so that the suffix can fit in:
-    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
-  length m.(GenerateName') ≤ 58 ∧
-  (* The name in the meta must be empty for nameless create *)
-  m.(Name') = ""%go ∧
+Definition valid_create kind ns (m : t) : Prop :=
+  (if decide (m.(Name') = ""%go)
+   then
+     valid_generate_name kind m.(GenerateName') ∧
+     (* The generated suffix requires [generateName] to contain at most 58 bytes:
+        https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/names/generate.go#L46 *)
+     length m.(GenerateName') ≤ 58
+   else
+     (m.(GenerateName') ≠ ""%go → valid_generate_name kind m.(GenerateName')) ∧
+     valid_name kind m.(Name')) ∧
   (* The namespace in the meta is either empty or equal to the provided ns *)
   (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
   valid_labels m.(Labels') ∧
@@ -192,36 +195,24 @@ Definition valid_nameless_create kind ns (m: t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
-Definition valid_named_create kind ns (m: t) : Prop :=
-  (m.(GenerateName') ≠ ""%go → valid_generate_name kind m.(GenerateName')) ∧
-  m.(Name') ≠ ""%go ∧
-  valid_name kind m.(Name') ∧
-  (* The namespace in the meta is either empty or equal to the provided ns *)
-  (m.(Namespace') = ""%go ∨ valid_namespace m.(Namespace') ∧ m.(Namespace') = ns) ∧
-  valid_labels m.(Labels') ∧
-  valid_annotations m.(Annotations') ∧
-  valid_owner_references m.(OwnerReferences') ∧
-  valid_finalizers m.(Finalizers') ∧
-  valid_managed_fields m.(ManagedFields').
-
-Definition nameless_created ns m m' : Prop :=
-  m'.(Namespace') = ns ∧
-  m'.(GenerateName') = m.(GenerateName') ∧
-  m'.(DeletionTimestamp') = None ∧
-  m'.(Annotations') = m.(Annotations') ∧
-  m'.(Labels') = m.(Labels') ∧
-  m'.(OwnerReferences') = m.(OwnerReferences') ∧
-  m'.(Finalizers') = m.(Finalizers').
-
-Definition named_created ns m m' : Prop :=
-  m'.(Namespace') = ns ∧
-  m'.(Name') = m.(Name') ∧
-  m'.(GenerateName') = m.(GenerateName') ∧
-  m'.(DeletionTimestamp') = None ∧
-  m'.(Annotations') = m.(Annotations') ∧
-  m'.(Labels') = m.(Labels') ∧
-  m'.(OwnerReferences') = m.(OwnerReferences') ∧
-  m'.(Finalizers') = m.(Finalizers').
+(** [expected] is the request metadata after resource-specific create
+    preparation. [stored] is the metadata stored by a successful create.
+    The server-generated UID, creation timestamp, and resource version are not
+    related to values supplied in the request. Generation is also omitted
+    because its create-time behavior is determined by each resource's strategy. *)
+Definition created ns expected stored : Prop :=
+  (if decide (expected.(Name') = ""%go)
+   then stored.(Name') ≠ ""%go
+   else stored.(Name') = expected.(Name')) ∧
+  stored.(Namespace') = ns ∧
+  stored.(GenerateName') = expected.(GenerateName') ∧
+  stored.(DeletionTimestamp') = None ∧
+  stored.(Annotations') = expected.(Annotations') ∧
+  stored.(Labels') = expected.(Labels') ∧
+  stored.(OwnerReferences') = expected.(OwnerReferences') ∧
+  stored.(Finalizers') = expected.(Finalizers') ∧
+  stored.(DeletionGracePeriodSeconds') = None ∧
+  stored.(SelfLink') = ""%go.
 
 (* m is the existing meta and m' is the meta passed to update.
    valid_simple_update states the precondition for a simple update to succeed.
@@ -323,137 +314,29 @@ End def.
 
 Section proof.
 
-Lemma valid_generate_name_of_valid {kind} m:
-  valid kind m →
-  m.(GenerateName') ≠ ""%go →
-  valid_generate_name kind m.(GenerateName').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_name_nonempty_of_valid {kind} m:
-  valid kind m →
-  m.(Name') ≠ ""%go.
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_name_of_valid {kind} m:
-  valid kind m →
-  valid_name kind m.(Name').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_namespace_nonempty_of_valid {kind} m:
-  valid kind m →
-  m.(Namespace') ≠ ""%go.
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_namespace_of_valid {kind} m:
-  valid kind m →
-  valid_namespace m.(Namespace').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_named_create_of_valid {kind ns} m :
-  valid kind m →
-  ns = m.(Namespace') →
-  valid_named_create kind ns m.
-Proof. unfold valid, valid_named_create. intros Hvalid ->. tauto. Qed.
-
-Lemma valid_uid_of_valid {kind} m:
-  valid kind m →
-  valid_uid m.(UID').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_labels_of_valid {kind} m:
-  valid kind m →
-  valid_labels m.(Labels').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_annotations_of_valid {kind} m:
-  valid kind m →
-  valid_annotations m.(Annotations').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_owner_references_of_valid {kind} m:
-  valid kind m →
-  valid_owner_references m.(OwnerReferences').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_finalizers_of_valid {kind} m:
-  valid kind m →
-  valid_finalizers m.(Finalizers').
-Proof. unfold valid. tauto. Qed.
-
-Lemma valid_managed_fields_of_valid {kind} m:
-  valid kind m →
-  valid_managed_fields m.(ManagedFields').
-Proof. unfold valid. tauto. Qed.
-
 Definition without_resource_version (m : t) : t :=
   m <| ResourceVersion' := ""%go |>.
 
 Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
   without_resource_version m1 = without_resource_version m2.
 
-(* Metadata updates accepted by the current model. The first branch covers
-   ordinary label/annotation updates; the second covers controller release,
-   whose request differs from the stored metadata only in ownerReferences
-   (and may omit the server-managed resourceVersion). This relation only
-   expresses cross-object update constraints; it does not require [m] to
-   satisfy the post-storage [valid] predicate. *)
-Definition valid_update m m' : Prop :=
-  valid_simple_update m m' ∨
-  equiv_except_resource_version
-    (m <| OwnerReferences' := m'.(OwnerReferences') |>) m'.
-
-Lemma equiv_except_resource_version_name m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  m1.(Name') = m2.(Name').
-Proof.
-  destruct m1, m2; simpl. intros H. inversion H. done.
-Qed.
-
-Lemma equiv_except_resource_version_namespace m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  m1.(Namespace') = m2.(Namespace').
-Proof.
-  destruct m1, m2; simpl. intros H. inversion H. done.
-Qed.
-
-Lemma equiv_except_resource_version_uid m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  m1.(UID') = m2.(UID').
-Proof.
-  destruct m1, m2; simpl. intros H. inversion H. done.
-Qed.
-
-Lemma equiv_except_resource_version_valid {kind} m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  valid kind m1 →
-  valid kind m2.
-Proof.
-  destruct m1, m2; simpl. intros H Heq. inversion H; subst.
-  unfold valid in *. tauto.
-Qed.
-
-Lemma equiv_except_resource_version_sym m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  equiv_except_resource_version m2 m1.
-Proof.
-  unfold equiv_except_resource_version. intros H. symmetry. done.
-Qed.
-
-Lemma equiv_except_resource_version_deletion_timestamp m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  m1.(DeletionTimestamp') = m2.(DeletionTimestamp').
-Proof.
-  destruct m1, m2; simpl. intros H. inversion H. done.
-Qed.
-
-Lemma equiv_except_resource_version_finalizers m1 m2 :
-  equiv_except_resource_version m1 m2 →
-  m1.(Finalizers') = m2.(Finalizers').
-Proof.
-  rewrite /equiv_except_resource_version /without_resource_version.
-  destruct m1, m2; simpl.
-  intros Hmeta_eq. injection Hmeta_eq. done.
-Qed.
+(** A sufficient request-shape condition for the controller updates currently
+    supported by the model. It is a top-level predicate over the existing and
+    submitted metadata and abstracts away preparation of unrepresented fields.
+    The first branch covers ordinary label/annotation updates. The second
+    covers controller release, whose request differs from the stored metadata
+    only in owner references and may omit the server-managed resource version.
+    [old] is the existing stored metadata.
+    [input] is the metadata submitted in the update request. *)
+Definition valid_update old input : Prop :=
+  (valid_simple_update old input ∨
+   equiv_except_resource_version
+     (old <| OwnerReferences' := input.(OwnerReferences') |>) input) ∧
+  valid_labels input.(Labels') ∧
+  valid_annotations input.(Annotations') ∧
+  valid_owner_references input.(OwnerReferences') ∧
+  valid_finalizers input.(Finalizers') ∧
+  valid_managed_fields input.(ManagedFields').
 
 End proof.
 End ObjectMetaV.

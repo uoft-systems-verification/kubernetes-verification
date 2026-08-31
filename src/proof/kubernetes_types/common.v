@@ -17,8 +17,7 @@ Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
 Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
+Context {sem : go.Semantics} {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Axiom t : Type.
 Axiom eq_dec : EqDecision t.
 Global Existing Instance eq_dec.
@@ -43,8 +42,7 @@ Definition dns1123_label_byte (b : w8) : Prop :=
 Fixpoint dns1123_label_tail (previous : w8) (suffix : go_string) : Prop :=
   match suffix with
   | [] => dns1123_lower_alphanumeric previous
-  | b :: suffix' =>
-      dns1123_label_byte b ∧ dns1123_label_tail b suffix'
+  | b :: suffix' => dns1123_label_byte b ∧ dns1123_label_tail b suffix'
   end.
 
 Definition dns1123_label_syntax (s : go_string) : Prop :=
@@ -61,6 +59,23 @@ Definition dns1123_label_syntax (s : go_string) : Prop :=
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L176-L202 *)
 Definition valid_dns1123_label (s : go_string) : Prop :=
   dns1123_label_syntax s ∧ length s ≤ 63.
+
+#[global] Instance dns1123_label_tail_dec previous suffix :
+    Decision (dns1123_label_tail previous suffix).
+Proof.
+  revert previous.
+  induction suffix as [|b suffix IH]; intros previous; simpl.
+  - unfold dns1123_lower_alphanumeric. apply _.
+  - unfold dns1123_label_byte, dns1123_lower_alphanumeric. apply _.
+Defined.
+
+#[global] Instance valid_dns1123_label_dec s :
+    Decision (valid_dns1123_label s).
+Proof.
+  unfold valid_dns1123_label, dns1123_label_syntax.
+  destruct s as [|first suffix]; simpl; first apply _.
+  unfold dns1123_lower_alphanumeric. apply _.
+Defined.
 
 Definition dns1123_subdomain_byte (b : w8) : Prop :=
   dns1123_label_byte b ∨ b = byte_dot.
@@ -406,15 +421,13 @@ Definition label_extended_character (b : w8) : Prop :=
 Fixpoint qualified_name_tail (previous : w8) (suffix : go_string) : Prop :=
   match suffix with
   | [] => label_alphanumeric previous
-  | b :: suffix' =>
-      label_extended_character b ∧ qualified_name_tail b suffix'
+  | b :: suffix' => label_extended_character b ∧ qualified_name_tail b suffix'
   end.
 
 Definition qualified_name_syntax (s : go_string) : Prop :=
   match s with
   | [] => False
-  | first :: suffix =>
-      label_alphanumeric first ∧ qualified_name_tail first suffix
+  | first :: suffix => label_alphanumeric first ∧ qualified_name_tail first suffix
   end.
 
 Definition valid_qualified_name (s : go_string) : Prop :=
@@ -540,17 +553,21 @@ Defined.
 Definition valid_label_value (value : go_string) : Prop :=
   value = ""%go ∨ valid_qualified_name value.
 
+#[global] Instance valid_label_value_dec value :
+    Decision (valid_label_value value).
+Proof. unfold valid_label_value. apply _. Defined.
+
 (* A nil label map and an empty label map are both accepted. Every entry in a
    nonempty map is checked using ValidateLabelName and IsValidLabelValue.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L112-L121 *)
 Definition valid_labels (labels : option (gmap go_string go_string)) : Prop :=
   match labels with
   | None => True
-  | Some labels =>
-      map_Forall
-        (λ name value, valid_label_name name ∧ valid_label_value value)
-        labels
+  | Some labels => map_Forall (λ name value, valid_label_name name ∧ valid_label_value value) labels
   end.
+
+#[global] Instance valid_labels_dec labels : Decision (valid_labels labels).
+Proof. unfold valid_labels. destruct labels; apply _. Defined.
 
 Lemma valid_labels_insert labels name value :
   valid_labels labels →
@@ -654,10 +671,7 @@ Definition valid_annotation (name value : go_string) : Prop :=
   valid_label_name (ascii_lower name).
 
 Definition annotations_size (annotations : gmap go_string go_string) : nat :=
-  sum_list
-    (List.map (λ kv : go_string * go_string,
-      (length kv.1 + length kv.2)%nat)
-      (map_to_list annotations)).
+  sum_list (List.map (λ kv : go_string * go_string, (length kv.1 + length kv.2)%nat) (map_to_list annotations)).
 
 (* Kubernetes treats nil and empty annotation maps equivalently, validates
    every key, and limits the sum of key and value byte lengths to 256 KiB.
@@ -670,6 +684,13 @@ Definition valid_annotations
       map_Forall valid_annotation annotations ∧
       annotations_size annotations ≤ 256 * 1024
   end.
+
+#[global] Instance valid_annotations_dec annotations :
+    Decision (valid_annotations annotations).
+Proof.
+  unfold valid_annotations, valid_annotation.
+  destruct annotations; apply _.
+Defined.
 
 (* Materializing a nil annotation map as an allocated empty map does not
    change the entries checked by Kubernetes annotation validation. *)
@@ -692,13 +713,15 @@ Definition valid_api_version kind api_version : Prop :=
   ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go) ∧
     api_version = "apps/v1"%go).
 
-(* Stored objects have the concrete kind and API version selected by their
-   typed REST endpoint. This is stronger than create-time TypeMeta validity,
-   which also permits omitted fields before decoding fills them. *)
+(* TypeMeta is optional on typed Kubernetes objects returned by the API server.
+   When kind or apiVersion is present, it must agree with the concrete type;
+   omitted fields remain valid. The concrete [kind] argument still has to be a
+   kind supported by this model. *)
 Definition valid_typemeta kind tm : Prop :=
-  kind = tm.(v1.TypeMeta.Kind') ∧
+  (tm.(v1.TypeMeta.Kind') = ""%go ∨ kind = tm.(v1.TypeMeta.Kind')) ∧
   valid_kind kind ∧
-  valid_api_version kind tm.(v1.TypeMeta.APIVersion').
+  (tm.(v1.TypeMeta.APIVersion') = ""%go ∨
+    valid_api_version kind tm.(v1.TypeMeta.APIVersion')).
 
 (* TypeMeta on a create request may omit [kind] and/or [apiVersion]: the JSON
    decoder fills each missing GVK field from the REST endpoint's default GVK.
@@ -709,8 +732,8 @@ Definition valid_typemeta kind tm : Prop :=
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/runtime/serializer/json/json.go#L164-L205
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L116-L147
 
-   [valid_typemeta] remains the stronger invariant for an object returned by
-   Kubernetes. *)
+   The same omission rule applies to typed objects returned by Kubernetes;
+   [valid_typemeta] additionally records that [kind] is supported by the model. *)
 Definition valid_create_typemeta kind tm : Prop :=
   (tm.(v1.TypeMeta.Kind') = ""%go ∨ kind = tm.(v1.TypeMeta.Kind')) ∧
   (tm.(v1.TypeMeta.APIVersion') = ""%go ∨
@@ -726,5 +749,5 @@ Lemma valid_typemeta_valid_create_typemeta kind tm :
 Proof.
   unfold valid_typemeta, valid_create_typemeta.
   intros (Hkind & _ & Hapi_version).
-  split; right; done.
+  split; done.
 Qed.

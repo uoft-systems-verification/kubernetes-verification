@@ -140,7 +140,7 @@ Proof.
               (default ∅
                 pod.(PodV.ObjectMeta').(ObjectMetaV.Labels'))))).
     { apply valid_labels_insert.
-      - exact (ObjectMetaV.valid_labels_of_valid _ Hmeta_valid).
+      - unfold ObjectMetaV.valid in Hmeta_valid. tauto.
       - apply statefulset_pod_name_label_valid.
       - rewrite -Hpod_name.
         by apply valid_label_value_of_valid_dns1123_label. }
@@ -185,7 +185,7 @@ Proof.
         (ObjectSpecV.PodSpec
           (update_identity set pod ordinal).(PodV.Spec'))).
   { unfold ObjectSpecV.valid_update, update_identity. cbn.
-    apply PodSpecV.valid_update_refl. }
+    apply PodSpecV.valid_update_refl. exact Hspec_valid. }
   split_and!; done.
 Qed.
 
@@ -239,7 +239,8 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
             ⌜ ¬ pod_identity_matches set pod ⌝ ∗
           "%Hmeta_updated" ∷
             ⌜ ObjectMetaV.updated
-                (update_identity set pod ordinal).(PodV.ObjectMeta')
+                (pod_objectmeta_after_conversion
+                  (update_identity set pod ordinal).(PodV.ObjectMeta'))
                 pod'.(PodV.ObjectMeta') ⌝ ∗
           "%Hspec_updated" ∷
             ⌜ ObjectSpecV.updated
@@ -284,17 +285,36 @@ Proof.
           ObjectMetaV.UID')).
     { symmetry. exact Hinput_uid'. }
     assert (Hinput_valid_create :
-        PodV.valid_named_create
+        PodV.valid_create PodV.kind
           (update_identity set pod ordinal).(PodV.ObjectMeta').(
             ObjectMetaV.Namespace')
           (update_identity set pod ordinal)).
-    { eapply PodV.valid_named_create_of_valid; done. }
+    { eapply PodV.valid_create_of_valid; done. }
     assert (Hinput_uid_nonempty :
         (update_identity set pod ordinal).(PodV.ObjectMeta').(
           ObjectMetaV.UID') ≠ ""%go).
     { destruct Hinput_valid as (_ & _ & Hmeta & _).
       eapply valid_uid_non_empty.
-      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
+    assert (Hinput_valid_update :
+        KObjectV.valid_update PodV.kind
+          (update_identity set pod ordinal).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
+          pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+          (KObjectV.Pod (update_identity set pod ordinal))).
+    { unfold KObjectV.valid_update, PodV.valid_update. simpl.
+      destruct Hinput_valid as
+        (Hinput_typemeta & Hinput_resource_version & Hinput_meta_valid &
+          Hinput_spec_valid & Hinput_status_valid).
+      pose proof Hinput_meta_valid as Hinput_meta_valid'.
+      unfold ObjectMetaV.valid in Hinput_meta_valid'.
+      destruct Hinput_meta_valid' as
+        (Hgenerate_name & Hname_nonempty & Hname_valid' &
+          Hnamespace_nonempty & Hnamespace_valid & Huid_valid &
+          Hlabels_valid' & Hannotations_valid & Howner_references_valid &
+          Hfinalizers_valid & Hmanaged_fields_valid & Hselflink).
+      split_and!; try done.
+      - unfold ObjectMetaV.valid_update.
+        split_and!; try done. left. exact Hvalid_meta_update. }
     wp_auto.
     iAssert
       (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
@@ -363,6 +383,10 @@ Proof.
       split_and!; done. }
     iIntros (returned_pod_l returned_pod) "Hupdate".
     iNamedPrefix "Hupdate" "Hupdate_".
+    unfold PodV.updated in Hupdate_Hupdated.
+    destruct Hupdate_Hupdated as
+      (Hupdate_Htypemeta_updated & Hupdate_Hmeta_updated &
+        Hupdate_Hspec_updated).
     assert (returned_pod.(PodV.Spec') = pod.(PodV.Spec'))
       as Hreturned_spec.
     { unfold ObjectSpecV.updated, PodSpecV.updated in

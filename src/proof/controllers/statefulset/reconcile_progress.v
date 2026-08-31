@@ -340,7 +340,7 @@ Definition pvc_ready γ set ordinal claim_template_name claim_template :
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
    (own_available_reserved_frag γ 1
       (desired_pvc_key set claim_template_name ordinal) ∗
-    ⌜ PersistentVolumeClaimV.valid_named_create
+    ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
         (new_persistent_volume_claim set claim_template ordinal) ⌝))%I.
 
@@ -377,7 +377,7 @@ Lemma prepare_pvc_states γ set ordinal
       desired_pvc_key set name2 ordinal → name1 = name2) →
   (∀ name claim_template,
     claim_templates !! name = Some claim_template →
-    PersistentVolumeClaimV.valid_named_create
+    PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
       (new_persistent_volume_claim set claim_template ordinal)) →
   own_pvc_map γ pvc_map -∗
@@ -443,7 +443,7 @@ Proof.
       - rewrite dom_insert_L. apply elem_of_union. right. exact Hother2. }
     assert (∀ other other_template,
         claim_templates !! other = Some other_template →
-        PersistentVolumeClaimV.valid_named_create
+        PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (new_persistent_volume_claim set other_template ordinal))
       as Hvalid_tail.
@@ -715,13 +715,15 @@ Qed.
 Lemma pod_identity_matches_meta_updated set pod pod' :
   pod_identity_matches set pod →
   PodV.key pod = PodV.key pod' →
-  ObjectMetaV.updated pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') →
+  ObjectMetaV.updated (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
+    pod'.(PodV.ObjectMeta') →
   pod_identity_matches set pod'.
 Proof.
   destruct pod as [typemeta meta spec status],
     pod' as [typemeta' meta' spec' status']; simpl.
   destruct meta, meta'; simpl.
-  unfold pod_identity_matches, PodV.key, PodV.meta_key.
+  unfold pod_identity_matches, PodV.key, PodV.meta_key,
+    pod_objectmeta_after_conversion.
   simpl. intros Hidentity Hkey Hupdated.
   destruct Hupdated as
     (Hname & _ & Hnamespace & _ & _ & _ & _ & _ & Hlabels & _).
@@ -2301,9 +2303,22 @@ Proof.
   rewrite Forall_forall in Hpvc_valid.
   specialize (Hpvc_valid claim
     (proj1 (list_elem_of_In _ _) Hclaim) ordinal Hordinal).
-  destruct Hpvc_valid as (_ & Hmeta & _).
-  unfold ObjectMetaV.valid_named_create in Hmeta.
-  destruct Hmeta as (_ & _ & Hname_valid & _).
+  destruct Hpvc_valid as (_ & _ & _ & _ & Hmeta & _).
+  assert ((new_persistent_volume_claim set claim ordinal).(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name') ≠
+      ""%go) as Hname_nonempty.
+  { change (desired_pvc_name
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+      claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name') ordinal ≠
+      ""%go).
+    intro Hempty. unfold desired_pvc_name in Hempty.
+    apply app_eq_nil in Hempty as [_ Hempty]. discriminate Hempty. }
+  assert (valid_name PersistentVolumeClaimV.kind
+      (new_persistent_volume_claim set claim ordinal).(PersistentVolumeClaimV.ObjectMeta').(
+        ObjectMetaV.Name')) as Hname_valid.
+  { unfold ObjectMetaV.valid_create in Hmeta.
+    destruct (decide
+      ((new_persistent_volume_claim set claim ordinal).(PersistentVolumeClaimV.ObjectMeta').(
+        ObjectMetaV.Name') = ""%go)); [contradiction|simpl in Hmeta; tauto]. }
   unfold new_persistent_volume_claim in Hname_valid. simpl in Hname_valid.
   unfold valid_name, PersistentVolumeClaimV.kind in Hname_valid.
   destruct Hname_valid as [[Hkind _]|[_ Hsubdomain]].
@@ -2336,7 +2351,7 @@ Lemma new_statefulset_pod_requirements set ordinal controller_ref
   pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
       desired_pod_name
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ∧
-  PodV.valid_named_create
+  PodV.valid_create PodV.kind
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod ∧
   obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
@@ -2358,7 +2373,7 @@ Proof.
   assert ((ordinal ≤ go_int32_max_nat)%nat) as Hordinal_bound.
   { pose proof (statefulset_replicas_le_go_int32_max set). lia. }
   assert (length (decimal_string ordinal) ≤ 63) as Hdecimal_length.
-  { destruct Hpod_name_valid as [_ Hpod_name_length].
+  { pose proof Hpod_name_valid as [_ Hpod_name_length].
     assert (length (decimal_string ordinal) ≤
         length (desired_pod_name
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)).
@@ -2367,7 +2382,9 @@ Proof.
   assert (valid_dns1123_label
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name'))
     as Hset_name_valid.
-  { pose proof (ObjectMetaV.valid_name_of_valid _ Hset_meta) as Hname.
+  { assert (valid_name StatefulSetV.kind
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')) as Hname.
+    { unfold ObjectMetaV.valid in Hset_meta. tauto. }
     unfold valid_name, StatefulSetV.kind in Hname.
     destruct Hname as [[_ Hname]|[Hkind _]]; first exact Hname.
     destruct Hkind as [Hkind|[Hkind|Hkind]]; discriminate Hkind. }
@@ -2463,27 +2480,31 @@ Proof.
   split_and!.
   - unfold new_statefulset_pod, init_storage, init_identity,
       update_identity, PodV.update_objectmeta, controller.generated_pod. done.
-  - unfold PodV.valid_named_create. split_and!.
+  - unfold PodV.valid_create, PodV.kind. split_and!.
+    + done.
+    + unfold ObjectMetaV.valid in Hset_meta. tauto.
+    + unfold ObjectMetaV.valid in Hset_meta. tauto.
     + apply zero_typemeta_valid_create.
-    + unfold ObjectMetaV.valid_named_create, new_statefulset_pod,
+    + unfold ObjectMetaV.valid_create, new_statefulset_pod,
         init_storage, init_identity, update_identity, PodV.update_objectmeta,
         controller.generated_pod, controller.generated_pod_meta. simpl.
+      case_decide as Hempty.
+      { unfold desired_pod_name in Hempty.
+        apply app_eq_nil in Hempty as [_ Hempty]. discriminate Hempty. }
       pose proof (valid_annotations_default _ Htemplate_annotations) as
         [Hannotations_keys Hannotations_size].
       split_and!.
       * intros _. apply valid_generate_name_of_valid_prefix.
         exists set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name').
         split_and!; try done.
-        -- intros Hempty. rewrite Hempty in Hset_name_valid.
+        -- intros Hset_name_empty. rewrite Hset_name_empty in Hset_name_valid.
            destruct Hset_name_valid as [Hsyntax _]. contradiction.
         -- unfold valid_name, PodV.kind. right. split; first tauto.
            apply valid_dns1123_label_subdomain. exact Hset_name_valid.
-      * destruct Hpod_name_valid as [Hsyntax _].
-        intros Hempty. rewrite Hempty in Hsyntax. contradiction.
       * unfold valid_name, PodV.kind. right. split; first tauto.
         apply valid_dns1123_label_subdomain. exact Hpod_name_valid.
       * right. split.
-        -- exact (ObjectMetaV.valid_namespace_of_valid _ Hset_meta).
+        -- unfold ObjectMetaV.valid in Hset_meta. tauto.
         -- done.
       * exact Hlabels_valid.
       * exact Hannotations_keys.
@@ -2533,9 +2554,10 @@ Lemma created_statefulset_pod_properties set ordinal pod pod' :
   pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
     desired_pod_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal →
-  ObjectMetaV.named_created
+  ObjectMetaV.created
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-    pod.(PodV.ObjectMeta') pod'.(PodV.ObjectMeta') →
+    (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
+    pod'.(PodV.ObjectMeta') →
   ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
     (ObjectSpecV.PodSpec pod'.(PodV.Spec')) →
   PodV.key pod' = desired_pod_key set ordinal ∧
@@ -2544,10 +2566,17 @@ Lemma created_statefulset_pod_properties set ordinal pod pod' :
   pod_match set pod'.
 Proof.
   intros [Hidentity Himmutable] Hpod_name Hmeta_created Hspec_created.
-  unfold ObjectMetaV.named_created in Hmeta_created.
+  unfold ObjectMetaV.created in Hmeta_created.
   destruct Hmeta_created as
-    (Hnamespace & Hname & Hgenerate_name & Hdeletion & Hannotations &
-      Hlabels & Howners & Hfinalizers).
+    (Hname & Hnamespace & Hgenerate_name & Hdeletion & Hannotations &
+      Hlabels & Howners & Hfinalizers & Hdeletion_grace_period & Hself_link).
+  assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go) as Hpod_name_nonempty.
+  { intros Hempty.
+    rewrite Hpod_name in Hempty. unfold desired_pod_name in Hempty.
+    apply app_eq_nil in Hempty as [_ Hempty]. discriminate Hempty. }
+  rewrite decide_False in Hname.
+  1: exact Hpod_name_nonempty.
+  simpl in Hname, Hnamespace, Hdeletion, Hlabels.
   unfold ObjectSpecV.created in Hspec_created. simpl in Hspec_created.
   unfold PodSpecV.created in Hspec_created.
   assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
@@ -3098,7 +3127,7 @@ Proof.
             (StatefulSetSpecV.volume_claim_templates_list
               set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
-          PersistentVolumeClaimV.valid_named_create
+          PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template
               (sint.nat ordinal))) as Hclaim_valid_lookup.
@@ -3344,7 +3373,7 @@ Proof.
           desired_pod_name
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
             (sint.nat ordinal) ∧
-        PodV.valid_named_create
+        PodV.valid_create PodV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') new_pod ∧
         obj_parent_ref_is (KObjectV.Pod new_pod) StatefulSetV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
@@ -3379,7 +3408,7 @@ Proof.
             (StatefulSetSpecV.volume_claim_templates_list
               set.(StatefulSetV.Spec')) !! name =
               Some claim_template →
-          PersistentVolumeClaimV.valid_named_create
+          PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template
               (sint.nat ordinal))) as Hclaim_valid_lookup.

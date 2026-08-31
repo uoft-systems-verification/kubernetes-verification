@@ -306,7 +306,9 @@ Proof.
 	    iDestruct (struct_fields_split with "Hrs_spec_l") as "[H %Hrs_spec_l_not_null]". iNamedPrefix "H" "Hrs_".
 	    change ((rs_l.[apps_v1.ReplicaSet.t, "Spec"]).[apps_v1.ReplicaSetSpec.t, "Template"]) with
 	      ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"]).
-	    pose proof (ObjectMetaV.valid_name_of_valid _ Hrs_meta_valid) as Hrs_name_valid.
+	    assert (valid_name ReplicaSetV.kind
+	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')) as Hrs_name_valid.
+	    { unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
 	    unfold valid_name, ReplicaSetV.kind in Hrs_name_valid.
 	    destruct Hrs_name_valid as [[Hkind _]|[[Hkind|[Hkind|Hkind]] Hrs_name_valid]];
 	      try discriminate.
@@ -346,10 +348,16 @@ Proof.
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Hpr.
 	    { apply controller.generated_pod_parent_ref. exact Hcontroller_ref_valid. }
-	    assert (KObjectV.valid_nameless_create "Pod"%go
+	    assert (KObjectV.valid_create "Pod"%go
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') (KObjectV.Pod pod)) as Hvalid.
-	    { apply controller.generated_pod_valid_nameless_create; try done.
-	      apply ReplicaSetSpecV.valid_template. exact Hrs_spec_valid. }
+	    { apply controller.generated_pod_valid_create.
+	      - apply ReplicaSetSpecV.valid_template. exact Hrs_spec_valid.
+	      - exact Hrs_name_valid.
+	      - exact Hrs_name_short.
+	      - exact Hrs_template_finalizers_valid.
+	      - exact Hcontroller_ref_wf.
+	      - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto.
+	      - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
 	    wp_auto.
 	    wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_rs]") as "Hdeepown_m_l_rs".
 	    wp_apply (wp_State__PodCreate_nameless γ l
@@ -359,8 +367,7 @@ Proof.
 	      with "[Hdeepown_l_pod Hown_children_frag]").
 	    { iFrame "#".
 	      iSplit; [iPureIntro; exact Hvalid|].
-	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_nonempty_of_valid; exact Hrs_meta_valid|].
-	      iSplit; [iPureIntro; eapply ObjectMetaV.valid_namespace_of_valid; exact Hrs_meta_valid|].
+	      iSplit; [iPureIntro; unfold pod, controller.generated_pod, controller.generated_pod_meta; done|].
 	      iSplit; [iPureIntro; rewrite /ReplicaSetV.key /ReplicaSetV.meta_key /=; done|].
 	      iSplit; [iPureIntro; exact Hpr|].
 	      iSplitL "Hdeepown_l_pod".
@@ -388,13 +395,19 @@ Proof.
               { iPureIntro. rewrite length_app /= Hlen_active_pods'.
                 word. }
               iSplit.
-              { iPureIntro. intros pod0 Hpod0.
-                apply elem_of_app in Hpod0 as [Hpod0|Hpod0].
-                - apply Hall_active. done.
-                - rewrite list_elem_of_singleton in Hpod0. subst pod0.
-                  unfold is_pod_alive.
-                  unfold ObjectMetaV.nameless_created in Hcreate_Hmeta_created.
-	                  Timeout 5 naive_solver. }
+	              { iPureIntro. intros pod0 Hpod0.
+	                apply elem_of_app in Hpod0 as [Hpod0|Hpod0].
+	                - apply Hall_active. done.
+	                - rewrite list_elem_of_singleton in Hpod0. subst pod0.
+	                  unfold is_pod_alive.
+	                  unfold PodV.created in Hcreate_Hcreated.
+	                  destruct Hcreate_Hcreated as
+	                    (_ & Hmeta_created & _ & _).
+	                  unfold ObjectMetaV.created in Hmeta_created.
+	                  simpl in Hmeta_created.
+	                  destruct Hmeta_created as
+	                    (_ & _ & _ & Hdeletion & _).
+	                  exact Hdeletion. }
               { iPureIntro. word. }
       }
 	      iFrame.
@@ -690,15 +703,24 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
   destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid & Hdeletion_timestamp_eq).
   assert (ObjectMetaV.valid ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
-  { eapply ObjectMetaV.equiv_except_resource_version_valid.
-    - apply ObjectMetaV.equiv_except_resource_version_sym. exact Hget_Hmeta_eq.
-    - exact Hrs_meta_valid. }
+  { destruct Hget_Hvalid' as (_ & _ & Hvalid_meta & _). exact Hvalid_meta. }
+  pose proof Hget_Hmeta_eq as Hget_Hmeta_fields.
+  rewrite /ObjectMetaV.equiv_except_resource_version
+    /ObjectMetaV.without_resource_version in Hget_Hmeta_fields.
+  pose proof (f_equal ObjectMetaV.Name' Hget_Hmeta_fields) as Hget_Hname_eq.
+  pose proof (f_equal ObjectMetaV.UID' Hget_Hmeta_fields) as Hget_Huid_eq.
+  pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hget_Hmeta_fields)
+    as Hget_Hdeletion_timestamp_eq.
+  simpl in Hget_Hname_eq, Hget_Huid_eq, Hget_Hdeletion_timestamp_eq.
   destruct Hget_Hvalid' as [Hrs_valid_typemeta _].
   destruct Hrs_valid_typemeta as (_ & Hrs_kind_valid & _).
   pose proof (valid_kind_slash_free _ Hrs_kind_valid) as Hrs_kind_slash_free.
-  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hrs_get_meta_valid) as Hrs_namespace_valid.
-  pose proof (ObjectMetaV.valid_name_of_valid _ Hrs_get_meta_valid) as Hrs_name_valid.
-  pose proof (ObjectMetaV.valid_uid_of_valid _ Hrs_get_meta_valid) as Hrs_uid_valid.
+  assert (valid_namespace rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+    as Hrs_namespace_valid by (unfold ObjectMetaV.valid in Hrs_get_meta_valid; tauto).
+  assert (valid_name ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name'))
+    as Hrs_name_valid by (unfold ObjectMetaV.valid in Hrs_get_meta_valid; tauto).
+  assert (valid_uid rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID'))
+    as Hrs_uid_valid by (unfold ObjectMetaV.valid in Hrs_get_meta_valid; tauto).
   pose proof (valid_namespace_slash_free _ Hrs_namespace_valid) as Hrs_namespace_slash_free.
   pose proof (valid_name_slash_free _ Hrs_name_valid) as Hrs_name_slash_free.
   pose proof (valid_uid_slash_free _ Hrs_uid_valid) as Hrs_uid_slash_free.
@@ -718,7 +740,7 @@ Proof.
   { exact Hget_Hkey_eq. }
   assert (rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Hrs_uid_eq.
-  { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
+  { symmetry. exact Hget_Huid_eq. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_terminating_children_frag".
   wp_apply (common.wp_FilterPodsByOwner_uniform with
@@ -765,11 +787,11 @@ Proof.
   iNamedPrefix "Hdeepown_m_rs" "Hrs_meta_".
   assert (rs_meta_c.(v1.ObjectMeta.DeletionTimestamp') = null) as Hrs_deletion_timestamp_null.
   { apply Hrs_meta_Hdeepown_deletiontimestamp_none.
-    rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _ Hget_Hmeta_eq).
+    rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
   assert (rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
     as Hdeletion_timestamp_eq_get.
-  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _ Hget_Hmeta_eq).
+  { rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
   wp_auto.
   rewrite Hrs_deletion_timestamp_null.
@@ -793,7 +815,7 @@ Proof.
   assert (rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n) as Hreplicas_eq_get.
   { rewrite <-Hget_Hspec_eq. exact Hreplicas_eq. }
   assert (length rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58) as Hrs_get_name_short.
-  { rewrite (ObjectMetaV.equiv_except_resource_version_name _ _ Hget_Hmeta_eq).
+  { rewrite Hget_Hname_eq.
     exact Hrs_name_short. }
   assert (valid_finalizers
       rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))

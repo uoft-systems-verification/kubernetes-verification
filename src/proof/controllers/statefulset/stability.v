@@ -72,12 +72,12 @@ Proof.
   destruct Hset_typemeta_valid as (_ & Hset_kind_valid & _).
   pose proof (valid_kind_slash_free _ Hset_kind_valid)
     as Hkind_slash_free.
-  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hset_meta_valid)
-    as Hnamespace_valid.
-  pose proof (ObjectMetaV.valid_name_of_valid _ Hset_meta_valid)
-    as Hname_valid.
-  pose proof (ObjectMetaV.valid_uid_of_valid _ Hset_meta_valid)
-    as Huid_valid.
+  assert (valid_namespace set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+    as Hnamespace_valid by (unfold ObjectMetaV.valid in Hset_meta_valid; tauto).
+  assert (valid_name StatefulSetV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name'))
+    as Hname_valid by (unfold ObjectMetaV.valid in Hset_meta_valid; tauto).
+  assert (valid_uid set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID'))
+    as Huid_valid by (unfold ObjectMetaV.valid in Hset_meta_valid; tauto).
   pose proof (valid_namespace_slash_free _ Hnamespace_valid)
     as Hnamespace_slash_free.
   pose proof (valid_name_slash_free _ Hname_valid) as Hname_slash_free.
@@ -87,13 +87,16 @@ Proof.
   { unfold statefulset_storage_view.
     unfold ObjectMetaV.equiv_except_resource_version in Hget_Hmeta_eq.
     rewrite Hget_Hspec_eq. f_equal. symmetry. exact Hget_Hmeta_eq. }
+  pose proof (f_equal ObjectMetaV.UID' Hget_Hmeta_eq) as Hget_Huid_eq.
+  pose proof (f_equal ObjectMetaV.DeletionTimestamp' Hget_Hmeta_eq)
+    as Hget_Hdeletion_timestamp_eq.
+  simpl in Hget_Huid_eq, Hget_Hdeletion_timestamp_eq.
   assert (Hset_key : StatefulSetV.key sts = StatefulSetV.key set)
     by exact Hget_Hkey_eq.
   assert (Hset_uid :
       sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') =
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')).
-  { symmetry. apply ObjectMetaV.equiv_except_resource_version_uid.
-    exact Hget_Hmeta_eq. }
+  { symmetry. exact Hget_Huid_eq. }
 
   assert (list_to_set (C:=gset KKey.t) (PodV.key <$> pods) =
       filter (λ key, key.(KKey.Kind') = "Pod"%go)
@@ -153,13 +156,11 @@ Proof.
   assert (set_meta_c.(v1.ObjectMeta.DeletionTimestamp') = null)
     as Hset_deletion_timestamp_null.
   { apply Hset_meta_Hdeepown_deletiontimestamp_none.
-    rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp
-      _ _ Hget_Hmeta_eq).
+    rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
   assert (set.(StatefulSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') =
       None) as Hset_deletion_timestamp_none.
-  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp
-      _ _ Hget_Hmeta_eq).
+  { rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
   wp_auto. rewrite Hset_deletion_timestamp_null. wp_auto.
   iEval (rewrite Hset_deletion_timestamp_none) in

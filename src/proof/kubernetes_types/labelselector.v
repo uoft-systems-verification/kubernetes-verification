@@ -40,6 +40,12 @@ Definition valid (requirement : t) : Prop :=
   valid_label_name requirement.(Key') ∧
   Forall valid_label_value (values_list requirement).
 
+Global Instance valid_dec requirement : Decision (valid requirement).
+Proof.
+  unfold valid, valid_operator, values_list.
+  destruct requirement.(Values'); apply _.
+Defined.
+
 Definition deepown (c : v1.LabelSelectorRequirement.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_key" ∷ ⌜c.(v1.LabelSelectorRequirement.Key') = v.(Key')⌝ ∗
   "%Hdeepown_operator" ∷
@@ -83,8 +89,10 @@ Definition match_expressions_list
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L62-L74 *)
 Definition valid (selector : t) : Prop :=
   valid_labels selector.(MatchLabels') ∧
-  Forall LabelSelectorRequirementV.valid
-    (match_expressions_list selector).
+  Forall LabelSelectorRequirementV.valid (match_expressions_list selector).
+
+Global Instance valid_dec selector : Decision (valid selector).
+Proof. unfold valid. apply _. Defined.
 
 Definition extra_valid (selector : t) : Prop :=
   Z.of_nat
@@ -94,6 +102,22 @@ Definition extra_valid (selector : t) : Prop :=
 Definition empty (selector : t) : Prop :=
   (selector.(MatchLabels') = None ∨ selector.(MatchLabels') = Some ∅) ∧
   match_expressions_list selector = [].
+
+Global Instance empty_dec selector : Decision (empty selector).
+Proof. unfold empty. apply _. Defined.
+
+Global Instance exists_eq_some_dec selected (P : t → Prop)
+    `{!∀ selector, Decision (P selector)} :
+    Decision (∃ selector, selected = Some selector ∧ P selector).
+Proof.
+  destruct selected as [selector|].
+  - destruct (decide (P selector)) as [HP|Hnot_P].
+    + left. exists selector. done.
+    + right. intros (selector' & Heq & HP).
+      injection Heq as <-. contradiction.
+  - right.
+    intros (selector & Heq & _). discriminate.
+Defined.
 
 Definition match_labels
     (required labels : option (gmap go_string go_string)) : Prop :=
@@ -117,27 +141,21 @@ Definition selected_label
   end.
 
 Definition requirement_matches
-    (labels : option (gmap go_string go_string))
-    (requirement : LabelSelectorRequirementV.t) : Prop :=
+  (labels : option (gmap go_string go_string)) (requirement : LabelSelectorRequirementV.t) : Prop :=
   (requirement.(LabelSelectorRequirementV.Operator') = "In"%go ∧
     match selected_label labels requirement.(LabelSelectorRequirementV.Key') with
-    | Some label_value =>
-        label_value ∈ LabelSelectorRequirementV.values_list requirement
+    | Some label_value => label_value ∈ LabelSelectorRequirementV.values_list requirement
     | None => False
     end) ∨
   (requirement.(LabelSelectorRequirementV.Operator') = "NotIn"%go ∧
     match selected_label labels requirement.(LabelSelectorRequirementV.Key') with
-    | Some label_value =>
-        label_value ∉ LabelSelectorRequirementV.values_list requirement
+    | Some label_value => label_value ∉ LabelSelectorRequirementV.values_list requirement
     | None => True
     end) ∨
-  (requirement.(LabelSelectorRequirementV.Operator') =
-      "Exists"%go ∧
-      is_Some
-        (selected_label labels requirement.(LabelSelectorRequirementV.Key'))) ∨
-  (requirement.(LabelSelectorRequirementV.Operator') =
-      "DoesNotExist"%go ∧
-      selected_label labels requirement.(LabelSelectorRequirementV.Key') = None).
+  (requirement.(LabelSelectorRequirementV.Operator') = "Exists"%go ∧
+    is_Some (selected_label labels requirement.(LabelSelectorRequirementV.Key'))) ∨
+  (requirement.(LabelSelectorRequirementV.Operator') = "DoesNotExist"%go ∧
+    selected_label labels requirement.(LabelSelectorRequirementV.Key') = None).
 
 Global Instance requirement_matches_dec labels requirement :
   Decision (requirement_matches labels requirement).
@@ -149,8 +167,7 @@ Proof.
   - apply _.
 Defined.
 
-Definition matches
-    (selector : t) (labels : option (gmap go_string go_string)) : Prop :=
+Definition matches (selector : t) (labels : option (gmap go_string go_string)) : Prop :=
   match_labels selector.(MatchLabels') labels ∧
   Forall (requirement_matches labels) (match_expressions_list selector).
 
@@ -171,10 +188,8 @@ Global Instance matches_dec selector labels : Decision (matches selector labels)
 Proof. unfold matches. apply _. Defined.
 
 Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_matchlabels_none" ∷
-    ⌜c.(v1.LabelSelector.MatchLabels') = null ↔ v.(MatchLabels') = None⌝ ∗
-  "Hdeepown_matchlabels_some" ∷
-    (match v.(MatchLabels') with
+  "%Hdeepown_matchlabels_none" ∷ ⌜c.(v1.LabelSelector.MatchLabels') = null ↔ v.(MatchLabels') = None⌝ ∗
+  "Hdeepown_matchlabels_some" ∷ (match v.(MatchLabels') with
     | Some match_labels =>
         ∃ match_labels_c,
           c.(v1.LabelSelector.MatchLabels') ↦${dq} match_labels_c ∗
@@ -182,17 +197,12 @@ Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
     | None => True%I
     end) ∗
   "%Hdeepown_matchexpressions_none" ∷
-    ⌜c.(v1.LabelSelector.MatchExpressions') = slice.nil ↔
-      v.(MatchExpressions') = None⌝ ∗
-  "Hdeepown_matchexpressions_some" ∷
-    (match v.(MatchExpressions') with
+    ⌜c.(v1.LabelSelector.MatchExpressions') = slice.nil ↔ v.(MatchExpressions') = None⌝ ∗
+  "Hdeepown_matchexpressions_some" ∷ (match v.(MatchExpressions') with
     | Some match_expressions =>
         ∃ match_expressions_c,
-          deepown_list c.(v1.LabelSelector.MatchExpressions')
-            match_expressions_c match_expressions
-            (λ requirement pure_requirement,
-              LabelSelectorRequirementV.deepown
-                requirement pure_requirement dq)
+          deepown_list c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
+            (λ requirement pure_requirement, LabelSelectorRequirementV.deepown requirement pure_requirement dq)
     | None => True%I
     end).
 

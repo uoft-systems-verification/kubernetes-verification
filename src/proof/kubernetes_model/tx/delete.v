@@ -458,7 +458,11 @@ Proof.
   destruct Hmeta_valid as (_ & _ & Huid_kmeta & _ & _).
   assert (Huid_kobj : uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID')).
   { rewrite Huid_kmeta.
-    symmetry. apply (ObjectMetaV.equiv_except_resource_version_uid _ _ Hmeta_eq). }
+    pose proof Hmeta_eq as Hmeta_fields.
+    rewrite /ObjectMetaV.equiv_except_resource_version
+      /ObjectMetaV.without_resource_version in Hmeta_fields.
+    pose proof (f_equal ObjectMetaV.UID' Hmeta_fields) as Huid.
+    simpl in Huid. symmetry. exact Huid. }
   assert (Hprecondition_uid_mismatch_false :
     precondition_uid_mismatch options (KObjectV.objectmeta kobj) = false).
   { eapply precondition_uid_mismatch_false; done. }

@@ -261,7 +261,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
             (new_persistent_volume_claim_key
               set claim_template ordinal) ∗
           "%Hvalid_create" ∷
-            ⌜ PersistentVolumeClaimV.valid_named_create
+            ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝ ∗
@@ -391,6 +391,17 @@ Proof.
         Hclaim_spec_l Hclaim_status_l]" as "Hclaim".
     { iApply PersistentVolumeClaimV.deepown_l_restore;
         [exact Hclaim_l_not_null | iFrame]. }
+    assert (Hclaim_name_nonempty :
+      (new_persistent_volume_claim set claim_template ordinal).(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name') ≠
+        ""%go).
+    { change (desired_pvc_name
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+        claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name')
+        ordinal ≠ ""%go).
+      intro Hempty.
+      unfold desired_pvc_name in Hempty.
+      apply app_eq_nil in Hempty as [_ Hempty].
+      discriminate Hempty. }
     wp_apply (wp_State__PersistentVolumeClaimCreate_named_orphan
       with "[$Hclaim $Hown_reserved_frag]").
     { iFrame "# %".
@@ -459,7 +470,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
             (new_persistent_volume_claim_key
               set claim_template ordinal) ∗
           "%Hvalid_create" ∷
-            ⌜ PersistentVolumeClaimV.valid_named_create
+            ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝ ∗
@@ -586,7 +597,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
           (own_available_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal) ∗
-           ⌜ PersistentVolumeClaimV.valid_named_create
+           ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝))
@@ -657,7 +668,7 @@ Proof.
         claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
     (own_available_reserved_frag γ 1
         (desired_pvc_key set claim_template_name ordinal) ∗
-     ⌜ PersistentVolumeClaimV.valid_named_create
+     ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (new_persistent_volume_claim
             set claim_template ordinal) ⌝))%I.
@@ -793,7 +804,7 @@ Proof.
        (own_available_reserved_frag γ 1
           (new_persistent_volume_claim_key
             set claim_template ordinal) ∗
-        ⌜ PersistentVolumeClaimV.valid_named_create
+        ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim
               set claim_template ordinal) ⌝ ∗

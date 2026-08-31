@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export pod persistentvolumeclaim replicaset statefulset.
+From New.proof.kubernetes_types Require Import top_level.
 
 Module KObject.
 Section def.
@@ -29,8 +30,7 @@ Definition update_objectmeta o m: t :=
   match o with
   | Pod pod => Pod (pod <| v1.Pod.ObjectMeta' := m |>)
   | ReplicaSet rs => ReplicaSet (rs <| v1.ReplicaSet.ObjectMeta' := m |>)
-  | PersistentVolumeClaim pvc =>
-      PersistentVolumeClaim (pvc <| v1.PersistentVolumeClaim.ObjectMeta' := m |>)
+  | PersistentVolumeClaim pvc => PersistentVolumeClaim (pvc <| v1.PersistentVolumeClaim.ObjectMeta' := m |>)
   | StatefulSet sts => StatefulSet (sts <| v1.StatefulSet.ObjectMeta' := m |>)
   end.
 
@@ -65,61 +65,49 @@ Definition extra_valid (v : t) : Prop :=
   | _ => True
   end.
 
-Definition valid_create (v : t) : Prop :=
-  match v with
-  | PodSpec p => PodSpecV.valid_create p
-  | ReplicaSetSpec rs => ReplicaSetSpecV.valid_create rs
-  | PersistentVolumeClaimSpec pvc => PersistentVolumeClaimSpecV.valid_create pvc
-  | StatefulSetSpec sts => StatefulSetSpecV.valid_create sts
+(* Admission validation of a spec submitted in a create or update request. *)
+Definition valid_create (input : t) : Prop :=
+  match input with
+  | PodSpec input => PodSpecV.valid_create input
+  | ReplicaSetSpec input => ReplicaSetSpecV.valid_create input
+  | PersistentVolumeClaimSpec input => PersistentVolumeClaimSpecV.valid_create input
+  | StatefulSetSpec input => StatefulSetSpecV.valid_create input
   end.
 
-Definition valid_update (old new : t) : Prop :=
-  match old, new with
-  | PodSpec old, PodSpec new => PodSpecV.valid_update old new
-  | ReplicaSetSpec old, ReplicaSetSpec new =>
-      ReplicaSetSpecV.valid_update old new
-  | PersistentVolumeClaimSpec old, PersistentVolumeClaimSpec new =>
-      PersistentVolumeClaimSpecV.valid_update old new
-  | StatefulSetSpec old, StatefulSetSpec new =>
-      StatefulSetSpecV.valid_update old new
+(** Top-level update-validation contract over the stored old spec and
+    submitted input spec. Each object-specific predicate accounts for any
+    preparation relevant to the represented fields. *)
+Definition valid_update (old input : t) : Prop :=
+  match old, input with
+  | PodSpec old, PodSpec input => PodSpecV.valid_update old input
+  | ReplicaSetSpec old, ReplicaSetSpec input => ReplicaSetSpecV.valid_update old input
+  | PersistentVolumeClaimSpec old, PersistentVolumeClaimSpec input =>
+      PersistentVolumeClaimSpecV.valid_update old input
+  | StatefulSetSpec old, StatefulSetSpec input => StatefulSetSpecV.valid_update old input
   | _, _ => False
   end.
 
-Global Instance valid_update_dec old new :
-  Decision (valid_update old new).
-Proof.
-  destruct old, new; simpl; apply _.
-Defined.
+Global Instance valid_update_dec old input :
+  Decision (valid_update old input).
+Proof. destruct old, input; simpl; apply _. Defined.
 
 Definition created (input stored : t) : Prop :=
   match input, stored with
   | PodSpec input, PodSpec stored => PodSpecV.created input stored
-  | ReplicaSetSpec input, ReplicaSetSpec stored =>
-      ReplicaSetSpecV.created input stored
+  | ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.created input stored
   | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
       PersistentVolumeClaimSpecV.created input stored
-  | StatefulSetSpec input, StatefulSetSpec stored =>
-      StatefulSetSpecV.created input stored
+  | StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.created input stored
   | _, _ => False
   end.
 
-(* TODO: Revisit the update model to distinguish the submitted object, the
-   intermediate objects produced by normalization/defaulting, the objects
-   checked by update validation and admission, and the final stored object. *)
-(* The API server's update-defaulting relation from a create-valid submitted
-   spec to the normalized stored spec. Keeping this dispatch resource-specific
-   prevents facts about a fully modeled resource, such as exact preservation
-   of the represented Pod fields, from being lost behind one unconstrained
-   global axiom. *)
 Definition updated (input stored : t) : Prop :=
   match input, stored with
   | PodSpec input, PodSpec stored => PodSpecV.updated input stored
-  | ReplicaSetSpec input, ReplicaSetSpec stored =>
-      ReplicaSetSpecV.updated input stored
+  | ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.updated input stored
   | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
       PersistentVolumeClaimSpecV.updated input stored
-  | StatefulSetSpec input, StatefulSetSpec stored =>
-      StatefulSetSpecV.updated input stored
+  | StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
   | _, _ => False
   end.
 
@@ -144,14 +132,10 @@ Qed.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
-  | PodSpec p =>
-      ∃ c, l ↦{dq} c ∗ PodSpecV.deepown c p dq
-  | ReplicaSetSpec rs =>
-      ∃ c, l ↦{dq} c ∗ ReplicaSetSpecV.deepown c rs dq
-  | PersistentVolumeClaimSpec pvc =>
-      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc dq
-  | StatefulSetSpec sts =>
-      ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts dq
+  | PodSpec p => ∃ c, l ↦{dq} c ∗ PodSpecV.deepown c p dq
+  | ReplicaSetSpec rs => ∃ c, l ↦{dq} c ∗ ReplicaSetSpecV.deepown c rs dq
+  | PersistentVolumeClaimSpec pvc => ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc dq
+  | StatefulSetSpec sts => ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts dq
   end.
 
 End def.
@@ -179,44 +163,49 @@ Definition valid (v : t) : Prop :=
   | StatefulSetStatus sts => StatefulSetStatusV.valid sts
   end.
 
-Axiom valid_create: t → Prop.
-Axiom valid_update: t → t → Prop.
-Axiom valid_update_dec: ∀ s1 s2, Decision (valid_update s1 s2).
-Global Existing Instance valid_update_dec.
+Axiom valid_create : t → Prop.
+
+(* Status-subresource validation after preparation, including both standalone
+   checks on the new status and transition checks against the old status. *)
+Definition valid_update (old input : t) : Prop :=
+  match old, input with
+  | PodStatus old, PodStatus input => PodStatusV.valid_update old input
+  | ReplicaSetStatus old, ReplicaSetStatus input => ReplicaSetStatusV.valid_update old input
+  | PersistentVolumeClaimStatus old, PersistentVolumeClaimStatus input =>
+      PersistentVolumeClaimStatusV.valid_update old input
+  | StatefulSetStatus old, StatefulSetStatus input => StatefulSetStatusV.valid_update old input
+  | _, _ => False
+  end.
+
+Global Instance valid_update_dec old input : Decision (valid_update old input).
+Proof. destruct old, input; simpl; apply _. Defined.
+
 Definition created (input stored : t) : Prop :=
   match input, stored with
   | PodStatus input, PodStatus stored => PodStatusV.created input stored
-  | ReplicaSetStatus input, ReplicaSetStatus stored =>
-      ReplicaSetStatusV.created input stored
+  | ReplicaSetStatus input, ReplicaSetStatus stored => ReplicaSetStatusV.created input stored
   | PersistentVolumeClaimStatus input, PersistentVolumeClaimStatus stored =>
-      PersistentVolumeClaimStatusV.created input stored
-  | StatefulSetStatus input, StatefulSetStatus stored =>
-      StatefulSetStatusV.created input stored
+    PersistentVolumeClaimStatusV.created input stored
+  | StatefulSetStatus input, StatefulSetStatus stored => StatefulSetStatusV.created input stored
   | _, _ => False
   end.
 
 Definition updated (input stored : t) : Prop :=
   match input, stored with
   | PodStatus input, PodStatus stored => PodStatusV.updated input stored
-  | ReplicaSetStatus input, ReplicaSetStatus stored =>
-      ReplicaSetStatusV.updated input stored
+  | ReplicaSetStatus input, ReplicaSetStatus stored => ReplicaSetStatusV.updated input stored
   | PersistentVolumeClaimStatus input, PersistentVolumeClaimStatus stored =>
       PersistentVolumeClaimStatusV.updated input stored
-  | StatefulSetStatus input, StatefulSetStatus stored =>
-      StatefulSetStatusV.updated input stored
+  | StatefulSetStatus input, StatefulSetStatus stored => StatefulSetStatusV.updated input stored
   | _, _ => False
   end.
 
 Definition deepown_l l v dq: iProp Σ :=
   match v with
-  | PodStatus p =>
-      ∃ c, l ↦{dq} c ∗ PodStatusV.deepown c p dq
-  | ReplicaSetStatus rs =>
-      ∃ c, l ↦{dq} c ∗ ReplicaSetStatusV.deepown c rs dq
-  | PersistentVolumeClaimStatus pvc =>
-      ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc dq
-  | StatefulSetStatus sts =>
-      ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts dq
+  | PodStatus p => ∃ c, l ↦{dq} c ∗ PodStatusV.deepown c p dq
+  | ReplicaSetStatus rs => ∃ c, l ↦{dq} c ∗ ReplicaSetStatusV.deepown c rs dq
+  | PersistentVolumeClaimStatus pvc => ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc dq
+  | StatefulSetStatus sts => ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts dq
   end.
 
 End def.
@@ -255,8 +244,7 @@ Definition spec o: ObjectSpecV.t :=
   match o with
   | Pod p => ObjectSpecV.PodSpec p.(PodV.Spec')
   | ReplicaSet rs => ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')
-  | PersistentVolumeClaim pvc =>
-      ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec')
+  | PersistentVolumeClaim pvc => ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec')
   | StatefulSet sts => ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')
   end.
 
@@ -264,8 +252,7 @@ Definition status o: ObjectStatusV.t :=
   match o with
   | Pod p => ObjectStatusV.PodStatus p.(PodV.Status')
   | ReplicaSet rs => ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status')
-  | PersistentVolumeClaim pvc =>
-      ObjectStatusV.PersistentVolumeClaimStatus pvc.(PersistentVolumeClaimV.Status')
+  | PersistentVolumeClaim pvc => ObjectStatusV.PersistentVolumeClaimStatus pvc.(PersistentVolumeClaimV.Status')
   | StatefulSet sts => ObjectStatusV.StatefulSetStatus sts.(StatefulSetV.Status')
   end.
 
@@ -275,6 +262,15 @@ Definition kind o : go_string :=
   | ReplicaSet _ => ReplicaSetV.kind
   | PersistentVolumeClaim _ => PersistentVolumeClaimV.kind
   | StatefulSet _ => StatefulSetV.kind
+  end.
+
+Definition same_kind (o1 o2 : t) : Prop :=
+  match o1, o2 with
+  | Pod _, Pod _ => True
+  | ReplicaSet _, ReplicaSet _ => True
+  | PersistentVolumeClaim _, PersistentVolumeClaim _ => True
+  | StatefulSet _, StatefulSet _ => True
+  | _, _ => False
   end.
 
 Definition key o : KKey.t :=
@@ -288,9 +284,47 @@ Definition update_objectmeta o m: t :=
   match o with
   | Pod pod => Pod (pod <| PodV.ObjectMeta' := m |>)
   | ReplicaSet rs => ReplicaSet (rs <| ReplicaSetV.ObjectMeta' := m |>)
-  | PersistentVolumeClaim pvc =>
-      PersistentVolumeClaim (pvc <| PersistentVolumeClaimV.ObjectMeta' := m |>)
+  | PersistentVolumeClaim pvc => PersistentVolumeClaim (pvc <| PersistentVolumeClaimV.ObjectMeta' := m |>)
   | StatefulSet sts => StatefulSet (sts <| StatefulSetV.ObjectMeta' := m |>)
+  end.
+
+(** [input] is the submitted create request.
+    [stored] is the object stored after the successful create. *)
+Definition created namespace input stored : Prop :=
+  match input, stored with
+  | Pod input_pod, Pod stored_pod => PodV.created namespace input_pod stored_pod
+  | ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.created namespace input_rs stored_rs
+  | PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
+      PersistentVolumeClaimV.created namespace input_pvc stored_pvc
+  | StatefulSet input_sts, StatefulSet stored_sts =>
+      StatefulSetV.created namespace input_sts stored_sts
+  | _, _ => False
+  end.
+
+(** End-to-end relation between the submitted object and the stored result of
+    a successful update. This relation does not constrain the stored status. *)
+Definition updated input stored : Prop :=
+  match input, stored with
+  | Pod input_pod, Pod stored_pod => PodV.updated input_pod stored_pod
+  | ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.updated input_rs stored_rs
+  | PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
+      PersistentVolumeClaimV.updated input_pvc stored_pvc
+  | StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
+  | _, _ => False
+  end.
+
+(** [input] is the submitted status update.
+    [stored] is the object stored after the successful status update.
+    This is a relation because the current views omit fields that can affect
+    the exact stored value. *)
+Definition status_updated input stored : Prop :=
+  match input, stored with
+  | Pod input, Pod stored => PodV.status_updated input stored
+  | ReplicaSet input, ReplicaSet stored => ReplicaSetV.status_updated input stored
+  | PersistentVolumeClaim input, PersistentVolumeClaim stored =>
+      PersistentVolumeClaimV.status_updated input stored
+  | StatefulSet input, StatefulSet stored => StatefulSetV.status_updated input stored
+  | _, _ => False
   end.
 
 Lemma kind_update_objectmeta :
@@ -321,9 +355,7 @@ Lemma extra_valid_update_objectmeta o m :
 Proof. rewrite /extra_valid spec_update_objectmeta //. Qed.
 
 (* [valid] is the complete invariant guaranteed for an object stored by the
-   API server. It combines Kubernetes validity with the normalization facts
-   represented by this model; request predicates such as
-   [valid_named_create] remain weaker and describe admission before storage. *)
+   API server. *)
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
@@ -331,49 +363,56 @@ Definition valid o : Prop :=
   ObjectSpecV.valid (spec o) ∧
   ObjectStatusV.valid (status o).
 
-(** The create strategies for every resource currently represented by [t]
+(** [input] is the object submitted in the create request.
+
+    The create strategies for every resource currently represented by [t]
     (Pod, PersistentVolumeClaim, ReplicaSet, and StatefulSet) reset the
     submitted status before validation, so their create predicates impose no
-    condition on the input status. If a resource such as Node is added here,
-    revisit this: Kubernetes permits and validates a Node's status on create.
+    condition on the input status. Kubernetes permits and validates a Node's
+    status on create, which can be expressed in [NodeV.valid_create] if Node is
+    added here. Empty TypeMeta kind/apiVersion fields are valid: the create
+    request decoder defaults them from the REST endpoint before validation.
     See https://github.com/kubernetes/kubernetes/blob/master/pkg/registry/core/node/strategy.go. *)
-Definition valid_nameless_create knd ns o : Prop :=
-  knd = kind o ∧
-  (* Empty TypeMeta kind/apiVersion fields are valid here: the create request
-     decoder defaults them from the REST endpoint before validation. *)
-  valid_create_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_nameless_create (kind o) ns (objectmeta o) ∧
-  ObjectSpecV.valid_create (spec o).
+Definition valid_create request_kind namespace input : Prop :=
+  match input with
+  | Pod input => PodV.valid_create request_kind namespace input
+  | ReplicaSet input => ReplicaSetV.valid_create request_kind namespace input
+  | PersistentVolumeClaim input => PersistentVolumeClaimV.valid_create request_kind namespace input
+  | StatefulSet input => StatefulSetV.valid_create request_kind namespace input
+  end.
 
-Definition valid_named_create knd ns o : Prop :=
-  knd = kind o ∧
-  (* See [valid_nameless_create]: TypeMeta fields may be omitted on create. *)
-  valid_create_typemeta (kind o) (typemeta o) ∧
-  ObjectMetaV.valid_named_create (kind o) ns (objectmeta o) ∧
-  ObjectSpecV.valid_create (spec o).
-
-Definition same_kind (o1 o2 : t) : Prop :=
-  match o1, o2 with
-  | Pod _, Pod _ => True
-  | ReplicaSet _, ReplicaSet _ => True
-  | PersistentVolumeClaim _, PersistentVolumeClaim _ => True
-  | StatefulSet _, StatefulSet _ => True
+(** Top-level update-validation contract.
+    [request_kind] and [namespace] identify the update request.
+    [old_meta] and [old_spec] are the metadata and spec currently in etcd.
+    [input] is the object submitted in the update request. *)
+Definition valid_update request_kind namespace old_meta old_spec input : Prop :=
+  match old_spec, input with
+  | ObjectSpecV.PodSpec old_spec, Pod input =>
+      PodV.valid_update request_kind namespace old_meta old_spec input
+  | ObjectSpecV.ReplicaSetSpec old_spec, ReplicaSet input =>
+      ReplicaSetV.valid_update request_kind namespace old_meta old_spec input
+  | ObjectSpecV.PersistentVolumeClaimSpec old_spec, PersistentVolumeClaim input =>
+      PersistentVolumeClaimV.valid_update request_kind namespace old_meta old_spec input
+  | ObjectSpecV.StatefulSetSpec old_spec, StatefulSet input =>
+      StatefulSetV.valid_update request_kind namespace old_meta old_spec input
   | _, _ => False
   end.
 
-Definition nameless_created ns o o' : Prop :=
-  same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
-  typemeta o = typemeta o' ∧
-  ObjectMetaV.nameless_created ns (objectmeta o) (objectmeta o') ∧
-  ObjectSpecV.created (spec o) (spec o') ∧
-  ObjectStatusV.created (status o) (status o').
-
-Definition named_created ns o o' : Prop :=
-  same_kind o o' ∧ (* A shortcut for proving same kind; it can be derived by conditions below *)
-  typemeta o = typemeta o' ∧
-  ObjectMetaV.named_created ns (objectmeta o) (objectmeta o') ∧
-  ObjectSpecV.created (spec o) (spec o') ∧
-  ObjectStatusV.created (status o) (status o').
+(** Top-level status-update validation contract.
+    [old_meta] and [old_status] are the metadata and status currently in etcd.
+    [input] is the object submitted in the status-update request. *)
+Definition valid_status_update request_kind namespace old_meta old_status input : Prop :=
+  match old_status, input with
+  | ObjectStatusV.PodStatus old_status, Pod input =>
+      PodV.valid_status_update request_kind namespace old_meta old_status input
+  | ObjectStatusV.ReplicaSetStatus old_status, ReplicaSet input =>
+      ReplicaSetV.valid_status_update request_kind namespace old_meta old_status input
+  | ObjectStatusV.PersistentVolumeClaimStatus old_status, PersistentVolumeClaim input =>
+      PersistentVolumeClaimV.valid_status_update request_kind namespace old_meta old_status input
+  | ObjectStatusV.StatefulSetStatus old_status, StatefulSet input =>
+      StatefulSetV.valid_status_update request_kind namespace old_meta old_status input
+  | _, _ => False
+  end.
 
 Definition valid2 o : Prop :=
   match o with
@@ -392,38 +431,6 @@ Proof.
       /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
 Qed.
 
-Definition valid_nameless_create2 knd ns o : Prop :=
-  match o with
-  | Pod p => knd = PodV.kind ∧ PodV.valid_nameless_create ns p
-  | ReplicaSet rs =>
-      knd = ReplicaSetV.kind ∧ ReplicaSetV.valid_nameless_create ns rs
-  | PersistentVolumeClaim pvc =>
-      knd = PersistentVolumeClaimV.kind ∧
-      PersistentVolumeClaimV.valid_nameless_create ns pvc
-  | StatefulSet sts =>
-      knd = StatefulSetV.kind ∧ StatefulSetV.valid_nameless_create ns sts
-  end.
-
-Lemma valid_nameless_create_eq_valid_nameless_create2 knd ns o :
-  valid_nameless_create knd ns o = valid_nameless_create2 knd ns o.
-Proof. destruct o; reflexivity. Qed.
-
-Definition valid_named_create2 knd ns o : Prop :=
-  match o with
-  | Pod p => knd = PodV.kind ∧ PodV.valid_named_create ns p
-  | ReplicaSet rs =>
-      knd = ReplicaSetV.kind ∧ ReplicaSetV.valid_named_create ns rs
-  | PersistentVolumeClaim pvc =>
-      knd = PersistentVolumeClaimV.kind ∧
-      PersistentVolumeClaimV.valid_named_create ns pvc
-  | StatefulSet sts =>
-      knd = StatefulSetV.kind ∧ StatefulSetV.valid_named_create ns sts
-  end.
-
-Lemma valid_named_create_eq_valid_named_create2 knd ns o :
-  valid_named_create knd ns o = valid_named_create2 knd ns o.
-Proof. destruct o; reflexivity. Qed.
-
 Definition valid_without_meta o : Prop :=
   match o with
   | Pod p => PodV.valid_without_meta p
@@ -439,6 +446,19 @@ Definition deepown_l l v dq: iProp Σ :=
   | PersistentVolumeClaim v => PersistentVolumeClaimV.deepown_l l v dq
   | StatefulSet v => StatefulSetV.deepown_l l v dq
   end.
+
+#[global]
+Instance top_level_instance : top_level Σ t :=
+  Build_top_level Σ t ObjectMetaV.t ObjectSpecV.t ObjectStatusV.t
+    valid
+    extra_valid
+    valid_create
+    valid_update
+    valid_status_update
+    created
+    updated
+    status_updated
+    deepown_l.
 
 Definition deepown_l_without_meta l v dq: iProp Σ :=
   match v with
@@ -572,24 +592,27 @@ Proof.
   done.
 Qed.
 
-Lemma valid_nameless_pod_set_name pod namespace name :
-  valid_nameless_create PodV.kind namespace (Pod pod) →
+Lemma valid_create_pod_set_name pod request_kind namespace name :
+  valid_create request_kind namespace (Pod pod) →
   name ≠ ""%go →
   valid_name PodV.kind name →
-  valid_named_create PodV.kind namespace
+  valid_create request_kind namespace
     (Pod (PodV.update_objectmeta pod
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
 Proof.
-  rewrite /valid_nameless_create /valid_named_create /=.
-  intros (Hkind & Htypemeta & Hmeta & Hspec)
+  rewrite /valid_create /=.
+  intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec)
     Hname_nonempty Hname_valid.
-  assert (Hmeta_named : ObjectMetaV.valid_named_create PodV.kind namespace
-      (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)).
-  { rewrite /ObjectMetaV.valid_nameless_create in Hmeta.
-    rewrite /ObjectMetaV.valid_named_create /=.
-    destruct Hmeta as (Hgenerate_name & _ & _ & Hnamespace & Hlabels &
-      Hannotations & Howner_references & Hfinalizers & Hmanaged_fields).
-    split_and!; done. }
+  assert (ObjectMetaV.valid_create PodV.kind namespace
+      (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)) as Hmeta_named.
+  { unfold ObjectMetaV.valid_create in Hmeta |- *.
+    simpl. destruct (decide (name = ""%go)) as [Hname_empty | Hname_ne];
+      first contradiction.
+    destruct (decide (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = ""%go));
+      simpl in Hmeta;
+      destruct Hmeta as ((Hgenerate_name & _) & Hrest).
+    - split; [split; [intros _; exact Hgenerate_name|exact Hname_valid]|exact Hrest].
+    - split; [split; [exact Hgenerate_name|exact Hname_valid]|exact Hrest]. }
   split_and!; done.
 Qed.
 
@@ -764,7 +787,9 @@ Proof.
   intros Hwf kind1 name1 uid1 kind2 name2 uid2 H1 H2.
   unfold obj_has_controller_parent_of in H1, H2.
   apply valid_object_has_valid_objectmeta in Hwf.
-  pose proof (ObjectMetaV.valid_owner_references_of_valid _ Hwf) as Hwf_ownerref.
+  assert (valid_owner_references
+      (KObjectV.objectmeta obj).(ObjectMetaV.OwnerReferences')) as Hwf_ownerref.
+  { unfold ObjectMetaV.valid in Hwf. tauto. }
   destruct (ObjectMetaV.OwnerReferences' (KObjectV.objectmeta obj)) as [os|]; simpl in H1, H2, Hwf_ownerref.
   - unfold valid_owner_references in Hwf_ownerref. simpl in Hwf_ownerref.
     assert (OwnerReferenceV.list_valid os) as Hwf_list.

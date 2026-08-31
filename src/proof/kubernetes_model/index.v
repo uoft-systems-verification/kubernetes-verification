@@ -51,7 +51,7 @@ Proof.
       destruct Hpod_valid as (_ & _ & Hmeta_valid & _).
       assert (Hpod_ns_sf : slash_free pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')).
       { eapply valid_namespace_slash_free.
-        eapply ObjectMetaV.valid_namespace_of_valid; exact Hmeta_valid. }
+        unfold ObjectMetaV.valid in Hmeta_valid. tauto. }
       destruct (ObjectMetaV.OwnerReferences' (PodV.ObjectMeta' pod)) as [orefs|] eqn:Horefs in Hindexed |- *.
       * destruct (list_find (λ oref : OwnerReferenceV.t, oref.(OwnerReferenceV.Controller') = Some true) orefs)
           as [[idx oref]|] eqn:Hfind in Hindexed |- *.

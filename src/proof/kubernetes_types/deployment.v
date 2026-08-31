@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export replicaset.
+From New.proof.kubernetes_types Require Import top_level.
 
 Module DeploymentSpecV.
 Section def.
@@ -34,8 +35,7 @@ Definition valid (spec : t) : Prop :=
     spec.(Selector') = Some selector ∧
     LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
-    LabelSelectorV.matches
-      selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
+    LabelSelectorV.matches selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid spec.(Template').
 
 (* On create the replica count may be omitted; defaulting fills in 1:
@@ -50,8 +50,7 @@ Definition valid_create (spec : t) : Prop :=
     spec.(Selector') = Some selector ∧
     LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
-    LabelSelectorV.matches
-      selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
+    LabelSelectorV.matches selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid spec.(Template').
 
 (* Kubernetes allows the represented replica count, minimum-ready duration, and
@@ -59,44 +58,50 @@ Definition valid_create (spec : t) : Prop :=
    also meaningful when [old] is only [valid_create], before its replica count
    has been defaulted:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L709-L714 *)
-Definition valid_update (old new : t) : Prop :=
-  new.(Selector') = old.(Selector').
+Definition valid_update (old input : t) : Prop :=
+  valid_create input ∧
+  input.(Selector') = old.(Selector').
 
-Global Instance valid_update_dec old new :
-  Decision (valid_update old new).
-Proof. unfold valid_update. solve_decision. Defined.
+Global Instance valid_update_dec old input :
+  Decision (valid_update old input).
+Proof.
+  unfold valid_update, valid_create.
+  apply and_dec.
+  - apply and_dec; first (destruct input.(Replicas'); apply _).
+    apply and_dec; first apply _.
+    apply and_dec; last apply _.
+    apply LabelSelectorV.exists_eq_some_dec.
+    intros selector. apply _.
+  - apply _.
+Defined.
 
 Lemma valid_update_refl spec :
+  valid_create spec →
   valid_update spec spec.
 Proof. unfold valid_update. done. Qed.
 
-Lemma valid_replicas :
-  ∀ v, valid v →
-  ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
-Proof. intros v (Hreplicas & _). exact Hreplicas. Qed.
+Lemma valid_replicas v :
+  valid v → ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
+Proof. intros (Hreplicas & _). exact Hreplicas. Qed.
 
-Lemma valid_template :
-  ∀ v, valid v →
-  PodTemplateSpecV.valid v.(Template').
-Proof. intros v (_ & _ & _ & Htemplate). exact Htemplate. Qed.
+Lemma valid_template v :
+  valid v → PodTemplateSpecV.valid v.(Template').
+Proof. intros (_ & _ & _ & Htemplate). exact Htemplate. Qed.
 
-(* v1 defaulting is applied to every submitted object before it is persisted.
-   Of the represented fields only the replica count has a default:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L38-L73 *)
-Definition defaulted (spec spec' : t) : Prop :=
-  spec'.(Replicas') = (match spec.(Replicas') with
-                       | Some replicas => Some replicas
-                       | None => Some (W32 1)
-                       end) ∧
-  spec'.(MinReadySeconds') = spec.(MinReadySeconds') ∧
-  spec'.(Selector') = spec.(Selector') ∧
-  spec'.(Template') = spec.(Template').
-
-(* The create strategy resets the status and bumps the generation but leaves
-   the spec alone, so the stored spec is the defaulted submitted spec:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L74-L80 *)
-Definition created (spec spec' : t) : Prop :=
-  defaulted spec spec'.
+(* Creation fills an omitted replica count with one and removes obsolete
+   init-container annotations from the Pod template during version conversion.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L38-L73
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/v1/conversion.go#L247-L254 *)
+Definition created (input stored : t) : Prop :=
+  stored.(Replicas') = (match input.(Replicas') with
+                        | Some replicas => Some replicas
+                        | None => Some (W32 1)
+                        end) ∧
+  stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
+  stored.(Selector') = input.(Selector') ∧
+  stored.(Template') =
+    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
+      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |>.
 
 (* Likewise on update: decoder defaulting precedes PrepareForUpdate, which
    restores the old status and bumps the generation without otherwise changing
@@ -104,9 +109,9 @@ Definition created (spec spec' : t) : Prop :=
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L110-L124
    Thus [updated] includes the same replica default as [created]. *)
 Definition updated (input stored : t) : Prop :=
-  defaulted input stored.
+  created input stored.
 
-(* A defaulted spec has an explicit, nonnegative replica count, so a spec that
+(* A created spec has an explicit, nonnegative replica count, so a spec that
    passes create validation is valid once stored. *)
 Lemma valid_create_created spec spec' :
   valid_create spec →
@@ -121,20 +126,18 @@ Proof.
     + exists (W32 1). split; [exact Hreplicas'|word].
   - rewrite Hminready'. exact Hminready.
   - rewrite Hselector' Htemplate'. exact Hselector.
-  - rewrite Htemplate'. exact Htemplate.
+  - rewrite Htemplate'. apply PodTemplateSpecV.valid_after_conversion. exact Htemplate.
 Qed.
 
 Definition deepown (c: v1.DeploymentSpec.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜c.(v1.DeploymentSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-  | Some i => ∃ replicas, c.(v1.DeploymentSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
-  | None => True%I
-  end) ∗
+    | Some i => ∃ replicas, c.(v1.DeploymentSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
+    | None => True%I
+    end) ∗
   "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.DeploymentSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
-  "%Hdeepown_selector_none" ∷
-    ⌜c.(v1.DeploymentSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
-  "Hdeepown_selector_some" ∷
-    (match v.(Selector') with
+  "%Hdeepown_selector_none" ∷ ⌜c.(v1.DeploymentSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
+  "Hdeepown_selector_some" ∷ (match v.(Selector') with
     | Some selector =>
         ∃ selector_c,
           c.(v1.DeploymentSpec.Selector') ↦{dq} selector_c ∗
@@ -158,6 +161,11 @@ Context {sem : go.Semantics}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
 Axiom valid : t → Prop.
+Axiom valid_update : t → t → Prop.
+Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
+Global Existing Instance valid_update_dec.
+Axiom created : t → t → Prop.
+Axiom updated : t → t → Prop.
 Axiom deepown : v1.DeploymentStatus.t → t → dfrac → iProp Σ.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -200,19 +208,56 @@ Definition valid (d: t) : Prop :=
   DeploymentSpecV.valid d.(Spec') ∧
   DeploymentStatusV.valid d.(Status').
 
-Definition valid_nameless_create ns (d : t) : Prop :=
+Definition extra_valid (_d : t) : Prop := True.
+
+Definition valid_create request_kind ns (d : t) : Prop :=
+  request_kind = kind ∧
+  ns ≠ ""%go ∧
+  valid_namespace ns ∧
   valid_create_typemeta kind d.(TypeMeta') ∧
-  ObjectMetaV.valid_nameless_create kind ns d.(ObjectMeta') ∧
+  ObjectMetaV.valid_create kind ns d.(ObjectMeta') ∧
   DeploymentSpecV.valid_create d.(Spec').
 
-Definition valid_named_create ns (d : t) : Prop :=
-  valid_create_typemeta kind d.(TypeMeta') ∧
-  ObjectMetaV.valid_named_create kind ns d.(ObjectMeta') ∧
-  DeploymentSpecV.valid_create d.(Spec').
+Definition valid_update request_kind namespace old_meta old_spec (input : t) : Prop :=
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  valid_create request_kind namespace input ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  DeploymentSpecV.valid_update old_spec input.(Spec').
+
+Definition valid_status_update request_kind namespace old_meta old_status (input : t) : Prop :=
+  request_kind = kind ∧
+  input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
+  input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
+  valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta kind input.(TypeMeta') ∧
+  ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
+  DeploymentStatusV.valid_update old_status input.(Status').
 
 Definition valid_without_meta (d: t) : Prop :=
   DeploymentSpecV.valid d.(Spec') ∧
   DeploymentStatusV.valid d.(Status').
+
+Definition created (namespace : go_string) (input stored : t) : Prop :=
+  valid_typemeta kind stored.(TypeMeta') ∧
+  ObjectMetaV.created namespace input.(ObjectMeta') stored.(ObjectMeta') ∧
+  stored.(ObjectMeta').(ObjectMetaV.Generation') = W64 1 ∧
+  DeploymentSpecV.created input.(Spec') stored.(Spec') ∧
+  DeploymentStatusV.created input.(Status') stored.(Status').
+
+Definition updated (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  DeploymentSpecV.updated input.(Spec') stored.(Spec').
+
+Definition status_updated (input stored : t) : Prop :=
+  stored.(TypeMeta') = input.(TypeMeta') ∧
+  ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
+  DeploymentStatusV.updated input.(Status') stored.(Status').
 
 Definition deepown (c: v1.Deployment.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Deployment.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -222,6 +267,19 @@ Definition deepown (c: v1.Deployment.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+#[global]
+Instance top_level_instance : top_level Σ t :=
+  Build_top_level Σ t ObjectMetaV.t DeploymentSpecV.t DeploymentStatusV.t
+    valid
+    extra_valid
+    valid_create
+    valid_update
+    valid_status_update
+    created
+    updated
+    status_updated
+    deepown_l.
 
 Definition typemeta_ptr l: loc :=
   struct_field_ref v1.Deployment.t "TypeMeta" l.
@@ -244,9 +302,9 @@ Definition deepown_without_meta (c: v1.Deployment.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
   ∃ c,
-  spec_ptr l ↦{dq} c.(v1.Deployment.Spec') ∗
-  status_ptr l ↦{dq} c.(v1.Deployment.Status') ∗
-  deepown_without_meta c v dq.
+    spec_ptr l ↦{dq} c.(v1.Deployment.Spec') ∗
+    status_ptr l ↦{dq} c.(v1.Deployment.Status') ∗
+    deepown_without_meta c v dq.
 
 End def.
 

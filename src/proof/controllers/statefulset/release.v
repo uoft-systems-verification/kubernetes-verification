@@ -159,8 +159,10 @@ Proof.
   intros Howner_references Hvalid Hparent.
   destruct Hvalid as
     (Htypemeta & Hresource_version & Hmeta & Hspec & Hstatus).
-  pose proof (ObjectMetaV.valid_owner_references_of_valid
-    _ Hmeta) as Hvalid_owner_references.
+  assert (valid_owner_references
+      pod.(PodV.ObjectMeta').(ObjectMetaV.OwnerReferences'))
+    as Hvalid_owner_references.
+  { unfold ObjectMetaV.valid in Hmeta. tauto. }
   rewrite Howner_references in Hvalid_owner_references.
   pose proof (release_owner_references_facts
     pod.(PodV.ObjectMeta')
@@ -333,8 +335,10 @@ Proof.
   pose proof Hvalid_pod as Hvalid_pod_parts.
   destruct Hvalid_pod_parts as
     (_ & _ & Hvalid_pod_meta & _).
-  pose proof (ObjectMetaV.valid_owner_references_of_valid
-    _ Hvalid_pod_meta) as Hvalid_owner_references.
+  assert (valid_owner_references
+      pod.(PodV.ObjectMeta').(ObjectMetaV.OwnerReferences'))
+    as Hvalid_owner_references.
+  { unfold ObjectMetaV.valid in Hvalid_pod_meta. tauto. }
   rewrite Howner_references in Hvalid_owner_references.
   pose proof (release_owner_references_facts
     pod.(PodV.ObjectMeta')
@@ -823,17 +827,56 @@ Proof.
           pod.(PodV.Spec')).
     { unfold release_pod_input. done. }
     assert (Hreleased_pod_valid_create :
-        PodV.valid_named_create
+        PodV.valid_create PodV.kind
           (release_pod_input set pod).(PodV.ObjectMeta').(
             ObjectMetaV.Namespace')
           (release_pod_input set pod)).
-    { eapply PodV.valid_named_create_of_valid; done. }
+    { eapply PodV.valid_create_of_valid; done. }
+    assert (Hreleased_pod_name_nonempty :
+        (release_pod_input set pod).(PodV.ObjectMeta').(
+          ObjectMetaV.Name') ≠ ""%go).
+    { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
+    assert (Hreleased_pod_valid_typemeta :
+        valid_typemeta PodV.kind (release_pod_input set pod).(PodV.TypeMeta')).
+    { destruct Hreleased_pod_valid as (Htypemeta & _). exact Htypemeta. }
     assert (Hreleased_pod_uid_nonempty :
         (release_pod_input set pod).(PodV.ObjectMeta').(
           ObjectMetaV.UID') ≠ ""%go).
     { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
       eapply valid_uid_non_empty.
-      eapply ObjectMetaV.valid_uid_of_valid. exact Hmeta. }
+      unfold ObjectMetaV.valid in Hmeta. tauto. }
+    assert (Hreleased_pod_resource_version_valid :
+        valid_resource_version
+          (release_pod_input set pod).(PodV.ObjectMeta').(
+            ObjectMetaV.ResourceVersion')).
+    { destruct Hreleased_pod_valid as (_ & Hresource_version & _).
+      exact Hresource_version. }
+    assert (Hreleased_pod_meta_valid_update :
+        ObjectMetaV.valid_update pod.(PodV.ObjectMeta')
+          (release_pod_input set pod).(PodV.ObjectMeta')).
+    { destruct Hreleased_pod_valid as (_ & _ & Hmeta & _).
+      rewrite /ObjectMetaV.valid_update.
+      destruct Hmeta as (_ & _ & _ & _ & _ & _ & Hreleased_meta_labels_valid &
+        Hreleased_meta_annotations_valid & Hreleased_meta_owner_references_valid &
+        Hreleased_meta_finalizers_valid & Hreleased_meta_managed_fields_valid & _).
+      split.
+      - right. exact Hreleased_pod_meta_update.
+      - split_and!; done. }
+    assert (Hreleased_pod_spec_valid_update :
+        PodSpecV.valid_update pod.(PodV.Spec')
+          (release_pod_input set pod).(PodV.Spec')).
+    { rewrite Hreleased_pod_spec.
+      apply PodSpecV.valid_update_refl.
+      destruct Hreleased_pod_valid as (_ & _ & _ & Hspec & _).
+      exact Hspec. }
+    assert (Hreleased_pod_valid_update :
+        KObjectV.valid_update PodV.kind
+          (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
+          pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+          (KObjectV.Pod (release_pod_input set pod))).
+    { rewrite /KObjectV.valid_update /= /PodV.valid_update.
+      split_and!; done. }
     rewrite HupdatedPod_meta_Hdeepown_namespace.
     iAssert (is_pkg_init apimodel) as "#Hapimodel".
     { iPkgInit. }
@@ -844,12 +887,10 @@ Proof.
       iEval (rewrite Hreleased_pod_key Hreleased_pod_uid) in "Hown_deletion_observed_frag".
       wp_apply (wp_State__PodUpdateTx_release_terminating γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
-        updatedPod_l (release_pod_input set pod) (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase
-        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag
-          $Hown_terminating_children_frag]").
+        updatedPod_l (release_pod_input set pod)
+        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag]").
       { iFrame "%". }
-      iIntros (returned_pod_l err) "Hown_terminating_children_frag". wp_auto.
+      iIntros (returned_pod_l err) "_". wp_auto.
       wp_apply (wp_IsNotFound err with "[]").
       destruct (decide (not_found_error err)) as [Hnot_found|Hnot_found].
       * replace (bool_decide (not_found_error err)) with true by
