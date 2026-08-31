@@ -33,12 +33,13 @@ Lemma wp_GetName_deepown_kobject i l o m dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}
-    #(methods i.(interface.ty) "GetName" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetName" #(interface.ok i)) #()
   {{{ RET #m.(ObjectMetaV.Name');
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetName_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -49,12 +50,13 @@ Lemma wp_GetGenerateName_deepown_kobject i l o m dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}
-    #(methods i.(interface.ty) "GetGenerateName" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetGenerateName" #(interface.ok i)) #()
   {{{ RET #m.(ObjectMetaV.GenerateName');
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetGenerateName_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -65,12 +67,13 @@ Lemma wp_GetUID_deepown_kobject i l o m dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}
-    #(methods i.(interface.ty) "GetUID" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetUID" #(interface.ok i)) #()
   {{{ RET #m.(ObjectMetaV.UID');
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetUID_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -81,12 +84,13 @@ Lemma wp_GetResourceVersion_deepown_kobject i l o m dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}
-    #(methods i.(interface.ty) "GetResourceVersion" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetResourceVersion" #(interface.ok i)) #()
   {{{ RET #m.(ObjectMetaV.ResourceVersion');
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetResourceVersion_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -97,13 +101,14 @@ Lemma wp_SetName_deepown_kobject i l o m name:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1
   }}}
-    #(methods i.(interface.ty) "SetName" i.(interface.v)) #name
+    (MethodResolve v1.Object "SetName" #(interface.ok i)) #name
   {{{ RET #();
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o)
         (m <| ObjectMetaV.Name' := name |>) 1
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetName_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -116,14 +121,14 @@ Lemma wp_SetCreationTimestamp_deepown_kobject
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1 ∗
       "Htime" ∷ TimeV.deepown creation_timestamp pure_creation_timestamp 1
   }}}
-    #(methods i.(interface.ty) "SetCreationTimestamp" i.(interface.v))
-      #creation_timestamp
+    (MethodResolve v1.Object "SetCreationTimestamp" #(interface.ok i)) #creation_timestamp
   {{{ RET #();
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o)
         (m <| ObjectMetaV.CreationTimestamp' := pure_creation_timestamp |>) 1
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures;
     wp_apply (wp_SetCreationTimestamp_deepown with "[$Hinit $Hmeta $Htime]");
@@ -135,13 +140,14 @@ Lemma wp_SetUID_deepown_kobject i l o m uid:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1
   }}}
-    #(methods i.(interface.ty) "SetUID" i.(interface.v)) #uid
+    (MethodResolve v1.Object "SetUID" #(interface.ok i)) #uid
   {{{ RET #();
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o)
         (m <| ObjectMetaV.UID' := uid |>) 1
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetUID_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -152,14 +158,14 @@ Lemma wp_SetResourceVersion_deepown_kobject i l o m resource_version:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1
   }}}
-    #(methods i.(interface.ty) "SetResourceVersion" i.(interface.v))
-      #resource_version
+    (MethodResolve v1.Object "SetResourceVersion" #(interface.ok i)) #resource_version
   {{{ RET #();
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o)
         (m <| ObjectMetaV.ResourceVersion' := resource_version |>) 1
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetResourceVersion_deepown with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -170,12 +176,13 @@ Lemma wp_GetFinalizers_kobject i l o metadata_c dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}
-    #(methods i.(interface.ty) "GetFinalizers" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetFinalizers" #(interface.ok i)) #()
   {{{ RET #metadata_c.(code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.Finalizers');
       (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetFinalizers with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -186,7 +193,7 @@ Lemma wp_GetFinalizers_deepown_kobject i l o m dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}
-    #(methods i.(interface.ty) "GetFinalizers" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetFinalizers" #(interface.ok i)) #()
   {{{ sl, RET #sl;
       ⌜ sl = slice.nil ↔ m.(ObjectMetaV.Finalizers') = None ⌝ ∗
       match m.(ObjectMetaV.Finalizers') with
@@ -197,6 +204,7 @@ Lemma wp_GetFinalizers_deepown_kobject i l o m dq:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetFinalizers_deepown with "[$Hinit $Hmeta]");
     iIntros (sl) "Hfinalizers"; iApply "HΦ"; iFrame.
@@ -207,7 +215,7 @@ Lemma wp_SetFinalizers_kobject i l o metadata_c finalizers:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦ metadata_c
   }}}
-    #(methods i.(interface.ty) "SetFinalizers" i.(interface.v)) #finalizers
+    (MethodResolve v1.Object "SetFinalizers" #(interface.ok i)) #finalizers
   {{{ RET #();
       (KObjectV.objectmeta_ptr l o) ↦
         (metadata_c <|
@@ -215,6 +223,7 @@ Lemma wp_SetFinalizers_kobject i l o metadata_c finalizers:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetFinalizers with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -225,12 +234,13 @@ Lemma wp_GetDeletionGracePeriodSeconds_kobject i l o metadata_c dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}
-    #(methods i.(interface.ty) "GetDeletionGracePeriodSeconds" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetDeletionGracePeriodSeconds" #(interface.ok i)) #()
   {{{ RET #metadata_c.(code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.DeletionGracePeriodSeconds');
       (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetDeletionGracePeriodSeconds with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -241,7 +251,7 @@ Lemma wp_SetDeletionGracePeriodSeconds_kobject i l o metadata_c dgps:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦ metadata_c
   }}}
-    #(methods i.(interface.ty) "SetDeletionGracePeriodSeconds" i.(interface.v)) #dgps
+    (MethodResolve v1.Object "SetDeletionGracePeriodSeconds" #(interface.ok i)) #dgps
   {{{ RET #();
       (KObjectV.objectmeta_ptr l o) ↦
         (metadata_c <|
@@ -249,6 +259,7 @@ Lemma wp_SetDeletionGracePeriodSeconds_kobject i l o metadata_c dgps:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -259,12 +270,13 @@ Lemma wp_GetDeletionTimestamp_kobject i l o metadata_c dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}
-    #(methods i.(interface.ty) "GetDeletionTimestamp" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetDeletionTimestamp" #(interface.ok i)) #()
   {{{ RET #metadata_c.(code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.DeletionTimestamp');
       (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetDeletionTimestamp with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -275,7 +287,7 @@ Lemma wp_SetDeletionTimestamp_kobject i l o metadata_c deletion_timestamp:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦ metadata_c
   }}}
-    #(methods i.(interface.ty) "SetDeletionTimestamp" i.(interface.v)) #deletion_timestamp
+    (MethodResolve v1.Object "SetDeletionTimestamp" #(interface.ok i)) #deletion_timestamp
   {{{ RET #();
       (KObjectV.objectmeta_ptr l o) ↦
         (metadata_c <|
@@ -283,6 +295,7 @@ Lemma wp_SetDeletionTimestamp_kobject i l o metadata_c deletion_timestamp:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetDeletionTimestamp with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -293,12 +306,13 @@ Lemma wp_GetGeneration_kobject i l o metadata_c dq:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}
-    #(methods i.(interface.ty) "GetGeneration" i.(interface.v)) #()
+    (MethodResolve v1.Object "GetGeneration" #(interface.ok i)) #()
   {{{ RET #metadata_c.(code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.Generation');
       (KObjectV.objectmeta_ptr l o) ↦{dq} metadata_c
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_GetGeneration with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
@@ -309,7 +323,7 @@ Lemma wp_SetGeneration_kobject i l o metadata_c generation:
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
       "Hmeta" ∷ (KObjectV.objectmeta_ptr l o) ↦ metadata_c
   }}}
-    #(methods i.(interface.ty) "SetGeneration" i.(interface.v)) #generation
+    (MethodResolve v1.Object "SetGeneration" #(interface.ok i)) #generation
   {{{ RET #();
       (KObjectV.objectmeta_ptr l o) ↦
         (metadata_c <|
@@ -317,6 +331,7 @@ Lemma wp_SetGeneration_kobject i l o metadata_c generation:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
+  wp_pures.
   destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
     wp_pures; wp_apply (wp_SetGeneration with "[$Hinit $Hmeta]");
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
