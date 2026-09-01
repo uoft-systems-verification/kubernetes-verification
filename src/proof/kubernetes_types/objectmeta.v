@@ -338,5 +338,62 @@ Definition valid_update old input : Prop :=
   valid_finalizers input.(Finalizers') ∧
   valid_managed_fields input.(ManagedFields').
 
+Lemma valid_name_of_valid {kind} m:
+  valid kind m →
+  valid_name kind m.(Name').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_name_nonempty_of_valid {kind} m:
+  valid kind m →
+  m.(Name') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_of_valid {kind} m:
+  valid kind m →
+  valid_namespace m.(Namespace').
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_namespace_nonempty_of_valid {kind} m:
+  valid kind m →
+  m.(Namespace') ≠ ""%go.
+Proof. unfold valid. tauto. Qed.
+
+Lemma valid_uid_of_valid {kind} m:
+  valid kind m →
+  valid_uid m.(UID').
+Proof. unfold valid. tauto. Qed.
+
+(* A stored object's metadata is admissible as a create request into its own
+   namespace: [valid] is strictly stronger than [valid_create] except for the
+   namespace agreement, which the caller supplies. *)
+Lemma valid_create_of_valid {kind ns} m :
+  valid kind m →
+  ns = m.(Namespace') →
+  valid_create kind ns m.
+Proof.
+  unfold valid, valid_create.
+  intros (Hgenerate_name & Hname_nonempty & Hname & _ & Hnamespace_valid &
+    _ & Hlabels & Hannotations & Howner_references & Hfinalizers &
+    Hmanaged_fields & _) Hnamespace.
+  case_decide; first contradiction.
+  split; [split; assumption|].
+  split; [right; split; [assumption|symmetry; exact Hnamespace]|].
+  repeat split; assumption.
+Qed.
+
+Lemma equiv_except_resource_version_uid m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(UID') = m2.(UID').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
+Lemma equiv_except_resource_version_deletion_timestamp m1 m2 :
+  equiv_except_resource_version m1 m2 →
+  m1.(DeletionTimestamp') = m2.(DeletionTimestamp').
+Proof.
+  destruct m1, m2; simpl. intros H. inversion H. done.
+Qed.
+
 End proof.
 End ObjectMetaV.

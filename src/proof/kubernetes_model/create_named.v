@@ -711,10 +711,10 @@ Lemma wp_State__ReplicaSetCreate_named_available γ l namespace key rs_l rs
     parent_key parent_uid children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ ReplicaSetV.valid_named_create namespace rs ⌝ ∗
+      "%Hvalid" ∷ ⌜ ReplicaSetV.valid_create ReplicaSetV.kind namespace rs ⌝ ∗
+      "%Hname_nonempty" ∷
+        ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
-      "%Hns_nonempty" ∷ ⌜ namespace ≠ ""%go ⌝ ∗
-      "%Hns_valid" ∷ ⌜ valid_namespace namespace ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hkey_eq" ∷ ⌜ key = {|
         KKey.Kind' := ReplicaSetV.kind;
@@ -730,7 +730,7 @@ Lemma wp_State__ReplicaSetCreate_named_available γ l namespace key rs_l rs
     l @! (go.PointerType apimodel.State) @! "ReplicaSetCreate" #namespace #rs_l
   {{{ rs_l' rs' uid, RET (#rs_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ ReplicaSetV.valid rs' ⌝ ∗
-      "%Hmeta_created" ∷ ⌜ ObjectMetaV.named_created namespace
+      "%Hmeta_created" ∷ ⌜ ObjectMetaV.created namespace
           rs.(ReplicaSetV.ObjectMeta') rs'.(ReplicaSetV.ObjectMeta') ⌝ ∗
       "%Hspec_created" ∷ ⌜ ObjectSpecV.created
           (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
@@ -767,10 +767,12 @@ Proof.
     with "[$Hinit $Hisk $Hdeepown_i
       $Hown_reserved_frag $Hown_children_frag]").
   { iPureIntro.
-    rewrite KObjectV.valid_named_create_eq_valid_named_create2 /=.
     split_and!; done. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  simpl in Hcreated.
+  destruct Hcreated as
+    (_ & Hmeta_created & _ & Hspec_created & Hstatus_created).
   iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
   wp_auto.
   unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
