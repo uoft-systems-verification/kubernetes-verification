@@ -35,6 +35,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/uoft-systems-verification/perennial v0.0.0-20260623180933-c7214070e69a h1:oh+lglXOPxuO2aWH3bP7SVne3jtF6q6atNpf3ytlDpY=
 github.com/uoft-systems-verification/perennial v0.0.0-20260623180933-c7214070e69a/go.mod h1:dxMAh5+6XoFVBwRc2jwpyN26pOHhkuWiSBprCLvQXEM=
+github.com/uoft-systems-verification/perennial v0.0.0-20260818000745-1723ea2029e6 h1:RnnQ4KfCzUWTmax8zlt3vNSSx1PhryVfFFcPEPXBm58=
+github.com/uoft-systems-verification/perennial v0.0.0-20260818000745-1723ea2029e6/go.mod h1:dxMAh5+6XoFVBwRc2jwpyN26pOHhkuWiSBprCLvQXEM=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
 go.yaml.in/yaml/v4 v4.0.0-rc.3 h1:3h1fjsh1CTAPjW7q/EMe+C8shx5d8ctzZTrLcs/j8Go=
 go.yaml.in/yaml/v4 v4.0.0-rc.3/go.mod h1:aZqd9kCMsGL7AuUv/m/PvWLdg5sjJsZ4oHDEnfPPfY0=

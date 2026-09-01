@@ -327,7 +327,7 @@ Definition getPodsLabelSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       do:  ("v" <-[go.string] "$value");;;
       do:  ("k" <-[go.string] "$key");;;
       let: "$r0" := (![go.string] "v") in
-      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredLabels", ![go.string] "k")) <-[go.string] "$r0")));;;
+      do:  (map.insert go.string (![labels.Set'] "desiredLabels") (![go.string] "k") "$r0")));;;
     return: (![labels.Set'] "desiredLabels")).
 
 (* go: controller_utils.go:497:6 *)
@@ -357,7 +357,7 @@ Definition getPodsAnnotationSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       do:  ("v" <-[go.string] "$value");;;
       do:  ("k" <-[go.string] "$key");;;
       let: "$r0" := (![go.string] "v") in
-      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredAnnotations", ![go.string] "k")) <-[go.string] "$r0")));;;
+      do:  (map.insert go.string (![labels.Set'] "desiredAnnotations") (![go.string] "k") "$r0")));;;
     return: (![labels.Set'] "desiredAnnotations")).
 
 (* go: controller_utils.go:562:6 *)
