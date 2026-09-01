@@ -250,8 +250,16 @@ Definition pod_view_match sts
     Decision (pod_view_identity_matches sts view).
 Proof.
   unfold pod_view_identity_matches.
-  destruct parse_member_name,
-    ((pod_view_meta view).(ObjectMetaV.Labels')); apply _.
+  destruct parse_member_name as [ordinal|];
+    destruct ((pod_view_meta view).(ObjectMetaV.Labels')) as [labels|].
+  - apply and_dec.
+    + solve_decision.
+    + apply and_dec.
+      * solve_decision.
+      * apply and_dec; solve_decision.
+  - right. simpl. tauto.
+  - right. simpl. tauto.
+  - right. simpl. tauto.
 Defined.
 
 #[global] Instance pod_view_storage_matches_decision sts view :
@@ -259,8 +267,15 @@ Defined.
 Proof.
   unfold pod_view_storage_matches.
   destruct view as [meta spec]. simpl.
-  destruct spec; try (right; tauto).
-  destruct parse_pod_ordinal; apply _.
+  destruct spec as [pod_spec|replicaset_spec|pvc_spec|statefulset_spec].
+  - destruct parse_pod_ordinal as [ordinal|].
+    + apply and_dec.
+      * solve_decision.
+      * apply _.
+    + right. simpl. tauto.
+  - right. simpl. tauto.
+  - right. simpl. tauto.
+  - right. simpl. tauto.
 Defined.
 
 #[global] Instance pod_view_immutable_matches_decision sts view :

@@ -77,7 +77,14 @@ Definition rs_is_old (new_rs_o : option ReplicaSetV.t) (rs : ReplicaSetV.t) : Pr
   end.
 
 #[global] Instance rs_is_old_dec new_rs_o rs : Decision (rs_is_old new_rs_o rs).
-Proof. unfold rs_is_old. destruct new_rs_o; apply _. Defined.
+Proof.
+  unfold rs_is_old.
+  destruct new_rs_o as [new_rs|].
+  - destruct (decide (rs_uid rs = rs_uid new_rs)) as [Huid|Huid].
+    + right. intros Hneq. exact (Hneq Huid).
+    + left. exact Huid.
+  - left. done.
+Defined.
 
 Definition old_replica_set_pairs (ptrs : list loc) (rss : list ReplicaSetV.t)
     (new_rs_o : option ReplicaSetV.t) : list (loc * ReplicaSetV.t) :=
