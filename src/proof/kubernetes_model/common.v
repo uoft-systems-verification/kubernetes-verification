@@ -209,15 +209,15 @@ Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string uni
 Proof.
 Admitted.
 
-Lemma wp_validateObjectMeta i (kind : go_string) l m dq :
+Lemma wp_validateObjectMeta i (kind : go_string) l o m dq :
   {{{ is_pkg_init apimodel ∗
-      ⌜ i = interface.mk (go.PointerType v1.ObjectMeta) #l ⌝ ∗
-      ObjectMetaV.deepown_l l m dq ∗
+      ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       ⌜ ObjectMetaV.valid kind m ⌝
   }}}
     @! apimodel.validateObjectMeta #(interface.ok i) #kind
   {{{ RET #interface.nil;
-      ObjectMetaV.deepown_l l m dq
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
   }}}.
 Proof.
 Admitted.

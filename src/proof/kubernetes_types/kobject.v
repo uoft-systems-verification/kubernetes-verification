@@ -224,6 +224,24 @@ Inductive t :=
 | PersistentVolumeClaim (pvc : PersistentVolumeClaimV.t)
 | StatefulSet (sts : StatefulSetV.t).
 
+(** These are Go interface-membership facts, not method-call specifications.
+    [go.type_set_contains] consults the semantic [method_set], while the
+    generated [MethodUnfold] instances for direct and promoted methods constrain
+    only method execution. The current generated package assumptions do not
+    connect those two parts of the semantics, so these facts cannot yet be
+    derived from them. Remove this class once Goose generates signature-bearing
+    method-set lookup facts. *)
+Class ObjectInterfaceAssumptions : Prop := {
+  pod_is_object :
+    go.type_set_contains (go.PointerType v1.Pod) v1.Object = true;
+  replicaset_is_object :
+    go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true;
+  persistentvolumeclaim_is_object :
+    go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true;
+  statefulset_is_object :
+    go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true;
+}.
+
 Definition typemeta o : v1.TypeMeta.t :=
   match o with
   | Pod p => p.(PodV.TypeMeta')
@@ -470,14 +488,48 @@ Definition deepown_l_without_meta l v dq: iProp Σ :=
 
 Definition valid_interface i (l: loc) v: Prop :=
   match v with
-  | Pod _ => i = interface.mk (go.PointerType v1.Pod) #l
-  | ReplicaSet _ => i = interface.mk (go.PointerType v1.ReplicaSet) #l
-  | PersistentVolumeClaim _ => i = interface.mk (go.PointerType v1.PersistentVolumeClaim) #l
-  | StatefulSet _ => i = interface.mk (go.PointerType v1.StatefulSet) #l
+  | Pod _ =>
+      i = interface.mk (go.PointerType v1.Pod) #l ∧
+      go.type_set_contains (go.PointerType v1.Pod) v1.Object = true
+  | ReplicaSet _ =>
+      i = interface.mk (go.PointerType v1.ReplicaSet) #l ∧
+      go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true
+  | PersistentVolumeClaim _ =>
+      i = interface.mk (go.PointerType v1.PersistentVolumeClaim) #l ∧
+      go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true
+  | StatefulSet _ =>
+      i = interface.mk (go.PointerType v1.StatefulSet) #l ∧
+      go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true
   end.
 
 Definition deepown_i i v dq: iProp Σ :=
   ∃ l, ⌜ valid_interface i l v ⌝ ∗ deepown_l l v dq.
+
+Section object_interface_assumptions.
+Context `{object_interface_sem : !ObjectInterfaceAssumptions}.
+
+Lemma valid_interface_Pod l p :
+  valid_interface (interface.mk (go.PointerType v1.Pod) #l) l (Pod p).
+Proof using object_interface_sem. split; [done|apply pod_is_object]. Qed.
+
+Lemma valid_interface_ReplicaSet l rs :
+  valid_interface (interface.mk (go.PointerType v1.ReplicaSet) #l) l
+    (ReplicaSet rs).
+Proof using object_interface_sem. split; [done|apply replicaset_is_object]. Qed.
+
+Lemma valid_interface_PersistentVolumeClaim l pvc :
+  valid_interface (interface.mk (go.PointerType v1.PersistentVolumeClaim) #l) l
+    (PersistentVolumeClaim pvc).
+Proof using object_interface_sem.
+  split; [done|apply persistentvolumeclaim_is_object].
+Qed.
+
+Lemma valid_interface_StatefulSet l sts :
+  valid_interface (interface.mk (go.PointerType v1.StatefulSet) #l) l
+    (StatefulSet sts).
+Proof using object_interface_sem. split; [done|apply statefulset_is_object]. Qed.
+
+End object_interface_assumptions.
 
 Definition typemeta_ptr l v: loc :=
   match v with
@@ -587,6 +639,8 @@ Proof.
   iIntros "[Hdeepown_i %Hvalid]".
   iDestruct "Hdeepown_i" as (l') "[%Hvalid' Hdeepown_l]".
   destruct v; simpl in *;
+  destruct Hvalid as [Hvalid _];
+  destruct Hvalid' as [Hvalid' _];
   subst i;
   simplify_eq;
   done.

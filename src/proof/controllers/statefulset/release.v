@@ -41,6 +41,7 @@ Proof using package_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Local Set Default Proof Using "All".
 
 Definition owner_references_without_uid

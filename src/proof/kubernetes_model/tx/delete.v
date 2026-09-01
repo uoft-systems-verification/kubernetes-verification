@@ -21,21 +21,21 @@ Definition precondition_uid_mismatch (options : DeleteOptionsV.t) (metadata : Ob
   | None => false
   end.
 
-Lemma wp_preconditionUIDMismatch options_c options metadata_i metadata_l metadata dq :
+Lemma wp_preconditionUIDMismatch options_c options metadata_i l o metadata dq :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
+      "%Hmetadata_i" ∷ ⌜ KObjectV.valid_interface metadata_i l o ⌝ ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options dq ∗
-      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata dq
+      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) metadata dq
   }}}
     @! apimodel.preconditionUIDMismatch #options_c #(interface.ok metadata_i)
   {{{ mismatch, RET #mismatch;
       "%Hmismatch" ∷ ⌜ mismatch = precondition_uid_mismatch options metadata ⌝ ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options dq ∗
-      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata dq
+      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) metadata dq
   }}}.
 Proof.
   wp_start as "H".
-  iNamed "H". subst metadata_i.
+  iNamed "H".
   iNamed "Hdeepown_options".
   destruct options.(DeleteOptionsV.Preconditions') as [preconditions|] eqn:Hpreconditions.
   - iDestruct "Hdeepown_preconditions_some" as (preconditions_c)
@@ -58,7 +58,7 @@ Proof.
       { apply bool_decide_false. done. }
       rewrite Huid_nonnull_decide /=.
       wp_auto.
-      wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_metadata]").
+      wp_apply (wp_GetUID_deepown_kobject metadata_i l o with "[$Hdeepown_metadata]"). 1: done.
       iIntros "Hdeepown_metadata".
       destruct (decide (uid = metadata.(ObjectMetaV.UID'))) as [Huid_eq|Huid_neq].
       * rewrite Huid_eq.
@@ -226,23 +226,23 @@ Proof.
   intros Hneq. apply Hneq. done.
 Qed.
 
-Lemma wp_setPreconditionResourceVersion options_l options metadata_i metadata_l metadata :
+Lemma wp_setPreconditionResourceVersion options_l options metadata_i l o metadata :
   {{{ is_pkg_init apimodel ∗
-      "%Hmetadata_i" ∷ ⌜ metadata_i = interface.mk (go.PointerType v1.ObjectMeta) #metadata_l ⌝ ∗
+      "%Hmetadata_i" ∷ ⌜ KObjectV.valid_interface metadata_i l o ⌝ ∗
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options 1 ∗
-      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata 1 }}}
+      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) metadata 1 }}}
     @! apimodel.setPreconditionResourceVersion #options_l #(interface.ok metadata_i)
   {{{ RET #();
       "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1 ∗
-      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l metadata_l metadata 1 }}}.
+      "Hdeepown_metadata" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) metadata 1 }}}.
 Proof.
   wp_start as "H".
-  iNamed "H". subst metadata_i.
+  iNamed "H".
   iDestruct "Hdeepown_options_l" as (options_c) "[Hoptions_l Hdeepown_options]".
   iNamed "Hdeepown_options".
   wp_auto.
-  wp_apply (v1.wp_GetResourceVersion_deepown with "[$Hdeepown_metadata]").
+  wp_apply (wp_GetResourceVersion_deepown_kobject metadata_i l o with "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata".
   wp_auto.
   iAssert (⌜ rv_ptr ≠ null ⌝%I) as "%Hrv_ptr_not_null".
@@ -466,13 +466,13 @@ Proof.
   assert (Hprecondition_uid_mismatch_false :
     precondition_uid_mismatch options (KObjectV.objectmeta kobj) = false).
   { eapply precondition_uid_mismatch_false; done. }
-  wp_apply (wp_preconditionUIDMismatch with
+  wp_apply (wp_preconditionUIDMismatch options_c_copy options i kobj_l kobj with
     "[$Hinit $Hdeepown_options_copy $Hdeepown_metadata]").
   { done. }
   iIntros (mismatch) "(%Hmismatch & Hdeepown_options_copy & Hdeepown_metadata)".
   rewrite Hmismatch Hprecondition_uid_mismatch_false.
   wp_auto.
-  wp_apply (wp_setPreconditionResourceVersion with
+  wp_apply (wp_setPreconditionResourceVersion _ options i kobj_l kobj with
     "[optionsCopy Hdeepown_options_copy Hdeepown_metadata]").
   { iFrame "#".
     iSplit; first done.

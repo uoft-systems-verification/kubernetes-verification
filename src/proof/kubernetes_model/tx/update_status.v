@@ -8,6 +8,7 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Local Set Default Proof Using "All".
 
 Lemma wp_State__updateStatusTx_au γ l kind namespace i kobj :
@@ -97,7 +98,8 @@ Proof.
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
   { iPureIntro. split. 1: done. right. done. }
   iIntros "Hdeepown_metadata". wp_auto.
-  wp_apply (wp_GetName_deepown with "[$Hdeepown_metadata]").
+  wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto.
   rewrite bool_decide_false //. wp_auto.
   set key := {|
@@ -130,9 +132,11 @@ Proof.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
     "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
       Hdeepown_existing_status)".
-  wp_apply (wp_GetResourceVersion_deepown with "[$Hdeepown_existing_metadata]").
+  wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
+    "[$Hdeepown_existing_metadata]"). 1: done.
   iIntros "Hdeepown_existing_metadata". wp_auto.
-  wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_metadata]").
+  wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto.
   assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := namespace |>) =
     KObjectV.objectmeta kobj) as Hnamespace_noop.
@@ -147,7 +151,7 @@ Proof.
   iAssert (KObjectV.deepown_i i_copy kobj_rv 1) with "[Hdeepown_l]" as
     "Hdeepown_i_copy".
   { iExists kobj_l. iSplit.
-    { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; done. }
+    { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
   assert (valid_resource_version
     (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as

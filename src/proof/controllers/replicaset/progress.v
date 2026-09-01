@@ -192,6 +192,8 @@ Lemma own_unreserved_key_frag_list_as_keys γ pods :
   ([∗ list] key ∈ PodV.key <$> pods, own_unreserved_key_frag γ key).
 Proof. rewrite big_sepL_fmap. done. Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_manageReplicas γ l sl rs_l ptrs active_pods inactive_pods rs n phase dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -322,7 +324,8 @@ Proof.
 	    { iFrame "# Hdeepown_m_l_rs Hdeepown_l_controller_ref".
 	      iSplitL "Hrs_Template Hrs_Hdeepown_template".
 	      { iExists rs_spec_c'.(v1.ReplicaSetSpec.Template'). iFrame. }
-	      iPureIntro. split; [done|exact Hrs_name_valid]. }
+	      iPureIntro. split;
+	        [apply KObjectV.valid_interface_ReplicaSet|exact Hrs_name_valid]. }
 	    iIntros (pod_l) "(Hdeepown_l_pod & Htemplate & Hdeepown_m_l_rs)".
 	    iDestruct "Htemplate" as (template_c) "[Hrs_Template Hrs_Hdeepown_template]".
 	    set rs_spec_c'' :=

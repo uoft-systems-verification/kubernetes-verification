@@ -42,6 +42,8 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_syncStatefulSet_progress γ l namespace name sts dq pods pvcs :
   ⊢ progress_spec γ l namespace name sts dq pods pvcs.
 Proof.

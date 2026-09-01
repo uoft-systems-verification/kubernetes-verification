@@ -90,6 +90,8 @@ Proof.
   exact Hperm.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_manageReplicas_stability sl rs_l ptrs active_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "Hsl" ∷ sl ↦* ptrs ∗

@@ -66,65 +66,6 @@ Proof.
   iApply "HΦ". iFrame. done.
 Qed.
 
-(** Borrow the labels map from an owned ObjectMeta. The wand returns the map
-    ownership to the enclosing metadata object after [Matches] has inspected
-    it. *)
-Lemma wp_ObjectMeta__GetLabels_deepown meta_l meta dq :
-  {{{ is_pkg_init v1 ∗
-      ObjectMetaV.deepown_l meta_l meta dq
-  }}}
-    meta_l @! (go.PointerType v1.ObjectMeta) @! "GetLabels" #()
-  {{{ labels_l, RET #labels_l;
-      labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq ∗
-      (labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq -∗
-        ObjectMetaV.deepown_l meta_l meta dq)
-  }}}.
-Proof.
-  wp_start as "Hmeta".
-  iDestruct "Hmeta" as (meta_c) "[Hmeta_l Hmeta]".
-  iDestruct (struct_fields_split (V:=v1.ObjectMeta.t) with "Hmeta_l") as
-    "[Hmeta_fields %Hmeta_nonnull]".
-  iNamedPrefix "Hmeta_fields" "Hfield_".
-  iNamed "Hmeta".
-  wp_auto.
-  iApply "HΦ".
-  destruct meta.(ObjectMetaV.Labels') as [label_map|] eqn:Hlabels.
-  - iDestruct "Hdeepown_labels_some" as (label_map_c)
-      "[Hlabel_map %Hlabel_map]". subst label_map_c.
-    iAssert (labels_set_rep meta_c.(v1.ObjectMeta.Labels')
-      (Some label_map) dq) with "[Hlabel_map]" as "Hlabels_rep".
-    { rewrite /labels_set_rep. iFrame.
-      iPureIntro. exact Hdeepown_labels_none. }
-    iFrame "Hlabels_rep".
-    iIntros "Hlabels_rep_back".
-    iEval (rewrite /labels_set_rep) in "Hlabels_rep_back".
-    iDestruct "Hlabels_rep_back" as "[_ Hlabel_map]".
-    iCombineNamed "Hfield_*" as "Hmeta_fields".
-    iAssert (typed_pointsto_def meta_l meta_c dq) with
-      "[Hmeta_fields]" as "Hmeta_l".
-    { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
-    iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t) meta_l meta_c dq
-      Hmeta_nonnull with "Hmeta_l") as "Hmeta_l".
-    iExists meta_c. iFrame "Hmeta_l".
-    rewrite /ObjectMetaV.deepown /named Hlabels. iFrame. iFrame "%".
-    done.
-  - iAssert (labels_set_rep meta_c.(v1.ObjectMeta.Labels') None dq)
-      as "Hlabels_rep".
-    { rewrite /labels_set_rep. iSplit; last done.
-      iPureIntro. split; [intros _; done|].
-      intros _. apply Hdeepown_labels_none. done. }
-    iFrame "Hlabels_rep".
-    iIntros "_".
-    iCombineNamed "Hfield_*" as "Hmeta_fields".
-    iAssert (typed_pointsto_def meta_l meta_c dq) with
-      "[Hmeta_fields]" as "Hmeta_l".
-    { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
-    iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t) meta_l meta_c dq
-      Hmeta_nonnull with "Hmeta_l") as "Hmeta_l".
-    iExists meta_c. iFrame "Hmeta_l".
-    rewrite /ObjectMetaV.deepown /named Hlabels. iFrame. iFrame "%".
-Qed.
-
 (** Filtering uses the semantic selector representation from the labels
     package. The weak list API intentionally forgets which valid objects
     matched once the filter has run. *)
@@ -218,7 +159,8 @@ Proof.
     wp_apply wp_Accessor; first (iPureIntro; exact Hthis_interface).
     iPoseProof (KObjectV.deepown_l_split with "Hthis") as
       "(%Hthis_l_nonnull & Hthis_type & Hthis_meta & Hthis_spec & Hthis_status)".
-    wp_apply (wp_ObjectMeta__GetLabels_deepown with "[$Hv1_init $Hthis_meta]").
+    wp_apply (wp_GetLabels_deepown_kobject this_interface this_l this_obj
+      with "[$Hv1_init $Hthis_meta]"). 1: done.
     iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto.
     wp_bind ((match selector with
       | interface.ok selector_i =>
@@ -338,7 +280,7 @@ Proof.
   - iIntros "H". iDestruct "H" as %[].
   - iIntros "[Hi Hrest]".
     iDestruct "Hi" as (ptr) "[%Hi Hrs]".
-    simpl in Hi. subst i.
+    simpl in Hi. destruct Hi as [Hi _]. subst i.
     iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
     iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
 Qed.
@@ -496,7 +438,7 @@ Proof.
   - iIntros "H". iDestruct "H" as %[].
   - iIntros "[Hi Hrest]".
     iDestruct "Hi" as (ptr) "[%Hi Hpod]".
-    simpl in Hi. subst i.
+    simpl in Hi. destruct Hi as [Hi _]. subst i.
     iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
     iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
 Qed.

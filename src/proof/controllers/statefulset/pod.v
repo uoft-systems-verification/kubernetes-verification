@@ -99,6 +99,8 @@ Definition new_statefulset_pod (set : StatefulSetV.t) (ordinal : nat)
   init_storage set (init_identity set pod ordinal) ordinal
     claim_template_names.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_newStatefulSetPod set_l (set : StatefulSetV.t) (ordinal : w64) dq :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq ∗
@@ -220,7 +222,7 @@ Proof.
       Hset_spec_deepown_Hdeepown_template".
     { iExists set_spec_c.(v1.StatefulSetSpec.Template').
       iFrame. }
-    iPureIntro. split; done. }
+    iPureIntro. split; [apply KObjectV.valid_interface_StatefulSet|done]. }
   iIntros (pod_l) "(Hpod & Htemplate & Hset_objectmeta_l)".
   wp_auto.
   iDestruct "Htemplate" as (template_c)

@@ -41,6 +41,8 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 (* [createStatefulPod] first ensures one PVC for every distinct claim-template
    name, then creates the named Pod.  The intended caller owns a reservation for
    the missing Pod key, so Pod creation succeeds and the AlreadyExists branch is

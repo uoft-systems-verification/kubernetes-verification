@@ -444,8 +444,7 @@ Proof.
   iIntros (annotations_l) "[Htemplate Hannotations]".
   wp_auto.
   wp_apply wp_Accessor. 1: iPureIntro; done.
-  wp_auto.
-  wp_apply (wp_GetName_deepown with "[$Hparent_meta]").
+  wp_apply (wp_GetName_deepown_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
   iIntros "Hparent_meta".
   wp_auto.
   wp_apply (wp_getPodsPrefix with "[]").

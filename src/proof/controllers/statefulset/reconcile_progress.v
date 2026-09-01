@@ -2798,6 +2798,8 @@ Proof.
     done.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods : list PodV.t) (pvcs : list PersistentVolumeClaimV.t)

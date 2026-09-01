@@ -39,6 +39,8 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_syncReplicaSet_preservation γ l namespace name rs dq pods :
   ⊢ preservation_spec γ l namespace name rs dq pods.
 Proof.

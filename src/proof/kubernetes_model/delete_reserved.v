@@ -110,7 +110,8 @@ Proof.
   wp_alloc err as "Herr". wp_auto.
   wp_apply (wp_validateDeleteOptions with "[$Hdeepown_l_options1]"). 1: done.
   iIntros "Hdeepown_l_options1". wp_auto.
-  wp_apply (wp_validateDeletePreconditions with "[$Hdeepown_m_l1 $Hdeepown_l_options1]"). 1: done.
+  wp_apply (wp_validateDeletePreconditions i1 l1 kobj with
+    "[$Hdeepown_m_l1 $Hdeepown_l_options1]"). 1: done.
   iIntros (err0) "(%Hpreconditions & Hdeepown_m_l1 & Hdeepown_l_options1)". wp_auto.
   destruct Hpreconditions as [[Hdelete_preconditions_match ->]|
     [Hdelete_preconditions_not_match [Herr0 Hconflict_err0]]].
@@ -180,16 +181,16 @@ Proof.
       [Hdt_none _].
     exfalso. done.
   }
-  wp_apply (wp_deletionFinalizersForGarbageCollection with "[$Hdeepown_m_l1 $Hdeepown_l_options1]").
-  { iFrame "%". done. }
+  wp_apply (wp_deletionFinalizersForGarbageCollection i1 l1 kobj with
+    "[$Hdeepown_m_l1 $Hdeepown_l_options1]").
+  all: try (iPureIntro; done).
   iIntros (should_update_finalizers new_finalizers_sl new_finalizers) "(%Hshould_update_finalizers_eq &
     %Hnew_finalizers_eq & %Hvalid_new_finalizers & %Hnew_finalizers_none & Hnew_finalizers_some & Hdeepown_m_l1 &
     Hdeepown_l_options1)". wp_auto.
   iDestruct "Hdeepown_m_l1" as "(%mc0 & Hmc_ptr & Hdeepown_m)".
   wp_if_join (λ v, ⌜ v = execute_val ⌝ ∗
     ∃ current_kmeta mc,
-    "metadata" ∷ metadata_ptr ↦
-      interface.mk_ok (go.PointerType v1.ObjectMeta) #(KObjectV.objectmeta_ptr l1 kobj) ∗
+    "metadata" ∷ metadata_ptr ↦ interface.ok i1 ∗
     "newFinalizers" ∷ newFinalizers_ptr ↦ new_finalizers_sl ∗
     "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦ mc ∗
     "Hdeepown_m" ∷ ObjectMetaV.deepown mc current_kmeta 1 ∗
@@ -198,7 +199,7 @@ Proof.
         current_kmeta.(ObjectMetaV.Finalizers') |> ⌝ ∗
     "%Hvalid_current_finalizers" ∷ ⌜ valid_finalizers current_kmeta.(ObjectMetaV.Finalizers') ⌝)%I
     with "[metadata newFinalizers Hmc_ptr Hdeepown_m Hnew_finalizers_some]".
-  { wp_apply (wp_SetFinalizers with "[$Hmc_ptr]") as "Hmc_ptr".
+  { wp_apply (wp_SetFinalizers_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
     iSplit; first done.
     iExists ((KObjectV.objectmeta kobj) <| ObjectMetaV.Finalizers' := new_finalizers |>),
       (mc0 <| v1.ObjectMeta.Finalizers' := new_finalizers_sl |>).
@@ -247,7 +248,7 @@ Proof.
   }
   { iSplit; first done. iExists (W64 0), graceful_val. iFrame. }
   iIntros (?) "H". iDestruct "H" as "(-> & %gps & %graceful_val1 & H)". iNamed "H". wp_auto.
-  wp_apply (wp_GetFinalizers with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_GetFinalizers_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
   wp_if_join (λ v, ∃ (should_delete : bool),
     "->" ∷ ⌜ v = #should_delete ⌝ ∗
     "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦ mc ∗
@@ -325,7 +326,7 @@ Proof.
   }
   iEval (rewrite /ObjectMetaV.deepown) in "Hdeepown_m".
   iNamedPrefix "Hdeepown_m" "Hmeta_".
-  wp_apply (wp_GetDeletionGracePeriodSeconds with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_GetDeletionGracePeriodSeconds_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
   wp_if_join (λ v, ∃ (should_set_grace_period : bool),
     "->" ∷ ⌜ v = #should_set_grace_period ⌝ ∗
     "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦ mc ∗
@@ -355,8 +356,7 @@ Proof.
   iIntros (?) "H". iNamed "H". wp_auto.
   wp_if_join (λ v, "->" ∷ ⌜ v = execute_val ⌝ ∗
     ∃ dgps_ptr,
-      "metadata" ∷ metadata_ptr ↦
-        interface.mk_ok (go.PointerType v1.ObjectMeta) #(KObjectV.objectmeta_ptr l1 kobj) ∗
+      "metadata" ∷ metadata_ptr ↦ interface.ok i1 ∗
       "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦
         (mc <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps_ptr |>) ∗
       "graceful" ∷ graceful_ptr ↦ graceful_val1 ∗
@@ -364,7 +364,7 @@ Proof.
       "Hdgps" ∷ (⌜ dgps_ptr = gracePeriod_ptr ⌝ ∨ dgps_ptr ↦ gps))%I
     with "[metadata Hmc_ptr graceful gracePeriod Hcurrent_dgps]".
   {
-    wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hmc_ptr]") as "Hmc_ptr".
+    wp_apply (wp_SetDeletionGracePeriodSeconds_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
     iSplit; first done. iExists gracePeriod_ptr. iFrame. iLeft. done.
   }
   { iSplit; first done.
@@ -378,12 +378,12 @@ Proof.
   set mc_dgps := mc <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps_ptr |>.
   iEval (change (mc <| v1.ObjectMeta.DeletionGracePeriodSeconds' := dgps_ptr |>) with mc_dgps) in "Hmc_ptr".
   wp_auto.
-  wp_apply (wp_GetDeletionTimestamp (KObjectV.objectmeta_ptr l1 kobj) mc_dgps (DfracOwn 1) with "[$Hmc_ptr]") as "Hmc_ptr".
+  wp_apply (wp_GetDeletionTimestamp_kobject i1 l1 kobj mc_dgps (DfracOwn 1)
+    with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
   change (v1.ObjectMeta.DeletionTimestamp' mc_dgps) with (v1.ObjectMeta.DeletionTimestamp' mc).
   wp_if_join (λ v, "->" ∷ ⌜ v = execute_val ⌝ ∗
     ∃ dt_ptr dt_c dt_v gen,
-      "metadata" ∷ metadata_ptr ↦
-        interface.mk_ok (go.PointerType v1.ObjectMeta) #(KObjectV.objectmeta_ptr l1 kobj) ∗
+      "metadata" ∷ metadata_ptr ↦ interface.ok i1 ∗
       "gracePeriod" ∷ gracePeriod_ptr ↦ gps ∗
       "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦
         (mc_dgps <| v1.ObjectMeta.DeletionTimestamp' := dt_ptr |>
@@ -392,22 +392,23 @@ Proof.
       "Hdeepown_time" ∷ TimeV.deepown dt_c dt_v 1)%I
     with "[metadata Hmc_ptr graceful gracePeriod Hmeta_Hdeepown_deletiontimestamp_some]".
   { wp_apply (wp_deletionTimestampForDelete). iIntros (timel timec timev) "[Htimel Hdeepown_time]". wp_auto.
-    wp_apply (wp_SetDeletionTimestamp with "[$Hmc_ptr]") as "Hmc_ptr".
+    wp_apply (wp_SetDeletionTimestamp_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
     set mc_dt := mc_dgps <| v1.ObjectMeta.DeletionTimestamp' := timel |>.
     iEval (change (mc_dgps <| v1.ObjectMeta.DeletionTimestamp' := timel |>) with mc_dt) in "Hmc_ptr".
-    wp_apply (wp_GetGeneration (KObjectV.objectmeta_ptr l1 kobj) mc_dt (DfracOwn 1) with "[$Hmc_ptr]") as "Hmc_ptr".
+    wp_apply (wp_GetGeneration_kobject i1 l1 kobj mc_dt (DfracOwn 1)
+      with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
     change (v1.ObjectMeta.Generation' mc_dt) with (v1.ObjectMeta.Generation' mc).
     wp_if_join (λ v, "->" ∷ ⌜ v = execute_val ⌝ ∗
       ∃ gen,
-        "metadata" ∷ metadata_ptr ↦
-          interface.mk_ok (go.PointerType v1.ObjectMeta) #(KObjectV.objectmeta_ptr l1 kobj) ∗
+        "metadata" ∷ metadata_ptr ↦ interface.ok i1 ∗
         "Hmc_ptr" ∷ KObjectV.objectmeta_ptr l1 kobj ↦
         (mc_dt <| v1.ObjectMeta.Generation' := gen |>) )%I
       with "[metadata Hmc_ptr]".
-    { wp_bind ((KObjectV.objectmeta_ptr l1 kobj) @! (go.PointerType v1.ObjectMeta) @! "GetGeneration" #())%E.
-      wp_apply (wp_GetGeneration (KObjectV.objectmeta_ptr l1 kobj) mc_dt (DfracOwn 1) with "[$Hmc_ptr]") as "Hmc_ptr".
+    { wp_bind (#(methods i1.(interface.ty) "GetGeneration" i1.(interface.v)) #())%E.
+      wp_apply (wp_GetGeneration_kobject i1 l1 kobj mc_dt (DfracOwn 1)
+        with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
       change (v1.ObjectMeta.Generation' mc_dt) with (v1.ObjectMeta.Generation' mc).
-      wp_apply (wp_SetGeneration with "[$Hmc_ptr]") as "Hmc_ptr".
+      wp_apply (wp_SetGeneration_kobject i1 l1 kobj with "[$Hmc_ptr]") as "Hmc_ptr". 1: done.
       iSplit; first done. iExists (word.add (v1.ObjectMeta.Generation' mc) (W64 1)). iFrame.
     }
     { iSplit; first done. iExists (v1.ObjectMeta.Generation' mc).
@@ -488,12 +489,12 @@ Proof.
   iIntros (generated_rv) "(%Hgenerated_rv_is_not_used & %Hgenerated_rv_valid & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)".
   wp_auto.
   iPoseProof (KObjectV.deepown_i_yields_deepown_l i1 l1 with "[$Hdeepown_i1]") as "Hdeepown_l1".
-  { iPureIntro. destruct kobj; done. }
+  { iPureIntro. destruct kobj; exact Hvalid_interface. }
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l1") as
     "(%Hl1_not_null2 & Hdeepown_t_l1 & Hdeepown_m_l1 & Hdeepown_s_l1 & Hdeepown_st_l1)".
-  assert (KObjectV.objectmeta_ptr l1 kobj = KObjectV.objectmeta_ptr l1 (KObjectV.update_objectmeta kobj new_kmeta)) as ->.
-  { destruct kobj; done. }
-  wp_apply (wp_SetResourceVersion_deepown with "[$Hdeepown_m_l1]") as "Hdeepown_m_l1".
+  wp_apply (wp_SetResourceVersion_deepown_kobject i1 l1
+    (KObjectV.update_objectmeta kobj new_kmeta) with "[$Hdeepown_m_l1]") as "Hdeepown_m_l1".
+  { iPureIntro. destruct kobj; exact Hvalid_interface. }
   wp_apply (wp_map_insert apimodel.KKey with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
   iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hl1_not_null2 with "[$Hdeepown_t_l1 $Hdeepown_m_l1 $Hdeepown_s_l1 $Hdeepown_st_l1]") as "Hdeepown_l1".
   set new_kmeta1 := new_kmeta <| ObjectMetaV.ResourceVersion' := generated_rv |>.
@@ -502,7 +503,7 @@ Proof.
     = KObjectV.update_objectmeta kobj new_kmeta1  ) as ->.
   { destruct kobj; done. }
   iAssert (KObjectV.deepown_i i1 (KObjectV.update_objectmeta kobj new_kmeta1) 1) with "[Hdeepown_l1]" as "Hdeepown_i1".
-  { iFrame. iPureIntro. destruct kobj. all: done. }
+  { iFrame. iPureIntro. destruct kobj; exact Hvalid_interface. }
   set new_kobj := KObjectV.update_objectmeta kobj new_kmeta1.
   iApply fupd_wp.
   iMod "Hau" as (uid kmeta kspec parent_key parent_uid children phase) "H". iNamed "H".

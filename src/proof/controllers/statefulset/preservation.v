@@ -180,6 +180,8 @@ Proof.
   by rewrite -list_elem_of_In.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs :
   ⊢ preservation_spec γ l namespace name sts dq pods pvcs.
 Proof.

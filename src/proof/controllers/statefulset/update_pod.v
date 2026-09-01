@@ -189,6 +189,8 @@ Proof.
   split_and!; done.
 Qed.
 
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
+
 Lemma wp_updateStatefulPod γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
     dq_set dq_pod :
