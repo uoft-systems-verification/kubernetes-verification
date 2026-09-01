@@ -492,19 +492,68 @@ Axiom template_matches_dec : ∀ t1 t2, Decision (template_matches t1 t2).
 #[global] Existing Instance template_matches_dec.
 Axiom template_matches_sym : ∀ t1 t2, template_matches t1 t2 → template_matches t2 t1.
 
+(* Storing a ReplicaSet runs its pod template's ObjectMeta through
+   [pod_objectmeta_after_conversion]. That only drops the legacy
+   init-container annotations that PodTemplateSpec conversion strips from a
+   stored Deployment's template too, so EqualIgnoreHash cannot see the
+   difference in either direction. Like the two axioms above this is content
+   of the axiomatized [template_matches] relation; discharge it alongside the
+   TODO above. *)
+Axiom template_matches_after_conversion : ∀ t1 t2,
+  template_matches
+    (t1 <| PodTemplateSpecV.ObjectMeta' :=
+      pod_objectmeta_after_conversion t1.(PodTemplateSpecV.ObjectMeta') |>) t2
+  ↔ template_matches t1 t2.
+
+Definition template_after_store (t : PodTemplateSpecV.t) : PodTemplateSpecV.t :=
+  t <| PodTemplateSpecV.ObjectMeta' :=
+    pod_objectmeta_after_conversion t.(PodTemplateSpecV.ObjectMeta') |>.
+
+(* What survives an update that rewrites only the replica count. The template
+   itself is untouched, but storing it normalizes its ObjectMeta, so a
+   no-op scale leaves the template alone while a real one returns it
+   normalized. Weaker than equality precisely by that normalization, which
+   [template_matches] cannot see. *)
+Definition template_preserved (t t' : PodTemplateSpecV.t) : Prop :=
+  t' = t ∨ t' = template_after_store t.
+
+Lemma template_preserved_refl t : template_preserved t t.
+Proof. left. done. Qed.
+
+Lemma template_preserved_matches t t' dt :
+  template_preserved t t' →
+  template_matches t' dt ↔ template_matches t dt.
+Proof.
+  intros [-> | ->]; first done.
+  rewrite /template_after_store. apply template_matches_after_conversion.
+Qed.
+
 Definition rs_template (rs : ReplicaSetV.t) : PodTemplateSpecV.t :=
   rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').
 
 Definition deployment_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
   d.(DeploymentV.Spec').(DeploymentSpecV.Template').
 
+(* Storing the result of a scale is the only way a ReplicaSet's template
+   changes along these proofs, so [ReplicaSetSpecV.updated] is exactly
+   [template_preserved] on the template. *)
+Lemma template_preserved_of_spec_updated old_spec new_spec :
+  ReplicaSetSpecV.updated old_spec new_spec →
+  template_preserved
+    old_spec.(ReplicaSetSpecV.Template') new_spec.(ReplicaSetSpecV.Template').
+Proof.
+  rewrite /ReplicaSetSpecV.updated /ReplicaSetSpecV.created.
+  intros (_ & _ & _ & Htmpl). right. rewrite /template_after_store. exact Htmpl.
+Qed.
+
 (* The merge preserves templates when both inputs do. *)
 Lemma merge_old_posts_Forall2_templates uid (rss : list ReplicaSetV.t)
     new_post posts :
-  Forall (λ rs, rs_is_new uid rs → rs_template new_post = rs_template rs) rss →
-  Forall2 (λ a b, rs_template b = rs_template a)
+  Forall (λ rs, rs_is_new uid rs →
+    template_preserved (rs_template rs) (rs_template new_post)) rss →
+  Forall2 (λ a b, template_preserved (rs_template a) (rs_template b))
     (filter (rs_is_old uid) rss) posts →
-  Forall2 (λ a b, rs_template b = rs_template a) rss
+  Forall2 (λ a b, template_preserved (rs_template a) (rs_template b)) rss
     (merge_old_posts uid rss new_post posts).
 Proof.
   revert posts. induction rss as [|x rest IH]; intros posts Hnew Hold.
@@ -593,17 +642,21 @@ Proof.
     /rs_scaled /rs_scaled_spec /=. done.
 Qed.
 
-Lemma rs_scaled_valid_named_create ns rs n :
+Lemma rs_scaled_valid_create request_kind ns rs n :
   ReplicaSetV.valid rs →
   0 ≤ sint.Z n →
+  request_kind = ReplicaSetV.kind →
   ns = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') →
-  ReplicaSetV.valid_named_create ns (rs_scaled rs n).
+  ReplicaSetV.valid_create request_kind ns (rs_scaled rs n).
 Proof.
-  rewrite /ReplicaSetV.valid /ReplicaSetV.valid_named_create /rs_scaled /=.
-  intros (Htm & _ & Hmeta & Hspec & _) Hn ->.
+  rewrite /ReplicaSetV.valid /ReplicaSetV.valid_create /rs_scaled /=.
+  intros (Htm & _ & Hmeta & Hspec & _) Hn Hkind Hns.
   split_and!.
+  - exact Hkind.
+  - rewrite Hns. exact (ObjectMetaV.valid_namespace_nonempty_of_valid _ Hmeta).
+  - rewrite Hns. exact (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
   - eapply valid_typemeta_valid_create_typemeta. exact Htm.
-  - eapply ObjectMetaV.valid_named_create_of_valid; done.
+  - eapply ObjectMetaV.valid_create_of_valid; done.
   - apply rs_scaled_spec_valid_create; [exact (proj1 Hspec)|exact Hn].
 Qed.
 
@@ -907,27 +960,33 @@ Proof.
 Qed.
 
 (* The ReplicaSet getNewReplicaSet submits passes admission. *)
-Lemma new_replica_set_valid_named_create d ref dsel :
+Lemma new_replica_set_valid_create request_kind d ref dsel :
+  request_kind = ReplicaSetV.kind →
   DeploymentV.valid d →
   valid_dns1123_subdomain (new_rs_name d) →
   d.(DeploymentV.Spec').(DeploymentSpecV.Selector') = Some dsel →
   selector_avoids_hash_label dsel →
   OwnerReferenceV.valid ref →
-  ReplicaSetV.valid_named_create
+  ReplicaSetV.valid_create request_kind
     d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') (new_replica_set d ref).
 Proof.
-  intros Hd_valid Hname Hdsel Havoid Href.
+  intros Hkind Hd_valid Hname Hdsel Havoid Href.
   pose proof Hd_valid as (Htm & _ & Hmeta & Hspec & _).
   pose proof Hspec as (Hrepl & Hmin &
     (dsel0 & Hdsel0 & Hsel_valid & Hsel_ne & Hsel_match) & Htmpl).
   assert (dsel0 = dsel) as ->
     by (rewrite Hdsel in Hdsel0; injection Hdsel0; auto).
-  rewrite /ReplicaSetV.valid_named_create /new_replica_set /=.
+  rewrite /ReplicaSetV.valid_create /new_replica_set /=.
   split_and!.
+  - exact Hkind.
+  - exact (ObjectMetaV.valid_namespace_nonempty_of_valid _ Hmeta).
+  - exact (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
   - apply zero_typemeta_valid_create.
-  - rewrite /ObjectMetaV.valid_named_create /=. split_and!.
+  - rewrite /ObjectMetaV.valid_create /=.
+    rewrite decide_False;
+      first (apply valid_dns1123_subdomain_non_empty; exact Hname).
+    split_and!.
     + intros Hc. done.
-    + apply valid_dns1123_subdomain_non_empty. exact Hname.
     + right. split; [right; left; done|exact Hname].
     + right. split; [|done].
       apply (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
@@ -1024,7 +1083,8 @@ Qed.
 (* Uniqueness only reads templates, so it travels along any pointwise template
    preservation — which is what scaling gives. *)
 Lemma unique_new_replica_set_Forall2_templates d rss rss' :
-  Forall2 (λ rs rs', rs_template rs' = rs_template rs) rss rss' →
+  Forall2 (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
+    rss rss' →
   unique_new_replica_set d rss →
   unique_new_replica_set d rss'.
 Proof.
@@ -1032,8 +1092,8 @@ Proof.
   destruct (Forall2_lookup_r _ _ _ _ _ Hf Hi) as (a & Ha & Hta).
   destruct (Forall2_lookup_r _ _ _ _ _ Hf Hj) as (b & Hb & Htb).
   eapply Hu; [exact Ha|exact Hb| |].
-  - rewrite -Hta. exact Hmi.
-  - rewrite -Htb. exact Hmj.
+  - exact (proj1 (template_preserved_matches _ _ _ Hta) Hmi).
+  - exact (proj1 (template_preserved_matches _ _ _ Htb) Hmj).
 Qed.
 
 (* Appending to a list in which nothing matches: the appended element is the
@@ -1063,13 +1123,15 @@ Proof. rewrite /find_new_replica_set list_find_None. done. Qed.
 
 (* Templates travel, so "nothing matches" does too. *)
 Lemma no_match_Forall2_templates d rss rss' :
-  Forall2 (λ rs rs', rs_template rs' = rs_template rs) rss rss' →
+  Forall2 (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
+    rss rss' →
   Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss →
   Forall (λ rs, ¬ template_matches (rs_template rs) (deployment_template d)) rss'.
 Proof.
   intros Hf Hno. apply Forall_lookup. intros k x Hk Hm.
   destruct (Forall2_lookup_r _ _ _ _ _ Hf Hk) as (a & Ha & Hta).
-  rewrite Forall_lookup in Hno. apply (Hno k a Ha). rewrite -Hta. exact Hm.
+  rewrite Forall_lookup in Hno. apply (Hno k a Ha).
+  exact (proj1 (template_preserved_matches _ _ _ Hta) Hm).
 Qed.
 
 (* The deployment's desired state is realized by [rss]: some ReplicaSet carries

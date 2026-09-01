@@ -174,15 +174,20 @@ Proof.
       (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
       with "[$Hcopy $Hown_meta $Hown_spec]").
     { iFrame "#". iPureIntro. split_and!.
-      - apply rs_scaled_valid_named_create; [split_and!; done|done|done].
+      - apply rs_scaled_valid_create; [split_and!; done|done|done|done].
+      - exact (ObjectMetaV.valid_name_nonempty_of_valid _ Hom_valid).
       - eapply valid_uid_non_empty. eapply ObjectMetaV.valid_uid_of_valid.
         exact Hom_valid.
+      - exact Hrv_valid.
+      - exact Htm_valid.
       - done.
       - done.
       - done.
       - apply valid_simple_update_refl.
       - rewrite /ObjectSpecV.valid_update /ReplicaSetSpecV.valid_update
-          /rs_scaled /rs_scaled_spec /=. done.
+          /rs_scaled /=.
+        split; [|rewrite /rs_scaled_spec /=; done].
+        apply rs_scaled_spec_valid_create; [exact (proj1 Hspec_valid)|done].
       - exact Hdeletion. }
     iIntros (rs'_l rs') "Hupd". iNamedPrefix "Hupd" "Hu_".
     wp_auto.
@@ -519,12 +524,11 @@ Proof.
       d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') children
       with "[$Hapimodel $Hisk $HnewRS_deep $Hreserved $Hown_children]").
     { iPureIntro. split_and!.
-      - eapply new_replica_set_valid_named_create;
-          [exact Hd_valid|exact Hnew_rs_name_valid|exact Hdsel
+      - eapply new_replica_set_valid_create;
+          [done|exact Hd_valid|exact Hnew_rs_name_valid|exact Hdsel
           |exact (proj1 (Hsel_adm dsel Hdsel))|exact Href_valid].
+      - apply valid_dns1123_subdomain_non_empty. exact Hnew_rs_name_valid.
       - apply new_replica_set_extra_valid. exact Hsel_adm.
-      - apply valid_namespace_non_empty. exact Hnamespace_valid.
-      - exact Hnamespace_valid.
       - done.
       - done.
       - pose proof (new_replica_set_is_new d ref Href_controller) as
@@ -561,6 +565,7 @@ Proof.
       rewrite Htmpl_eq.
       pose proof Hshape as (_ & _ & _ & _ & _ & _ & _ & Htmpl_new).
       rewrite /rs_template in Htmpl_new. rewrite Htmpl_new.
+      apply template_matches_after_conversion.
       apply template_matches_new_rs_template. }
     iSplit; [iPureIntro; exact Hmatches'|].
     iRight.
@@ -610,8 +615,10 @@ Lemma wp_reconcileNewReplicaSet γ model_l new_rs_l d_l
           Some (deployment_replicas d) ⌝ ∗
       "%Hscaled" ∷ ⌜ scaled = bool_decide (rs_replicas new_rs ≠ deployment_replicas d) ⌝ ∗
       (* Scaling rewrites only the replica count, so the template — which is
-         what identifies this as the deployment's new ReplicaSet — survives. *)
-      "%Htemplate" ∷ ⌜ rs_template new_rs' = rs_template new_rs ⌝ ∗
+         what identifies this as the deployment's new ReplicaSet — survives,
+         up to the ObjectMeta normalization that storing it applies. *)
+      "%Htemplate" ∷
+        ⌜ template_preserved (rs_template new_rs) (rs_template new_rs') ⌝ ∗
       "%Huid" ∷ ⌜ new_rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
           new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
       "%Hkey_pres" ∷ ⌜ ReplicaSetV.key new_rs' = ReplicaSetV.key new_rs ⌝
@@ -635,7 +642,7 @@ Proof.
   - (* Already at the deployment's count: nothing was written, and validity
        says the stored count is explicit rather than defaulted. *)
     destruct Hnoop as (Hcount & -> & -> & _).
-    iPureIntro. split_and!; [| |done|done|done].
+    iPureIntro. split_and!; [| |apply template_preserved_refl|done|done].
     + rewrite (rs_replicas_of_valid _ Hnew_rs_valid) Hcount. done.
     + assert (bool_decide (rs_replicas new_rs ≠ deployment_replicas d) = false)
         as ->; [|done].
@@ -647,9 +654,9 @@ Proof.
         as ->; [|done].
       apply bool_decide_eq_true_2. exact Hne.
     + rewrite /rs_template.
-      rewrite /ObjectSpecV.updated /ReplicaSetSpecV.updated
-        /ReplicaSetSpecV.created /rs_scaled_spec /= in Hspec_updated.
-      destruct Hspec_updated as (_ & _ & _ & Htmpl). rewrite Htmpl. done.
+      exact (template_preserved_of_spec_updated
+        (rs_scaled_spec new_rs (deployment_replicas d))
+        new_rs'.(ReplicaSetV.Spec') Hspec_updated).
 Qed.
 
 (* reconcileOldReplicaSets drains every old ReplicaSet to zero in one pass. *)
@@ -693,7 +700,8 @@ Lemma wp_reconcileOldReplicaSets γ model_l sl ptrs
           bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0) old_rss) ⌝ ∗
       (* Draining rewrites only the replica count, so templates survive. The
          caller needs this to carry [unique_new_replica_set] across the sync. *)
-      "%Htemplates" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+      "%Htemplates" ∷ ⌜ Forall2
+          (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
           old_rss old_rss' ⌝
   }}}.
 Proof.
@@ -721,7 +729,8 @@ Proof.
     "%Hdone_drained" ∷ ⌜ Forall (λ rs',
         rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0))
         done_rss ⌝ ∗
-    "%Hdone_tmpl" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+    "%Hdone_tmpl" ∷ ⌜ Forall2
+      (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
         (take (sint.nat i) old_rss) done_rss ⌝ ∗
     "Hdone" ∷ ([∗ list] rs;rs' ∈ take (sint.nat i) old_rss;done_rss, FRAG rs rs') ∗
     "Hrest" ∷ ([∗ list] rs ∈ drop (sint.nat i) old_rss, FRAG rs rs) ∗
@@ -768,20 +777,20 @@ Proof.
        had to be moved. *)
     iAssert ⌜ this_rs'.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)
         ∧ scaled = bool_decide (rs_replicas this_rs ≠ W32 0)
-        ∧ rs_template this_rs' = rs_template this_rs ⌝%I
+        ∧ template_preserved (rs_template this_rs) (rs_template this_rs') ⌝%I
       as %(Hzero & Hscaled_eq & Htmpl_this).
     { iDestruct "Hdisj" as "[%Hnoop|(%Hscaled & _ & %Hspec_updated)]".
       - destruct Hnoop as (Hcount & -> & -> & _). iPureIntro. split_and!.
         + rewrite (rs_replicas_of_valid _ Hthis_valid) Hcount. done.
         + symmetry. apply bool_decide_eq_false_2. intros Hne. exact (Hne Hcount).
-        + done.
+        + apply template_preserved_refl.
       - destruct Hscaled as (Hne & ->). iPureIntro. split_and!.
         + eapply rs_scaled_spec_updated_replicas. exact Hspec_updated.
         + symmetry. apply bool_decide_eq_true_2. exact Hne.
         + rewrite /rs_template.
-          rewrite /ObjectSpecV.updated /ReplicaSetSpecV.updated
-            /ReplicaSetSpecV.created /rs_scaled_spec /= in Hspec_updated.
-          destruct Hspec_updated as (_ & _ & _ & Ht). rewrite Ht. done. }
+          exact (template_preserved_of_spec_updated
+            (rs_scaled_spec this_rs (W32 0))
+            this_rs'.(ReplicaSetV.Spec') Hspec_updated). }
     (* The accumulator advances by exactly this element's contribution. *)
     assert (bool_decide (Exists (λ rs, rs_replicas rs ≠ W32 0)
         (take (sint.nat (word.add i (W64 1))) old_rss))
@@ -802,7 +811,8 @@ Proof.
     assert (length (done_rss ++ [this_rs']) = sint.nat (word.add i (W64 1)))
       as Hdone_len'.
     { rewrite app_length Hdone_len /=. word. }
-    assert (Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+    assert (Forall2
+        (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
         (take (sint.nat (word.add i (W64 1))) old_rss) (done_rss ++ [this_rs']))
       as Htmpl'.
     { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
@@ -907,7 +917,8 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
           rss' ⌝ ∗
       (* Scaling rewrites only replica counts, so templates survive; the caller
          needs this to carry [unique_new_replica_set] across the sync. *)
-      "%Htemplates" ∷ ⌜ Forall2 (λ rs rs', rs_template rs' = rs_template rs)
+      "%Htemplates" ∷ ⌜ Forall2
+          (λ rs rs', template_preserved (rs_template rs) (rs_template rs'))
           rss rss' ⌝ ∗
       (* [rss'] is the post-state of exactly the ReplicaSets passed in, so
          these fragments cover [rss] and nothing else. *)
@@ -1024,7 +1035,8 @@ Proof.
     assert (¬ rs_is_old (rs_uid new_rs) new_rs) as Hnot_old.
     { rewrite /rs_is_old. intros Hc. exact (Hc eq_refl). }
     iSplit.
-    { iPureIntro. rewrite Htemplate. exact Hnew_rs_matches. }
+    { iPureIntro.
+      exact (proj2 (template_preserved_matches _ _ _ Htemplate) Hnew_rs_matches). }
     iSplit; [iPureIntro; exact Hreplicas|].
     iSplit.
     { iPureIntro.
@@ -1117,7 +1129,8 @@ Proof.
     iApply ("HΦ" $! new_rs' old_rss').
     iFrame "Hd Hsl Hrss Hold_frags".
     iSplit.
-    { iPureIntro. rewrite Htemplate. exact Hnew_rs_matches. }
+    { iPureIntro.
+      exact (proj2 (template_preserved_matches _ _ _ Htemplate) Hnew_rs_matches). }
     iSplit; [iPureIntro; exact Hreplicas|].
     iSplit.
     { iPureIntro. apply Forall_lookup. intros k x Hk. right.
