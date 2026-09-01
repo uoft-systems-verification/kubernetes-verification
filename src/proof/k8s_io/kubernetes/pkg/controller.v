@@ -211,43 +211,40 @@ Lemma wp_getPodsLabelSet template_l template dq :
       labels_l ↦$ default ∅
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
   }}}.
-Proof. Admitted.
-(*
+Proof.
   wp_start as "H". iNamed "H".
   iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
   iNamedPrefix "Htemplate" "Htemplate_".
   iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
+  iDestruct (struct_fields_split with "Htemplate_l") as
+    "[Htemplate_fields %Htemplate_nonnull]".
+  iNamedPrefix "Htemplate_fields" "Htemplate_field_".
+  iDestruct (struct_fields_split with "Htemplate_field_ObjectMeta") as
+    "[Hmeta_fields %Hmeta_nonnull]".
+  iNamedPrefix "Hmeta_fields" "Hmeta_field_".
   wp_auto.
-  rewrite exception_do_unseal /exception_do_def.
-  wp_bind (#(functions go.make1 [go.MapType go.string go.string]) #())%E.
-  wp_apply (wp_map_make1 (K:=go_string) (V:=go_string) go.string go.string).
-  iIntros (labels_l) "Hlabels".
-  Timeout 10 wp_pures.
-  Timeout 10 wp_store.
-  Timeout 10 wp_pures.
-  Timeout 10 wp_load.
-  Timeout 10 wp_pures.
-  Timeout 10 iDestruct (access_strict
-      (A:=(template_l.[v1.PodTemplateSpec.t, "ObjectMeta"] ↦{dq}
-        template_c.(v1.PodTemplateSpec.ObjectMeta')))
-      (A':=(template_l.[v1.PodTemplateSpec.t, "ObjectMeta"] ↦{dq}
-        template_c.(v1.PodTemplateSpec.ObjectMeta')))
-      with "Htemplate_l") as "[Hobjectmeta Hclose_template]".
-  Timeout 10 iDestruct (access_strict
-      (A:=(template_l.[v1.PodTemplateSpec.t, "ObjectMeta"].[v1.ObjectMeta.t, "Labels"]
-        ↦{dq} template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels')))
-      (A':=(template_l.[v1.PodTemplateSpec.t, "ObjectMeta"].[v1.ObjectMeta.t, "Labels"]
-        ↦{dq} template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels')))
-      with "Hobjectmeta") as "[Hlabels_field Hclose_objectmeta]".
-  Timeout 10 wp_apply (wp_load with "Hlabels_field").
-  iIntros "Hlabels_field".
-  iPoseProof ("Hclose_objectmeta" with "Hlabels_field") as "Hobjectmeta".
-  iPoseProof ("Hclose_template" with "Hobjectmeta") as "Htemplate_l".
-  Timeout 10 wp_pures.
-  Timeout 10 wp_alloc v_ptr as "v".
-  Timeout 10 wp_pures.
-  Timeout 10 wp_alloc k_ptr as "k".
-  Timeout 10 wp_pures.
+  rewrite go.make1_underlying.
+  rewrite (go.is_underlying (t := labels.Set')
+    (tunder := labels.Set'ⁱᵐᵖˡ)).
+  wp_apply wp_map_make1 as (labels_l) "Hlabels".
+  wp_pures.
+  iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
+  iAssert (typed_pointsto_def
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq)
+    with "[Hmeta_fields]" as "Hobjectmeta".
+  { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq Hmeta_nonnull
+      with "Hobjectmeta") as "Hobjectmeta".
+  iCombineNamed "Htemplate_field_*" as "Htemplate_fields".
+  iAssert (typed_pointsto_def template_l template_c dq)
+    with "[Htemplate_fields Hobjectmeta]" as "Htemplate_l".
+  { iNamed "Htemplate_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.PodTemplateSpec.t)
+      template_l template_c dq Htemplate_nonnull with "Htemplate_l")
+    as "Htemplate_l".
   destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
     as [labels|] eqn:Hlabels_opt.
   - iDestruct "Hmeta_Hdeepown_labels_some" as (labels_c)
@@ -275,7 +272,7 @@ Proof. Admitted.
         "(v & k & desiredLabels & Hlabels)".
       wp_pures.
       simpl subst'.
-      Timeout 10 wp_auto.
+      wp_auto.
       wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
         go.string labels_l (map_prefix keys i labels) key value
         with "Hlabels") as "Hlabels".
@@ -287,8 +284,7 @@ Proof. Admitted.
       "(v & k & desiredLabels & Hlabels)".
     destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
     rewrite (map_prefix_all keys labels Hkeys_dom Hkeys_len).
-    Timeout 10 wp_auto.
-    rewrite return_val_unseal /return_val_def. Timeout 10 wp_auto.
+    wp_auto.
     iAssert ((match template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') with
       | Some labels' => ∃ labels_c,
           template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels') ↦${dq} labels_c ∗
@@ -303,13 +299,7 @@ Proof. Admitted.
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
     { rewrite /ObjectMetaV.deepown Hlabels_opt /=. iNamed "Hobjectmeta".
-      iFrame "Hmeta_Hdeepown_creationtimestamp
-        Hmeta_Hdeepown_deletiontimestamp_some
-        Hmeta_Hdeepown_deletiongraceperiodseconds_some
-        Hmeta_Hdeepown_labels_some Hmeta_Hdeepown_annotations_some
-        Hmeta_Hdeepown_ownerreferences_some Hmeta_Hdeepown_finalizers_some
-        Hmeta_Hdeepown_managedfields_some".
-      iPureIntro. Timeout 10 naive_solver. }
+      iFrame. iFrame "%". }
     iApply ("HΦ" $! labels_l). iFrame "Hlabels".
     iExists template_c. iFrame "Htemplate_l".
     rewrite /PodTemplateSpecV.deepown. iFrame.
@@ -317,30 +307,20 @@ Proof. Admitted.
         map.nil) as Hlabels_nil.
     { apply Hmeta_Hdeepown_labels_none. done. }
     rewrite Hlabels_nil.
-    Timeout 10 wp_pures.
-    Timeout 10 wp_apply (wp_map_for_range_nil go.string go.string).
-    Timeout 10 wp_pures.
-    rewrite return_val_unseal /return_val_def.
-    Timeout 10 wp_pures.
+    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_pures.
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
     iAssert (ObjectMetaV.deepown
         template_c.(v1.PodTemplateSpec.ObjectMeta')
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
     { rewrite /ObjectMetaV.deepown Hlabels_opt /=. iNamed "Hobjectmeta".
-      iFrame "Hmeta_Hdeepown_creationtimestamp
-        Hmeta_Hdeepown_deletiontimestamp_some
-        Hmeta_Hdeepown_deletiongraceperiodseconds_some
-        Hmeta_Hdeepown_annotations_some
-        Hmeta_Hdeepown_ownerreferences_some Hmeta_Hdeepown_finalizers_some
-        Hmeta_Hdeepown_managedfields_some".
-      iPureIntro. Timeout 10 naive_solver. }
+      iFrame. iFrame "%". }
     iApply ("HΦ" $! labels_l).
     iFrame "Hlabels".
     iExists template_c. iFrame "Htemplate_l".
     rewrite /PodTemplateSpecV.deepown. iFrame.
 Qed.
-*)
 
 Lemma wp_getPodsFinalizers template_l template dq :
   {{{ is_pkg_init controller ∗
@@ -353,7 +333,151 @@ Lemma wp_getPodsFinalizers template_l template dq :
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ∗
       ⌜ finalizers_sl ≠ slice.nil ⌝
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "Htemplate".
+  iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
+  iNamedPrefix "Htemplate" "Htemplate_".
+  iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
+  iDestruct (struct_fields_split with "Htemplate_l") as
+    "[Htemplate_fields %Htemplate_nonnull]".
+  iNamedPrefix "Htemplate_fields" "Htemplate_field_".
+  iDestruct (struct_fields_split with "Htemplate_field_ObjectMeta") as
+    "[Hmeta_fields %Hmeta_nonnull]".
+  iNamedPrefix "Hmeta_fields" "Hmeta_field_".
+  iAssert (∃ finalizers,
+      template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers')
+        ↦*{dq} finalizers ∗
+      ⌜finalizers = default []
+        template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')⌝)%I
+    with "[Hmeta_Hdeepown_finalizers_some]" as
+      (finalizers) "[Hfinalizers_src %Hfinalizers]".
+  { destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')
+      as [finalizers|] eqn:Hfinalizers_opt; simpl.
+    - iDestruct "Hmeta_Hdeepown_finalizers_some" as (finalizers_c)
+        "[Hfinalizers_src %Hfinalizers_c]".
+      subst finalizers_c. iExists finalizers. iSplitL; first iFrame. done.
+    - assert (template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers') =
+          slice.nil) as Hfinalizers_nil.
+      { apply Hmeta_Hdeepown_finalizers_none. done. }
+      rewrite Hfinalizers_nil. iExists []. iSplit; last done.
+      iApply own_slice_nil. }
+  subst finalizers.
+  iDestruct (own_slice_len with "Hfinalizers_src") as
+    %[Hfinalizers_len Hfinalizers_len_nonnegative].
+  assert (Hmake3 : ∀ stk E (len cap : u64),
+    0 ≤ sint.Z len ≤ sint.Z cap →
+    {{{ True }}}
+      #(functions go.make3 [go.SliceType go.string]) #len #cap @ stk; E
+    {{{ sl, RET #sl;
+        sl ↦* (replicate (sint.nat len) (zero_val go_string)) ∗
+        own_slice_cap go_string sl (DfracOwn 1) ∗
+        ⌜sl ≠ slice.nil⌝
+    }}}).
+  { intros stk E len cap Hbounds. wp_start.
+    wp_if_destruct; first (exfalso; word).
+    wp_if_destruct; first (exfalso; word).
+    case_bool_decide; wp_auto.
+    - subst cap. assert (len = W64 0) by word. subst len.
+      wp_apply wp_ArbitraryInt. iIntros (x) "_".
+      wp_auto. iApply "HΦ".
+      iDestruct (own_slice_empty with "[]") as "$"; simpl.
+      { word. }
+      { word. }
+      { by iApply array_empty. }
+      iDestruct own_slice_cap_empty as "$"; simpl.
+      { word. }
+      { word. }
+      iPureIntro. intros Hnil.
+      apply (f_equal slice.ptr) in Hnil.
+      apply (f_equal addr_id) in Hnil.
+      rewrite /loc_add addr_id_of_plus /addr_id /null /= in Hnil. lia.
+    - iApply "HΦ".
+      rewrite own_slice_unseal /own_slice_def /=.
+      iDestruct (array_split len with "p") as "[Hsl Hcap]"; first word.
+      simpl. rewrite take_replicate.
+      iSplitL "Hsl".
+      { iRight. iSplitL; last word.
+        replace (_ `min` _)%nat with (sint.nat len) by word. iFrame. }
+      rewrite own_slice_cap_unseal /own_slice_cap_def /=.
+      iSplitL "Hcap".
+      { iRight. iSplitR; first word. iFrame. }
+      iPureIntro. intros Hnil.
+      apply (f_equal slice.cap) in Hnil. simpl in Hnil. word. }
+  assert (Hmake2 : ∀ stk E (len : u64),
+    {{{ ⌜0 ≤ sint.Z len⌝ }}}
+      #(functions go.make2 [go.SliceType go.string]) #len @ stk; E
+    {{{ sl, RET #sl;
+        sl ↦* (replicate (sint.nat len) (zero_val go_string)) ∗
+        own_slice_cap go_string sl (DfracOwn 1) ∗
+        ⌜sl ≠ slice.nil⌝
+    }}}).
+  { intros stk E len. wp_start as "%Hlen".
+    wp_apply Hmake3; first word.
+    iIntros (sl) "Hsl". iApply "HΦ". iFrame. }
+  wp_auto.
+  wp_apply Hmake2; first word.
+  iIntros (finalizers_sl)
+    "(Hfinalizers & Hfinalizers_cap & %Hfinalizers_non_nil)".
+  iEval (rewrite -Hfinalizers_len) in "Hfinalizers".
+  wp_auto.
+  wp_apply (wp_slice_copy with "[$Hfinalizers $Hfinalizers_src]") as (n)
+    "(%Hcopied & Hfinalizers & Hfinalizers_src)".
+  iAssert (finalizers_sl ↦* default []
+      template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))
+    with "[Hfinalizers]" as "Hfinalizers".
+  { iEval (rewrite length_replicate) in "Hfinalizers".
+    iEval (rewrite take_ge; last done) in "Hfinalizers".
+    assert (length (replicate
+        (length (default [] (ObjectMetaV.Finalizers'
+          (PodTemplateSpecV.ObjectMeta' template)))) (zero_val go_string)) ≤
+      length (default [] (ObjectMetaV.Finalizers'
+        (PodTemplateSpecV.ObjectMeta' template))))%nat as Hdrop.
+    { rewrite length_replicate. done. }
+    iEval (rewrite (drop_ge _ _ Hdrop)) in "Hfinalizers".
+    iEval (rewrite app_nil_r) in "Hfinalizers".
+    iExact "Hfinalizers". }
+  wp_pures.
+  iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
+  iAssert (typed_pointsto_def
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq)
+    with "[Hmeta_fields]" as "Hobjectmeta_l".
+  { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq Hmeta_nonnull
+      with "Hobjectmeta_l") as "Hobjectmeta_l".
+  iCombineNamed "Htemplate_field_*" as "Htemplate_fields".
+  iAssert (typed_pointsto_def template_l template_c dq)
+    with "[Htemplate_fields Hobjectmeta_l]" as "Htemplate_l".
+  { iNamed "Htemplate_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.PodTemplateSpec.t)
+      template_l template_c dq Htemplate_nonnull with "Htemplate_l")
+    as "Htemplate_l".
+  iAssert ((match template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') with
+    | Some finalizers' => ∃ finalizers_c,
+        template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers')
+          ↦*{dq} finalizers_c ∗ ⌜finalizers_c = finalizers'⌝
+    | None => True
+    end)%I) with "[Hfinalizers_src]" as "Hmeta_Hdeepown_finalizers_some".
+  { destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')
+      as [finalizers|] eqn:Hfinalizers_opt; simpl.
+    - iExists finalizers. iSplitL; first iFrame. done.
+    - iClear "Hfinalizers_src". done. }
+  iCombineNamed "Hmeta_*" as "Hobjectmeta".
+  iAssert (ObjectMetaV.deepown
+      template_c.(v1.PodTemplateSpec.ObjectMeta')
+      template.(PodTemplateSpecV.ObjectMeta') dq)
+    with "[Hobjectmeta]" as "Hobjectmeta".
+  { rewrite /ObjectMetaV.deepown.
+    iNamed "Hobjectmeta". iFrame. iFrame "%". }
+  iApply ("HΦ" $! finalizers_sl).
+  iFrame "Hfinalizers".
+  iSplitL "Htemplate_l Hobjectmeta Htemplate_Hdeepown_spec".
+  { iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame. }
+  done.
+Qed.
 
 Lemma wp_getPodsAnnotationSet template_l template dq :
   {{{ is_pkg_init controller ∗
@@ -365,7 +489,114 @@ Lemma wp_getPodsAnnotationSet template_l template dq :
       annotations_l ↦$ default ∅
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations')
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "Htemplate".
+  iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
+  iNamedPrefix "Htemplate" "Htemplate_".
+  iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
+  iDestruct (struct_fields_split with "Htemplate_l") as
+    "[Htemplate_fields %Htemplate_nonnull]".
+  iNamedPrefix "Htemplate_fields" "Htemplate_field_".
+  iDestruct (struct_fields_split with "Htemplate_field_ObjectMeta") as
+    "[Hmeta_fields %Hmeta_nonnull]".
+  iNamedPrefix "Hmeta_fields" "Hmeta_field_".
+  wp_auto.
+  rewrite go.make1_underlying.
+  rewrite (go.is_underlying (t := labels.Set')
+    (tunder := labels.Set'ⁱᵐᵖˡ)).
+  wp_apply wp_map_make1 as (annotations_l) "Hannotations".
+  wp_pures.
+  iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
+  iAssert (typed_pointsto_def
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq)
+    with "[Hmeta_fields]" as "Hobjectmeta".
+  { iNamed "Hmeta_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
+      (template_l.[v1.PodTemplateSpec.t, "ObjectMeta"])
+      template_c.(v1.PodTemplateSpec.ObjectMeta') dq Hmeta_nonnull
+      with "Hobjectmeta") as "Hobjectmeta".
+  iCombineNamed "Htemplate_field_*" as "Htemplate_fields".
+  iAssert (typed_pointsto_def template_l template_c dq)
+    with "[Htemplate_fields Hobjectmeta]" as "Htemplate_l".
+  { iNamed "Htemplate_fields". simpl. rewrite /named. iFrame. }
+  iDestruct (struct_fields_combine (V:=v1.PodTemplateSpec.t)
+      template_l template_c dq Htemplate_nonnull with "Htemplate_l")
+    as "Htemplate_l".
+  destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations')
+    as [annotations|] eqn:Hannotations_opt.
+  - iDestruct "Hmeta_Hdeepown_annotations_some" as (annotations_c)
+      "[Hannotations_src %Hannotations_c]".
+    subst annotations_c.
+    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
+      (λ (keys : list go_string) i,
+        ∃ (last_value last_key : go_string),
+          "v" ∷ v_ptr ↦ last_value ∗
+          "k" ∷ k_ptr ↦ last_key ∗
+          "desiredAnnotations" ∷ desiredAnnotations_ptr ↦ annotations_l ∗
+          "Hannotations" ∷ annotations_l ↦$ map_prefix keys i annotations)%I
+      with "Hannotations_src").
+    { done. }
+    iIntros (keys) "%Hkeys".
+    iSplitL "v k desiredAnnotations Hannotations".
+    { iExists ""%go, ""%go. iFrame.
+      rewrite map_prefix_empty. iFrame. }
+    iSplitL "".
+    { iModIntro. iIntros (i key value) "%Hiter Hloop".
+      destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+      destruct Hiter as [Hi_bounds [Hkey_lookup Hvalue_lookup]].
+      destruct Hi_bounds as [Hi_nonneg Hi_upper].
+      iDestruct "Hloop" as (last_value last_key)
+        "(v & k & desiredAnnotations & Hannotations)".
+      wp_pures. simpl subst'. wp_auto.
+      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string annotations_l (map_prefix keys i annotations) key value
+        with "Hannotations") as "Hannotations".
+      iRight. iSplit; [done|].
+      iExists value, key. iFrame.
+      rewrite -map_prefix_insert; done. }
+    iIntros "Hannotations_src Hloop".
+    iDestruct "Hloop" as (last_value last_key)
+      "(v & k & desiredAnnotations & Hannotations)".
+    destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+    rewrite (map_prefix_all keys annotations Hkeys_dom Hkeys_len).
+    wp_auto.
+    iAssert ((match template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') with
+      | Some annotations' => ∃ annotations_c,
+          template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Annotations')
+            ↦${dq} annotations_c ∗ ⌜annotations_c = annotations'⌝
+      | None => True
+      end)%I) with "[Hannotations_src]" as
+        "Hmeta_Hdeepown_annotations_some".
+    { rewrite Hannotations_opt. iExists annotations.
+      iSplitL "Hannotations_src"; [iExact "Hannotations_src"|done]. }
+    iCombineNamed "Hmeta_*" as "Hobjectmeta".
+    iAssert (ObjectMetaV.deepown
+        template_c.(v1.PodTemplateSpec.ObjectMeta')
+        template.(PodTemplateSpecV.ObjectMeta') dq)
+      with "[Hobjectmeta]" as "Hobjectmeta".
+    { rewrite /ObjectMetaV.deepown Hannotations_opt /=.
+      iNamed "Hobjectmeta". iFrame. iFrame "%". }
+    iApply ("HΦ" $! annotations_l). iFrame "Hannotations".
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
+  - assert (template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Annotations') =
+        map.nil) as Hannotations_nil.
+    { apply Hmeta_Hdeepown_annotations_none. done. }
+    rewrite Hannotations_nil.
+    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_pures.
+    iCombineNamed "Hmeta_*" as "Hobjectmeta".
+    iAssert (ObjectMetaV.deepown
+        template_c.(v1.PodTemplateSpec.ObjectMeta')
+        template.(PodTemplateSpecV.ObjectMeta') dq)
+      with "[Hobjectmeta]" as "Hobjectmeta".
+    { rewrite /ObjectMetaV.deepown Hannotations_opt /=.
+      iNamed "Hobjectmeta". iFrame. iFrame "%". }
+    iApply ("HΦ" $! annotations_l). iFrame "Hannotations".
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
+Qed.
 
 Lemma wp_getPodsPrefix controller_name :
   {{{ is_pkg_init controller ∗
@@ -387,7 +618,13 @@ Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
         owner_reference.(v1.OwnerReference.UID')⌝
   }}}.
 Proof.
-Admitted.
+  wp_start as "HownerReference".
+  iDestruct (typed_pointsto_not_null with "HownerReference") as %HownerReference_nonnull.
+  wp_auto.
+  rewrite -> bool_decide_false by exact HownerReference_nonnull.
+  wp_auto.
+  iApply "HΦ". iPureIntro. rewrite !app_assoc. done.
+Qed.
 
 Lemma wp_GetPodFromTemplate template_l obj controller_ref_l template_dq
     parent_dq template parent_l parent controller_ref :
