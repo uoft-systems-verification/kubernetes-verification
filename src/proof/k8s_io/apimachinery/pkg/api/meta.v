@@ -3,21 +3,22 @@ From New.proof.kubernetes_types Require Export prelude.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
+From New.proof.k8s_io.apimachinery.pkg Require Import labels.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
-  {package_sem : meta.Assumptions}
+  {package_sem : code.k8s_io.apimachinery.pkg.api.meta.meta.Assumptions}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Local Set Default Proof Using "All".
 
 Lemma wp_Accessor i l o:
-  {{{ "Hinit" ∷ is_pkg_init meta ∗
+  {{{ "Hinit" ∷ is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta ∗
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝
   }}}
-    @! meta.Accessor #(interface.ok i)
+    @! code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor #(interface.ok i)
   {{{ RET (#(interface.ok i), #interface.nil);
     True
   }}}.
@@ -26,6 +27,26 @@ Proof.
   destruct o; simpl in Hi; destruct Hi as [-> Hcontains]; wp_auto;
     rewrite Hcontains; wp_auto.
   all: iApply "HΦ"; done.
+Qed.
+
+(** The borrowed-labels rule after method promotion through a supported
+    Kubernetes object interface. *)
+Lemma wp_GetLabels_deepown_kobject i l o meta dq :
+  {{{ "Hinit" ∷ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1 ∗
+      "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      "Hmeta" ∷ ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) meta dq
+  }}}
+    #(methods i.(interface.ty) "GetLabels" i.(interface.v)) #()
+  {{{ labels_l, RET #labels_l;
+      labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq ∗
+      (labels_set_rep labels_l meta.(ObjectMetaV.Labels') dq -∗
+        ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) meta dq)
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
+    wp_pures; wp_apply (wp_GetLabels_deepown with "[$Hinit $Hmeta]");
+    iIntros (labels_l) "Hlabels"; iApply "HΦ"; iFrame.
 Qed.
 
 Lemma wp_GetName_deepown_kobject i l o m dq:
