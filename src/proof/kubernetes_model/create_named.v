@@ -759,7 +759,8 @@ Proof.
       (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
       (KObjectV.ReplicaSet rs) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
-  { iExists rs_l. iSplit; [done|]. iFrame. }
+  { iExists rs_l.
+    iSplit; [iPureIntro; apply KObjectV.valid_interface_ReplicaSet|]. iFrame. }
   wp_apply (wp_State__create_named_available
     γ l ReplicaSetV.kind namespace key
     (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
@@ -775,7 +776,7 @@ Proof.
     (_ & Hmeta_created & _ & Hspec_created & Hstatus_created).
   iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
   wp_auto.
-  unfold KObjectV.valid_interface in Hi'. rewrite Hi'.
+  unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
   cbn [interface.ty interface.v].
   replace

@@ -445,7 +445,8 @@ Proof.
       (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
       (KObjectV.ReplicaSet rs) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
-  { iExists rs_l. iSplit; [done|]. iFrame. }
+  { iExists rs_l.
+    iSplit; [iPureIntro; apply KObjectV.valid_interface_ReplicaSet|]. iFrame. }
   assert (KObjectV.valid_update ReplicaSetV.kind namespace kmeta kspec
       (KObjectV.ReplicaSet rs)) as Hvalid_update.
   { destruct kspec; simpl in Hvalid_spec_update |- *; try contradiction.
