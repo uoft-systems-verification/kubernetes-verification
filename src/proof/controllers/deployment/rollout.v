@@ -44,6 +44,7 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 (* ---------------------------------------------------------------- *)
 (* Specs for the state-touching half of the controller.              *)

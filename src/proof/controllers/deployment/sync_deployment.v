@@ -37,6 +37,7 @@ Proof using package_sem.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 (* ---------------------------------------------------------------- *)
 (* Top-level specs: the controller's entry point and its listing.    *)
@@ -208,7 +209,8 @@ Proof.
       as "[Hthis_i_rs Hother_i_rs]".
     { split. all: rewrite lookup_drop Nat.add_0_r; done. }
     iDestruct "Hthis_i_rs" as (this_ptr) "[%Hthis_i Hdeepown_l]".
-    unfold KObjectV.valid_interface in Hthis_i. rewrite Hthis_i.
+    unfold KObjectV.valid_interface in Hthis_i.
+    destruct Hthis_i as [Hthis_i _]. rewrite Hthis_i.
     rewrite decide_True; [change (go.PointerType deployment.apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet); reflexivity|].
     wp_auto.
     rewrite bool_decide_true; [change (go.PointerType deployment.apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet); reflexivity|].

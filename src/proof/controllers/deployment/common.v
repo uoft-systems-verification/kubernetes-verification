@@ -32,6 +32,7 @@ Proof using package_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 Local Set Default Proof Using "All".
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 (* ---------------------------------------------------------------- *)
 (* Gallina model of the pure deployment helpers                      *)
 (* ---------------------------------------------------------------- *)

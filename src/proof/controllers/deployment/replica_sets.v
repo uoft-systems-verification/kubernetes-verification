@@ -34,6 +34,7 @@ Proof using package_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 Local Set Default Proof Using "All".
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Lemma wp_replicasOf d_l (d : DeploymentV.t) dq :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq
