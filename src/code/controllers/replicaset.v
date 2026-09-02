@@ -385,4 +385,3 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_controller_Assumption :: controller.Assumptions;
 }.
 End replicaset.
-
