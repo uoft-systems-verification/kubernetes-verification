@@ -5,6 +5,7 @@ translate = [
     "getPodsLabelSet",
     "getPodsFinalizers",
     "getPodsAnnotationSet",
+    "PodControllerIndexKey",
     "GetPodFromTemplate",
 ]
 

@@ -327,7 +327,7 @@ Definition getPodsLabelSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       do:  ("v" <-[go.string] "$value");;;
       do:  ("k" <-[go.string] "$key");;;
       let: "$r0" := (![go.string] "v") in
-      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredLabels", ![go.string] "k")) <-[go.string] "$r0")));;;
+      do:  (map.insert go.string (![labels.Set'] "desiredLabels") (![go.string] "k") "$r0")));;;
     return: (![labels.Set'] "desiredLabels")).
 
 (* go: controller_utils.go:497:6 *)
@@ -357,7 +357,7 @@ Definition getPodsAnnotationSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       do:  ("v" <-[go.string] "$value");;;
       do:  ("k" <-[go.string] "$key");;;
       let: "$r0" := (![go.string] "v") in
-      do:  ((IndexRef labels.Set' (![labels.Set'] "desiredAnnotations", ![go.string] "k")) <-[go.string] "$r0")));;;
+      do:  (map.insert go.string (![labels.Set'] "desiredAnnotations") (![go.string] "k") "$r0")));;;
     return: (![labels.Set'] "desiredAnnotations")).
 
 (* go: controller_utils.go:562:6 *)
@@ -422,6 +422,19 @@ Definition IsPodActiveⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
   λ: "p",
     exception_do (let: "p" := (GoAlloc (go.PointerType core_v1.Pod) "p") in
     return: (((core_v1.PodSucceeded ≠⟨core_v1.PodPhase⟩ (![core_v1.PodPhase] (StructFieldRef core_v1.PodStatus "Phase"%go (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "p"))))) && (core_v1.PodFailed ≠⟨core_v1.PodPhase⟩ (![core_v1.PodPhase] (StructFieldRef core_v1.PodStatus "Phase"%go (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "p")))))) && ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "p")))) =⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil)))).
+
+(* PodControllerIndexKey returns the index key to locate pods with the specified controller ownerReference.
+   If ownerReference is nil, the returned key locates pods in the namespace without a controller ownerReference.
+
+   go: controller_utils.go:1141:6 *)
+Definition PodControllerIndexKeyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "namespace" "ownerReference",
+    exception_do (let: "ownerReference" := (GoAlloc (go.PointerType meta_v1.OwnerReference) "ownerReference") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType meta_v1.OwnerReference] "ownerReference") =⟨go.PointerType meta_v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType meta_v1.OwnerReference) UntypedNil))
+    then return: (![go.string] "namespace")
+    else do:  #());;;
+    return: (((((((![go.string] "namespace") +⟨go.string⟩ #"/"%go) +⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.OwnerReference "Kind"%go (![go.PointerType meta_v1.OwnerReference] "ownerReference")))) +⟨go.string⟩ #"/"%go) +⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.OwnerReference "Name"%go (![go.PointerType meta_v1.OwnerReference] "ownerReference")))) +⟨go.string⟩ #"/"%go) +⟨go.string⟩ (![types.UID] (StructFieldRef meta_v1.OwnerReference "UID"%go (![go.PointerType meta_v1.OwnerReference] "ownerReference"))))).
 
 #[global] Instance info' : PkgInfo pkg_id.controller :=
 {|
@@ -974,6 +987,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] getPodsAnnotationSet_unfold :: FuncUnfold getPodsAnnotationSet [] (getPodsAnnotationSetⁱᵐᵖˡ);
   #[global] GetPodFromTemplate_unfold :: FuncUnfold GetPodFromTemplate [] (GetPodFromTemplateⁱᵐᵖˡ);
   #[global] IsPodActive_unfold :: FuncUnfold IsPodActive [] (IsPodActiveⁱᵐᵖˡ);
+  #[global] PodControllerIndexKey_unfold :: FuncUnfold PodControllerIndexKey [] (PodControllerIndexKeyⁱᵐᵖˡ);
   #[global] import_fmt_Assumption :: fmt.Assumptions;
   #[global] import_core_v1_Assumption :: core_v1.Assumptions;
   #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
