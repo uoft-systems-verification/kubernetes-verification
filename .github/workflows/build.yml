@@ -36,6 +36,27 @@ jobs:
       - name: opam uninstall
         run: opam uninstall .
 
+  check-goose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: "go.mod"
+      - name: Check that generated files are up to date
+        run: |
+          ./scripts/goose.sh
+
+          changes="$(git status --short --untracked-files=all -- src/code src/generatedproof)"
+          if [[ -n "$changes" ]]; then
+            echo "Goose generated changes; run ./scripts/goose.sh and commit the results:"
+            printf '%s\n' "$changes"
+            git diff -- src/code src/generatedproof
+            exit 1
+          fi
+
   pbt-model:
     runs-on: ubuntu-latest
     steps:
