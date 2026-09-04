@@ -17,8 +17,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance BaseControllerRefManager_typed_pointsto  :
@@ -37,8 +35,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PodControllerRefManager_typed_pointsto  :
@@ -57,8 +53,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetControllerRefManager_typed_pointsto  :
@@ -77,8 +71,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerRevisionControllerRefManager_typed_pointsto  :
@@ -97,8 +89,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance objectForAddOwnerRefPatch_typed_pointsto  :
@@ -117,8 +107,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance objectMetaForPatch_typed_pointsto  :
@@ -137,8 +125,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance objectForDeleteOwnerRefStrategicMergePatch_typed_pointsto  :
@@ -157,8 +143,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance objectMetaForMergePatch_typed_pointsto  :
@@ -177,8 +161,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ResyncPeriodFunc_typed_pointsto  :
@@ -197,8 +179,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerExpectationsInterface_typed_pointsto  :
@@ -217,8 +197,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerExpectations_typed_pointsto  :
@@ -237,8 +215,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControlleeExpectations_typed_pointsto  :
@@ -257,8 +233,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance UIDSet_typed_pointsto  :
@@ -277,8 +251,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance UIDTrackingControllerExpectations_typed_pointsto  :
@@ -297,8 +269,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RSControlInterface_typed_pointsto  :
@@ -317,8 +287,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RealRSControl_typed_pointsto  :
@@ -337,8 +305,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerRevisionControlInterface_typed_pointsto  :
@@ -357,8 +323,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RealControllerRevisionControl_typed_pointsto  :
@@ -377,8 +341,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PodControlInterface_typed_pointsto  :
@@ -397,8 +359,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RealPodControl_typed_pointsto  :
@@ -417,8 +377,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance FakePodControl_typed_pointsto  :
@@ -437,8 +395,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ByLogging_typed_pointsto  :
@@ -457,8 +413,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ActivePods_typed_pointsto  :
@@ -478,7 +432,6 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global]Program Instance ActivePodsWithRanks_typed_pointsto  :
@@ -546,8 +499,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance filterRS_typed_pointsto  :
@@ -566,8 +517,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllersByCreationTimestamp_typed_pointsto  :
@@ -586,8 +535,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetsByCreationTimestamp_typed_pointsto  :
@@ -606,8 +553,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetsBySizeOlder_typed_pointsto  :
@@ -626,8 +571,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetsBySizeNewer_typed_pointsto  :

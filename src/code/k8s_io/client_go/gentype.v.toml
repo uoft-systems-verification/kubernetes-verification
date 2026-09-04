@@ -22,3 +22,8 @@ imports = [
 trusted = [
     "Client.Create",
 ]
+
+# The trusted client shim only relies on selected field-access contracts. The
+# generic client structs also contain function-valued and opaque REST fields
+# that proofgen cannot prove structurally.
+trust_proofgen = true

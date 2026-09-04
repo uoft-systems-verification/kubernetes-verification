@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : errors.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StatusError_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : errors.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance APIStatus_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : errors.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance UnexpectedObjectError_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : errors.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ErrorReporter_typed_pointsto  :

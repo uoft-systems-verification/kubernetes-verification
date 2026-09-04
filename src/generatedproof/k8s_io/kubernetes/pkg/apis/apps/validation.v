@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : validation.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StatefulSetValidationOptions_typed_pointsto  :

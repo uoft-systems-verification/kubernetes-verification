@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PassiveClock_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Clock_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance WithTicker_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance WithDelayedExecution_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance WithTickerAndDelayedExecution_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Ticker_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RealClock_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Timer_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance realTimer_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : clock.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance realTicker_typed_pointsto  :

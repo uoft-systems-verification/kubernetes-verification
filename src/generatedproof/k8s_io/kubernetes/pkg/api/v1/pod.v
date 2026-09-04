@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : pod.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ContainerType_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : pod.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ContainerVisitor_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : pod.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Visitor_typed_pointsto  :

@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance job_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance bitState_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance queue_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance entry_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance thread_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance machine_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance inputs_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance lazyFlag_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance onePassMachine_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance onePassProg_typed_pointsto  :
@@ -211,8 +191,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance onePassInst_typed_pointsto  :
@@ -231,8 +209,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance queueOnePass_typed_pointsto  :
@@ -251,8 +227,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Regexp_typed_pointsto  :
@@ -271,8 +245,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance input_typed_pointsto  :
@@ -291,8 +263,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance inputString_typed_pointsto  :
@@ -311,8 +281,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance inputBytes_typed_pointsto  :
@@ -331,8 +299,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : regexp.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance inputReader_typed_pointsto  :

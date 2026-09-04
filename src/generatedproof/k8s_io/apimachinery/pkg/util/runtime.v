@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : runtime.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ErrorHandler_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : runtime.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance rudimentaryErrorBackoff_typed_pointsto  :

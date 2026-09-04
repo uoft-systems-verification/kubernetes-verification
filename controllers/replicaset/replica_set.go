@@ -1,6 +1,7 @@
 package replicaset
 
 import (
+	"context"
 	"controllers/common"
 	"kubernetes_model/apimodel"
 	"sort"
@@ -11,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -98,7 +100,7 @@ func getPodsRankedByRelatedPodsOnSameNode(podsToRank, relatedPods []*v1.Pod) con
 	return controller.ActivePodsWithRanks{Pods: podsToRank, Rank: ranks, Now: metav1.Now()}
 }
 
-func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
+func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	if diff < 0 {
 		diff *= -1
@@ -107,7 +109,8 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 			if err != nil {
 				return err
 			}
-			_, err = apimodel.ModelState.PodCreate(rs.ObjectMeta.GetNamespace(), pod)
+			var createOptions metav1.CreateOptions
+			_, err = kubeClient.CoreV1().Pods(rs.ObjectMeta.GetNamespace()).Create(ctx, pod, createOptions)
 			if err != nil {
 				return err
 			}
@@ -131,7 +134,7 @@ func manageReplicas(activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	return nil
 }
 
-func syncReplicaSet(namespace, name string) error {
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, namespace, name string) error {
 	rs, err := apimodel.ModelState.ReplicaSetGet(namespace, name)
 	if apierrors.IsNotFound(err) {
 		return nil
@@ -149,7 +152,7 @@ func syncReplicaSet(namespace, name string) error {
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(allActivePods, rs)
+		manageReplicasErr = manageReplicas(ctx, kubeClient, allActivePods, rs)
 	}
 
 	return manageReplicasErr

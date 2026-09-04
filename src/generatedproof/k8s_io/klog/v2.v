@@ -12,8 +12,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance LoggerOption_typed_pointsto  :
@@ -32,8 +30,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance loggerOptions_typed_pointsto  :
@@ -52,8 +48,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance logWriter_typed_pointsto  :
@@ -72,8 +66,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance formatAny_typed_pointsto  :
@@ -92,8 +84,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ObjectRef_typed_pointsto  :
@@ -112,8 +102,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance KMetadata_typed_pointsto  :
@@ -132,8 +120,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance kobjSlice_typed_pointsto  :
@@ -152,8 +138,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance severityValue_typed_pointsto  :
@@ -172,8 +156,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance OutputStats_typed_pointsto  :
@@ -192,8 +174,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Level_typed_pointsto  :
@@ -212,8 +192,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance moduleSpec_typed_pointsto  :
@@ -232,8 +210,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance modulePat_typed_pointsto  :
@@ -252,8 +228,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance traceLocation_typed_pointsto  :
@@ -272,8 +246,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance settings_typed_pointsto  :
@@ -292,8 +264,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance loggingT_typed_pointsto  :
@@ -312,8 +282,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance State_typed_pointsto  :
@@ -332,8 +300,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance state_typed_pointsto  :
@@ -352,8 +318,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance syncBuffer_typed_pointsto  :
@@ -372,8 +336,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance flushDaemon_typed_pointsto  :
@@ -392,8 +354,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance fileArray_typed_pointsto  :
@@ -412,8 +372,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance logBridge_typed_pointsto  :
@@ -432,8 +390,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Verbose_typed_pointsto  :
@@ -452,8 +408,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance LogFilter_typed_pointsto  :
@@ -472,8 +426,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : klog.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance klogger_typed_pointsto  :

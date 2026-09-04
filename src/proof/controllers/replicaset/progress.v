@@ -9,6 +9,15 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
+Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
+Module client_gentype := code.k8s_io.client_go.gentype.gentype.
+Module trusted_client_core_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
+Module trusted_client_gentype := trusted_code.k8s_io.client_go.gentype.gentype.
+(* TODO: Remove this workaround once Goose gives trusted implementations the
+   generated same-package named-type token; see
+   goose-trusted-same-package-type-support.md. *)
+Transparent client_gentype.Client.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -18,6 +27,12 @@ Collection W := sem + package_sem.
   code.controllers.replicaset.replicaset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
   code.controllers.replicaset.replicaset.import_controller_Assumption.
+#[local] Instance clientset_sem : kubernetes.Assumptions :=
+  code.controllers.replicaset.replicaset.import_kubernetes_Assumption.
+#[local] Instance client_core_v1_sem : client_core_v1.Assumptions :=
+  kubernetes.import_v1_Assumption.
+#[local] Instance client_gentype_sem : client_gentype.Assumptions :=
+  client_core_v1.import_gentype_Assumption.
 #[local] Instance runtime_sem : code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions :=
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
@@ -194,7 +209,8 @@ Proof. rewrite big_sepL_fmap. done. Qed.
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_manageReplicas γ l sl rs_l ptrs active_pods inactive_pods rs n phase dq1 dq2 :
+Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
+    sl rs_l ptrs active_pods inactive_pods rs n phase dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -218,7 +234,7 @@ Lemma wp_manageReplicas γ l sl rs_l ptrs active_pods inactive_pods rs n phase d
       "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝ ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> (active_pods ++ inactive_pods)) ⌝
   }}}
-    @! replicaset.manageReplicas #sl #rs_l
+    @! replicaset.manageReplicas #ctx #kube_client #sl #rs_l
   {{{ pods', RET #interface.nil;
       ⌜ length (filter is_pod_alive pods') = sint.nat n ⌝ ∗
       (∃ phase', own_terminating_children_frag γ (ReplicaSetV.key rs)
@@ -288,7 +304,7 @@ Proof.
     wp_for "Hloop_inv". wp_if_destruct.
 	  + wp_bind ((global_addr apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
 	    iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
-	      "(_ & _ & _ & #Happs_v1_init & _)".
+	      "(_ & _ & _ & _ & #Happs_v1_init & _)".
 	    wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
 	      (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
 	        _ _ _ _ object_apps_v1_sem) "ReplicaSet"%go with
@@ -363,7 +379,21 @@ Proof.
 	      - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
 	    wp_auto.
 	    wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_rs]") as "Hdeepown_m_l_rs".
-	    wp_apply (wp_State__PodCreate_nameless γ l
+	    wp_method_call. rewrite /kubernetes.Clientset__CoreV1ⁱᵐᵖˡ. wp_call.
+	    rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
+	    cbn beta iota. wp_auto.
+	    wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto.
+	    wp_method_call. rewrite /trusted_client_gentype.Client__Createⁱᵐᵖˡ. wp_call.
+	    rewrite /trusted_client_gentype.clientType. wp_auto.
+	    change (go.PointerType
+	      trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.api_core_v1.Pod)
+	      with (go.PointerType code.k8s_io.api.core.v1.v1.Pod).
+	    change (go.PointerType trusted_code.k8s_io.client_go.gentype.api_core_v1.Pod)
+	      with (go.PointerType code.k8s_io.api.core.v1.v1.Pod).
+	    rewrite !decide_True; try reflexivity.
+	    wp_auto.
+	    wp_bind.
+	    iApply (wp_State__PodCreate_nameless γ l
 	      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') pod_l pod
 	      (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
 	      (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods)))
@@ -376,8 +406,9 @@ Proof.
 	      iSplitL "Hdeepown_l_pod".
 	      { unfold object_core_v1_sem. iExact "Hdeepown_l_pod". }
 	      iExact "Hown_children_frag". }
-      iIntros (pod_l' pod' key uid) "H". iNamedPrefix "H" "Hcreate_". subst key. subst uid. wp_auto.
-	      iApply wp_for_post_do. wp_auto.
+	      iNext. iIntros (pod_l' pod' key uid) "H". iNamedPrefix "H" "Hcreate_". subst key. subst uid.
+	      wp_auto. rewrite decide_True; try reflexivity. wp_auto.
+		      iApply wp_for_post_do. wp_auto.
       iAssert (I) with
         "[Hi_ptr Hown_pod_meta_frags Hcreate_Hown_meta_frag Hown_pod_unreserved_key_frags
           Hcreate_Hown_unreserved_key_frag Hcreate_Hown_children_frag Hown_terminating_children_frag]"
@@ -668,8 +699,8 @@ Proof.
 		    iApply (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null). iFrame.
 Qed.
 
-Lemma wp_syncReplicaSet_progress γ l namespace name rs dq pods :
-  ⊢ progress_spec γ l namespace name rs dq pods.
+Lemma wp_syncReplicaSet_progress γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
+  ⊢ progress_spec γ l ctx kube_client namespace name rs dq pods.
 Proof.
   unfold progress_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -827,7 +858,7 @@ Proof.
   assert (NoDup (PodV.key <$>
       (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))) as Hpartition_nodup.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
-  wp_apply (wp_manageReplicas γ l active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
     rs_get n Quiescent dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
