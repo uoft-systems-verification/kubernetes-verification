@@ -92,7 +92,8 @@ Qed.
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_manageReplicas_stability sl rs_l ptrs active_pods rs n dq1 dq2 :
+Lemma wp_manageReplicas_stability (ctx : context.Context.t) (kube_client : loc)
+    sl rs_l ptrs active_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "Hsl" ∷ sl ↦* ptrs ∗
       "Hdeepown_l_active_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;active_pods, PodV.deepown_l ptr pod dq1) ∗
@@ -101,7 +102,7 @@ Lemma wp_manageReplicas_stability sl rs_l ptrs active_pods rs n dq1 dq2 :
       "%Hn_nonneg" ∷ ⌜ 0 ≤ sint.Z n ⌝ ∗
       "%Hlen_active" ∷ ⌜ length active_pods = sint.nat n ⌝
   }}}
-    @! replicaset.manageReplicas #sl #rs_l
+    @! replicaset.manageReplicas #ctx #kube_client #sl #rs_l
   {{{ RET #interface.nil;
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;active_pods, PodV.deepown_l ptr pod dq1) ∗
@@ -132,8 +133,8 @@ Proof.
       rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet_stability γ l namespace name rs dq pods :
-  ⊢ stability_spec γ l namespace name rs dq pods.
+Lemma wp_syncReplicaSet_stability γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
+  ⊢ stability_spec γ l ctx kube_client namespace name rs dq pods.
 Proof.
   unfold stability_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -255,7 +256,7 @@ Proof.
     rewrite Hreplicas_eq in Hmatch. simpl in Hmatch.
     rewrite (active_pod_count_erased_meta_perm all_pods pods Hall_meta_perm).
     exact Hmatch. }
-  wp_apply (wp_manageReplicas_stability active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas_stability ctx kube_client active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) rs_get n dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs]").
   { iFrame "#".

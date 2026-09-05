@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Feature_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance FeatureSpec_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance VersionedSpecs_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PromotionVersionMapping_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance prerelease_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance FeatureGate_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance MutableFeatureGate_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance MutableVersionedFeatureGate_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : featuregate.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance featureGate_typed_pointsto  :

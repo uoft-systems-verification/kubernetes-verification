@@ -1,0 +1,29 @@
+translate = [
+    "objectWithMeta",
+    "Client",
+    "ClientWithList",
+    "ClientWithApply",
+    "ClientWithListAndApply",
+    "alsoLister",
+    "alsoApplier",
+    "Option",
+    "NewClient",
+    "NewClientWithList",
+    "NewClientWithApply",
+    "NewClientWithListAndApply",
+]
+
+imports = [
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/runtime",
+    "k8s.io/client-go/rest",
+]
+
+trusted = [
+    "Client.Create",
+]
+
+# The trusted client shim only relies on selected field-access contracts. The
+# generic client structs also contain function-valued and opaque REST fields
+# that proofgen cannot prove structurally.
+trust_proofgen = true

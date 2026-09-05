@@ -12,8 +12,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ErrorMatcher_typed_pointsto  :
@@ -32,8 +30,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance TestIntf_typed_pointsto  :
@@ -52,8 +48,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Error_typed_pointsto  :
@@ -72,8 +66,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance OmitValueType_typed_pointsto  :
@@ -92,8 +84,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ErrorType_typed_pointsto  :
@@ -112,8 +102,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ErrorList_typed_pointsto  :
@@ -132,8 +120,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance pathOptions_typed_pointsto  :
@@ -152,8 +138,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PathOption_typed_pointsto  :
@@ -172,8 +156,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Path_typed_pointsto  :

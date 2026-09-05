@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance AppsV1Interface_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance AppsV1Client_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerRevisionsGetter_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerRevisionInterface_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance controllerRevisions_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DaemonSetsGetter_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DaemonSetInterface_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance daemonSets_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DeploymentsGetter_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DeploymentInterface_typed_pointsto  :
@@ -211,8 +191,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance deployments_typed_pointsto  :
@@ -231,8 +209,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ControllerRevisionExpansion_typed_pointsto  :
@@ -251,8 +227,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DaemonSetExpansion_typed_pointsto  :
@@ -271,8 +245,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DeploymentExpansion_typed_pointsto  :
@@ -291,8 +263,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetExpansion_typed_pointsto  :
@@ -311,8 +281,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StatefulSetExpansion_typed_pointsto  :
@@ -331,8 +299,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetsGetter_typed_pointsto  :
@@ -351,8 +317,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicaSetInterface_typed_pointsto  :
@@ -371,8 +335,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance replicaSets_typed_pointsto  :
@@ -391,8 +353,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StatefulSetsGetter_typed_pointsto  :
@@ -411,8 +371,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StatefulSetInterface_typed_pointsto  :
@@ -431,8 +389,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance statefulSets_typed_pointsto  :

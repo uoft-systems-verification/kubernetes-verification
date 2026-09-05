@@ -12,8 +12,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance AmbiguousResourceError_typed_pointsto  :
@@ -32,8 +30,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance AmbiguousKindError_typed_pointsto  :
@@ -52,8 +48,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance NoResourceMatchError_typed_pointsto  :
@@ -72,8 +66,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance NoKindMatchError_typed_pointsto  :
@@ -92,8 +84,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance FirstHitRESTMapper_typed_pointsto  :
@@ -112,8 +102,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ListMetaAccessor_typed_pointsto  :
@@ -132,8 +120,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance List_typed_pointsto  :
@@ -152,8 +138,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Type'_typed_pointsto  :
@@ -172,8 +156,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance MetadataAccessor_typed_pointsto  :
@@ -192,8 +174,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RESTScopeName_typed_pointsto  :
@@ -212,8 +192,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RESTScope_typed_pointsto  :
@@ -232,8 +210,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RESTMapping_typed_pointsto  :
@@ -252,8 +228,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RESTMapper_typed_pointsto  :
@@ -272,8 +246,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ResettableRESTMapper_typed_pointsto  :
@@ -292,8 +264,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance lazyObject_typed_pointsto  :
@@ -312,8 +282,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance objectAccessor_typed_pointsto  :
@@ -332,8 +300,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance resourceAccessor_typed_pointsto  :
@@ -352,8 +318,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance genericAccessor_typed_pointsto  :
@@ -372,8 +336,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance MultiRESTMapper_typed_pointsto  :
@@ -392,8 +354,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PriorityRESTMapper_typed_pointsto  :
@@ -412,8 +372,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance restScope_typed_pointsto  :
@@ -432,8 +390,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DefaultRESTMapper_typed_pointsto  :
@@ -452,8 +408,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance kindByPreferredGroupVersion_typed_pointsto  :
@@ -472,8 +426,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : meta.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance resourceByPreferredGroupVersion_typed_pointsto  :

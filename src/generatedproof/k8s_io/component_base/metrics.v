@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StableCollector_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance BaseStableCollector_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Counter_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance exemplarCounterMetric_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CounterVec_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CounterVecWithContext_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Desc_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Gauge_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeVec_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeVecWithContext_typed_pointsto  :
@@ -211,8 +191,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Histogram_typed_pointsto  :
@@ -231,8 +209,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance exemplarHistogramMetric_typed_pointsto  :
@@ -251,8 +227,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance exemplarHistogramVec_typed_pointsto  :
@@ -271,8 +245,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance HistogramVec_typed_pointsto  :
@@ -291,8 +263,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance HistogramVecWithContext_typed_pointsto  :
@@ -311,8 +281,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance HandlerOpts_typed_pointsto  :
@@ -331,8 +299,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Labels_typed_pointsto  :
@@ -351,8 +317,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance kubeCollector_typed_pointsto  :
@@ -371,8 +335,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance lazyKubeMetric_typed_pointsto  :
@@ -391,8 +353,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance lazyMetric_typed_pointsto  :
@@ -411,8 +371,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance selfCollector_typed_pointsto  :
@@ -431,8 +389,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance metricWithExemplar_typed_pointsto  :
@@ -451,8 +407,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance noopMetric_typed_pointsto  :
@@ -471,8 +425,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Options_typed_pointsto  :
@@ -491,8 +443,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance KubeOpts_typed_pointsto  :
@@ -511,8 +461,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance StabilityLevel_typed_pointsto  :
@@ -531,8 +479,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CounterOpts_typed_pointsto  :
@@ -551,8 +497,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeOpts_typed_pointsto  :
@@ -571,8 +515,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance HistogramOpts_typed_pointsto  :
@@ -591,8 +533,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance TimingHistogramOpts_typed_pointsto  :
@@ -611,8 +551,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance SummaryOpts_typed_pointsto  :
@@ -631,8 +569,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance MetricLabelAllowList_typed_pointsto  :
@@ -651,8 +587,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Registerable_typed_pointsto  :
@@ -671,8 +605,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance resettable_typed_pointsto  :
@@ -691,8 +623,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance KubeRegistry_typed_pointsto  :
@@ -711,8 +641,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance kubeRegistry_typed_pointsto  :
@@ -731,8 +659,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Summary_typed_pointsto  :
@@ -751,8 +677,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance SummaryVec_typed_pointsto  :
@@ -771,8 +695,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance SummaryVecWithContext_typed_pointsto  :
@@ -791,8 +713,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PrometheusTimingHistogram_typed_pointsto  :
@@ -811,8 +731,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance TimingHistogram_typed_pointsto  :
@@ -831,8 +749,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance TimingHistogramVec_typed_pointsto  :
@@ -851,8 +767,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance TimingHistogramVecWithContext_typed_pointsto  :
@@ -871,8 +785,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ValueType_typed_pointsto  :
@@ -891,8 +803,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Collector_typed_pointsto  :
@@ -911,8 +821,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Metric_typed_pointsto  :
@@ -931,8 +839,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CounterMetric_typed_pointsto  :
@@ -951,8 +857,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CounterVecMetric_typed_pointsto  :
@@ -971,8 +875,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeMetric_typed_pointsto  :
@@ -991,8 +893,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeVecMetric_typed_pointsto  :
@@ -1011,8 +911,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ObserverMetric_typed_pointsto  :
@@ -1031,8 +929,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance PromRegistry_typed_pointsto  :
@@ -1051,8 +947,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Gatherer_typed_pointsto  :
@@ -1071,8 +965,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Registerer_typed_pointsto  :
@@ -1091,8 +983,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : metrics.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance GaugeFunc_typed_pointsto  :

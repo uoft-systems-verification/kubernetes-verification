@@ -12,8 +12,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : features.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance clientAdapter_typed_pointsto  :

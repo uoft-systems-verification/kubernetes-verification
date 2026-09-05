@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Scale_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance int64Amount_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance infDecAmount_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Format_typed_pointsto  :
@@ -92,7 +84,6 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global]Program Instance Quantity_typed_pointsto  :
@@ -174,8 +165,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CanonicalValue_typed_pointsto  :
@@ -194,8 +183,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance QuantityValue_typed_pointsto  :
@@ -214,8 +201,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance suffix_typed_pointsto  :
@@ -234,8 +219,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance suffixer_typed_pointsto  :
@@ -254,8 +237,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance bePair_typed_pointsto  :
@@ -274,8 +255,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance listSuffixer_typed_pointsto  :
@@ -294,8 +273,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance suffixHandler_typed_pointsto  :
@@ -314,8 +291,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : resource.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance fastLookup_typed_pointsto  :

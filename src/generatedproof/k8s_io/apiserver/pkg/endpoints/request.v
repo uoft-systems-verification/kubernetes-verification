@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance key_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance requestReceivedTimestampKeyType_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance LongRunningRequestCheck_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RequestInfoResolver_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RequestInfo_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RequestInfoFactory_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance requestInfoKeyType_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance serverShutdownSignalKeyType_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance ServerShutdownSignal_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance DurationTracker_typed_pointsto  :
@@ -211,8 +191,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance durationTracker_typed_pointsto  :
@@ -231,8 +209,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance LatencyTrackers_typed_pointsto  :
@@ -251,8 +227,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : request.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance latencyTrackersKeyType_typed_pointsto  :

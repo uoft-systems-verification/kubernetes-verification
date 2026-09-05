@@ -11,8 +11,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance contextKey_typed_pointsto  :
@@ -31,8 +29,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance notFoundError_typed_pointsto  :
@@ -51,8 +47,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Logger_typed_pointsto  :
@@ -71,8 +65,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance RuntimeInfo_typed_pointsto  :
@@ -91,8 +83,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance LogSink_typed_pointsto  :
@@ -111,8 +101,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CallDepthLogSink_typed_pointsto  :
@@ -131,8 +119,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance CallStackHelperLogSink_typed_pointsto  :
@@ -151,8 +137,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Marshaler_typed_pointsto  :
@@ -171,8 +155,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance slogHandler_typed_pointsto  :
@@ -191,8 +173,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance SlogSink_typed_pointsto  :
@@ -211,8 +191,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance Underlier_typed_pointsto  :
@@ -231,8 +209,6 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
-Context {package_sem' : logr.Assumptions}.
-
 Local Set Default Proof Using "All".
 
 #[global] Instance slogSink_typed_pointsto  :
