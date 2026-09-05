@@ -3,6 +3,7 @@ package apimodel
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -110,6 +111,20 @@ func (s *State) PodUpdateTx(namespace string, pod *corev1.Pod) (*corev1.Pod, err
 	}
 
 	return updatedPod, nil
+}
+
+func (s *State) ReplicaSetUpdateTx(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	obj, err := s.updateTx("ReplicaSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return nil, fmt.Errorf("transactional update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
 }
 
 func (s *State) updateStatusTx(kind, namespace string, obj interface{}) (interface{}, error) {

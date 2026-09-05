@@ -5,7 +5,7 @@ Require Export New.code.k8s_io.api.apps.v1.
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
-Require Export New.code.k8s_io.apimachinery.pkg.labels.
+Require Export New.code.k8s_io.apimachinery.pkg.types.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
 Module apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module core_v1 := code.k8s_io.api.core.v1.v1.
@@ -111,12 +111,18 @@ Definition findNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType apps_v1.ReplicaSet) UntypedNil)).
 
-(* findOldReplicaSets returns every ReplicaSet other than newRS.
+(* findOldReplicaSets returns every ReplicaSet whose UID differs from
+   newRSUID.
 
-   go: deployment.go:72:6 *)
+   Takes the UID rather than the *apps.ReplicaSet it came from: the only thing
+   the loop needs is a value to compare against, and taking the pointer would
+   oblige a caller that already owns newRS through rsList to own it a second
+   time. See notes/deployment-spec-aug-26.md §3.1.
+
+   go: deployment.go:78:6 *)
 Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "rsList" "newRS",
-    exception_do (let: "newRS" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) "newRS") in
+  λ: "rsList" "newRSUID",
+    exception_do (let: "newRSUID" := (GoAlloc types.UID "newRSUID") in
     let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
     let: "old" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType apps_v1.ReplicaSet)) #())) in
     let: "$r0" := (CompositeLiteral (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (LiteralValue [])) in
@@ -126,7 +132,7 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     slice.for_range (go.PointerType apps_v1.ReplicaSet) "$range" (λ: "$key" "$value",
       do:  ("rs" <-[go.PointerType apps_v1.ReplicaSet] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool (((![go.PointerType apps_v1.ReplicaSet] "newRS") ≠⟨go.PointerType apps_v1.ReplicaSet⟩ (Convert go.untyped_nil (go.PointerType apps_v1.ReplicaSet) UntypedNil)) && ((![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rs")))) =⟨types.UID⟩ (![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "newRS"))))))
+      (if: Convert go.untyped_bool go.bool ((![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rs")))) =⟨types.UID⟩ (![types.UID] "newRSUID"))
       then continue: #()
       else do:  #());;;
       let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "old") in
@@ -136,7 +142,7 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
       do:  ("old" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "old")).
 
-(* go: deployment.go:83:6 *)
+(* go: deployment.go:89:6 *)
 Definition cloneAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "existing" "key" "value",
     exception_do (let: "value" := (GoAlloc go.string "value") in
@@ -157,7 +163,7 @@ Definition cloneAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     do:  (map.insert go.string (![go.MapType go.string go.string] "result") (![go.string] "key") "$r0");;;
     return: (![go.MapType go.string go.string] "result")).
 
-(* go: deployment.go:92:6 *)
+(* go: deployment.go:98:6 *)
 Definition cloneSelectorAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "selector" "key" "value",
     exception_do (let: "value" := (GoAlloc go.string "value") in
@@ -178,7 +184,7 @@ Definition cloneSelectorAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 (* scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
    scaled=false) when the count already matches.
 
-   go: deployment.go:103:6 *)
+   go: deployment.go:109:6 *)
 Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs" "newScale",
     exception_do (let: "newScale" := (GoAlloc go.int32 "newScale") in
@@ -196,7 +202,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "updated" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rsCopy")))) in
     let: "$a1" := (![go.PointerType apps_v1.ReplicaSet] "rsCopy") in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdateTx"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("updated" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;
@@ -209,7 +215,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
    deterministic name and the deployment's replica count if it does not exist.
 
-   go: deployment.go:118:6 *)
+   go: deployment.go:124:6 *)
 Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -253,7 +259,10 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     (MethodResolve (go.PointerType schema.GroupVersion) "WithKind"%go (GlobalVarAddr apps_v1.SchemeGroupVersion #())) "$a0") in
     (FuncResolve meta_v1.NewControllerRef [] #()) "$a0" "$a1")) in
     CompositeLiteral (go.SliceType meta_v1.OwnerReference) (LiteralValue [KeyedElement None (ElementExpression meta_v1.OwnerReference "$v0")])) in
-    let: "$v3" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go "newRSTemplate"))) in
+    let: "$v3" := (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef meta_v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (StructFieldRef apps_v1.DeploymentSpec "Template"%go (StructFieldRef apps_v1.Deployment "Spec"%go (![go.PointerType apps_v1.Deployment] "d")))))) in
+    let: "$a1" := (Convert go.untyped_string go.string deploymentUniqueLabelKey) in
+    let: "$a2" := (![go.string] "podTemplateSpecHash") in
+    (FuncResolve cloneAndAddLabel [] #()) "$a0" "$a1" "$a2") in
     CompositeLiteral meta_v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "OwnerReferences"%go)) (ElementExpression (go.SliceType meta_v1.OwnerReference) "$v2"); KeyedElement (Some (KeyField "Labels"%go)) (ElementExpression (go.MapType go.string go.string) "$v3")])) in
     let: "$v1" := (let: "$v0" := "replicas" in
     let: "$v1" := (![go.int32] (StructFieldRef apps_v1.DeploymentSpec "MinReadySeconds"%go (StructFieldRef apps_v1.Deployment "Spec"%go (![go.PointerType apps_v1.Deployment] "d")))) in
@@ -287,7 +296,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:159:6 *)
+   go: deployment.go:169:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -308,7 +317,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:165:6 *)
+   go: deployment.go:175:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "oldRSs") in
@@ -343,7 +352,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:180:6 *)
+   go: deployment.go:190:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -362,7 +371,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
     else do:  #());;;
     let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType apps_v1.ReplicaSet)) #())) in
     let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "rsList") in
-    let: "$a1" := (![go.PointerType apps_v1.ReplicaSet] "newRS") in
+    let: "$a1" := (![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "newRS")))) in
     (FuncResolve findOldReplicaSets [] #()) "$a0" "$a1") in
     do:  ("oldRSs" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0");;;
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType apps_v1.ReplicaSet] "newRS") in
@@ -383,48 +392,67 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
-   whose controller reference points at the deployment.
+(* filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
+   points at the deployment.
 
-   go: deployment.go:198:6 *)
+   Fetched through the replicaSetController index rather than by listing the
+   namespace and filtering in Go, mirroring controllers/common's
+   FilterPodsByOwner. Listing cannot be related back to the deployment's
+   children fragment — the list spec is fragment-free — whereas the index is
+   keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
+   §3.2.
+
+   go: deployment.go:215:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
+    let: "result" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType apps_v1.ReplicaSet)) #())) in
+    let: "$r0" := (CompositeLiteral (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (LiteralValue [])) in
+    do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0");;;
+    let: "key" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    let: "$r0" := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.Deployment "ObjectMeta"%go (![go.PointerType apps_v1.Deployment] "d")))) in
+    let: "$a1" := (GoAlloc meta_v1.OwnerReference (let: "$v0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef apps_v1.Deployment "ObjectMeta"%go (![go.PointerType apps_v1.Deployment] "d")))) in
+    let: "$v1" := #"Deployment"%go in
+    let: "$v2" := (![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.Deployment "ObjectMeta"%go (![go.PointerType apps_v1.Deployment] "d")))) in
+    CompositeLiteral meta_v1.OwnerReference (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "UID"%go)) (ElementExpression types.UID "$v2")]))) in
+    (FuncResolve controller.PodControllerIndexKey [] #()) "$a0" "$a1") in
+    do:  ("key" <-[go.string] "$r0");;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "all" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType apps_v1.ReplicaSet)) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.Deployment "ObjectMeta"%go (![go.PointerType apps_v1.Deployment] "d")))) in
-    let: "$a1" := ((FuncResolve labels.Everything [] #()) #()) in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetList"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
+    let: "$a1" := (Convert go.untyped_string go.string apimodel.ReplicaSetControllerIndex) in
+    let: "$a2" := (![go.string] "key") in
+    (MethodResolve (go.PointerType apimodel.State) "ByIndex"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("all" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0");;;
+    do:  ("items" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.SliceType (go.PointerType apps_v1.ReplicaSet)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "result" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType apps_v1.ReplicaSet)) #())) in
-    let: "$r0" := (CompositeLiteral (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (LiteralValue [])) in
-    do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0");;;
-    let: "$range" := (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "all") in
-    (let: "rs" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
-    slice.for_range (go.PointerType apps_v1.ReplicaSet) "$range" (λ: "$key" "$value",
-      do:  ("rs" <-[go.PointerType apps_v1.ReplicaSet] "$value");;;
+    let: "$range" := (![go.SliceType (go.InterfaceType [])] "items") in
+    (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
+      do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
-      let: "ref" := (GoAlloc (go.PointerType meta_v1.OwnerReference) (GoZeroVal (go.PointerType meta_v1.OwnerReference) #())) in
-      let: "$r0" := (let: "$a0" := (Convert (go.PointerType apps_v1.ReplicaSet) meta_v1.Object (![go.PointerType apps_v1.ReplicaSet] "rs")) in
-      (FuncResolve meta_v1.GetControllerOf [] #()) "$a0") in
-      do:  ("ref" <-[go.PointerType meta_v1.OwnerReference] "$r0");;;
-      (if: Convert go.untyped_bool go.bool (((![go.PointerType meta_v1.OwnerReference] "ref") ≠⟨go.PointerType meta_v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType meta_v1.OwnerReference) UntypedNil)) && ((![types.UID] (StructFieldRef meta_v1.OwnerReference "UID"%go (![go.PointerType meta_v1.OwnerReference] "ref"))) =⟨types.UID⟩ (![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef apps_v1.Deployment "ObjectMeta"%go (![go.PointerType apps_v1.Deployment] "d"))))))
-      then
-        let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result") in
-        let: "$a1" := ((let: "$sl0" := (![go.PointerType apps_v1.ReplicaSet] "rs") in
-        CompositeLiteral (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType apps_v1.ReplicaSet) "$sl0")]))) in
-        (FuncResolve go.append [go.SliceType (go.PointerType apps_v1.ReplicaSet)] #()) "$a0" "$a1") in
-        do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")
-      else do:  #())));;;
+      let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+      let: "rs" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("rs" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;
+      do:  ("ok" <-[go.bool] "$r1");;;
+      (if: (⟨go.bool⟩! (![go.bool] "ok"))
+      then continue: #()
+      else do:  #());;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType apps_v1.ReplicaSet] "rs") in
+      CompositeLiteral (go.SliceType (go.PointerType apps_v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType apps_v1.ReplicaSet) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType apps_v1.ReplicaSet)] #()) "$a0" "$a1") in
+      do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:213:6 *)
+(* go: deployment.go:233:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -464,14 +492,14 @@ Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
 #[global] Instance info' : PkgInfo pkg_id.deployment :=
 {|
-  pkg_imported_pkgs := [code.reflect.pkg_id.reflect; code.kubernetes_model.apimodel.pkg_id.apimodel; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
+  pkg_imported_pkgs := [code.reflect.pkg_id.reflect; code.kubernetes_model.apimodel.pkg_id.apimodel; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.deployment (λ: <>,
       exception_do (do:  (controller.initialize' #());;;
-      do:  (labels.initialize' #());;;
+      do:  (types.initialize' #());;;
       do:  (meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
       do:  (core_v1.initialize' #());;;
@@ -502,7 +530,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_core_v1_Assumption :: core_v1.Assumptions;
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
-  #[global] import_labels_Assumption :: labels.Assumptions;
+  #[global] import_types_Assumption :: types.Assumptions;
   #[global] import_controller_Assumption :: controller.Assumptions;
 }.
 End deployment.

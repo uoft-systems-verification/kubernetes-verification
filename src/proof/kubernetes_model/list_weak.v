@@ -259,7 +259,7 @@ Lemma kobject_list_to_replica_sets objs :
 Proof.
   induction 1 as [|obj objs Hkind _ [replica_sets ->]].
   - exists []. done.
-  - destruct obj as [pod|replica_set|pvc|stateful_set];
+  - destruct obj as [pod|replica_set|pvc|stateful_set|deployment];
       simpl in Hkind; try discriminate.
     exists (replica_set :: replica_sets). done.
 Qed.
@@ -418,7 +418,7 @@ Lemma kobject_list_to_pods objs :
 Proof.
   induction 1 as [|obj objs Hkind _ [pods ->]].
   - exists []. done.
-  - destruct obj as [pod|replica_set|pvc|stateful_set];
+  - destruct obj as [pod|replica_set|pvc|stateful_set|deployment];
       simpl in Hkind; try discriminate.
     exists (pod :: pods). done.
 Qed.

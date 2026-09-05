@@ -48,8 +48,10 @@ Proof.
     destruct old_spec, kobj; rewrite /KObjectV.valid_update /=;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/DeploymentV.valid_update
         ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create
         /KObjectV.valid_create /=;
       try contradiction; tauto.
   }
@@ -59,7 +61,8 @@ Proof.
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
   { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create in Hvalid;
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
@@ -222,7 +225,8 @@ Proof.
     - exact Hkey_old_new.
     - rewrite <-e0.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
+        [tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]]; destruct meta; done. }
   destruct ((KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp'))
     as [old_deletion_timestamp|] eqn:Hold_deletion_timestamp.
   2: {
@@ -381,7 +385,8 @@ Proof.
       Hdeletion_timestamp_new).
   { destruct kobj, new_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
-        /PersistentVolumeClaimV.updated /StatefulSetV.updated /= in Hupdated_new |- *;
+        /PersistentVolumeClaimV.updated /StatefulSetV.updated
+        /DeploymentV.updated /= in Hupdated_new |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated_new |- *; tauto. }
   assert (KObjectV.valid new_kobj) as Hvalid_new.
   { unfold new_kobj, new_kmeta.
@@ -487,27 +492,31 @@ Proof.
       (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj)) as Hvalid_meta_update.
   { rewrite /ObjectMetaV.valid_update. split.
     - left. rewrite /ObjectMetaV.valid_simple_update. done.
-    - destruct kobj as [pod|rs|pvc|sts]; simpl in Hvalid, Hname_nonempty |- *;
+    - destruct kobj as [pod|rs|pvc|sts|d]; simpl in Hvalid, Hname_nonempty |- *;
         rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create in Hvalid;
+          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+          ?/DeploymentV.valid_create in Hvalid;
         destruct Hvalid as (_ & _ & _ & _ & Hvalid_meta & _);
         rewrite /ObjectMetaV.valid_create in Hvalid_meta;
         tauto. }
   assert (ObjectSpecV.valid_update
       (KObjectV.spec kobj) (KObjectV.spec kobj)) as Hvalid_spec_update.
-  { destruct kobj as [pod|rs|pvc|sts]; simpl in Hvalid |- *;
+  { destruct kobj as [pod|rs|pvc|sts|d]; simpl in Hvalid |- *;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create in Hvalid;
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create in Hvalid;
       destruct Hvalid as (_ & _ & _ & _ & _ & Hvalid_spec).
     - apply PodSpecV.valid_update_refl. exact Hvalid_spec.
     - apply ReplicaSetSpecV.valid_update_refl. exact Hvalid_spec.
     - apply PersistentVolumeClaimSpecV.valid_update_refl. exact Hvalid_spec.
-    - apply StatefulSetSpecV.valid_update_refl. exact Hvalid_spec. }
+    - apply StatefulSetSpecV.valid_update_refl. exact Hvalid_spec.
+    - apply DeploymentSpecV.valid_update_refl. exact Hvalid_spec. }
   assert (KObjectV.valid_update kind namespace
       (KObjectV.objectmeta kobj) (KObjectV.spec kobj) kobj) as Hvalid_update.
-  { destruct kobj as [pod|rs|pvc|sts]; simpl in *;
+  { destruct kobj as [pod|rs|pvc|sts|d]; simpl in *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
-        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update;
+        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/DeploymentV.valid_update;
       split_and!; assumption. }
   iApply wp_State__update_release_terminating_au.
   iFrame "#". iFrame "%". iFrame "Hdeepown_i".

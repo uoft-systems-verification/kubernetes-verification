@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -68,11 +68,17 @@ func findNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) *apps.Repl
 	return nil
 }
 
-// findOldReplicaSets returns every ReplicaSet other than newRS.
-func findOldReplicaSets(rsList []*apps.ReplicaSet, newRS *apps.ReplicaSet) []*apps.ReplicaSet {
+// findOldReplicaSets returns every ReplicaSet whose UID differs from
+// newRSUID.
+//
+// Takes the UID rather than the *apps.ReplicaSet it came from: the only thing
+// the loop needs is a value to compare against, and taking the pointer would
+// oblige a caller that already owns newRS through rsList to own it a second
+// time. See notes/deployment-spec-aug-26.md §3.1.
+func findOldReplicaSets(rsList []*apps.ReplicaSet, newRSUID types.UID) []*apps.ReplicaSet {
 	old := []*apps.ReplicaSet{}
 	for _, rs := range rsList {
-		if newRS != nil && rs.UID == newRS.UID {
+		if rs.UID == newRSUID {
 			continue
 		}
 		old = append(old, rs)
@@ -106,7 +112,7 @@ func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSe
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := apimodel.ModelState.ReplicaSetUpdate(rsCopy.Namespace, rsCopy)
+	updated, err := apimodel.ModelState.ReplicaSetUpdateTx(rsCopy.Namespace, rsCopy)
 	if err != nil {
 		return false, rs, err
 	}
@@ -132,7 +138,11 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 			Name:            d.Name + "-" + podTemplateSpecHash,
 			Namespace:       d.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(d, apps.SchemeGroupVersion.WithKind("Deployment"))},
-			Labels:          newRSTemplate.Labels,
+			// A second clone rather than newRSTemplate.Labels: upstream shares
+			// one map between the ReplicaSet's own labels and its template's,
+			// but a deep-ownership predicate cannot hold the same map twice.
+			// The contents are identical either way.
+			Labels: cloneAndAddLabel(d.Spec.Template.Labels, deploymentUniqueLabelKey, podTemplateSpecHash),
 		},
 		Spec: apps.ReplicaSetSpec{
 			Replicas:        &replicas,
@@ -182,7 +192,7 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	if err != nil {
 		return err
 	}
-	oldRSs := findOldReplicaSets(rsList, newRS)
+	oldRSs := findOldReplicaSets(rsList, newRS.UID)
 
 	_, err = reconcileNewReplicaSet(newRS, d)
 	if err != nil {
@@ -193,19 +203,29 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	return err
 }
 
-// filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
-// whose controller reference points at the deployment.
+// filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
+// points at the deployment.
+//
+// Fetched through the replicaSetController index rather than by listing the
+// namespace and filtering in Go, mirroring controllers/common's
+// FilterPodsByOwner. Listing cannot be related back to the deployment's
+// children fragment — the list spec is fragment-free — whereas the index is
+// keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
+// §3.2.
 func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
-	all, err := apimodel.ModelState.ReplicaSetList(d.Namespace, labels.Everything())
+	result := []*apps.ReplicaSet{}
+	key := controller.PodControllerIndexKey(d.Namespace,
+		&metav1.OwnerReference{Name: d.Name, Kind: "Deployment", UID: d.UID})
+	items, err := apimodel.ModelState.ByIndex("ReplicaSet", apimodel.ReplicaSetControllerIndex, key)
 	if err != nil {
 		return nil, err
 	}
-	result := []*apps.ReplicaSet{}
-	for _, rs := range all {
-		ref := metav1.GetControllerOf(rs)
-		if ref != nil && ref.UID == d.UID {
-			result = append(result, rs)
+	for _, obj := range items {
+		rs, ok := obj.(*apps.ReplicaSet)
+		if !ok {
+			continue
 		}
+		result = append(result, rs)
 	}
 	return result, nil
 }

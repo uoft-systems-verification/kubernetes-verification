@@ -55,8 +55,10 @@ Proof.
     destruct old_spec, kobj; rewrite /KObjectV.valid_update /=;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/DeploymentV.valid_update
         ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create
         /KObjectV.valid_create /=;
       try contradiction; tauto.
   }
@@ -66,7 +68,8 @@ Proof.
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
   { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create in Hvalid;
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ.
   wp_call. wp_auto.
@@ -221,8 +224,10 @@ Proof.
       destruct old_spec, kobj; rewrite /KObjectV.valid_update /=;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+          ?/DeploymentV.valid_update
           ?/PodV.valid_create ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+          ?/DeploymentV.valid_create
           /KObjectV.valid_create /=;
         try contradiction; tauto. }
     assert (KObjectV.valid_create kind namespace
@@ -231,9 +236,11 @@ Proof.
             ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>))) as Hcreate_rv.
     { revert Hcreate.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; simpl;
+        [tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]]; simpl;
         rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create;
+          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+          ?/DeploymentV.valid_create;
         intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
         split_and!; try done; destruct meta; done. }
     assert (ObjectMetaV.valid_update old_meta
@@ -251,11 +258,14 @@ Proof.
         + right. exact Hmeta_release.
         + split_and!; done. }
     destruct old_spec, kobj as [[tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; destruct meta; simpl in *;
+        [tm meta spec status]|[tm meta spec status]|
+        [tm meta spec status]]; destruct meta; simpl in *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/DeploymentV.valid_update
         ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create
         /KObjectV.valid_create /= in Hcreate_rv |- *;
       try contradiction; tauto. }
   iSplit.
@@ -430,7 +440,7 @@ Proof.
   { destruct kobj'; rewrite /KObjectV.updated /PodV.updated /= in Hupdated |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated; tauto. }
   pose proof (kobject_updated_parent_ref _ _ Hupdated) as Hparent_updated.
-  destruct kobj' as [pod'|rs'|pvc'|sts']; simpl in Hupdated; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; simpl in Hupdated; try done.
   iDestruct "Hdeepown_i" as
     (pod_l') "[%Hi' Hdeepown_l]".
   wp_auto.
@@ -566,9 +576,11 @@ Proof.
   { subst kobj_rv kmeta_rv.
     revert Hvalid.
     destruct kobj as [[tm meta spec status]|[tm meta spec status]|
-      [tm meta spec status]|[tm meta spec status]]; simpl;
+      [tm meta spec status]|[tm meta spec status]|
+      [tm meta spec status]]; simpl;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create;
+        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
+        ?/DeploymentV.valid_create;
       intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
       split_and!; try done; destruct meta; done. }
   assert ((KObjectV.objectmeta kobj_rv).(ObjectMetaV.Name') ≠ ""%go) as Hname_nonempty_rv.
@@ -663,7 +675,7 @@ Proof.
     "[(%Hret & %Herr_nil & %Hsame_kind) Hdeepown_updated_i]".
   subst ret err. wp_auto.
   iDestruct "Hdeepown_updated_i" as (updated_l) "[%Hvalid_updated Hdeepown_updated_l]".
-  destruct updated_kobj as [updated_pod| | |]; try done.
+  destruct updated_kobj as [updated_pod| | | |]; try done.
   unfold KObjectV.valid_interface in Hvalid_updated.
   destruct Hvalid_updated as [Hvalid_updated _]. rewrite Hvalid_updated.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod). cbn [interface.ty interface.v].

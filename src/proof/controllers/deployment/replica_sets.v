@@ -1,4 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
+From New.proof.map Require Import for_range.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
@@ -33,6 +34,7 @@ Proof using package_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 Local Set Default Proof Using "All".
+Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Lemma wp_replicasOf d_l (d : DeploymentV.t) dq :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq
@@ -135,22 +137,114 @@ Proof.
 Qed.
 
 Lemma wp_findOldReplicaSets sl ptrs (rss : list ReplicaSetV.t)
-    new_rs_l (new_rs_o : option ReplicaSetV.t) dq1 dq2 dq3 :
+    (new_rs_uid : types.UID.t) dq1 dq2 :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hsl" ∷ sl ↦*{dq1} ptrs ∗
-      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq2) ∗
-      "Hnew" ∷ rs_opt_own new_rs_l new_rs_o dq3
+      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq2)
   }}}
-    @! deployment.findOldReplicaSets #sl #new_rs_l
+    @! deployment.findOldReplicaSets #sl #new_rs_uid
   {{{ sl', RET #sl';
       sl ↦*{dq1} ptrs ∗
-      sl' ↦* ((old_replica_set_pairs ptrs rss new_rs_o).*1) ∗
+      sl' ↦* ((old_replica_set_pairs ptrs rss new_rs_uid).*1) ∗
       own_slice_cap loc sl' (DfracOwn 1) ∗
-      ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq2) ∗
-      rs_opt_own new_rs_l new_rs_o dq3
+      ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq2)
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply wp_slice_literal. iSplitR; first done.
+  iIntros (old_sl0) "[Hold_sl Hold_cap]". wp_auto.
+  iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
+  iDestruct (big_sepL2_length with "Hrss") as %Hptrs_rss_len.
+  set Q := (λ pr : loc * ReplicaSetV.t, rs_is_old new_rs_uid pr.2).
+  (* [old] holds exactly the old ReplicaSets found among the first i entries. *)
+  set I := (∃ (i : w64) (rs_ptr_value : loc) (old_sl : slice.t),
+    "Hi_ptr" ∷ i_ptr ↦ i ∗
+    "Hold_ptr" ∷ old_ptr ↦ old_sl ∗
+    "Hrs_ptr" ∷ rs_ptr ↦ rs_ptr_value ∗
+    "HnewRSUID_ptr" ∷ newRSUID_ptr ↦ new_rs_uid ∗
+    "Hold_sl" ∷ old_sl ↦* ((filter Q (take (sint.nat i) (zip ptrs rss))).*1) ∗
+    "Hold_cap" ∷ own_slice_cap loc old_sl (DfracOwn 1) ∗
+    "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq2) ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝
+  )%I.
+  iAssert I with "[i old rs newRSUID Hold_sl Hold_cap Hrss]" as "Hloop_inv".
+  { iExists (W64 0), null, _. iFrame. iPureIntro. word. }
+  wp_for "Hloop_inv". wp_if_destruct.
+  - list_elem ptrs (sint.Z i) as this_ptr.
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr_lookup. }
+    iIntros "Hsl". wp_auto.
+    assert (∃ this_rs, rss !! sint.nat i = Some this_rs) as [this_rs Hthis_rs_lookup].
+    { apply lookup_lt_is_Some_2. rewrite -Hptrs_rss_len Hsl_len1. word. }
+    assert (zip ptrs rss !! sint.nat i = Some (this_ptr, this_rs)) as Hzip_lookup.
+    { rewrite lookup_zip_with Hthis_ptr_lookup Hthis_rs_lookup. done. }
+    assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext by word.
+    (* Only the current ReplicaSet is opened: the comparison value is a plain
+       UID, so nothing else has to be owned. *)
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hthis_ptr_lookup|exact Hthis_rs_lookup|].
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
+      "(%Hthis_not_null & Hthis_typemeta & Hthis_objectmeta_l & Hthis_spec_l & Hthis_status_l)".
+    iDestruct "Hthis_objectmeta_l" as (this_meta_c) "[Hthis_meta_field Hthis_meta]".
+    iNamedPrefix "Hthis_meta" "Hthis_meta_".
+    wp_auto.
+    rewrite Hthis_meta_Hdeepown_uid.
+    iCombineNamed "Hthis_meta_Hdeepown_*" as "Hthis_meta_parts".
+    iAssert (ObjectMetaV.deepown this_meta_c (ReplicaSetV.ObjectMeta' this_rs) dq2)
+      with "[Hthis_meta_parts]" as "Hthis_meta".
+    { iNamed "Hthis_meta_parts". iFrame. done. }
+    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hthis_not_null
+      with "[$Hthis_typemeta $Hthis_spec_l $Hthis_status_l Hthis_meta_field Hthis_meta]")
+      as "Hthis".
+    { iExists this_meta_c. iFrame. }
+    iSpecialize ("Hrss_restore" with "Hthis").
+    iRename "Hrss_restore" into "Hrss".
+    (* Splitting an ObjectMeta leaves ~15 spent pure facts behind; dropping them
+       keeps the tactics below from crawling. *)
+    clear Hthis_meta_Hdeepown_name Hthis_meta_Hdeepown_generatename
+      Hthis_meta_Hdeepown_namespace Hthis_meta_Hdeepown_selflink
+      Hthis_meta_Hdeepown_uid Hthis_meta_Hdeepown_resourceversion
+      Hthis_meta_Hdeepown_generation Hthis_meta_Hdeepown_deletiontimestamp_none
+      Hthis_meta_Hdeepown_deletiongraceperiodseconds_none
+      Hthis_meta_Hdeepown_labels_none Hthis_meta_Hdeepown_annotations_none
+      Hthis_meta_Hdeepown_ownerreferences_none
+      Hthis_meta_Hdeepown_finalizers_none Hthis_meta_Hdeepown_managedfields_none
+      this_meta_c.
+    wp_if_destruct.
+    + (* Same UID as newRS: skip it, so the filter drops this entry. *)
+      iApply wp_for_post_continue. wp_auto.
+      assert (¬ Q (this_ptr, this_rs)) as HnotQ.
+      { unfold Q, rs_is_old, rs_uid. simpl. intros Hne. apply Hne. congruence. }
+      assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =
+        filter Q (take (sint.nat i) (zip ptrs rss))) as Hfilter_eq.
+      { rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
+        rewrite (filter_singleton_False Q (this_ptr, this_rs) [] HnotQ) app_nil_r. done. }
+      iFrame "Hsl HΦ".
+      iExists (word.add i (W64 1)), this_ptr, old_sl.
+      rewrite Hfilter_eq. iFrame. iPureIntro. word.
+    + wp_apply wp_slice_literal. iSplitR; first done.
+      iIntros (one_sl) "[Hone_sl _]". wp_auto.
+      wp_apply (wp_slice_append with "[$Hold_sl $Hold_cap $Hone_sl]").
+      iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      assert (Q (this_ptr, this_rs)) as HQ.
+      { unfold Q, rs_is_old, rs_uid. simpl. congruence. }
+      assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =
+        filter Q (take (sint.nat i) (zip ptrs rss)) ++ [(this_ptr, this_rs)]) as Hfilter_eq.
+      { rewrite Hnext (take_S_r _ _ (this_ptr, this_rs) Hzip_lookup) list.filter_app.
+        rewrite (filter_singleton_True Q (this_ptr, this_rs) [] HQ). done. }
+      iFrame "Hsl HΦ".
+      iExists (word.add i (W64 1)), this_ptr, old_sl'.
+      rewrite Hfilter_eq fmap_app. iFrame. iPureIntro. word.
+  - (* The whole list was scanned, so the prefix is all of it. *)
+    assert (sint.nat i = length ptrs) as Hi_len by (rewrite Hsl_len1; word).
+    assert (take (sint.nat i) (zip ptrs rss) = zip ptrs rss) as Htake.
+    { apply take_ge. rewrite length_zip_with Hi_len -Hptrs_rss_len. lia. }
+    assert (filter Q (take (sint.nat i) (zip ptrs rss)) =
+      old_replica_set_pairs ptrs rss new_rs_uid) as Heq by (rewrite Htake; done).
+    iApply ("HΦ" $! old_sl). rewrite -Heq. iFrame.
+Qed.
 
 Lemma wp_equalIgnoreHash t1_l t2_l c1 c2 tv1 tv2 dq1 dq2 :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
@@ -187,6 +281,244 @@ Lemma wp_findNewReplicaSet d_l (d : DeploymentV.t) sl ptrs (rss : list ReplicaSe
       ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3)
   }}}.
 Proof.
-Admitted.
+  wp_start as "H". iNamed "H". wp_auto.
+  iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
+  iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
+  iDestruct (big_sepL2_length with "Hrss") as %Hptrs_rss_len.
+  set P := (λ rs, template_matches (rs_template rs) (deployment_template d)).
+  (* The loop has scanned rss[0..i) without finding a matching template. *)
+  set I := (∃ (i : w64) (rs_ptr_value : loc),
+    "Hi_ptr" ∷ i_ptr ↦ i ∗
+    "Hd_ptr" ∷ d_ptr ↦ d_l ∗
+    "Hd" ∷ DeploymentV.deepown_l d_l d dq1 ∗
+    "Hrs_ptr" ∷ rs_ptr ↦ rs_ptr_value ∗
+    "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3) ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝ ∗
+    "%Hnot_found" ∷ ⌜ ∀ j r, (j < sint.nat i)%nat → rss !! j = Some r → ¬ P r ⌝
+  )%I.
+  iAssert I with "[i d Hd rs Hrss]" as "Hloop_inv".
+  { iExists (W64 0), null. iFrame.
+    iPureIntro. split; [word|]. intros j r Hj. exfalso. word. }
+  wp_for "Hloop_inv". wp_if_destruct.
+  - list_elem ptrs (sint.Z i) as this_ptr.
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr_lookup. }
+    iIntros "Hsl". wp_auto.
+    assert (∃ this_rs, rss !! sint.nat i = Some this_rs) as [this_rs Hthis_rs_lookup].
+    { apply lookup_lt_is_Some_2. rewrite -Hptrs_rss_len Hsl_len1. word. }
+    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
+      [exact Hthis_ptr_lookup|exact Hthis_rs_lookup|].
+    (* equalIgnoreHash takes &rs.Spec.Template and &d.Spec.Template, so both
+       specs have to be split all the way down to their Template fields. *)
+    iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
+      "(%Hthis_not_null & Hthis_typemeta & Hthis_objectmeta_l & Hthis_spec_l & Hthis_status_l)".
+    iDestruct "Hthis_spec_l" as (rs_spec_c) "[Hthis_spec_field Hthis_spec]".
+    iDestruct (struct_fields_split (V:=v1.ReplicaSetSpec.t) with "Hthis_spec_field") as
+      "[Hrs_spec_fields %Hrs_spec_not_null]".
+    iNamedPrefix "Hrs_spec_fields" "Hrsf_".
+    iPoseProof (DeploymentV.deepown_l_split with "Hd") as
+      "(%Hd_not_null & Hd_typemeta & Hd_objectmeta_l & Hd_spec_l & Hd_status_l)".
+    iDestruct "Hd_spec_l" as (d_spec_c) "[Hd_spec_field Hd_spec]".
+    iDestruct (struct_fields_split (V:=v1.DeploymentSpec.t) with "Hd_spec_field") as
+      "[Hd_spec_fields %Hd_spec_not_null]".
+    iNamedPrefix "Hd_spec_fields" "Hdf_".
+    iNamedPrefix "Hthis_spec" "Hrs_".
+    iNamedPrefix "Hd_spec" "Hd_".
+    wp_apply (wp_equalIgnoreHash with
+      "[$Hrsf_Template $Hrs_Hdeepown_template $Hdf_Template $Hd_Hdeepown_template]").
+    iIntros "(Hrsf_Template & Hrs_Hdeepown_template & Hdf_Template & Hd_Hdeepown_template)".
+    (* Put both objects back together before branching. *)
+    iCombineNamed "Hrsf_*" as "Hrs_spec_fields".
+    iAssert (typed_pointsto_def (ReplicaSetV.spec_ptr this_ptr) rs_spec_c dq3)
+      with "[Hrs_spec_fields]" as "Hrs_spec_fields".
+    { iNamed "Hrs_spec_fields". destruct rs_spec_c. simpl. iFrame. }
+    iDestruct (struct_fields_combine _ _ _ Hrs_spec_not_null with "Hrs_spec_fields")
+      as "Hthis_spec_field".
+    iCombineNamed "Hdf_*" as "Hd_spec_fields".
+    iAssert (typed_pointsto_def (DeploymentV.spec_ptr d_l) d_spec_c dq1)
+      with "[Hd_spec_fields]" as "Hd_spec_fields".
+    { iNamed "Hd_spec_fields". destruct d_spec_c. simpl. iFrame. }
+    iDestruct (struct_fields_combine _ _ _ Hd_spec_not_null with "Hd_spec_fields")
+      as "Hd_spec_field".
+    iCombineNamed "Hrs_Hdeepown_*" as "Hthis_spec_parts".
+    iAssert (ReplicaSetSpecV.deepown rs_spec_c (ReplicaSetV.Spec' this_rs) dq3)
+      with "[Hthis_spec_parts]" as "Hthis_spec".
+    { iNamed "Hthis_spec_parts". iFrame. done. }
+    iCombineNamed "Hd_Hdeepown_*" as "Hd_spec_parts".
+    iAssert (DeploymentSpecV.deepown d_spec_c (DeploymentV.Spec' d) dq1)
+      with "[Hd_spec_parts]" as "Hd_spec".
+    { iNamed "Hd_spec_parts". iFrame. done. }
+    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hthis_not_null
+      with "[$Hthis_typemeta $Hthis_objectmeta_l $Hthis_status_l Hthis_spec_field Hthis_spec]")
+      as "Hthis".
+    { iExists rs_spec_c. iFrame. }
+    iPoseProof (DeploymentV.deepown_l_restore _ _ _ Hd_not_null
+      with "[$Hd_typemeta $Hd_objectmeta_l $Hd_status_l Hd_spec_field Hd_spec]") as "Hd".
+    { iExists d_spec_c. iFrame. }
+    iSpecialize ("Hrss_restore" with "Hthis").
+    iRename "Hrss_restore" into "Hrss".
+    wp_if_destruct.
+    + (* This template matches, and Hnot_found rules out every earlier one, so
+         this index is the one list_find picks. *)
+      iApply wp_for_post_return. wp_auto.
+      assert (find_new_replica_set d rss = Some (sint.nat i, this_rs)) as Hfind.
+      { apply list_find_Some. split_and!.
+        - exact Hthis_rs_lookup.
+        - assumption.
+        - intros j r Hlookup Hj HP.
+          eapply (Hnot_found j r); [lia|exact Hlookup|exact HP]. }
+      iApply ("HΦ" $! this_ptr). rewrite Hfind. iFrame. done.
+    + iApply wp_for_post_do. wp_auto.
+      iFrame "Hsl HΦ".
+      iExists (word.add i (W64 1)), this_ptr.
+      iFrame.
+      iPureIntro. split; [word|].
+      intros j r Hj Hlookup HP.
+      destruct (decide (j < sint.nat i)%nat) as [Hj_old|Hj_not_old].
+      * eapply (Hnot_found j r); done.
+      * assert (j = sint.nat i) as -> by word.
+        rewrite Hthis_rs_lookup in Hlookup.
+        injection Hlookup as <-.
+        contradiction.
+  - (* The loop ran off the end, so no template matched. *)
+    assert (sint.nat i = length rss) as Hi_len.
+    { rewrite -Hptrs_rss_len Hsl_len1. word. }
+    assert (find_new_replica_set d rss = None) as Hfind.
+    { apply list_find_None. apply Forall_forall.
+      intros r Hr HP.
+      rewrite -list_elem_of_In in Hr.
+      apply list_elem_of_lookup_1 in Hr as [j Hlookup].
+      eapply (Hnot_found j r); [|exact Hlookup|exact HP].
+      rewrite Hi_len. apply lookup_lt_Some in Hlookup. lia. }
+    iApply ("HΦ" $! null). rewrite Hfind. iFrame. done.
+Qed.
+
+(* cloneAndAddLabel returns a fresh map holding [existing] plus one binding.
+   [existing] is only read, and a nil map ranges as empty, hence [default ∅].
+   The result is fully owned: it is a map literal the callee just built. *)
+Lemma wp_cloneAndAddLabel existing_l (existing : option (gmap go_string go_string))
+    (key value : go_string) dq :
+  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
+      "Hexisting" ∷ labels_opt_own existing_l existing dq
+  }}}
+    @! deployment.cloneAndAddLabel #existing_l #key #value
+  {{{ (result_l : loc), RET #result_l;
+      labels_opt_own existing_l existing dq ∗
+      result_l ↦$ (<[key := value]> (default ∅ existing))
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply wp_map_make1. iIntros (result_l) "Hresult".
+  wp_auto.
+  destruct existing as [m|].
+  - (* The copy loop fills [result] with the map_prefix of the keys seen so far. *)
+    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
+      (λ (keys : list go_string) i,
+        ∃ (last_value last_key : go_string),
+          "v" ∷ v_ptr ↦ last_value ∗
+          "k" ∷ k_ptr ↦ last_key ∗
+          "result" ∷ result_ptr ↦ result_l ∗
+          "Hresult" ∷ result_l ↦$ map_prefix keys i m)%I
+      with "Hexisting").
+    { done. }
+    iIntros (keys) "%Hkeys".
+    iSplitL "v k result Hresult".
+    { iExists ""%go, ""%go. iFrame. rewrite map_prefix_empty. iFrame. }
+    iSplitL "".
+    { iModIntro. iIntros (i k0 v0) "%Hiter Hloop".
+      destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+      destruct Hiter as [Hi_bounds [Hkey_lookup Hvalue_lookup]].
+      destruct Hi_bounds as [Hi_nonneg Hi_upper].
+      iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+      wp_pures. simpl subst'. wp_auto.
+      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string result_l (map_prefix keys i m) k0 v0 with "Hresult") as "Hresult".
+      iRight. iSplit; [done|].
+      iExists v0, k0. iFrame.
+      rewrite -map_prefix_insert; done. }
+    iIntros "Hexisting Hloop".
+    iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+    destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
+    rewrite (map_prefix_all keys m Hkeys_dom Hkeys_len).
+    wp_auto.
+    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      go.string result_l m key value with "Hresult") as "Hresult".
+    iApply ("HΦ" $! result_l). iFrame.
+  - (* A nil source map ranges zero times, leaving [result] empty. *)
+    iDestruct "Hexisting" as %->.
+    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      go.string result_l ∅ key value with "Hresult") as "Hresult".
+    iApply ("HΦ" $! result_l). iFrame. done.
+Qed.
+
+(* cloneSelectorAndAddLabel deep-copies the selector and sets one MatchLabels
+   binding on the copy, allocating MatchLabels first if it was nil.  The source
+   is only read; the returned selector is fully owned. *)
+Lemma wp_cloneSelectorAndAddLabel selector_l (selector : LabelSelectorV.t)
+    (key value : go_string) dq :
+  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
+      "Hselector" ∷ LabelSelectorV.deepown_l selector_l selector dq
+  }}}
+    @! deployment.cloneSelectorAndAddLabel #selector_l #key #value
+  {{{ (result_l : loc), RET #result_l;
+      LabelSelectorV.deepown_l selector_l selector dq ∗
+      LabelSelectorV.deepown_l result_l
+        (selector_with_label selector key value) 1
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  (* meta/v1's proof module is not imported here — apps/v1 owns the [v1]
+     shorthand — so the DeepCopy contract is named in full. *)
+  iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1)
+    as "#Hmeta_v1".
+  { iPkgInit. }
+  wp_apply (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_LabelSelector__DeepCopy
+    with "[$Hmeta_v1 $Hselector]").
+  iIntros (copy_l) "[Hcopy Hselector]".
+  wp_auto.
+  iDestruct "Hcopy" as (copy_c) "[Hcopy_l Hcopy]".
+  iNamed "Hcopy".
+  destruct selector.(LabelSelectorV.MatchLabels') as [ml|] eqn:Hml.
+  - (* MatchLabels was already allocated: insert straight into the copy's map. *)
+    iDestruct "Hdeepown_matchlabels_some" as (mlc) "[Hmlc ->]".
+    assert (copy_c.(v1.LabelSelector.MatchLabels') ≠ null) as Hnn.
+    { intros Hn. apply Hdeepown_matchlabels_none in Hn. congruence. }
+    wp_auto.
+    wp_if_destruct.
+    + exfalso. apply Hnn. exact e.
+    + wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string (v1.LabelSelector.MatchLabels' copy_c) ml key value
+        with "Hmlc") as "Hmlc".
+      iApply ("HΦ" $! copy_l). iFrame "Hselector".
+      iExists copy_c. iFrame "Hcopy_l".
+      rewrite /LabelSelectorV.deepown /selector_with_label Hml /=.
+      iSplit.
+      { iPureIntro.
+        split; [intros Hn; exfalso; apply Hnn; exact Hn|discriminate]. }
+      iSplitL "Hmlc"; [iExists (<[key:=value]> ml); iFrame "Hmlc"; done|].
+      iFrame "%". iFrame.
+  - (* MatchLabels was nil: the copy gets a fresh map first. *)
+    assert (v1.LabelSelector.MatchLabels' copy_c = null) as Hnull.
+    { apply Hdeepown_matchlabels_none. done. }
+    wp_auto.
+    wp_if_destruct.
+    + wp_apply wp_map_make1. iIntros (new_ml_l) "Hnew_ml".
+      iDestruct (own_map_not_nil with "Hnew_ml") as %Hnew_ml_nn.
+      wp_auto.
+      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+        go.string new_ml_l ∅ key value with "Hnew_ml") as "Hnew_ml".
+      iApply ("HΦ" $! copy_l). iFrame "Hselector".
+      iExists (copy_c <| v1.LabelSelector.MatchLabels' := new_ml_l |>).
+      iFrame "Hcopy_l".
+      rewrite /LabelSelectorV.deepown /selector_with_label Hml /=.
+      iSplit.
+      { iPureIntro.
+        split; [intros Hn; exfalso; apply Hnew_ml_nn; exact Hn|discriminate]. }
+      iSplitL "Hnew_ml"; [iExists (<[key:=value]> ∅); iFrame "Hnew_ml"; done|].
+      iFrame "%". iFrame.
+    + exfalso. apply n. exact Hnull.
+Qed.
 
 End proof.
