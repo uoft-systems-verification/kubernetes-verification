@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance typePair_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance NameFunc_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConversionFunc_typed_pointsto  :
@@ -65,6 +71,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Converter_typed_pointsto  :
@@ -83,6 +91,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Scope_typed_pointsto  :
@@ -101,6 +111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConversionFuncs_typed_pointsto  :
@@ -119,6 +131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Meta_typed_pointsto  :
@@ -137,6 +151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance scope_typed_pointsto  :
@@ -155,6 +171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : conversion.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Equalities_typed_pointsto  :

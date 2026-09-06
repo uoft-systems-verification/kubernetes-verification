@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance corruptObjectDeleter_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance decoratedWatcher_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance DryRunnableStorage_typed_pointsto  :
@@ -65,6 +71,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FinishFunc_typed_pointsto  :
@@ -83,6 +91,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance AfterDeleteFunc_typed_pointsto  :
@@ -101,6 +111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance BeginCreateFunc_typed_pointsto  :
@@ -119,6 +131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance AfterCreateFunc_typed_pointsto  :
@@ -137,6 +151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance BeginUpdateFunc_typed_pointsto  :
@@ -155,6 +171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance AfterUpdateFunc_typed_pointsto  :
@@ -173,6 +191,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance GenericStore_typed_pointsto  :
@@ -191,6 +211,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : registry.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Store_typed_pointsto  :

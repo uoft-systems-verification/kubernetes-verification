@@ -1,8 +1,8 @@
 From New.golang Require Import defn.
-Require Export New.code.context.
-Require Export New.code.kubernetes_model.apimodel.
-Require Export New.code.k8s_io.api.core.v1.
-Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Import New.code.context.
+Require Import New.code.kubernetes_model.apimodel.
+Require Import New.code.k8s_io.api.core.v1.
+Require Import New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 

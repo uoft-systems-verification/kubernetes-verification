@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PolicyRule_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Subject_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance RoleRef_typed_pointsto  :
@@ -65,6 +71,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Role_typed_pointsto  :
@@ -83,6 +91,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance RoleBinding_typed_pointsto  :
@@ -101,6 +111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance RoleBindingList_typed_pointsto  :
@@ -119,6 +131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance RoleList_typed_pointsto  :
@@ -137,6 +151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ClusterRole_typed_pointsto  :
@@ -155,6 +171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance AggregationRule_typed_pointsto  :
@@ -173,6 +191,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ClusterRoleBinding_typed_pointsto  :
@@ -191,6 +211,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ClusterRoleBindingList_typed_pointsto  :
@@ -209,6 +231,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ClusterRoleList_typed_pointsto  :

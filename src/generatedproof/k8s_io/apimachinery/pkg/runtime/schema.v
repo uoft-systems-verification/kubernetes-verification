@@ -12,6 +12,7 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global]Program Instance GroupResource_typed_pointsto  :
@@ -65,6 +66,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance GroupVersionResource_typed_pointsto  :
@@ -83,6 +86,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance GroupKind_typed_pointsto  :
@@ -102,6 +107,7 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global]Program Instance GroupVersionKind_typed_pointsto  :
@@ -170,6 +176,7 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global]Program Instance GroupVersion_typed_pointsto  :
@@ -223,6 +230,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance GroupVersions_typed_pointsto  :
@@ -241,6 +250,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ObjectKind_typed_pointsto  :
@@ -259,6 +270,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : schema.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance emptyObjectKind_typed_pointsto  :

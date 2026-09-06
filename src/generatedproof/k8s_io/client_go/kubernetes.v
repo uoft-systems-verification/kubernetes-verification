@@ -13,6 +13,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : kubernetes.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Interface_typed_pointsto  :
@@ -31,6 +33,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : kubernetes.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Clientset_typed_pointsto  :

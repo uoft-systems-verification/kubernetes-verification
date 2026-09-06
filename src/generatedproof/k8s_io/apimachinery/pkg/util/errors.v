@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : errors.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance MessageCountMap_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : errors.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance aggregate_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : errors.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Matcher_typed_pointsto  :

@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FilterFunc_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance filteredWatch_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Recorder_typed_pointsto  :
@@ -65,6 +71,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FullChannelBehavior_typed_pointsto  :
@@ -83,6 +91,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Broadcaster_typed_pointsto  :
@@ -101,6 +111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance functionFakeRuntimeObject_typed_pointsto  :
@@ -119,6 +131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance broadcasterWatcher_typed_pointsto  :
@@ -137,6 +151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Decoder_typed_pointsto  :
@@ -155,6 +171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Reporter_typed_pointsto  :
@@ -173,6 +191,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance StreamWatcher_typed_pointsto  :
@@ -191,6 +211,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Interface_typed_pointsto  :
@@ -209,6 +231,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EventType_typed_pointsto  :
@@ -227,6 +251,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Event_typed_pointsto  :
@@ -245,6 +271,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance emptyWatch_typed_pointsto  :
@@ -263,6 +291,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeWatcher_typed_pointsto  :
@@ -281,6 +311,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeOptions_typed_pointsto  :
@@ -299,6 +331,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance RaceFreeFakeWatcher_typed_pointsto  :
@@ -317,6 +351,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ProxyWatcher_typed_pointsto  :
@@ -335,6 +371,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : watch.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance MockWatcher_typed_pointsto  :

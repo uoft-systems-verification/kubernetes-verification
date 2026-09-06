@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : replicaset.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance rsStrategy_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : replicaset.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance rsStatusStrategy_typed_pointsto  :

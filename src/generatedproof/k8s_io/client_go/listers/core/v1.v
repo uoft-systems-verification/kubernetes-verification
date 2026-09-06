@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ComponentStatusLister_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance componentStatusLister_typed_pointsto  :
@@ -47,6 +51,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConfigMapLister_typed_pointsto  :
@@ -65,6 +71,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance configMapLister_typed_pointsto  :
@@ -83,6 +91,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConfigMapNamespaceLister_typed_pointsto  :
@@ -101,6 +111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance configMapNamespaceLister_typed_pointsto  :
@@ -119,6 +131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EndpointsLister_typed_pointsto  :
@@ -137,6 +151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance endpointsLister_typed_pointsto  :
@@ -155,6 +171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EndpointsNamespaceLister_typed_pointsto  :
@@ -173,6 +191,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance endpointsNamespaceLister_typed_pointsto  :
@@ -191,6 +211,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EventLister_typed_pointsto  :
@@ -209,6 +231,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance eventLister_typed_pointsto  :
@@ -227,6 +251,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EventNamespaceLister_typed_pointsto  :
@@ -245,6 +271,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance eventNamespaceLister_typed_pointsto  :
@@ -263,6 +291,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ComponentStatusListerExpansion_typed_pointsto  :
@@ -281,6 +311,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConfigMapListerExpansion_typed_pointsto  :
@@ -299,6 +331,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ConfigMapNamespaceListerExpansion_typed_pointsto  :
@@ -317,6 +351,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EndpointsListerExpansion_typed_pointsto  :
@@ -335,6 +371,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EndpointsNamespaceListerExpansion_typed_pointsto  :
@@ -353,6 +391,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EventListerExpansion_typed_pointsto  :
@@ -371,6 +411,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance EventNamespaceListerExpansion_typed_pointsto  :
@@ -389,6 +431,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance LimitRangeListerExpansion_typed_pointsto  :
@@ -407,6 +451,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance LimitRangeNamespaceListerExpansion_typed_pointsto  :
@@ -425,6 +471,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance NamespaceListerExpansion_typed_pointsto  :
@@ -443,6 +491,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance NodeListerExpansion_typed_pointsto  :
@@ -461,6 +511,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeListerExpansion_typed_pointsto  :
@@ -479,6 +531,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeClaimListerExpansion_typed_pointsto  :
@@ -497,6 +551,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeClaimNamespaceListerExpansion_typed_pointsto  :
@@ -515,6 +571,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodListerExpansion_typed_pointsto  :
@@ -533,6 +591,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodNamespaceListerExpansion_typed_pointsto  :
@@ -551,6 +611,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodTemplateListerExpansion_typed_pointsto  :
@@ -569,6 +631,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodTemplateNamespaceListerExpansion_typed_pointsto  :
@@ -587,6 +651,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ResourceQuotaListerExpansion_typed_pointsto  :
@@ -605,6 +671,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ResourceQuotaNamespaceListerExpansion_typed_pointsto  :
@@ -623,6 +691,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance SecretListerExpansion_typed_pointsto  :
@@ -641,6 +711,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance SecretNamespaceListerExpansion_typed_pointsto  :
@@ -659,6 +731,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceListerExpansion_typed_pointsto  :
@@ -677,6 +751,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceNamespaceListerExpansion_typed_pointsto  :
@@ -695,6 +771,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceAccountListerExpansion_typed_pointsto  :
@@ -713,6 +791,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceAccountNamespaceListerExpansion_typed_pointsto  :
@@ -731,6 +811,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance LimitRangeLister_typed_pointsto  :
@@ -749,6 +831,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance limitRangeLister_typed_pointsto  :
@@ -767,6 +851,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance LimitRangeNamespaceLister_typed_pointsto  :
@@ -785,6 +871,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance limitRangeNamespaceLister_typed_pointsto  :
@@ -803,6 +891,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance NamespaceLister_typed_pointsto  :
@@ -821,6 +911,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance namespaceLister_typed_pointsto  :
@@ -839,6 +931,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance NodeLister_typed_pointsto  :
@@ -857,6 +951,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance nodeLister_typed_pointsto  :
@@ -875,6 +971,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeLister_typed_pointsto  :
@@ -893,6 +991,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance persistentVolumeLister_typed_pointsto  :
@@ -911,6 +1011,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeClaimLister_typed_pointsto  :
@@ -929,6 +1031,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance persistentVolumeClaimLister_typed_pointsto  :
@@ -947,6 +1051,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PersistentVolumeClaimNamespaceLister_typed_pointsto  :
@@ -965,6 +1071,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance persistentVolumeClaimNamespaceLister_typed_pointsto  :
@@ -983,6 +1091,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodLister_typed_pointsto  :
@@ -1001,6 +1111,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance podLister_typed_pointsto  :
@@ -1019,6 +1131,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodNamespaceLister_typed_pointsto  :
@@ -1037,6 +1151,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance podNamespaceLister_typed_pointsto  :
@@ -1055,6 +1171,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodTemplateLister_typed_pointsto  :
@@ -1073,6 +1191,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance podTemplateLister_typed_pointsto  :
@@ -1091,6 +1211,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance PodTemplateNamespaceLister_typed_pointsto  :
@@ -1109,6 +1231,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance podTemplateNamespaceLister_typed_pointsto  :
@@ -1127,6 +1251,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicationControllerLister_typed_pointsto  :
@@ -1145,6 +1271,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance replicationControllerLister_typed_pointsto  :
@@ -1163,6 +1291,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicationControllerNamespaceLister_typed_pointsto  :
@@ -1181,6 +1311,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance replicationControllerNamespaceLister_typed_pointsto  :
@@ -1199,6 +1331,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicationControllerListerExpansion_typed_pointsto  :
@@ -1217,6 +1351,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ReplicationControllerNamespaceListerExpansion_typed_pointsto  :
@@ -1235,6 +1371,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ResourceQuotaLister_typed_pointsto  :
@@ -1253,6 +1391,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance resourceQuotaLister_typed_pointsto  :
@@ -1271,6 +1411,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ResourceQuotaNamespaceLister_typed_pointsto  :
@@ -1289,6 +1431,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance resourceQuotaNamespaceLister_typed_pointsto  :
@@ -1307,6 +1451,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance SecretLister_typed_pointsto  :
@@ -1325,6 +1471,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance secretLister_typed_pointsto  :
@@ -1343,6 +1491,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance SecretNamespaceLister_typed_pointsto  :
@@ -1361,6 +1511,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance secretNamespaceLister_typed_pointsto  :
@@ -1379,6 +1531,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceLister_typed_pointsto  :
@@ -1397,6 +1551,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance serviceLister_typed_pointsto  :
@@ -1415,6 +1571,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceNamespaceLister_typed_pointsto  :
@@ -1433,6 +1591,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance serviceNamespaceLister_typed_pointsto  :
@@ -1451,6 +1611,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceAccountLister_typed_pointsto  :
@@ -1469,6 +1631,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance serviceAccountLister_typed_pointsto  :
@@ -1487,6 +1651,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ServiceAccountNamespaceLister_typed_pointsto  :
@@ -1505,6 +1671,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance serviceAccountNamespaceLister_typed_pointsto  :

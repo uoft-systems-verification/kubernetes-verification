@@ -15,6 +15,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeClient_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'}  :
@@ -33,6 +35,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeClientWithList_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
@@ -51,6 +55,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeClientWithApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
@@ -69,6 +75,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance FakeClientWithListAndApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'}  :
@@ -87,6 +95,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance alsoFakeLister_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
@@ -105,6 +115,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance alsoFakeApplier_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
@@ -123,6 +135,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance namedObject_typed_pointsto  :
@@ -142,93 +156,107 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance Client_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'}  :
-  TypedPointsto (Σ:=Σ) (gentype.Client.t T'). Admitted.
+#[global]Program Instance Client_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'}  :
+  TypedPointsto (Σ:=Σ) (gentype.Client.t T') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "resource" ∷ l.[(gentype.Client.t T'), "resource"] ↦{dq} v.(gentype.Client.resource') ∗
+      "client" ∷ l.[(gentype.Client.t T'), "client"] ↦{dq} v.(gentype.Client.client') ∗
+      "namespace" ∷ l.[(gentype.Client.t T'), "namespace"] ↦{dq} v.(gentype.Client.namespace') ∗
+      "newObject" ∷ l.[(gentype.Client.t T'), "newObject"] ↦{dq} v.(gentype.Client.newObject') ∗
+      "parameterCodec" ∷ l.[(gentype.Client.t T'), "parameterCodec"] ↦{dq} v.(gentype.Client.parameterCodec') ∗
+      "prefersProtobuf" ∷ l.[(gentype.Client.t T'), "prefersProtobuf"] ↦{dq} v.(gentype.Client.prefersProtobuf') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Client_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T}  :
   IntoValTypedUnderlying (gentype.Client.t T') (gentype.Clientⁱᵐᵖˡ T).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance Client_access_load_resource `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "resource"] ↦{dq} (v.(gentype.Client.resource')))
     (l.[(gentype.Client.t T'), "resource"] ↦{dq} (v.(gentype.Client.resource')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_resource `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) resource' :
   AccessStrict
     (l.[(gentype.Client.t T'), "resource"] ↦ (v.(gentype.Client.resource')))
     (l.[(gentype.Client.t T'), "resource"] ↦ resource')
     (l ↦ v) (l ↦ (v <|(gentype.Client.resource') := resource'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance Client_access_load_client `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "client"] ↦{dq} (v.(gentype.Client.client')))
     (l.[(gentype.Client.t T'), "client"] ↦{dq} (v.(gentype.Client.client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_client `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) client' :
   AccessStrict
     (l.[(gentype.Client.t T'), "client"] ↦ (v.(gentype.Client.client')))
     (l.[(gentype.Client.t T'), "client"] ↦ client')
     (l ↦ v) (l ↦ (v <|(gentype.Client.client') := client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance Client_access_load_namespace `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "namespace"] ↦{dq} (v.(gentype.Client.namespace')))
     (l.[(gentype.Client.t T'), "namespace"] ↦{dq} (v.(gentype.Client.namespace')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_namespace `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) namespace' :
   AccessStrict
     (l.[(gentype.Client.t T'), "namespace"] ↦ (v.(gentype.Client.namespace')))
     (l.[(gentype.Client.t T'), "namespace"] ↦ namespace')
     (l ↦ v) (l ↦ (v <|(gentype.Client.namespace') := namespace'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance Client_access_load_newObject `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "newObject"] ↦{dq} (v.(gentype.Client.newObject')))
     (l.[(gentype.Client.t T'), "newObject"] ↦{dq} (v.(gentype.Client.newObject')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_newObject `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) newObject' :
   AccessStrict
     (l.[(gentype.Client.t T'), "newObject"] ↦ (v.(gentype.Client.newObject')))
     (l.[(gentype.Client.t T'), "newObject"] ↦ newObject')
     (l ↦ v) (l ↦ (v <|(gentype.Client.newObject') := newObject'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance Client_access_load_parameterCodec `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "parameterCodec"] ↦{dq} (v.(gentype.Client.parameterCodec')))
     (l.[(gentype.Client.t T'), "parameterCodec"] ↦{dq} (v.(gentype.Client.parameterCodec')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_parameterCodec `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) parameterCodec' :
   AccessStrict
     (l.[(gentype.Client.t T'), "parameterCodec"] ↦ (v.(gentype.Client.parameterCodec')))
     (l.[(gentype.Client.t T'), "parameterCodec"] ↦ parameterCodec')
     (l ↦ v) (l ↦ (v <|(gentype.Client.parameterCodec') := parameterCodec'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance Client_access_load_prefersProtobuf `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) dq :
   AccessStrict
     (l.[(gentype.Client.t T'), "prefersProtobuf"] ↦{dq} (v.(gentype.Client.prefersProtobuf')))
     (l.[(gentype.Client.t T'), "prefersProtobuf"] ↦{dq} (v.(gentype.Client.prefersProtobuf')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance Client_access_store_prefersProtobuf `{!TypedPointsto (Σ:=Σ) T'} l (v : (gentype.Client.t T')) prefersProtobuf' :
   AccessStrict
     (l.[(gentype.Client.t T'), "prefersProtobuf"] ↦ (v.(gentype.Client.prefersProtobuf')))
     (l.[(gentype.Client.t T'), "prefersProtobuf"] ↦ prefersProtobuf')
     (l ↦ v) (l ↦ (v <|(gentype.Client.prefersProtobuf') := prefersProtobuf'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Client.
@@ -239,41 +267,51 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance alsoLister_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
-  TypedPointsto (Σ:=Σ) (gentype.alsoLister.t T' L'). Admitted.
+#[global]Program Instance alsoLister_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
+  TypedPointsto (Σ:=Σ) (gentype.alsoLister.t T' L') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "client" ∷ l.[(gentype.alsoLister.t T' L'), "client"] ↦{dq} v.(gentype.alsoLister.client') ∗
+      "newList" ∷ l.[(gentype.alsoLister.t T' L'), "newList"] ↦{dq} v.(gentype.alsoLister.newList') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance alsoLister_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T} (L : go.type) `{!ZeroVal L'} `{!TypedPointsto (Σ:=Σ) L'} `{!IntoValTyped L' L}  :
   IntoValTypedUnderlying (gentype.alsoLister.t T' L') (gentype.alsoListerⁱᵐᵖˡ T L).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance alsoLister_access_load_client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.alsoLister.t T' L')) dq :
   AccessStrict
     (l.[(gentype.alsoLister.t T' L'), "client"] ↦{dq} (v.(gentype.alsoLister.client')))
     (l.[(gentype.alsoLister.t T' L'), "client"] ↦{dq} (v.(gentype.alsoLister.client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance alsoLister_access_store_client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.alsoLister.t T' L')) client' :
   AccessStrict
     (l.[(gentype.alsoLister.t T' L'), "client"] ↦ (v.(gentype.alsoLister.client')))
     (l.[(gentype.alsoLister.t T' L'), "client"] ↦ client')
     (l ↦ v) (l ↦ (v <|(gentype.alsoLister.client') := client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance alsoLister_access_load_newList `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.alsoLister.t T' L')) dq :
   AccessStrict
     (l.[(gentype.alsoLister.t T' L'), "newList"] ↦{dq} (v.(gentype.alsoLister.newList')))
     (l.[(gentype.alsoLister.t T' L'), "newList"] ↦{dq} (v.(gentype.alsoLister.newList')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance alsoLister_access_store_newList `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.alsoLister.t T' L')) newList' :
   AccessStrict
     (l.[(gentype.alsoLister.t T' L'), "newList"] ↦ (v.(gentype.alsoLister.newList')))
     (l.[(gentype.alsoLister.t T' L'), "newList"] ↦ newList')
     (l ↦ v) (l ↦ (v <|(gentype.alsoLister.newList') := newList'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End alsoLister.
@@ -284,41 +322,51 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance ClientWithList_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
-  TypedPointsto (Σ:=Σ) (gentype.ClientWithList.t T' L'). Admitted.
+#[global]Program Instance ClientWithList_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'}  :
+  TypedPointsto (Σ:=Σ) (gentype.ClientWithList.t T' L') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Client" ∷ l.[(gentype.ClientWithList.t T' L'), "Client"] ↦{dq} v.(gentype.ClientWithList.Client') ∗
+      "alsoLister" ∷ l.[(gentype.ClientWithList.t T' L'), "alsoLister"] ↦{dq} v.(gentype.ClientWithList.alsoLister') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ClientWithList_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T} (L : go.type) `{!ZeroVal L'} `{!TypedPointsto (Σ:=Σ) L'} `{!IntoValTyped L' L}  :
   IntoValTypedUnderlying (gentype.ClientWithList.t T' L') (gentype.ClientWithListⁱᵐᵖˡ T L).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance ClientWithList_access_load_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.ClientWithList.t T' L')) dq :
   AccessStrict
     (l.[(gentype.ClientWithList.t T' L'), "Client"] ↦{dq} (v.(gentype.ClientWithList.Client')))
     (l.[(gentype.ClientWithList.t T' L'), "Client"] ↦{dq} (v.(gentype.ClientWithList.Client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithList_access_store_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.ClientWithList.t T' L')) Client' :
   AccessStrict
     (l.[(gentype.ClientWithList.t T' L'), "Client"] ↦ (v.(gentype.ClientWithList.Client')))
     (l.[(gentype.ClientWithList.t T' L'), "Client"] ↦ Client')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithList.Client') := Client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance ClientWithList_access_load_alsoLister `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.ClientWithList.t T' L')) dq :
   AccessStrict
     (l.[(gentype.ClientWithList.t T' L'), "alsoLister"] ↦{dq} (v.(gentype.ClientWithList.alsoLister')))
     (l.[(gentype.ClientWithList.t T' L'), "alsoLister"] ↦{dq} (v.(gentype.ClientWithList.alsoLister')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithList_access_store_alsoLister `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} l (v : (gentype.ClientWithList.t T' L')) alsoLister' :
   AccessStrict
     (l.[(gentype.ClientWithList.t T' L'), "alsoLister"] ↦ (v.(gentype.ClientWithList.alsoLister')))
     (l.[(gentype.ClientWithList.t T' L'), "alsoLister"] ↦ alsoLister')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithList.alsoLister') := alsoLister'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ClientWithList.
@@ -329,28 +377,37 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance alsoApplier_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
-  TypedPointsto (Σ:=Σ) (gentype.alsoApplier.t T' C'). Admitted.
+#[global]Program Instance alsoApplier_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
+  TypedPointsto (Σ:=Σ) (gentype.alsoApplier.t T' C') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "client" ∷ l.[(gentype.alsoApplier.t T' C'), "client"] ↦{dq} v.(gentype.alsoApplier.client') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance alsoApplier_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T} (C : go.type) `{!ZeroVal C'} `{!TypedPointsto (Σ:=Σ) C'} `{!IntoValTyped C' C}  :
   IntoValTypedUnderlying (gentype.alsoApplier.t T' C') (gentype.alsoApplierⁱᵐᵖˡ T C).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance alsoApplier_access_load_client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.alsoApplier.t T' C')) dq :
   AccessStrict
     (l.[(gentype.alsoApplier.t T' C'), "client"] ↦{dq} (v.(gentype.alsoApplier.client')))
     (l.[(gentype.alsoApplier.t T' C'), "client"] ↦{dq} (v.(gentype.alsoApplier.client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance alsoApplier_access_store_client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.alsoApplier.t T' C')) client' :
   AccessStrict
     (l.[(gentype.alsoApplier.t T' C'), "client"] ↦ (v.(gentype.alsoApplier.client')))
     (l.[(gentype.alsoApplier.t T' C'), "client"] ↦ client')
     (l ↦ v) (l ↦ (v <|(gentype.alsoApplier.client') := client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End alsoApplier.
@@ -361,41 +418,51 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance ClientWithApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
-  TypedPointsto (Σ:=Σ) (gentype.ClientWithApply.t T' C'). Admitted.
+#[global]Program Instance ClientWithApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'}  :
+  TypedPointsto (Σ:=Σ) (gentype.ClientWithApply.t T' C') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Client" ∷ l.[(gentype.ClientWithApply.t T' C'), "Client"] ↦{dq} v.(gentype.ClientWithApply.Client') ∗
+      "alsoApplier" ∷ l.[(gentype.ClientWithApply.t T' C'), "alsoApplier"] ↦{dq} v.(gentype.ClientWithApply.alsoApplier') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ClientWithApply_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T} (C : go.type) `{!ZeroVal C'} `{!TypedPointsto (Σ:=Σ) C'} `{!IntoValTyped C' C}  :
   IntoValTypedUnderlying (gentype.ClientWithApply.t T' C') (gentype.ClientWithApplyⁱᵐᵖˡ T C).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance ClientWithApply_access_load_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithApply.t T' C')) dq :
   AccessStrict
     (l.[(gentype.ClientWithApply.t T' C'), "Client"] ↦{dq} (v.(gentype.ClientWithApply.Client')))
     (l.[(gentype.ClientWithApply.t T' C'), "Client"] ↦{dq} (v.(gentype.ClientWithApply.Client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithApply_access_store_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithApply.t T' C')) Client' :
   AccessStrict
     (l.[(gentype.ClientWithApply.t T' C'), "Client"] ↦ (v.(gentype.ClientWithApply.Client')))
     (l.[(gentype.ClientWithApply.t T' C'), "Client"] ↦ Client')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithApply.Client') := Client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance ClientWithApply_access_load_alsoApplier `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithApply.t T' C')) dq :
   AccessStrict
     (l.[(gentype.ClientWithApply.t T' C'), "alsoApplier"] ↦{dq} (v.(gentype.ClientWithApply.alsoApplier')))
     (l.[(gentype.ClientWithApply.t T' C'), "alsoApplier"] ↦{dq} (v.(gentype.ClientWithApply.alsoApplier')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithApply_access_store_alsoApplier `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithApply.t T' C')) alsoApplier' :
   AccessStrict
     (l.[(gentype.ClientWithApply.t T' C'), "alsoApplier"] ↦ (v.(gentype.ClientWithApply.alsoApplier')))
     (l.[(gentype.ClientWithApply.t T' C'), "alsoApplier"] ↦ alsoApplier')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithApply.alsoApplier') := alsoApplier'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ClientWithApply.
@@ -406,54 +473,65 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : gentype.Assumptions}.
+
 Local Set Default Proof Using "All".
 
-#[global] Instance ClientWithListAndApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'}  :
-  TypedPointsto (Σ:=Σ) (gentype.ClientWithListAndApply.t T' L' C'). Admitted.
+#[global]Program Instance ClientWithListAndApply_typed_pointsto `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'}  :
+  TypedPointsto (Σ:=Σ) (gentype.ClientWithListAndApply.t T' L' C') :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Client" ∷ l.[(gentype.ClientWithListAndApply.t T' L' C'), "Client"] ↦{dq} v.(gentype.ClientWithListAndApply.Client') ∗
+      "alsoLister" ∷ l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoLister"] ↦{dq} v.(gentype.ClientWithListAndApply.alsoLister') ∗
+      "alsoApplier" ∷ l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoApplier"] ↦{dq} v.(gentype.ClientWithListAndApply.alsoApplier') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ClientWithListAndApply_into_val_typed
   (T : go.type) `{!ZeroVal T'} `{!TypedPointsto (Σ:=Σ) T'} `{!IntoValTyped T' T} (L : go.type) `{!ZeroVal L'} `{!TypedPointsto (Σ:=Σ) L'} `{!IntoValTyped L' L} (C : go.type) `{!ZeroVal C'} `{!TypedPointsto (Σ:=Σ) C'} `{!IntoValTyped C' C}  :
   IntoValTypedUnderlying (gentype.ClientWithListAndApply.t T' L' C') (gentype.ClientWithListAndApplyⁱᵐᵖˡ T L C).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
 #[global] Instance ClientWithListAndApply_access_load_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) dq :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "Client"] ↦{dq} (v.(gentype.ClientWithListAndApply.Client')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "Client"] ↦{dq} (v.(gentype.ClientWithListAndApply.Client')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithListAndApply_access_store_Client `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) Client' :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "Client"] ↦ (v.(gentype.ClientWithListAndApply.Client')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "Client"] ↦ Client')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithListAndApply.Client') := Client'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance ClientWithListAndApply_access_load_alsoLister `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) dq :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoLister"] ↦{dq} (v.(gentype.ClientWithListAndApply.alsoLister')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoLister"] ↦{dq} (v.(gentype.ClientWithListAndApply.alsoLister')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithListAndApply_access_store_alsoLister `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) alsoLister' :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoLister"] ↦ (v.(gentype.ClientWithListAndApply.alsoLister')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoLister"] ↦ alsoLister')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithListAndApply.alsoLister') := alsoLister'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 #[global] Instance ClientWithListAndApply_access_load_alsoApplier `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) dq :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoApplier"] ↦{dq} (v.(gentype.ClientWithListAndApply.alsoApplier')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoApplier"] ↦{dq} (v.(gentype.ClientWithListAndApply.alsoApplier')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 #[global] Instance ClientWithListAndApply_access_store_alsoApplier `{!TypedPointsto (Σ:=Σ) T'} `{!TypedPointsto (Σ:=Σ) L'} `{!TypedPointsto (Σ:=Σ) C'} l (v : (gentype.ClientWithListAndApply.t T' L' C')) alsoApplier' :
   AccessStrict
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoApplier"] ↦ (v.(gentype.ClientWithListAndApply.alsoApplier')))
     (l.[(gentype.ClientWithListAndApply.t T' L' C'), "alsoApplier"] ↦ alsoApplier')
     (l ↦ v) (l ↦ (v <|(gentype.ClientWithListAndApply.alsoApplier') := alsoApplier'|>))%I.
-Proof. Admitted.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ClientWithListAndApply.

@@ -11,6 +11,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : statefulset.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance statefulSetStrategy_typed_pointsto  :
@@ -29,6 +31,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : statefulset.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance statefulSetStatusStrategy_typed_pointsto  :

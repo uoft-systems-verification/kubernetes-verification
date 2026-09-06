@@ -17,6 +17,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Requirements_typed_pointsto  :
@@ -36,6 +38,7 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global]Program Instance nothingSelector_typed_pointsto  :
@@ -62,6 +65,7 @@ Section def.
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
 Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global]Program Instance Requirement_typed_pointsto  :
@@ -129,6 +133,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Token_typed_pointsto  :
@@ -147,6 +153,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ScannedItem_typed_pointsto  :
@@ -165,6 +173,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Lexer_typed_pointsto  :
@@ -183,6 +193,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance Parser_typed_pointsto  :
@@ -201,6 +213,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ParserContext_typed_pointsto  :
@@ -219,6 +233,8 @@ Section def.
 
 Context `{hG: heapGS Σ, !ffi_semantics _ _}.
 Context {sem : go.Semantics}.
+Context {package_sem' : labels.Assumptions}.
+
 Local Set Default Proof Using "All".
 
 #[global] Instance ValidatedSetSelector_typed_pointsto  :

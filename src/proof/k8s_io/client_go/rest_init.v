@@ -1,3 +1,6 @@
+From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
+From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.
+From New.proof.k8s_io.client_go.util Require Export flowcontrol_init.
 Require Export New.generatedproof.k8s_io.client_go.rest.
 From New.proof Require Import proof_prelude.
 

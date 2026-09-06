@@ -1,3 +1,9 @@
-translate = ["Object"]
+translate = [
+    "Object",
+    "ParameterCodec",
+]
 
-imports = ["k8s.io/apimachinery/pkg/runtime/schema"]
+imports = [
+    "k8s.io/apimachinery/pkg/runtime/schema",
+    "net/url",
+]

@@ -61,6 +61,7 @@ packages = [
     "./staging/src/k8s.io/client-go/rest",
     "./staging/src/k8s.io/client-go/tools/cache",
     "./staging/src/k8s.io/client-go/util/apply",
+    "./staging/src/k8s.io/client-go/util/flowcontrol",
     # "./staging/src/k8s.io/client-go/util/workqueue",
     "./staging/src/k8s.io/component-base/featuregate",
     "./staging/src/k8s.io/component-base/metrics",
@@ -68,4 +69,5 @@ packages = [
     "./vendor/k8s.io/klog/v2",
     "./vendor/k8s.io/utils/clock",
     "./vendor/k8s.io/utils/ptr",
+    "net/url",
 ]
