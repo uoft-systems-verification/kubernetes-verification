@@ -386,7 +386,8 @@ Proof.
 	    rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
 	    cbn beta iota. wp_auto.
 	    wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto.
-	    wp_method_call. rewrite /trusted_client_gentype.Client__Createⁱᵐᵖˡ. wp_call.
+	    wp_method_call. rewrite /trusted_client_gentype.Client__Createⁱᵐᵖˡ decide_True; try reflexivity.
+	    rewrite /trusted_client_gentype.clientCreate. wp_call.
 	    rewrite /trusted_client_gentype.clientType. wp_auto.
 	    change (go.PointerType
 	      trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.api_core_v1.Pod)
@@ -600,7 +601,8 @@ Proof.
 	      rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
 	      cbn beta iota. wp_auto.
 	      wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto.
-	      wp_method_call. rewrite /trusted_client_gentype.Client__Deleteⁱᵐᵖˡ. wp_call.
+	      wp_method_call. rewrite /trusted_client_gentype.Client__Deleteⁱᵐᵖˡ decide_True; try reflexivity.
+	      rewrite /trusted_client_gentype.clientDelete. wp_call.
 	      rewrite /trusted_client_gentype.clientType. wp_auto.
 	      assert (drop (sint.nat i) active_pods = this_pod :: drop (S (sint.nat i)) active_pods)
         as Hdrop_active_pods.

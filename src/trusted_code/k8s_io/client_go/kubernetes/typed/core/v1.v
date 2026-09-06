@@ -10,7 +10,7 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Definition coreV1ClientType : go.type :=
   go.Named "k8s.io/client-go/kubernetes/typed/core/v1.CoreV1Client"%go [].
 
-Definition typeClientType : go.type :=
+Definition podClientType : go.type :=
   gentype.Client (go.PointerType api_core_v1.Pod).
 
 (* Go-like equivalent of this trusted shim. This is intentionally not valid
@@ -25,12 +25,12 @@ Definition CoreV1Client__Podsⁱᵐᵖˡ : val :=
   λ: "c" "namespace",
     exception_do (let: "c" := (GoAlloc (go.PointerType coreV1ClientType) "c") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "typeClient" := (GoAlloc typeClientType
+    let: "podClient" := (GoAlloc podClientType
       (let: "$v0" := (![go.string] "namespace") in
-       CompositeLiteral typeClientType
+       CompositeLiteral podClientType
          (LiteralValue [KeyedElement (Some (KeyField "namespace"%go))
            (ElementExpression go.string "$v0")]))) in
-    return: (Convert (go.PointerType typeClientType) go.any "typeClient")).
+    return: (Convert (go.PointerType podClientType) go.any "podClient")).
 
 End code.
 End v1.
