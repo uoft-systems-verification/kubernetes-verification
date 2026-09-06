@@ -290,11 +290,12 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
           let: "$r0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
           do:  ("uid" <-[types.UID] "$r0");;;
           (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-          let: "$r0" := (let: "$a0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
+          let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
           let: "$a1" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
           let: "$a2" := (let: "$a0" := (![types.UID] "uid") in
           (FuncResolve common.NewDeleteOptionsWithUID [] #()) "$a0") in
-          (MethodResolve (go.PointerType apimodel.State) "PodDelete"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1" "$a2") in
+          (MethodResolve v1.PodInterface "Delete"%go (let: "$a0" := ((MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod"))) #()) in
+          (MethodResolve v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType kubernetes.Clientset) "CoreV1"%go (![go.PointerType kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
           do:  ("err" <-[go.error] "$r0");;;
           (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
           then

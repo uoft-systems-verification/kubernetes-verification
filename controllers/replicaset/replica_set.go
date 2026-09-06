@@ -123,7 +123,7 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 		podsToDelete := getPodsToDelete(activePods, relatedPods, diff)
 		for _, pod := range podsToDelete {
 			uid := pod.ObjectMeta.GetUID()
-			if err := apimodel.ModelState.PodDelete(pod.ObjectMeta.GetNamespace(), pod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
+			if err := kubeClient.CoreV1().Pods(pod.ObjectMeta.GetNamespace()).Delete(ctx, pod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return err
 				}

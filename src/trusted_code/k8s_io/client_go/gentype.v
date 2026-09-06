@@ -37,5 +37,24 @@ Definition Client__Createⁱᵐᵖˡ (T : go.type) : val :=
       (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
     return: (TypeAssert T (Convert (go.PointerType api_core_v1.Pod) go.any "$ret0"), "$ret1")).
 
+(* Trusted Go equivalent:
+
+   func (c *Client[T]) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
+       _ = ctx
+       return apimodel.ModelState.PodDelete(c.namespace, name, opts)
+   }
+*)
+Definition Client__Deleteⁱᵐᵖˡ (T : go.type) : val :=
+  λ: "c" "ctx" "name" "opts",
+    exception_do (let: "c" := (GoAlloc (go.PointerType (clientType T)) "c") in
+    let: "opts" := (GoAlloc meta_v1.DeleteOptions "opts") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string (![go.string] (StructFieldRef (clientType T) "namespace"%go (![go.PointerType (clientType T)] "c")))) in
+    return: (let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![go.string] "name") in
+    let: "$a2" := (![meta_v1.DeleteOptions] "opts") in
+    (MethodResolve (go.PointerType apimodel.State) "PodDelete"%go
+      (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1" "$a2")).
+
 End code.
 End gentype.

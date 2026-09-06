@@ -593,9 +593,15 @@ Proof.
       iPoseProof (PodV.deepown_l_split with "Hdeepown_l_this") as
         "(%Hthis_ptr_not_null & Hdeepown_t_l_pod & Hdeepown_m_l_pod & Hdeepown_s_l_pod & Hdeepown_st_l_pod)".
       wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto.
-      wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto.
 	      wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto.
 	      wp_apply (common.wp_NewDeleteOptionsWithUID). iIntros (do_c) "(Hdeepown_do & %Hvalid_do)". wp_auto.
+	      wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto.
+	      wp_method_call. rewrite /kubernetes.Clientset__CoreV1ⁱᵐᵖˡ. wp_call.
+	      rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
+	      cbn beta iota. wp_auto.
+	      wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto.
+	      wp_method_call. rewrite /trusted_client_gentype.Client__Deleteⁱᵐᵖˡ. wp_call.
+	      rewrite /trusted_client_gentype.clientType. wp_auto.
 	      assert (drop (sint.nat i) active_pods = this_pod :: drop (S (sint.nat i)) active_pods)
         as Hdrop_active_pods.
       { apply drop_S. exact Hlookup_active_pods. }
