@@ -12,6 +12,13 @@ Definition clientsetType : go.type :=
 Definition coreV1ClientType : go.type :=
   core_v1.CoreV1Client.
 
+(* Trusted Go equivalent:
+
+   func (c *Clientset) CoreV1() corev1.CoreV1Interface {
+       var client *corev1.CoreV1Client
+       return client
+   }
+*)
 Definition Clientset__CoreV1ⁱᵐᵖˡ : val :=
   λ: "c" <>,
     exception_do (let: "c" := (GoAlloc (go.PointerType clientsetType) "c") in

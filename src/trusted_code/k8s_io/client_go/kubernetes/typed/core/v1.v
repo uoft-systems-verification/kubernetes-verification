@@ -13,6 +13,14 @@ Definition coreV1ClientType : go.type :=
 Definition typeClientType : go.type :=
   gentype.Client (go.PointerType api_core_v1.Pod).
 
+(* Go-like equivalent of this trusted shim. This is intentionally not valid
+   client-go source: [namespace] is private to package gentype, and the minimal
+   generic client does not implement every method in [PodInterface].
+
+   func (c *CoreV1Client) Pods(namespace string) PodInterface {
+       return &gentype.Client[*corev1.Pod]{namespace: namespace}
+   }
+*)
 Definition CoreV1Client__Podsⁱᵐᵖˡ : val :=
   λ: "c" "namespace",
     exception_do (let: "c" := (GoAlloc (go.PointerType coreV1ClientType) "c") in

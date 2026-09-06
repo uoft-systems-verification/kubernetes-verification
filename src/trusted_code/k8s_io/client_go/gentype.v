@@ -13,6 +13,17 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Definition clientType (T : go.type) : go.type :=
   go.Named "k8s.io/client-go/gentype.Client"%go [T].
 
+(* Trusted Go equivalent:
+
+   func (c *Client[T]) Create(ctx context.Context, obj T, opts metav1.CreateOptions) (T, error) {
+       _ = ctx
+       _ = opts
+       type podPointer = *corev1.Pod
+       typed := any(obj).(podPointer)
+       created, err := apimodel.ModelState.PodCreate(c.namespace, typed)
+       return any(created).(T), err
+   }
+*)
 Definition Client__Createⁱᵐᵖˡ (T : go.type) : val :=
   λ: "c" "ctx" "obj" "opts",
     exception_do (let: "c" := (GoAlloc (go.PointerType (clientType T)) "c") in
