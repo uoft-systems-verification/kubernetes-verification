@@ -13,9 +13,12 @@ Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module client_gentype := code.k8s_io.client_go.gentype.gentype.
 Module trusted_client_core_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module trusted_client_gentype := trusted_code.k8s_io.client_go.gentype.gentype.
-(* TODO: Remove this workaround once Goose gives trusted implementations the
-   generated same-package named-type token; see
-   goose-trusted-same-package-type-support.md. *)
+(* TODO: Remove this workaround once Goose lets a trusted implementation reuse
+   the generated named-type token from its own package. The generated gentype
+   module imports the trusted Create shim, so the shim cannot import that module
+   back without a cycle and instead reconstructs Client with [go.Named]. Goose
+   marks generated [Client] opaque, which prevents proof automation from reducing
+   type checks in the shim; exposing it makes both spellings normalize alike. *)
 Transparent client_gentype.Client.
 
 Section proof.
