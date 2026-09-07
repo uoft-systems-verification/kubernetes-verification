@@ -314,11 +314,14 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kubeClient" := (GoAlloc (go.PointerType kubernetes.Clientset) "kubeClient") in
     let: "ctx" := (GoAlloc context.Context "ctx") in
+    let: "getOptions" := (GoAlloc meta_v1.GetOptions (GoZeroVal meta_v1.GetOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "rs" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![context.Context] "ctx") in
     let: "$a1" := (![go.string] "name") in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    let: "$a2" := (![meta_v1.GetOptions] "getOptions") in
+    (MethodResolve v1.ReplicaSetInterface "Get"%go (let: "$a0" := (![go.string] "namespace") in
+    (MethodResolve v1.AppsV1Interface "ReplicaSets"%go ((MethodResolve (go.PointerType kubernetes.Clientset) "AppsV1"%go (![go.PointerType kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("rs" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;

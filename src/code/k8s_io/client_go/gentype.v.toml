@@ -22,4 +22,5 @@ imports = [
 trusted = [
     "Client.Create",
     "Client.Delete",
+    "Client.Get",
 ]

@@ -9,8 +9,10 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
+Module client_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module client_gentype := code.k8s_io.client_go.gentype.gentype.
+Module trusted_client_apps_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module trusted_client_core_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module trusted_client_gentype := trusted_code.k8s_io.client_go.gentype.gentype.
 (* TODO: Remove this workaround once Goose lets a trusted implementation reuse
@@ -33,7 +35,9 @@ Collection W := sem + package_sem.
 #[local] Instance clientset_sem : kubernetes.Assumptions :=
   code.controllers.replicaset.replicaset.import_kubernetes_Assumption.
 #[local] Instance client_core_v1_sem : client_core_v1.Assumptions :=
-  kubernetes.import_v1_Assumption.
+  kubernetes.import_core_v1_Assumption.
+#[local] Instance client_apps_v1_sem : client_apps_v1.Assumptions :=
+  kubernetes.import_apps_v1_Assumption.
 #[local] Instance client_gentype_sem : client_gentype.Assumptions :=
   client_core_v1.import_gentype_Assumption.
 #[local] Instance runtime_sem : code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions :=
@@ -719,11 +723,39 @@ Proof.
     Hown_children_frag Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as [Hrs_name_short Hrs_template_finalizers_valid].
-  wp_auto.
+  wp_pures.
+  wp_alloc_auto.
+  rewrite exception_do_unseal /exception_do_def.
+  wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure.
+  wp_bind (kube_client @! (go.PointerType kubernetes.Clientset) @! "AppsV1" #())%E.
+  wp_method_call. rewrite /kubernetes.Clientset__AppsV1ⁱᵐᵖˡ. wp_call.
+  rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
+  cbn beta iota. wp_auto.
+  wp_bind (null @! (go.PointerType trusted_client_apps_v1.appsV1ClientType) @!
+    "ReplicaSets" #namespace)%E.
+  wp_method_call. rewrite /trusted_client_apps_v1.AppsV1Client__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_bind (replicaSetClient_ptr @!
+    (go.PointerType (client_gentype.Client (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet))) @!
+    "Get" #ctx #name #(zero_val meta_v1.GetOptions.t))%E.
+  wp_method_call. rewrite /trusted_client_gentype.Client__Getⁱᵐᵖˡ decide_True; try reflexivity.
+  rewrite /trusted_client_gentype.clientGet. wp_call.
+  change trusted_client_gentype.clientType with client_gentype.Client.
+  wp_auto.
   wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag]").
   { iFrame "#".
     iPureIntro.
@@ -738,6 +770,8 @@ Proof.
     exact Hrs_get_spec_valid. }
   assert (ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec')) as Hrs_spec_valid.
   { rewrite Hget_Hspec_eq. exact Hrs_get_spec_valid. }
+  wp_auto.
+  rewrite decide_True; try reflexivity.
   wp_auto.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by

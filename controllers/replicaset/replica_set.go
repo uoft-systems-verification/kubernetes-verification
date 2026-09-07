@@ -135,7 +135,8 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 }
 
 func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, namespace, name string) error {
-	rs, err := apimodel.ModelState.ReplicaSetGet(namespace, name)
+	var getOptions metav1.GetOptions
+	rs, err := kubeClient.AppsV1().ReplicaSets(namespace).Get(ctx, name, getOptions)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
