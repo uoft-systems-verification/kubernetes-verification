@@ -8,9 +8,6 @@ Module v1.
 Section code.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 
-Definition replicaSetListerType : go.type :=
-  go.Named "k8s.io/client-go/listers/apps/v1.replicaSetLister"%go [].
-
 Definition replicaSetResourceIndexerType : go.type :=
   generic_listers.ResourceIndexer (go.PointerType api_apps_v1.ReplicaSet).
 
