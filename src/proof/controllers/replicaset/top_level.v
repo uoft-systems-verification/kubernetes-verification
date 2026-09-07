@@ -1,5 +1,10 @@
 From New.proof.controllers.replicaset Require Export replicaset_init.
 
+Module app_listers := code.k8s_io.client_go.listers.apps.v1.v1.
+
+Definition replica_set_lister {ext : ffi_syntax} {go_gctx : GoGlobalContext} : interface.t :=
+  interface.mk_ok (go.PointerType app_listers.replicaSetLister) (#null).
+
 Definition current_state_matches (rs : ReplicaSetV.t) (pods : list PodV.t) : Prop :=
   match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with
   | Some replicas => length (filter is_pod_alive pods) = sint.nat replicas
@@ -134,7 +139,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) name
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ current_state_matches rs pods' ∨
@@ -154,7 +159,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
@@ -171,7 +176,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) nam
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ rs pods (stability_fractions dq) true
   }}}.

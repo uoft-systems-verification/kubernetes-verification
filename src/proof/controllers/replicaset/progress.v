@@ -12,9 +12,13 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 Module client_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module client_gentype := code.k8s_io.client_go.gentype.gentype.
+Module generic_listers := code.k8s_io.client_go.listers.listers.
+Module k8s_api_apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module trusted_client_apps_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module trusted_client_core_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module trusted_client_gentype := trusted_code.k8s_io.client_go.gentype.gentype.
+Module trusted_app_listers := trusted_code.k8s_io.client_go.listers.apps.v1.v1.
+Module trusted_generic_listers := trusted_code.k8s_io.client_go.listers.listers.
 (* TODO: Remove this workaround once Goose lets a trusted implementation reuse
    the generated named-type token from its own package. The generated gentype
    module imports the trusted Create shim, so the shim cannot import that module
@@ -40,6 +44,10 @@ Collection W := sem + package_sem.
   kubernetes.import_apps_v1_Assumption.
 #[local] Instance client_gentype_sem : client_gentype.Assumptions :=
   client_core_v1.import_gentype_Assumption.
+#[local] Instance app_listers_sem : app_listers.Assumptions :=
+  code.controllers.replicaset.replicaset.import_listers_apps_v1_Assumption.
+#[local] Instance generic_listers_sem : generic_listers.Assumptions :=
+  app_listers.import_listers_Assumption.
 #[local] Instance runtime_sem : code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions :=
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
@@ -309,7 +317,7 @@ Proof.
     { iExists (W64 0), active_pods, phase. iFrame. iFrame "#".
       iPureIntro. split_and!. all: try word. done. }
     wp_for "Hloop_inv". wp_if_destruct.
-	  + wp_bind ((global_addr apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
+	  + wp_bind ((global_addr k8s_api_apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
 	    iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
 	      "(_ & _ & _ & _ & #Happs_v1_init & _)".
 	    wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
@@ -318,9 +326,9 @@ Proof.
 	      "[$Happs_v1_init]").
 	    iIntros (gvk) "%Hgvk". wp_auto.
 	    destruct Hgvk as (Hgvk_g & Hgvk_v & Hgvk_k).
-	    wp_bind (@! replicaset.meta_v1.NewControllerRef
-	      #(interface.mk_ok (go.PointerType apps_v1.ReplicaSet) (#rs_l)) #gvk)%E.
-	    change (replicaset.meta_v1.NewControllerRef) with v1.NewControllerRef.
+	    wp_bind (@! replicaset.apis_meta_v1.NewControllerRef
+	      #(interface.mk_ok (go.PointerType k8s_api_apps_v1.ReplicaSet) (#rs_l)) #gvk)%E.
+	    change (replicaset.apis_meta_v1.NewControllerRef) with v1.NewControllerRef.
 	    wp_apply (v1.wp_NewControllerRef_ReplicaSet with "[Hdeepown_m_l_rs]").
 	    { iFrame "Hdeepown_m_l_rs". iPureIntro. done. }
 	    iIntros (controller_ref_l controller_ref)
@@ -329,7 +337,7 @@ Proof.
 	    iDestruct "Hdeepown_s_l_rs" as (rs_spec_c') "[Hrs_spec_l Hdeepown_rs_spec]".
 	    iNamedPrefix "Hdeepown_rs_spec" "Hrs_".
 	    iDestruct (struct_fields_split with "Hrs_spec_l") as "[H %Hrs_spec_l_not_null]". iNamedPrefix "H" "Hrs_".
-	    change ((rs_l.[apps_v1.ReplicaSet.t, "Spec"]).[apps_v1.ReplicaSetSpec.t, "Template"]) with
+	    change ((rs_l.[k8s_api_apps_v1.ReplicaSet.t, "Spec"]).[k8s_api_apps_v1.ReplicaSetSpec.t, "Template"]) with
 	      ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"]).
 	    assert (valid_name ReplicaSetV.kind
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')) as Hrs_name_valid.
@@ -339,7 +347,7 @@ Proof.
 	      try discriminate.
 	    wp_apply (controller.wp_GetPodFromTemplate
 	      ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"])
-	      (interface.mk (go.PointerType apps_v1.ReplicaSet) #rs_l)
+	      (interface.mk (go.PointerType k8s_api_apps_v1.ReplicaSet) #rs_l)
 	      controller_ref_l dq2 dq2
 	      (ReplicaSetSpecV.Template' (ReplicaSetV.Spec' rs)) rs_l
 	      (KObjectV.ReplicaSet rs) (Some controller_ref) with
@@ -739,22 +747,11 @@ Proof.
   { iPkgInit. }
   wp_load. wp_pure. wp_pure.
   wp_load. wp_pure. wp_pure.
-  wp_load. wp_pure. wp_pure.
-  wp_load. wp_pure. wp_pure.
   wp_load. wp_pure.
-  wp_bind (kube_client @! (go.PointerType kubernetes.Clientset) @! "AppsV1" #())%E.
-  wp_method_call. rewrite /kubernetes.Clientset__AppsV1ⁱᵐᵖˡ. wp_call.
-  rewrite exception_do_unseal /exception_do_def do_return_unseal /exception.do_return_def.
-  cbn beta iota. wp_auto.
-  wp_bind (null @! (go.PointerType trusted_client_apps_v1.appsV1ClientType) @!
-    "ReplicaSets" #namespace)%E.
-  wp_method_call. rewrite /trusted_client_apps_v1.AppsV1Client__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_bind (replicaSetClient_ptr @!
-    (go.PointerType (client_gentype.Client (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet))) @!
-    "Get" #ctx #name #(zero_val meta_v1.GetOptions.t))%E.
-  wp_method_call. rewrite /trusted_client_gentype.Client__Getⁱᵐᵖˡ decide_True; try reflexivity.
-  rewrite /trusted_client_gentype.clientGet. wp_call.
-  change trusted_client_gentype.clientType with client_gentype.Client.
+  wp_bind (null @! (go.PointerType app_listers.replicaSetLister) @! "ReplicaSets" #namespace)%E.
+  wp_method_call. rewrite /trusted_app_listers.replicaSetLister__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /trusted_generic_listers.ResourceIndexer__Getⁱᵐᵖˡ decide_True; try reflexivity.
+  rewrite /trusted_generic_listers.resourceIndexerGet. wp_pures.
   wp_auto.
   wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag]").
   { iFrame "#".
@@ -935,6 +932,7 @@ Proof.
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
     with "[Hown_terminating_children_frag]" as "Hown_terminating_children_frag".
   { iExists phase'. iFrame. }
+  rewrite return_val_unseal /return_val_def. wp_auto.
   iApply ("HΦ" $! (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)).
   rewrite /owned_resources /=.
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post

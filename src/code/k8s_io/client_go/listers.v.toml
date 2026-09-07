@@ -1,0 +1,13 @@
+translate = [
+    "ResourceIndexer",
+]
+
+imports = [
+    "k8s.io/apimachinery/pkg/runtime",
+    "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/client-go/tools/cache",
+]
+
+trusted = [
+    "ResourceIndexer.Get",
+]
