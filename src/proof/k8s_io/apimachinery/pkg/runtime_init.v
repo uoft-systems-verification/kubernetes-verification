@@ -1,3 +1,4 @@
+From New.proof.net Require Export url_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
 From New.proof Require Import proof_prelude.

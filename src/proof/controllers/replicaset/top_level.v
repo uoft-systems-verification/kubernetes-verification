@@ -125,7 +125,7 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
-Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
+Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -134,7 +134,7 @@ Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ current_state_matches rs pods' ∨
@@ -145,7 +145,7 @@ Definition progress_spec γ l namespace name rs dq pods : iProp Σ :=
   desired state (or, does not cancel its previous progress) when the cluster state is *unready* for the controller to
   make progress. Here, unready means the controller has some terminating children objects, so the controller might need
   to wait for termination before making progress. *)
-Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
+Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -154,7 +154,7 @@ Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
@@ -162,7 +162,7 @@ Definition preservation_spec γ l namespace name rs dq pods : iProp Σ :=
 
 (* Stability spec states that the controller does not modify the cluster state if the state already matches the desired
   state. We use fractional ownerships owned_resources so the controller has no permission to modify the state. *)
-Definition stability_spec γ l namespace name rs dq pods : iProp Σ :=
+Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -171,7 +171,7 @@ Definition stability_spec γ l namespace name rs dq pods : iProp Σ :=
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
   }}}
-    @! replicaset.syncReplicaSet #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ rs pods (stability_fractions dq) true
   }}}.

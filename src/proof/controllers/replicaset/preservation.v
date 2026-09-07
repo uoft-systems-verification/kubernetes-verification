@@ -41,8 +41,8 @@ Local Set Default Proof Using "All".
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_syncReplicaSet_preservation γ l namespace name rs dq pods :
-  ⊢ preservation_spec γ l namespace name rs dq pods.
+Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
+  ⊢ preservation_spec γ l ctx kube_client namespace name rs dq pods.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -194,7 +194,7 @@ Proof.
   assert (NoDup (PodV.key <$> filter is_pod_alive all_pods)) as Hactive_nodup.
   { eapply sublist_NoDup; first exact Hall_nodup.
     apply fmap_sublist, sublist_filter. }
-  wp_apply (wp_manageReplicas γ l active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) []
     rs_get n phase dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
