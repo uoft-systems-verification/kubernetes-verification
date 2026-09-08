@@ -453,10 +453,9 @@ Proof.
     iApply ("HΦ" $! rss_out).
     rewrite -Hkey_eq -Huid_get -Hnew_key_eq.
     iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hpost_frags".
-    iRight.
     iSplitR; [iPureIntro; exact Hkdeletion|].
     iSplitR.
-    { iPureIntro. eapply deployment_realized_spec_eq;
+    { iPureIntro. left. eapply deployment_realized_spec_eq;
         [symmetry; exact Hget_Hspec_eq|].
       destruct Hadopted as (i & Hi).
       exists new_rs. split_and!.
@@ -481,10 +480,9 @@ Proof.
     iSplitL "Hpost_frags Hnew_meta Hnew_spec".
     { iApply big_sepL_app. iFrame "Hpost_frags".
       simpl. rewrite Hnew_key Hnew_key_eq. iFrame "Hnew_meta Hnew_spec". }
-    iRight.
     iSplitR; [iPureIntro; exact Hkdeletion|].
     iSplitR.
-    { iPureIntro. eapply deployment_realized_spec_eq;
+    { iPureIntro. left. eapply deployment_realized_spec_eq;
         [symmetry; exact Hget_Hspec_eq|].
       exists new_rs. split_and!.
       - rewrite elem_of_app. right. rewrite elem_of_cons. left. done.

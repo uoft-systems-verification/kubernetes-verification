@@ -1204,4 +1204,43 @@ Definition deployment_realized (d : DeploymentV.t) (rss : list ReplicaSetV.t)
       ReplicaSetV.key rs = ReplicaSetV.key new_rs ∨
       rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)) rss.
 
+#[global] Instance deployment_realized_dec d rss :
+    Decision (deployment_realized d rss).
+Proof.
+  set P := (λ new_rs,
+    template_matches (rs_template new_rs) (deployment_template d) ∧
+    new_rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') =
+      Some (deployment_replicas d) ∧
+    Forall (λ rs,
+      ReplicaSetV.key rs = ReplicaSetV.key new_rs ∨
+      rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some (W32 0)) rss).
+  destruct (decide (Exists P rss)) as [Hex|Hex].
+  - left. apply List.Exists_exists in Hex as (new_rs & Hin & HP).
+    rewrite -list_elem_of_In in Hin.
+    exists new_rs. split; [exact Hin|exact HP].
+  - right. intros (new_rs & Hin & HP). apply Hex.
+    apply List.Exists_exists. exists new_rs.
+    split; [rewrite -list_elem_of_In; exact Hin|exact HP].
+Defined.
+
+(* ---------------------------------------------------------------- *)
+(* Observable change -- H1's [observable_change]                     *)
+(* ---------------------------------------------------------------- *)
+
+(* A sync's writes are visible to the API server, so the watch fires and the
+   controller is requeued. Mirrors [pods_progress_observed] in
+   replicaset/top_level.v, minus its metadata clause: this controller only ever
+   creates a ReplicaSet or rewrites a replica count, never touches metadata. *)
+Definition rs_spec_changed (rss rss' : list ReplicaSetV.t) : Prop :=
+  ∃ rs rs',
+    rs ∈ rss ∧
+    rs' ∈ rss' ∧
+    ReplicaSetV.key rs = ReplicaSetV.key rs' ∧
+    rs.(ReplicaSetV.Spec') ≠ rs'.(ReplicaSetV.Spec').
+
+Definition rss_progress_observed (rss rss' : list ReplicaSetV.t) : Prop :=
+  list_to_set (C:=gset KKey.t) (ReplicaSetV.key <$> rss) ≠
+    list_to_set (C:=gset KKey.t) (ReplicaSetV.key <$> rss') ∨
+  rs_spec_changed rss rss'.
+
 End proof.

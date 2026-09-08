@@ -130,11 +130,68 @@ Definition input_requirement (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ∧
   unique_new_replica_set d rss.
 
-(* H1 -- progress. [deployment_realized] rather than a progress measure: with no
-   surge pacing one sync reaches the desired state, so [match_distance] would be
-   two-valued and the three-disjunct postcondition collapses to its first
-   disjunct. [rss_post] is existential because the new ReplicaSet may have been
-   created during the sync, in which case it is not among the framed [rss]. *)
+(* ---------------------------------------------------------------- *)
+(* (M) -- the progress metric                                       *)
+(* ---------------------------------------------------------------- *)
+
+(* Two-valued, and that is the accurate metric for this controller rather than
+   a degenerate one. The rule is that a metric's granularity has to match how
+   many reconcile runs convergence takes: replicaset/top_level.v uses
+   |actual - desired| because SlowStartBatch creates a bounded batch per sync,
+   and statefulset charges 2 for a live outdated pod so that the run which
+   deletes it is a strict decrease rather than a plateau.
+
+   This controller has no surge pacing, so one sync scales the new ReplicaSet
+   to replicasOf(d) and every old one to 0, and every lemma in the rollout
+   chain returns without an error -- full fragment ownership rules out the
+   update conflict that would otherwise leave a sync half-done. Convergence
+   takes one run, so the metric needs exactly two values. *)
+Definition match_distance (d : DeploymentV.t) (rss : list ReplicaSetV.t) : nat :=
+  if decide (deployment_realized d rss) then 0%nat else 1%nat.
+
+Lemma match_distance_zero_matches d rss :
+  match_distance d rss = 0%nat ↔ deployment_realized d rss.
+Proof.
+  rewrite /match_distance.
+  destruct (decide (deployment_realized d rss)) as [Hr|Hr].
+  - split; [intros _; exact Hr|done].
+  - split; [discriminate|intros Hc; contradiction].
+Qed.
+
+(* The collapse, which is why stating [progress_spec] in the reduction's shape
+   costs no strength here. [match_distance] is two-valued, so a strict decrease
+   can only be 1 -> 0, and that is [deployment_realized] again: the progress
+   disjunct says nothing the match disjunct does not already say. *)
+Lemma progress_disjunct_realized d rss rss' :
+  deployment_realized d rss' ∨
+    (rss_progress_observed rss rss' ∧
+     match_distance d rss' < match_distance d rss) →
+  deployment_realized d rss'.
+Proof.
+  intros [Hrealized|[_ Hlt]]; first exact Hrealized.
+  apply match_distance_zero_matches.
+  unfold match_distance in Hlt |- *.
+  destruct (decide (deployment_realized d rss')),
+           (decide (deployment_realized d rss)); lia.
+Qed.
+
+(* H1 -- progress. Stated in the reduction's shape, matching
+   replicaset/top_level.v's [progress_spec]: either the desired state is
+   reached, or the sync made an observable change that strictly decreased the
+   metric.
+
+   This controller always establishes the *first* disjunct, and
+   [progress_disjunct_realized] shows the second cannot say anything more here
+   -- with a two-valued metric a strict decrease *is* being realized. The shape
+   is what earns its keep: the meta-theorem instantiates uniformly across
+   controllers, and a reader does not have to re-derive the collapse.
+
+   This triple assumes a good environment rather than stating one; the
+   [preservation_spec] that would cover the bad case does not exist yet. See
+   the TODO on [owned_resources] above.
+
+   [rss_post] is existential because the new ReplicaSet may have been created
+   during the sync, in which case it is not among the framed [rss]. *)
 Definition progress_spec γ model_l (namespace name : go_string)
     (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     (children_keys : gset KKey.t) uid kmeta dq_d : iProp Σ :=
@@ -157,43 +214,40 @@ Definition progress_spec γ model_l (namespace name : go_string)
         own_spec_frag γ (ReplicaSetV.key rs)
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
-      ( (* Deleting: the controller returns early and touches nothing. *)
-        ( "%Hdeleting" ∷ ⌜ is_Some
-              kmeta.(ObjectMetaV.DeletionTimestamp') ∧ rss_post = rss ⌝ ∗
+      (* The deletion branch is gone: holding the metadata fragment gives
+         [kview.own_meta_valid], so the deployment has no deletion timestamp
+         under this precondition and [syncDeployment]'s early return is
+         unreachable. It used to appear as a vacuous first disjunct. *)
+      "%Hnot_deleting" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
+      "%Hprogress" ∷ ⌜ deployment_realized d rss_post ∨
+          (rss_progress_observed rss rss_post ∧
+           match_distance d rss_post < match_distance d rss) ⌝ ∗
+      "%Hunique_new'" ∷ ⌜ unique_new_replica_set d rss_post ⌝ ∗
+      (* Either the new ReplicaSet was adopted from [rss], or it was created
+         and [rss_post] carries one extra object at [new_rs_key d].
+
+         Stated over the key lists, not the objects: a sync rewrites replica
+         counts, and the objects reach the controller through the index in an
+         arbitrary order, so [rss_post] is never literally [rss]. What the
+         caller needs is which *objects* exist, and that is the keys. *)
+      ( ( "%Hadopted" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
+              ReplicaSetV.key <$> rss ⌝ ∗
           "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
           "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
             uid 1 children_keys)
         ∨
-        (* Live: one sync realizes the deployment. *)
-        ( "%Hnot_deleting" ∷ ⌜ kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝ ∗
-          "%Hrealized" ∷ ⌜ deployment_realized d rss_post ⌝ ∗
-          "%Hunique_new'" ∷ ⌜ unique_new_replica_set d rss_post ⌝ ∗
-          (* Either the new ReplicaSet was adopted from [rss], or it was created
-             and [rss_post] carries one extra object at [new_rs_key d].
-
-             Stated over the key lists, not the objects: a sync rewrites replica
-             counts, and the objects reach the controller through the index in
-             an arbitrary order, so [rss_post] is never literally [rss]. What
-             the caller needs is which *objects* exist, and that is the keys. *)
-          ( ( "%Hadopted" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
-                  ReplicaSetV.key <$> rss ⌝ ∗
-              "Hreserved" ∷ own_available_reserved_frag γ 1
-                (new_rs_key d) ∗
-              "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid 1 children_keys)
-            ∨
-            (* The created ReplicaSet is named because the reservation it fills
-               is stamped with *its* UID, not the deployment's — the store
-               records which object occupies the reserved key. *)
-            ( ∃ new_rs,
-              "%Hcreated" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
-                  (ReplicaSetV.key <$> rss) ++ [new_rs_key d] ∧
-                  new_rs ∈ rss_post ∧
-                  ReplicaSetV.key new_rs = new_rs_key d ⌝ ∗
-              "Hreserved" ∷ own_occupied_reserved_frag γ 1 (new_rs_key d)
-                new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ∗
-              "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
-                uid 1 ({[ new_rs_key d ]} ∪ children_keys)))))
+        (* The created ReplicaSet is named because the reservation it fills is
+           stamped with *its* UID, not the deployment's — the store records
+           which object occupies the reserved key. *)
+        ( ∃ new_rs,
+          "%Hcreated" ∷ ⌜ ReplicaSetV.key <$> rss_post ≡ₚ
+              (ReplicaSetV.key <$> rss) ++ [new_rs_key d] ∧
+              new_rs ∈ rss_post ∧
+              ReplicaSetV.key new_rs = new_rs_key d ⌝ ∗
+          "Hreserved" ∷ own_occupied_reserved_frag γ 1 (new_rs_key d)
+            new_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ∗
+          "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
+            uid 1 ({[ new_rs_key d ]} ∪ children_keys)))
   }}}.
 
 (* H2 -- stability. Nothing moves, so the postcondition is the precondition.
