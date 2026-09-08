@@ -40,16 +40,14 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 (* ---------------------------------------------------------------- *)
 (* Shared ownership bundle for the two top-level triples.            *)
 (*                                                                   *)
-(* The reduction in notes/hoare.md is (M) + (H1) + (H2) + (A1)-(A4). *)
+(* The reduction to Hoare triples needs two of them, H1 and H2.     *)
 (* H1 is [progress_spec] below, discharged by [wp_syncDeployment] in *)
 (* sync_deployment.v; H2 is [stability_spec], discharged by          *)
 (* [wp_syncDeployment_stability] in stability.v.                     *)
 (*                                                                   *)
-(* There is no preservation triple. Preservation is H1's third       *)
-(* disjunct ([waiting_on_env]), and this controller never waits on   *)
-(* the environment: #7 dropped surge pacing, so the new RS goes to   *)
-(* replicasOf(d) and old RSs to 0 in the same sync. H1 collapses to  *)
-(* its first disjunct -- see notes/deployment-spec.md 52-58 and Q6.  *)
+(* There is no preservation triple yet, and there should be -- see  *)
+(* the TODO on [owned_resources] below. The triples here assume a    *)
+(* good environment rather than naming it.                           *)
 (* ---------------------------------------------------------------- *)
 
 (* Field names are prefixed because [replicaset/top_level.v] already exports
@@ -86,6 +84,58 @@ Definition stability_fractions (dq : dfrac) : all_fractions :=
    bundle for stability. The progress postcondition cannot use it: its branches
    differ in the children set and in whether the reserved key is available or
    occupied, so it spells those out. *)
+(* TODO (separate PR): make the good-environment assumption explicit, and add
+   the [preservation_spec] that covers the bad case. Mirror
+   replicaset/top_level.v, whose [owned_resources] takes a [ready : bool] and
+   which pairs [progress_spec] (ready) with [preservation_spec] (not ready).
+
+   WHAT "GOOD ENVIRONMENT" MEANS HERE. [getNewReplicaSet] creates under the
+   deterministic name <deployment>-<template-hash>. The model gives every name
+   a reservation with three states (kubernetes_model/inv.v:46-56):
+
+       Available | Occupied uid | Deleting uid
+
+   [owned_resources] below holds [own_available_reserved_frag], i.e. it assumes
+   [Available]. [Deleting uid] is reachable: this controller never deletes
+   ReplicaSets, so an external actor -- a user, garbage collection, or the
+   revision-history cleanup this simplified controller drops -- can delete the
+   object sitting at that name. Until deletion completes the name is not free,
+   the create returns AlreadyExists, and the controller can only wait. That is
+   a *definite* environment action, which is exactly the situation preservation
+   is for.
+
+   So: ready = the new ReplicaSet's name reservation is [Available], not
+   [Deleting]. That is the analogue of the ReplicaSet controller's
+   [own_terminating_children_frag ... Quiescent].
+
+   Two things that are NOT part of it, because ownership already implies them:
+     - No child ReplicaSet is terminating. [kview.own_meta_valid]
+       (algebra/kview.v:3820) yields [DeletionTimestamp = None] from any
+       metadata fragment at any fraction, and [Hdom_eq] forces [rss] to be
+       exactly the ReplicaSet-kinded children.
+     - No competing writer. Discharged structurally by [dep_rs_dq := 1].
+
+   WHAT IT TAKES, in dependency order:
+
+     1. [wp_State__ReplicaSetCreate_named] -- the Deleting variant of the named
+        create, which does not exist yet. Mirror [wp_State__PodCreate_named]
+        (kubernetes_model/create_named.v:610); the note at :704 there records
+        that only the Available variant was written. This is the blocker, and
+        the bulk of the work.
+     2. A second branch in [wp_getNewReplicaSet] for the AlreadyExists return.
+        Note the Go then calls [ReplicaSetGet] and hands the result to
+        [rollout], which would scale a terminating object -- that path is
+        currently assumed away, not verified, so expect to find out what it
+        does.
+     3. [ready : bool] on [owned_resources], selecting
+        [own_available_reserved_frag] against
+        [∃ status, own_reserved_frag ... status].
+     4. [preservation_spec] at ready = false, concluding
+        [match_distance d rss' ≤ match_distance d rss].
+
+   Until then the triples below are sound but silent about their premise: they
+   hold under an environment assumption that is baked into the ownership bundle
+   rather than written down. *)
 Definition owned_resources γ (d : DeploymentV.t)
     (rss : list ReplicaSetV.t) (children_keys : gset KKey.t)
     uid kmeta (fractions : all_fractions) : iProp Σ :=

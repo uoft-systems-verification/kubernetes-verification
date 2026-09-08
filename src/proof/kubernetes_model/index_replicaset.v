@@ -33,6 +33,103 @@ Definition replicaSetController_indexed_value (rs : ReplicaSetV.t) : go_string :
   | None => rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')
   end.
 
+(* Filtering the store's ReplicaSets by this index value is the same as
+   filtering them by controller reference. The ReplicaSet analogue of index.v's
+   [matching_podController_indexed_value_implies_being_children_pods], and the
+   step that lets the index be related back to [own_children_frag].
+
+   The string reasoning is shared: [pod_controller_index_key_inj_right] and
+   [pod_controller_index_key_inequality1] (string/prefix_suffix.v) are about
+   the "ns/Kind/Name/UID" encoding, not about Pods. *)
+Lemma matching_replicaSetController_indexed_value_implies_being_children
+    rss parent_key parent_uid :
+  slash_free parent_key.(KKey.Kind') →
+  slash_free parent_key.(KKey.Namespace') →
+  slash_free parent_key.(KKey.Name') →
+  slash_free parent_uid →
+  Forall ReplicaSetV.valid rss →
+  filter (λ rs, replicaSetController_indexed_value rs =
+    parent_key.(KKey.Namespace') ++ "/"%go ++ parent_key.(KKey.Kind') ++ "/"%go ++
+    parent_key.(KKey.Name') ++ "/"%go ++ parent_uid) rss =
+  filter (λ rs, obj_parent_ref (KObjectV.ReplicaSet rs) =
+    Some (parent_key, parent_uid)) rss.
+Proof.
+  intros Hparent_kind_sf Hparent_ns_sf Hparent_name_sf Hparent_uid_sf Hrss_valid.
+  induction Hrss_valid as [|rs rss Hrs_valid Hrss_valid IH]; simpl; [done|].
+  rewrite !filter_cons.
+  case_decide as Hindexed.
+  - case_decide as Hparent.
+    + simpl. f_equal. exact IH.
+    + exfalso.
+      apply Hparent.
+      clear IH Hrss_valid Hparent.
+      unfold replicaSetController_indexed_value, meta_parent_ref in Hindexed.
+      unfold obj_parent_ref, meta_parent_ref.
+      destruct Hrs_valid as (_ & _ & Hmeta_valid & _).
+      assert (Hrs_ns_sf :
+        slash_free rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')).
+      { eapply valid_namespace_slash_free.
+        unfold ObjectMetaV.valid in Hmeta_valid. tauto. }
+      destruct (ObjectMetaV.OwnerReferences' (ReplicaSetV.ObjectMeta' rs))
+        as [orefs|] eqn:Horefs in Hindexed |- *.
+      * destruct (list_find (λ oref : OwnerReferenceV.t,
+          oref.(OwnerReferenceV.Controller') = Some true) orefs)
+          as [[idx oref]|] eqn:Hfind in Hindexed |- *.
+        -- pose proof (pod_controller_index_key_inj_right
+             rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')
+             oref.(OwnerReferenceV.Kind')
+             oref.(OwnerReferenceV.Name')
+             oref.(OwnerReferenceV.UID')
+             parent_key.(KKey.Namespace')
+             parent_key.(KKey.Kind')
+             parent_key.(KKey.Name')
+             parent_uid
+             Hrs_ns_sf
+             Hparent_ns_sf
+             Hparent_kind_sf
+             Hparent_name_sf
+             Hparent_uid_sf
+             Hindexed) as (Hns_eq & Hkind_eq & Hname_eq & Huid_eq).
+           unfold obj_parent_ref, meta_parent_ref.
+           simpl.
+           rewrite Horefs Hfind.
+           destruct parent_key as [parent_kind parent_name parent_ns].
+           simpl in *.
+           subst.
+           reflexivity.
+        -- exfalso.
+           eapply pod_controller_index_key_inequality1;
+             [exact Hrs_ns_sf|exact Hparent_ns_sf|].
+           exact Hindexed.
+      * exfalso.
+        eapply pod_controller_index_key_inequality1;
+          [exact Hrs_ns_sf|exact Hparent_ns_sf|].
+        exact Hindexed.
+  - case_decide as Hparent.
+    + exfalso.
+      apply Hindexed.
+      clear IH Hrss_valid Hindexed.
+      unfold obj_parent_ref, meta_parent_ref in Hparent.
+      unfold replicaSetController_indexed_value, meta_parent_ref.
+      simpl.
+      destruct (ObjectMetaV.OwnerReferences' (ReplicaSetV.ObjectMeta' rs))
+        as [orefs|] eqn:Horefs.
+      * destruct (list_find (λ oref : OwnerReferenceV.t,
+          oref.(OwnerReferenceV.Controller') = Some true) orefs)
+          as [[idx oref]|] eqn:Hfind.
+        -- rewrite Horefs Hfind in Hparent |- *.
+           inversion Hparent as [[Hkey_eq Huid_eq]]; clear Hparent.
+           destruct parent_key as [parent_kind parent_name parent_ns].
+           simpl in Hkey_eq, Huid_eq.
+           inversion Hkey_eq; subst.
+           reflexivity.
+        -- rewrite Horefs Hfind in Hparent.
+           discriminate.
+      * rewrite Horefs in Hparent.
+        discriminate.
+    + simpl. exact IH.
+Qed.
+
 (* What survives a round trip through the store: everything except the
    resource version, which the API server rewrites. Mirrors index.v's
    [pod_storage_view], and for the same reason — it is the granularity at
@@ -297,25 +394,138 @@ Proof.
     iPureIntro. apply Forall_cons_2; [exact Hne|exact Hrest].
 Qed.
 
-(* TRUSTED — the single remaining obligation for H2.
+(* ---------------------------------------------------------------- *)
+(* The atomic-update form, and the Hoare triple built on it.        *)
+(*                                                                   *)
+(* Same layering as index.v's Pod chain: the semantic work lives in *)
+(* the [_au] lemma, proved once against inv.v, and every triple      *)
+(* below is a thin wrapper that [iApply]s it. index.v has six such   *)
+(* wrappers over [wp_State__ByIndex_podController_au] (:1097, :1153, *)
+(* :1232, :1299, :1378, :1446); this file needs one.                 *)
+(*                                                                   *)
+(* Simpler than the Pod version in three ways, all consequences of   *)
+(* the Deployment controller never deleting ReplicaSets: no          *)
+(* living/terminating partition, so no [phase], no                   *)
+(* [own_terminating_children_frag] and no deletion observations; and *)
+(* no [include_specs] switch, because the only caller wants specs.   *)
+(* ---------------------------------------------------------------- *)
 
-   Discharging it means writing the ReplicaSet analogue of index.v's Pod
-   chain: an [_au] version proved against inv.v showing that ByIndex over the
-   invariant returns exactly the objects whose controller reference matches,
-   and hence exactly the ReplicaSet-kinded keys in [own_children_frag]. That is
-   the semantic core Q3 identified; the index packages it reusably rather than
-   avoiding it.
+(* TODO (separate PR): discharge this. It is the last real obligation for the
+   Deployment controller's stability triple, and everything it needs is either
+   already proved below/in list.v or has a direct Pod analogue to mirror.
 
-   index.v is 1725 lines for the Pod case, ~1100 of them supporting lemmas
-   below [wp_State__ByIndex_podController] at :1097. The ReplicaSet version
-   should be materially leaner (no living/terminating partition), but it is a
-   file, not a lemma. Note that even the Pod chain is not fully discharged —
-   [wp_index_of_podController] (index.v:19) is itself Admitted.
+   WHAT IT SAYS. [ByIndex] run under the store invariant returns exactly the
+   objects whose controller reference is (parent_key, parent_uid) -- hence
+   exactly the ReplicaSet-kinded keys recorded in [own_children_frag] -- and it
+   returns them related to the caller's framed list by a permutation of
+   [rs_storage_view], i.e. up to resource version. Metadata alone would not be
+   enough: [deployment_realized] constrains ReplicaSet *specs*, so the caller
+   has to move spec fragments across the permutation too.
 
-   Shaped after [wp_State__ByIndex_podController_with_spec] (index.v:1153):
-   metadata *and* spec fragments go in, both come back untouched, and the
-   objects the API returned are related to the framed ones by a permutation
-   of storage views. *)
+   WHAT IS ALREADY DONE, and should just be used:
+     - [wp_State__objListLocked_ReplicaSet_NamespaceAll] (list.v) -- the listing
+       step, proved.
+     - [matching_replicaSetController_indexed_value_implies_being_children]
+       (above) -- filtering by index value = filtering by controller reference,
+       proved. This is the step that connects the index to the children
+       fragment.
+     - [own_rs_frags_as_storage_views], [own_rs_frags_view_perm],
+       [rs_storage_view_eq_inv] (above) -- the fragment-motion layer, proved.
+
+   WHAT REMAINS, in dependency order:
+
+     1. [child_rs_state_dom_eq] -- mirror index.v:193's
+        [child_pod_state_dom_eq]. Roughly 30 lines. Simpler than the Pod
+        version: there is no living/terminating partition to reconcile, so
+        index.v:223's [living_terminating_child_pod_keys_partition] has no
+        analogue and is not needed.
+
+     2. [spec_rss_is_permutation_of_child_rs_state_for_storage_view] and
+        [rss_is_permutation_of_spec_rss_for_storage_view] -- mirror index.v:570
+        and index.v:693. Together ~200 lines, and the bulk of the work. These
+        carry the storage-view permutation from the framed list to the list the
+        API returned. Substitute [obj_parent_ref] for the Pod version's
+        [living_obj_parent_ref] throughout: with no terminating axis the two
+        coincide here.
+
+     3. The body of this lemma -- mirror index.v:762's
+        [wp_State__ByIndex_podController_au], ~150 lines with the pieces above
+        in hand. Open the mutex, list with (list.v) above, run the filter loop
+        (index.v:846-920 transfers almost verbatim -- it is generic in the
+        object type), then at loop exit open the atomic update, rewrite with the
+        matching lemma, and close with (2). Drop everything in the Pod proof
+        that touches [phase], [own_terminating_children_frag],
+        [terminating_pods] or [own_deletion_observed_frag]: the Deployment
+        controller never deletes ReplicaSets, so none of it has an analogue.
+
+     4. [wp_index_of_replicaSetController] -- the loop calls [index_of], and the
+        Pod chain's corresponding [wp_index_of_podController] (index.v:19) is
+        itself [Admitted]. Mirroring it leaves this file resting on exactly the
+        trust the Pod chain already rests on. Proving it outright means
+        reasoning about the goose-translated [index_of]'s interface type
+        assertion and [controller.PodControllerIndexKey], and should be decided
+        for Pod and ReplicaSet together rather than here.
+
+   WORTH DECIDING FIRST. This whole file exists only because
+   [filterReplicaSetsByOwner] fetches through an index instead of listing --
+   see the TODO on that function in controllers/deployment/deployment.go. If
+   the model's listing specifications are given fragments and the controller
+   goes back to the upstream listing shape, this file and the
+   [ReplicaSetControllerIndex] constant both disappear. Settle that before
+   spending the ~400 lines above. *)
+Local Lemma wp_State__ByIndex_replicaSetController_au γ l indexed_value :
+  ∀ Φ,
+  ( is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    |={⊤,∅}=> ∃ rss rs_dqs parent_key parent_uid children_keys children_dq,
+      "Hown_meta_frags" ∷ ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
+        own_meta_frag γ (ReplicaSetV.key rs)
+          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') rs_dq
+          rs.(ReplicaSetV.ObjectMeta')) ∗
+      "Hown_spec_frags" ∷ ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
+        own_spec_frag γ (ReplicaSetV.key rs)
+          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') rs_dq
+          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
+        children_dq children_keys ∗
+      "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
+      "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
+        parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
+        filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free parent_key.(KKey.Kind') ∧
+        slash_free parent_key.(KKey.Namespace') ∧
+        slash_free parent_key.(KKey.Name') ∧
+        slash_free parent_uid ⌝ ∗
+      "Hclose" ∷ (∀ sl interfaces rss' dq',
+        sl ↦* (interface.ok <$> interfaces) ∗
+        ([∗ list] i;rs ∈ interfaces;rss',
+          KObjectV.deepown_i i (KObjectV.ReplicaSet rs) dq') ∗
+        ⌜ rs_storage_view <$> rss' ≡ₚ rs_storage_view <$> rss ⌝ ∗
+        ⌜ Forall ReplicaSetV.valid rss' ⌝ ∗
+        ⌜ Forall (λ rs, obj_parent_ref (KObjectV.ReplicaSet rs) =
+            Some (parent_key, parent_uid)) rss' ⌝ ∗
+        ⌜ NoDup (ReplicaSetV.key <$> rss') ⌝ ∗
+        ⌜ NoDup ((λ rs,
+            rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) <$> rss') ⌝ ∗
+        ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
+          own_meta_frag γ (ReplicaSetV.key rs)
+            rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') rs_dq
+            rs.(ReplicaSetV.ObjectMeta')) ∗
+        ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
+          own_spec_frag γ (ReplicaSetV.key rs)
+            rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') rs_dq
+            (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
+        own_children_frag γ parent_key parent_uid children_dq children_keys
+          ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V
+      )
+  ) -∗ WP l @! (go.PointerType apimodel.State) @! "ByIndex"
+        #ReplicaSetV.kind #"replicaSetController"%go #indexed_value {{ Φ }}.
+Proof.
+Admitted.
+
+(* The triple the Deployment controller uses. A thin wrapper over the atomic
+   update, in the shape of index.v's [wp_State__ByIndex_podController]. *)
 Lemma wp_State__ByIndex_replicaSetController γ l indexed_value rss rs_dqs
     parent_key parent_uid children_keys children_dq :
   {{{ is_pkg_init apimodel ∗
@@ -370,6 +580,23 @@ Lemma wp_State__ByIndex_replicaSetController γ l indexed_value rss rs_dqs
         children_dq children_keys
   }}}.
 Proof.
-Admitted.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  iApply wp_State__ByIndex_replicaSetController_au.
+  iFrame "#".
+  iApply fupd_mask_intro.
+  { Timeout 10 set_solver. }
+  iIntros "Hmask".
+  iExists rss, rs_dqs, parent_key, parent_uid, children_keys, children_dq.
+  simpl. iFrame "%". iFrame.
+  iIntros (sl interfaces rss_ret dq') "Hpost".
+  iDestruct "Hpost" as
+    "(Hsl & Hrss & %Hview_perm & %Hrss_valid & %Hparent_refs & %Hnodup' &
+      %Huid_nodup' & Hown_meta_frags & Hown_spec_frags & Hown_children_frag)".
+  iMod "Hmask" as "_".
+  iModIntro. iNext.
+  iApply ("HΦ" $! sl interfaces rss_ret dq').
+  iFrame "Hsl Hrss Hown_meta_frags Hown_spec_frags Hown_children_frag".
+  iFrame "%".
+Qed.
 
 End proof.

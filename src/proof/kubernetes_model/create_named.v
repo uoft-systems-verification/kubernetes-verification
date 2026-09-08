@@ -698,11 +698,15 @@ Qed.
 
 (* The ReplicaSet counterpart of [wp_State__PodCreate_named_available].
 
-   Only the Available variant is provided: the Deployment controller creates a
-   ReplicaSet under a deterministic name while holding that name's available
-   reservation, which is exactly what rules out the AlreadyExists return. If a
-   caller ever needs the Deleting variant, mirror [wp_State__PodCreate_named]
-   the same way.
+   TODO (separate PR): provide the Deleting variant too, mirroring
+   [wp_State__PodCreate_named] above. Only Available is here, because the
+   Deployment controller creates under a deterministic name while holding that
+   name's available reservation, which is what rules out the AlreadyExists
+   return. But [Deleting uid] is reachable -- an external actor can delete the
+   object at that name -- and until the Deleting variant exists the Deployment
+   triples have to assume it away rather than handle it. See the TODO on
+   [owned_resources] in controllers/deployment/top_level.v, for which this is
+   the blocking piece.
 
    Unlike the Pod case this carries [ReplicaSetV.extra_valid] explicitly:
    [ObjectSpecV.extra_valid] is [True] for every kind except ReplicaSet, where
