@@ -113,13 +113,9 @@ Proof.
   - iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happsv1".
     { iPkgInit. }
     iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
-    iEval (rewrite /named) in "Hrs".
-    iDestruct "Hrs" as (rs_phy) "[Hrs_ptr Hrs_deep]".
-    wp_apply (wp_ReplicaSet__DeepCopy rs_l rs_phy rs dq dq
-      with "[$Happsv1 $Hrs_ptr $Hrs_deep]").
-    iIntros (copy_l) "(Hcopy & Hrs_ptr & Hrs_deep)".
-    iAssert (ReplicaSetV.deepown_l rs_l rs dq) with "[Hrs_ptr Hrs_deep]" as "Hrs".
-    { iExists rs_phy. iFrame. }
+    iEval (rewrite /named /rs_opt_own) in "Hrs".
+    wp_apply (wp_ReplicaSet__DeepCopy rs_l rs dq with "[$Happsv1 $Hrs]").
+    iIntros (copy_l) "(Hcopy & Hrs)".
     wp_auto.
     iPoseProof (ReplicaSetV.deepown_l_split with "Hcopy") as
       "(%Hcopy_nn & Hc_tm & Hc_om & Hc_spec & Hc_st)".
@@ -167,6 +163,7 @@ Proof.
     iPoseProof (kview.own_meta_valid with "Hown_meta") as "%Hmeta_frag_valid".
     destruct Hmeta_frag_valid as (_ & _ & _ & Hmeta_valid & Hdeletion).
     destruct Hrs_valid as (Htm_valid & Hrv_valid & Hom_valid & Hspec_valid & Hst_valid).
+    pose proof Hom_valid as (_ & Hname_nonempty & _ & _ & _ & Huid_valid & _).
     wp_apply (wp_State__ReplicaSetUpdateTx γ model_l
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')
       copy_l (rs_scaled rs new_scale) (ReplicaSetV.key rs)
@@ -176,9 +173,8 @@ Proof.
       with "[$Hcopy $Hown_meta $Hown_spec]").
     { iFrame "#". iPureIntro. split_and!.
       - apply rs_scaled_valid_create; [split_and!; done|done|done|done].
-      - exact (ObjectMetaV.valid_name_nonempty_of_valid _ Hom_valid).
-      - eapply valid_uid_non_empty. eapply ObjectMetaV.valid_uid_of_valid.
-        exact Hom_valid.
+      - exact Hname_nonempty.
+      - eapply valid_uid_non_empty. exact Huid_valid.
       - exact Hrv_valid.
       - exact Htm_valid.
       - done.
@@ -536,6 +532,8 @@ Proof.
       - pose proof (new_replica_set_is_new d ref Href_controller) as
           (_ & _ & _ & Hpr & _). exact Hpr. }
     iIntros (rs_l' rs' uid) "Hc". iNamedPrefix "Hc" "Hc_".
+    destruct Hc_Hcreated as
+      (_ & Hc_Hmeta_created & _ & Hc_Hspec_created & Hc_Hstatus_created).
     subst uid.
     wp_auto.
     wp_apply (wp_IsAlreadyExists interface.nil with "[]").
@@ -562,7 +560,7 @@ Proof.
     assert (template_matches (rs_template rs') (deployment_template d))
       as Hmatches'.
     { rewrite /rs_template.
-      rewrite /ObjectSpecV.created /ReplicaSetSpecV.created in Hc_Hspec_created.
+      rewrite /ReplicaSetSpecV.created in Hc_Hspec_created.
       destruct Hc_Hspec_created as (_ & _ & _ & Htmpl_eq).
       rewrite Htmpl_eq.
       pose proof Hshape as (_ & _ & _ & _ & _ & _ & _ & Htmpl_new).

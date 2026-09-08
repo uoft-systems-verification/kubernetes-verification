@@ -677,10 +677,11 @@ Lemma rs_scaled_valid_create request_kind ns rs n :
 Proof.
   rewrite /ReplicaSetV.valid /ReplicaSetV.valid_create /rs_scaled /=.
   intros (Htm & _ & Hmeta & Hspec & _) Hn Hkind Hns.
+  pose proof Hmeta as (_ & _ & _ & Hns_nonempty & Hns_valid & _).
   split_and!.
   - exact Hkind.
-  - rewrite Hns. exact (ObjectMetaV.valid_namespace_nonempty_of_valid _ Hmeta).
-  - rewrite Hns. exact (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
+  - rewrite Hns. exact Hns_nonempty.
+  - rewrite Hns. exact Hns_valid.
   - eapply valid_typemeta_valid_create_typemeta. exact Htm.
   - eapply ObjectMetaV.valid_create_of_valid; done.
   - apply rs_scaled_spec_valid_create; [exact (proj1 Hspec)|exact Hn].
@@ -1003,10 +1004,11 @@ Proof.
   assert (dsel0 = dsel) as ->
     by (rewrite Hdsel in Hdsel0; injection Hdsel0; auto).
   rewrite /ReplicaSetV.valid_create /new_replica_set /=.
+  pose proof Hmeta as (_ & _ & _ & Hns_nonempty & Hns_valid & _).
   split_and!.
   - exact Hkind.
-  - exact (ObjectMetaV.valid_namespace_nonempty_of_valid _ Hmeta).
-  - exact (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
+  - exact Hns_nonempty.
+  - exact Hns_valid.
   - apply zero_typemeta_valid_create.
   - rewrite /ObjectMetaV.valid_create /=.
     rewrite decide_False;
@@ -1015,7 +1017,7 @@ Proof.
     + intros Hc. done.
     + right. split; [right; left; done|exact Hname].
     + right. split; [|done].
-      apply (ObjectMetaV.valid_namespace_of_valid _ Hmeta).
+      exact Hns_valid.
     + apply new_rs_labels_valid. exact (proj1 Htmpl).
     + done.
     + intros i1 i2 or1 or2 H1 H2 _ _.

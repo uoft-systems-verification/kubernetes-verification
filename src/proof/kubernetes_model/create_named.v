@@ -730,14 +730,7 @@ Lemma wp_State__ReplicaSetCreate_named_available γ l namespace key rs_l rs
     l @! (go.PointerType apimodel.State) @! "ReplicaSetCreate" #namespace #rs_l
   {{{ rs_l' rs' uid, RET (#rs_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ ReplicaSetV.valid rs' ⌝ ∗
-      "%Hmeta_created" ∷ ⌜ ObjectMetaV.created namespace
-          rs.(ReplicaSetV.ObjectMeta') rs'.(ReplicaSetV.ObjectMeta') ⌝ ∗
-      "%Hspec_created" ∷ ⌜ ObjectSpecV.created
-          (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
-          (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝ ∗
-      "%Hstatus_created" ∷ ⌜ ObjectStatusV.created
-          (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
-          (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ⌝ ∗
+      "%Hcreated" ∷ ⌜ ReplicaSetV.created namespace rs rs' ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ key = ReplicaSetV.key rs' ⌝ ∗
       "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
@@ -771,9 +764,8 @@ Proof.
     split_and!; done. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  (* [KObjectV.created] on two ReplicaSets *is* [ReplicaSetV.created]. *)
   simpl in Hcreated.
-  destruct Hcreated as
-    (_ & Hmeta_created & _ & Hspec_created & Hstatus_created).
   iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
   wp_auto.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.

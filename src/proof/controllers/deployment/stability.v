@@ -405,10 +405,10 @@ Proof.
     (Hd_get_typemeta & Hd_get_rv & Hd_get_meta_valid & Hd_get_spec & Hd_get_status).
   destruct Hd_get_typemeta as (_ & Hd_kind_valid & _).
   pose proof (valid_kind_slash_free _ Hd_kind_valid) as Hkind_slash_free.
-  pose proof (ObjectMetaV.valid_namespace_of_valid _ Hd_get_meta_valid)
-    as Hns_valid.
-  pose proof (ObjectMetaV.valid_name_of_valid _ Hd_get_meta_valid) as Hname_valid.
-  pose proof (ObjectMetaV.valid_uid_of_valid _ Hd_get_meta_valid) as Huid_valid.
+  (* [ObjectMetaV.valid] is a flat conjunction; the index key needs three of
+     its components. *)
+  pose proof Hd_get_meta_valid as
+    (_ & _ & Hname_valid & _ & Hns_valid & Huid_valid & _).
   pose proof (valid_namespace_slash_free _ Hns_valid) as Hns_slash_free.
   pose proof (valid_name_slash_free _ Hname_valid) as Hname_slash_free.
   pose proof (valid_uid_slash_free _ Huid_valid) as Huid_slash_free.
@@ -418,7 +418,7 @@ Proof.
     by exact Hget_Hkey_eq.
   assert (uid = d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.UID')) as Huid_get.
   { rewrite Huid_eq. symmetry.
-    apply ObjectMetaV.equiv_except_resource_version_uid. exact Hget_Hmeta_eq. }
+    exact (f_equal ObjectMetaV.UID' Hget_Hmeta_eq). }
   iEval (rewrite Hkey_eq Huid_get) in "Hown_children".
   iDestruct (big_sepL_sep with "Hown_frags") as "[Hown_meta_frags Hown_spec_frags]".
   wp_apply (wp_filterReplicaSetsByOwner γ model_l d_l d_get rss children_keys
@@ -431,8 +431,8 @@ Proof.
   iDestruct "Hf_Hd" as (d_c) "[Hdptr Hdeepown_d]".
   assert (d_get.(DeploymentV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
     as Hdel_none.
-  { rewrite (ObjectMetaV.equiv_except_resource_version_deletion_timestamp _ _
-      Hget_Hmeta_eq). exact Hkdeletion. }
+  { rewrite (f_equal ObjectMetaV.DeletionTimestamp' Hget_Hmeta_eq).
+    exact Hkdeletion. }
   iAssert ⌜ d_c.(v1.Deployment.ObjectMeta').(v1.ObjectMeta.DeletionTimestamp')
       = null ⌝%I as %Hdel_null.
   { iNamedPrefix "Hdeepown_d" "Hdep_".
