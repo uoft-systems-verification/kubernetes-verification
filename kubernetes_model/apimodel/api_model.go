@@ -152,6 +152,8 @@ func (s *State) objListBySelector(kind, namespace string, selector labels.Select
 	return filterByLabelSelector(s.objList(kind, namespace), selector)
 }
 
+const ReplicaSetControllerUIDIndex = "controllerUID"
+
 func index_of(indexName string, obj interface{}) ([]string, error) {
 	if indexName == controller.PodControllerIndex {
 		pod, ok := obj.(*v1.Pod)
@@ -161,6 +163,16 @@ func index_of(indexName string, obj interface{}) ([]string, error) {
 		// Get the ControllerRef of the Pod to check if it's managed by a controller.
 		// Index with a non-nil controller (indicating an owned pod) or a nil controller (indicating an orphan pod).
 		return []string{controller.PodControllerIndexKey(pod.Namespace, metav1.GetControllerOf(pod))}, nil
+	} else if indexName == ReplicaSetControllerUIDIndex {
+		rs, ok := obj.(*appsv1.ReplicaSet)
+		if !ok {
+			return nil, nil
+		}
+		controllerRef := metav1.GetControllerOf(rs)
+		if controllerRef == nil {
+			return nil, nil
+		}
+		return []string{string(controllerRef.UID)}, nil
 	} else {
 		return nil, fmt.Errorf("index %q does not exist", indexName)
 	}
