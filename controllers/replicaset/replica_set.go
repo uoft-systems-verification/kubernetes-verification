@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
+	appslisters "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -134,8 +135,8 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 	return nil
 }
 
-func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, namespace, name string) error {
-	rs, err := apimodel.ModelState.ReplicaSetGet(namespace, name)
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, namespace, name string) error {
+	rs, err := rsLister.ReplicaSets(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}

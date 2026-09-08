@@ -17,6 +17,53 @@ Definition clientType (T : go.type) : go.type :=
 
 (* Trusted Go equivalent:
 
+   func (c *Client[T]) Get(ctx context.Context, name string, opts metav1.GetOptions) (T, error) {
+       _ = ctx
+       _ = opts
+       var zero T
+       switch any(zero).(type) {
+       case *corev1.Pod:
+           obj, err := apimodel.ModelState.PodGet(c.namespace, name)
+           return any(obj).(T), err
+       case *appsv1.ReplicaSet:
+           obj, err := apimodel.ModelState.ReplicaSetGet(c.namespace, name)
+           return any(obj).(T), err
+       case *corev1.PersistentVolumeClaim:
+           obj, err := apimodel.ModelState.PersistentVolumeClaimGet(c.namespace, name)
+           return any(obj).(T), err
+       case *appsv1.StatefulSet:
+           obj, err := apimodel.ModelState.StatefulSetGet(c.namespace, name)
+           return any(obj).(T), err
+       default:
+           panic("unsupported Kubernetes object type")
+       }
+   }
+*)
+Definition clientGet (T : go.type) (method : go_string) : val :=
+  λ: "c" "ctx" "name" "opts",
+    let: "c" := (GoAlloc (go.PointerType (clientType T)) "c") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string (![go.string] (StructFieldRef (clientType T) "namespace"%go (![go.PointerType (clientType T)] "c")))) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "namespace") in
+    let: "$a1" := (![go.string] "name") in
+    (MethodResolve (go.PointerType apimodel.State) method
+      (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    (TypeAssert T (Convert T go.any "$ret0"), "$ret1").
+
+Definition Client__Getⁱᵐᵖˡ (T : go.type) : val :=
+  if decide (T = go.PointerType api_apps_v1.ReplicaSet) then
+    clientGet T "ReplicaSetGet"%go
+  else if decide (T = go.PointerType api_core_v1.Pod) then
+    clientGet T "PodGet"%go
+  else if decide (T = go.PointerType api_core_v1.PersistentVolumeClaim) then
+    clientGet T "PersistentVolumeClaimGet"%go
+  else if decide (T = go.PointerType api_apps_v1.StatefulSet) then
+    clientGet T "StatefulSetGet"%go
+  else
+    (λ: "c" "ctx" "name" "opts", Panic "unsupported Kubernetes object type")%V.
+
+(* Trusted Go equivalent:
+
    func (c *Client[T]) Create(ctx context.Context, obj T, opts metav1.CreateOptions) (T, error) {
        _ = ctx
        _ = opts

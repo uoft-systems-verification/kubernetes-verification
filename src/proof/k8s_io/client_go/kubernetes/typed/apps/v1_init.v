@@ -1,3 +1,12 @@
+From New.proof Require Export context.
+From New.proof.k8s_io.api.apps Require Export v1_init.
+From New.proof.k8s_io.api.autoscaling Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export watch_init.
+From New.proof.k8s_io.client_go.applyconfigurations.apps Require Export v1_init.
+From New.proof.k8s_io.client_go.applyconfigurations.autoscaling Require Export v1_init.
+From New.proof.k8s_io.client_go Require Export rest_init.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
 From New.proof Require Import proof_prelude.
 

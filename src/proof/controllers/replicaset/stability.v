@@ -9,6 +9,16 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
+Module client_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
+Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
+Module client_gentype := code.k8s_io.client_go.gentype.gentype.
+Module generic_listers := code.k8s_io.client_go.listers.listers.
+Module trusted_client_apps_v1 := trusted_code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
+Module trusted_client_gentype := trusted_code.k8s_io.client_go.gentype.gentype.
+Module trusted_app_listers := trusted_code.k8s_io.client_go.listers.apps.v1.v1.
+Module trusted_generic_listers := trusted_code.k8s_io.client_go.listers.listers.
+Transparent client_gentype.Client.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -18,6 +28,18 @@ Collection W := sem + package_sem.
   code.controllers.replicaset.replicaset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
   code.controllers.replicaset.replicaset.import_controller_Assumption.
+#[local] Instance clientset_sem : kubernetes.Assumptions :=
+  code.controllers.replicaset.replicaset.import_kubernetes_Assumption.
+#[local] Instance client_core_v1_sem : client_core_v1.Assumptions :=
+  kubernetes.import_core_v1_Assumption.
+#[local] Instance client_apps_v1_sem : client_apps_v1.Assumptions :=
+  kubernetes.import_apps_v1_Assumption.
+#[local] Instance client_gentype_sem : client_gentype.Assumptions :=
+  client_core_v1.import_gentype_Assumption.
+#[local] Instance app_listers_sem : app_listers.Assumptions :=
+  code.controllers.replicaset.replicaset.import_listers_apps_v1_Assumption.
+#[local] Instance generic_listers_sem : generic_listers.Assumptions :=
+  app_listers.import_listers_Assumption.
 #[local] Instance runtime_sem : code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions :=
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
@@ -140,11 +162,28 @@ Proof.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
-  wp_auto.
+  wp_pures.
+  wp_alloc_auto.
+  rewrite exception_do_unseal /exception_do_def.
+  wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
+  wp_alloc_auto. wp_pures.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure. wp_pure.
+  wp_load. wp_pure.
+  wp_bind (null @! (go.PointerType app_listers.replicaSetLister) @! "ReplicaSets" #namespace)%E.
+  wp_method_call. rewrite /trusted_app_listers.replicaSetLister__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /trusted_generic_listers.ResourceIndexer__Getⁱᵐᵖˡ decide_True; try reflexivity.
+  rewrite /trusted_generic_listers.resourceIndexerGet. wp_pures.
+  wp_auto.
   wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag]").
   { iFrame "#".
     iPureIntro.
@@ -159,6 +198,8 @@ Proof.
     exact Hrs_get_spec_valid. }
   assert (ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec')) as Hrs_spec_valid.
   { rewrite Hget_Hspec_eq. exact Hrs_get_spec_valid. }
+  wp_auto.
+  rewrite decide_True; try reflexivity.
   wp_auto.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
@@ -284,6 +325,7 @@ Proof.
   { rewrite /owner_ref_key /ReplicaSetV.key /ReplicaSetV.meta_key /ReplicaSetV.kind. done. }
   iEval (rewrite Howner_key_eq -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite Howner_key_eq -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
+  rewrite return_val_unseal /return_val_def. wp_auto.
   iApply ("HΦ" $! interface.nil).
   rewrite /owned_resources /=.
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hown_pod_meta_frags
