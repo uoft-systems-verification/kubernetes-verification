@@ -289,7 +289,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:162:6 *)
+   go: deployment.go:163:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -310,7 +310,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:168:6 *)
+   go: deployment.go:169:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "oldRSs") in
@@ -345,7 +345,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:183:6 *)
+   go: deployment.go:184:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -388,14 +388,18 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
 (* filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
    points at the deployment.
 
-   Fetched through the replicaSetController index rather than by listing the
-   namespace and filtering in Go, mirroring controllers/common's
-   FilterPodsByOwner. Listing cannot be related back to the deployment's
-   children fragment — the list spec is fragment-free — whereas the index is
-   keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
-   §3.2.
+   TODO: restore the upstream shape. Upstream's getReplicaSetsForDeployment
+   lists the ReplicaSets in the deployment's namespace and reconciles
+   ControllerRefs through a ControllerRefManager; this fetches them through the
+   replicaSetController index instead, the way controllers/common's
+   FilterPodsByOwner fetches Pods. The reason is a proof one: the model's
+   listing specifications hand back deep copies owned independently of the
+   store invariant, so nothing relates a listed object to the ghost fragment
+   recording the deployment's children, whereas the index is keyed by exactly
+   the owner reference that fragment records. Once the listing specifications
+   carry fragments, this can go back to listing and filtering in Go.
 
-   go: deployment.go:208:6 *)
+   go: deployment.go:213:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -445,7 +449,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("result" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:226:6 *)
+(* go: deployment.go:231:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in

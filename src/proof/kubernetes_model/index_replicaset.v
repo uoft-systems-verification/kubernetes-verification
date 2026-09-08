@@ -17,7 +17,7 @@ Local Set Default Proof Using "All".
 (* they hand back deep copies owned independently of the invariant,  *)
 (* so nothing relates the returned objects to the parent's           *)
 (* own_children_frag. The index is keyed by exactly that owner       *)
-(* reference, so it can. See notes/deployment-spec-aug-26.md §3.2.   *)
+(* reference, so it can.                                            *)
 (*                                                                   *)
 (* Simpler than the Pod index in one respect: the Deployment         *)
 (* controller never deletes ReplicaSets, so there is no              *)

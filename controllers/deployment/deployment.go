@@ -131,10 +131,11 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 			Name:            d.Name + "-" + podTemplateSpecHash,
 			Namespace:       d.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(d, apps.SchemeGroupVersion.WithKind("Deployment"))},
-			// A second clone rather than newRSTemplate.Labels: upstream shares
-			// one map between the ReplicaSet's own labels and its template's,
-			// but a deep-ownership predicate cannot hold the same map twice.
-			// The contents are identical either way.
+			// TODO: share one map with newRSTemplate.Labels, as upstream does.
+			// Cloning a second time is a proof accommodation: deep ownership of
+			// the ReplicaSet would otherwise have to hold the same map both as
+			// the object's labels and as its template's, and a separating
+			// conjunction cannot. The contents are identical either way.
 			Labels: cloneAndAddLabel(d.Spec.Template.Labels, deploymentUniqueLabelKey, podTemplateSpecHash),
 		},
 		Spec: apps.ReplicaSetSpec{
@@ -199,12 +200,16 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 // filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
 // points at the deployment.
 //
-// Fetched through the replicaSetController index rather than by listing the
-// namespace and filtering in Go, mirroring controllers/common's
-// FilterPodsByOwner. Listing cannot be related back to the deployment's
-// children fragment — the list spec is fragment-free — whereas the index is
-// keyed by exactly that owner reference. See notes/deployment-spec-aug-26.md
-// §3.2.
+// TODO: restore the upstream shape. Upstream's getReplicaSetsForDeployment
+// lists the ReplicaSets in the deployment's namespace and reconciles
+// ControllerRefs through a ControllerRefManager; this fetches them through the
+// replicaSetController index instead, the way controllers/common's
+// FilterPodsByOwner fetches Pods. The reason is a proof one: the model's
+// listing specifications hand back deep copies owned independently of the
+// store invariant, so nothing relates a listed object to the ghost fragment
+// recording the deployment's children, whereas the index is keyed by exactly
+// the owner reference that fragment records. Once the listing specifications
+// carry fragments, this can go back to listing and filtering in Go.
 func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
 	result := []*apps.ReplicaSet{}
 	key := controller.PodControllerIndexKey(d.Namespace,

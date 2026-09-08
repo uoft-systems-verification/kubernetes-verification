@@ -109,7 +109,7 @@ Definition owned_resources γ (d : DeploymentV.t)
 (* The hypotheses both triples carry. [unique_new_replica_set] is the
    no-collision assumption: findNewReplicaSet returns the *first* template
    match, so with two matches a sync could pick either and stability would be
-   false as stated -- notes/questions-08-20.md Q2. *)
+   false as stated. *)
 Definition input_requirement (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     (children_keys : gset KKey.t) (namespace name : go_string) : Prop :=
   DeploymentV.key d = {|

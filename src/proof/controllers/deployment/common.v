@@ -1086,8 +1086,10 @@ Qed.
 
    This is a precondition, not a theorem: [findNewReplicaSet] returns the
    *first* match, so with two matching ReplicaSets a sync could pick either and
-   the choice would not be stable across syncs. See notes/deployment-spec.md
-   §2b. Carried by [wp_rollout] and [wp_syncDeployment]. *)
+   the choice would not be stable across syncs. It holds in practice because
+   the new ReplicaSet's name is a hash of the template, and deployment.go's
+   header records that hash collisions are assumed away. Carried by
+   [wp_rollout] and [wp_syncDeployment]. *)
 Definition unique_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     : Prop :=
   ∀ i j rs_i rs_j,

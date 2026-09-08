@@ -209,7 +209,8 @@ Qed.
    The IsAlreadyExists path in the Go code re-reads the object rather than
    failing. Under the no-collision assumption that object holds the same
    template, so it is folded into the "adopted" branch here rather than given a
-   third outcome — see deployment.go's header and notes/deployment-spec.md §2b. *)
+   third outcome. deployment.go's header lists hash-collision handling among
+   the features this controller does not model. *)
 Lemma wp_getNewReplicaSet γ model_l d_l (d : DeploymentV.t)
     sl ptrs (rss : list ReplicaSetV.t) (children : gset KKey.t)
     dq_d dq_sl dq_rss :
@@ -883,9 +884,10 @@ Lemma wp_rollout γ model_l d_l (d : DeploymentV.t)
           d.(DeploymentV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hnew_rs_name_valid" ∷ ⌜ valid_dns1123_subdomain (new_rs_name d) ⌝ ∗
       "%Hsel_adm" ∷ ⌜ deployment_selector_admissible d ⌝ ∗
-      (* The no-collision assumption, made explicit. Without it findNewReplicaSet
-         may pick either of two matching ReplicaSets and stability fails —
-         see notes/deployment-spec.md §2b. *)
+      (* The no-collision assumption, made explicit: at most one of [rss]
+         matches the deployment's template. Without it findNewReplicaSet may
+         pick either of two matching ReplicaSets, so the choice is not stable
+         across syncs and stability fails as stated. *)
       "%Hunique_new" ∷ ⌜ unique_new_replica_set d rss ⌝ ∗
       "Hreserved" ∷ own_available_reserved_frag γ 1 (new_rs_key d) ∗
       "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
