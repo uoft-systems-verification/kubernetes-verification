@@ -970,26 +970,12 @@ Proof.
     assert (rss !! i = Some new_rs) as Hrss_i.
     { unfold find_new_replica_set in Hfind.
       apply list_find_Some in Hfind as (H1 & _ & _). exact H1. }
-    (* Reading newRS.UID needs the object open, but only for the read. *)
-    iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
-      [exact Hptr|exact Hrss_i|].
-    iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
-      "(%Hnn & Htm & Hom & Hsp & Hst)".
-    iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
-    iNamedPrefix "Hmeta" "Hm_".
-    wp_auto.
-    rewrite Hm_Hdeepown_uid.
-    iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
-    iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' new_rs) dq_rss)
-      with "[Hmeta_parts]" as "Hmeta".
-    { iNamed "Hmeta_parts". iFrame. done. }
-    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
-      with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hthis".
-    { iExists meta_c. iFrame. }
-    iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
-    wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid new_rs) dq_sl dq_rss
+    (* The new ReplicaSet is already one of [rss]; findOldReplicaSets reads its
+       UID out of the list rather than being handed a second copy. *)
+    wp_apply (wp_findOldReplicaSets sl ptrs rss new_rs_l new_rs dq_sl dq_rss dq_rss
       with "[$Hsl $Hrss]").
-    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+    { iLeft. iPureIntro. exists i. split; [exact Hptr|exact Hrss_i]. }
+    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss & _)".
     wp_auto.
     (* Split the fragments: the new ReplicaSet, and everything else. Distinct
        UIDs make "not old" exactly the new one. *)
@@ -1081,23 +1067,18 @@ Proof.
       iApply (own_meta_frag_key_distinct_list with "Hmetas Hnew_meta"). }
     iEval (rewrite -Hnew_rs_key) in "Hnew_meta".
     iEval (rewrite -Hnew_rs_key) in "Hnew_spec".
-    (* Read newRS.UID off the created object. *)
-    iPoseProof (ReplicaSetV.deepown_l_split with "Hnew_rs") as
-      "(%Hnn & Htm & Hom & Hsp & Hst)".
-    iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
-    iNamedPrefix "Hmeta" "Hm_".
-    wp_auto.
-    rewrite Hm_Hdeepown_uid.
-    iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
-    iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' new_rs) 1)
-      with "[Hmeta_parts]" as "Hmeta".
-    { iNamed "Hmeta_parts". iFrame. done. }
-    iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
-      with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hnew_rs".
-    { iExists meta_c. iFrame. }
-    wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid new_rs) dq_sl dq_rss
-      with "[$Hsl $Hrss]").
-    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+    (* The created ReplicaSet is not among [rss], so it is handed to
+       findOldReplicaSets directly. *)
+    wp_apply (wp_findOldReplicaSets sl ptrs rss new_rs_l new_rs dq_sl dq_rss 1
+      with "[$Hsl $Hrss Hnew_rs]").
+    { iRight. iFrame "Hnew_rs". }
+    iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss & Hnew_readable)".
+    (* It cannot have come back as the "already in the list" shape: every
+       element of [rss] has a different UID. *)
+    iDestruct "Hnew_readable" as "[%Hin|Hnew_rs]".
+    { exfalso. destruct Hin as (j & _ & Hj_rs).
+      rewrite Forall_lookup in Hfresh.
+      exact (Hfresh j new_rs Hj_rs eq_refl). }
     wp_auto.
     wp_apply (wp_reconcileNewReplicaSet γ model_l new_rs_l d_l new_rs d
       1 dq_d with "[$Hnew_rs $Hd $Hnew_meta $Hnew_spec]").

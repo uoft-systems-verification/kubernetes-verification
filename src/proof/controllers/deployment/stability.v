@@ -318,27 +318,12 @@ Proof.
   { unfold find_new_replica_set in Hfound.
     apply list_find_Some in Hfound as (H1 & _ & _). exact H1. }
   wp_auto_lc 1.
-  (* Reading newRS.UID needs the new ReplicaSet open, but only until the read
-     is done — findOldReplicaSets takes the bare UID, so nothing is owned twice. *)
-  iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
-    [exact Hptr|exact Hrss_i|].
-  iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
-    "(%Hnn & Htm & Hom & Hsp & Hst)".
-  iDestruct "Hom" as (meta_c) "[Hmeta_field Hmeta]".
-  iNamedPrefix "Hmeta" "Hm_".
-  wp_auto.
-  rewrite Hm_Hdeepown_uid.
-  iCombineNamed "Hm_Hdeepown_*" as "Hmeta_parts".
-  iAssert (ObjectMetaV.deepown meta_c (ReplicaSetV.ObjectMeta' found_rs) dq)
-    with "[Hmeta_parts]" as "Hmeta".
-  { iNamed "Hmeta_parts". iFrame. done. }
-  iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hnn
-    with "[$Htm $Hsp $Hst Hmeta_field Hmeta]") as "Hthis".
-  { iExists meta_c. iFrame. }
-  iDestruct ("Hrss_restore" with "Hthis") as "Hrss".
-  wp_apply (wp_findOldReplicaSets sl ptrs rss (rs_uid found_rs) dq_sl dq
+  (* The new ReplicaSet is one of [rss], so findOldReplicaSets reads its UID
+     out of the list rather than being handed a second copy of the object. *)
+  wp_apply (wp_findOldReplicaSets sl ptrs rss new_rs_l found_rs dq_sl dq dq
     with "[$Hsl $Hrss]").
-  iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss)".
+  { iLeft. iPureIntro. exists i. split; [exact Hptr|exact Hrss_i]. }
+  iIntros (old_sl) "(Hsl & Hold_sl & Hold_cap & Hrss & _)".
   wp_auto.
   (* reconcileNewReplicaSet: the new ReplicaSet is already at the deployment's
      count, so scaleReplicaSet takes its no-op path. *)
