@@ -84,69 +84,94 @@ Definition stability_fractions (dq : dfrac) : all_fractions :=
    bundle for stability. The progress postcondition cannot use it: its branches
    differ in the children set and in whether the reserved key is available or
    occupied, so it spells those out. *)
-(* TODO (separate PR): make the good-environment assumption explicit, and add
-   the [preservation_spec] that covers the bad case. Mirror
-   replicaset/top_level.v, whose [owned_resources] takes a [ready : bool] and
-   which pairs [progress_spec] (ready) with [preservation_spec] (not ready).
+(* THE GOOD-ENVIRONMENT ASSUMPTION, and what is still missing.
 
-   WHAT "GOOD ENVIRONMENT" MEANS HERE. [getNewReplicaSet] creates under the
+   [owned_resources] takes a [ready : bool], mirroring
+   replicaset/top_level.v. [progress_spec] below is stated at [true]: the
+   controller makes progress *provided nothing in the environment forces it to
+   wait for a deletion*. Two things can, and [ready] covers both.
+
+   AXIS 1 -- the name reservation. [getNewReplicaSet] creates under the
    deterministic name <deployment>-<template-hash>. The model gives every name
    a reservation with three states (kubernetes_model/inv.v:46-56):
 
        Available | Occupied uid | Deleting uid
 
-   [owned_resources] below holds [own_available_reserved_frag], i.e. it assumes
-   [Available]. [Deleting uid] is reachable: this controller never deletes
-   ReplicaSets, so an external actor -- a user, garbage collection, or the
-   revision-history cleanup this simplified controller drops -- can delete the
-   object sitting at that name. Until deletion completes the name is not free,
-   the create returns AlreadyExists, and the controller can only wait. That is
-   a *definite* environment action, which is exactly the situation preservation
-   is for.
+   [Deleting uid] is reachable: this controller never deletes ReplicaSets, so
+   an external actor -- a user, garbage collection, or the revision-history
+   cleanup this simplified controller drops -- can delete the object sitting at
+   that name. Until deletion completes the name is not free, the create returns
+   AlreadyExists, and the controller can only wait.
 
-   So: ready = the new ReplicaSet's name reservation is [Available], not
-   [Deleting]. That is the analogue of the ReplicaSet controller's
-   [own_terminating_children_frag ... Quiescent].
+   AXIS 2 -- terminating children. A child ReplicaSet carrying a deletion
+   timestamp is one the controller must wait out before the rollout can be
+   realized. This is NOT implied by holding fragments for [rss], contrary to
+   what an earlier version of this comment claimed. The argument given there
+   was that [kview.own_meta_valid] yields [DeletionTimestamp = None] from any
+   metadata fragment, and [Hdom_eq] forces [rss] to be exactly the
+   ReplicaSet-kinded children. The first half is true and the second is not:
+   [own_children_frag] records the keys of the *living* children only
+   (algebra/cview.v:124), so a terminating child is missing from
+   [children_keys] altogether rather than present and visibly terminating.
+   Fragments for [rss] therefore say every object in [rss] is living, and say
+   nothing about children outside it.
 
-   Two things that are NOT part of it, because ownership already implies them:
-     - No child ReplicaSet is terminating. [kview.own_meta_valid]
-       (algebra/kview.v:3820) yields [DeletionTimestamp = None] from any
-       metadata fragment at any fraction, and [Hdom_eq] forces [rss] to be
-       exactly the ReplicaSet-kinded children.
+   That gap is load-bearing downstream: [filterReplicaSetsByOwner] reads
+   through the replicaSetController index, which filters by [obj_parent_ref]
+   and is blind to deletion timestamps, so it returns terminating children the
+   caller holds no fragment for. See the note on
+   [wp_State__ByIndex_replicaSetController] in
+   kubernetes_model/index_replicaset.v.
+
+   Not part of [ready], because ownership really does imply it:
      - No competing writer. Discharged structurally by [dep_rs_dq := 1].
 
-   WHAT IT TAKES, in dependency order:
+   TODO (separate PR): the [ready = false] half, in dependency order.
+   Item 1 is the blocker, and is the other half of the TODO at
+   kubernetes_model/create_named.v:701.
 
      1. [wp_State__ReplicaSetCreate_named] -- the Deleting variant of the named
         create, which does not exist yet. Mirror [wp_State__PodCreate_named]
         (kubernetes_model/create_named.v:610); the note at :704 there records
-        that only the Available variant was written. This is the blocker, and
-        the bulk of the work.
+        that only the Available variant was written.
      2. A second branch in [wp_getNewReplicaSet] for the AlreadyExists return.
         Note the Go then calls [ReplicaSetGet] and hands the result to
         [rollout], which would scale a terminating object -- that path is
-        currently assumed away, not verified, so expect to find out what it
-        does.
-     3. [ready : bool] on [owned_resources], selecting
-        [own_available_reserved_frag] against
-        [∃ status, own_reserved_frag ... status].
-     4. [preservation_spec] at ready = false, concluding
-        [match_distance d rss' ≤ match_distance d rss].
+        currently assumed away, not verified.
+     3. [preservation_spec] at [ready = false], concluding
+        [match_distance d rss' <= match_distance d rss].
 
-   Until then the triples below are sound but silent about their premise: they
-   hold under an environment assumption that is baked into the ownership bundle
-   rather than written down. *)
+   So the premise is now written down rather than baked silently into the
+   ownership bundle; what remains is the [false] half. *)
 Definition owned_resources γ (d : DeploymentV.t)
     (rss : list ReplicaSetV.t) (children_keys : gset KKey.t)
-    uid kmeta (fractions : all_fractions) : iProp Σ :=
+    uid kmeta (fractions : all_fractions) (ready : bool) : iProp Σ :=
   "Hown_d_meta" ∷ own_meta_frag γ (DeploymentV.key d) uid
     fractions.(dep_dq) kmeta ∗
   "Hown_d_spec" ∷ own_spec_frag γ (DeploymentV.key d) uid fractions.(dep_dq)
     (ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')) ∗
-  "Hreserved" ∷ own_available_reserved_frag γ fractions.(dep_children_dq)
-    (new_rs_key d) ∗
+  (* Good environment, axis 1: the name the create targets is free, not
+     mid-deletion. *)
+  "Hreserved" ∷ (if ready then
+      own_available_reserved_frag γ fractions.(dep_children_dq) (new_rs_key d)
+    else
+      ∃ status, own_reserved_frag γ (new_rs_key d)
+        fractions.(dep_children_dq) status)%I ∗
   "Hown_children" ∷ own_children_frag γ (DeploymentV.key d) uid
     fractions.(dep_children_dq) children_keys ∗
+  (* Good environment, axis 2: no child ReplicaSet is mid-deletion. Not
+     implied by the fragments above, contrary to what an earlier draft of
+     this file claimed: [own_children_frag] records only the *living*
+     children (algebra/cview.v:124), so a terminating child is absent from
+     [children_keys] rather than present-and-visible, and [Hdom_eq] cannot
+     see it either. The index the controller reads through filters by
+     [obj_parent_ref], which is blind to deletion timestamps, so it returns
+     terminating children the caller holds no fragment for. *)
+  "Hown_terminating_children" ∷ (if ready then
+      own_terminating_children_frag γ (DeploymentV.key d) uid Quiescent
+    else
+      ∃ control_phase,
+        own_terminating_children_frag γ (DeploymentV.key d) uid control_phase)%I ∗
   "Hown_frags" ∷ ([∗ list] rs ∈ rss,
     own_meta_frag γ (ReplicaSetV.key rs)
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(dep_rs_dq)
@@ -248,8 +273,10 @@ Definition progress_spec γ model_l (namespace name : go_string)
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+      (* Progress is claimed only in a good environment: [true]. The
+         [preservation_spec] that covers [false] is still to be written. *)
       "Hresources" ∷ owned_resources γ d rss children_keys uid kmeta
-        (mutating_fractions dq_d) ∗
+        (mutating_fractions dq_d) true ∗
       "%Hinput" ∷ ⌜ input_requirement d rss children_keys namespace name ⌝
   }}}
     @! deployment.syncDeployment #namespace #name
@@ -257,6 +284,11 @@ Definition progress_spec γ model_l (namespace name : go_string)
       "Hown_d_meta" ∷ own_meta_frag γ (DeploymentV.key d) uid dq_d kmeta ∗
       "Hown_d_spec" ∷ own_spec_frag γ (DeploymentV.key d) uid dq_d
         (ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')) ∗
+      (* Handed back without a phase claim, as replicaset/top_level.v's
+         [progress_spec] hands back [owned_resources ... false]: the sync may
+         itself have moved the parent out of [Quiescent]. *)
+      "Hown_terminating_children" ∷ (∃ control_phase,
+        own_terminating_children_frag γ (DeploymentV.key d) uid control_phase) ∗
       "Hown_frags" ∷ ([∗ list] rs ∈ rss_post,
         own_meta_frag γ (ReplicaSetV.key rs)
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -312,13 +344,14 @@ Definition stability_spec γ model_l (namespace name : go_string)
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
       "Hresources" ∷ owned_resources γ d rss children_keys uid kmeta
-        (stability_fractions dq) ∗
+        (stability_fractions dq) true ∗
       "%Hinput" ∷ ⌜ input_requirement d rss children_keys namespace name ⌝ ∗
       "%Hmatch" ∷ ⌜ deployment_realized d rss ⌝
   }}}
     @! deployment.syncDeployment #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ d rss children_keys uid kmeta (stability_fractions dq)
+        true
   }}}.
 
 End specs.

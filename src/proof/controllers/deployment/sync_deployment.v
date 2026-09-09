@@ -74,6 +74,13 @@ Lemma wp_filterReplicaSetsByOwner γ model_l d_l (d : DeploymentV.t)
           filter (λ key, key.(KKey.Kind') = ReplicaSetV.kind) children_keys ⌝ ∗
       "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
         d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') children_dq children_keys ∗
+      (* Good environment: no child ReplicaSet is mid-deletion. The index
+         filters by [obj_parent_ref] and so would otherwise hand back a
+         terminating child that [rss] has no fragment for, and [Hview_perm]
+         below would be false. See index_replicaset.v. *)
+      "Hown_terminating_children" ∷ own_terminating_children_frag γ
+        (DeploymentV.key d) d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID')
+        Quiescent ∗
       "Hown_meta_frags" ∷ ([∗ list] rs ∈ rss,
         own_meta_frag γ (ReplicaSetV.key rs)
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq_rs
@@ -105,6 +112,9 @@ Lemma wp_filterReplicaSetsByOwner γ model_l d_l (d : DeploymentV.t)
                   d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID'))) rss' ⌝ ∗
       "Hown_children" ∷ own_children_frag γ (DeploymentV.key d)
         d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') children_dq children_keys ∗
+      "Hown_terminating_children" ∷ own_terminating_children_frag γ
+        (DeploymentV.key d) d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID')
+        Quiescent ∗
       "Hown_meta_frags" ∷ ([∗ list] rs ∈ rss,
         own_meta_frag γ (ReplicaSetV.key rs)
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq_rs
@@ -161,7 +171,8 @@ Proof.
   wp_apply (wp_State__ByIndex_replicaSetController
     γ model_l _ rss rs_dqs (DeploymentV.key d)
     d.(DeploymentV.ObjectMeta').(ObjectMetaV.UID') children_keys children_dq
-    with "[$Hown_meta_frags2 $Hown_spec_frags2 $Hown_children]").
+    with "[$Hown_meta_frags2 $Hown_spec_frags2 $Hown_children
+      $Hown_terminating_children]").
   { iFrame "#". iFrame "%". iPureIntro.
     rewrite /DeploymentV.key /DeploymentV.meta_key /=.
     rewrite Hdm_Hdeepown_namespace Hdm_Hdeepown_name Hdm_Hdeepown_uid. done. }
@@ -239,7 +250,8 @@ Proof.
     iEval (rewrite big_sepL2_replicate_r; [done|]) in "Hindex_Hown_meta_frags".
     iEval (rewrite big_sepL2_replicate_r; [done|]) in "Hindex_Hown_spec_frags".
     iFrame "Hd Hresult Hdeepown_l_rss Hindex_Hown_meta_frags
-      Hindex_Hown_spec_frags Hindex_Hown_children_frag".
+      Hindex_Hown_spec_frags Hindex_Hown_children_frag
+      Hindex_Hown_terminating_children_frag".
     iFrame "%".
 Qed.
 
@@ -375,14 +387,24 @@ Proof.
   { rewrite Huid_eq. symmetry.
     exact (f_equal ObjectMetaV.UID' Hget_Hmeta_eq). }
   iEval (rewrite Hkey_eq Huid_get) in "Hown_children".
+  iEval (rewrite Hkey_eq Huid_get) in "Hown_terminating_children".
   assert (new_rs_key d = new_rs_key d_get) as Hnew_key_eq
     by (apply new_rs_key_congr; [exact Hget_Hkey_eq|exact Hget_Hspec_eq]).
   iEval (rewrite Hnew_key_eq) in "Hreserved".
   iDestruct (big_sepL_sep with "Hown_frags") as "[Hown_meta_frags Hown_spec_frags]".
   wp_apply (wp_filterReplicaSetsByOwner γ model_l d_l d_get rss children_keys
-    1 1 1 with "[$Hget_Hdeepown_l $Hown_children $Hown_meta_frags $Hown_spec_frags]").
+    1 1 1 with "[$Hget_Hdeepown_l $Hown_children $Hown_terminating_children
+      $Hown_meta_frags $Hown_spec_frags]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (sl ptrs rss' dq') "Hfilter". iNamedPrefix "Hfilter" "Hf_".
+  (* Handed back without a phase claim, mirroring replicaset/top_level.v's
+     [progress_spec]: the caller learns the parent still has a terminating-
+     children fragment, not that it is still [Quiescent]. *)
+  iAssert (∃ control_phase,
+      own_terminating_children_frag γ (DeploymentV.key d) uid control_phase)%I
+    with "[Hf_Hown_terminating_children]" as "Hterm_out".
+  { iExists Quiescent. rewrite Hkey_eq Huid_get.
+    iFrame "Hf_Hown_terminating_children". }
   wp_auto.
   (* The deletion guard is unreachable: holding the metadata fragment means no
      deletion timestamp. *)
@@ -452,7 +474,7 @@ Proof.
        [rss_out] is the whole answer and no key was added. *)
     iApply ("HΦ" $! rss_out).
     rewrite -Hkey_eq -Huid_get -Hnew_key_eq.
-    iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hpost_frags".
+    iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hterm_out Hpost_frags".
     iSplitR; [iPureIntro; exact Hkdeletion|].
     iSplitR.
     { iPureIntro. left. eapply deployment_realized_spec_eq;
@@ -477,6 +499,7 @@ Proof.
     rewrite -Hkey_eq -Huid_get -Hnew_key_eq.
     iSplitL "Hget_Hown_meta_frag"; [iFrame "Hget_Hown_meta_frag"|].
     iSplitL "Hget_Hown_spec_frag"; [iFrame "Hget_Hown_spec_frag"|].
+    iSplitL "Hterm_out"; [iFrame "Hterm_out"|].
     iSplitL "Hpost_frags Hnew_meta Hnew_spec".
     { iApply big_sepL_app. iFrame "Hpost_frags".
       simpl. rewrite Hnew_key Hnew_key_eq. iFrame "Hnew_meta Hnew_spec". }

@@ -420,9 +420,11 @@ Proof.
   { rewrite Huid_eq. symmetry.
     exact (f_equal ObjectMetaV.UID' Hget_Hmeta_eq). }
   iEval (rewrite Hkey_eq Huid_get) in "Hown_children".
+  iEval (rewrite Hkey_eq Huid_get) in "Hown_terminating_children".
   iDestruct (big_sepL_sep with "Hown_frags") as "[Hown_meta_frags Hown_spec_frags]".
   wp_apply (wp_filterReplicaSetsByOwner γ model_l d_l d_get rss children_keys
-    1 dq dq with "[$Hget_Hdeepown_l $Hown_children $Hown_meta_frags $Hown_spec_frags]").
+    1 dq dq with "[$Hget_Hdeepown_l $Hown_children $Hown_terminating_children
+      $Hown_meta_frags $Hown_spec_frags]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (sl ptrs rss' dq') "Hfilter". iNamedPrefix "Hfilter" "Hf_".
   wp_auto.
@@ -462,7 +464,9 @@ Proof.
   iApply ("HΦ" $! interface.nil).
   rewrite /owned_resources /=.
   iEval (rewrite -Hkey_eq -Huid_get) in "Hf_Hown_children".
-  iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hreserved Hf_Hown_children".
+  iEval (rewrite -Hkey_eq -Huid_get) in "Hf_Hown_terminating_children".
+  iFrame "Hget_Hown_meta_frag Hget_Hown_spec_frag Hreserved Hf_Hown_children
+    Hf_Hown_terminating_children".
   iSplitL; [|iPureIntro; exact Hkeys_nodup].
   iApply big_sepL_sep. iFrame "Hf_Hown_meta_frags Hf_Hown_spec_frags".
 Qed.
