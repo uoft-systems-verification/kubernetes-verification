@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export index.
+From New.proof.kubernetes_model Require Export by_index_pod_controller.
 From New.proof Require Export util.
 From New.proof.controllers Require Export common_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.

@@ -1,6 +1,6 @@
 
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export get index create delete.
+From New.proof.kubernetes_model Require Export get by_index_pod_controller create delete.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
