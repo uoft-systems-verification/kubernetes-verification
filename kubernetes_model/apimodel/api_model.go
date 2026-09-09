@@ -155,12 +155,17 @@ func (s *State) objListBySelector(kind, namespace string, selector labels.Select
 // ReplicaSetControllerIndex is the name for the ReplicaSet store's index
 // function, mirroring controller.PodControllerIndex for Pods.
 //
-// It cannot be imported from k8s.io/kubernetes: no such index exists upstream.
-// controller.PodControllerIndex ("podController") is the only controller-ref
-// index Kubernetes defines, and the real Deployment controller does not use an
-// index at all -- getReplicaSetsForDeployment lists ReplicaSets through a
-// lister and reconciles ControllerRefs itself. So this name is new, and it is
-// declared here because k8s.io/kubernetes is a submodule that is not modified.
+// It cannot be imported from k8s.io/kubernetes. Upstream does index ReplicaSets
+// by controller reference, but that index is unexported: replicaset's
+// controllerUIDIndex ("controllerUID"), registered on the rsInformer in
+// NewBaseController and read by getReplicaSetsWithSameController. It is also a
+// different index: it keys on the bare controllerRef.UID and indexes nothing at
+// all when the ReplicaSet has no controller, whereas the key used here is
+// namespace/Kind/Name/UID with the namespace itself as the orphan bucket. The
+// real Deployment controller uses no index -- getReplicaSetsForDeployment lists
+// ReplicaSets through a lister and reconciles ControllerRefs itself. So this
+// name is new, and it is declared here because k8s.io/kubernetes is a submodule
+// that is not modified.
 //
 // Only the name is new. The key function is upstream's:
 // controller.PodControllerIndexKey builds namespace/Kind/Name/UID from any
