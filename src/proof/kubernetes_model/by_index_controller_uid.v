@@ -12,8 +12,8 @@ Definition replica_set_has_controller_uid (uid : go_string) (rs : ReplicaSetV.t)
   ∃ parent_key, obj_parent_ref (KObjectV.ReplicaSet rs) = Some (parent_key, uid).
 
 Lemma wp_index_of_controllerUID i rs dq :
-  ReplicaSetV.valid rs →
   {{{ is_pkg_init apimodel ∗
+      "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "Hrs" ∷ KObjectV.deepown_i i (KObjectV.ReplicaSet rs) dq
   }}}
     @! apimodel.index_of #"controllerUID"%go #(interface.ok i)
@@ -23,7 +23,6 @@ Lemma wp_index_of_controllerUID i rs dq :
       "%Hvalues" ∷ ⌜ Forall (λ uid, replica_set_has_controller_uid uid rs) values ⌝
   }}}.
 Proof.
-  intros Hvalid.
   wp_start as "H". iNamed "H".
   iAssert (is_pkg_init v1) as "#Hmeta_init".
   { iPkgInit. }
@@ -124,18 +123,14 @@ Local Lemma wp_State__ByIndex_controllerUID_au γ l controller_uid :
     |={⊤,∅}=>
       "Hclose" ∷ (∀ sl interfaces replica_sets,
         "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
-        "Hreplica_sets" ∷ ([∗ list] i;rs ∈ interfaces;replica_sets,
-          KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
+        "Hreplica_sets" ∷ ([∗ list] i;rs ∈ interfaces;replica_sets, KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
         "%Hvalid" ∷ ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
         "%Hextra_valid" ∷ ⌜ Forall ReplicaSetV.extra_valid replica_sets ⌝ ∗
-        "%Hcontroller_uid" ∷
-          ⌜ Forall (replica_set_has_controller_uid controller_uid)
-            replica_sets ⌝ ∗
+        "%Hcontroller_uid" ∷ ⌜ Forall (replica_set_has_controller_uid controller_uid) replica_sets ⌝ ∗
         "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> replica_sets) ⌝
         ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V)
   ) -∗
-  WP l @! (go.PointerType apimodel.State) @! "ByIndex"
-    #"ReplicaSet"%go #"controllerUID"%go #controller_uid {{ Φ }}.
+  WP l @! (go.PointerType apimodel.State) @! "ByIndex" #"ReplicaSet"%go #"controllerUID"%go #controller_uid {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hisk & Hau)". iNamed "Hisk".
   iAssert (is_pkg_init sync) as "#Hsync".
@@ -251,8 +246,8 @@ Proof.
     iPoseProof (big_sepL2_head_tail _ _ _ this_interface this_rs with
       "Hremaining") as "[Hthis Hremaining]".
     { split; rewrite lookup_drop Nat.add_0_r; done. }
-    wp_apply (wp_index_of_controllerUID this_interface this_rs 1
-      Hthis_valid with "[$Hpkg $Hthis]").
+    wp_apply (wp_index_of_controllerUID this_interface this_rs 1 with
+      "[$Hpkg $Hthis //]").
     iIntros (values_sl values) "(Hvalues_sl & Hthis & %Hvalues_match)".
     wp_auto.
     wp_alloc j_ptr as "Hj_ptr". wp_auto.
@@ -367,17 +362,13 @@ Lemma wp_State__ByIndex_controllerUID γ l controller_uid :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l
   }}}
-    l @! (go.PointerType apimodel.State) @! "ByIndex"
-      #"ReplicaSet"%go #"controllerUID"%go #controller_uid
+    l @! (go.PointerType apimodel.State) @! "ByIndex" #"ReplicaSet"%go #"controllerUID"%go #controller_uid
   {{{ sl interfaces replica_sets, RET (#sl, #interface.nil);
       "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
-      "Hreplica_sets" ∷ ([∗ list] i;rs ∈ interfaces;replica_sets,
-        KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
+      "Hreplica_sets" ∷ ([∗ list] i;rs ∈ interfaces;replica_sets, KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
       "%Hvalid" ∷ ⌜ Forall ReplicaSetV.valid replica_sets ⌝ ∗
       "%Hextra_valid" ∷ ⌜ Forall ReplicaSetV.extra_valid replica_sets ⌝ ∗
-      "%Hcontroller_uid" ∷
-        ⌜ Forall (replica_set_has_controller_uid controller_uid)
-          replica_sets ⌝ ∗
+      "%Hcontroller_uid" ∷ ⌜ Forall (replica_set_has_controller_uid controller_uid) replica_sets ⌝ ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> replica_sets) ⌝
   }}}.
 Proof.
