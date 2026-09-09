@@ -10,7 +10,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	appslisters "k8s.io/client-go/listers/apps/v1"
@@ -22,39 +21,31 @@ import (
 // * managing status
 // * concurrent creation/deletion
 
-// getReplicaSetsWithSameController returns the ReplicaSets in rs's namespace
-// that have the same controller owner as rs.
-func getReplicaSetsWithSameController(rs *apps.ReplicaSet) ([]*apps.ReplicaSet, error) {
+// getReplicaSetsWithSameController returns a list of ReplicaSets with the same
+// owner as the given ReplicaSet.
+func getReplicaSetsWithSameController(rs *apps.ReplicaSet) []*apps.ReplicaSet {
 	controllerRef := metav1.GetControllerOf(rs)
 	if controllerRef == nil {
-		return nil, nil
+		return nil
 	}
 
-	replicaSets, err := apimodel.ModelState.ReplicaSetList(rs.Namespace, labels.Everything())
+	objects, err := apimodel.ModelState.ByIndex("ReplicaSet", "controllerUID", string(controllerRef.UID))
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	relatedReplicaSets := make([]*apps.ReplicaSet, 0, len(replicaSets))
-	for _, relatedRS := range replicaSets {
-		relatedControllerRef := metav1.GetControllerOf(relatedRS)
-		if relatedControllerRef != nil && relatedControllerRef.UID == controllerRef.UID {
-			relatedReplicaSets = append(relatedReplicaSets, relatedRS)
-		}
+	relatedReplicaSets := make([]*apps.ReplicaSet, 0, len(objects))
+	for _, obj := range objects {
+		relatedReplicaSets = append(relatedReplicaSets, obj.(*apps.ReplicaSet))
 	}
-	return relatedReplicaSets, nil
+	return relatedReplicaSets
 }
 
 // getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
 // with the same controller owner as rs.
 func getIndirectlyRelatedPods(rs *apps.ReplicaSet) ([]*v1.Pod, error) {
-	relatedReplicaSets, err := getReplicaSetsWithSameController(rs)
-	if err != nil {
-		return nil, err
-	}
-
 	relatedPods := []*v1.Pod{}
 	seen := make(map[types.UID]*apps.ReplicaSet)
-	for _, relatedRS := range relatedReplicaSets {
+	for _, relatedRS := range getReplicaSetsWithSameController(rs) {
 		selector, err := metav1.LabelSelectorAsSelector(relatedRS.Spec.Selector)
 		if err != nil {
 			// An invalid selector does not match any pods.

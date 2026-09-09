@@ -55,15 +55,15 @@ Proof.
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
   wp_auto.
+  wp_apply wp_slice_literal. iSplitR; first done.
+  iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto.
+  wp_apply wp_map_make1 as (seen_l) "Hseen".
   wp_apply (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
     "[$Hrs $Hisk $Hglobal_l]").
   iIntros (related_sets_sl related_set_ptrs related_sets related_dq)
     "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid &
       %Hrelated_sets_extra_valid & Hrs)".
   wp_auto.
-  wp_apply wp_slice_literal. iSplitR; first done.
-  iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto.
-  wp_apply wp_map_make1 as (seen_l) "Hseen".
   iDestruct (own_slice_len with "Hrelated_sets_sl") as
     %(Hrelated_sets_len1 & Hrelated_sets_len2).
   iDestruct (big_sepL2_length with "Hrelated_sets") as

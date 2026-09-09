@@ -7,7 +7,6 @@ Require Export New.code.k8s_io.api.apps.v1.
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
-Require Export New.code.k8s_io.apimachinery.pkg.labels.
 Require Export New.code.k8s_io.apimachinery.pkg.types.
 Require Export New.code.k8s_io.client_go.kubernetes.
 Require Export New.code.k8s_io.client_go.listers.apps.v1.
@@ -36,10 +35,10 @@ Definition manageReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_st
 
 Definition syncReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
-(* getReplicaSetsWithSameController returns the ReplicaSets in rs's namespace
-   that have the same controller owner as rs.
+(* getReplicaSetsWithSameController returns a list of ReplicaSets with the same
+   owner as the given ReplicaSet.
 
-   go: replica_set.go:27:6 *)
+   go: replica_set.go:26:6 *)
 Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -48,68 +47,52 @@ Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
     (FuncResolve apis_meta_v1.GetControllerOf [] #()) "$a0") in
     do:  ("controllerRef" <-[go.PointerType apis_meta_v1.OwnerReference] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.PointerType apis_meta_v1.OwnerReference] "controllerRef") =⟨go.PointerType apis_meta_v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.OwnerReference) UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil, Convert go.untyped_nil go.error UntypedNil)
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil)
     else do:  #());;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "replicaSets" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Namespace"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) in
-    let: "$a1" := ((FuncResolve labels.Everything [] #()) #()) in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetList"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    let: "objects" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
+    let: "$a1" := #"controllerUID"%go in
+    let: "$a2" := (![types.UID] (StructFieldRef apis_meta_v1.OwnerReference "UID"%go (![go.PointerType apis_meta_v1.OwnerReference] "controllerRef"))) in
+    (MethodResolve (go.PointerType apimodel.State) "ByIndex"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("replicaSets" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0");;;
+    do:  ("objects" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil)
     else do:  #());;;
     let: "relatedReplicaSets" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "replicaSets") in
-    (FuncResolve go.len [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) "$a0")) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objects") in
+    (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
     do:  ("relatedReplicaSets" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0");;;
-    let: "$range" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "replicaSets") in
-    (let: "relatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    slice.for_range (go.PointerType api_apps_v1.ReplicaSet) "$range" (λ: "$key" "$value",
-      do:  ("relatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$value");;;
+    let: "$range" := (![go.SliceType (go.InterfaceType [])] "objects") in
+    (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
+      do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
-      let: "relatedControllerRef" := (GoAlloc (go.PointerType apis_meta_v1.OwnerReference) (GoZeroVal (go.PointerType apis_meta_v1.OwnerReference) #())) in
-      let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.ReplicaSet) apis_meta_v1.Object (![go.PointerType api_apps_v1.ReplicaSet] "relatedRS")) in
-      (FuncResolve apis_meta_v1.GetControllerOf [] #()) "$a0") in
-      do:  ("relatedControllerRef" <-[go.PointerType apis_meta_v1.OwnerReference] "$r0");;;
-      (if: Convert go.untyped_bool go.bool (((![go.PointerType apis_meta_v1.OwnerReference] "relatedControllerRef") ≠⟨go.PointerType apis_meta_v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.OwnerReference) UntypedNil)) && ((![types.UID] (StructFieldRef apis_meta_v1.OwnerReference "UID"%go (![go.PointerType apis_meta_v1.OwnerReference] "relatedControllerRef"))) =⟨types.UID⟩ (![types.UID] (StructFieldRef apis_meta_v1.OwnerReference "UID"%go (![go.PointerType apis_meta_v1.OwnerReference] "controllerRef")))))
-      then
-        let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "relatedReplicaSets") in
-        let: "$a1" := ((let: "$sl0" := (![go.PointerType api_apps_v1.ReplicaSet] "relatedRS") in
-        CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.ReplicaSet) "$sl0")]))) in
-        (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) "$a0" "$a1") in
-        do:  ("relatedReplicaSets" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0")
-      else do:  #())));;;
-    return: (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "relatedReplicaSets", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "relatedReplicaSets") in
+      let: "$a1" := ((let: "$sl0" := (TypeAssert (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+      CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.ReplicaSet) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) "$a0" "$a1") in
+      do:  ("relatedReplicaSets" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "relatedReplicaSets")).
 
 (* getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
    with the same controller owner as rs.
 
-   go: replica_set.go:49:6 *)
+   go: replica_set.go:45:6 *)
 Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
-    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "relatedReplicaSets" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
-    (FuncResolve getReplicaSetsWithSameController [] #()) "$a0") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("relatedReplicaSets" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.Pod)) UntypedNil, ![go.error] "err")
-    else do:  #());;;
     let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
     let: "$r0" := (CompositeLiteral (go.SliceType (go.PointerType api_core_v1.Pod)) (LiteralValue [])) in
     do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
     let: "seen" := (GoAlloc (go.MapType types.UID (go.PointerType api_apps_v1.ReplicaSet)) (GoZeroVal (go.MapType types.UID (go.PointerType api_apps_v1.ReplicaSet)) #())) in
     let: "$r0" := ((FuncResolve go.make1 [go.MapType types.UID (go.PointerType api_apps_v1.ReplicaSet)] #()) #()) in
     do:  ("seen" <-[go.MapType types.UID (go.PointerType api_apps_v1.ReplicaSet)] "$r0");;;
-    let: "$range" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "relatedReplicaSets") in
+    let: "$range" := (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
+    (FuncResolve getReplicaSetsWithSameController [] #()) "$a0") in
     (let: "relatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
     slice.for_range (go.PointerType api_apps_v1.ReplicaSet) "$range" (λ: "$key" "$value",
       do:  ("relatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$value");;;
@@ -159,7 +142,7 @@ Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
         do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")))));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "relatedPods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:78:6 *)
+(* go: replica_set.go:69:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (GoAlloc go.int "diff") in
@@ -182,7 +165,7 @@ Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getPodsRankedByRelatedPodsOnSameNode ranks each pod by the number of active
    related pods colocated on its node.
 
-   go: replica_set.go:90:6 *)
+   go: replica_set.go:81:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "relatedPods") in
@@ -216,7 +199,7 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {g
      let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
      CompositeLiteral controller.ActivePodsWithRanks (LiteralValue [KeyedElement (Some (KeyField "Pods"%go)) (ElementExpression (go.SliceType (go.PointerType api_core_v1.Pod)) "$v0"); KeyedElement (Some (KeyField "Rank"%go)) (ElementExpression (go.SliceType go.int) "$v1"); KeyedElement (Some (KeyField "Now"%go)) (ElementExpression apis_meta_v1.Time "$v2")]))).
 
-(* go: replica_set.go:104:6 *)
+(* go: replica_set.go:95:6 *)
 Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "activePods" "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -309,7 +292,7 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:138:6 *)
+(* go: replica_set.go:129:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -362,7 +345,7 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
 #[global] Instance info' : PkgInfo pkg_id.replicaset :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -372,7 +355,6 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (listers_apps_v1.initialize' #());;;
       do:  (kubernetes.initialize' #());;;
       do:  (types.initialize' #());;;
-      do:  (labels.initialize' #());;;
       do:  (apis_meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
       do:  (api_core_v1.initialize' #());;;
@@ -399,7 +381,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_api_core_v1_Assumption :: api_core_v1.Assumptions;
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_apis_meta_v1_Assumption :: apis_meta_v1.Assumptions;
-  #[global] import_labels_Assumption :: labels.Assumptions;
   #[global] import_types_Assumption :: types.Assumptions;
   #[global] import_kubernetes_Assumption :: kubernetes.Assumptions;
   #[global] import_listers_apps_v1_Assumption :: listers_apps_v1.Assumptions;
