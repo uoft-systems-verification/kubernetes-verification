@@ -37,6 +37,7 @@ translate = [
     "StatefulSet.GetGeneration",
     "StatefulSet.GetLabels",
     "StatefulSet.GetName",
+    "StatefulSet.GetOwnerReferences",
     "StatefulSet.GetResourceVersion",
     "StatefulSet.GetUID",
     "StatefulSet.SetCreationTimestamp",

@@ -36,7 +36,7 @@ Lemma wp_GetName_deepown l m dq:
       ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetName with "[$Hl]").
   iIntros "Hl".
@@ -68,7 +68,7 @@ Lemma wp_SetName_deepown l m name :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Name' := name |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetName with "[$Hl]").
   iIntros "Hl".
@@ -158,7 +158,7 @@ Lemma wp_GetGenerateName_deepown l m dq :
       ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetGenerateName with "[$Hl]").
   iIntros "Hl".
@@ -190,7 +190,7 @@ Lemma wp_GetUID_deepown l m dq :
       ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetUID with "[$Hl]").
   iIntros "Hl".
@@ -222,7 +222,7 @@ Lemma wp_GetResourceVersion_deepown l m dq :
       ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetResourceVersion with "[$Hl]").
   iIntros "Hl".
@@ -274,7 +274,7 @@ Lemma wp_GetNamespace_deepown l m dq:
       ObjectMetaV.deepown_l l m dq
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetNamespace with "[$Hl]").
   iIntros "Hl".
@@ -306,7 +306,7 @@ Lemma wp_SetNamespace_deepown l m namespace :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Namespace' := namespace |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetNamespace with "[$Hl]").
   iIntros "Hl".
@@ -338,7 +338,7 @@ Lemma wp_SetCreationTimestamp_deepown l m creation_timestamp pure_creation_times
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.CreationTimestamp' := pure_creation_timestamp |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l & Hdeepown_time) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l & Hdeepown_time) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetCreationTimestamp with "[$Hl]").
   iIntros "Hl".
@@ -384,7 +384,7 @@ Lemma wp_SetDeletionTimestamp_deepown l m deletion_timestamp pure_deletion_times
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionTimestamp' := pure_deletion_timestamp |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hdeletiontimestamp_none & Hdeletiontimestamp_some) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l & %Hdeletiontimestamp_none & Hdeletiontimestamp_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetDeletionTimestamp with "[$Hl]").
   iIntros "Hl".
@@ -430,7 +430,7 @@ Lemma wp_SetDeletionGracePeriodSeconds_deepown l m dgps pure_dgps :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.DeletionGracePeriodSeconds' := pure_dgps |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hdgps_none & Hdgps_some) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l & %Hdgps_none & Hdgps_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetDeletionGracePeriodSeconds with "[$Hl]").
   iIntros "Hl".
@@ -461,7 +461,7 @@ Lemma wp_SetSelfLink_deepown l m self_link :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.SelfLink' := self_link |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetSelfLink with "[$Hl]").
   iIntros "Hl".
@@ -492,7 +492,7 @@ Lemma wp_SetResourceVersion_deepown l m resource_version :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.ResourceVersion' := resource_version |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetResourceVersion with "[$Hl]").
   iIntros "Hl".
@@ -527,7 +527,7 @@ Lemma wp_GetFinalizers_deepown l m dq :
       end
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_GetFinalizers with "[$Hl]").
   iIntros "Hl".
@@ -576,7 +576,7 @@ Lemma wp_SetFinalizers_deepown l m fs pure_fs :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Finalizers' := pure_fs |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l & %Hfs_none & Hfs_some) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l & %Hfs_none & Hfs_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetFinalizers with "[$Hl]").
   iIntros "Hl".
@@ -607,7 +607,7 @@ Lemma wp_SetUID_deepown l m uid :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.UID' := uid |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hdeepown_l) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetUID with "[$Hl]").
   iIntros "Hl".
@@ -648,7 +648,7 @@ Lemma wp_GetOwnerReferences_deepown l m dq :
       end
   }}}.
 Proof.
-  iIntros (Φ) "(#Hinit & Hmeta) HΦ".
+  iIntros (Φ) "(#? & Hmeta) HΦ".
   iDestruct "Hmeta" as (c) "[Hl Hmeta]".
   wp_method_call. rewrite /v1.ObjectMeta__GetOwnerReferencesⁱᵐᵖˡ. wp_call.
   iNamed "Hmeta". wp_auto.
@@ -664,16 +664,13 @@ Proof.
     + rewrite Hrefs. iFrame.
 Qed.
 
-Definition is_controller_reference_of (m : ObjectMetaV.t)
-    (ref : OwnerReferenceV.t) : Prop :=
+Definition is_controller_reference_of (m : ObjectMetaV.t) (ref : OwnerReferenceV.t) : Prop :=
   ∃ refs,
     m.(ObjectMetaV.OwnerReferences') = Some refs ∧
     ref ∈ refs ∧
     ref.(OwnerReferenceV.Controller') = Some true.
 
-Definition owner_references_borrow (m : ObjectMetaV.t) (dq : dfrac)
-    (sl : slice.t)
-    (Restore : iProp Σ) : iProp Σ :=
+Definition owner_references_borrow (m : ObjectMetaV.t) (dq : dfrac) (sl : slice.t) (Restore : iProp Σ) : iProp Σ :=
   ⌜ sl = slice.nil ↔ m.(ObjectMetaV.OwnerReferences') = None ⌝ ∗
   match m.(ObjectMetaV.OwnerReferences') with
   | Some refs => ∃ cs,
@@ -686,10 +683,8 @@ Definition owner_references_borrow (m : ObjectMetaV.t) (dq : dfrac)
   | None => Restore
   end.
 
-Definition get_owner_references_capability (owner : interface.t)
-    (m : ObjectMetaV.t) (dq : dfrac)
-    (Own : iProp Σ) : iProp Σ :=
-  {{{ "Hinit" ∷ is_pkg_init v1 ∗
+Definition get_owner_references_capability (owner : interface.t) (m : ObjectMetaV.t) (dq : dfrac) (Own : iProp Σ) : iProp Σ :=
+  {{{ is_pkg_init v1 ∗
       "Hown" ∷ Own
   }}}
     (MethodResolve v1.Object "GetOwnerReferences" #owner) #()
@@ -697,26 +692,24 @@ Definition get_owner_references_capability (owner : interface.t)
 
 Lemma get_owner_references_capability_ObjectMeta meta_l m dq :
   ⊢ get_owner_references_capability
-    (interface.mk_ok (go.PointerType v1.ObjectMeta) #meta_l) m dq
-    (ObjectMetaV.deepown_l meta_l m dq).
+    (interface.mk_ok (go.PointerType v1.ObjectMeta) #meta_l) m dq (ObjectMetaV.deepown_l meta_l m dq).
 Proof.
   unfold get_owner_references_capability.
-  wp_start as "H".
-  iNamed "H".
+  wp_start as "H". iNamed "H".
   wp_auto.
-  wp_apply (wp_GetOwnerReferences_deepown with "[$Hinit $Hown]").
+  wp_apply (wp_GetOwnerReferences_deepown with "[$Hown]").
   iIntros (sl) "Hrefs".
   iApply "HΦ". iExact "Hrefs".
 Qed.
 
 Local Lemma wp_GetControllerOfNoCopy_general owner m dq (Own : iProp Σ) :
-  {{{ "Hinit" ∷ is_pkg_init v1 ∗
+  {{{ is_pkg_init v1 ∗
       "Hget" ∷ get_owner_references_capability owner m dq Own ∗
       "Hmeta" ∷ Own
   }}}
     @! v1.GetControllerOfNoCopy #owner
   {{{ controller_ref_l, RET #controller_ref_l;
-      (⌜ controller_ref_l = null ⌝ ∗
+      (⌜ controller_ref_l = null ∧ meta_parent_ref m = None ⌝ ∗
        Own) ∨
       (∃ controller_ref controller_c,
         ⌜ controller_ref_l ≠ null ∧ is_controller_reference_of m controller_ref ⌝ ∗
@@ -733,7 +726,7 @@ Proof.
   wp_alloc refs_ptr as "Hrefs_ptr".
   wp_pures.
   wp_load.
-  wp_apply ("Hget" with "[$Hinit $Hmeta]").
+  wp_apply ("Hget" with "[$Hmeta]").
   iIntros (refs_sl) "(%Hrefs_nil & Hrefs)". wp_auto.
   destruct m.(ObjectMetaV.OwnerReferences') as [refs|] eqn:Hrefs_some.
   2: {
@@ -749,7 +742,8 @@ Proof.
     wp_for "Hloop". wp_if_destruct; first word.
     clear I0. wp_auto.
     rewrite return_val_unseal /return_val_def. wp_auto.
-    iApply "HΦ". iLeft. iFrame. done. }
+    iApply "HΦ". iLeft. iFrame. iPureIntro. split; first done.
+    unfold meta_parent_ref. rewrite Hrefs_some. done. }
   iDestruct "Hrefs" as (cs) "(Hrefs_sl & Hrefs & Hmeta_restore)".
   iDestruct (own_slice_len with "Hrefs_sl") as %(Hrefs_len1 & Hrefs_len2).
   iDestruct (big_sepL2_length with "Hrefs") as %Hrefs_len.
@@ -759,9 +753,13 @@ Proof.
     "Hi" ∷ i_ptr ↦ source_i ∗
     "Hrefs_sl" ∷ refs_sl ↦*{dq} cs ∗
     "Hrefs" ∷ ([∗ list] c;ref ∈ cs;refs, OwnerReferenceV.deepown c ref dq) ∗
-    "%Hi_bound" ∷ ⌜ 0 ≤ sint.Z loop_i ≤ sint.Z (slice.len refs_sl) ⌝)%I.
+    "%Hi_bound" ∷ ⌜ 0 ≤ sint.Z loop_i ≤ sint.Z (slice.len refs_sl) ⌝ ∗
+    "%Hno_controller" ∷ ⌜ Forall (λ ref,
+      ref.(OwnerReferenceV.Controller') ≠ Some true)
+      (take (sint.nat loop_i) refs) ⌝)%I.
   iAssert I with "[Hloop_i i Hrefs_sl Hrefs]" as "Hloop".
-  { iExists (W64 0), (W64 0). iFrame. iPureIntro. word. }
+  { iExists (W64 0), (W64 0). iFrame. iPureIntro. split; first word.
+    constructor. }
   wp_for "Hloop". wp_if_destruct.
   - list_elem cs (sint.Z loop_i) as this_c.
     destruct (decide (0 ≤ sint.Z loop_i < sint.Z (slice.len refs_sl)))
@@ -848,7 +846,13 @@ Proof.
         iEval (rewrite (list_insert_id _ _ _ Hthis_c_lookup)) in "Hrefs_sl".
         iApply wp_for_post_do. wp_auto.
         iFrame "HΦ Hmeta_restore Hrefs_ptr".
-        iExists (word.add loop_i (W64 1)), loop_i. iFrame. iPureIntro. word.
+        iExists (word.add loop_i (W64 1)), loop_i. iFrame.
+        iPureIntro. split; first word.
+        assert (sint.nat (word.add loop_i (W64 1)) =
+          S (sint.nat loop_i)) as -> by word.
+        rewrite (take_S_r _ _ this_ref Hthis_ref_lookup).
+        apply Forall_app. split; first exact Hno_controller.
+        constructor; last constructor. rewrite Hcontroller. discriminate.
     + assert (this_c.(v1.OwnerReference.Controller') = null) as Hcontroller_null.
       { apply Hthis_Hdeepown_controller_none. done. }
       destruct (decide
@@ -870,22 +874,39 @@ Proof.
       iEval (rewrite (list_insert_id _ _ _ Hthis_c_lookup)) in "Hrefs_sl".
       iApply wp_for_post_do. wp_auto.
       iFrame "HΦ Hmeta_restore Hrefs_ptr".
-      iExists (word.add loop_i (W64 1)), loop_i. iFrame. iPureIntro. word.
+      iExists (word.add loop_i (W64 1)), loop_i. iFrame.
+      iPureIntro. split; first word.
+      assert (sint.nat (word.add loop_i (W64 1)) =
+        S (sint.nat loop_i)) as -> by word.
+      rewrite (take_S_r _ _ this_ref Hthis_ref_lookup).
+      apply Forall_app. split; first exact Hno_controller.
+      constructor; last constructor. rewrite Hcontroller. discriminate.
   - clear I.
     rewrite return_val_unseal /return_val_def. wp_auto.
-    iApply "HΦ". iLeft. iSplit; first done.
+    assert (sint.nat loop_i = length refs) as Hloop_len.
+    { rewrite -Hrefs_len Hrefs_len1. word. }
+    assert (take (sint.nat loop_i) refs = refs) as Htake.
+    { apply take_ge. lia. }
+    rewrite Htake in Hno_controller.
+    iApply "HΦ". iLeft. iSplit.
+    { iPureIntro. split; first done. unfold meta_parent_ref.
+      rewrite Hrefs_some.
+      assert (list_find (λ ref : OwnerReferenceV.t,
+        ref.(OwnerReferenceV.Controller') = Some true) refs = None) as Hfind.
+      { apply list_find_None. exact Hno_controller. }
+      rewrite Hfind. done. }
     iApply ("Hmeta_restore" $! cs). iFrame.
 Qed.
 
-Lemma wp_GetControllerOf_general owner m dq (Own : iProp Σ) :
-  {{{ "Hinit" ∷ is_pkg_init v1 ∗
+Lemma wp_GetControllerOf_general_exact owner m dq (Own : iProp Σ) :
+  {{{ is_pkg_init v1 ∗
       "Hget" ∷ get_owner_references_capability owner m dq Own ∗
       "Hmeta" ∷ Own
   }}}
     @! v1.GetControllerOf #owner
   {{{ controller_ref_l, RET #controller_ref_l;
       Own ∗
-      (⌜ controller_ref_l = null ⌝ ∨
+      (⌜ controller_ref_l = null ∧ meta_parent_ref m = None ⌝ ∨
        ∃ controller_ref,
          ⌜ controller_ref_l ≠ null ∧ is_controller_reference_of m controller_ref ⌝ ∗
          OwnerReferenceV.deepown_l controller_ref_l controller_ref 1)
@@ -895,10 +916,11 @@ Proof.
   wp_auto.
   wp_bind (@! v1.GetControllerOfNoCopy #owner)%E.
   wp_apply (wp_GetControllerOfNoCopy_general owner m dq Own with
-    "[$Hinit $Hget $Hmeta]").
+    "[$Hget $Hmeta]").
   iIntros (controller_ref_l) "Hresult".
   iDestruct "Hresult" as "[(%Hnull & Hmeta)|Hresult]".
-  - subst controller_ref_l. wp_auto. iApply "HΦ". iFrame "Hmeta".
+  - destruct Hnull as [Hnull Hparent_none].
+    subst controller_ref_l. wp_auto. iApply "HΦ". iFrame "Hmeta".
     iLeft. done.
   - iDestruct "Hresult" as (controller_ref controller_c)
       "(%Hcontroller & Href_l & Href & Hrestore)".
@@ -984,8 +1006,36 @@ Proof.
         iSplitL ""; done.
 Qed.
 
+Lemma wp_GetControllerOf_general owner m dq (Own : iProp Σ) :
+  {{{ is_pkg_init v1 ∗
+      "Hget" ∷ get_owner_references_capability owner m dq Own ∗
+      "Hmeta" ∷ Own
+  }}}
+    @! v1.GetControllerOf #owner
+  {{{ controller_ref_l, RET #controller_ref_l;
+      Own ∗
+      (⌜ controller_ref_l = null ⌝ ∨
+       ∃ controller_ref,
+         ⌜ controller_ref_l ≠ null ∧ is_controller_reference_of m controller_ref ⌝ ∗
+         OwnerReferenceV.deepown_l controller_ref_l controller_ref 1)
+  }}}.
+Proof.
+  iIntros (Φ) "(#? & H) HΦ". iNamed "H".
+  iAssert (is_pkg_init v1 ∗
+           get_owner_references_capability owner m dq Own ∗ Own)%I
+    with "[$Hget $Hmeta]" as "Hpre".
+  { iFrame "#". }
+  iApply (wp_GetControllerOf_general_exact owner m dq Own with "Hpre").
+  iNext.
+  iIntros (controller_ref_l) "(Hmeta & Hresult)".
+  iApply "HΦ". iFrame "Hmeta".
+  iDestruct "Hresult" as "[%Hnull|Hresult]".
+  - destruct Hnull as [Hnull Hparent_none]. iLeft. done.
+  - iRight. iExact "Hresult".
+Qed.
+
 Lemma wp_GetControllerOf owner meta_l m dq :
-  {{{ "Hinit" ∷ is_pkg_init v1 ∗
+  {{{ is_pkg_init v1 ∗
       "%Howner" ∷ ⌜ owner = interface.mk_ok (go.PointerType v1.ObjectMeta) #meta_l ⌝ ∗
       "Hmeta" ∷ ObjectMetaV.deepown_l meta_l m dq
   }}}
@@ -998,9 +1048,16 @@ Lemma wp_GetControllerOf owner meta_l m dq :
          OwnerReferenceV.deepown_l controller_ref_l controller_ref 1)
   }}}.
 Proof.
-  iIntros (Φ) "H HΦ". iNamed "H". subst owner.
+  iIntros (Φ) "(#? & H) HΦ". iNamed "H". subst owner.
   iPoseProof (get_owner_references_capability_ObjectMeta meta_l m dq) as "Hget".
-  iApply (wp_GetControllerOf_general with "[$Hinit $Hget $Hmeta]").
+  iAssert (is_pkg_init v1 ∗
+           get_owner_references_capability
+             (interface.mk_ok (go.PointerType v1.ObjectMeta) #meta_l) m dq
+             (ObjectMetaV.deepown_l meta_l m dq) ∗
+           ObjectMetaV.deepown_l meta_l m dq)%I
+    with "[$Hget $Hmeta]" as "Hpre".
+  { iFrame "#". }
+  iApply (wp_GetControllerOf_general with "Hpre").
   iExact "HΦ".
 Qed.
 
@@ -1013,8 +1070,7 @@ Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
   {{{ l controller_ref, RET #l;
       OwnerReferenceV.deepown_l l controller_ref 1 ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref gvk.(schema.GroupVersionKind.Kind')
-        m.(ObjectMetaV.Name')
-        m.(ObjectMetaV.UID') ⌝ ∗
+        m.(ObjectMetaV.Name') m.(ObjectMetaV.UID') ⌝ ∗
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}.
@@ -1033,8 +1089,7 @@ Lemma wp_NewControllerRef_StatefulSet owner gvk set_l m dq :
   {{{ l controller_ref, RET #l;
       OwnerReferenceV.deepown_l l controller_ref 1 ∗
       ⌜ OwnerReferenceV.refers_to_controller controller_ref
-          gvk.(schema.GroupVersionKind.Kind')
-          m.(ObjectMetaV.Name') m.(ObjectMetaV.UID') ⌝ ∗
+          gvk.(schema.GroupVersionKind.Kind') m.(ObjectMetaV.Name') m.(ObjectMetaV.UID') ⌝ ∗
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
       ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) m dq
   }}}.
