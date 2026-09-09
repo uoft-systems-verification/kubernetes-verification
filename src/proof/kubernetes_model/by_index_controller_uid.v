@@ -11,42 +11,6 @@ Local Set Default Proof Using "All".
 Definition replica_set_has_controller_uid (uid : go_string) (rs : ReplicaSetV.t) : Prop :=
   ∃ parent_key, obj_parent_ref (KObjectV.ReplicaSet rs) = Some (parent_key, uid).
 
-Lemma is_controller_reference_of_meta_parent_ref m controller_ref :
-  ObjectMetaV.valid ReplicaSetV.kind m →
-  is_controller_reference_of m controller_ref →
-  ∃ parent_key, meta_parent_ref m = Some (parent_key, controller_ref.(OwnerReferenceV.UID')).
-Proof.
-  intros Hvalid (owner_references & Howner_references & Hcontroller_ref_in & Hcontroller_ref_controller).
-  assert (valid_owner_references m.(ObjectMetaV.OwnerReferences')) as Hvalid_owner_references.
-  { unfold ObjectMetaV.valid in Hvalid. tauto. }
-  rewrite Howner_references in Hvalid_owner_references.
-  destruct Hvalid_owner_references as [Hcontroller_unique _].
-  unfold meta_parent_ref. rewrite Howner_references.
-  destruct (list_find
-    (λ owner_reference : OwnerReferenceV.t,
-      owner_reference.(OwnerReferenceV.Controller') = Some true)
-    owner_references) as [[found_i found_ref]|] eqn:Hfind.
-  - apply list_find_Some in Hfind as
-      (Hfound_lookup & Hfound_controller & _).
-    apply list_elem_of_lookup_1 in Hcontroller_ref_in as
-      [controller_ref_i Hcontroller_ref_lookup].
-    assert (controller_ref_i = found_i) as ->.
-    { eapply Hcontroller_unique; eauto. }
-    rewrite Hcontroller_ref_lookup in Hfound_lookup.
-    injection Hfound_lookup as ->.
-    exists {|
-      KKey.Kind' := found_ref.(OwnerReferenceV.Kind');
-      KKey.Namespace' := m.(ObjectMetaV.Namespace');
-      KKey.Name' := found_ref.(OwnerReferenceV.Name')
-    |}.
-    reflexivity.
-  - apply list_find_None in Hfind.
-    rewrite Forall_forall in Hfind.
-    exfalso. apply (Hfind controller_ref).
-    + rewrite -list_elem_of_In. exact Hcontroller_ref_in.
-    + exact Hcontroller_ref_controller.
-Qed.
-
 Lemma wp_index_of_controllerUID i rs dq :
   ReplicaSetV.valid rs →
   {{{ is_pkg_init apimodel ∗
@@ -114,9 +78,39 @@ Proof.
     { iExists rs_l. iFrame. iPureIntro. split; done. }
     iPureIntro. constructor; last constructor.
     unfold replica_set_has_controller_uid, obj_parent_ref. simpl.
-    eapply is_controller_reference_of_meta_parent_ref.
-    + unfold ReplicaSetV.valid in Hvalid. tauto.
-    + exact Hcontroller_ref_of.
+    destruct Hcontroller_ref_of as
+      (owner_references & Howner_references & Hcontroller_ref_in &
+        Hcontroller_ref_controller).
+    assert (valid_owner_references
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.OwnerReferences')) as
+      Hvalid_owner_references.
+    { unfold ReplicaSetV.valid, ObjectMetaV.valid in Hvalid. tauto. }
+    rewrite Howner_references in Hvalid_owner_references.
+    destruct Hvalid_owner_references as [Hcontroller_unique _].
+    unfold meta_parent_ref. rewrite Howner_references.
+    destruct (list_find
+      (λ owner_reference : OwnerReferenceV.t,
+        owner_reference.(OwnerReferenceV.Controller') = Some true)
+      owner_references) as [[found_i found_ref]|] eqn:Hfind.
+    + apply list_find_Some in Hfind as
+        (Hfound_lookup & Hfound_controller & _).
+      apply list_elem_of_lookup_1 in Hcontroller_ref_in as
+        [controller_ref_i Hcontroller_ref_lookup].
+      assert (controller_ref_i = found_i) as ->.
+      { eapply Hcontroller_unique; eauto. }
+      rewrite Hcontroller_ref_lookup in Hfound_lookup.
+      injection Hfound_lookup as ->.
+      exists {|
+        KKey.Kind' := found_ref.(OwnerReferenceV.Kind');
+        KKey.Namespace' := rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace');
+        KKey.Name' := found_ref.(OwnerReferenceV.Name')
+      |}.
+      reflexivity.
+    + apply list_find_None in Hfind.
+      rewrite Forall_forall in Hfind.
+      exfalso. apply (Hfind controller_ref).
+      * rewrite -list_elem_of_In. exact Hcontroller_ref_in.
+      * exact Hcontroller_ref_controller.
 Qed.
 
 (** Logically atomic, read-only specification for the ReplicaSet informer's
