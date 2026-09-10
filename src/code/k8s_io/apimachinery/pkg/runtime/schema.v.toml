@@ -1,3 +1,10 @@
-translate = ["GroupResource", "GroupVersionKind", "GroupVersion", "GroupVersion.WithKind"]
+translate = [
+    "GroupResource",
+    "GroupVersionKind",
+    "GroupVersion",
+    "GroupVersion.WithKind",
+    "GroupVersionKind.GroupVersion",
+    "GroupVersion.String",
+]
 
 imports = ["!*"]

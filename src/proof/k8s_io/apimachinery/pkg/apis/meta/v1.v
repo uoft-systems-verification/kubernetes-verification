@@ -2,6 +2,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Import prelude.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels.
+From New.proof.k8s_io.apimachinery.pkg.runtime Require Import schema.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -1061,9 +1062,15 @@ Proof.
   iExact "HΦ".
 Qed.
 
+Context {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
 Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
   {{{ is_pkg_init v1 ∗
       ⌜ owner = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
+      ⌜ gvk.(schema.GroupVersionKind.Group') = "apps"%go ∧
+        gvk.(schema.GroupVersionKind.Version') = "v1"%go ∧
+        gvk.(schema.GroupVersionKind.Kind') = "ReplicaSet"%go ⌝ ∗
+      ⌜ ObjectMetaV.valid ReplicaSetV.kind m ⌝ ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}
     @! v1.NewControllerRef #owner #gvk
@@ -1074,7 +1081,65 @@ Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
       ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "H".
+  iDestruct "H" as "(-> & %Hgvk & %Hmvalid & Hmeta)".
+  destruct Hgvk as (Hgroup & Hversion & Hkind).
+  iRename select (is_pkg_init v1) into "Hinit".
+  wp_auto.
+  wp_bind (gvk_ptr @! (go.PointerType schema.GroupVersionKind) @!
+    "GroupVersion" #())%E.
+  wp_method_call. wp_pures. wp_load. wp_pures.
+  iAssert (is_pkg_init schema) as "#Hschema_init".
+  { solve_pkg_init. }
+  wp_apply (schema.wp_GroupVersionKind__GroupVersion with "[$Hschema_init]").
+  wp_apply (schema.wp_GroupVersion__String_apps_v1 with "[$Hschema_init]").
+  { iPureIntro. simpl. done. }
+  wp_bind (rs_l @! (go.PointerType v1.ReplicaSet) @! "GetName" #())%E.
+  wp_method_call. wp_pures.
+  wp_apply (wp_GetName_deepown with "[$Hmeta]").
+  iIntros "Hmeta". wp_auto.
+  wp_bind (rs_l @! (go.PointerType v1.ReplicaSet) @! "GetUID" #())%E.
+  wp_method_call. wp_pures.
+  wp_apply (wp_GetUID_deepown with "[$Hmeta]").
+  iIntros "Hmeta". wp_auto.
+  wp_bind (#(functions ptr.To [go.bool]) #true)%E.
+  wp_func_call. wp_call. wp_alloc block_ptr as "Hblock". wp_auto.
+  wp_bind (#(functions ptr.To [go.bool]) #true)%E.
+  wp_func_call. wp_call. wp_alloc controller_ptr as "Hcontroller". wp_auto.
+  wp_alloc ref_ptr as "Href". wp_auto.
+  iDestruct (typed_pointsto_not_null with "Hblock") as %Hblock_nonnull.
+  iDestruct (typed_pointsto_not_null with "Hcontroller") as %Hcontroller_nonnull.
+  iApply ("HΦ" $! ref_ptr ({|
+    OwnerReferenceV.APIVersion' := "apps/v1"%go;
+    OwnerReferenceV.Kind' := gvk.(schema.GroupVersionKind.Kind');
+    OwnerReferenceV.Name' := m.(ObjectMetaV.Name');
+    OwnerReferenceV.UID' := m.(ObjectMetaV.UID');
+    OwnerReferenceV.Controller' := Some true;
+    OwnerReferenceV.BlockOwnerDeletion' := Some true
+  |})).
+  iFrame "Hmeta".
+  iSplitL "Href Hblock Hcontroller".
+  { unfold OwnerReferenceV.deepown_l, OwnerReferenceV.deepown, named.
+    iExists _. iFrame "Href". simpl.
+    iSplit; first done. iSplit; first done.
+    iSplit; first done. iSplit; first done.
+    iSplitL "".
+    { iPureIntro. split; intros; done. }
+    iSplitL "Hcontroller".
+    { iExists true. iFrame. done. }
+    iSplitL "".
+    { iPureIntro. split; intros; done. }
+    iExists true. iFrame. done. }
+  iSplit; first done.
+  iPureIntro.
+  unfold OwnerReferenceV.valid, valid_api_version. simpl.
+  unfold ObjectMetaV.valid in Hmvalid.
+  destruct Hmvalid as (_ & Hname_nonempty & _ & _ & _ & Huid_valid & _).
+  apply valid_uid_non_empty in Huid_valid.
+  rewrite Hkind. split; last done.
+  right. split; first (left; done). done.
+Qed.
 
 Lemma wp_NewControllerRef_StatefulSet owner gvk set_l m dq :
   {{{ is_pkg_init v1 ∗
@@ -1093,7 +1158,65 @@ Lemma wp_NewControllerRef_StatefulSet owner gvk set_l m dq :
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
       ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l) m dq
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "H".
+  iDestruct "H" as "(-> & %Hgvk & %Hmvalid & Hmeta)".
+  destruct Hgvk as (Hgroup & Hversion & Hkind).
+  iRename select (is_pkg_init v1) into "Hinit".
+  wp_auto.
+  wp_bind (gvk_ptr @! (go.PointerType schema.GroupVersionKind) @!
+    "GroupVersion" #())%E.
+  wp_method_call. wp_pures. wp_load. wp_pures.
+  iAssert (is_pkg_init schema) as "#Hschema_init".
+  { solve_pkg_init. }
+  wp_apply (schema.wp_GroupVersionKind__GroupVersion with "[$Hschema_init]").
+  wp_apply (schema.wp_GroupVersion__String_apps_v1 with "[$Hschema_init]").
+  { iPureIntro. simpl. done. }
+  wp_bind (set_l @! (go.PointerType v1.StatefulSet) @! "GetName" #())%E.
+  wp_method_call. wp_pures.
+  wp_apply (wp_GetName_deepown with "[$Hmeta]").
+  iIntros "Hmeta". wp_auto.
+  wp_bind (set_l @! (go.PointerType v1.StatefulSet) @! "GetUID" #())%E.
+  wp_method_call. wp_pures.
+  wp_apply (wp_GetUID_deepown with "[$Hmeta]").
+  iIntros "Hmeta". wp_auto.
+  wp_bind (#(functions ptr.To [go.bool]) #true)%E.
+  wp_func_call. wp_call. wp_alloc block_ptr as "Hblock". wp_auto.
+  wp_bind (#(functions ptr.To [go.bool]) #true)%E.
+  wp_func_call. wp_call. wp_alloc controller_ptr as "Hcontroller". wp_auto.
+  wp_alloc ref_ptr as "Href". wp_auto.
+  iDestruct (typed_pointsto_not_null with "Hblock") as %Hblock_nonnull.
+  iDestruct (typed_pointsto_not_null with "Hcontroller") as %Hcontroller_nonnull.
+  iApply ("HΦ" $! ref_ptr ({|
+    OwnerReferenceV.APIVersion' := "apps/v1"%go;
+    OwnerReferenceV.Kind' := gvk.(schema.GroupVersionKind.Kind');
+    OwnerReferenceV.Name' := m.(ObjectMetaV.Name');
+    OwnerReferenceV.UID' := m.(ObjectMetaV.UID');
+    OwnerReferenceV.Controller' := Some true;
+    OwnerReferenceV.BlockOwnerDeletion' := Some true
+  |})).
+  iFrame "Hmeta".
+  iSplitL "Href Hblock Hcontroller".
+  { unfold OwnerReferenceV.deepown_l, OwnerReferenceV.deepown, named.
+    iExists _. iFrame "Href". simpl.
+    iSplit; first done. iSplit; first done.
+    iSplit; first done. iSplit; first done.
+    iSplitL "".
+    { iPureIntro. split; intros; done. }
+    iSplitL "Hcontroller".
+    { iExists true. iFrame. done. }
+    iSplitL "".
+    { iPureIntro. split; intros; done. }
+    iExists true. iFrame. done. }
+  iSplit; first done.
+  iPureIntro.
+  unfold OwnerReferenceV.valid, valid_api_version. simpl.
+  unfold ObjectMetaV.valid in Hmvalid.
+  destruct Hmvalid as (_ & Hname_nonempty & _ & _ & _ & Huid_valid & _).
+  apply valid_uid_non_empty in Huid_valid.
+  rewrite Hkind. split; last done.
+  right. split; first (right; done). done.
+Qed.
 
 Definition namespace_matches ns_query ns: Prop :=
   ns_query = v1.NamespaceAll ∨ ns_query = ns.

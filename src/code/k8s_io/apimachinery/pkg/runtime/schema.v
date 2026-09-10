@@ -71,6 +71,27 @@ Definition bestMatch {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string 
 
 Definition FromAPIVersionAndKind {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/runtime/schema.FromAPIVersionAndKind"%go.
 
+(* go: group_version.go:157:29 *)
+Definition GroupVersionKind__GroupVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "gvk" <>,
+    exception_do (let: "gvk" := (GoAlloc GroupVersionKind "gvk") in
+    return: (let: "$v0" := (![go.string] (StructFieldRef GroupVersionKind "Group"%go "gvk")) in
+     let: "$v1" := (![go.string] (StructFieldRef GroupVersionKind "Version"%go "gvk")) in
+     CompositeLiteral GroupVersion (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Version"%go)) (ElementExpression go.string "$v1")]))).
+
+(* String puts "group" and "version" into a single "group/version" string. For the legacy v1
+   it returns "v1".
+
+   go: group_version.go:178:24 *)
+Definition GroupVersion__Stringⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "gv" <>,
+    exception_do (let: "gv" := (GoAlloc GroupVersion "gv") in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.string] (StructFieldRef GroupVersion "Group"%go "gv")) in
+    (FuncResolve go.len [go.string] #()) "$a0") >⟨go.int⟩ #(W64 0))
+    then return: (((![go.string] (StructFieldRef GroupVersion "Group"%go "gv")) +⟨go.string⟩ #"/"%go) +⟨go.string⟩ (![go.string] (StructFieldRef GroupVersion "Version"%go "gv")))
+    else do:  #());;;
+    return: (![go.string] (StructFieldRef GroupVersion "Version"%go "gv"))).
+
 (* WithKind creates a GroupVersionKind based on the method receiver's GroupVersion and the passed Kind.
 
    go: group_version.go:230:24 *)
@@ -204,6 +225,8 @@ Class GroupVersionKind_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoL
   #[global] GroupVersionKind_set_Version (x : GroupVersionKind.t) y :: ⟦StructFieldSet (GroupVersionKindⁱᵐᵖˡ) "Version", (#x, #y)⟧ ⤳[under] #(x <|GroupVersionKind.Version' := y|>);
   #[global] GroupVersionKind_get_Kind (x : GroupVersionKind.t) :: ⟦StructFieldGet (GroupVersionKindⁱᵐᵖˡ) "Kind", #x⟧ ⤳[under] #x.(GroupVersionKind.Kind');
   #[global] GroupVersionKind_set_Kind (x : GroupVersionKind.t) y :: ⟦StructFieldSet (GroupVersionKindⁱᵐᵖˡ) "Kind", (#x, #y)⟧ ⤳[under] #(x <|GroupVersionKind.Kind' := y|>);
+  #[global] GroupVersionKind_GroupVersion_unfold :: MethodUnfold (GroupVersionKind) "GroupVersion" (GroupVersionKind__GroupVersionⁱᵐᵖˡ);
+  #[global] GroupVersionKind'ptr_GroupVersion_unfold :: MethodUnfold (go.PointerType (GroupVersionKind)) "GroupVersion" (λ: "$r", MethodResolve (GroupVersionKind) "GroupVersion" (![(GroupVersionKind)] "$r"));
 }.
 
 Module GroupVersion.
@@ -239,7 +262,9 @@ Class GroupVersion_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocal
   #[global] GroupVersion_set_Group (x : GroupVersion.t) y :: ⟦StructFieldSet (GroupVersionⁱᵐᵖˡ) "Group", (#x, #y)⟧ ⤳[under] #(x <|GroupVersion.Group' := y|>);
   #[global] GroupVersion_get_Version (x : GroupVersion.t) :: ⟦StructFieldGet (GroupVersionⁱᵐᵖˡ) "Version", #x⟧ ⤳[under] #x.(GroupVersion.Version');
   #[global] GroupVersion_set_Version (x : GroupVersion.t) y :: ⟦StructFieldSet (GroupVersionⁱᵐᵖˡ) "Version", (#x, #y)⟧ ⤳[under] #(x <|GroupVersion.Version' := y|>);
+  #[global] GroupVersion_String_unfold :: MethodUnfold (GroupVersion) "String" (GroupVersion__Stringⁱᵐᵖˡ);
   #[global] GroupVersion_WithKind_unfold :: MethodUnfold (GroupVersion) "WithKind" (GroupVersion__WithKindⁱᵐᵖˡ);
+  #[global] GroupVersion'ptr_String_unfold :: MethodUnfold (go.PointerType (GroupVersion)) "String" (λ: "$r", MethodResolve (GroupVersion) "String" (![(GroupVersion)] "$r"));
   #[global] GroupVersion'ptr_WithKind_unfold :: MethodUnfold (go.PointerType (GroupVersion)) "WithKind" (λ: "$r", MethodResolve (GroupVersion) "WithKind" (![(GroupVersion)] "$r"));
 }.
 

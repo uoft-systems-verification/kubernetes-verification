@@ -330,7 +330,7 @@ Proof.
 	      #(interface.mk_ok (go.PointerType k8s_api_apps_v1.ReplicaSet) (#rs_l)) #gvk)%E.
 	    change (replicaset.apis_meta_v1.NewControllerRef) with v1.NewControllerRef.
 	    wp_apply (v1.wp_NewControllerRef_ReplicaSet with "[Hdeepown_m_l_rs]").
-	    { iFrame "Hdeepown_m_l_rs". iPureIntro. done. }
+	    { iFrame "Hdeepown_m_l_rs". iPureIntro. split_and!; done. }
 	    iIntros (controller_ref_l controller_ref)
 	      "(Hdeepown_l_controller_ref & %Hcontroller_ref_valid & %Hcontroller_ref_wf & Hdeepown_m_l_rs)".
 	    wp_auto. rewrite Hgvk_k in Hcontroller_ref_valid.
