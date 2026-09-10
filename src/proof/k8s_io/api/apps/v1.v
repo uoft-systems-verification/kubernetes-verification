@@ -58,7 +58,7 @@ Proof.
   wp_auto.
   wp_method_call.
   wp_pures.
-  wp_apply (wp_GetOwnerReferences_deepown with "[$Hinit $Hmeta]").
+  wp_apply (wp_GetOwnerReferences_deepown with "[$Hmeta]").
   iIntros (sl) "(%Hnil & Hrefs)".
   iApply "HΦ". iSplit; first done.
   destruct rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.OwnerReferences') as

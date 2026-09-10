@@ -626,6 +626,16 @@ Proof.
   iApply "HΦ". iPureIntro. rewrite !app_assoc. done.
 Qed.
 
+Lemma wp_PodControllerIndexKey_nil (namespace : go_string) :
+  {{{ is_pkg_init controller }}}
+    @! controller.PodControllerIndexKey #namespace #(null : loc)
+  {{{ RET #namespace; True }}}.
+Proof.
+  wp_start as "Hinit".
+  wp_auto.
+  iApply "HΦ". done.
+Qed.
+
 Lemma wp_GetPodFromTemplate template_l obj controller_ref_l template_dq
     parent_dq template parent_l parent controller_ref :
   {{{ "Hinit" ∷ is_pkg_init controller ∗

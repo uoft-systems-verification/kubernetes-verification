@@ -11,22 +11,28 @@ Local Set Default Proof Using "All".
 Definition replica_set_has_controller_uid (uid : go_string) (rs : ReplicaSetV.t) : Prop :=
   ∃ parent_key, obj_parent_ref (KObjectV.ReplicaSet rs) = Some (parent_key, uid).
 
+Definition controllerUID_indexed_values (rs : ReplicaSetV.t) : list go_string :=
+  match meta_parent_ref rs.(ReplicaSetV.ObjectMeta') with
+  | Some (_, uid) => [uid]
+  | None => []
+  end.
+
 Lemma wp_index_of_controllerUID i rs dq :
   {{{ is_pkg_init apimodel ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "Hrs" ∷ KObjectV.deepown_i i (KObjectV.ReplicaSet rs) dq
   }}}
     @! apimodel.index_of #"controllerUID"%go #(interface.ok i)
-  {{{ sl values, RET (#sl, #interface.nil);
-      "Hsl" ∷ sl ↦* values ∗
-      "Hrs" ∷ KObjectV.deepown_i i (KObjectV.ReplicaSet rs) dq ∗
-      "%Hvalues" ∷ ⌜ Forall (λ uid, replica_set_has_controller_uid uid rs) values ⌝
+  {{{ sl, RET (#sl, #interface.nil);
+      sl ↦* controllerUID_indexed_values rs ∗
+      KObjectV.deepown_i i (KObjectV.ReplicaSet rs) dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
   iAssert (is_pkg_init v1) as "#Hmeta_init".
   { iPkgInit. }
   iDestruct "Hrs" as (rs_l) "[%Hi Hrs]".
+  pose proof Hi as Hrs_interface.
   unfold KObjectV.valid_interface in Hi.
   destruct Hi as [Hi Hobject]. subst i.
   wp_auto.
@@ -40,18 +46,21 @@ Proof.
   wp_auto.
   wp_bind (@! v1.GetControllerOf
     #(interface.mk_ok (go.PointerType api_apps_v1.ReplicaSet) #rs_l))%E.
-  wp_apply (wp_GetControllerOf_ReplicaSet with
+  wp_apply (wp_GetControllerOf_kobject_exact
+    (interface.mk_ok (go.PointerType api_apps_v1.ReplicaSet) #rs_l)
+    (interface.mk (go.PointerType api_apps_v1.ReplicaSet) #rs_l)
+    rs_l (KObjectV.ReplicaSet rs) dq with
     "[$Hmeta_init $Hrs //]").
   iIntros (controller_ref_l) "(Hrs & Hcontroller_ref)".
   iDestruct "Hcontroller_ref" as
-    "[%Hcontroller_ref_null|Hcontroller_ref]".
-  - subst controller_ref_l. wp_auto.
-    iApply ("HΦ" $! slice.nil []).
+    "[%Hcontroller_ref|Hcontroller_ref]".
+  - destruct Hcontroller_ref as [Hcontroller_ref_null Hparent_none].
+    subst controller_ref_l. wp_auto.
+    iApply ("HΦ" $! slice.nil).
     iPoseProof (own_slice_nil (V:=go_string)) as "Hnil".
-    iFrame "Hnil".
-    iSplitL "Hrs".
-    { iExists rs_l. iFrame. iPureIntro. split; done. }
-    done.
+    unfold controllerUID_indexed_values. simpl in Hparent_none.
+    rewrite Hparent_none. iFrame "Hnil".
+    iExists rs_l. iFrame. done.
   - iDestruct "Hcontroller_ref" as (controller_ref)
       "(%Hcontroller_ref & Hcontroller_ref)".
     destruct Hcontroller_ref as
@@ -70,53 +79,49 @@ Proof.
     rewrite Hcontroller_ref_deepown_Hdeepown_uid.
     wp_apply wp_slice_literal. iSplitR; first done.
     iIntros "%sl_ptr [Hsl _]". wp_auto.
-    iApply ("HΦ" $! (slice.mk sl_ptr (W64 1) (W64 1))
-      [controller_ref.(OwnerReferenceV.UID')]).
-    iFrame "Hsl".
-    iSplitL "Hrs".
-    { iExists rs_l. iFrame. iPureIntro. split; done. }
-    iPureIntro. constructor; last constructor.
-    unfold replica_set_has_controller_uid, obj_parent_ref. simpl.
-    destruct Hcontroller_ref_of as
-      (owner_references & Howner_references & Hcontroller_ref_in &
-        Hcontroller_ref_controller).
-    assert (valid_owner_references
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.OwnerReferences')) as
-      Hvalid_owner_references.
-    { unfold ReplicaSetV.valid, ObjectMetaV.valid in Hvalid. tauto. }
-    rewrite Howner_references in Hvalid_owner_references.
-    destruct Hvalid_owner_references as [Hcontroller_unique _].
-    unfold meta_parent_ref. rewrite Howner_references.
-    destruct (list_find
-      (λ owner_reference : OwnerReferenceV.t,
-        owner_reference.(OwnerReferenceV.Controller') = Some true)
-      owner_references) as [[found_i found_ref]|] eqn:Hfind.
-    + apply list_find_Some in Hfind as
-        (Hfound_lookup & Hfound_controller & _).
-      apply list_elem_of_lookup_1 in Hcontroller_ref_in as
-        [controller_ref_i Hcontroller_ref_lookup].
-      assert (controller_ref_i = found_i) as ->.
-      { eapply Hcontroller_unique; eauto. }
-      rewrite Hcontroller_ref_lookup in Hfound_lookup.
-      injection Hfound_lookup as ->.
-      exists {|
-        KKey.Kind' := found_ref.(OwnerReferenceV.Kind');
-        KKey.Namespace' := rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace');
-        KKey.Name' := found_ref.(OwnerReferenceV.Name')
-      |}.
-      reflexivity.
-    + apply list_find_None in Hfind.
-      rewrite Forall_forall in Hfind.
-      exfalso. apply (Hfind controller_ref).
-      * rewrite -list_elem_of_In. exact Hcontroller_ref_in.
-      * exact Hcontroller_ref_controller.
+    assert (meta_parent_ref rs.(ReplicaSetV.ObjectMeta') = Some ({|
+      KKey.Kind' := controller_ref.(OwnerReferenceV.Kind');
+      KKey.Namespace' := rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace');
+      KKey.Name' := controller_ref.(OwnerReferenceV.Name')
+    |}, controller_ref.(OwnerReferenceV.UID'))) as Hparent.
+    { destruct Hcontroller_ref_of as
+        (owner_references & Howner_references & Hcontroller_ref_in &
+          Hcontroller_ref_controller).
+      assert (valid_owner_references
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.OwnerReferences')) as
+        Hvalid_owner_references.
+      { unfold ReplicaSetV.valid, ObjectMetaV.valid in Hvalid. tauto. }
+      rewrite Howner_references in Hvalid_owner_references.
+      destruct Hvalid_owner_references as [Hcontroller_unique _].
+      unfold meta_parent_ref. rewrite Howner_references.
+      destruct (list_find
+        (λ owner_reference : OwnerReferenceV.t,
+          owner_reference.(OwnerReferenceV.Controller') = Some true)
+        owner_references) as [[found_i found_ref]|] eqn:Hfind.
+      - apply list_find_Some in Hfind as
+          (Hfound_lookup & Hfound_controller & _).
+        apply list_elem_of_lookup_1 in Hcontroller_ref_in as
+          [controller_ref_i Hcontroller_ref_lookup].
+        assert (controller_ref_i = found_i) as ->.
+        { eapply Hcontroller_unique; eauto. }
+        rewrite Hcontroller_ref_lookup in Hfound_lookup.
+        injection Hfound_lookup as ->.
+        reflexivity.
+      - apply list_find_None in Hfind.
+        rewrite Forall_forall in Hfind.
+        exfalso. apply (Hfind controller_ref).
+        + rewrite -list_elem_of_In. exact Hcontroller_ref_in.
+        + exact Hcontroller_ref_controller. }
+    iApply ("HΦ" $! (slice.mk sl_ptr (W64 1) (W64 1))).
+    unfold controllerUID_indexed_values. rewrite Hparent.
+    iFrame "Hsl". iExists rs_l. iFrame. done.
 Qed.
 
 (** Logically atomic, read-only specification for the ReplicaSet informer's
     controller-UID index. The result contains owned deep copies, just like
     other model list operations; every returned object has a controller owner
     reference whose UID equals [controller_uid]. *)
-Local Lemma wp_State__ByIndex_controllerUID_au γ l controller_uid :
+Lemma wp_State__ByIndex_controllerUID_au γ l controller_uid :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
@@ -248,7 +253,7 @@ Proof.
     { split; rewrite lookup_drop Nat.add_0_r; done. }
     wp_apply (wp_index_of_controllerUID this_interface this_rs 1 with
       "[$Hpkg $Hthis //]").
-    iIntros (values_sl values) "(Hvalues_sl & Hthis & %Hvalues_match)".
+    iIntros (values_sl) "(Hvalues_sl & Hthis)".
     wp_auto.
     wp_alloc j_ptr as "Hj_ptr". wp_auto.
     iDestruct (own_slice_len with "Hvalues_sl") as
@@ -269,11 +274,13 @@ Proof.
     wp_for "Hinner". wp_if_destruct.
     + assert (0 ≤ sint.Z j < sint.Z (slice.len values_sl)) as Hjbounds
         by word.
-      list_elem values (sint.Z j) as this_uid.
+      list_elem (controllerUID_indexed_values this_rs) (sint.Z j) as
+        this_uid.
       rewrite decide_True.
       { exact Hjbounds. }
       wp_apply (wp_load_slice_index (V:=go_string) (t:=go.string)
-        values_sl (sint.Z j) values (DfracOwn 1) this_uid with
+        values_sl (sint.Z j) (controllerUID_indexed_values this_rs)
+        (DfracOwn 1) this_uid with
         "[$Hvalues_sl]"); [word|iPureIntro; exact Hthis_uid_lookup|].
       iIntros "Hvalues_sl". wp_auto.
       destruct (bool_decide (this_uid = controller_uid)) as [|]
@@ -281,9 +288,14 @@ Proof.
       * apply bool_decide_eq_true in Huid_eq. subst this_uid.
         assert (replica_set_has_controller_uid controller_uid this_rs)
           as Hthis_controller_uid.
-        { rewrite Forall_forall in Hvalues_match. apply Hvalues_match.
-          rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
-          exact Hthis_uid_lookup. }
+        { apply list_elem_of_lookup_2 in Hthis_uid_lookup.
+          unfold controllerUID_indexed_values in Hthis_uid_lookup.
+          destruct (meta_parent_ref this_rs.(ReplicaSetV.ObjectMeta'))
+            as [[parent_key parent_uid]|] eqn:Hparent; simpl in Hthis_uid_lookup.
+          - apply list_elem_of_singleton in Hthis_uid_lookup.
+            subst parent_uid. exists parent_key.
+            unfold obj_parent_ref. simpl. exact Hparent.
+          - rewrite elem_of_nil in Hthis_uid_lookup. contradiction. }
         wp_apply wp_slice_literal. iSplitR; first done.
         iIntros "%one_ptr [Hone _]". wp_auto.
         wp_apply (wp_slice_append with
