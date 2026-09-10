@@ -121,7 +121,7 @@ Qed.
     controller-UID index. The result contains owned deep copies, just like
     other model list operations; every returned object has a controller owner
     reference whose UID equals [controller_uid]. *)
-Local Lemma wp_State__ByIndex_controllerUID_au γ l controller_uid :
+Lemma wp_State__ByIndex_controllerUID_au γ l controller_uid :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗

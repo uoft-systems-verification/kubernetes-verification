@@ -815,7 +815,7 @@ Proof.
       Hnodup Hdom Hlookup).
 Qed.
 
-Local Lemma wp_State__ByIndex_podController_au γ l indexed_value :
+Lemma wp_State__ByIndex_podController_au γ l indexed_value :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
