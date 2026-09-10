@@ -37,7 +37,8 @@ Definition deepown (c: v1.OwnerReference.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
-(* Kubernetes requires an owner reference to have a nonempty API version,
+(* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L69-L90
+   Kubernetes requires an owner reference to have a nonempty API version,
    kind, name, and UID, and rejects Event as an owner. [valid_api_version]
    restricts the first two fields to the concrete, non-Event kinds supported
    by this model. *)
