@@ -153,6 +153,11 @@ Proof.
           | H : ReplicaSetStatusV.created ?input ?helper_result
               |- ReplicaSetStatusV.created ?input ?stored =>
               destruct helper_result; destruct stored; exact H
+          end
+        | match goal with
+          | H : DeploymentStatusV.created ?input ?helper_result
+              |- DeploymentStatusV.created ?input ?stored =>
+              destruct helper_result; destruct stored; exact H
           end ] ].
 Qed.
 

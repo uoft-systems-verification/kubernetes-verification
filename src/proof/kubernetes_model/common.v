@@ -113,7 +113,7 @@ Lemma storage_object_normalize_update_objectmeta_deletionTimestamp obj m :
   m.(ObjectMetaV.DeletionTimestamp') =
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp').
 Proof.
-  destruct obj as [p|rs|pvc|sts].
+  destruct obj as [p|rs|pvc|sts|d].
   - destruct p as [pt pm ps pst]. destruct pm. destruct m. simpl.
     intros H. inversion H. done.
   - destruct rs as [rt rm rspec rstatus]. destruct rm. destruct m. simpl.
@@ -121,6 +121,8 @@ Proof.
   - destruct pvc as [pvct pvcm pvcs pvcst]. destruct pvcm. destruct m. simpl.
     intros H. inversion H. done.
   - destruct sts as [stst stsm stss stsst]. destruct stsm. destruct m. simpl.
+    intros H. inversion H. done.
+  - destruct d as [dt dm ds dst]. destruct dm. destruct m. simpl.
     intros H. inversion H. done.
 Qed.
 
