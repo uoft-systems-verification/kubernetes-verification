@@ -44,6 +44,7 @@ func getReplicaSetsWithSameController(rs *apps.ReplicaSet) []*apps.ReplicaSet {
 // with the same controller owner as rs.
 func getIndirectlyRelatedPods(rs *apps.ReplicaSet) ([]*v1.Pod, error) {
 	relatedPods := []*v1.Pod{}
+	// `seen` works as a `Set` to keep track of pods that have already been considered (Like fingerprints in model checker).
 	seen := make(map[types.UID]*apps.ReplicaSet)
 	for _, relatedRS := range getReplicaSetsWithSameController(rs) {
 		selector, err := metav1.LabelSelectorAsSelector(relatedRS.Spec.Selector)
@@ -81,6 +82,7 @@ func getPodsToDelete(filteredPods, relatedPods []*v1.Pod, diff int) []*v1.Pod {
 func getPodsRankedByRelatedPodsOnSameNode(podsToRank, relatedPods []*v1.Pod) controller.ActivePodsWithRanks {
 	podsOnNode := make(map[string]int)
 	for _, pod := range relatedPods {
+		// Only count active pods on the node.
 		if controller.IsPodActive(pod) {
 			podsOnNode[pod.Spec.NodeName]++
 		}
@@ -97,11 +99,13 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 	if diff < 0 {
 		diff *= -1
 		for i := 0; i < diff; i++ {
+			// Create Pod according to the ReplicaSet's template.
 			pod, err := controller.GetPodFromTemplate(&rs.Spec.Template, rs, metav1.NewControllerRef(rs, apps.SchemeGroupVersion.WithKind("ReplicaSet")))
 			if err != nil {
 				return err
 			}
 			var createOptions metav1.CreateOptions
+			// API request to create the pod, which is different from retriving information locally.
 			_, err = kubeClient.CoreV1().Pods(rs.ObjectMeta.GetNamespace()).Create(ctx, pod, createOptions)
 			if err != nil {
 				return err
@@ -127,6 +131,7 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 }
 
 func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, namespace, name string) error {
+	// use <namespace, name> localize a unique ReplicaSet
 	rs, err := rsLister.ReplicaSets(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		return nil
@@ -135,6 +140,7 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 		return err
 	}
 
+	// allRSPods, err := common.FilterPodsByOwner(&((*rs).ObjectMeta), "ReplicaSet")
 	allRSPods, err := common.FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet")
 	if err != nil {
 		return err
