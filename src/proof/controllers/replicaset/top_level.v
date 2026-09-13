@@ -121,7 +121,7 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
   "Hown_terminating_children_frag" ∷
     (if ready then
       own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') Quiescent
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
     else
       ∃ phase, own_terminating_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗

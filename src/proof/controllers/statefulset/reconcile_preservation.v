@@ -1230,7 +1230,7 @@ Proof.
     { eapply (reserved_subset_remove _ _ stored_pod _).
       - rewrite -Hpods_decomp. exact Hreserved_subset.
       - exact Hstored_unreserved. }
-    wp_auto. iApply ("HΦ" $! (before ++ after) Mutable).
+    wp_auto. iApply ("HΦ" $! (before ++ after) terminating_children.Maybe).
     iFrame. iPureIntro. split_and!; try done. lia.
 Qed.
 
@@ -1381,7 +1381,7 @@ Proof.
         iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
         iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
         wp_auto. iApply ("HΦ" $! pods3 (pvc_list_of_map pvc_map1)
-          (phase_after_deletion phase deletion3)).
+          (has_terminating_children_after_deletion phase deletion3)).
         rewrite unreserved_pods_nil. iFrame.
         iPureIntro. split_and!; try done. Timeout 10 set_solver.
       * iDestruct "Hcondemned_stop" as
@@ -1406,7 +1406,7 @@ Proof.
         iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
         iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
         iApply ("HΦ" $! pods2 (pvc_list_of_map pvc_map1)
-          (phase_after_deletion phase deletion2)).
+          (has_terminating_children_after_deletion phase deletion2)).
         rewrite unreserved_pods_nil. iFrame.
         iPureIntro. split_and!; try done. Timeout 10 set_solver.
     + wp_apply (wp_reconcileCondemnedPod_preservation γ model_l set_l

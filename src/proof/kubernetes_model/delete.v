@@ -38,7 +38,7 @@ Lemma wp_State__delete_au γ l key options_c options:
         if decide (delete_options_preconditions_resource_version_none options) then
           ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
             "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-            "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+            "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
           )
             ={∅,⊤}=∗ ▷ Φ #interface.nil
         else
@@ -46,7 +46,7 @@ Lemma wp_State__delete_au γ l key options_c options:
             ( ( ⌜ err = interface.nil ⌝ ∗
                 ( "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
                   "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-                  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+                  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
                 )) ∨
               ( ⌜ conflict_error err ⌝ ∗
                 own_meta_frag γ key uid 1 kmeta ∗
@@ -274,7 +274,7 @@ Proof.
     pose proof Hliving_parent as Hliving_parent_info.
     apply cview.living_obj_parent_ref_eq_some in Hliving_parent_info as
       [Hdeletion_timestamp_none _].
-    iMod (terminating_children.set_mutable_vs
+    iMod (terminating_children.set_maybe_vs
       γ.(γ_terminating_children) abs_state
       parent_key parent_uid phase with
       "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
@@ -616,12 +616,12 @@ Proof.
     rewrite objectmeta_update_objectmeta Hcurrent_kmeta_eq.
     destruct kobj; done.
   }
-  iMod (terminating_children.set_mutable_vs
+  iMod (terminating_children.set_maybe_vs
     γ.(γ_terminating_children) abs_state
     parent_key parent_uid phase with
     "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
     "(Hinv_Hown_terminating_children & Hown_terminating_children_frag)".
-  iMod (terminating_children.update_introduce_mutable_vs
+  iMod (terminating_children.update_introduce_maybe_vs
     γ.(γ_terminating_children) abs_state (KObjectV.key kobj)
     kobj new_kobj parent_key parent_uid with
     "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
@@ -676,7 +676,7 @@ Lemma wp_State__delete γ l key options_c options uid kmeta parent_key parent_ui
   {{{ RET #interface.nil;
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -720,7 +720,7 @@ Lemma wp_State__PodDelete γ l key namespace name options_c options uid kmeta
   {{{ RET #interface.nil;
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.

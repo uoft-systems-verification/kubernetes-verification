@@ -76,7 +76,7 @@ Lemma wp_deletePod γ model_l pod_l
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
       "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
         (children ∖ {[PodV.key stored_pod]}) ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.

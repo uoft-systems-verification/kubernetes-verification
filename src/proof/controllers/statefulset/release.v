@@ -261,7 +261,7 @@ Qed.
 Lemma wp_releasePod_combined γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (children : gset KKey.t) dq_set dq_pod (terminating : bool)
-    (phase : terminating_children.phase) :
+    (phase : terminating_children.has_terminating_children) :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -1280,7 +1280,7 @@ Proof.
         (children ∖ list_to_set
           (PodV.key <$> filter Bad
             (take (sint.nat i) pods)))
-        dq_set dq_pods false Quiescent
+        dq_set dq_pods false terminating_children.No
         with
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis
             $Hown_meta_this $Hown_spec_this
@@ -1368,7 +1368,7 @@ Qed.
 Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc) (pods : list PodV.t)
     (children : gset KKey.t) dq_set dq_pods
-    (phase : terminating_children.phase) :
+    (phase : terminating_children.has_terminating_children) :
   let Bad := (λ pod : PodV.t,
     ¬ pod_has_int32_member_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')

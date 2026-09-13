@@ -296,7 +296,7 @@ Proof.
       { iExists n. iSplitL; first iExact "Hrs_Hdeepown_replicas". done. }
       iSplit; first done. iSplit; first done.
       iFrame "Hrs_Hdeepown_selector_some Hrs_Hdeepown_template". }
-    set I := (∃ (i: w64) (active_pods': list PodV.t) (phase' : terminating_children.phase),
+    set I := (∃ (i: w64) (active_pods': list PodV.t) (phase' : terminating_children.has_terminating_children),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ active_pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
@@ -558,7 +558,7 @@ Proof.
 	  clear Hlen Hsl_len1. rename Hlen_sorted into Hlen.
 	  rename Hsl_len1_sorted into Hsl_len1.
     iDestruct (own_slice_len with "Hslice") as %(Hslice_len1 & Hslice_len2).
-    set I := (∃ (i: w64) (pod_l: loc) (inactive_pods': list PodV.t) (phase' : terminating_children.phase),
+    set I := (∃ (i: w64) (pod_l: loc) (inactive_pods': list PodV.t) (phase' : terminating_children.has_terminating_children),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hpod_ptr" ∷ pod_ptr ↦ pod_l ∗
       "Hown_active_pod_meta_frags" ∷ ([∗ list] pod ∈ drop (sint.nat i) active_pods,
@@ -656,7 +656,7 @@ Proof.
 		      iAssert (I) with "[Hi_ptr Hpod_ptr Hdelete_Hown_children_frag
 		        Hdelete_Hown_terminating_children_frag Hown_active_pod_meta_frags_tail
             Hown_inactive_pod_meta_frags]" as "loop_inv".
-		      { iExists (word.add i (W64 1)), this_ptr, inactive_pods', Mutable.
+		      { iExists (word.add i (W64 1)), this_ptr, inactive_pods', terminating_children.Maybe.
 	        assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hsucc by word.
 	        rewrite Hsucc.
 	        iFrame "Hi_ptr Hpod_ptr Hown_active_pod_meta_frags_tail Hown_inactive_pod_meta_frags".
@@ -902,7 +902,7 @@ Proof.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
   wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
-    rs_get n Quiescent dq' 1 with
+    rs_get n terminating_children.No dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".

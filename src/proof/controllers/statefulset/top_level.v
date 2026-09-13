@@ -487,7 +487,7 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
   "Hown_terminating_children_frag" ∷
     (if ready then
       own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') Quiescent
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
     else
       ∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗

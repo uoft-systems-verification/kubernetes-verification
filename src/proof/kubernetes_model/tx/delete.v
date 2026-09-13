@@ -400,7 +400,7 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
     }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable,
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe,
       COMM ▷ Φ #interface.nil
     }>
     -∗ WP l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c {{ Φ }}.
@@ -421,7 +421,7 @@ Proof.
     }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable,
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe,
       COMM ▷ Φ #interface.nil
     }>
   )%I.
@@ -566,7 +566,7 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
   {{{ RET #interface.nil;
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ".

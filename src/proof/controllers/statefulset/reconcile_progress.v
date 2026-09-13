@@ -3650,7 +3650,7 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
       "Hterminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
-        (phase_after_deletion phase deletion) ∗
+        (has_terminating_children_after_deletion phase deletion) ∗
       "%Hdeletion_retiring" ∷ ⌜ match deletion with
         | None => True
         | Some (key, _) => key ∉ desired_pod_keys set
@@ -3715,7 +3715,7 @@ Proof.
       intros pod Hpod. apply Hstored_alive.
       by rewrite -list_elem_of_In. }
     iApply ("HΦ" $! true pods None).
-    rewrite /own_started_deletion /phase_after_deletion /=.
+    rewrite /own_started_deletion /has_terminating_children_after_deletion /=.
     iFrame. iPureIntro. split; first done.
     split; first exact Hdistance_le.
     split; first exact Hstored_members.
@@ -3872,7 +3872,7 @@ Proof.
     iApply ("HΦ" $! false (before ++ after)
       (Some (PodV.key stored_pod,
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
-    rewrite /own_started_deletion /phase_after_deletion /=.
+    rewrite /own_started_deletion /has_terminating_children_after_deletion /=.
     iFrame. iPureIntro. split; first exact Hnot_desired.
     split; first lia.
     split; first exact Hmembers'.
@@ -3962,7 +3962,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
       "Hterminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
-        (phase_after_deletion phase deletion) ∗
+        (has_terminating_children_after_deletion phase deletion) ∗
       "%Hdeletion_desired" ∷ ⌜ match deletion with
         | None => True
         | Some (key, _) => key ∈ desired_pod_keys set
@@ -4040,7 +4040,7 @@ Proof.
       by rewrite -list_elem_of_In. }
     wp_auto.
     iApply ("HΦ" $! pods None).
-    rewrite /own_started_deletion /phase_after_deletion /=.
+    rewrite /own_started_deletion /has_terminating_children_after_deletion /=.
     iFrame. iPureIntro. split; first done.
     split; first lia. split; first exact Hstored_members.
     split.
@@ -4197,7 +4197,7 @@ Proof.
       iApply ("HΦ" $! (before ++ after)
         (Some (PodV.key stored_pod,
           stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
-      rewrite /own_started_deletion /phase_after_deletion /=.
+      rewrite /own_started_deletion /has_terminating_children_after_deletion /=.
       iFrame. iPureIntro. split; first exact Hdesired.
       split; first lia.
       split; first exact Hmembers'.
@@ -4294,7 +4294,7 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
       "Hterminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
-        (phase_after_deletion phase deletion) ∗
+        (has_terminating_children_after_deletion phase deletion) ∗
       "%Hdeletion_classified" ∷ ⌜ match deletion with
         | None => True
         | Some (key, _) => key ∈ desired_pod_keys set ∨
@@ -4394,7 +4394,7 @@ Proof.
       "(%Hcontinue_desired & %Hprogress1)".
     subst continue_desired. wp_auto.
     iApply ("HΦ" $! pods1 pvcs1 None).
-    rewrite /own_started_deletion /phase_after_deletion /=.
+    rewrite /own_started_deletion /has_terminating_children_after_deletion /=.
     iFrame. iPureIntro. split; first done.
     split; first exact Hdistance1.
     split; first exact Hmembers1. exact Hprogress1.
