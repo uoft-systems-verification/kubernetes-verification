@@ -225,7 +225,7 @@ Proof. rewrite big_sepL_fmap. done. Qed.
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
-    sl rs_l ptrs active_pods inactive_pods rs n phase dq1 dq2 :
+    sl rs_l ptrs active_pods inactive_pods rs n has_terminating_children dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -239,7 +239,7 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods ++ inactive_pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
       "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid ReplicaSetV.kind rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
       "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝ ∗
       "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
@@ -252,8 +252,8 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
     @! replicaset.manageReplicas #ctx #kube_client #sl #rs_l
   {{{ pods', RET #interface.nil;
       ⌜ length (filter is_pod_alive pods') = sint.nat n ⌝ ∗
-      (∃ phase', own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase') ∗
+      (∃ has_terminating_children', own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children') ∗
       ReplicaSetV.deepown_l rs_l rs dq2 ∗
       ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
@@ -296,7 +296,7 @@ Proof.
       { iExists n. iSplitL; first iExact "Hrs_Hdeepown_replicas". done. }
       iSplit; first done. iSplit; first done.
       iFrame "Hrs_Hdeepown_selector_some Hrs_Hdeepown_template". }
-    set I := (∃ (i: w64) (active_pods': list PodV.t) (phase' : terminating_children.has_terminating_children),
+    set I := (∃ (i: w64) (active_pods': list PodV.t) (has_terminating_children' : terminating_children.has_terminating_children),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ active_pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
@@ -305,7 +305,7 @@ Proof.
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> (active_pods' ++ inactive_pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children' ∗
       "%Hlen_active_pods'" ∷ ⌜ length active_pods' = Z.to_nat ((sint.Z (slice.len sl)) + sint.Z i) ⌝ ∗
       "%Hall_active" ∷ ⌜ ∀ pod, pod ∈ active_pods' → is_pod_alive pod ⌝ ∗
       "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (word.mul (word.sub (slice.len sl) (W64 (sint.Z n))) (W64 (-1))) ⌝
@@ -314,7 +314,7 @@ Proof.
       "[i Hown_active_pod_meta_frags Hown_active_pod_unreserved_key_frags Hown_children_frag
         Hown_terminating_children_frag]"
       as "Hloop_inv".
-    { iExists (W64 0), active_pods, phase. iFrame. iFrame "#".
+    { iExists (W64 0), active_pods, has_terminating_children. iFrame. iFrame "#".
       iPureIntro. split_and!. all: try word. done. }
     wp_for "Hloop_inv". wp_if_destruct.
 	  + wp_bind ((global_addr k8s_api_apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
@@ -429,7 +429,7 @@ Proof.
         "[Hi_ptr Hown_pod_meta_frags Hcreate_Hown_meta_frag Hown_pod_unreserved_key_frags
           Hcreate_Hown_unreserved_key_frag Hcreate_Hown_children_frag Hown_terminating_children_frag]"
         as "loop_inv".
-      { iExists (word.add i (W64 1)), (active_pods' ++ [pod']), phase'. iFrame "Hi_ptr".
+      { iExists (word.add i (W64 1)), (active_pods' ++ [pod']), has_terminating_children'. iFrame "Hi_ptr".
         iSplitL "Hown_pod_meta_frags Hcreate_Hown_meta_frag".
         - rewrite big_sepL_app. simpl. iFrame.
         - iSplit.
@@ -466,7 +466,7 @@ Proof.
       { iPureIntro.
         rewrite (filter_all is_pod_alive active_pods' Hall_active) Hlen_active_pods'. word. }
       iSplitL "Hown_terminating_children_frag".
-      { iExists phase'. iFrame "Hown_terminating_children_frag". }
+      { iExists has_terminating_children'. iFrame "Hown_terminating_children_frag". }
 	      iFrame "Hown_pod_meta_frags
 	        Hown_pod_unreserved_key_frags Hown_children_frag".
 	      iApply (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null).
@@ -478,7 +478,7 @@ Proof.
         rewrite (filter_all is_pod_alive active_pods Hactive_pods).
         rewrite -Hlen Hsl_len1. word. }
       iSplitL "Hown_terminating_children_frag".
-      { iExists phase. iFrame "Hown_terminating_children_frag". }
+      { iExists has_terminating_children. iFrame "Hown_terminating_children_frag". }
 	      iFrame "Hown_active_pod_meta_frags
 	        Hown_active_pod_unreserved_key_frags Hown_children_frag".
       iApply (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null).
@@ -558,7 +558,7 @@ Proof.
 	  clear Hlen Hsl_len1. rename Hlen_sorted into Hlen.
 	  rename Hsl_len1_sorted into Hsl_len1.
     iDestruct (own_slice_len with "Hslice") as %(Hslice_len1 & Hslice_len2).
-    set I := (∃ (i: w64) (pod_l: loc) (inactive_pods': list PodV.t) (phase' : terminating_children.has_terminating_children),
+    set I := (∃ (i: w64) (pod_l: loc) (inactive_pods': list PodV.t) (has_terminating_children' : terminating_children.has_terminating_children),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
       "Hpod_ptr" ∷ pod_ptr ↦ pod_l ∗
       "Hown_active_pod_meta_frags" ∷ ([∗ list] pod ∈ drop (sint.nat i) active_pods,
@@ -570,7 +570,7 @@ Proof.
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (list_to_set (PodV.key <$> ((drop (sint.nat i) active_pods) ++ inactive_pods' ++ inactive_pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children' ∗
       "%Hinactive" ∷ ⌜ ∀ pod, pod ∈ inactive_pods' → ¬ is_pod_alive pod ⌝ ∗
       "%Hincluded" ∷ ⌜ ∀ key, key ∈ PodV.key <$> inactive_pods' → key ∈ PodV.key <$> take (sint.nat i) active_pods ⌝ ∗
       "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len (slice.slice sl loc (W64 0) (word.sub (slice.len sl) (W64 (sint.Z n))))) ⌝
@@ -579,7 +579,7 @@ Proof.
 	      "[i pod Hown_active_pod_meta_frags Hown_sorted_pod_unreserved_key_frags Hown_children_frag
 	        Hown_terminating_children_frag]"
       as "Hloop_inv".
-    { iExists (W64 0), (zero_val loc), [], phase.
+    { iExists (W64 0), (zero_val loc), [], has_terminating_children.
       rewrite drop_0 big_sepL_nil app_nil_r.
       iFrame. iFrame "#".
       iPureIntro. split.
@@ -634,7 +634,7 @@ Proof.
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
 		        (list_to_set (PodV.key <$>
 		          ((drop (sint.nat i) active_pods) ++ inactive_pods' ++ inactive_pods)))
-		        phase'
+		        has_terminating_children'
 		        with "[Hdeepown_do Hown_pod_meta_frag_this Hown_children_frag
               Hown_unreserved_key_frag Hown_terminating_children_frag]").
 	      { iFrame "#".
@@ -716,7 +716,7 @@ Proof.
 	      rewrite length_drop -Hlen Hsl_len1 Hi_eq.
 	      word. }
 		    iSplitL "Hown_terminating_children_frag".
-		    { iExists phase'. iFrame. }
+		    { iExists has_terminating_children'. iFrame. }
 	    iFrame "Hown_pod_meta_frags_ret Hown_pod_unreserved_key_frags
 	      Hown_children_frag_ret".
 		    iApply (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null). iFrame.
@@ -910,10 +910,10 @@ Proof.
     intros pod Hpod.
     apply list_elem_of_filter in Hpod as [Halive _].
     exact Halive. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hphase & Hdeepown_l_rs &
+  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children & Hdeepown_l_rs &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
-  iDestruct "Hphase" as (phase') "Hown_terminating_children_frag".
+  iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".
   wp_auto.
   iAssert (([∗ list] pod ∈ pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods,
       own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -928,10 +928,10 @@ Proof.
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
   iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
     with "Hpod_meta_frags_post") as "%Hpods'_nodup".
-  iAssert (∃ phase, own_terminating_children_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+  iAssert (∃ has_terminating_children, own_terminating_children_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
     with "[Hown_terminating_children_frag]" as "Hown_terminating_children_frag".
-  { iExists phase'. iFrame. }
+  { iExists has_terminating_children'. iFrame. }
   rewrite return_val_unseal /return_val_def. wp_auto.
   iApply ("HΦ" $! (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)).
   rewrite /owned_resources /=.

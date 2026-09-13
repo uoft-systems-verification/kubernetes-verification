@@ -123,8 +123,8 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
       own_terminating_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
     else
-      ∃ phase, own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗
+      ∃ has_terminating_children, own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the

@@ -390,13 +390,13 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
     is_kubernetes γ l ∗
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
-    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children phase,
+    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children has_terminating_children,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
     }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
@@ -411,13 +411,13 @@ Proof.
   set I := (∃ options_c_orig,
     "Hoptions_ptr" ∷ options_ptr ↦ options_c_orig ∗
     "Hdeepown_options_orig" ∷ DeleteOptionsV.deepown options_c_orig options 1 ∗
-    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children phase,
+    "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children has_terminating_children,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
     }> @ ⊤, ∅ <{ ∀∀ (_ : unit),
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
       "Hdeletion_observed_frag" ∷ own_deletion_observed_frag γ key uid ∗
@@ -436,7 +436,7 @@ Proof.
   wp_auto.
   wp_apply (wp_State__get_some_au γ l key).
   iFrame "#".
-  iMod "Hau" as (uid kmeta parent_key parent_uid children phase) "[Hau_pre Hclose]".
+  iMod "Hau" as (uid kmeta parent_key parent_uid children has_terminating_children) "[Hau_pre Hclose]".
   iNamed "Hau_pre".
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
@@ -504,11 +504,11 @@ Proof.
   iFrame "#".
   iFrame "Hdeepown_options_rv".
   iSplit; first done.
-  iMod "Hau" as (uid' kmeta' parent_key' parent_uid' children' phase') "[Hau_pre Hclose]".
+  iMod "Hau" as (uid' kmeta' parent_key' parent_uid' children' has_terminating_children') "[Hau_pre Hclose]".
   iRename "Hown_unreserved_key_frag" into "Hown_unreserved_key_frag_outer".
   iNamed "Hau_pre".
   iModIntro.
-  iExists uid', kmeta', parent_key', parent_uid', children', phase'.
+  iExists uid', kmeta', parent_key', parent_uid', children', has_terminating_children'.
   iFrame "Hown_meta_frag Hown_children_frag Hown_terminating_children_frag".
   iSplit; first done.
   iSplit.
@@ -550,7 +550,7 @@ Proof.
     iExists options_c'. iFrame.
 Qed.
 
-Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_uid children phase :
+Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_uid children has_terminating_children :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
@@ -560,7 +560,7 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
       "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
   }}}
     l @! (go.PointerType apimodel.State) @! "deleteTx" #key #options_c
   {{{ RET #interface.nil;
@@ -582,7 +582,7 @@ Proof.
     "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
     "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
     "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-    "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase)%I)
+    "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children)%I)
     with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]" as "Hpre".
   { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
   iAaccIntro with "Hpre".

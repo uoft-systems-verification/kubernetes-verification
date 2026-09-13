@@ -1,9 +1,9 @@
 From New.proof.controllers.statefulset Require Export top_level.
 
-Definition has_terminating_children_after_deletion phase
+Definition has_terminating_children_after_deletion has_terminating_children
     (deletion : option (KKey.t * types.UID.t)) :=
   match deletion with
-  | None => phase
+  | None => has_terminating_children
   | Some _ => terminating_children.Maybe
   end.
 

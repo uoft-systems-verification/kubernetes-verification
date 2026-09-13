@@ -392,8 +392,8 @@ Proof.
         exact Hcomplete. }
       iEval (rewrite -Hset_key -Hset_uid) in
         "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
@@ -417,8 +417,8 @@ Proof.
         rewrite Hgood_eq in Hstrict. exact Hstrict. }
       iEval (rewrite -Hset_key -Hset_uid) in
         "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
@@ -484,8 +484,8 @@ Proof.
       rewrite Hname. exact (proj2 Hfinal_good). }
     iEval (rewrite -Hset_key -Hset_uid) in
       "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-    iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+    iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
       with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
     { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
     iApply ("HΦ" $! pods' pvcs' interface.nil).
