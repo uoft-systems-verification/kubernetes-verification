@@ -46,7 +46,9 @@ Proof.
     (Hmeta_update & Hspec_update).
   { destruct old_spec, input; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
-        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update in Hvalid_update;
+        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+        ?/DeploymentV.valid_update
+        ?/DeploymentV.valid_update in Hvalid_update;
       try contradiction; tauto. }
   assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
       (KObjectV.objectmeta old).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace'))
@@ -108,6 +110,8 @@ Proof.
   { destruct old_status, input; rewrite /KObjectV.valid_status_update /= in Hvalid_update;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        ?/DeploymentV.valid_status_update
+        ?/DeploymentV.valid_status_update
         in Hvalid_update;
       try contradiction; tauto. }
   assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
@@ -164,14 +168,16 @@ Proof.
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace.
   { destruct input, stored;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
-        /PersistentVolumeClaimV.updated /StatefulSetV.updated /= in Hupdated |- *;
+        /PersistentVolumeClaimV.updated /StatefulSetV.updated
+        /DeploymentV.updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.OwnerReferences') =
     (KObjectV.objectmeta input).(ObjectMetaV.OwnerReferences')) as Howners.
   { destruct input, stored;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
-        /PersistentVolumeClaimV.updated /StatefulSetV.updated /= in Hupdated |- *;
+        /PersistentVolumeClaimV.updated /StatefulSetV.updated
+        /DeploymentV.updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   rewrite /meta_parent_ref Howners.
@@ -191,14 +197,16 @@ Proof.
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace.
   { destruct input, stored;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /= in Hupdated |- *;
+        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
+        /DeploymentV.status_updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.OwnerReferences') =
       (KObjectV.objectmeta input).(ObjectMetaV.OwnerReferences')) as Howners.
   { destruct input, stored;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated /= in Hupdated |- *;
+        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
+        /DeploymentV.status_updated /= in Hupdated |- *;
       try done; destruct Hupdated as (_ & Hmeta & _);
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   rewrite /meta_parent_ref Howners.
@@ -217,9 +225,11 @@ Lemma storage_object_normalize_eq_implies_update_objects_equiv_except_resource_v
   update_objects_equiv_except_resource_version obj1 obj2.
 Proof.
   destruct obj1 as [[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
-      [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]],
+      [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
+      [tm1 meta1 spec1 status1]],
     obj2 as [[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
-      [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]];
+      [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
+      [tm2 meta2 spec2 status2]];
     try discriminate;
     destruct meta1, meta2;
     rewrite /KObjectV.valid /storage_object_normalize
@@ -308,7 +318,8 @@ Proof.
   rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
   destruct (KObjectV.spec old), input; rewrite /KObjectV.valid_update /= in Hvalid_update;
     rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
-      ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update in Hvalid_update;
+      ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+      ?/DeploymentV.valid_update in Hvalid_update;
     try contradiction; tauto.
 Qed.
 
@@ -407,6 +418,7 @@ Proof.
       rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        ?/DeploymentV.valid_status_update
         /ObjectMetaV.valid_update in Hvalid_status_update;
       try contradiction; tauto. }
   destruct Hprepared as (_ & _ & _ & ->).

@@ -17,6 +17,15 @@ Proof.
   - exists (pod :: pods). done.
 Qed.
 
+Lemma kobject_list_to_replicasets objs :
+  Forall (λ obj, ∃ rs, obj = KObjectV.ReplicaSet rs) objs →
+  ∃ rss, objs = KObjectV.ReplicaSet <$> rss.
+Proof.
+  induction 1 as [|obj objs [rs ->] _ [rss ->]].
+  - exists []. done.
+  - exists (rs :: rss). done.
+Qed.
+
 Definition processed_map `{Countable K} {A}
     (keys : list K) (i : Z) (m : gmap K A) : gmap K A :=
   filter (λ '(k, _), k ∈ list_to_set (C:=gset K) (take (Z.to_nat i) keys)) m.
@@ -529,8 +538,9 @@ Proof.
     apply elem_of_map_to_list in Hin.
     apply map_lookup_filter_Some in Hin as [Hlookup_abs [Hkind _]].
     pose proof (Habs_valid key obj Hlookup_abs) as [Hkey_eq _].
-    destruct obj as [pod|rs|pvc|sts].
+    destruct obj as [pod|rs|pvc|sts|d].
     - eexists. done.
+    - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
@@ -613,6 +623,152 @@ Proof.
   }
   rewrite Hfilter_eq in Hperm.
   split; [exact Hperm|exact Hpods_valid].
+Qed.
+
+(* ---------------------------------------------------------------- *)
+(* ReplicaSet specialisations, mirroring the Pod ones above.        *)
+(* ---------------------------------------------------------------- *)
+
+Lemma wp_State__objListLocked_ReplicaSet γ l (namespace : go_string)
+    phys_state_l phys_state abs_state used_uid :
+  {{{ is_pkg_init apimodel ∗
+      "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
+      "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
+      "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
+      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "objListLocked"
+      #ReplicaSetV.kind #namespace
+  {{{ sl interfaces rss, RET #sl;
+      sl ↦* (interface.ok <$> interfaces) ∗
+      ([∗ list] i;rs ∈ interfaces;rss,
+        KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
+      ⌜ KObjectV.ReplicaSet <$> rss ≡ₚ (map_to_list (filter
+          (λ kv, kv.1.(KKey.Kind') = ReplicaSetV.kind ∧
+            v1.namespace_matches #namespace #(kv.1.(KKey.Namespace')))
+          abs_state)).*2 ⌝ ∗
+      ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
+      ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
+      l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
+      phys_state_l ↦$ phys_state ∗
+      own_kview_auth γ abs_state used_uid ∗
+      ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
+  wp_apply (wp_State__objListLocked
+    with "[$Hstate_m_addr $Hown_phys $Hown_abs $Hphys_abs_rep]").
+  iIntros (sl interfaces objs)
+    "(Hsl & Hlist & %Hperm & %Hvalid & %Hextra_valid & %Hnodup &
+      Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
+  iPoseProof (kview.own_auth_valid_forall with "Hown_abs") as "%Habs_valid".
+  assert (Forall (λ obj, ∃ rs, obj = KObjectV.ReplicaSet rs) objs)
+    as Hobjs_are_rss.
+  { rewrite Forall_forall.
+    intros obj Hobj_in.
+    rewrite Hperm in Hobj_in.
+    rewrite <- list_elem_of_In in Hobj_in.
+    apply list_elem_of_fmap_1 in Hobj_in as [[key obj'] [Hobj_eq Hin]].
+    simpl in Hobj_eq. subst obj'.
+    apply elem_of_map_to_list in Hin.
+    apply map_lookup_filter_Some in Hin as [Hlookup_abs [Hkind _]].
+    pose proof (Habs_valid key obj Hlookup_abs) as [Hkey_eq _].
+    destruct obj as [pod|rs|pvc|sts|d].
+    - exfalso. subst key. simpl in Hkind. done.
+    - eexists. done.
+    - exfalso. subst key. simpl in Hkind. done.
+    - exfalso. subst key. simpl in Hkind. done.
+    - exfalso. subst key. simpl in Hkind. done. }
+  destruct (kobject_list_to_replicasets _ Hobjs_are_rss) as [rss ->].
+  iEval (rewrite big_sepL2_fmap_r) in "Hlist".
+  iApply "HΦ". iFrame.
+  iPureIntro. split_and!.
+  - exact Hperm.
+  - rewrite Forall_fmap in Hvalid.
+    rewrite Forall_forall in Hvalid.
+    apply Forall_forall.
+    intros rs Hrs_in.
+    specialize (Hvalid rs Hrs_in).
+    change (KObjectV.valid2 (KObjectV.ReplicaSet rs)).
+    rewrite -KObjectV.valid_eq_valid2. exact Hvalid.
+  - assert (KObjectV.key <$> (KObjectV.ReplicaSet <$> rss) =
+      ReplicaSetV.key <$> rss) as Hkeys_eq.
+    { rewrite -list_fmap_compose.
+      apply list_fmap_ext. intros i rs Hlookup.
+      unfold compose, KObjectV.key, ReplicaSetV.key, KObjectV.kind,
+        ReplicaSetV.kind. done. }
+    rewrite Hkeys_eq in Hnodup. exact Hnodup.
+Qed.
+
+Lemma wp_State__objListLocked_ReplicaSet_NamespaceAll γ l
+    phys_state_l phys_state abs_state used_uid :
+  {{{ is_pkg_init apimodel ∗
+      "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
+      "Hown_phys" ∷ phys_state_l ↦$ phys_state ∗
+      "Hown_abs" ∷ own_kview_auth γ abs_state used_uid ∗
+      "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
+  }}}
+    l @! (go.PointerType apimodel.State) @! "objListLocked"
+      #ReplicaSetV.kind #""%go
+  {{{ sl interfaces rss, RET #sl;
+      sl ↦* (interface.ok <$> interfaces) ∗
+      ([∗ list] i;rs ∈ interfaces;rss,
+        KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
+      ⌜ KObjectV.ReplicaSet <$> rss ≡ₚ (map_to_list (filter
+          (λ kv, kv.1.(KKey.Kind') = ReplicaSetV.kind) abs_state)).*2 ⌝ ∗
+      ⌜ Forall ReplicaSetV.valid rss ⌝ ∗
+      ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
+      l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
+      phys_state_l ↦$ phys_state ∗
+      own_kview_auth γ abs_state used_uid ∗
+      ([∗ map] i; obj ∈ phys_state; abs_state,
+        match i with
+        | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+        | interface.nil => False%I
+        end)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep) HΦ".
+  wp_apply (wp_State__objListLocked_ReplicaSet
+    with "[$Hstate_m_addr $Hown_phys $Hown_abs $Hphys_abs_rep]").
+  iIntros (sl interfaces rss)
+    "(Hsl & Hlist & %Hperm & %Hrss_valid & %Hnodup &
+      Hstate_m_addr & Hown_phys & Hown_abs & Hphys_abs_rep)".
+  iApply "HΦ". iFrame.
+  iPureIntro.
+  assert (filter
+    (λ kv, kv.1.(KKey.Kind') = ReplicaSetV.kind ∧
+      v1.namespace_matches v1.NamespaceAll #(kv.1.(KKey.Namespace'))) abs_state =
+    filter (λ kv, kv.1.(KKey.Kind') = ReplicaSetV.kind) abs_state) as Hfilter_eq.
+  { apply map_eq. intros k.
+    destruct (abs_state !! k) as [obj|] eqn:Hlookup.
+    - destruct (decide (k.(KKey.Kind') = ReplicaSetV.kind)) as [Hkind|Hkind].
+      + transitivity (Some obj).
+        * apply map_lookup_filter_Some_2; [done|].
+          split; [done|left; done].
+        * symmetry. apply map_lookup_filter_Some_2; [done|]. done.
+      + transitivity (@None KObjectV.t).
+        * apply map_lookup_filter_None_2. right.
+          intros x Hlookup' [Hkind' _]. apply Hkind. exact Hkind'.
+        * symmetry. apply map_lookup_filter_None_2. right.
+          intros x Hlookup' Hpred. apply Hkind. exact Hpred.
+    - transitivity (@None KObjectV.t).
+      + apply map_lookup_filter_None_2. left. done.
+      + symmetry. apply map_lookup_filter_None_2. left. done. }
+  rewrite Hfilter_eq in Hperm.
+  split_and!; [exact Hperm|exact Hrss_valid|exact Hnodup].
 Qed.
 
 End proof.

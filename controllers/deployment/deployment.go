@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -106,7 +105,7 @@ func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSe
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := apimodel.ModelState.ReplicaSetUpdate(rsCopy.Namespace, rsCopy)
+	updated, err := apimodel.ModelState.ReplicaSetUpdateTx(rsCopy.Namespace, rsCopy)
 	if err != nil {
 		return false, rs, err
 	}
@@ -132,7 +131,12 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 			Name:            d.Name + "-" + podTemplateSpecHash,
 			Namespace:       d.Namespace,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(d, apps.SchemeGroupVersion.WithKind("Deployment"))},
-			Labels:          newRSTemplate.Labels,
+			// TODO: share one map with newRSTemplate.Labels, as upstream does.
+			// Cloning a second time is a proof accommodation: deep ownership of
+			// the ReplicaSet would otherwise have to hold the same map both as
+			// the object's labels and as its template's, and a separating
+			// conjunction cannot. The contents are identical either way.
+			Labels: cloneAndAddLabel(d.Spec.Template.Labels, deploymentUniqueLabelKey, podTemplateSpecHash),
 		},
 		Spec: apps.ReplicaSetSpec{
 			Replicas:        &replicas,
@@ -193,19 +197,33 @@ func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	return err
 }
 
-// filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
-// whose controller reference points at the deployment.
+// filterReplicaSetsByOwner returns the ReplicaSets whose controller reference
+// points at the deployment.
+//
+// TODO: restore the upstream shape. Upstream's getReplicaSetsForDeployment
+// lists the ReplicaSets in the deployment's namespace and reconciles
+// ControllerRefs through a ControllerRefManager; this fetches them through the
+// replicaSetController index instead, the way controllers/common's
+// FilterPodsByOwner fetches Pods. The reason is a proof one: the model's
+// listing specifications hand back deep copies owned independently of the
+// store invariant, so nothing relates a listed object to the ghost fragment
+// recording the deployment's children, whereas the index is keyed by exactly
+// the owner reference that fragment records. Once the listing specifications
+// carry fragments, this can go back to listing and filtering in Go.
 func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
-	all, err := apimodel.ModelState.ReplicaSetList(d.Namespace, labels.Everything())
+	result := []*apps.ReplicaSet{}
+	key := controller.PodControllerIndexKey(d.Namespace,
+		&metav1.OwnerReference{Name: d.Name, Kind: "Deployment", UID: d.UID})
+	items, err := apimodel.ModelState.ByIndex("ReplicaSet", apimodel.ReplicaSetControllerIndex, key)
 	if err != nil {
 		return nil, err
 	}
-	result := []*apps.ReplicaSet{}
-	for _, rs := range all {
-		ref := metav1.GetControllerOf(rs)
-		if ref != nil && ref.UID == d.UID {
-			result = append(result, rs)
+	for _, obj := range items {
+		rs, ok := obj.(*apps.ReplicaSet)
+		if !ok {
+			continue
 		}
+		result = append(result, rs)
 	}
 	return result, nil
 }

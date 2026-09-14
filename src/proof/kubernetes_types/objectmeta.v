@@ -345,5 +345,23 @@ Definition valid_update old input : Prop :=
   valid_finalizers input.(Finalizers') ∧
   valid_managed_fields input.(ManagedFields').
 
+(* A stored object's metadata is admissible as a create request into its own
+   namespace: [valid] is strictly stronger than [valid_create] except for the
+   namespace agreement, which the caller supplies. *)
+Lemma valid_create_of_valid {kind ns} m :
+  valid kind m →
+  ns = m.(Namespace') →
+  valid_create kind ns m.
+Proof.
+  unfold valid, valid_create.
+  intros (Hgenerate_name & Hname_nonempty & Hname & _ & Hnamespace_valid &
+    _ & Hlabels & Hannotations & Howner_references & Hfinalizers &
+    Hmanaged_fields & _) Hnamespace.
+  case_decide; first contradiction.
+  split; [split; assumption|].
+  split; [right; split; [assumption|symmetry; exact Hnamespace]|].
+  repeat split; assumption.
+Qed.
+
 End proof.
 End ObjectMetaV.

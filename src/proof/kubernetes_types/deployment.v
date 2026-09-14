@@ -4,7 +4,7 @@ From New.proof.kubernetes_types Require Import top_level.
 
 Module DeploymentSpecV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -154,19 +154,27 @@ End DeploymentSpecV.
 
 Module DeploymentStatusV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Record t := mk {}.
+(* This includes validation and normalization of the unmodeled status fields. *)
 Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom created : t → t → Prop.
-Axiom updated : t → t → Prop.
 Axiom deepown : v1.DeploymentStatus.t → t → dfrac → iProp Σ.
+
+(* PrepareForCreate discards any submitted status, so the stored status is
+   whatever the registry produces rather than the input:
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L74-L80 *)
+Definition created (_input stored : t) : Prop :=
+  valid stored.
+
+Definition updated (input stored : t) : Prop :=
+  stored = input.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -176,7 +184,7 @@ End DeploymentStatusV.
 
 Module DeploymentV.
 Section def.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
@@ -309,7 +317,7 @@ Definition deepown_l_without_meta l v (dq: dfrac): iProp Σ :=
 End def.
 
 Section proof.
-Context `{hG: !heapGS Σ}.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
