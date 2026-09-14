@@ -124,14 +124,32 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 		if err != nil {
 			return err
 		}
+		// Choose which Pods to delete, preferring those in earlier phases of startup.
 		podsToDelete := getPodsToDelete(activePods, relatedPods, diff)
+
+		errCh := make(chan error, diff)
+		var wg sync.WaitGroup
+		wg.Add(diff)
 		for _, pod := range podsToDelete {
-			uid := pod.ObjectMeta.GetUID()
-			if err := kubeClient.CoreV1().Pods(pod.ObjectMeta.GetNamespace()).Delete(ctx, pod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
-				if !apierrors.IsNotFound(err) {
-					return err
+			go func(targetPod *v1.Pod) {
+				defer wg.Done()
+				uid := targetPod.ObjectMeta.GetUID()
+				if err := kubeClient.CoreV1().Pods(targetPod.ObjectMeta.GetNamespace()).Delete(ctx, targetPod.ObjectMeta.GetName(), common.NewDeleteOptionsWithUID(uid)); err != nil {
+					if !apierrors.IsNotFound(err) {
+						errCh <- err
+					}
 				}
+			}(pod)
+		}
+		wg.Wait()
+
+		select {
+		case err := <-errCh:
+			// all errors have been reported before and they're likely to be the same, so we'll only return the first one we hit.
+			if err != nil {
+				return err
 			}
+		default:
 		}
 	}
 

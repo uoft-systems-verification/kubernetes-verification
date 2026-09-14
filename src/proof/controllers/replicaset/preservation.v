@@ -232,10 +232,10 @@ Proof.
       $Hown_terminating_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; try done.
-    - intros pod Hpod.
-      apply list_elem_of_filter in Hpod as [Halive _].
-      exact Halive.
-    - rewrite app_nil_r. exact Hactive_nodup. }
+    all: try (intros pod Hpod; apply list_elem_of_filter in Hpod as [Halive _]; exact Halive).
+    all: try (rewrite app_nil_r; exact Hactive_nodup).
+    pose proof (Permutation_length Hactive_key_perm) as Hlen_perm.
+    rewrite !length_fmap in Hlen_perm. lia. }
   iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".

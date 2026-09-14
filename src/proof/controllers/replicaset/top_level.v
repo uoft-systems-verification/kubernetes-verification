@@ -127,6 +127,9 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
+(* The number of owned pods is bounded by the int32 range because the controller
+  adds it to a sync.WaitGroup counter, as upstream does. Upstream is protected
+  by its burst cap, which the verified controller does not yet have. *)
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
@@ -136,6 +139,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) name
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
@@ -156,6 +160,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
