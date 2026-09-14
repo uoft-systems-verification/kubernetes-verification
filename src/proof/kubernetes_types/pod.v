@@ -234,7 +234,7 @@ Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
     ⌜c.(v1.PodSpec.Volumes') = slice.nil ↔ v.(Volumes') = None⌝ ∗
   "Hdeepown_volumes" ∷
     (∃ volumes,
-      deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v)
+      deepown_list_dq dq c.(v1.PodSpec.Volumes') volumes (volumes_list v)
       (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
   "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
   "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.
