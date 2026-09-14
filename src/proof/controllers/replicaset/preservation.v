@@ -236,7 +236,7 @@ Proof.
       apply list_elem_of_filter in Hpod as [Halive _].
       exact Halive.
     - rewrite app_nil_r. exact Hactive_nodup. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children & Hdeepown_l_rs &
+  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
   iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".

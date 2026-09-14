@@ -3,6 +3,7 @@ Require Export New.code.context.
 Require Export New.code.controllers.common.
 Require Export New.code.kubernetes_model.apimodel.
 Require Export New.code.sort.
+Require Export New.code.sync.
 Require Export New.code.k8s_io.api.apps.v1.
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
@@ -33,12 +34,14 @@ Definition getPodsRankedByRelatedPodsOnSameNode {ext : ffi_syntax} {go_gctx : Go
 
 Definition manageReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.manageReplicas"%go.
 
+Definition slowStartBatch {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.slowStartBatch"%go.
+
 Definition syncReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
 (* getReplicaSetsWithSameController returns a list of ReplicaSets with the same
    owner as the given ReplicaSet.
 
-   go: replica_set.go:26:6 *)
+   go: replica_set.go:27:6 *)
 Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -81,7 +84,7 @@ Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
 (* getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
    with the same controller owner as rs.
 
-   go: replica_set.go:45:6 *)
+   go: replica_set.go:46:6 *)
 Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -142,7 +145,7 @@ Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
         do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")))));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "relatedPods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:69:6 *)
+(* go: replica_set.go:71:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (GoAlloc go.int "diff") in
@@ -165,7 +168,7 @@ Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getPodsRankedByRelatedPodsOnSameNode ranks each pod by the number of active
    related pods colocated on its node.
 
-   go: replica_set.go:81:6 *)
+   go: replica_set.go:83:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "relatedPods") in
@@ -199,7 +202,7 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {g
      let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
      CompositeLiteral controller.ActivePodsWithRanks (LiteralValue [KeyedElement (Some (KeyField "Pods"%go)) (ElementExpression (go.SliceType (go.PointerType api_core_v1.Pod)) "$v0"); KeyedElement (Some (KeyField "Rank"%go)) (ElementExpression (go.SliceType go.int) "$v1"); KeyedElement (Some (KeyField "Now"%go)) (ElementExpression apis_meta_v1.Time "$v2")]))).
 
-(* go: replica_set.go:95:6 *)
+(* go: replica_set.go:98:6 *)
 Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "activePods" "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -213,11 +216,11 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     (if: Convert go.untyped_bool go.bool ((![go.int] "diff") <⟨go.int⟩ #(W64 0))
     then
       do:  ("diff" <-[go.int] ((![go.int] "diff") *⟨go.int⟩ (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1))));;;
-      (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-      let: "$r0" := #(W64 0) in
-      do:  ("i" <-[go.int] "$r0");;;
-      (for: (λ: <>, (![go.int] "i") <⟨go.int⟩ (![go.int] "diff")); (λ: <>, do:  ("i" <-[go.int] ((![go.int] "i") +⟨go.int⟩ #(W64 1)))) := λ: <>,
-        let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.int] "diff") in
+      let: "$a1" := (Convert go.untyped_int go.int controller.SlowStartInitialBatchSize) in
+      let: "$a2" := (λ: <>,
+        exception_do (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
         let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
         let: ("$ret0", "$ret1") := (let: "$a0" := (StructFieldRef api_apps_v1.ReplicaSetSpec "Template"%go (StructFieldRef api_apps_v1.ReplicaSet "Spec"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))) in
         let: "$a1" := (Convert (go.PointerType api_apps_v1.ReplicaSet) runtime.Object (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
@@ -243,9 +246,14 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
         let: "$r1" := "$ret1" in
         do:  "$r0";;;
         do:  ("err" <-[go.error] "$r1");;;
-        (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-        then return: (![go.error] "err")
-        else do:  #())))
+        return: (![go.error] "err"))
+        ) in
+      (FuncResolve slowStartBatch [] #()) "$a0" "$a1" "$a2") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("err" <-[go.error] "$r1");;;
+      return: (![go.error] "err")
     else
       (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ #(W64 0))
       then
@@ -292,7 +300,82 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:129:6 *)
+(* slowStartBatch tries to call the provided function a total of 'count' times,
+   starting slow to check for errors, then speeding up if calls succeed.
+
+   It groups the calls into batches, starting with a group of initialBatchSize.
+   Within each batch, it may call the function multiple times concurrently.
+
+   If a whole batch succeeds, the next batch may get exponentially larger.
+   If there are any failures in a batch, all remaining batches are skipped
+   after waiting for the current batch to complete.
+
+   It returns the number of successful calls to the function.
+
+   go: replica_set.go:152:6 *)
+Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "count" "initialBatchSize" "fn",
+    exception_do (let: "fn" := (GoAlloc (go.FunctionType (go.Signature [] false [go.error])) "fn") in
+    let: "initialBatchSize" := (GoAlloc go.int "initialBatchSize") in
+    let: "count" := (GoAlloc go.int "count") in
+    let: "remaining" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := (![go.int] "count") in
+    do:  ("remaining" <-[go.int] "$r0");;;
+    let: "successes" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := #(W64 0) in
+    do:  ("successes" <-[go.int] "$r0");;;
+    (let: "batchSize" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := (let: "$a0" := (![go.int] "remaining") in
+    let: "$a1" := (![go.int] "initialBatchSize") in
+    (FuncResolve go.min [go.int; go.int] #()) "$a0" "$a1") in
+    do:  ("batchSize" <-[go.int] "$r0");;;
+    (for: (λ: <>, (![go.int] "batchSize") >⟨go.int⟩ #(W64 0)); (λ: <>, let: "$r0" := (let: "$a0" := (#(W64 2) *⟨go.int⟩ (![go.int] "batchSize")) in
+    let: "$a1" := (![go.int] "remaining") in
+    (FuncResolve go.min [go.int; go.int] #()) "$a0" "$a1") in
+    do:  ("batchSize" <-[go.int] "$r0")) := λ: <>,
+      let: "errCh" := (GoAlloc (go.ChannelType go.sendrecv go.error) (GoZeroVal (go.ChannelType go.sendrecv go.error) #())) in
+      let: "$r0" := ((FuncResolve go.make2 [go.ChannelType go.sendrecv go.error] #()) (![go.int] "batchSize")) in
+      do:  ("errCh" <-[go.ChannelType go.sendrecv go.error] "$r0");;;
+      let: "wg" := (GoAlloc sync.WaitGroup (GoZeroVal sync.WaitGroup #())) in
+      do:  (let: "$a0" := (![go.int] "batchSize") in
+      (MethodResolve (go.PointerType sync.WaitGroup) "Add"%go "wg") "$a0");;;
+      (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
+      let: "$r0" := #(W64 0) in
+      do:  ("i" <-[go.int] "$r0");;;
+      (for: (λ: <>, (![go.int] "i") <⟨go.int⟩ (![go.int] "batchSize")); (λ: <>, do:  ("i" <-[go.int] ((![go.int] "i") +⟨go.int⟩ #(W64 1)))) := λ: <>,
+        let: "$go" := (λ: <>,
+          with_defer: (do:  (let: "$f" := (MethodResolve (go.PointerType sync.WaitGroup) "Done"%go "wg") in
+          "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
+          (λ: <>,
+            "$f" #();;
+            "$oldf" #()
+            )));;;
+          (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+          let: "$r0" := ((![go.FunctionType (go.Signature [] false [go.error])] "fn") #()) in
+          do:  ("err" <-[go.error] "$r0");;;
+          (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+          then
+            do:  (let: "$chan" := (![go.ChannelType go.sendrecv go.error] "errCh") in
+            let: "$v" := (![go.error] "err") in
+            chan.send go.error "$chan" "$v")
+          else do:  #()));;;
+          return: #())
+          ) in
+        do:  (Fork ("$go" #()))));;;
+      do:  ((MethodResolve (go.PointerType sync.WaitGroup) "Wait"%go "wg") #());;;
+      let: "curSuccesses" := (GoAlloc go.int (GoZeroVal go.int #())) in
+      let: "$r0" := ((![go.int] "batchSize") -⟨go.int⟩ (let: "$a0" := (![go.ChannelType go.sendrecv go.error] "errCh") in
+      (FuncResolve go.len [go.ChannelType go.sendrecv go.error] #()) "$a0")) in
+      do:  ("curSuccesses" <-[go.int] "$r0");;;
+      do:  ("successes" <-[go.int] ((![go.int] "successes") +⟨go.int⟩ (![go.int] "curSuccesses")));;;
+      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.ChannelType go.sendrecv go.error] "errCh") in
+      (FuncResolve go.len [go.ChannelType go.sendrecv go.error] #()) "$a0") >⟨go.int⟩ #(W64 0))
+      then return: (![go.int] "successes", Fst (chan.receive go.error (![go.ChannelType go.sendrecv go.error] "errCh")))
+      else do:  #());;;
+      do:  ("remaining" <-[go.int] ((![go.int] "remaining") -⟨go.int⟩ (![go.int] "batchSize")))));;;
+    return: (![go.int] "successes", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: replica_set.go:178:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -345,7 +428,7 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
 #[global] Instance info' : PkgInfo pkg_id.replicaset :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.sync.pkg_id.sync; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -359,6 +442,7 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (errors.initialize' #());;;
       do:  (api_core_v1.initialize' #());;;
       do:  (api_apps_v1.initialize' #());;;
+      do:  (sync.initialize' #());;;
       do:  (sort.initialize' #());;;
       do:  (apimodel.initialize' #());;;
       do:  (common.initialize' #());;;
@@ -372,11 +456,13 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] getPodsToDelete_unfold :: FuncUnfold getPodsToDelete [] (getPodsToDeleteⁱᵐᵖˡ);
   #[global] getPodsRankedByRelatedPodsOnSameNode_unfold :: FuncUnfold getPodsRankedByRelatedPodsOnSameNode [] (getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ);
   #[global] manageReplicas_unfold :: FuncUnfold manageReplicas [] (manageReplicasⁱᵐᵖˡ);
+  #[global] slowStartBatch_unfold :: FuncUnfold slowStartBatch [] (slowStartBatchⁱᵐᵖˡ);
   #[global] syncReplicaSet_unfold :: FuncUnfold syncReplicaSet [] (syncReplicaSetⁱᵐᵖˡ);
   #[global] import_context_Assumption :: context.Assumptions;
   #[global] import_common_Assumption :: common.Assumptions;
   #[global] import_apimodel_Assumption :: apimodel.Assumptions;
   #[global] import_sort_Assumption :: sort.Assumptions;
+  #[global] import_sync_Assumption :: sync.Assumptions;
   #[global] import_api_apps_v1_Assumption :: api_apps_v1.Assumptions;
   #[global] import_api_core_v1_Assumption :: api_core_v1.Assumptions;
   #[global] import_errors_Assumption :: errors.Assumptions;
