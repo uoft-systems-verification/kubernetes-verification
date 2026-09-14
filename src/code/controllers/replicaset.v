@@ -274,29 +274,60 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
         let: "$a2" := (![go.int] "diff") in
         (FuncResolve getPodsToDelete [] #()) "$a0" "$a1" "$a2") in
         do:  ("podsToDelete" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
+        let: "errCh" := (GoAlloc (go.ChannelType go.sendrecv go.error) (GoZeroVal (go.ChannelType go.sendrecv go.error) #())) in
+        let: "$r0" := ((FuncResolve go.make2 [go.ChannelType go.sendrecv go.error] #()) (![go.int] "diff")) in
+        do:  ("errCh" <-[go.ChannelType go.sendrecv go.error] "$r0");;;
+        let: "wg" := (GoAlloc sync.WaitGroup (GoZeroVal sync.WaitGroup #())) in
+        do:  (let: "$a0" := (![go.int] "diff") in
+        (MethodResolve (go.PointerType sync.WaitGroup) "Add"%go "wg") "$a0");;;
         let: "$range" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "podsToDelete") in
         (let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
         slice.for_range (go.PointerType api_core_v1.Pod) "$range" (λ: "$key" "$value",
           do:  ("pod" <-[go.PointerType api_core_v1.Pod] "$value");;;
           do:  "$key";;;
-          let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
-          let: "$r0" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetUID"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "pod"))) #()) in
-          do:  ("uid" <-[types.UID] "$r0");;;
-          (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-          let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-          let: "$a1" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetName"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "pod"))) #()) in
-          let: "$a2" := (let: "$a0" := (![types.UID] "uid") in
-          (FuncResolve common.NewDeleteOptionsWithUID [] #()) "$a0") in
-          (MethodResolve v1.PodInterface "Delete"%go (let: "$a0" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "pod"))) #()) in
-          (MethodResolve v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType kubernetes.Clientset) "CoreV1"%go (![go.PointerType kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
+          let: "$a0" := (![go.PointerType api_core_v1.Pod] "pod") in
+          let: "$go" := (λ: "targetPod",
+            with_defer: (let: "targetPod" := (GoAlloc (go.PointerType api_core_v1.Pod) "targetPod") in
+            do:  (let: "$f" := (MethodResolve (go.PointerType sync.WaitGroup) "Done"%go "wg") in
+            "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
+            (λ: <>,
+              "$f" #();;
+              "$oldf" #()
+              )));;;
+            let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
+            let: "$r0" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetUID"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "targetPod"))) #()) in
+            do:  ("uid" <-[types.UID] "$r0");;;
+            (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+            let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
+            let: "$a1" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetName"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "targetPod"))) #()) in
+            let: "$a2" := (let: "$a0" := (![types.UID] "uid") in
+            (FuncResolve common.NewDeleteOptionsWithUID [] #()) "$a0") in
+            (MethodResolve v1.PodInterface "Delete"%go (let: "$a0" := ((MethodResolve (go.PointerType apis_meta_v1.ObjectMeta) "GetNamespace"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "targetPod"))) #()) in
+            (MethodResolve v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType kubernetes.Clientset) "CoreV1"%go (![go.PointerType kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
+            do:  ("err" <-[go.error] "$r0");;;
+            (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+            then
+              (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
+              (FuncResolve errors.IsNotFound [] #()) "$a0"))
+              then
+                do:  (let: "$chan" := (![go.ChannelType go.sendrecv go.error] "errCh") in
+                let: "$v" := (![go.error] "err") in
+                chan.send go.error "$chan" "$v")
+              else do:  #())
+            else do:  #()));;;
+            return: #())
+            ) in
+          do:  (Fork ("$go" "$a0"))));;;
+        do:  ((MethodResolve (go.PointerType sync.WaitGroup) "Wait"%go "wg") #());;;
+        let: "$ch0" := (![go.ChannelType go.sendrecv go.error] "errCh") in
+        SelectStmt (SelectStmtClauses (Some (do:  #())) [(CommClause (RecvCase go.error "$ch0") (λ: "$recvVal",
+          let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+          let: "$r0" := (Fst "$recvVal") in
           do:  ("err" <-[go.error] "$r0");;;
           (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-          then
-            (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
-            (FuncResolve errors.IsNotFound [] #()) "$a0"))
-            then return: (![go.error] "err")
-            else do:  #())
-          else do:  #()))))
+          then return: (![go.error] "err")
+          else do:  #())
+          ))])
       else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
@@ -312,7 +343,7 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
    It returns the number of successful calls to the function.
 
-   go: replica_set.go:152:6 *)
+   go: replica_set.go:170:6 *)
 Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "count" "initialBatchSize" "fn",
     exception_do (let: "fn" := (GoAlloc (go.FunctionType (go.Signature [] false [go.error])) "fn") in
@@ -375,7 +406,7 @@ Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       do:  ("remaining" <-[go.int] ((![go.int] "remaining") -⟨go.int⟩ (![go.int] "batchSize")))));;;
     return: (![go.int] "successes", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:178:6 *)
+(* go: replica_set.go:196:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
