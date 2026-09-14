@@ -5,14 +5,14 @@ From iris.base_logic.lib Require Import own.
 
 Section terminating_children.
 
-Inductive phase :=
-  | Quiescent
-  | Mutable.
+Inductive has_terminating_children :=
+  | No
+  | Maybe.
 
-#[global] Instance phase_eq_decision : EqDecision phase.
+#[global] Instance has_terminating_children_eq_decision : EqDecision has_terminating_children.
 Proof. solve_decision. Defined.
 
-Lemma mutable_ne_quiescent : Mutable ≠ Quiescent.
+Lemma maybe_ne_no : Maybe ≠ No.
 Proof. intros H. inversion H. Qed.
 
 Definition parent := (KKey.t * types.UID.t)%type.
@@ -151,7 +151,7 @@ Qed.
 
 Definition authO : ofe := leibnizO (gmap KKey.t KObjectV.t).
 Definition fragUR : ucmra :=
-  gmapUR parent (prodR dfracR (agreeR (leibnizO phase))).
+  gmapUR parent (prodR dfracR (agreeR (leibnizO has_terminating_children))).
 
 Implicit Types (a : authO) (b : fragUR).
 
@@ -194,11 +194,11 @@ Qed.
 
 Local Definition compatible
     (b : fragUR) (a : gmap KKey.t KObjectV.t) : Prop :=
-  map_Forall (λ p '(dq, agree_phase),
-    ∃ control_phase,
-      agree_phase ≡ to_agree (A := leibnizO phase) control_phase ∧
+  map_Forall (λ p '(dq, agree_has_terminating_children),
+    ∃ has_terminating_children_value,
+      agree_has_terminating_children ≡ to_agree (A := leibnizO has_terminating_children) has_terminating_children_value ∧
       ✓ dq ∧
-      (control_phase = Quiescent →
+      (has_terminating_children_value = No →
         terminating_children a p = ∅)) b.
 
 Local Definition view_rel_raw (_ : nat) a b : Prop :=
@@ -224,18 +224,18 @@ Proof.
   destruct (Some_includedN_is_Some _ _ _ Hlookup_incl) as
     [[dq1 agree1] Hlookup1].
   destruct (Hcompatible _ _ Hlookup1) as
-    (control_phase & Hagree1 & Hvdq1 & Hquiescent).
+    (has_terminating_children_value & Hagree1 & Hvdq1 & Hquiescent).
   rewrite Hlookup1 in Hlookup_incl.
   assert (Hvalid1 :
     ✓{n2} (Some (dq1, agree1) :
-      option (dfrac * agree (leibnizO phase)))).
+      option (dfrac * agree (leibnizO has_terminating_children)))).
   { simpl. apply cmra_valid_validN.
     apply pair_valid. split.
     - apply cmra_valid_validN. done.
     - rewrite Hagree1. done. }
   assert (Hvalid2 :
     ✓{n2} (Some (dq2, agree2) :
-      option (dfrac * agree (leibnizO phase)))).
+      option (dfrac * agree (leibnizO has_terminating_children)))).
   { eapply cmra_validN_includedN; done. }
   assert (Hvdq2 : ✓ dq2).
   { apply (proj2 (cmra_discrete_valid_iff n2 dq2)).
@@ -249,9 +249,9 @@ Proof.
   { rewrite Hagree1. done. }
   pose proof (agree_valid_includedN n2 agree2 agree1
     Hagree1_valid Hagree_incl) as Hagree2.
-  exists control_phase. split_and!; try done.
+  exists has_terminating_children_value. split_and!; try done.
   apply (proj2 (discrete_iff n2 agree2
-    (to_agree (A := leibnizO phase) control_phase))).
+    (to_agree (A := leibnizO has_terminating_children) has_terminating_children_value))).
   etrans; [exact Hagree2|exact (Hagree1 n2)].
 Qed.
 
@@ -259,9 +259,9 @@ Local Lemma view_rel_raw_valid n a b :
   view_rel_raw n a b → ✓{n} b.
 Proof.
   intros Hcompatible p.
-  destruct (b !! p) as [[dq agree_phase]|] eqn:Hlookup.
+  destruct (b !! p) as [[dq agree_has_terminating_children]|] eqn:Hlookup.
   - destruct (Hcompatible _ _ Hlookup) as
-      (control_phase & Hagree & Hvdq & _).
+      (has_terminating_children_value & Hagree & Hvdq & _).
     rewrite Hlookup.
     apply pair_validN. split.
     + apply cmra_valid_validN. done.
@@ -285,9 +285,9 @@ Local Canonical Structure control_view_rel : view_rel authO fragUR :=
 Definition control_auth dq a : viewR control_view_rel := ●V{dq} a.
 Definition control_frag b : viewR control_view_rel := ◯V b.
 
-Definition mk_frag (p : parent) (control_phase : phase) : fragUR :=
+Definition mk_frag (p : parent) (has_terminating_children_value : has_terminating_children) : fragUR :=
   {[p := (DfracOwn 1,
-    to_agree (A := leibnizO phase) control_phase)]}.
+    to_agree (A := leibnizO has_terminating_children) has_terminating_children_value)]}.
 
 Class terminatingChildrenG Σ := {
   #[global] terminating_children_inG ::
@@ -308,15 +308,15 @@ Context {Hcontrol : terminatingChildrenG Σ}.
 Definition own_auth γ state : iProp Σ :=
   own γ (control_auth 1 state).
 
-Definition own_frag γ key uid control_phase : iProp Σ :=
-  own γ (control_frag (mk_frag (key, uid) control_phase)).
+Definition own_frag γ key uid has_terminating_children_value : iProp Σ :=
+  own γ (control_frag (mk_frag (key, uid) has_terminating_children_value)).
 
 Global Instance own_auth_timeless γ state :
   Timeless (own_auth γ state).
 Proof. apply _. Qed.
 
-Global Instance own_frag_timeless γ key uid control_phase :
-  Timeless (own_frag γ key uid control_phase).
+Global Instance own_frag_timeless γ key uid has_terminating_children_value :
+  Timeless (own_frag γ key uid has_terminating_children_value).
 Proof. apply _. Qed.
 
 Lemma init :
@@ -336,10 +336,10 @@ Proof.
   iModIntro. iExists γ. iExact "Hauth".
 Qed.
 
-Lemma own_auth_frag_valid {γ state key uid control_phase} :
+Lemma own_auth_frag_valid {γ state key uid has_terminating_children_value} :
   own_auth γ state -∗
-  own_frag γ key uid control_phase -∗
-  ⌜ control_phase = Quiescent →
+  own_frag γ key uid has_terminating_children_value -∗
+  ⌜ has_terminating_children_value = No →
     terminating_children state (key, uid) = ∅ ⌝.
 Proof.
   iIntros "Hauth Hfrag".
@@ -347,24 +347,24 @@ Proof.
   iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid.
   iPureIntro.
   apply (proj1 (view_both_validN control_view_rel 0%nat
-    state (mk_frag (key, uid) control_phase)))
+    state (mk_frag (key, uid) has_terminating_children_value)))
     in Hvalid.
   change (view_rel_raw 0%nat state
-    (mk_frag (key, uid) control_phase)) in Hvalid.
+    (mk_frag (key, uid) has_terminating_children_value)) in Hvalid.
   assert (Hlookup :
-    mk_frag (key, uid) control_phase !! (key, uid) =
+    mk_frag (key, uid) has_terminating_children_value !! (key, uid) =
       Some (DfracOwn 1,
-        to_agree (A := leibnizO phase) control_phase)).
+        to_agree (A := leibnizO has_terminating_children) has_terminating_children_value)).
   { rewrite /mk_frag lookup_singleton_eq //. }
   destruct (Hvalid _ _ Hlookup) as
-    (control_phase' & Hagree & _ & Hquiescent).
-  assert (Hphase_eqv :
-    (control_phase : leibnizO phase) ≡ control_phase').
+    (has_terminating_children_value' & Hagree & _ & Hquiescent).
+  assert (Hhas_terminating_children_eqv :
+    (has_terminating_children_value : leibnizO has_terminating_children) ≡ has_terminating_children_value').
   { apply (inj (to_agree :
-      leibnizO phase → agree (leibnizO phase))).
+      leibnizO has_terminating_children → agree (leibnizO has_terminating_children))).
     exact Hagree. }
-  apply leibniz_equiv in Hphase_eqv.
-  subst control_phase'.
+  apply leibniz_equiv in Hhas_terminating_children_eqv.
+  subst has_terminating_children_value'.
   exact Hquiescent.
 Qed.
 
@@ -380,10 +380,10 @@ Proof.
   change (compatible b state) in Hcompatible.
   change (compatible b (<[key := obj]> state)).
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
-  intros p [dq agree_phase] Hlookup.
+  intros p [dq agree_has_terminating_children] Hlookup.
   destruct (Hcompatible _ _ Hlookup) as
-    (control_phase & Hagree & Hvdq & Hquiescent).
-  exists control_phase. split_and!; try done.
+    (has_terminating_children_value & Hagree & Hvdq & Hquiescent).
+  exists has_terminating_children_value. split_and!; try done.
   intros ->. rewrite terminating_children_insert_none //.
   exact (Hquiescent eq_refl).
 Qed.
@@ -401,10 +401,10 @@ Proof.
   change (compatible b state) in Hcompatible.
   change (compatible b (<[key := new_obj]> state)).
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
-  intros p [dq agree_phase] Hfrag.
+  intros p [dq agree_has_terminating_children] Hfrag.
   destruct (Hcompatible _ _ Hfrag) as
-    (control_phase & Hagree & Hvdq & Hquiescent).
-  exists control_phase. split_and!; try done.
+    (has_terminating_children_value & Hagree & Hvdq & Hquiescent).
+  exists has_terminating_children_value. split_and!; try done.
   intros ->.
   rewrite (terminating_children_update_same
     state key old_obj new_obj p Hlookup Hparent).
@@ -423,10 +423,10 @@ Proof.
   change (compatible b state) in Hcompatible.
   change (compatible b (<[key := new_obj]> state)).
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
-  intros p [dq agree_phase] Hfrag.
+  intros p [dq agree_has_terminating_children] Hfrag.
   destruct (Hcompatible _ _ Hfrag) as
-    (control_phase & Hagree & Hvdq & Hquiescent).
-  exists control_phase. split_and!; try done.
+    (has_terminating_children_value & Hagree & Hvdq & Hquiescent).
+  exists has_terminating_children_value. split_and!; try done.
   intros ->.
   apply leibniz_equiv. apply set_equiv. intros child_key.
   split.
@@ -446,10 +446,10 @@ Proof.
   change (compatible b state) in Hcompatible.
   change (compatible b (delete key state)).
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
-  intros p [dq agree_phase] Hfrag.
+  intros p [dq agree_has_terminating_children] Hfrag.
   destruct (Hcompatible _ _ Hfrag) as
-    (control_phase & Hagree & Hvdq & Hquiescent).
-  exists control_phase. split_and!; try done.
+    (has_terminating_children_value & Hagree & Hvdq & Hquiescent).
+  exists has_terminating_children_value. split_and!; try done.
   intros ->.
   apply leibniz_equiv. apply set_equiv. intros child_key.
   split.
@@ -460,49 +460,49 @@ Proof.
   - intros Hchild. rewrite elem_of_empty in Hchild. done.
 Qed.
 
-Lemma update_introduce_mutable state key old_obj new_obj introduced_parent :
+Lemma update_introduce_maybe state key old_obj new_obj introduced_parent :
   state !! key = Some old_obj →
   terminating_obj_parent_ref old_obj = None →
   terminating_obj_parent_ref new_obj = Some introduced_parent →
   (control_auth 1 state ⋅
-    control_frag (mk_frag introduced_parent Mutable)) ~~>
+    control_frag (mk_frag introduced_parent Maybe)) ~~>
   (control_auth 1 (<[key := new_obj]> state) ⋅
-    control_frag (mk_frag introduced_parent Mutable)).
+    control_frag (mk_frag introduced_parent Maybe)).
 Proof.
   intros Hlookup Hold Hnew.
   apply view_update.
   intros n bf Hcompatible.
   change (compatible
-    (mk_frag introduced_parent Mutable ⋅ bf) state) in Hcompatible.
+    (mk_frag introduced_parent Maybe ⋅ bf) state) in Hcompatible.
   change (compatible
-    (mk_frag introduced_parent Mutable ⋅ bf)
+    (mk_frag introduced_parent Maybe ⋅ bf)
     (<[key := new_obj]> state)).
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
   assert (Hbf_none : bf !! introduced_parent = None).
-  { destruct (bf !! introduced_parent) as [[dq agree_phase]|]
+  { destruct (bf !! introduced_parent) as [[dq agree_has_terminating_children]|]
       eqn:Hlookup_bf; last done.
     exfalso.
     assert (Hlookup_source :
-      (mk_frag introduced_parent Mutable ⋅ bf) !! introduced_parent =
+      (mk_frag introduced_parent Maybe ⋅ bf) !! introduced_parent =
         Some ((DfracOwn 1,
-          to_agree (A := leibnizO phase) Mutable) ⋅
-          (dq, agree_phase))).
+          to_agree (A := leibnizO has_terminating_children) Maybe) ⋅
+          (dq, agree_has_terminating_children))).
     { rewrite /mk_frag lookup_op lookup_singleton_eq Hlookup_bf
         Some_op_opM //. }
     destruct (Hcompatible _ _ Hlookup_source) as
-      (source_phase & _ & Hvdq & _).
+      (source_has_terminating_children & _ & Hvdq & _).
     simpl in Hvdq.
     pose proof (dfrac_valid_own_l dq 1 Hvdq) as Hlt.
     apply (Qp.lt_nge 1 1) in Hlt. apply Hlt. done. }
-  intros p [dq agree_phase] Hfrag.
+  intros p [dq agree_has_terminating_children] Hfrag.
   destruct (decide (p = introduced_parent)) as [->|Hneq].
   - rewrite /mk_frag lookup_op lookup_singleton_eq Hbf_none
       right_id in Hfrag.
-    inversion Hfrag. subst dq agree_phase.
-    exists Mutable. split_and!; try done.
+    inversion Hfrag. subst dq agree_has_terminating_children.
+    exists Maybe. split_and!; try done.
   - destruct (Hcompatible _ _ Hfrag) as
-      (control_phase & Hagree & Hvdq & Hquiescent).
-    exists control_phase. split_and!; try done.
+      (has_terminating_children_value & Hagree & Hvdq & Hquiescent).
+    exists has_terminating_children_value. split_and!; try done.
     intros ->.
     rewrite (terminating_children_update_other_parent
       state key old_obj new_obj introduced_parent p
@@ -510,52 +510,52 @@ Proof.
     exact (Hquiescent eq_refl).
 Qed.
 
-Lemma set_phase state key uid old_phase new_phase :
-  (new_phase = Quiescent →
+Lemma set_has_terminating_children state key uid old_value new_value :
+  (new_value = No →
     terminating_children state (key, uid) = ∅) →
   (control_auth 1 state ⋅
-    control_frag (mk_frag (key, uid) old_phase)) ~~>
+    control_frag (mk_frag (key, uid) old_value)) ~~>
   (control_auth 1 state ⋅
-    control_frag (mk_frag (key, uid) new_phase)).
+    control_frag (mk_frag (key, uid) new_value)).
 Proof.
   intros Hquiescent.
   apply view_update.
   intros n bf Hrel.
   change (view_rel_raw n state
-    (mk_frag (key, uid) old_phase ⋅ bf)) in Hrel.
+    (mk_frag (key, uid) old_value ⋅ bf)) in Hrel.
   change (compatible
-    (mk_frag (key, uid) old_phase ⋅ bf) state) in Hrel.
+    (mk_frag (key, uid) old_value ⋅ bf) state) in Hrel.
   rewrite /compatible map_Forall_lookup in Hrel |- *.
   assert (Hbf_none : bf !! (key, uid) = None).
-  { destruct (bf !! (key, uid)) as [[dq agree_phase]|] eqn:Hlookup;
+  { destruct (bf !! (key, uid)) as [[dq agree_has_terminating_children]|] eqn:Hlookup;
       last done.
     exfalso.
     assert (Hlookup_source :
-      (mk_frag (key, uid) old_phase ⋅ bf) !! (key, uid) =
+      (mk_frag (key, uid) old_value ⋅ bf) !! (key, uid) =
         Some ((DfracOwn 1,
-          to_agree (A := leibnizO phase) old_phase) ⋅
-          (dq, agree_phase))).
+          to_agree (A := leibnizO has_terminating_children) old_value) ⋅
+          (dq, agree_has_terminating_children))).
     { rewrite /mk_frag lookup_op lookup_singleton_eq Hlookup
         Some_op_opM //. }
     destruct (Hrel _ _ Hlookup_source) as
-      (source_phase & _ & Hvdq & _).
+      (source_has_terminating_children & _ & Hvdq & _).
     simpl in Hvdq.
     pose proof (dfrac_valid_own_l dq 1 Hvdq) as Hlt.
     apply (Qp.lt_nge 1 1) in Hlt.
     apply Hlt. done. }
-  intros p [dq agree_phase] Hlookup.
+  intros p [dq agree_has_terminating_children] Hlookup.
   destruct (decide (p = (key, uid))) as [->|Hneq].
   - rewrite /mk_frag lookup_op lookup_singleton_eq Hbf_none
       right_id in Hlookup.
-    inversion Hlookup. subst dq agree_phase.
-    exists new_phase. split_and!; try done.
-  - assert (Hlookup_bf : bf !! p = Some (dq, agree_phase)).
+    inversion Hlookup. subst dq agree_has_terminating_children.
+    exists new_value. split_and!; try done.
+  - assert (Hlookup_bf : bf !! p = Some (dq, agree_has_terminating_children)).
     { rewrite /mk_frag lookup_op lookup_singleton_ne // left_id
         in Hlookup.
       exact Hlookup. }
     assert (Hlookup_old :
-      (mk_frag (key, uid) old_phase ⋅ bf) !! p =
-        Some (dq, agree_phase)).
+      (mk_frag (key, uid) old_value ⋅ bf) !! p =
+        Some (dq, agree_has_terminating_children)).
     { rewrite /mk_frag lookup_op lookup_singleton_ne // left_id.
       exact Hlookup_bf. }
     destruct (Hrel _ _ Hlookup_old) as
@@ -610,46 +610,46 @@ Proof.
   iModIntro. iExact "Hauth".
 Qed.
 
-Lemma update_introduce_mutable_vs γ state key old_obj new_obj
+Lemma update_introduce_maybe_vs γ state key old_obj new_obj
     parent_key parent_uid :
   state !! key = Some old_obj →
   terminating_obj_parent_ref old_obj = None →
   terminating_obj_parent_ref new_obj = Some (parent_key, parent_uid) →
   own_auth γ state -∗
-  own_frag γ parent_key parent_uid Mutable ==∗
+  own_frag γ parent_key parent_uid Maybe ==∗
     own_auth γ (<[key := new_obj]> state) ∗
-    own_frag γ parent_key parent_uid Mutable.
+    own_frag γ parent_key parent_uid Maybe.
 Proof.
   iIntros (Hlookup Hold Hnew) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { eapply update_introduce_mutable; done. }
+  { eapply update_introduce_maybe; done. }
   iModIntro. iDestruct (own_op with "H") as "[$ $]".
 Qed.
 
-Lemma set_mutable_vs γ state key uid control_phase :
+Lemma set_maybe_vs γ state key uid has_terminating_children_value :
   own_auth γ state -∗
-  own_frag γ key uid control_phase ==∗
+  own_frag γ key uid has_terminating_children_value ==∗
     own_auth γ state ∗
-    own_frag γ key uid Mutable.
+    own_frag γ key uid Maybe.
 Proof.
   iIntros "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { apply set_phase. intros H.
-    exfalso. exact (mutable_ne_quiescent H). }
+  { apply set_has_terminating_children. intros H.
+    exfalso. exact (maybe_ne_no H). }
   iModIntro.
   iDestruct (own_op with "H") as "[$ $]".
 Qed.
 
-Lemma reestablish_quiescent_vs γ state key uid :
+Lemma reestablish_no_vs γ state key uid :
   terminating_children state (key, uid) = ∅ →
   own_auth γ state -∗
-  own_frag γ key uid Mutable ==∗
+  own_frag γ key uid Maybe ==∗
     own_auth γ state ∗
-    own_frag γ key uid Quiescent.
+    own_frag γ key uid No.
 Proof.
   iIntros (Hempty) "Hauth Hfrag".
   iMod (own_update_2 with "Hauth Hfrag") as "H".
-  { apply set_phase. intros _. exact Hempty. }
+  { apply set_has_terminating_children. intros _. exact Hempty. }
   iModIntro.
   iDestruct (own_op with "H") as "[$ $]".
 Qed.

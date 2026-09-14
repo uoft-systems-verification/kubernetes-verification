@@ -64,8 +64,8 @@ Definition own_children_frag γ key uid dq keys : iProp Σ :=
 Definition own_terminating_children_auth γ state : iProp Σ :=
   terminating_children.own_auth γ.(γ_terminating_children) state.
 
-Definition own_terminating_children_frag γ key uid control_phase : iProp Σ :=
-  terminating_children.own_frag γ.(γ_terminating_children) key uid control_phase.
+Definition own_terminating_children_frag γ key uid has_terminating_children_value : iProp Σ :=
+  terminating_children.own_frag γ.(γ_terminating_children) key uid has_terminating_children_value.
 
 Definition own_deletion_observation_auth γ state used_uid : iProp Σ :=
   deletion_observation.own_auth γ.(γ_deletion_observation) state used_uid.

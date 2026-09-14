@@ -261,7 +261,7 @@ Qed.
 Lemma wp_releasePod_combined γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (children : gset KKey.t) dq_set dq_pod (terminating : bool)
-    (phase : terminating_children.phase) :
+    (has_terminating_children : terminating_children.has_terminating_children) :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -280,7 +280,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
           ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
           own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
           own_terminating_children_frag γ (StatefulSetV.key set)
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children
         else
           ⌜ PodV.key pod ∈ children ⌝ ∗
           own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
@@ -296,7 +296,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       (if terminating then
         own_terminating_children_frag γ (StatefulSetV.key set)
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase
+          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children
       else
         own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -1280,7 +1280,7 @@ Proof.
         (children ∖ list_to_set
           (PodV.key <$> filter Bad
             (take (sint.nat i) pods)))
-        dq_set dq_pods false Quiescent
+        dq_set dq_pods false terminating_children.No
         with
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis
             $Hown_meta_this $Hown_spec_this
@@ -1368,7 +1368,7 @@ Qed.
 Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc) (pods : list PodV.t)
     (children : gset KKey.t) dq_set dq_pods
-    (phase : terminating_children.phase) :
+    (has_terminating_children : terminating_children.has_terminating_children) :
   let Bad := (λ pod : PodV.t,
     ¬ pod_has_int32_member_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
@@ -1393,7 +1393,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
       "%Hchildren" ∷ ⌜ children = list_to_set (PodV.key <$> filter is_pod_alive pods) ⌝ ∗
       "%Hname_lengths" ∷ ⌜ Forall (λ pod,
         Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤ go_int_max) pods ⌝ ∗
@@ -1420,7 +1420,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (children ∖ list_to_set (PodV.key <$> filter BadLiving (take n pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children
   }}}.
 Proof.
   simpl. wp_start as "H". iNamed "H".
@@ -1452,7 +1452,7 @@ Proof.
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (children ∖ list_to_set (PodV.key <$> filter BadLiving (take (sint.nat i) pods))) ∗
     "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key set)
-      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len pods_sl) ⌝)%I.
   iAssert I with "[i set Hset pod Hpods_sl Hpods Hown_meta Hown_spec Hown_occupied
       Hown_children Hown_terminating_children_frag]" as "Hloop_inv".
@@ -1558,7 +1558,7 @@ Proof.
         wp_apply (wp_releasePod_combined γ model_l set_l this_ptr set this_pod
           (list_to_set (C:=gset KKey.t) (PodV.key <$> filter is_pod_alive pods) ∖
             list_to_set (PodV.key <$> filter BadLiving (take (sint.nat i) pods)))
-          dq_set dq_pods false phase with
+          dq_set dq_pods false has_terminating_children with
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hown_meta_this $Hown_spec_this $Hown_children]").
         { iFrame "%". }
         iIntros (err) "(%Herr & Hset & Hthis & Hown_children)".
@@ -1590,7 +1590,7 @@ Proof.
         iDestruct (big_sepL_elem_of_acc _ _ _ Hthis_observed with "Hown_deletion_observed_frag") as
           "[#Hthis_observed _]".
         wp_apply (wp_releasePod_combined γ model_l set_l this_ptr set this_pod ∅
-          dq_set dq_pods true phase with
+          dq_set dq_pods true has_terminating_children with
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hthis_observed $Hown_terminating_children_frag]").
         { iFrame "%". }
         iIntros (err) "(_ & Hset & Hthis & Hown_terminating_children_frag)".

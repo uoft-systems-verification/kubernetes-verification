@@ -60,7 +60,7 @@ Proof.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
-  iDestruct "Hown_terminating_children_frag" as (phase) "Hown_terminating_children_frag".
+  iDestruct "Hown_terminating_children_frag" as (has_terminating_children) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as [Hrs_name_short Hrs_template_finalizers_valid].
   wp_pures.
@@ -227,7 +227,7 @@ Proof.
     apply fmap_sublist, sublist_filter. }
   wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) []
-    rs_get n phase dq' 1 with
+    rs_get n has_terminating_children dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
@@ -236,20 +236,20 @@ Proof.
       apply list_elem_of_filter in Hpod as [Halive _].
       exact Halive.
     - rewrite app_nil_r. exact Hactive_nodup. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hphase & Hdeepown_l_rs &
+  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children & Hdeepown_l_rs &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
-  iDestruct "Hphase" as (phase') "Hown_terminating_children_frag".
+  iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".
   wp_auto.
   iEval (rewrite app_nil_r) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
   iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
     with "Hmanaged_meta_frags") as "%Hpods'_nodup".
-  iAssert (∃ phase, own_terminating_children_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+  iAssert (∃ has_terminating_children, own_terminating_children_frag γ (ReplicaSetV.key rs)
+      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
     with "[Hown_terminating_children_frag]" as "Hown_terminating_children_frag".
-  { iExists phase'. iFrame. }
+  { iExists has_terminating_children'. iFrame. }
   rewrite return_val_unseal /return_val_def. wp_auto.
   iApply ("HΦ" $! pods_managed).
   rewrite /owned_resources /=.

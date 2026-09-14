@@ -46,7 +46,7 @@ Local Set Default Proof Using "All".
    reservation and returns it in the deleting state. *)
 Lemma wp_deletePod γ model_l pod_l
     (local_pod stored_pod : PodV.t)
-    parent_key parent_uid (children : gset KKey.t) phase dq_pod :
+    parent_key parent_uid (children : gset KKey.t) has_terminating_children dq_pod :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -67,7 +67,7 @@ Lemma wp_deletePod γ model_l pod_l
       "Hreservation" ∷ own_occupied_reserved_frag γ 1 (PodV.key stored_pod)
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
       "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid phase
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
   }}}
     @! statefulset.deletePod #pod_l
   {{{ RET #interface.nil;
@@ -76,7 +76,7 @@ Lemma wp_deletePod γ model_l pod_l
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ∗
       "Hown_children" ∷ own_children_frag γ parent_key parent_uid 1
         (children ∖ {[PodV.key stored_pod]}) ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid Mutable
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -105,7 +105,7 @@ Proof.
       local_pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))
     stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
     stored_pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec stored_pod.(PodV.Spec'))
-    parent_key parent_uid children phase
+    parent_key parent_uid children has_terminating_children
     with "[Hoptions Hown_meta Hown_spec Hreservation Hown_children
       Hown_terminating_children_frag]").
   { iFrame "#".

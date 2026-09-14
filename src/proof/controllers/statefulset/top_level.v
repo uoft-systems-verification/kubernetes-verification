@@ -487,10 +487,10 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
   "Hown_terminating_children_frag" ∷
     (if ready then
       own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') Quiescent
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
     else
-      ∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗
+      ∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') fractions.(pvc_dq)

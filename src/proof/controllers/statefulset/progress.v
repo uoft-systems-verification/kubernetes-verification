@@ -335,7 +335,7 @@ Proof.
   iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
   wp_auto.
   wp_apply (wp_reconcileReplicas_progress γ l set_l good_sl set
-    good_ptrs good_pods pvcs 1 pod_dq Quiescent
+    good_ptrs good_pods pvcs 1 pod_dq terminating_children.No
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_frags
       $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvc_frags $Hgood_children
       $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags]").
@@ -392,10 +392,10 @@ Proof.
         exact Hcomplete. }
       iEval (rewrite -Hset_key -Hset_uid) in
         "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
-      { iExists (phase_after_deletion Quiescent deletion). iFrame. }
+      { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
       rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
@@ -417,10 +417,10 @@ Proof.
         rewrite Hgood_eq in Hstrict. exact Hstrict. }
       iEval (rewrite -Hset_key -Hset_uid) in
         "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-      iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+      iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
-      { iExists (phase_after_deletion Quiescent deletion). iFrame. }
+      { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
       iApply ("HΦ" $! pods' pvcs' interface.nil).
       rewrite /owned_resources /=.
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
@@ -484,10 +484,10 @@ Proof.
       rewrite Hname. exact (proj2 Hfinal_good). }
     iEval (rewrite -Hset_key -Hset_uid) in
       "Hreconcile_Hown_children Hreconcile_Hterminating_children_frag".
-    iAssert (∃ phase, own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I
+    iAssert (∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
+        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
       with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
-    { iExists (phase_after_deletion Quiescent deletion). iFrame. }
+    { iExists (has_terminating_children_after_deletion terminating_children.No deletion). iFrame. }
     iApply ("HΦ" $! pods' pvcs' interface.nil).
     rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag

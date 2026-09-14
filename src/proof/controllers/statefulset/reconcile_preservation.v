@@ -956,7 +956,7 @@ Qed.
 Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (local_pods pods reserved : list PodV.t)
-    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods phase :
+    (pvcs initial_pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods has_terminating_children :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -973,7 +973,7 @@ Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
         (list_to_set (PodV.key <$> unreserved_pods reserved pods)) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods),
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
@@ -994,7 +994,7 @@ Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
         ⌜ desired_objects_reconciled set pods pvcs ⌝
   }}}
     @! statefulset.reconcileCondemnedPod #set_l #pods_sl
-  {{{ (pods' : list PodV.t) phase', RET (#false, #interface.nil);
+  {{{ (pods' : list PodV.t) has_terminating_children', RET (#false, #interface.nil);
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;local_pods,
@@ -1006,7 +1006,7 @@ Lemma wp_reconcileCondemnedPod_preservation γ model_l set_l pods_sl
         (list_to_set (PodV.key <$> unreserved_pods reserved pods')) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children' ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods'),
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "%Hdistance" ∷ ⌜ match_distance set pods' pvcs ≤
@@ -1106,7 +1106,7 @@ Proof.
     iIntros (terminating) "[%Hterminating Hlocal_pod]".
     destruct terminating.
     { iSpecialize ("Hlocal_pod_restore" with "Hlocal_pod").
-      wp_auto. iApply ("HΦ" $! pods phase). iFrame.
+      wp_auto. iApply ("HΦ" $! pods has_terminating_children). iFrame.
       iPureIntro. split_and!; done. }
     assert (is_pod_alive local_pod) as Hlocal_pod_alive.
     { apply Classical_Prop.NNPP. intros Hnot_alive.
@@ -1157,7 +1157,7 @@ Proof.
       local_pod stored_pod (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
       (list_to_set (PodV.key <$> unreserved_pods
-      (filter (pending_pod set) local_pods) pods)) phase dq_pods
+      (filter (pending_pod set) local_pods) pods)) has_terminating_children dq_pods
       with "[$Hlocal_pod $Hstored_meta $Hstored_spec $Hstored_occupied
         $Hown_children $Hown_terminating_children_frag]").
     { iFrame "#". iPureIntro. split_and!; done. }
@@ -1230,14 +1230,14 @@ Proof.
     { eapply (reserved_subset_remove _ _ stored_pod _).
       - rewrite -Hpods_decomp. exact Hreserved_subset.
       - exact Hstored_unreserved. }
-    wp_auto. iApply ("HΦ" $! (before ++ after) Mutable).
+    wp_auto. iApply ("HΦ" $! (before ++ after) terminating_children.Maybe).
     iFrame. iPureIntro. split_and!; try done. lia.
 Qed.
 
 Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods reserved : list PodV.t)
-    (pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods phase :
+    (pvcs : list PersistentVolumeClaimV.t) dq_set dq_pods has_terminating_children :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -1260,7 +1260,7 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
         (list_to_set (PodV.key <$> unreserved_pods reserved pods)) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase ∗
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods),
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
@@ -1275,7 +1275,7 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
       "%Hinput_requirement" ∷ ⌜ input_requirement set ⌝
   }}}
     @! statefulset.reconcileReplicas #set_l #pods_sl
-  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) phase',
+  {{{ (pods' : list PodV.t) (pvcs' : list PersistentVolumeClaimV.t) has_terminating_children',
       RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
@@ -1294,7 +1294,7 @@ Lemma wp_reconcileReplicas_preservation γ model_l set_l pods_sl
         (list_to_set (PodV.key <$> unreserved_pods reserved pods')) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') phase' ∗
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children' ∗
       "Hreserved_pods" ∷ ([∗ list] key ∈ missing_pod_keys set (unreserved_pods reserved pods'),
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs',
@@ -1334,7 +1334,7 @@ Proof.
         in "Hown_pvcs".
       iDestruct "Hown_pvcs" as "[Hown_pvcs Hoccupied_pvcs]".
       wp_apply (wp_reconcileCondemnedPod γ model_l set_l pods_sl set ptrs
-        pods pods1 (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods phase with
+        pods pods1 (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods has_terminating_children with
         "[$Hset $Hpods_sl $Hpods $Hown_pods $Hown_pvcs $Hown_children
           $Hoccupied_pods $Hown_terminating_children_frag]").
       { iFrame "#". iPureIntro. split_and!; done. }
@@ -1349,7 +1349,7 @@ Proof.
         subst continue_condemned. subst deletion2. subst pods2. wp_auto.
         iClear "Hstarted_deletion".
         wp_apply (wp_reconcileOutdatedPod γ model_l set_l pods_sl set ptrs
-          pods pods1 (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods phase with
+          pods pods1 (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods has_terminating_children with
           "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
             $Hown_children $Hown_terminating_children_frag]").
         { iFrame "#". iPureIntro. split_and!; done. }
@@ -1381,7 +1381,7 @@ Proof.
         iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
         iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
         wp_auto. iApply ("HΦ" $! pods3 (pvc_list_of_map pvc_map1)
-          (phase_after_deletion phase deletion3)).
+          (has_terminating_children_after_deletion has_terminating_children deletion3)).
         rewrite unreserved_pods_nil. iFrame.
         iPureIntro. split_and!; try done. Timeout 10 set_solver.
       * iDestruct "Hcondemned_stop" as
@@ -1406,12 +1406,12 @@ Proof.
         iCombine "Hown_pvcs Hoccupied_pvcs" as "Hown_pvcs".
         iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
         iApply ("HΦ" $! pods2 (pvc_list_of_map pvc_map1)
-          (phase_after_deletion phase deletion2)).
+          (has_terminating_children_after_deletion has_terminating_children deletion2)).
         rewrite unreserved_pods_nil. iFrame.
         iPureIntro. split_and!; try done. Timeout 10 set_solver.
     + wp_apply (wp_reconcileCondemnedPod_preservation γ model_l set_l
         pods_sl set ptrs pods pods1 (pending :: reserved_tail)
-        (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods phase with
+        (pvc_list_of_map pvc_map1) pvcs dq_set dq_pods has_terminating_children with
         "[$Hset $Hpods_sl $Hpods $Hown_pods $Hown_children $Hreserved_pods
           $Hown_terminating_children_frag]").
       { iFrame "#". iPureIntro. split_and!; done. }
@@ -1428,7 +1428,7 @@ Proof.
     subst continue_desired. wp_auto.
     iEval (rewrite (own_pvc_map_as_list γ pvc_map1 Hpvc_wf1))
       in "Hown_pvcs".
-    iApply ("HΦ" $! pods1 (pvc_list_of_map pvc_map1) phase).
+    iApply ("HΦ" $! pods1 (pvc_list_of_map pvc_map1) has_terminating_children).
     iFrame. iPureIntro. split_and!; done.
 Qed.
 
