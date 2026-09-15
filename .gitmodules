@@ -2,3 +2,6 @@
 	path = kubernetes
 	url = https://github.com/marshtompsxd/kubernetes.git
 	branch = xudong/verify-1.34
+[submodule "rocqd"]
+	path = rocqd
+	url = git@github.com:uoft-systems-verification/rocqd.git
