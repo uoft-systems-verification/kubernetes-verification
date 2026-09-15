@@ -938,18 +938,16 @@ Proof.
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post
     Hpod_unreserved_key_frags_post Hown_children_frag Hown_terminating_children_frag".
   iPureIntro. split; first exact Hpods'_nodup.
-  left.
-  {
-    unfold current_state_matches.
-    rewrite Hreplicas_eq.
-    simpl.
-    rewrite list.filter_app.
-    assert (filter is_pod_alive (filter (λ pod, not (is_pod_alive pod)) all_pods) = []) as Hfilter_inactive.
-    { apply filter_none. intros pod Hpod.
-      apply list_elem_of_filter in Hpod as [Hnot_alive _].
-      exact Hnot_alive. }
-    rewrite Hfilter_inactive app_nil_r.
-    exact Hmanaged_len. }
+  unfold current_state_matches.
+  rewrite Hreplicas_eq.
+  simpl.
+  rewrite list.filter_app.
+  assert (filter is_pod_alive (filter (λ pod, not (is_pod_alive pod)) all_pods) = []) as Hfilter_inactive.
+  { apply filter_none. intros pod Hpod.
+    apply list_elem_of_filter in Hpod as [Hnot_alive _].
+    exact Hnot_alive. }
+  rewrite Hfilter_inactive app_nil_r.
+  exact Hmanaged_len.
 Qed.
 
 End proof.

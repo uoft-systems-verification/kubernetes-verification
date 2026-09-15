@@ -24,28 +24,6 @@ Definition match_distance (rs : ReplicaSetV.t) (pods : list PodV.t) : nat :=
   | None => 1%nat
   end.
 
-Definition pod_meta_except_resource_version_changed
-    (pods pods' : list PodV.t) : Prop :=
-  ∃ pod pod',
-    pod ∈ pods ∧
-    pod' ∈ pods' ∧
-    PodV.key pod = PodV.key pod' ∧
-    ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta') ≠
-      ObjectMetaV.without_resource_version pod'.(PodV.ObjectMeta').
-
-Definition pod_spec_changed (pods pods' : list PodV.t) : Prop :=
-  ∃ pod pod',
-    pod ∈ pods ∧
-    pod' ∈ pods' ∧
-    PodV.key pod = PodV.key pod' ∧
-    pod.(PodV.Spec') ≠ pod'.(PodV.Spec').
-
-Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
-  list_to_set (C:=gset KKey.t) (PodV.key <$> pods) ≠
-    list_to_set (C:=gset KKey.t) (PodV.key <$> pods') ∨
-  pod_meta_except_resource_version_changed pods pods' ∨
-  pod_spec_changed pods pods'.
-
 Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
   (* ReplicaSet-generated Pod names append a hyphen and five-character suffix;
      copied template finalizers must also be valid on the generated Pod. *)
@@ -127,9 +105,10 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') phase)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
-(* Progress spec states that the controller either makes progress toward the desired state or has already reached the
-  desired state, assuming that the cluster state is *ready* for the controller to make progress.
-  Here, ready means none of the controller's children objects (Pods) are terminating. *)
+(* Progress spec states that one call of the controller reaches the desired state, assuming that the cluster state is
+  *ready* for the controller to make progress. Here, ready means none of the controller's children objects (Pods) are
+  terminating. The controller creates or deletes the whole difference in one call, so no weaker "makes progress" case
+  is needed. *)
 Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -142,8 +121,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) name
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
-      ⌜ current_state_matches rs pods' ∨
-        (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
+      ⌜ current_state_matches rs pods' ⌝
   }}}.
 
 (* Preservation spec states that the controller does not increase the distance between the current cluster state and its
