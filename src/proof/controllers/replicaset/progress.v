@@ -225,7 +225,7 @@ Proof. rewrite big_sepL_fmap. done. Qed.
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
+Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     sl rs_l ptrs active_pods inactive_pods rs n has_terminating_children dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
@@ -248,12 +248,13 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc)
       "%Hrs_template_finalizers_valid" ∷ ⌜ valid_finalizers
         rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ⌝ ∗
       "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝ ∗
-      "%Hactive_pods_bound" ∷ ⌜ Z.of_nat (length active_pods) < 2^31 ⌝ ∗
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> (active_pods ++ inactive_pods)) ⌝
   }}}
-    @! replicaset.manageReplicas #ctx #kube_client #sl #rs_l
+    @! replicaset.manageReplicas #ctx #kube_client #burst #sl #rs_l
   {{{ pods', RET #interface.nil;
-      ⌜ length (filter is_pod_alive pods') = sint.nat n ⌝ ∗
+      ⌜ length pods' = capped_replica_count (length active_pods) (sint.nat n) (sint.nat burst) ⌝ ∗
+      ⌜ ∀ pod, pod ∈ pods' → is_pod_alive pod ⌝ ∗
       (∃ has_terminating_children', own_terminating_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children') ∗
       ([∗ list] pod ∈ pods',
@@ -287,6 +288,23 @@ Proof.
   assert ((sint.Z (W64 0)) = 0) as -> by word.
   wp_if_destruct.
   - (* too few replicas: create [diff] pods concurrently through slowStartBatch *)
+    (* the burst cap: [d] is the number of pods to create this sync *)
+    try wp_auto.
+    wp_bind (if: _ then _ else do: #())%E.
+    iApply (wp_wand _ _ _ (λ v, ⌜ v = execute_val ⌝ ∗
+      (∃ d : w64, "diff" ∷ diff_ptr ↦ d ∗
+        "%Hd" ∷ ⌜ sint.Z d = Z.min (sint.Z n - sint.Z (slice.len sl)) (sint.Z burst) ⌝) ∗ _)%I
+      with "[-]").
+    { wp_if_destruct.
+      - try wp_auto. iSplitR; first done. iSplitL "diff".
+        { iExists burst. iFrame "diff". iPureIntro. rewrite Z.min_r; word. }
+        iNamedAccu.
+      - try wp_auto. iSplitR; first done. iSplitL "diff".
+        { iExists _. iFrame "diff". iPureIntro. rewrite Z.min_l; word. }
+        iNamedAccu. }
+    iIntros (?) "(-> & Hdiff & H)". iNamed "H". iDestruct "Hdiff" as (d) "[diff %Hd]".
+    assert (0 < sint.Z d ≤ sint.Z burst) as [Hd_pos Hd_le_burst] by lia.
+    assert (sint.Z d ≤ sint.Z n - sint.Z (slice.len sl)) as Hd_le_diff by lia.
     (* The pod-creating closure runs in forked goroutines, which share the
        ReplicaSet's metadata and template read-only. *)
     iPersist "rs ctx kubeClient".
@@ -314,7 +332,7 @@ Proof.
       (list_to_set (PodV.key <$> (active_pods ++ inactive_pods)))
       with "[$Hown_children_frag]").
     { iFrame "#".
-      iSplit; last (iPureIntro; split; word).
+      iSplit; last (iPureIntro; split; [lia|word]).
       (* the closure creates one pod per call *)
       iIntros "!>" (Φ') "Hau".
       wp_pures. wp_auto.
@@ -413,9 +431,17 @@ Proof.
     iApply ("HΦ" $! (active_pods ++ created)).
     iSplit.
     { iPureIntro.
-      rewrite list.filter_app (filter_all is_pod_alive active_pods Hactive_pods)
-        (filter_all is_pod_alive created Hcreated_alive) length_app Hcreated_len -Hlen.
-      word. }
+      assert (length active_pods < sint.nat n)%nat as Hlt by (rewrite -Hlen Hsl_len1; word).
+      assert (Z.of_nat (sint.nat d) = sint.Z d) as Hd_Z by word.
+      assert (Z.of_nat (sint.nat n) = sint.Z n) as Hn_Z by word.
+      assert (Z.of_nat (sint.nat burst) = sint.Z burst) as Hburst_Z by word.
+      assert (Z.of_nat (length active_pods) = sint.Z (slice.len sl)) as Hactive_Z by (rewrite -Hlen Hsl_len1; word).
+      unfold capped_replica_count. rewrite (decide_True _ _ Hlt).
+      rewrite length_app Hcreated_len. lia. }
+    iSplit.
+    { iPureIntro. intros pod Hpod. apply elem_of_app in Hpod as [Hin|Hin].
+      - apply Hactive_pods. exact Hin.
+      - apply Hcreated_alive. exact Hin. }
     iSplitL "Hown_terminating_children_frag".
     { iExists has_terminating_children. iFrame "Hown_terminating_children_frag". }
     iSplitL "Hown_active_pod_meta_frags Hcreated_meta_frags".
@@ -428,16 +454,36 @@ Proof.
     2 : { iApply ("HΦ" $! active_pods).
       iSplit.
       { iPureIntro.
-        rewrite (filter_all is_pod_alive active_pods Hactive_pods).
-        rewrite -Hlen Hsl_len1. word. }
+        assert (length active_pods = sint.nat n) as Heq by (rewrite -Hlen Hsl_len1; word).
+        unfold capped_replica_count. destruct (decide _); lia. }
+      iSplit; first (iPureIntro; exact Hactive_pods).
       iSplitL "Hown_terminating_children_frag".
       { iExists has_terminating_children. iFrame "Hown_terminating_children_frag". }
 	      iFrame "Hown_active_pod_meta_frags
 	        Hown_active_pod_unreserved_key_frags Hown_children_frag".
     }
-	  assert (Hdelete_count :
-	    sint.Z (word.sub (slice.len sl) (W64 (sint.Z n))) =
-	    sint.Z (slice.len sl) - sint.Z n) by word.
+    (* the burst cap: [d] is the number of pods to delete this sync *)
+    assert (0 < sint.Z (slice.len sl) - sint.Z n) as Hdiff_pos by word.
+    try wp_auto.
+    wp_bind (if: _ then _ else do: #())%E.
+    iApply (wp_wand _ _ _ (λ v, ⌜ v = execute_val ⌝ ∗
+      (∃ d : w64, "diff" ∷ diff_ptr ↦ d ∗
+        "%Hdelete_count" ∷ ⌜ sint.Z d = Z.min (sint.Z (slice.len sl) - sint.Z n) (sint.Z burst) ⌝) ∗ _)%I
+      with "[-]").
+    { wp_if_destruct.
+      - try wp_auto. iSplitR; first done. iSplitL "diff".
+        { iExists burst. iFrame "diff". iPureIntro. rewrite Z.min_r; word. }
+        iNamedAccu.
+      - try wp_auto. iSplitR; first done. iSplitL "diff".
+        { iExists _. iFrame "diff". iPureIntro. rewrite Z.min_l; word. }
+        iNamedAccu. }
+    iIntros (?) "(-> & Hdiff & H)". iNamed "H". iDestruct "Hdiff" as (d) "[diff %Hdelete_count]".
+    assert (0 < sint.Z d ≤ sint.Z burst) as [Hd_pos Hd_le_burst] by lia.
+    assert (sint.Z d ≤ sint.Z (slice.len sl) - sint.Z n) as Hd_le_diff by lia.
+    assert (Z.of_nat (sint.nat d) = sint.Z d) as Hd_Z by word.
+    assert (Z.of_nat (sint.nat n) = sint.Z n) as Hn_Z by word.
+    assert (Z.of_nat (sint.nat burst) = sint.Z burst) as Hburst_Z by word.
+    try wp_auto.
 	  iAssert (ReplicaSetSpecV.deepown_l (ReplicaSetV.spec_ptr rs_l)
 	      rs.(ReplicaSetV.Spec') dq2)%I
 	    with "[Hrs_spec_l Hrs_Hdeepown_replicas Hrs_Hdeepown_selector_some
@@ -458,12 +504,11 @@ Proof.
 	  iIntros (related_sl related_ptrs related_pods related_dq)
 	    "(Hrelated_sl & Hrelated_pods & Hdeepown_l_rs)".
 	  wp_auto.
-	  wp_bind (@! replicaset.getPodsToDelete #sl #related_sl
-	    #(word.sub (slice.len sl) (W64 (sint.Z n))))%E.
+	  wp_bind (@! replicaset.getPodsToDelete #sl #related_sl #d)%E.
 	  wp_apply (wp_getPodsToDelete sl ptrs active_pods related_sl related_ptrs related_pods
-	    (word.sub (slice.len sl) (W64 (sint.Z n))) dq1 related_dq with
+	    d dq1 related_dq with
 	    "[$Hsl $Hdeepown_l_active_pods $Hrelated_sl $Hrelated_pods]").
-	  { iFrame "#". iPureIntro. rewrite Hdelete_count. word. }
+	  { iFrame "#". iPureIntro. word. }
 	  iIntros (sorted_ptrs sorted_pods)
 	    "(Hbefore_slice & Hslice & Hafter_slice & Hdeepown_l_sorted_pods &
 	      %Hptrs_perm & %Hpods_perm)".
@@ -508,15 +553,11 @@ Proof.
 	  rename Hsl_len1_sorted into Hsl_len1.
     iDestruct (own_slice_len with "Hslice") as %(Hslice_len1 & Hslice_len2).
     (* the pods targeted for deletion are the first [d] sorted pods *)
-    set d := (word.sub (slice.len sl) (W64 (sint.Z n))).
-    pose proof (eq_refl : d = word.sub (slice.len sl) (W64 (sint.Z n))) as Hd_eq.
-    clearbody d.
-    rewrite -Hd_eq in Hdelete_count l0 Hslice_len1 Hslice_len2. clear Hd_eq.
     set targeted := take (sint.nat d) active_pods.
     set tptrs := take (sint.nat d) ptrs.
     set rest := (list_to_set (C:=gset KKey.t) (PodV.key <$> (drop (sint.nat d) active_pods ++ inactive_pods))).
     assert (sint.nat d ≤ length active_pods) as Hd_le.
-    { rewrite -Hlen Hsl_len1. word. }
+    { rewrite -Hlen Hsl_len1. lia. }
     assert (length targeted = sint.nat d) as Htargeted_len.
     { subst targeted. rewrite length_take. lia. }
     assert (length tptrs = sint.nat d) as Htptrs_len.
@@ -550,7 +591,7 @@ Proof.
     wp_apply chan.wp_make2; first word.
     iIntros (ch γch) "(#His_chan & _ & Hoc)".
     assert (d ≠ W64 0) as Hd_nz.
-    { intros Hd0. rewrite Hd0 in l0. lia. }
+    { intros Hd0. rewrite Hd0 in Hd_pos. word. }
     iEval (rewrite (decide_False _ _ Hd_nz)) in "Hoc".
     try wp_auto.
     iMod (init_WaitGroup delete_wgN with "wg") as (γwg) "(#His_wg & Hwg_ctr & Hwg_waiters)".
@@ -558,11 +599,7 @@ Proof.
     iApply fupd_mask_intro; [solve_ndisj|]. iIntros "Hmask". iNext.
     assert (sint.Z (slice.len sl) = Z.of_nat (length active_pods)) as Hsl_Z.
     { rewrite -Hlen Hsl_len1. word. }
-    assert (Z.of_nat (length active_pods) < 2^31) as Hactive_bound'.
-    { assert (length active_pods = length original_active_pods) as Hlen_eq.
-      { pose proof (Permutation_length Hpods_perm) as Hlen_perm. lia. }
-      rewrite Hlen_eq. exact Hactive_pods_bound. }
-    assert (sint.Z d < 2^31) as Hd_bound by (rewrite Hdelete_count; word).
+    assert (sint.Z d < 2^31) as Hd_bound by lia.
     iExists (W32 0). iFrame "Hwg_ctr". iSplit; [word|].
     iRight. iFrame "Hwg_waiters". iIntros "Hwg_waiters Hwg_ctr".
     iMod "Hmask" as "_". iModIntro.
@@ -768,20 +805,25 @@ Proof.
       iApply ("HΦ" $! (drop (sint.nat d) active_pods)).
       iSplit.
       { iPureIntro.
-        assert (filter is_pod_alive (drop (sint.nat d) active_pods) = drop (sint.nat d) active_pods)
-          as Hfilter_active.
-        { apply filter_all. intros pod Hpod. apply Hactive_pods.
-          apply list_elem_of_lookup_1 in Hpod as (j & Hlookup_pod).
-          apply (list_elem_of_lookup_2 active_pods (sint.nat d + j)%nat).
-          rewrite lookup_drop in Hlookup_pod. exact Hlookup_pod. }
-        rewrite Hfilter_active length_drop -Hlen Hsl_len1. word. }
+        assert (sint.nat n < length active_pods)%nat as Hgt by (rewrite -Hlen Hsl_len1; word).
+        assert (Z.of_nat (length active_pods) = sint.Z (slice.len sl)) as Hactive_Z by (rewrite -Hlen Hsl_len1; word).
+        pose proof (Permutation_length Hpods_perm) as Hlen_perm.
+        unfold capped_replica_count.
+        destruct (decide (length original_active_pods < sint.nat n)%nat) as [Hlt|_]; first lia.
+        rewrite length_drop. lia. }
+      iSplit.
+      { iPureIntro. intros pod Hpod. apply Hactive_pods.
+        apply list_elem_of_lookup_1 in Hpod as (j & Hlookup_pod).
+        apply (list_elem_of_lookup_2 active_pods (sint.nat d + j)%nat).
+        rewrite lookup_drop in Hlookup_pod. exact Hlookup_pod. }
       iSplitL "Hterm".
       { iExists htc. iFrame "Hterm". }
       iFrame "Hmeta_rest Hunres_rest Hown_children_frag".
 Qed.
 
-Lemma wp_syncReplicaSet_progress γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
-  ⊢ progress_spec γ l ctx kube_client namespace name rs dq pods.
+Lemma wp_syncReplicaSet_progress γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq
+    pods :
+  ⊢ progress_spec γ l ctx kube_client burst namespace name rs dq pods.
 Proof.
   unfold progress_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -793,6 +835,7 @@ Proof.
   wp_alloc_auto.
   rewrite exception_do_unseal /exception_do_def.
   wp_pures.
+  wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
@@ -958,7 +1001,7 @@ Proof.
   assert (NoDup (PodV.key <$>
       (filter is_pod_alive all_pods ++ filter (λ pod, not (is_pod_alive pod)) all_pods))) as Hpartition_nodup.
   { rewrite pod_key_filter_partition_perm. exact Hall_nodup. }
-  wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas γ l ctx kube_client burst active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) (filter (λ pod, not (is_pod_alive pod)) all_pods)
     rs_get n terminating_children.No dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
@@ -966,10 +1009,8 @@ Proof.
   { iFrame "#".
     iPureIntro. split_and!; try done.
     all: try (intros pod Hpod; apply list_elem_of_filter in Hpod as [Halive _]; exact Halive).
-    pose proof (sublist_length _ _ (sublist_filter is_pod_alive all_pods)) as Hfilter_le.
-    pose proof (Permutation_length Hall_key_perm) as Hlen_perm.
-    rewrite !length_fmap in Hlen_perm. lia. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children &
+    all: try lia. }
+  iIntros (pods_managed) "(%Hmanaged_len & %Hmanaged_alive & Hhas_terminating_children &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
   iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".
@@ -997,18 +1038,40 @@ Proof.
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hpod_meta_frags_post
     Hpod_unreserved_key_frags_post Hown_children_frag Hown_terminating_children_frag".
   iPureIntro. split; first exact Hpods'_nodup.
-  left.
-  {
-    unfold current_state_matches.
-    rewrite Hreplicas_eq.
-    simpl.
-    rewrite list.filter_app.
+  (* replica arithmetic of this sync: the live count moved toward the desired
+     count by [min distance burst], so either it now matches or the distance
+     strictly decreased and the pod set changed *)
+  assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
+  { symmetry. apply active_pod_count_erased_meta_perm. exact Hall_meta_perm. }
+  assert (length (filter is_pod_alive (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)) =
+      length pods_managed) as Hfinal_active_len.
+  { rewrite list.filter_app (filter_all is_pod_alive pods_managed Hmanaged_alive).
     assert (filter is_pod_alive (filter (λ pod, not (is_pod_alive pod)) all_pods) = []) as Hfilter_inactive.
     { apply filter_none. intros pod Hpod.
       apply list_elem_of_filter in Hpod as [Hnot_alive _].
       exact Hnot_alive. }
-    rewrite Hfilter_inactive app_nil_r.
-    exact Hmanaged_len. }
+    rewrite Hfilter_inactive app_nil_r. done. }
+  pose proof (capped_replica_count_distance (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
+    as Hcap.
+  rewrite -Hmanaged_len in Hcap.
+  assert (0 < sint.nat burst)%nat as Hburst_pos by word.
+  destruct (decide (length pods_managed = sint.nat n)) as [Hmatch|Hnomatch].
+  - left.
+    unfold current_state_matches. rewrite Hreplicas_eq Hfinal_active_len. exact Hmatch.
+  - right. split.
+    + (* the set of pod keys changed: the two key lists have no duplicates and different lengths *)
+      left. intros Hkeys_eq.
+      apply (f_equal size) in Hkeys_eq.
+      rewrite (size_list_to_set _ Hpods_nodup) (size_list_to_set _ Hpods'_nodup) in Hkeys_eq.
+      rewrite !length_fmap length_app in Hkeys_eq.
+      pose proof (Permutation_length Hall_key_perm) as Hlen_perm.
+      rewrite !length_fmap in Hlen_perm.
+      pose proof (Permutation_length (filter_partition_perm is_pod_alive all_pods)) as Hpartition_len.
+      rewrite length_app in Hpartition_len.
+      unfold replica_distance in Hcap. lia.
+    + rewrite !(match_distance_replica_distance _ _ n Hreplicas_eq).
+      rewrite Hfinal_active_len Hpods_active_len.
+      unfold replica_distance in Hcap |- *. lia.
 Qed.
 
 End proof.

@@ -20,7 +20,13 @@ import (
 // A simplified replicaset controller. The following features are not included:
 // * adoption and release
 // * managing status
-// * concurrent creation/deletion
+// * expectations, informers and the work queue
+
+const (
+	// Realistic value of the burstReplica field for the replica set manager based off
+	// performance requirements for kubernetes 1.0.
+	BurstReplicas = 500
+)
 
 // getReplicaSetsWithSameController returns a list of ReplicaSets with the same
 // owner as the given ReplicaSet.
@@ -95,10 +101,13 @@ func getPodsRankedByRelatedPodsOnSameNode(podsToRank, relatedPods []*v1.Pod) con
 	return controller.ActivePodsWithRanks{Pods: podsToRank, Rank: ranks, Now: metav1.Now()}
 }
 
-func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
+func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, burstReplicas int, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	if diff < 0 {
 		diff *= -1
+		if diff > burstReplicas {
+			diff = burstReplicas
+		}
 		// Batch the pod creates. Batch sizes start at SlowStartInitialBatchSize
 		// and double with each successful iteration in a kind of "slow start".
 		// This handles attempts to start large numbers of pods that would
@@ -116,10 +125,24 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, active
 			var createOptions metav1.CreateOptions
 			// API request to create the pod, which is different from retriving information locally.
 			_, err = kubeClient.CoreV1().Pods(rs.ObjectMeta.GetNamespace()).Create(ctx, pod, createOptions)
+			// Kept for consistency with upstream, but vacuous under verification: the
+			// API model's Create never returns an error, so this branch is never
+			// taken in the proofs and HasStatusCause needs no specification.
+			if err != nil {
+				if apierrors.HasStatusCause(err, v1.NamespaceTerminatingCause) {
+					// if the namespace is being terminated, we don't have to do
+					// anything because any creation will fail
+					return nil
+				}
+			}
 			return err
 		})
 		return err
 	} else if diff > 0 {
+		if diff > burstReplicas {
+			diff = burstReplicas
+		}
+
 		relatedPods, err := getIndirectlyRelatedPods(rs)
 		if err != nil {
 			return err
@@ -193,7 +216,7 @@ func slowStartBatch(count int, initialBatchSize int, fn func() error) (int, erro
 	return successes, nil
 }
 
-func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, namespace, name string) error {
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, namespace, name string) error {
 	// use <namespace, name> localize a unique ReplicaSet
 	rs, err := rsLister.ReplicaSets(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
@@ -213,7 +236,7 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(ctx, kubeClient, allActivePods, rs)
+		manageReplicasErr = manageReplicas(ctx, kubeClient, burstReplicas, allActivePods, rs)
 	}
 
 	return manageReplicasErr
