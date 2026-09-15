@@ -24,6 +24,8 @@ End pkg_id.
 Export pkg_id.
 Module replicaset.
 
+Definition BurstReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #500.
+
 Definition getReplicaSetsWithSameController {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.getReplicaSetsWithSameController"%go.
 
 Definition getIndirectlyRelatedPods {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.getIndirectlyRelatedPods"%go.
@@ -41,7 +43,7 @@ Definition syncReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_st
 (* getReplicaSetsWithSameController returns a list of ReplicaSets with the same
    owner as the given ReplicaSet.
 
-   go: replica_set.go:27:6 *)
+   go: replica_set.go:33:6 *)
 Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -84,7 +86,7 @@ Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
 (* getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
    with the same controller owner as rs.
 
-   go: replica_set.go:46:6 *)
+   go: replica_set.go:52:6 *)
 Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -145,7 +147,7 @@ Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
         do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")))));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "relatedPods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:71:6 *)
+(* go: replica_set.go:77:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (GoAlloc go.int "diff") in
@@ -168,7 +170,7 @@ Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getPodsRankedByRelatedPodsOnSameNode ranks each pod by the number of active
    related pods colocated on its node.
 
-   go: replica_set.go:83:6 *)
+   go: replica_set.go:89:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "relatedPods") in
@@ -202,11 +204,12 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {g
      let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
      CompositeLiteral controller.ActivePodsWithRanks (LiteralValue [KeyedElement (Some (KeyField "Pods"%go)) (ElementExpression (go.SliceType (go.PointerType api_core_v1.Pod)) "$v0"); KeyedElement (Some (KeyField "Rank"%go)) (ElementExpression (go.SliceType go.int) "$v1"); KeyedElement (Some (KeyField "Now"%go)) (ElementExpression apis_meta_v1.Time "$v2")]))).
 
-(* go: replica_set.go:98:6 *)
+(* go: replica_set.go:104:6 *)
 Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "ctx" "kubeClient" "activePods" "rs",
+  λ: "ctx" "kubeClient" "burstReplicas" "activePods" "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
     let: "activePods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "activePods") in
+    let: "burstReplicas" := (GoAlloc go.int "burstReplicas") in
     let: "kubeClient" := (GoAlloc (go.PointerType kubernetes.Clientset) "kubeClient") in
     let: "ctx" := (GoAlloc context.Context "ctx") in
     let: "diff" := (GoAlloc go.int (GoZeroVal go.int #())) in
@@ -216,6 +219,11 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     (if: Convert go.untyped_bool go.bool ((![go.int] "diff") <⟨go.int⟩ #(W64 0))
     then
       do:  ("diff" <-[go.int] ((![go.int] "diff") *⟨go.int⟩ (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1))));;;
+      (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ (![go.int] "burstReplicas"))
+      then
+        let: "$r0" := (![go.int] "burstReplicas") in
+        do:  ("diff" <-[go.int] "$r0")
+      else do:  #());;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.int] "diff") in
       let: "$a1" := (Convert go.untyped_int go.int controller.SlowStartInitialBatchSize) in
@@ -246,6 +254,14 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
         let: "$r1" := "$ret1" in
         do:  "$r0";;;
         do:  ("err" <-[go.error] "$r1");;;
+        (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+        then
+          (if: let: "$a0" := (![go.error] "err") in
+          let: "$a1" := api_core_v1.NamespaceTerminatingCause in
+          (FuncResolve errors.HasStatusCause [] #()) "$a0" "$a1"
+          then return: (Convert go.untyped_nil go.error UntypedNil)
+          else do:  #())
+        else do:  #());;;
         return: (![go.error] "err"))
         ) in
       (FuncResolve slowStartBatch [] #()) "$a0" "$a1" "$a2") in
@@ -257,6 +273,11 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     else
       (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ #(W64 0))
       then
+        (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ (![go.int] "burstReplicas"))
+        then
+          let: "$r0" := (![go.int] "burstReplicas") in
+          do:  ("diff" <-[go.int] "$r0")
+        else do:  #());;;
         let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
         let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
         let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
@@ -343,7 +364,7 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
    It returns the number of successful calls to the function.
 
-   go: replica_set.go:170:6 *)
+   go: replica_set.go:193:6 *)
 Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "count" "initialBatchSize" "fn",
     exception_do (let: "fn" := (GoAlloc (go.FunctionType (go.Signature [] false [go.error])) "fn") in
@@ -406,11 +427,12 @@ Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       do:  ("remaining" <-[go.int] ((![go.int] "remaining") -⟨go.int⟩ (![go.int] "batchSize")))));;;
     return: (![go.int] "successes", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:196:6 *)
+(* go: replica_set.go:219:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "ctx" "kubeClient" "rsLister" "namespace" "name",
+  λ: "ctx" "kubeClient" "rsLister" "burstReplicas" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "burstReplicas" := (GoAlloc go.int "burstReplicas") in
     let: "rsLister" := (GoAlloc listers_apps_v1.ReplicaSetLister "rsLister") in
     let: "kubeClient" := (GoAlloc (go.PointerType kubernetes.Clientset) "kubeClient") in
     let: "ctx" := (GoAlloc context.Context "ctx") in
@@ -450,9 +472,10 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     then
       let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
       let: "$a1" := (![go.PointerType kubernetes.Clientset] "kubeClient") in
-      let: "$a2" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allActivePods") in
-      let: "$a3" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
-      (FuncResolve manageReplicas [] #()) "$a0" "$a1" "$a2" "$a3") in
+      let: "$a2" := (![go.int] "burstReplicas") in
+      let: "$a3" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allActivePods") in
+      let: "$a4" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
+      (FuncResolve manageReplicas [] #()) "$a0" "$a1" "$a2" "$a3" "$a4") in
       do:  ("manageReplicasErr" <-[go.error] "$r0")
     else do:  #());;;
     return: (![go.error] "manageReplicasErr")).
