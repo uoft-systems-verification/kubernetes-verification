@@ -317,6 +317,86 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+(** * Reduced ownership footprints
+
+    [deepown] bundles every represented [ObjectMeta] field, including the
+    creation/deletion timestamps and the managed-field entries, whose
+    representations are opaque axioms in the pure model.  A caller that only
+    reads plain scalars, or only the fields a pod template contributes to a
+    generated pod, should not have to take that whole bundle: doing so drags
+    the opaque predicates into its footprint, and for concurrent readers into
+    the persistence obligations of a shared closure.
+
+    The predicates below carve out exactly those two footprints.  Both are
+    built from resources that can be discarded and shared without assuming
+    anything about [TimeV.deepown] or [ManagedFieldsEntryV.deepown]. *)
+
+(** The [ObjectMeta] fields that carry no ownership: [deepown] relates them by
+    pure equalities, so knowing them costs nothing beyond the struct itself. *)
+Definition scalars (c : v1.ObjectMeta.t) (v : t) : Prop :=
+  c.(v1.ObjectMeta.Name') = v.(Name') ∧
+  c.(v1.ObjectMeta.GenerateName') = v.(GenerateName') ∧
+  c.(v1.ObjectMeta.Namespace') = v.(Namespace') ∧
+  c.(v1.ObjectMeta.SelfLink') = v.(SelfLink') ∧
+  c.(v1.ObjectMeta.UID') = v.(UID') ∧
+  c.(v1.ObjectMeta.ResourceVersion') = v.(ResourceVersion') ∧
+  c.(v1.ObjectMeta.Generation') = v.(Generation').
+
+(** Read-only access to the scalar fields of the [ObjectMeta] stored at [l].
+    The concrete struct [c] is explicit so the resource can be lent out and
+    taken back, which [deepown_l_own_scalars] below relies on. *)
+Definition own_scalars (l : loc) (c : v1.ObjectMeta.t) (v : t) (dq : dfrac) : iProp Σ :=
+  "Hown_scalars_l" ∷ l ↦{dq} c ∗
+  "%Hown_scalars" ∷ ⌜ scalars c v ⌝.
+
+(** The metadata a pod template contributes to a generated pod: labels,
+    annotations and finalizers.  [GetPodFromTemplate] reads these and nothing
+    else from the template's [ObjectMeta].  The conjunct names match those of
+    [deepown] so proofs can move between the two. *)
+Definition own_template_meta (c : v1.ObjectMeta.t) (v : t) (dq : dfrac) : iProp Σ :=
+  "%Hdeepown_labels_none" ∷ ⌜c.(v1.ObjectMeta.Labels') = null ↔ v.(Labels') = None⌝ ∗
+  "Hdeepown_labels_some" ∷ (match v.(Labels') with
+  | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${dq} cl ∗ ⌜ cl = vl ⌝
+  | None => True%I
+  end) ∗
+  "%Hdeepown_annotations_none" ∷ ⌜c.(v1.ObjectMeta.Annotations') = null ↔ v.(Annotations') = None⌝ ∗
+  "Hdeepown_annotations_some" ∷ (match v.(Annotations') with
+  | Some va => ∃ ca, c.(v1.ObjectMeta.Annotations') ↦${dq} ca ∗ ⌜ ca = va ⌝
+  | None => True%I
+  end) ∗
+  "%Hdeepown_finalizers_none" ∷ ⌜c.(v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None⌝ ∗
+  "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with
+  | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{dq} cfs ∗ ⌜ cfs = vfs ⌝
+  | None => True%I
+  end).
+
+Lemma deepown_scalars c v dq :
+  deepown c v dq ⊢ ⌜ scalars c v ⌝.
+Proof. rewrite /deepown /scalars. iNamed 1. iPureIntro. split_and!; done. Qed.
+
+Lemma deepown_l_own_scalars l v dq :
+  deepown_l l v dq ⊢
+    ∃ c, own_scalars l c v dq ∗ (own_scalars l c v dq -∗ deepown_l l v dq).
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iDestruct (deepown_scalars with "Hdeepown") as "%Hscalars".
+  iExists c. rewrite /own_scalars. iSplitL "Hl"; first by iFrame "∗ %".
+  iNamed 1. iExists c. iFrame.
+Qed.
+
+Lemma deepown_own_template_meta c v dq :
+  deepown c v dq ⊢
+    own_template_meta c v dq ∗ (own_template_meta c v dq -∗ deepown c v dq).
+Proof.
+  rewrite /deepown /own_template_meta. iNamed 1.
+  iSplitL "Hdeepown_labels_some Hdeepown_annotations_some Hdeepown_finalizers_some".
+  { iFrame "∗ %". }
+  (* The pure conjuncts are already in context from the destruct above, so the
+     returned footprint only has to give back the three spatial ones. *)
+  iIntros "H". iDestruct "H" as "(_ & Hlabels & _ & Hannotations & _ & Hfinalizers)".
+  iFrame "∗ %".
+Qed.
+
 End def.
 
 Section proof.
