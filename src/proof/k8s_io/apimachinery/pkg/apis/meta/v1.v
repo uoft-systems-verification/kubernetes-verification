@@ -288,6 +288,59 @@ Proof.
   done.
 Qed.
 
+(** Reading a scalar [ObjectMeta] field needs only the struct and the pure
+    equalities of [ObjectMetaV.own_scalars], not full deep ownership.  Callers
+    that share metadata between goroutines use these, because
+    [ObjectMetaV.deepown] cannot be discarded: its timestamps and managed
+    fields are opaque in the pure model. *)
+Lemma wp_GetName_scalars l c m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.own_scalars l c m dq
+  }}}
+    l @! (go.PointerType v1.ObjectMeta) @! "GetName" #()
+  {{{ RET #m.(ObjectMetaV.Name');
+      ObjectMetaV.own_scalars l c m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#? & Hown) HΦ".
+  rewrite /ObjectMetaV.own_scalars. iNamed "Hown".
+  pose proof Hown_scalars as Hname. destruct Hname as (Hname & _).
+  wp_apply (wp_GetName with "[$Hown_scalars_l]").
+  iIntros "Hl". rewrite Hname. iApply "HΦ". by iFrame "∗ %".
+Qed.
+
+Lemma wp_GetNamespace_scalars l c m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.own_scalars l c m dq
+  }}}
+    l @! (go.PointerType v1.ObjectMeta) @! "GetNamespace" #()
+  {{{ RET #m.(ObjectMetaV.Namespace');
+      ObjectMetaV.own_scalars l c m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#? & Hown) HΦ".
+  rewrite /ObjectMetaV.own_scalars. iNamed "Hown".
+  pose proof Hown_scalars as Hns. destruct Hns as (_ & _ & Hns & _).
+  wp_apply (wp_GetNamespace with "[$Hown_scalars_l]").
+  iIntros "Hl". rewrite Hns. iApply "HΦ". by iFrame "∗ %".
+Qed.
+
+Lemma wp_GetUID_scalars l c m dq :
+  {{{ is_pkg_init v1 ∗
+      ObjectMetaV.own_scalars l c m dq
+  }}}
+    l @! (go.PointerType v1.ObjectMeta) @! "GetUID" #()
+  {{{ RET #m.(ObjectMetaV.UID');
+      ObjectMetaV.own_scalars l c m dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#? & Hown) HΦ".
+  rewrite /ObjectMetaV.own_scalars. iNamed "Hown".
+  pose proof Hown_scalars as Huid. destruct Huid as (_ & _ & _ & _ & Huid & _).
+  wp_apply (wp_GetUID with "[$Hown_scalars_l]").
+  iIntros "Hl". rewrite Huid. iApply "HΦ". by iFrame "∗ %".
+Qed.
+
 Lemma wp_SetNamespace l m namespace :
   {{{ is_pkg_init v1 ∗
       l ↦ m
@@ -1064,14 +1117,16 @@ Qed.
 
 Context {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
-Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
+(** [NewControllerRef] reads only the owner's name and UID, so it takes the
+    scalar footprint rather than full metadata deep ownership. *)
+Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l c m dq:
   {{{ is_pkg_init v1 ∗
       ⌜ owner = interface.mk_ok (go.PointerType v1.ReplicaSet) (# rs_l) ⌝ ∗
       ⌜ gvk.(schema.GroupVersionKind.Group') = "apps"%go ∧
         gvk.(schema.GroupVersionKind.Version') = "v1"%go ∧
         gvk.(schema.GroupVersionKind.Kind') = "ReplicaSet"%go ⌝ ∗
       ⌜ ObjectMetaV.valid ReplicaSetV.kind m ⌝ ∗
-      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
+      ObjectMetaV.own_scalars (ReplicaSetV.objectmeta_ptr rs_l) c m dq
   }}}
     @! v1.NewControllerRef #owner #gvk
   {{{ l controller_ref, RET #l;
@@ -1079,7 +1134,7 @@ Lemma wp_NewControllerRef_ReplicaSet owner gvk rs_l m dq:
       ⌜ OwnerReferenceV.refers_to_controller controller_ref gvk.(schema.GroupVersionKind.Kind')
         m.(ObjectMetaV.Name') m.(ObjectMetaV.UID') ⌝ ∗
       ⌜ OwnerReferenceV.valid controller_ref ⌝ ∗
-      ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) m dq
+      ObjectMetaV.own_scalars (ReplicaSetV.objectmeta_ptr rs_l) c m dq
   }}}.
 Proof.
   wp_start as "H".
@@ -1097,11 +1152,11 @@ Proof.
   { iPureIntro. simpl. done. }
   wp_bind (rs_l @! (go.PointerType v1.ReplicaSet) @! "GetName" #())%E.
   wp_method_call. wp_pures.
-  wp_apply (wp_GetName_deepown with "[$Hmeta]").
+  wp_apply (wp_GetName_scalars with "[$Hmeta]").
   iIntros "Hmeta". wp_auto.
   wp_bind (rs_l @! (go.PointerType v1.ReplicaSet) @! "GetUID" #())%E.
   wp_method_call. wp_pures.
-  wp_apply (wp_GetUID_deepown with "[$Hmeta]").
+  wp_apply (wp_GetUID_scalars with "[$Hmeta]").
   iIntros "Hmeta". wp_auto.
   wp_bind (#(functions ptr.To [go.bool]) #true)%E.
   wp_func_call. wp_call. wp_alloc block_ptr as "Hblock". wp_auto.
