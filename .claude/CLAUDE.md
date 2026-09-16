@@ -5,6 +5,17 @@ It is kept consistent with `AGENTS.md`; when updating one, update the other.
 
 ## Build Commands
 
+Every Rocq command (`make`, `rocq`, `rocqd`) must run in this project's opam switch. Activate it in each
+new shell before building, and check it when a command fails for no apparent reason:
+
+```bash
+eval $(opam env --switch=kubernetes-verification --set-switch)
+opam switch show    # must print kubernetes-verification
+```
+
+In the wrong switch, `make` fails immediately while regenerating `.rocqdeps.d`, with
+`library ... has not been found in the loadpath`.
+
 To compile all the Rocq files:
 
 ```bash
@@ -110,6 +121,13 @@ rocqd/target/release/rocqd status                                      # session
 rocqd/target/release/rocqd stop
 ```
 
+- Start the daemon only from a shell where `opam switch show` prints `kubernetes-verification`. The daemon
+  hands its own environment to every prover it spawns, so a client in the right switch does not fix a daemon
+  in the wrong one.
+- In the wrong switch `rocqd compile` never returns: `rocqd status` shows the session stuck in `Processing`
+  at a few MB until the check timeout (1 hour by default), with no error. Run `rocqd stop`, activate the
+  switch, and start the daemon again. While debugging this, cap the wait with
+  `rocqd start --check-timeout-secs 300`.
 - Do not pass load-path flags; they come from the repository's `_CoqProject`.
 - Expect the first check of a file to cost a full compile; later checks are fast.
 - Keep at most two sessions alive, since each holds 1-4 GB. Check with `rocqd status`.
