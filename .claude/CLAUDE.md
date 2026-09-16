@@ -88,6 +88,36 @@ appear above the focused goal in the same lemma. These edits are only a local fa
 temporarily admitted or commented proof before finishing the task, and do not count checks run with
 temporary admits as completed verification for the final result.
 
+### Incremental Proof Repair with `rocqd`
+
+`rocqd/` is a git submodule holding a caching daemon that keeps a Rocq prover alive between checks. Use it
+for the edit-check-edit loop when repairing a lemma near the end of its file. For a lemma in the middle of
+a file, use the admit trick from "Fast Rocq Proof Checks" above instead.
+
+Build the daemon once, and compile the file's dependencies before the first check:
+
+```bash
+(cd rocqd && cargo build --release)
+make -j10 src/proof/[FILE].vos
+```
+
+Start the daemon once per session, check against it, and stop it before finishing the task:
+
+```bash
+rocqd/target/release/rocqd start --max-sessions 2 --max-memory-mb 8000 &
+rocqd/target/release/rocqd compile src/proof/[FILE].v                  # check; prints diagnostics
+rocqd/target/release/rocqd query src/proof/[FILE].v:120 "Check foo."   # inspect the state at a line
+rocqd/target/release/rocqd status                                      # sessions and their memory
+rocqd/target/release/rocqd stop
+```
+
+- Do not pass load-path flags; they come from the repository's `_CoqProject`.
+- Expect the first check of a file to cost a full compile; later checks are fast.
+- Keep at most two sessions alive, since each holds 1-4 GB. Check with `rocqd status`.
+- `rocqd` does not produce `.vo` files. Always confirm with `make -j10 src/proof/[FILE].vo` before
+  reporting a proof as complete.
+- Always run `rocqd stop` before finishing the task.
+
 ## Debugging Tips
 
 - **Find lemmas**:
