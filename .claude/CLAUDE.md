@@ -15,7 +15,7 @@ To check a specific Rocq file, always run `make -j10` on its `.vo` target (path 
 so independent proofs compile in parallel:
 
 ```bash
-make -j10 src/proof/[FILE].vo
+make -j10 src/proof/<FILE>.vo
 ```
 
 Examples:
@@ -62,17 +62,17 @@ When modifying a file with many dependencies, use this three-stage workflow for 
 
 1. **Compilation without checking proofs**:
    ```bash
-   make -j10 src/proof/[FILE].vos
+   make -j10 src/proof/<FILE>.vos
    ```
 
 2. **Check proofs in the target FILE only**:
    ```bash
-   make -j10 src/proof/[FILE].vok
+   make -j10 src/proof/<FILE>.vok
    ```
 
 3. **Full compilation** (when the steps above succeed):
    ```bash
-   make -j10 src/proof/[FILE].vo
+   make -j10 src/proof/<FILE>.vo
    ```
 
 ### Fast Rocq Proof Checks
@@ -104,8 +104,8 @@ Start the daemon once per session, check against it, and stop it before finishin
 
 ```bash
 rocqd/target/release/rocqd start --max-sessions 2 --max-memory-mb 8000 &
-rocqd/target/release/rocqd compile src/proof/[FILE].v                  # check; prints diagnostics
-rocqd/target/release/rocqd query src/proof/[FILE].v:120 "Check foo."   # inspect the state at a line
+rocqd/target/release/rocqd compile src/proof/<FILE>.v                  # check; prints diagnostics
+rocqd/target/release/rocqd query src/proof/<FILE>.v:120 "Check foo."   # inspect the state at a line
 rocqd/target/release/rocqd status                                      # sessions and their memory
 rocqd/target/release/rocqd stop
 ```
