@@ -91,14 +91,13 @@ temporary admits as completed verification for the final result.
 ### Incremental Proof Repair with `rocqd`
 
 `rocqd/` is a git submodule holding a caching daemon that keeps a Rocq prover alive between checks. Use it
-for the edit-check-edit loop when repairing a lemma near the end of its file. For a lemma in the middle of
-a file, use the admit trick from "Fast Rocq Proof Checks" above instead.
+for the edit-check-edit loop when repairing a lemma. Combine it with the "Fast Rocq Proof Checks" above.
 
-Build the daemon once, and compile the file's dependencies before the first check:
+Build the daemon once, and compile the file's dependencies before the first check, for example:
 
 ```bash
 (cd rocqd && cargo build --release)
-make -j10 src/proof/[FILE].vos
+make -j10 src/proof/<FILE>.vos
 ```
 
 Start the daemon once per session, check against it, and stop it before finishing the task:
@@ -114,7 +113,7 @@ rocqd/target/release/rocqd stop
 - Do not pass load-path flags; they come from the repository's `_CoqProject`.
 - Expect the first check of a file to cost a full compile; later checks are fast.
 - Keep at most two sessions alive, since each holds 1-4 GB. Check with `rocqd status`.
-- `rocqd` does not produce `.vo` files. Always confirm with `make -j10 src/proof/[FILE].vo` before
+- `rocqd` does not produce `.vo` files. Always confirm with `make -j10 src/proof/<FILE>.vo` before
   reporting a proof as complete.
 - Always run `rocqd stop` before finishing the task.
 
