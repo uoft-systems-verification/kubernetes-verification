@@ -9,10 +9,11 @@
    Every lemma here is proved from the discard rules of points-to, maps and
    slices.  Predicates whose representation is an opaque axiom in the pure model
    -- [TimeV.deepown] and [ManagedFieldsEntryV.deepown] -- admit no such proof,
-   so full [ObjectMetaV.deepown] and [PodTemplateSpecV.deepown] have no discard
-   lemma.  Readers that share metadata take a reduced footprint instead
-   ([ObjectMetaV.own_scalars], [ObjectMetaV.own_template_meta],
-   [PodTemplateSpecV.own_template]), which is also all the code reads. *)
+   so deep ownership of an [ObjectMeta] or a pod template has no discard lemma.
+   Readers that share metadata take a reduced footprint instead
+   ([ObjectMetaV.own_shallow], [ObjectMetaV.own_pod_creation_fields],
+   [PodTemplateSpecV.own_pod_creation_inputs]), which is also all the code
+   reads. *)
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export pod replicaset.
 From New.proof Require Import proof_prelude.
@@ -71,27 +72,27 @@ Qed.
 
 (* Persistence for the reduced metadata footprints of
    [kubernetes_types/objectmeta.v].  Neither lemma says anything about
-   [TimeV.deepown] or [ManagedFieldsEntryV.deepown]: the scalar fields are
+   [TimeV.deepown] or [ManagedFieldsEntryV.deepown]: the shallow fields are
    related by pure equalities, and labels, annotations and finalizers are maps
-   and slices with established discard rules.  Full [ObjectMetaV.deepown] has
-   no discard lemma precisely because its timestamps and managed fields are
-   opaque; readers that need to share metadata take one of these instead. *)
-Lemma objectmeta_own_scalars_persist l c v dq :
-  ObjectMetaV.own_scalars l c v dq ⊢ |==> ObjectMetaV.own_scalars l c v DfracDiscarded.
+   and slices with established discard rules.  Deep ownership has no discard
+   lemma precisely because its timestamps and managed fields are opaque;
+   readers that need to share metadata take one of these instead. *)
+Lemma objectmeta_own_shallow_persist l c v dq :
+  ObjectMetaV.own_shallow l c v dq ⊢ |==> ObjectMetaV.own_shallow l c v DfracDiscarded.
 Proof.
-  rewrite /ObjectMetaV.own_scalars. iNamed 1.
-  iPersist "Hown_scalars_l". iModIntro. by iFrame "# %".
+  rewrite /ObjectMetaV.own_shallow. iNamed 1.
+  iPersist "Hown_shallow_l". iModIntro. by iFrame "# %".
 Qed.
 
-#[global] Instance objectmeta_own_scalars_persistent l c v :
-  Persistent (ObjectMetaV.own_scalars l c v DfracDiscarded).
-Proof. rewrite /ObjectMetaV.own_scalars. apply _. Qed.
+#[global] Instance objectmeta_own_shallow_persistent l c v :
+  Persistent (ObjectMetaV.own_shallow l c v DfracDiscarded).
+Proof. rewrite /ObjectMetaV.own_shallow. apply _. Qed.
 
-Lemma objectmeta_own_template_meta_persist c v dq :
-  ObjectMetaV.own_template_meta c v dq ⊢
-    |==> ObjectMetaV.own_template_meta c v DfracDiscarded.
+Lemma objectmeta_own_pod_creation_fields_persist c v dq :
+  ObjectMetaV.own_pod_creation_fields c v dq ⊢
+    |==> ObjectMetaV.own_pod_creation_fields c v DfracDiscarded.
 Proof.
-  rewrite /ObjectMetaV.own_template_meta. iNamed 1.
+  rewrite /ObjectMetaV.own_pod_creation_fields. iNamed 1.
   iAssert (|==> match v.(ObjectMetaV.Labels') with
     | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${DfracDiscarded} cl ∗ ⌜ cl = vl ⌝
     | None => True%I
@@ -116,10 +117,10 @@ Proof.
   iModIntro. by iFrame "∗ # %".
 Qed.
 
-#[global] Instance objectmeta_own_template_meta_persistent c v :
-  Persistent (ObjectMetaV.own_template_meta c v DfracDiscarded).
+#[global] Instance objectmeta_own_pod_creation_fields_persistent c v :
+  Persistent (ObjectMetaV.own_pod_creation_fields c v DfracDiscarded).
 Proof.
-  rewrite /ObjectMetaV.own_template_meta.
+  rewrite /ObjectMetaV.own_pod_creation_fields.
   destruct (v.(ObjectMetaV.Labels')), (v.(ObjectMetaV.Annotations')),
     (v.(ObjectMetaV.Finalizers'));
     apply _.
@@ -172,20 +173,20 @@ Qed.
   Persistent (PodSpecV.deepown c v DfracDiscarded).
 Proof. rewrite /PodSpecV.deepown /deepown_list_dq. apply _. Qed.
 
-Lemma pod_template_spec_own_template_persist l c v dq :
-  PodTemplateSpecV.own_template l c v dq ⊢
-    |==> PodTemplateSpecV.own_template l c v DfracDiscarded.
+Lemma pod_template_spec_own_pod_creation_inputs_persist l c v dq :
+  PodTemplateSpecV.own_pod_creation_inputs l c v dq ⊢
+    |==> PodTemplateSpecV.own_pod_creation_inputs l c v DfracDiscarded.
 Proof.
-  rewrite /PodTemplateSpecV.own_template. iNamed 1.
-  iPersist "Hown_template_l".
-  iMod (objectmeta_own_template_meta_persist with "Hown_template_meta")
-    as "Hown_template_meta".
-  iMod (pod_spec_deepown_persist with "Hown_template_spec") as "Hown_template_spec".
+  rewrite /PodTemplateSpecV.own_pod_creation_inputs. iNamed 1.
+  iPersist "Hown_inputs_l".
+  iMod (objectmeta_own_pod_creation_fields_persist with "Hown_inputs_fields")
+    as "Hown_inputs_fields".
+  iMod (pod_spec_deepown_persist with "Hown_inputs_spec") as "Hown_inputs_spec".
   iModIntro. by iFrame "∗ #".
 Qed.
 
-#[global] Instance pod_template_spec_own_template_persistent l c v :
-  Persistent (PodTemplateSpecV.own_template l c v DfracDiscarded).
-Proof. rewrite /PodTemplateSpecV.own_template. apply _. Qed.
+#[global] Instance pod_template_spec_own_pod_creation_inputs_persistent l c v :
+  Persistent (PodTemplateSpecV.own_pod_creation_inputs l c v DfracDiscarded).
+Proof. rewrite /PodTemplateSpecV.own_pod_creation_inputs. apply _. Qed.
 
 End persist.
