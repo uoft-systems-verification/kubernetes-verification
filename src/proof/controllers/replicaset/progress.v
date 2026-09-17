@@ -308,15 +308,16 @@ Proof.
     (* The pod-creating closure runs in forked goroutines, which share the
        ReplicaSet's metadata and template read-only. *)
     iPersist "rs ctx kubeClient".
-    (* Only the ReplicaSet's scalar metadata is shared with the goroutines:
-       [NewControllerRef] reads its name and UID, [GetPodFromTemplate] its name,
-       and the create call its namespace.  The rest of the metadata stays out of
-       the closure, which is what lets this be discarded without assuming
-       anything about the opaque timestamp and managed-field predicates. *)
-    iDestruct (ObjectMetaV.deepown_l_own_scalars with "Hdeepown_m_l_rs")
-      as (rs_meta_c) "[Hown_scalars_rs _]".
-    iMod (objectmeta_own_scalars_persist with "Hown_scalars_rs")
-      as "#Hown_scalars_rs".
+    (* Only shallow ownership of the ReplicaSet's metadata is shared with the
+       goroutines: [NewControllerRef] reads its name and UID,
+       [GetPodFromTemplate] its name, and the create call its namespace.  Nothing
+       reachable from the struct enters the closure, which is what lets this be
+       discarded without assuming anything about the opaque timestamp and
+       managed-field predicates. *)
+    iDestruct (ObjectMetaV.deepown_l_extract_shallow with "Hdeepown_m_l_rs")
+      as (rs_meta_c) "[Hown_shallow_rs _]".
+    iMod (objectmeta_own_shallow_persist with "Hown_shallow_rs")
+      as "#Hown_shallow_rs".
     iDestruct (struct_fields_split with "Hrs_spec_l") as "[H %Hrs_spec_l_not_null]".
     iNamedPrefix "H" "Hrs_".
     iAssert (PodTemplateSpecV.deepown_l
@@ -324,9 +325,9 @@ Proof.
         rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template') dq2)%I
       with "[Hrs_Template Hrs_Hdeepown_template]" as "Htemplate".
     { iExists _. iFrame. }
-    iDestruct (PodTemplateSpecV.deepown_l_own_template with "Htemplate")
+    iDestruct (PodTemplateSpecV.deepown_l_extract_pod_creation_inputs with "Htemplate")
       as (template_c) "[Htemplate _]".
-    iMod (pod_template_spec_own_template_persist with "Htemplate")
+    iMod (pod_template_spec_own_pod_creation_inputs_persist with "Htemplate")
       as "#Htemplate".
     assert (valid_name ReplicaSetV.kind
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')) as Hrs_name_valid.
@@ -364,7 +365,7 @@ Proof.
       wp_auto. rewrite Hgvk_k in Hcontroller_ref_valid.
       change ((rs_l.[k8s_api_apps_v1.ReplicaSet.t, "Spec"]).[k8s_api_apps_v1.ReplicaSetSpec.t, "Template"]) with
         ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"]).
-      wp_apply (controller.wp_GetPodFromTemplate
+      wp_apply (controller.wp_GetPodFromTemplate_from_creation_inputs
         ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"])
         (interface.mk (go.PointerType k8s_api_apps_v1.ReplicaSet) #rs_l)
         controller_ref_l DfracDiscarded DfracDiscarded
@@ -393,7 +394,7 @@ Proof.
         - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto.
         - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
       wp_auto.
-      wp_apply (v1.wp_GetNamespace_scalars with "[$Hown_scalars_rs]") as "_".
+      wp_apply (v1.wp_GetNamespace_shallow with "[$Hown_shallow_rs]") as "_".
       wp_method_call. rewrite /kubernetes.Clientset__CoreV1ⁱᵐᵖˡ. wp_call.
       try wp_auto.
       wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto.

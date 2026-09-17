@@ -8,19 +8,6 @@ After every completed task, include a `Timing` section with:
 
 Use `/usr/bin/time -p` for long-running verification commands when practical.
 
-## Toolchain
-
-Every Rocq command (`make`, `rocq`, `rocqd`) must run in this project's opam switch. Activate it in each
-new shell, and check it when a command fails for no apparent reason:
-
-```bash
-eval $(opam env --switch=kubernetes-verification --set-switch)
-opam switch show    # must print kubernetes-verification
-```
-
-In the wrong switch, `make` fails immediately while regenerating `.rocqdeps.d`, and `rocqd compile` never
-returns — `rocqd status` shows the session stuck in `Processing` until the check timeout, with no error.
-
 ## Proof References
 
 When writing Rocq program proofs, you can refer to local Perennial program
