@@ -2,7 +2,7 @@
 
 ## Build Commands
 
-Every Rocq command (`make`, `rocq`, `rocqd`) must run in this project's opam switch. Activate it in each
+Every Rocq command (`make`, `rocq`) must run in this project's opam switch. Activate it in each
 new shell before building, and check it when a command fails for no apparent reason:
 
 ```bash
@@ -66,7 +66,7 @@ edit can affect. Use these three stages instead.
    ```
 
 `-vos` skips proof bodies, so step 1 never catches a failing tactic — step 2 is what does. For repeated
-checks of a single file, prefer `rocqd` (below) to re-running its `.vok`.
+checks of a single file, combine step 2 with the "Fast Rocq Proof Checks" below.
 
 ### Fast Rocq Proof Checks
 
@@ -80,42 +80,6 @@ When focusing on one goal inside a lemma, also temporarily comment out proofs fo
 appear above the focused goal in the same lemma. These edits are only a local fast-check aid: restore every
 temporarily admitted or commented proof before finishing the task, and do not count checks run with
 temporary admits as completed verification for the final result.
-
-### Incremental Proof Repair with `rocqd`
-
-`rocqd/` is a git submodule holding a caching daemon that keeps a Rocq prover alive between checks. Use it
-for the edit-check-edit loop when repairing a lemma. Combine it with the "Fast Rocq Proof Checks" above.
-
-Build the daemon once, and compile the file's dependencies before the first check:
-
-```bash
-(cd rocqd && cargo build --release)
-make -j10 vos
-```
-
-Start the daemon once per session, check against it, and stop it before finishing the task:
-
-```bash
-rocqd/target/release/rocqd start --max-sessions 2 --max-memory-mb 8000 &
-rocqd/target/release/rocqd compile src/proof/<FILE>.v                  # check; prints diagnostics
-rocqd/target/release/rocqd query src/proof/<FILE>.v:120 "Check foo."   # inspect the state at a line
-rocqd/target/release/rocqd status                                      # sessions and their memory
-rocqd/target/release/rocqd stop
-```
-
-- Start the daemon only from a shell where `opam switch show` prints `kubernetes-verification`. The daemon
-  hands its own environment to every prover it spawns, so a client in the right switch does not fix a daemon
-  in the wrong one.
-- In the wrong switch `rocqd compile` never returns: `rocqd status` shows the session stuck in `Processing`
-  at a few MB until the check timeout (1 hour by default), with no error. Run `rocqd stop`, activate the
-  switch, and start the daemon again. While debugging this, cap the wait with
-  `rocqd start --check-timeout-secs 300`.
-- Do not pass load-path flags; they come from the repository's `_CoqProject`.
-- Expect the first check of a file to cost a full compile; later checks are fast.
-- Keep at most two sessions alive, since each holds 1-4 GB. Check with `rocqd status`.
-- `rocqd` does not produce `.vo` files. Always confirm with `make -j10 src/proof/<FILE>.vo` before
-  reporting a proof as complete.
-- Always run `rocqd stop` before finishing the task.
 
 ## Debugging Tips
 
