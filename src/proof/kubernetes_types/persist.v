@@ -166,12 +166,12 @@ Proof.
   iMod (own_slice_persist with "Hsl") as "Hsl".
   iMod (big_sepL2_persist VolumeV.deepown with "Hlist") as "Hlist".
   { intros. apply volume_deepown_persist. }
-  iModIntro. iFrame "%". iExists volumes. rewrite /deepown_list_dq. by iFrame.
+  iModIntro. iFrame "%". iExists volumes. rewrite /deepown_list. by iFrame.
 Qed.
 
 #[global] Instance pod_spec_deepown_persistent c v :
   Persistent (PodSpecV.deepown c v DfracDiscarded).
-Proof. rewrite /PodSpecV.deepown /deepown_list_dq. apply _. Qed.
+Proof. rewrite /PodSpecV.deepown /deepown_list. apply _. Qed.
 
 Lemma pod_template_spec_own_pod_creation_inputs_persist l c v dq :
   PodTemplateSpecV.own_pod_creation_inputs l c v dq ⊢

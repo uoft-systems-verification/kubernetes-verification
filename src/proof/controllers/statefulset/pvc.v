@@ -927,7 +927,7 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
               v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔
           set.(StatefulSetV.Spec').(
               StatefulSetSpecV.VolumeClaimTemplates') = None ⌝ ∗
-      "Hdeepown_volumeclaimtemplates" ∷ deepown_list
+      "Hdeepown_volumeclaimtemplates" ∷ deepown_list (DfracOwn 1)
         set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates_list
           (StatefulSetSpecV.volume_claim_templates_list
             set.(StatefulSetV.Spec'))

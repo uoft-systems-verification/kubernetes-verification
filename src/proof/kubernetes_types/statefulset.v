@@ -175,7 +175,7 @@ Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
       v.(VolumeClaimTemplates') = None⌝ ∗
   "Hdeepown_volumeclaimtemplates" ∷
     (∃ claim_templates,
-      deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates
+      deepown_list (DfracOwn 1) c.(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates
         (volume_claim_templates_list v)
         (λ claim_template pure_claim_template,
           PersistentVolumeClaimV.deepown claim_template pure_claim_template dq)) ∗
