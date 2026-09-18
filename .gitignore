@@ -16,5 +16,6 @@ _built/
 *.out
 # Rocq output cache
 .template-cache/
+.DS_Store
 # rapid test results
 kubernetes_model/apimodel/testdata/

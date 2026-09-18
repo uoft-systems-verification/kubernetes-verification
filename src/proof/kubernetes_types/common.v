@@ -9,10 +9,12 @@ From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
 
+(* The backing slice is owned at fraction [dq] so the list can be shared
+   read-only (e.g. by concurrent goroutines). *)
 Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
     {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
-    (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
-  c_slice ↦* cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
+    (dq : dfrac) (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
+  c_slice ↦*{dq} cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
 
 Module TimeV.
 Section def.

@@ -464,7 +464,7 @@ Proof.
   Ltac restore_storage_pod pod_spec_c physical_volumes pod_meta_c pod
       dq_pod pod_l Hpod_l_not_null :=
     iAssert (∃ volumes,
-        deepown_list pod_spec_c.(v1.PodSpec.Volumes') volumes
+        deepown_list dq_pod pod_spec_c.(v1.PodSpec.Volumes') volumes
           (PodSpecV.volumes_list pod.(PodV.Spec'))
           (λ physical_volume pure_volume,
             VolumeV.deepown physical_volume pure_volume dq_pod))%I
@@ -534,7 +534,7 @@ Proof.
     "Hvolume_ptr" ∷ volume_ptr ↦ volume ∗
     "Hvolumes_ptr" ∷ volumes_ptr ↦ volumes_l ∗
     "Hpod_volumes_slice" ∷
-      pod_spec_c.(v1.PodSpec.Volumes') ↦* physical_volumes ∗
+      pod_spec_c.(v1.PodSpec.Volumes') ↦*{dq_pod} physical_volumes ∗
     "Hvolumes_map" ∷ volumes_l ↦$
       pod_physical_volumes_map_of_list
         (take (sint.nat i) physical_volumes) ∗
@@ -632,7 +632,7 @@ Proof.
         (PodV.objectmeta_ptr pod_l) pod.(PodV.ObjectMeta') dq_pod ∗
       "Hpod_spec_field" ∷ PodV.spec_ptr pod_l ↦{dq_pod} pod_spec_c ∗
       "Hpod_volumes_slice" ∷
-        pod_spec_c.(v1.PodSpec.Volumes') ↦* physical_volumes ∗
+        pod_spec_c.(v1.PodSpec.Volumes') ↦*{dq_pod} physical_volumes ∗
       "Hpod_volumes_deepown" ∷
         ([∗ list] physical_volume;pure_volume ∈
           physical_volumes;PodSpecV.volumes_list pod.(PodV.Spec'),

@@ -209,7 +209,7 @@ Proof.
       - exact (IH b Hb Hlabel_tail). }
     apply (Htail_subdomain first suffix); last exact Htail.
     left. exact Hfirst. }
-  wp_apply (controller.wp_GetPodFromTemplate
+  wp_apply (controller.wp_GetPodFromTemplate_from_deep_ownership
     ((StatefulSetV.spec_ptr set_l).[v1.StatefulSetSpec.t, "Template"])
     (interface.mk (go.PointerType apps_v1.StatefulSet) #set_l)
     controller_ref_l dq dq

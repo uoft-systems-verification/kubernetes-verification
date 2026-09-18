@@ -53,8 +53,9 @@ Local Set Default Proof Using "All".
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
-  ⊢ preservation_spec γ l ctx kube_client namespace name rs dq pods.
+Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs
+    dq pods :
+  ⊢ preservation_spec γ l ctx kube_client burst namespace name rs dq pods.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -67,6 +68,7 @@ Proof.
   wp_alloc_auto.
   rewrite exception_do_unseal /exception_do_def.
   wp_pures.
+  wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
@@ -225,18 +227,17 @@ Proof.
   assert (NoDup (PodV.key <$> filter is_pod_alive all_pods)) as Hactive_nodup.
   { eapply sublist_NoDup; first exact Hall_nodup.
     apply fmap_sublist, sublist_filter. }
-  wp_apply (wp_manageReplicas γ l ctx kube_client active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas γ l ctx kube_client burst active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) []
     rs_get n has_terminating_children dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; try done.
-    - intros pod Hpod.
-      apply list_elem_of_filter in Hpod as [Halive _].
-      exact Halive.
-    - rewrite app_nil_r. exact Hactive_nodup. }
-  iIntros (pods_managed) "(%Hmanaged_len & Hhas_terminating_children & Hdeepown_l_rs &
+    all: try (intros pod Hpod; apply list_elem_of_filter in Hpod as [Halive _]; exact Halive).
+    all: try lia.
+    rewrite app_nil_r; exact Hactive_nodup. }
+  iIntros (pods_managed) "(%Hmanaged_len & %Hmanaged_alive & Hhas_terminating_children &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag)".
   iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".
@@ -256,9 +257,18 @@ Proof.
   iFrame "Hown_rs_meta_frag Hown_rs_spec_frag Hmanaged_meta_frags
     Hmanaged_unreserved_key_frags Hown_children_frag Hown_terminating_children_frag".
   iPureIntro. split; first exact Hpods'_nodup.
-  assert (match_distance rs pods_managed = 0%nat) as Hdistance_zero.
-  { unfold match_distance.
-    rewrite Hreplicas_eq /= Hmanaged_len. lia. }
+  (* one sync moves the live count toward the desired count by at most [burst] *)
+  assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
+    as Hliving_active_len.
+  { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
+  assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
+  { rewrite -Hliving_active_len. f_equal. apply filter_all.
+    intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
+  pose proof (capped_replica_count_distance (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
+    as Hcap.
+  rewrite -Hmanaged_len in Hcap.
+  rewrite !(match_distance_replica_distance _ _ n Hreplicas_eq).
+  rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hpods_active_len.
   lia.
 Qed.
 

@@ -1,4 +1,5 @@
 From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof Require Export util.
 
 Module app_listers := code.k8s_io.client_go.listers.apps.v1.v1.
 
@@ -45,6 +46,67 @@ Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
     list_to_set (C:=gset KKey.t) (PodV.key <$> pods') ∨
   pod_meta_except_resource_version_changed pods pods' ∨
   pod_spec_changed pods pods'.
+
+(* Replica arithmetic of one sync under the burst cap: the controller moves the
+   live replica count toward the desired count by at most [burst]. *)
+Definition replica_distance (actual desired : nat) : nat :=
+  ((actual - desired) + (desired - actual))%nat.
+
+Definition capped_replica_count (actual desired burst : nat) : nat :=
+  if decide (actual < desired)%nat then (actual + Nat.min (desired - actual) burst)%nat
+  else (actual - Nat.min (actual - desired) burst)%nat.
+
+Lemma capped_replica_count_distance actual desired burst :
+  (replica_distance (capped_replica_count actual desired burst) desired +
+    Nat.min (replica_distance actual desired) burst = replica_distance actual desired)%nat.
+Proof. unfold capped_replica_count, replica_distance. destruct (decide _); lia. Qed.
+
+Lemma match_distance_replica_distance rs pods n :
+  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n →
+  match_distance rs pods = replica_distance (length (filter is_pod_alive pods)) (sint.nat n).
+Proof. intros Hreplicas. unfold match_distance. rewrite Hreplicas. done. Qed.
+
+Lemma active_pod_count_erased_meta_perm pods1 pods2 :
+  ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods1) ≡ₚ
+    ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods2) →
+  length (filter is_pod_alive pods1) = length (filter is_pod_alive pods2).
+Proof.
+  intros Hperm.
+  assert (Hcount : ∀ pods,
+    length (filter is_pod_alive pods) =
+    length (filter (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
+      (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods)))).
+  { intros pods. induction pods as [|pod pods IH]; simpl; first done.
+    destruct (decide (is_pod_alive pod)) as [Halive|Hnot_alive].
+    - destruct (decide ((ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta')).(ObjectMetaV.DeletionTimestamp') = None))
+        as [Herased_alive|Hnot_erased_alive].
+      + rewrite (filter_cons_True is_pod_alive pod pods Halive).
+        rewrite (filter_cons_True
+          (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
+          (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'))
+          (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods))
+          Herased_alive).
+        simpl. f_equal. exact IH.
+      + exfalso. apply Hnot_erased_alive.
+        unfold is_pod_alive, ObjectMetaV.without_resource_version in *.
+        destruct pod as [? [] ? ?]. exact Halive.
+    - destruct (decide ((ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta')).(ObjectMetaV.DeletionTimestamp') = None))
+        as [Herased_alive|Hnot_erased_alive].
+      + exfalso. apply Hnot_alive.
+        unfold is_pod_alive, ObjectMetaV.without_resource_version in *.
+        destruct pod as [? [] ? ?]. exact Herased_alive.
+      + rewrite (filter_cons_False is_pod_alive pod pods Hnot_alive).
+        rewrite (filter_cons_False
+          (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
+          (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'))
+          (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods))
+          Hnot_erased_alive).
+        exact IH. }
+  rewrite !Hcount.
+  apply Permutation_length.
+  apply perm_filter.
+  exact Hperm.
+Qed.
 
 Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
   (* ReplicaSet-generated Pod names append a hyphen and five-character suffix;
@@ -127,19 +189,24 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
+(* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes at
+  most [burst] pods. It must be positive for the controller to make progress, and it
+  bounds the int32 sync.WaitGroup counter the controller adds it to. *)
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
-Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ current_state_matches rs pods' ∨
@@ -150,16 +217,18 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) name
   desired state (or, does not cancel its previous progress) when the cluster state is *unready* for the controller to
   make progress. Here, unready means the controller has some terminating children objects, so the controller might need
   to wait for termination before making progress. *)
-Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
@@ -167,7 +236,8 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
 
 (* Stability spec states that the controller does not modify the cluster state if the state already matches the desired
   state. We use fractional ownerships owned_resources so the controller has no permission to modify the state. *)
-Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -176,7 +246,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) nam
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ rs pods (stability_fractions dq) true
   }}}.
