@@ -452,7 +452,7 @@ Proof.
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   iDestruct "Hpod_spec_Hdeepown_volumes" as (physical_volumes)
     "Hpod_volumes".
-  rewrite /deepown_list_dq.
+  rewrite /deepown_list.
   iDestruct "Hpod_volumes" as
     "[Hpod_volumes_slice Hpod_volumes_deepown]".
   iDestruct (own_slice_len with "Hpod_volumes_slice") as
@@ -464,13 +464,13 @@ Proof.
   Ltac restore_storage_pod pod_spec_c physical_volumes pod_meta_c pod
       dq_pod pod_l Hpod_l_not_null :=
     iAssert (∃ volumes,
-        deepown_list_dq dq_pod pod_spec_c.(v1.PodSpec.Volumes') volumes
+        deepown_list dq_pod pod_spec_c.(v1.PodSpec.Volumes') volumes
           (PodSpecV.volumes_list pod.(PodV.Spec'))
           (λ physical_volume pure_volume,
             VolumeV.deepown physical_volume pure_volume dq_pod))%I
       with "[Hpod_volumes_slice Hpod_volumes_deepown]" as
         "Hpod_spec_Hdeepown_volumes";
-    [ iExists physical_volumes; rewrite /deepown_list_dq; iFrame | ];
+    [ iExists physical_volumes; rewrite /deepown_list; iFrame | ];
     iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta";
     iAssert (ObjectMetaV.deepown pod_meta_c
         pod.(PodV.ObjectMeta') dq_pod)
@@ -908,7 +908,7 @@ Proof.
       { rewrite /PodSpecV.deepown.
         iSplit; first done.
         iSplitL "Hpod_volumes_slice Hpod_volumes_deepown".
-        { iExists physical_volumes. rewrite /deepown_list_dq. iFrame. }
+        { iExists physical_volumes. rewrite /deepown_list. iFrame. }
         iFrame "%". }
       iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
           pod.(PodV.Spec') dq_pod)
@@ -939,7 +939,7 @@ Proof.
       { rewrite /PodSpecV.deepown.
         iSplit; first done.
         iSplitL "Hpod_volumes_slice Hpod_volumes_deepown".
-        { iExists physical_volumes. rewrite /deepown_list_dq. iFrame. }
+        { iExists physical_volumes. rewrite /deepown_list. iFrame. }
         iFrame "%". }
       iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
           pod.(PodV.Spec') dq_pod)
@@ -990,7 +990,7 @@ Proof.
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   iDestruct "Hpod_spec_Hdeepown_volumes" as (current_volumes_phy)
     "Hcurrent_volumes".
-  rewrite /deepown_list_dq.
+  rewrite /deepown_list.
   iDestruct "Hcurrent_volumes" as
     "[Hcurrent_volumes_slice Hcurrent_volumes_deepown]".
   wp_auto.
@@ -1373,7 +1373,7 @@ Proof.
       { iPureIntro. split; last discriminate.
         intros Hnil. exfalso. exact (Hout_non_nil Hnil). }
       iSplitL "Hnew_volumes_slice Hnew_volumes_deepown".
-      { iExists out_phy. rewrite /deepown_list_dq. iFrame. }
+      { iExists out_phy. rewrite /deepown_list. iFrame. }
       iFrame "%". }
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
         (pod.(PodV.Spec') <| PodSpecV.Volumes' :=
