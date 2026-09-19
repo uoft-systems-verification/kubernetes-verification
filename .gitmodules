@@ -2,3 +2,6 @@
 	path = kubernetes
 	url = https://github.com/marshtompsxd/kubernetes.git
 	branch = xudong/verify-1.34
+[submodule "rocq-lsp-mcp"]
+	path = rocq-lsp-mcp
+	url = git@github.com:uoft-systems-verification/rocq-lsp-mcp.git

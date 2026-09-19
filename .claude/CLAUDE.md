@@ -10,11 +10,9 @@ eval $(opam env --switch=kubernetes-verification --set-switch)
 opam switch show    # must print kubernetes-verification
 ```
 
-Use `/usr/bin/time -p` for long-running verification commands when practical.
-
 ## Project Structure
 
-This is a project for verifying Kubernetes controller implementations. The specifications and proofs are written in Rocq and depends on perennial, iris, and stdpp. The main content is in:
+This is a project for verifying Kubernetes controller implementations. The specifications and proofs are written in Rocq and depend on perennial, iris, and stdpp. The main content is in:
 
 - `src/proof/` - Specifications and proofs for Kubernetes controllers
 - `src/code/` - Automatically generated Rocq representation of controller code by goose
@@ -31,77 +29,52 @@ the source Go code or Goose configuration and regenerate instead.
 
 ## Benchmark Proof Runs
 
-When asked to "run benchmark x with time limit y", try to prove all lemmas in the `src/proof/benchmark/x.vo` target until reaching time limit `y`. Prove lemmas one by one from top to bottom. After each lemma you prove, run the corresponding make target to check it; for benchmark `basic`, run `make -j10 src/proof/benchmark/basic.vo`. If you find during the proof that the spec or code is wrong, fix the spec or code and then continue the proof, following the rules in "Generated Code" above.
-
+When asked to "run benchmark x with time limit y", try to prove all lemmas in the `src/proof/benchmark/x.vo` target until reaching time limit `y`. Prove lemmas one by one from top to bottom. After each lemma you prove, run `make -j10 src/proof/benchmark/x.vo` to check it. If you find during the proof that the spec or code is wrong, fix the spec or code and then continue the proof, following the rules in "Generated Code" above.
 
 ## Fast Development Workflow
 
-Never run a full `make -j10` to find an error. A full build re-proves every file downstream of the edit,
-and for anything under `src/proof/kubernetes_types` that is most of the project, almost none of which the
-edit can affect. Use these three stages instead.
+Never run a full `make -j10` to find an error. Check only the specs and theorems you touched, in two stages.
 
-1. **Compile the whole project without checking proofs.** Run this after every edit; it is cheap enough to
-   run unconditionally and it catches statement-level errors — unknown identifiers, type errors, a
-   `Require` that no longer resolves:
+1. **Compile the whole project without checking proofs.** Run this after every edit; it catches
+   statement-level errors — unknown identifiers, type errors, a `Require` that no longer resolves — and
+   produces the `.vos` files that `rocq-lsp` loads for dependencies:
 
    ```bash
    make -j10 vos
    ```
 
-2. **Check proofs in the changed files only.** Name every file you edited. Each is checked against the
-   `.vos` of its dependencies, so no untouched file is re-proved:
+2. **Check each touched spec or theorem with `rocq-lsp`.** List every touched target: each changed or new
+   specification, lemma, or theorem, and each proof that uses a changed specification. Handle the targets
+   one at a time, from top to bottom in each file:
 
-   ```bash
-   make -j10 src/proof/<FILE1>.vok src/proof/<FILE2>.vok
-   ```
+   1. Isolate the target. Temporarily replace the proof bodies of every other lemma above it in the file
+      with `Admitted.`, or comment them out, so Rocq reaches the target proof quickly. 
+   2. Check and repair incrementally, following the `rocq-lsp` skill: `rocq-lsp goal FILE:LAST_LINE` on the
+      target's `Qed.`, read `--- errors ---`, inspect the failing line with `rocq-lsp goal FILE:LINE`, test
+      replacements with `rocq-lsp try`, edit, and check again until there are no goals and no errors.
+   3. Restore every temporarily admitted or commented proof before moving to the next target or finishing
+      the task. Checks run while other proofs are admitted count only for the target being checked.
 
-   Iterate between editing and this step until it passes. When one file fails, re-run that file's `.vok`
-   alone rather than the whole list.
-
-3. **Full compilation, once, at the end.** Only this counts as verification; report a proof complete only
-   after it succeeds:
-
-   ```bash
-   make -j10
-   ```
-
-`-vos` skips proof bodies, so step 1 never catches a failing tactic — step 2 is what does. For repeated
-checks of a single file, combine step 2 with the "Fast Rocq Proof Checks" below.
-
-### Fast Rocq Proof Checks
-
-When asked to "Run fast proof check" or to use a fast Rocq proof check, always isolate the focused target
-before running `make -j10 path/to/file.vo`. Temporarily replace the proof bodies of earlier lemmas in the
-same file with `Admitted.` or otherwise comment them out so Rocq reaches the target proof quickly. This is
-required before repeated checks of a late-file lemma, especially in large proof files such as controller
-proofs.
-
-When focusing on one goal inside a lemma, also temporarily comment out proofs for parallel goals that
-appear above the focused goal in the same lemma. These edits are only a local fast-check aid: restore every
-temporarily admitted or commented proof before finishing the task, and do not count checks run with
-temporary admits as completed verification for the final result.
+   Run `rocq-lsp stop` when all targets pass.
 
 ## Debugging Tips
 
-- **Find lemmas**:
-  - For data structures (list, map, set): Search in stdpp (`~/.opam/kubernetes-verification/.opam-switch/build/rocq-stdpp.dev/`)
-  - For goose-generated code: Search in perennial (`~/.opam/kubernetes-verification/.opam-switch/build/perennial.dev/new/`)
-  - For resource algebras (auth_map, auth_set): Search in perennial (`~/.opam/kubernetes-verification/.opam-switch/build/perennial.dev/src/algebra`)
-- **Proof references**: When writing Rocq program proofs, refer to local Perennial program proof examples from
-  the active opam switch. Resolve the path with `opam var perennial:build`; the generated proof examples live
-  under `$(opam var perennial:build)/new`.
+- **Find lemmas** (sources live under `~/.opam/kubernetes-verification/.opam-switch/sources/`):
+  - For data structures (list, map, set): search stdpp in `rocq-stdpp/stdpp/`
+  - For resource algebras (auth_map, auth_set): search perennial in `perennial/src/algebra/`
+- **Proof references**: For goose-generated code and Rocq program proofs, refer to the Perennial program
+  proof examples in `perennial/new/` under the same sources directory.
 - **Check what depends on a file**: `grep "FILE.vo" .rocqdeps.d`
 
 ## Coding Conventions
 
-- Prefer definitions and lemmas from stdpp instead of Rocq's standard library
-- Do not edit generated files in `src/code` or `src/generatedproof` (see "Generated Code" above)
+Prefer definitions and lemmas from stdpp instead of Rocq's standard library.
 
 ### Solver Timeouts
 
-To avoid endless waits from inappropriate solver use, never call `set_solver` or `naive_solver` directly.
-Every use must be wrapped in a 10 second timeout: `Timeout 10 set_solver.` or `Timeout 10 naive_solver.`.
-If the timeout fires, choose a more explicit proof step instead of increasing the timeout.
+Never call `set_solver` or `naive_solver` directly. Every use must be wrapped in a 10 second timeout:
+`Timeout 10 set_solver.` or `Timeout 10 naive_solver.`. If the timeout fires, choose a more explicit proof
+step instead of increasing the timeout.
 
 Never call `vm_compute` directly. Every use must be wrapped in a 10 second timeout as
 `Timeout 10 vm_compute.`. For small concrete equalities or inequalities, prefer targeted unfolding followed
@@ -125,9 +98,10 @@ clean up only those processes; do not kill unrelated API server or etcd instance
 
 ## Task Reporting
 
-After every completed task, include a `Timing` section with:
+Use `/usr/bin/time -p` for long-running verification commands when practical. After every completed task,
+include a `Timing` section with:
 
 - Total tool time.
-- A breakdown of tool time by command or tool category, such as `make`, `go test`, `rg`/file reads,
-  `apply_patch`, and other shell commands.
+- A breakdown of tool time by command or tool category, such as `make`, `go test`, file reads and
+  searches, file edits, and other shell commands.
 - Interrupted commands listed separately, without counting them as completed verification.
