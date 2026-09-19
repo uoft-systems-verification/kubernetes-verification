@@ -226,7 +226,6 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 		return err
 	}
 
-	// allRSPods, err := common.FilterPodsByOwner(&((*rs).ObjectMeta), "ReplicaSet")
 	allRSPods, err := common.FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet")
 	if err != nil {
 		return err
