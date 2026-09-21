@@ -142,10 +142,12 @@ Axiom valid_kind: go_string → Prop.
 Axiom valid_kind_slash_free: ∀ kind, valid_kind kind → slash_free kind.
 
 (* Kubernetes selects the name validator from the resource's REST strategy.
-   This is a closed-world definition for the four resource kinds represented
-   by KObjectV: StatefulSet uses a DNS-1123 label; Pod, ReplicaSet, and PVC use
-   a DNS-1123 subdomain. An unknown kind has no valid names in this model.
+   This is a closed-world definition for the five resource kinds represented
+   by KObjectV: StatefulSet uses a DNS-1123 label; Pod, ReplicaSet, PVC, and
+   Deployment use a DNS-1123 subdomain. An unknown kind has no valid names in
+   this model.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L47-L54
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L542-L543
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L749-L757
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L256-L259
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L1860-L1863 *)
@@ -153,7 +155,8 @@ Definition valid_name (kind name : go_string) : Prop :=
   (kind = "StatefulSet"%go ∧ valid_dns1123_label name) ∨
   ((kind = "Pod"%go ∨
     kind = "ReplicaSet"%go ∨
-    kind = "PersistentVolumeClaim"%go) ∧
+    kind = "PersistentVolumeClaim"%go ∨
+    kind = "Deployment"%go) ∧
    valid_dns1123_subdomain name).
 
 (* After resource-specific validation, the API server applies common metadata
@@ -710,7 +713,8 @@ Proof. solve_decision. Defined.
 Definition valid_api_version kind api_version : Prop :=
   ((kind = "Pod"%go ∨ kind = "PersistentVolumeClaim"%go) ∧
     api_version = "v1"%go) ∨
-  ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go) ∧
+  ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go ∨
+    kind = "Deployment"%go) ∧
     api_version = "apps/v1"%go).
 
 (* TypeMeta is optional on typed Kubernetes objects returned by the API server.
