@@ -343,7 +343,8 @@ Proof.
 	        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name')) as Hrs_name_valid.
 	    { unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
 	    unfold valid_name, ReplicaSetV.kind in Hrs_name_valid.
-	    destruct Hrs_name_valid as [[Hkind _]|[[Hkind|[Hkind|Hkind]] Hrs_name_valid]];
+	    destruct Hrs_name_valid as
+	      [[Hkind _]|[[Hkind|[Hkind|[Hkind|Hkind]]] Hrs_name_valid]];
 	      try discriminate.
 	    wp_apply (controller.wp_GetPodFromTemplate
 	      ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"])

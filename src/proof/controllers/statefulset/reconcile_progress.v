@@ -2387,7 +2387,7 @@ Proof.
     { unfold ObjectMetaV.valid in Hset_meta. tauto. }
     unfold valid_name, StatefulSetV.kind in Hname.
     destruct Hname as [[_ Hname]|[Hkind _]]; first exact Hname.
-    destruct Hkind as [Hkind|[Hkind|Hkind]]; discriminate Hkind. }
+    destruct Hkind as [Hkind|[Hkind|[Hkind|Hkind]]]; discriminate Hkind. }
   assert (valid_labels
       (Some
         (<[pod_index_label := decimal_string ordinal]>
