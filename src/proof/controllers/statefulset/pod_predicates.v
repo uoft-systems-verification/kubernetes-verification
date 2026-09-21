@@ -93,7 +93,7 @@ Lemma pod_name_length_le_go_int_max_of_valid_name name :
   Z.of_nat (length name) ≤ go_int_max.
 Proof.
   unfold valid_name, PodV.kind.
-  intros [[Hkind _]|([Hpod|[Hreplicaset|Hpvc]] & Hvalid_name)];
+  intros [[Hkind _]|([Hpod|[Hreplicaset|[Hpvc|Hdeployment]]] & Hvalid_name)];
     try discriminate.
   destruct Hvalid_name as [_ Hlength].
   unfold go_int_max. lia.
