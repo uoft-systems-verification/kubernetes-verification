@@ -175,7 +175,7 @@ Proof.
       (_ & _ & Hset_name_valid & _).
     unfold valid_name, StatefulSetV.kind in Hset_name_valid.
     destruct Hset_name_valid as
-      [[_ Hset_name_valid]|[[Hkind|[Hkind|Hkind]] _]];
+      [[_ Hset_name_valid]|[[Hkind|[Hkind|[Hkind|Hkind]]] _]];
       try discriminate.
     unfold valid_dns1123_label in Hset_name_valid.
     destruct Hset_name_valid as [Hsyntax Hlength].
