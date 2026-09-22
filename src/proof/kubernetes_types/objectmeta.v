@@ -64,19 +64,60 @@ Definition refers_to_controller v kind name uid : Prop :=
 
 End OwnerReferenceV.
 
+Module FieldsV1V.
+Section def.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
+
+Definition t := option (list w8).
+
+Definition deepown (c : v1.FieldsV1.t) (v : t) dq : iProp Σ :=
+  "%Hdeepown_raw_none" ∷ ⌜ c.(v1.FieldsV1.Raw') = slice.nil ↔ v = None ⌝ ∗
+  "Hdeepown_raw_some" ∷ (match v with
+  | Some raw => c.(v1.FieldsV1.Raw') ↦*{dq} raw
+  | None => True%I
+  end).
+End def.
+End FieldsV1V.
+
 Module ManagedFieldsEntryV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 
-Axiom t : Type.
-Axiom eq_dec : EqDecision t.
-Global Existing Instance eq_dec.
+Record t := mk {
+  Manager' : go_string;
+  Operation' : v1.ManagedFieldsOperationType.t;
+  APIVersion' : go_string;
+  Time' : option TimeV.t;
+  FieldsType' : go_string;
+  FieldsV1' : option FieldsV1V.t;
+  Subresource' : go_string;
+}.
 
-Axiom deepown : v1.ManagedFieldsEntry.t → t → dfrac → iProp Σ.
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
 
-Definition deepown_l l v dq: iProp Σ :=
+Definition deepown (c : v1.ManagedFieldsEntry.t) (v : t) dq : iProp Σ :=
+  "%Hdeepown_manager" ∷ ⌜ c.(v1.ManagedFieldsEntry.Manager') = v.(Manager') ⌝ ∗
+  "%Hdeepown_operation" ∷ ⌜ c.(v1.ManagedFieldsEntry.Operation') = v.(Operation') ⌝ ∗
+  "%Hdeepown_apiversion" ∷ ⌜ c.(v1.ManagedFieldsEntry.APIVersion') = v.(APIVersion') ⌝ ∗
+  "%Hdeepown_time_none" ∷ ⌜ c.(v1.ManagedFieldsEntry.Time') = null ↔ v.(Time') = None ⌝ ∗
+  "Hdeepown_time_some" ∷ (match v.(Time') with
+  | Some vt => ∃ ct, c.(v1.ManagedFieldsEntry.Time') ↦{dq} ct ∗ TimeV.deepown ct vt dq
+  | None => True%I
+  end) ∗
+  "%Hdeepown_fieldstype" ∷ ⌜ c.(v1.ManagedFieldsEntry.FieldsType') = v.(FieldsType') ⌝ ∗
+  "%Hdeepown_fieldsv1_none" ∷ ⌜ c.(v1.ManagedFieldsEntry.FieldsV1') = null ↔ v.(FieldsV1') = None ⌝ ∗
+  "Hdeepown_fieldsv1_some" ∷ (match v.(FieldsV1') with
+  | Some vf => ∃ cf, c.(v1.ManagedFieldsEntry.FieldsV1') ↦{dq} cf ∗ FieldsV1V.deepown cf vf dq
+  | None => True%I
+  end) ∗
+  "%Hdeepown_subresource" ∷ ⌜ c.(v1.ManagedFieldsEntry.Subresource') = v.(Subresource') ⌝.
+
+Definition deepown_l l v dq : iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 End def.
@@ -316,103 +357,6 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-(** * Reduced ownership footprints
-
-    [deepown] covers the Goose struct together with the modeled heap reachable
-    from it, including the creation and deletion timestamps and the
-    managed-field entries, whose representations are opaque axioms in the pure
-    model.  A caller that reads only what the struct says directly, or only the
-    fields a pod template contributes to a generated pod, should not have to
-    take that whole bundle: doing so drags the opaque predicates into its
-    footprint, and for concurrent readers into the persistence obligations of a
-    shared closure.
-
-    The two predicates below carve out exactly those footprints.  Both are
-    built from resources that can be discarded and shared without assuming
-    anything about [TimeV.deepown] or [ManagedFieldsEntryV.deepown]. *)
-
-(** The [ObjectMeta] fields whose correspondence to the pure value can be
-    stated without following anything: every one of them is a plain value in
-    the Goose struct, so [deepown] relates them by pure equalities.  Every
-    field left out needs a pointer, map handle or slice to be dereferenced
-    before it means anything. *)
-Definition shallow_fields (c : v1.ObjectMeta.t) (v : t) : Prop :=
-  c.(v1.ObjectMeta.Name') = v.(Name') ∧
-  c.(v1.ObjectMeta.GenerateName') = v.(GenerateName') ∧
-  c.(v1.ObjectMeta.Namespace') = v.(Namespace') ∧
-  c.(v1.ObjectMeta.SelfLink') = v.(SelfLink') ∧
-  c.(v1.ObjectMeta.UID') = v.(UID') ∧
-  c.(v1.ObjectMeta.ResourceVersion') = v.(ResourceVersion') ∧
-  c.(v1.ObjectMeta.Generation') = v.(Generation').
-
-(** Shallow ownership of the [ObjectMeta] at [l]: the struct itself at
-    permission [dq], and agreement with the pure value on everything the struct
-    says directly ([shallow_fields]).  Nothing reachable from it is owned, which
-    is what distinguishes this from [deepown_l] — "shallow" and "deep" describe
-    how far ownership reaches, not the fraction, and both are parameterized by
-    [dq].  The concrete struct [c] is explicit so the resource can be lent out
-    and taken back; see [deepown_l_extract_shallow]. *)
-Definition own_shallow (l : loc) (c : v1.ObjectMeta.t) (v : t) (dq : dfrac) : iProp Σ :=
-  "Hown_shallow_l" ∷ l ↦{dq} c ∗
-  "%Hown_shallow" ∷ ⌜ shallow_fields c v ⌝.
-
-(** Ownership of the template metadata a generated pod is built from: labels,
-    annotations and finalizers.  [GetPodFromTemplate] reads these and nothing
-    else from the template's [ObjectMeta].  The conjunct names deliberately
-    match those of [deepown] so proofs can move between the two without
-    renaming hypotheses. *)
-Definition own_pod_creation_fields (c : v1.ObjectMeta.t) (v : t) (dq : dfrac) : iProp Σ :=
-  "%Hdeepown_labels_none" ∷ ⌜c.(v1.ObjectMeta.Labels') = null ↔ v.(Labels') = None⌝ ∗
-  "Hdeepown_labels_some" ∷ (match v.(Labels') with
-  | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${dq} cl ∗ ⌜ cl = vl ⌝
-  | None => True%I
-  end) ∗
-  "%Hdeepown_annotations_none" ∷ ⌜c.(v1.ObjectMeta.Annotations') = null ↔ v.(Annotations') = None⌝ ∗
-  "Hdeepown_annotations_some" ∷ (match v.(Annotations') with
-  | Some va => ∃ ca, c.(v1.ObjectMeta.Annotations') ↦${dq} ca ∗ ⌜ ca = va ⌝
-  | None => True%I
-  end) ∗
-  "%Hdeepown_finalizers_none" ∷ ⌜c.(v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None⌝ ∗
-  "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with
-  | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{dq} cfs ∗ ⌜ cfs = vfs ⌝
-  | None => True%I
-  end).
-
-(** Deep ownership says at least what shallow ownership does. *)
-Lemma deepown_shallow_fields c v dq :
-  deepown c v dq ⊢ ⌜ shallow_fields c v ⌝.
-Proof. rewrite /deepown /shallow_fields. iNamed 1. iPureIntro. split_and!; done. Qed.
-
-(** Lend the shallow footprint out of deep ownership.  The second conjunct is
-    the implication that takes it back, restoring [deepown_l] unchanged, so a
-    caller can hand the footprint to a narrower specification and recover full
-    ownership afterwards. *)
-Lemma deepown_l_extract_shallow l v dq :
-  deepown_l l v dq ⊢
-    ∃ c, own_shallow l c v dq ∗ (own_shallow l c v dq -∗ deepown_l l v dq).
-Proof.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  iDestruct (deepown_shallow_fields with "Hdeepown") as "%Hshallow".
-  iExists c. rewrite /own_shallow. iSplitL "Hl"; first by iFrame "∗ %".
-  iNamed 1. iExists c. iFrame.
-Qed.
-
-(** Lend the pod-creation fields out of deep ownership, with the implication
-    that takes them back.  The counterpart of [deepown_l_extract_shallow] for
-    the fields a pod template contributes. *)
-Lemma deepown_extract_pod_creation_fields c v dq :
-  deepown c v dq ⊢
-    own_pod_creation_fields c v dq ∗ (own_pod_creation_fields c v dq -∗ deepown c v dq).
-Proof.
-  rewrite /deepown /own_pod_creation_fields. iNamed 1.
-  iSplitL "Hdeepown_labels_some Hdeepown_annotations_some Hdeepown_finalizers_some".
-  { iFrame "∗ %". }
-  (* The pure conjuncts are already in context from the destruct above, so the
-     returned footprint only has to give back the three spatial ones. *)
-  iIntros "H". iDestruct "H" as "(_ & Hlabels & _ & Hannotations & _ & Hfinalizers)".
-  iFrame "∗ %".
-Qed.
 
 End def.
 

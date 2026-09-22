@@ -1,19 +1,11 @@
 (* Discarding fractions of deep ownership.
 
    The concurrent pod-creating goroutines of the ReplicaSet controller read the
-   ReplicaSet's metadata and pod template simultaneously.  Sharing a read across
-   goroutines is convenient when the predicate is persistent, which we obtain by
-   discarding the fraction ([DfracDiscarded]).  This file proves the discard
-   lemmas and persistence instances for the predicates involved.
-
-   Every lemma here is proved from the discard rules of points-to, maps and
-   slices.  Predicates whose representation is an opaque axiom in the pure model
-   -- [TimeV.deepown] and [ManagedFieldsEntryV.deepown] -- admit no such proof,
-   so deep ownership of an [ObjectMeta] or a pod template has no discard lemma.
-   Readers that share metadata take a reduced footprint instead
-   ([ObjectMetaV.own_shallow], [ObjectMetaV.own_pod_creation_fields],
-   [PodTemplateSpecV.own_pod_creation_inputs]), which is also all the code
-   reads. *)
+   ReplicaSet's ObjectMeta and pod template simultaneously. Sharing those reads
+   across goroutines requires the corresponding deep-ownership predicates to be
+   persistent, which we obtain by discarding the fraction ([DfracDiscarded]).
+   This file states the discard lemmas and persistence instances for the
+   predicates involved. *)
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_types Require Export pod replicaset.
 From New.proof Require Import proof_prelude.
@@ -24,8 +16,65 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
 Local Set Default Proof Using "All".
 
+(* [TimeV.deepown] is a pure equality, so it ignores its fraction. *)
+Lemma time_deepown_persist c v dq :
+  TimeV.deepown (Σ:=Σ) c v dq ⊢ |==> TimeV.deepown c v DfracDiscarded.
+Proof. rewrite /TimeV.deepown. iIntros "H". by iModIntro. Qed.
+
+#[global] Instance time_deepown_persistent c v :
+  Persistent (TimeV.deepown (Σ:=Σ) c v DfracDiscarded).
+Proof. rewrite /TimeV.deepown. apply _. Qed.
+
+Lemma fields_v1_deepown_persist c v dq :
+  FieldsV1V.deepown c v dq ⊢ |==> FieldsV1V.deepown c v DfracDiscarded.
+Proof.
+  rewrite /FieldsV1V.deepown. iNamed 1.
+  iAssert (|==> match v with
+    | Some raw => c.(v1.FieldsV1.Raw') ↦*{DfracDiscarded} raw
+    | None => True%I
+    end)%I with "[Hdeepown_raw_some]" as ">Hraw".
+  { destruct v as [raw|]; last done.
+    by iMod (own_slice_persist with "Hdeepown_raw_some") as "$". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance fields_v1_deepown_persistent c v :
+  Persistent (FieldsV1V.deepown c v DfracDiscarded).
+Proof. rewrite /FieldsV1V.deepown. destruct v; apply _. Qed.
+
+Lemma managed_fields_entry_deepown_persist c v dq :
+  ManagedFieldsEntryV.deepown c v dq ⊢ |==> ManagedFieldsEntryV.deepown c v DfracDiscarded.
+Proof.
+  rewrite /ManagedFieldsEntryV.deepown. iNamed 1.
+  iAssert (|==> match v.(ManagedFieldsEntryV.Time') with
+    | Some vt => ∃ ct, c.(v1.ManagedFieldsEntry.Time') ↦□ ct ∗ TimeV.deepown ct vt DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_time_some]" as ">Htime".
+  { destruct (v.(ManagedFieldsEntryV.Time')) as [vt|]; last done.
+    iDestruct "Hdeepown_time_some" as (ct) "[Hct Ht]".
+    iPersist "Hct". iMod (time_deepown_persist with "Ht") as "Ht".
+    iModIntro. iExists ct. by iFrame "∗ #". }
+  iAssert (|==> match v.(ManagedFieldsEntryV.FieldsV1') with
+    | Some vf => ∃ cf, c.(v1.ManagedFieldsEntry.FieldsV1') ↦□ cf ∗ FieldsV1V.deepown cf vf DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_fieldsv1_some]" as ">Hfieldsv1".
+  { destruct (v.(ManagedFieldsEntryV.FieldsV1')) as [vf|]; last done.
+    iDestruct "Hdeepown_fieldsv1_some" as (cf) "[Hcf Hf]".
+    iPersist "Hcf". iMod (fields_v1_deepown_persist with "Hf") as "Hf".
+    iModIntro. iExists cf. by iFrame "∗ #". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance managed_fields_entry_deepown_persistent c v :
+  Persistent (ManagedFieldsEntryV.deepown c v DfracDiscarded).
+Proof.
+  rewrite /ManagedFieldsEntryV.deepown.
+  destruct (v.(ManagedFieldsEntryV.Time')), (v.(ManagedFieldsEntryV.FieldsV1'));
+    apply _.
+Qed.
 
 Lemma big_sepL2_persist {A B} (P : A → B → dfrac → iProp Σ) dq (cs : list A) (vs : list B) :
   (∀ c v, P c v dq ⊢ |==> P c v DfracDiscarded) →
@@ -70,29 +119,26 @@ Proof.
     apply _.
 Qed.
 
-(* Persistence for the reduced metadata footprints of
-   [kubernetes_types/objectmeta.v].  Neither lemma says anything about
-   [TimeV.deepown] or [ManagedFieldsEntryV.deepown]: the shallow fields are
-   related by pure equalities, and labels, annotations and finalizers are maps
-   and slices with established discard rules.  Deep ownership has no discard
-   lemma precisely because its timestamps and managed fields are opaque;
-   readers that need to share metadata take one of these instead. *)
-Lemma objectmeta_own_shallow_persist l c v dq :
-  ObjectMetaV.own_shallow l c v dq ⊢ |==> ObjectMetaV.own_shallow l c v DfracDiscarded.
+Lemma objectmeta_deepown_persist c v dq :
+  ObjectMetaV.deepown c v dq ⊢ |==> ObjectMetaV.deepown c v DfracDiscarded.
 Proof.
-  rewrite /ObjectMetaV.own_shallow. iNamed 1.
-  iPersist "Hown_shallow_l". iModIntro. by iFrame "# %".
-Qed.
-
-#[global] Instance objectmeta_own_shallow_persistent l c v :
-  Persistent (ObjectMetaV.own_shallow l c v DfracDiscarded).
-Proof. rewrite /ObjectMetaV.own_shallow. apply _. Qed.
-
-Lemma objectmeta_own_pod_creation_fields_persist c v dq :
-  ObjectMetaV.own_pod_creation_fields c v dq ⊢
-    |==> ObjectMetaV.own_pod_creation_fields c v DfracDiscarded.
-Proof.
-  rewrite /ObjectMetaV.own_pod_creation_fields. iNamed 1.
+  rewrite /ObjectMetaV.deepown. iNamed 1.
+  iMod (time_deepown_persist with "Hdeepown_creationtimestamp") as "Hdeepown_creationtimestamp".
+  iAssert (|==> match v.(ObjectMetaV.DeletionTimestamp') with
+    | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦□ cd ∗ TimeV.deepown cd vd DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_deletiontimestamp_some]" as ">Hdeletiontimestamp".
+  { destruct (v.(ObjectMetaV.DeletionTimestamp')) as [vd|]; last done.
+    iDestruct "Hdeepown_deletiontimestamp_some" as (cd) "[Hcd Ht]".
+    iPersist "Hcd". iMod (time_deepown_persist with "Ht") as "Ht".
+    iModIntro. iExists cd. by iFrame "∗ #". }
+  iAssert (|==> match v.(ObjectMetaV.DeletionGracePeriodSeconds') with
+    | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionGracePeriodSeconds') ↦□ cd ∗ ⌜ cd = vd ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_deletiongraceperiodseconds_some]" as ">Hgrace".
+  { destruct (v.(ObjectMetaV.DeletionGracePeriodSeconds')) as [vd|]; last done.
+    iDestruct "Hdeepown_deletiongraceperiodseconds_some" as (cd) "[Hcd %Hcd]".
+    iPersist "Hcd". iModIntro. iExists cd. by iFrame "# %". }
   iAssert (|==> match v.(ObjectMetaV.Labels') with
     | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${DfracDiscarded} cl ∗ ⌜ cl = vl ⌝
     | None => True%I
@@ -107,6 +153,17 @@ Proof.
   { destruct (v.(ObjectMetaV.Annotations')) as [va|]; last done.
     iDestruct "Hdeepown_annotations_some" as (ca) "[Hca %Hca]".
     iMod (own_map_persist with "Hca") as "Hca". iModIntro. iExists ca. by iFrame "∗ %". }
+  iAssert (|==> match v.(ObjectMetaV.OwnerReferences') with
+    | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦*{DfracDiscarded} cos ∗
+        [∗ list] co;vo ∈ cos;vos, OwnerReferenceV.deepown co vo DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_ownerreferences_some]" as ">Howners".
+  { destruct (v.(ObjectMetaV.OwnerReferences')) as [vos|]; last done.
+    iDestruct "Hdeepown_ownerreferences_some" as (cos) "[Hcos Hlist]".
+    iMod (own_slice_persist with "Hcos") as "Hcos".
+    iMod (big_sepL2_persist OwnerReferenceV.deepown with "Hlist") as "Hlist".
+    { intros. apply owner_reference_deepown_persist. }
+    iModIntro. iExists cos. by iFrame. }
   iAssert (|==> match v.(ObjectMetaV.Finalizers') with
     | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{DfracDiscarded} cfs ∗ ⌜ cfs = vfs ⌝
     | None => True%I
@@ -114,17 +171,41 @@ Proof.
   { destruct (v.(ObjectMetaV.Finalizers')) as [vfs|]; last done.
     iDestruct "Hdeepown_finalizers_some" as (cfs) "[Hcfs %Hcfs]".
     iMod (own_slice_persist with "Hcfs") as "Hcfs". iModIntro. iExists cfs. by iFrame "∗ %". }
+  iAssert (|==> match v.(ObjectMetaV.ManagedFields') with
+    | Some vms => ∃ cms, c.(v1.ObjectMeta.ManagedFields') ↦*{DfracDiscarded} cms ∗
+        [∗ list] cm;vm ∈ cms;vms, ManagedFieldsEntryV.deepown cm vm DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_managedfields_some]" as ">Hmanaged".
+  { destruct (v.(ObjectMetaV.ManagedFields')) as [vms|]; last done.
+    iDestruct "Hdeepown_managedfields_some" as (cms) "[Hcms Hlist]".
+    iMod (own_slice_persist with "Hcms") as "Hcms".
+    iMod (big_sepL2_persist ManagedFieldsEntryV.deepown with "Hlist") as "Hlist".
+    { intros. apply managed_fields_entry_deepown_persist. }
+    iModIntro. iExists cms. by iFrame. }
   iModIntro. by iFrame "∗ # %".
 Qed.
 
-#[global] Instance objectmeta_own_pod_creation_fields_persistent c v :
-  Persistent (ObjectMetaV.own_pod_creation_fields c v DfracDiscarded).
+#[global] Instance objectmeta_deepown_persistent c v :
+  Persistent (ObjectMetaV.deepown c v DfracDiscarded).
 Proof.
-  rewrite /ObjectMetaV.own_pod_creation_fields.
-  destruct (v.(ObjectMetaV.Labels')), (v.(ObjectMetaV.Annotations')),
-    (v.(ObjectMetaV.Finalizers'));
+  rewrite /ObjectMetaV.deepown.
+  destruct (v.(ObjectMetaV.DeletionTimestamp')), (v.(ObjectMetaV.DeletionGracePeriodSeconds')),
+    (v.(ObjectMetaV.Labels')), (v.(ObjectMetaV.Annotations')), (v.(ObjectMetaV.OwnerReferences')),
+    (v.(ObjectMetaV.Finalizers')), (v.(ObjectMetaV.ManagedFields'));
     apply _.
 Qed.
+
+Lemma objectmeta_deepown_l_persist l v dq :
+  ObjectMetaV.deepown_l l v dq ⊢ |==> ObjectMetaV.deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (objectmeta_deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance objectmeta_deepown_l_persistent l v :
+  Persistent (ObjectMetaV.deepown_l l v DfracDiscarded).
+Proof. rewrite /ObjectMetaV.deepown_l. apply _. Qed.
 
 Lemma volume_source_deepown_persist c v dq :
   VolumeSourceV.deepown c v dq ⊢ |==> VolumeSourceV.deepown c v DfracDiscarded.
@@ -173,20 +254,29 @@ Qed.
   Persistent (PodSpecV.deepown c v DfracDiscarded).
 Proof. rewrite /PodSpecV.deepown /deepown_list. apply _. Qed.
 
-Lemma pod_template_spec_own_pod_creation_inputs_persist l c v dq :
-  PodTemplateSpecV.own_pod_creation_inputs l c v dq ⊢
-    |==> PodTemplateSpecV.own_pod_creation_inputs l c v DfracDiscarded.
+Lemma pod_template_spec_deepown_persist c v dq :
+  PodTemplateSpecV.deepown c v dq ⊢ |==> PodTemplateSpecV.deepown c v DfracDiscarded.
 Proof.
-  rewrite /PodTemplateSpecV.own_pod_creation_inputs. iNamed 1.
-  iPersist "Hown_inputs_l".
-  iMod (objectmeta_own_pod_creation_fields_persist with "Hown_inputs_fields")
-    as "Hown_inputs_fields".
-  iMod (pod_spec_deepown_persist with "Hown_inputs_spec") as "Hown_inputs_spec".
-  iModIntro. by iFrame "∗ #".
+  rewrite /PodTemplateSpecV.deepown. iNamed 1.
+  iMod (objectmeta_deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
+  iMod (pod_spec_deepown_persist with "Hdeepown_spec") as "Hdeepown_spec".
+  iModIntro. by iFrame.
 Qed.
 
-#[global] Instance pod_template_spec_own_pod_creation_inputs_persistent l c v :
-  Persistent (PodTemplateSpecV.own_pod_creation_inputs l c v DfracDiscarded).
-Proof. rewrite /PodTemplateSpecV.own_pod_creation_inputs. apply _. Qed.
+#[global] Instance pod_template_spec_deepown_persistent c v :
+  Persistent (PodTemplateSpecV.deepown c v DfracDiscarded).
+Proof. rewrite /PodTemplateSpecV.deepown. apply _. Qed.
+
+Lemma pod_template_spec_deepown_l_persist l v dq :
+  PodTemplateSpecV.deepown_l l v dq ⊢ |==> PodTemplateSpecV.deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (pod_template_spec_deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance pod_template_spec_deepown_l_persistent l v :
+  Persistent (PodTemplateSpecV.deepown_l l v DfracDiscarded).
+Proof. rewrite /PodTemplateSpecV.deepown_l. apply _. Qed.
 
 End persist.

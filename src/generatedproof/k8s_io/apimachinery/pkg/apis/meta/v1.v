@@ -1541,26 +1541,6 @@ Proof. Admitted.
 End def.
 End FieldSelectorOperator.
 
-Module ManagedFieldsOperationType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ManagedFieldsOperationType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ManagedFieldsOperationType.t). Admitted.
-
-#[global] Instance ManagedFieldsOperationType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ManagedFieldsOperationType.t) (v1.ManagedFieldsOperationTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ManagedFieldsOperationType.
-
 Module ManagedFieldsEntry.
 Section def.
 
@@ -1695,13 +1675,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance FieldsV1_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.FieldsV1.t). Admitted.
+#[global]Program Instance FieldsV1_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FieldsV1.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Raw" ∷ l.[(v1.FieldsV1.t), "Raw"] ↦{dq} v.(v1.FieldsV1.Raw') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance FieldsV1_into_val_typed
    :
   IntoValTypedUnderlying (v1.FieldsV1.t) (v1.FieldsV1ⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance FieldsV1_access_load_Raw l (v : (v1.FieldsV1.t)) dq :
+  AccessStrict
+    (l.[(v1.FieldsV1.t), "Raw"] ↦{dq} (v.(v1.FieldsV1.Raw')))
+    (l.[(v1.FieldsV1.t), "Raw"] ↦{dq} (v.(v1.FieldsV1.Raw')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FieldsV1_access_store_Raw l (v : (v1.FieldsV1.t)) Raw' :
+  AccessStrict
+    (l.[(v1.FieldsV1.t), "Raw"] ↦ (v.(v1.FieldsV1.Raw')))
+    (l.[(v1.FieldsV1.t), "Raw"] ↦ Raw')
+    (l ↦ v) (l ↦ (v <|(v1.FieldsV1.Raw') := Raw'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End FieldsV1.

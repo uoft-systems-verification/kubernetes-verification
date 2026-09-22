@@ -19,3 +19,5 @@ _built/
 .DS_Store
 # rapid test results
 kubernetes_model/apimodel/testdata/
+# rocq-lsp-mcp is kept as a local checkout, not a submodule
+rocq-lsp-mcp/

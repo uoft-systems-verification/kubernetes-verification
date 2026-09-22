@@ -65,25 +65,6 @@ Proof.
     iIntros "Hmeta"; iApply "HΦ"; iFrame.
 Qed.
 
-(** The shallow-ownership counterpart of [wp_GetName_deepown_kobject], for
-    callers that share an object's metadata read-only.  Returns the caller's
-    [ObjectMetaV.own_shallow] unchanged. *)
-Lemma wp_GetName_shallow_kobject i l o c m dq:
-  {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1 ∗
-      "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
-      "Hmeta" ∷ ObjectMetaV.own_shallow (KObjectV.objectmeta_ptr l o) c m dq
-  }}}
-    #(methods i.(interface.ty) "GetName" i.(interface.v)) #()
-  {{{ RET #m.(ObjectMetaV.Name');
-      ObjectMetaV.own_shallow (KObjectV.objectmeta_ptr l o) c m dq
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H".
-  destruct o; simpl in Hi; destruct Hi as [-> _]; wp_method_call;
-    wp_pures; wp_apply (wp_GetName_shallow with "[$Hmeta]");
-    iIntros "Hmeta"; iApply "HΦ"; iFrame.
-Qed.
-
 Lemma wp_GetGenerateName_deepown_kobject i l o m dq:
   {{{ is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1 ∗
       "%Hi" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗

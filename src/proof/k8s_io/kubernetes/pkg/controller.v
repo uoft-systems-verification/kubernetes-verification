@@ -201,23 +201,21 @@ Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
   {{{ (active : bool), RET #active; PodV.deepown_l pod_l pod dq }}}.
 Proof. Admitted.
 
-Lemma wp_getPodsLabelSet template_l template_c template dq :
+Lemma wp_getPodsLabelSet template_l template dq :
   {{{ "Hinit" ∷ is_pkg_init controller ∗
-      "Htemplate" ∷ PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq
+      "Htemplate" ∷ PodTemplateSpecV.deepown_l template_l template dq
   }}}
     @! controller.getPodsLabelSet #template_l
   {{{ labels_l, RET #labels_l;
-      PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq ∗
+      PodTemplateSpecV.deepown_l template_l template dq ∗
       labels_l ↦$ default ∅
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  rewrite /PodTemplateSpecV.own_pod_creation_inputs.
+  iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
   iNamedPrefix "Htemplate" "Htemplate_".
-  iRename "Htemplate_Hown_inputs_l" into "Htemplate_l".
-  iRename "Htemplate_Hown_inputs_spec" into "Htemplate_Hdeepown_spec".
-  iNamedPrefix "Htemplate_Hown_inputs_fields" "Hmeta_".
+  iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
   iDestruct (struct_fields_split with "Htemplate_l") as
     "[Htemplate_fields %Htemplate_nonnull]".
   iNamedPrefix "Htemplate_fields" "Htemplate_field_".
@@ -296,14 +294,15 @@ Proof.
     { rewrite Hlabels_opt. iExists labels.
       iSplitL "Hlabels_src"; [iExact "Hlabels_src"|done]. }
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
-    iAssert (ObjectMetaV.own_pod_creation_fields
+    iAssert (ObjectMetaV.deepown
         template_c.(v1.PodTemplateSpec.ObjectMeta')
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
-    { rewrite /ObjectMetaV.own_pod_creation_fields Hlabels_opt /=. iNamed "Hobjectmeta".
+    { rewrite /ObjectMetaV.deepown Hlabels_opt /=. iNamed "Hobjectmeta".
       iFrame. iFrame "%". }
     iApply ("HΦ" $! labels_l). iFrame "Hlabels".
-    rewrite /PodTemplateSpecV.own_pod_creation_inputs. iFrame.
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
   - assert (template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Labels') =
         map.nil) as Hlabels_nil.
     { apply Hmeta_Hdeepown_labels_none. done. }
@@ -311,35 +310,34 @@ Proof.
     wp_apply (wp_map_for_range_nil go.string go.string).
     wp_pures.
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
-    iAssert (ObjectMetaV.own_pod_creation_fields
+    iAssert (ObjectMetaV.deepown
         template_c.(v1.PodTemplateSpec.ObjectMeta')
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
-    { rewrite /ObjectMetaV.own_pod_creation_fields Hlabels_opt /=. iNamed "Hobjectmeta".
+    { rewrite /ObjectMetaV.deepown Hlabels_opt /=. iNamed "Hobjectmeta".
       iFrame. iFrame "%". }
     iApply ("HΦ" $! labels_l).
     iFrame "Hlabels".
-    rewrite /PodTemplateSpecV.own_pod_creation_inputs. iFrame.
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
 Qed.
 
-Lemma wp_getPodsFinalizers template_l template_c template dq :
+Lemma wp_getPodsFinalizers template_l template dq :
   {{{ is_pkg_init controller ∗
-      PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq
+      PodTemplateSpecV.deepown_l template_l template dq
   }}}
     @! controller.getPodsFinalizers #template_l
   {{{ finalizers_sl, RET #finalizers_sl;
-      PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq ∗
+      PodTemplateSpecV.deepown_l template_l template dq ∗
       finalizers_sl ↦* default []
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ∗
       ⌜ finalizers_sl ≠ slice.nil ⌝
   }}}.
 Proof.
   wp_start as "Htemplate".
-  rewrite /PodTemplateSpecV.own_pod_creation_inputs.
+  iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
   iNamedPrefix "Htemplate" "Htemplate_".
-  iRename "Htemplate_Hown_inputs_l" into "Htemplate_l".
-  iRename "Htemplate_Hown_inputs_spec" into "Htemplate_Hdeepown_spec".
-  iNamedPrefix "Htemplate_Hown_inputs_fields" "Hmeta_".
+  iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
   iDestruct (struct_fields_split with "Htemplate_l") as
     "[Htemplate_fields %Htemplate_nonnull]".
   iNamedPrefix "Htemplate_fields" "Htemplate_field_".
@@ -467,36 +465,35 @@ Proof.
     - iExists finalizers. iSplitL; first iFrame. done.
     - iClear "Hfinalizers_src". done. }
   iCombineNamed "Hmeta_*" as "Hobjectmeta".
-  iAssert (ObjectMetaV.own_pod_creation_fields
+  iAssert (ObjectMetaV.deepown
       template_c.(v1.PodTemplateSpec.ObjectMeta')
       template.(PodTemplateSpecV.ObjectMeta') dq)
     with "[Hobjectmeta]" as "Hobjectmeta".
-  { rewrite /ObjectMetaV.own_pod_creation_fields.
+  { rewrite /ObjectMetaV.deepown.
     iNamed "Hobjectmeta". iFrame. iFrame "%". }
   iApply ("HΦ" $! finalizers_sl).
   iFrame "Hfinalizers".
   iSplitL "Htemplate_l Hobjectmeta Htemplate_Hdeepown_spec".
-  { rewrite /PodTemplateSpecV.own_pod_creation_inputs. iFrame. }
+  { iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame. }
   done.
 Qed.
 
-Lemma wp_getPodsAnnotationSet template_l template_c template dq :
+Lemma wp_getPodsAnnotationSet template_l template dq :
   {{{ is_pkg_init controller ∗
-      PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq
+      PodTemplateSpecV.deepown_l template_l template dq
   }}}
     @! controller.getPodsAnnotationSet #template_l
   {{{ annotations_l, RET #annotations_l;
-      PodTemplateSpecV.own_pod_creation_inputs template_l template_c template dq ∗
+      PodTemplateSpecV.deepown_l template_l template dq ∗
       annotations_l ↦$ default ∅
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations')
   }}}.
 Proof.
   wp_start as "Htemplate".
-  rewrite /PodTemplateSpecV.own_pod_creation_inputs.
+  iDestruct "Htemplate" as (template_c) "[Htemplate_l Htemplate]".
   iNamedPrefix "Htemplate" "Htemplate_".
-  iRename "Htemplate_Hown_inputs_l" into "Htemplate_l".
-  iRename "Htemplate_Hown_inputs_spec" into "Htemplate_Hdeepown_spec".
-  iNamedPrefix "Htemplate_Hown_inputs_fields" "Hmeta_".
+  iNamedPrefix "Htemplate_Hdeepown_objectmeta" "Hmeta_".
   iDestruct (struct_fields_split with "Htemplate_l") as
     "[Htemplate_fields %Htemplate_nonnull]".
   iNamedPrefix "Htemplate_fields" "Htemplate_field_".
@@ -574,14 +571,15 @@ Proof.
     { rewrite Hannotations_opt. iExists annotations.
       iSplitL "Hannotations_src"; [iExact "Hannotations_src"|done]. }
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
-    iAssert (ObjectMetaV.own_pod_creation_fields
+    iAssert (ObjectMetaV.deepown
         template_c.(v1.PodTemplateSpec.ObjectMeta')
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
-    { rewrite /ObjectMetaV.own_pod_creation_fields Hannotations_opt /=.
+    { rewrite /ObjectMetaV.deepown Hannotations_opt /=.
       iNamed "Hobjectmeta". iFrame. iFrame "%". }
     iApply ("HΦ" $! annotations_l). iFrame "Hannotations".
-    rewrite /PodTemplateSpecV.own_pod_creation_inputs. iFrame.
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
   - assert (template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Annotations') =
         map.nil) as Hannotations_nil.
     { apply Hmeta_Hdeepown_annotations_none. done. }
@@ -589,14 +587,15 @@ Proof.
     wp_apply (wp_map_for_range_nil go.string go.string).
     wp_pures.
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
-    iAssert (ObjectMetaV.own_pod_creation_fields
+    iAssert (ObjectMetaV.deepown
         template_c.(v1.PodTemplateSpec.ObjectMeta')
         template.(PodTemplateSpecV.ObjectMeta') dq)
       with "[Hobjectmeta]" as "Hobjectmeta".
-    { rewrite /ObjectMetaV.own_pod_creation_fields Hannotations_opt /=.
+    { rewrite /ObjectMetaV.deepown Hannotations_opt /=.
       iNamed "Hobjectmeta". iFrame. iFrame "%". }
     iApply ("HΦ" $! annotations_l). iFrame "Hannotations".
-    rewrite /PodTemplateSpecV.own_pod_creation_inputs. iFrame.
+    iExists template_c. iFrame "Htemplate_l".
+    rewrite /PodTemplateSpecV.deepown. iFrame.
 Qed.
 
 Lemma wp_getPodsPrefix controller_name :
@@ -637,24 +636,12 @@ Proof.
   iApply "HΦ". done.
 Qed.
 
-(** Takes only the resources the code reads: the template's pod-creation inputs
-    and the parent's shallow metadata (of which only the name is used, for the
-    generated pod's name prefix).  It excludes the timestamps and managed fields
-    of either [ObjectMeta], whose representations are opaque axioms in the pure
-    model and therefore cannot be discarded for sharing — which is what lets a
-    caller hand these inputs to concurrent goroutines.
-
-    Returns the constructed pod at full ownership, and gives the caller back
-    every input resource it supplied, unchanged.
-
-    [wp_GetPodFromTemplate_from_deep_ownership] below states the same thing for
-    a caller holding deep ownership. *)
-Lemma wp_GetPodFromTemplate_from_creation_inputs template_l obj controller_ref_l template_dq
-    parent_dq template parent_l parent controller_ref template_c parent_c :
+Lemma wp_GetPodFromTemplate template_l obj controller_ref_l template_dq
+    parent_dq template parent_l parent controller_ref :
   {{{ "Hinit" ∷ is_pkg_init controller ∗
-      "Htemplate" ∷ PodTemplateSpecV.own_pod_creation_inputs template_l template_c template template_dq ∗
-      "Hparent_meta" ∷ ObjectMetaV.own_shallow
-        (KObjectV.objectmeta_ptr parent_l parent) parent_c
+      "Htemplate" ∷ PodTemplateSpecV.deepown_l template_l template template_dq ∗
+      "Hparent_meta" ∷ ObjectMetaV.deepown_l
+        (KObjectV.objectmeta_ptr parent_l parent)
         (KObjectV.objectmeta parent) parent_dq ∗
       "Hcontroller_ref" ∷
         (match controller_ref with
@@ -677,9 +664,9 @@ Lemma wp_GetPodFromTemplate_from_creation_inputs template_l obj controller_ref_l
           | None => None
           end)) 1 ∗
       "Htemplate" ∷
-        PodTemplateSpecV.own_pod_creation_inputs template_l template_c template template_dq ∗
-      "Hparent_meta" ∷ ObjectMetaV.own_shallow
-        (KObjectV.objectmeta_ptr parent_l parent) parent_c
+        PodTemplateSpecV.deepown_l template_l template template_dq ∗
+      "Hparent_meta" ∷ ObjectMetaV.deepown_l
+        (KObjectV.objectmeta_ptr parent_l parent)
         (KObjectV.objectmeta parent) parent_dq
   }}}.
 Proof.
@@ -704,7 +691,7 @@ Proof.
   iIntros (annotations_l) "[Htemplate Hannotations]".
   wp_auto.
   wp_apply wp_Accessor. 1: iPureIntro; done.
-  wp_apply (wp_GetName_shallow_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
+  wp_apply (wp_GetName_deepown_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
   iIntros "Hparent_meta".
   wp_auto.
   wp_apply (wp_getPodsPrefix with "[]").
@@ -746,20 +733,24 @@ Proof.
     iIntros (owners_sl)
       "(Howners_result & Howners_cap_result & Href_sl_back)".
     wp_auto.
-    iPoseProof (PodTemplateSpecV.own_pod_creation_inputs_split with "Htemplate") as
-      "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_meta_ptr &
-        Htemplate_spec_ptr & Htemplate_spec)".
-    set template_spec_phy := template_c.(v1.PodTemplateSpec.Spec').
+    iPoseProof (PodTemplateSpecV.deepown_l_split with "Htemplate") as
+      "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_spec)".
+    iDestruct "Htemplate_spec" as
+      (template_spec_phy) "[Htemplate_spec_ptr Htemplate_spec]".
     wp_apply (wp_PodSpec__DeepCopy
       with "[$Hcore_v1 $Htemplate_spec_ptr $Htemplate_spec]").
     iIntros (spec_copy_l)
       "(Hspec_copy & Htemplate_spec_ptr & Htemplate_spec)".
     iDestruct "Hspec_copy" as (spec_c) "[Hspec_copy_l Hspec_copy]".
     wp_auto.
-    iPoseProof (PodTemplateSpecV.own_pod_creation_inputs_restore _ _ _ _
-      Htemplate_l_not_null with
-      "[$Htemplate_meta $Htemplate_meta_ptr $Htemplate_spec_ptr
-        $Htemplate_spec]") as "Htemplate".
+    iAssert (PodSpecV.deepown_l
+        (PodTemplateSpecV.spec_ptr template_l)
+        template.(PodTemplateSpecV.Spec') template_dq)
+      with "[Htemplate_spec_ptr Htemplate_spec]" as "Htemplate_spec".
+    { iExists template_spec_phy. iFrame. }
+    iPoseProof (PodTemplateSpecV.deepown_l_restore _ _ _
+      Htemplate_l_not_null with "[$Htemplate_meta $Htemplate_spec]") as
+      "Htemplate".
     iDestruct (own_map_not_nil with "Hlabels") as "%Hlabels_not_nil".
     iDestruct (own_map_not_nil with "Hannotations") as
       "%Hannotations_not_nil".
@@ -840,20 +831,24 @@ Proof.
     iDestruct (struct_fields_split (V:=v1.ObjectMeta.t)
       with "Hpod_ObjectMeta") as "[Hmeta_fields %Hmeta_l_not_null]".
     iNamedPrefix "Hmeta_fields" "Hmeta_".
-    iPoseProof (PodTemplateSpecV.own_pod_creation_inputs_split with "Htemplate") as
-      "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_meta_ptr &
-        Htemplate_spec_ptr & Htemplate_spec)".
-    set template_spec_phy := template_c.(v1.PodTemplateSpec.Spec').
+    iPoseProof (PodTemplateSpecV.deepown_l_split with "Htemplate") as
+      "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_spec)".
+    iDestruct "Htemplate_spec" as
+      (template_spec_phy) "[Htemplate_spec_ptr Htemplate_spec]".
     wp_apply (wp_PodSpec__DeepCopy
       with "[$Hcore_v1 $Htemplate_spec_ptr $Htemplate_spec]").
     iIntros (spec_copy_l)
       "(Hspec_copy & Htemplate_spec_ptr & Htemplate_spec)".
     iDestruct "Hspec_copy" as (spec_c) "[Hspec_copy_l Hspec_copy]".
     wp_auto.
-    iPoseProof (PodTemplateSpecV.own_pod_creation_inputs_restore _ _ _ _
-      Htemplate_l_not_null with
-      "[$Htemplate_meta $Htemplate_meta_ptr $Htemplate_spec_ptr
-        $Htemplate_spec]") as "Htemplate".
+    iAssert (PodSpecV.deepown_l
+        (PodTemplateSpecV.spec_ptr template_l)
+        template.(PodTemplateSpecV.Spec') template_dq)
+      with "[Htemplate_spec_ptr Htemplate_spec]" as "Htemplate_spec".
+    { iExists template_spec_phy. iFrame. }
+    iPoseProof (PodTemplateSpecV.deepown_l_restore _ _ _
+      Htemplate_l_not_null with "[$Htemplate_meta $Htemplate_spec]") as
+      "Htemplate".
     iDestruct (own_map_not_nil with "Hlabels") as "%Hlabels_not_nil".
     iDestruct (own_map_not_nil with "Hannotations") as
       "%Hannotations_not_nil".
@@ -917,65 +912,6 @@ Proof.
       "[$Hpod_TypeMeta $Hpod_meta $Hpod_spec $Hpod_status]") as "Hpod".
     iApply ("HΦ" $! pod_l).
     iFrame "Hpod Htemplate Hparent_meta".
-Qed.
-
-(** Takes deep ownership of the template and the parent's metadata, for callers
-    that hold it and have no need to share it.  Proved from
-    [wp_GetPodFromTemplate_from_creation_inputs] by lending it the inputs it
-    reads and taking them back afterwards.
-
-    Returns the constructed pod at full ownership, and gives the caller back
-    every input resource it supplied, unchanged. *)
-Lemma wp_GetPodFromTemplate_from_deep_ownership template_l obj controller_ref_l template_dq
-    parent_dq template parent_l parent controller_ref :
-  {{{ "Hinit" ∷ is_pkg_init controller ∗
-      "Htemplate" ∷ PodTemplateSpecV.deepown_l template_l template template_dq ∗
-      "Hparent_meta" ∷ ObjectMetaV.deepown_l
-        (KObjectV.objectmeta_ptr parent_l parent)
-        (KObjectV.objectmeta parent) parent_dq ∗
-      "Hcontroller_ref" ∷
-        (match controller_ref with
-        | Some ref => OwnerReferenceV.deepown_l controller_ref_l ref 1
-        | None => ⌜ controller_ref_l = null ⌝
-        end) ∗
-      "%Hparent_interface" ∷
-        ⌜ KObjectV.valid_interface obj parent_l parent ⌝ ∗
-      "%Hparent_name_valid" ∷
-        ⌜ valid_dns1123_subdomain
-            (KObjectV.objectmeta parent).(ObjectMetaV.Name') ⌝
-  }}}
-    @! controller.GetPodFromTemplate #template_l #(interface.ok obj) #controller_ref_l
-  {{{ pod_l, RET (#pod_l, #interface.nil);
-      "Hpod" ∷ PodV.deepown_l pod_l
-        (generated_pod template
-          (KObjectV.objectmeta parent).(ObjectMetaV.Name')
-          (match controller_ref with
-          | Some ref => Some [ref]
-          | None => None
-          end)) 1 ∗
-      "Htemplate" ∷
-        PodTemplateSpecV.deepown_l template_l template template_dq ∗
-      "Hparent_meta" ∷ ObjectMetaV.deepown_l
-        (KObjectV.objectmeta_ptr parent_l parent)
-        (KObjectV.objectmeta parent) parent_dq
-  }}}.
-Proof.
-  (* Delegating corollary: keep the goal at the call rather than stepping into
-     the body, so [wp_start] is not used here. *)
-  iIntros (Φ) "H HΦ". iNamed "H".
-  iDestruct (PodTemplateSpecV.deepown_l_extract_pod_creation_inputs with "Htemplate")
-    as (template_c) "[Htemplate Htemplate_back]".
-  iDestruct (ObjectMetaV.deepown_l_extract_shallow with "Hparent_meta")
-    as (parent_c) "[Hparent_meta Hparent_meta_back]".
-  wp_apply (wp_GetPodFromTemplate_from_creation_inputs template_l obj controller_ref_l template_dq
-    parent_dq template parent_l parent controller_ref template_c parent_c with
-    "[$Hinit $Htemplate $Hparent_meta $Hcontroller_ref]").
-  { iPureIntro. split; [exact Hparent_interface | exact Hparent_name_valid]. }
-  iIntros (pod_l) "H". iNamed "H".
-  iApply ("HΦ" $! pod_l). iFrame "Hpod".
-  iSplitL "Htemplate Htemplate_back".
-  { iApply "Htemplate_back". iFrame. }
-  iApply "Hparent_meta_back". iFrame.
 Qed.
 
 End proof.

@@ -552,19 +552,6 @@ Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
-(** Everything [GetPodFromTemplate] reads from a pod template: the template
-    struct, the labels, annotations and finalizers of its [ObjectMeta], and the
-    pod spec it deep-copies.  Unlike [deepown_l] this leaves out the template
-    metadata's timestamps and managed fields, whose representations are opaque,
-    so it can be discarded and shared across concurrent readers.  See
-    [ObjectMetaV.own_pod_creation_fields]. *)
-Definition own_pod_creation_inputs (l : loc) (c : v1.PodTemplateSpec.t) (v : t) (dq : dfrac) : iProp Σ :=
-  "Hown_inputs_l" ∷ l ↦{dq} c ∗
-  "Hown_inputs_fields" ∷ ObjectMetaV.own_pod_creation_fields
-    c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hown_inputs_spec" ∷ PodSpecV.deepown
-    c.(v1.PodTemplateSpec.Spec') v.(Spec') dq.
-
 Definition objectmeta_ptr l : loc :=
   struct_field_ref v1.PodTemplateSpec.t "ObjectMeta" l.
 
@@ -579,64 +566,6 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-
-
-(** Lend the pod-creation inputs out of deep ownership.  The second conjunct is
-    the implication that takes them back, restoring [deepown_l] unchanged; this
-    is what lets [wp_GetPodFromTemplate_from_deep_ownership] be a corollary of
-    [wp_GetPodFromTemplate_from_creation_inputs]. *)
-Lemma deepown_l_extract_pod_creation_inputs l v dq :
-  deepown_l l v dq ⊢
-    ∃ c, own_pod_creation_inputs l c v dq ∗ (own_pod_creation_inputs l c v dq -∗ deepown_l l v dq).
-Proof.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  rewrite /deepown. iNamed "Hdeepown".
-  iDestruct (ObjectMetaV.deepown_extract_pod_creation_fields with "Hdeepown_objectmeta")
-    as "[Hmeta Hmeta_restore]".
-  iExists c. rewrite /own_pod_creation_inputs. iSplitL "Hl Hmeta Hdeepown_spec"; first by iFrame.
-  iNamed 1. iExists c. iFrame.
-  iApply "Hmeta_restore". iFrame.
-Qed.
-
-(** Componentwise view of [own_pod_creation_inputs], mirroring
-    [deepown_l_split]: the template metadata footprint alongside the two struct
-    field pointers and the pod spec.  Unlike [deepown_l_split] the concrete
-    struct is fixed, so [own_pod_creation_inputs_restore] puts back exactly what
-    was taken. *)
-Lemma own_pod_creation_inputs_split l c v dq :
-  own_pod_creation_inputs l c v dq ⊢
-    ⌜ l ≠ null ⌝ ∗
-    ObjectMetaV.own_pod_creation_fields
-      c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
-    objectmeta_ptr l ↦{dq} c.(v1.PodTemplateSpec.ObjectMeta') ∗
-    spec_ptr l ↦{dq} c.(v1.PodTemplateSpec.Spec') ∗
-    PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec') dq.
-Proof.
-  rewrite /own_pod_creation_inputs. iNamed 1.
-  iDestruct (struct_fields_split (V:=v1.PodTemplateSpec.t)
-    with "Hown_inputs_l") as "[Hfields %Hnot_null]".
-  iNamed "Hfields".
-  rewrite /objectmeta_ptr /spec_ptr. iFrame "∗ %".
-Qed.
-
-Lemma own_pod_creation_inputs_restore l c v dq :
-  l ≠ null →
-  ObjectMetaV.own_pod_creation_fields
-    c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
-  objectmeta_ptr l ↦{dq} c.(v1.PodTemplateSpec.ObjectMeta') ∗
-  spec_ptr l ↦{dq} c.(v1.PodTemplateSpec.Spec') ∗
-  PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec') dq ⊢
-    own_pod_creation_inputs l c v dq.
-Proof.
-  intros Hnot_null.
-  iIntros "(Hmeta & HObjectMeta & HSpec & Hspec)".
-  rewrite /own_pod_creation_inputs /objectmeta_ptr /spec_ptr.
-  iAssert (typed_pointsto_def l c dq) with "[HObjectMeta HSpec]" as "Hfields".
-  { destruct c. simpl. iFrame. }
-  iDestruct (struct_fields_combine (V:=v1.PodTemplateSpec.t) l c dq Hnot_null
-    with "Hfields") as "Hl".
-  iFrame.
-Qed.
 
 Lemma deepown_l_split l v dq :
   deepown_l l v dq ⊢

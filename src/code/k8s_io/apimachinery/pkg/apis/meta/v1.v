@@ -356,10 +356,6 @@ Axiom FieldSelectorRequirementⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : Go
 
 Axiom FieldSelectorOperatorⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ManagedFieldsOperationTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom FieldsV1ⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom Tableⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom TableColumnDefinitionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -520,9 +516,9 @@ Axiom FieldSelectorOpExists : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 Axiom FieldSelectorOpDoesNotExist : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom ManagedFieldsOperationApply : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ManagedFieldsOperationApply {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Apply"%go.
 
-Axiom ManagedFieldsOperationUpdate : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ManagedFieldsOperationUpdate {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Update"%go.
 
 Axiom RowCompleted : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -2564,17 +2560,16 @@ Class FieldSelectorOperator_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `
 Module ManagedFieldsOperationType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End ManagedFieldsOperationType.
 
+Definition ManagedFieldsOperationTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class ManagedFieldsOperationType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ManagedFieldsOperationType_type_repr  :: go.TypeReprUnderlying ManagedFieldsOperationTypeⁱᵐᵖˡ ManagedFieldsOperationType.t;
   #[global] ManagedFieldsOperationType_underlying :: (ManagedFieldsOperationType) <u (ManagedFieldsOperationTypeⁱᵐᵖˡ);
-  #[global] ManagedFieldsOperationTypeⁱᵐᵖˡ_underlying :: (ManagedFieldsOperationTypeⁱᵐᵖˡ) ↓u (ManagedFieldsOperationTypeⁱᵐᵖˡ);
 }.
 
 Module ManagedFieldsEntry.
@@ -2635,17 +2630,32 @@ Class ManagedFieldsEntry_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!G
 Module FieldsV1.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Raw' : slice.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End FieldsV1.
+
+Definition FieldsV1'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Raw"%go (go.SliceType go.byte))
+].
+Program Definition FieldsV1'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (FieldsV1'fds_unsealed).
+Global Instance equals_unfold_FieldsV1 {ext : ffi_syntax} {go_gctx : GoGlobalContext} : FieldsV1'fds =→ FieldsV1'fds_unsealed.
+Proof. rewrite /FieldsV1'fds seal_eq //. Qed.
+
+Definition FieldsV1ⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (FieldsV1'fds).
 
 Class FieldsV1_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] FieldsV1_type_repr  :: go.TypeReprUnderlying FieldsV1ⁱᵐᵖˡ FieldsV1.t;
   #[global] FieldsV1_underlying :: (FieldsV1) <u (FieldsV1ⁱᵐᵖˡ);
-  #[global] FieldsV1ⁱᵐᵖˡ_underlying :: (FieldsV1ⁱᵐᵖˡ) ↓u (FieldsV1ⁱᵐᵖˡ);
+  #[global] FieldsV1_get_Raw (x : FieldsV1.t) :: ⟦StructFieldGet (FieldsV1ⁱᵐᵖˡ) "Raw", #x⟧ ⤳[under] #x.(FieldsV1.Raw');
+  #[global] FieldsV1_set_Raw (x : FieldsV1.t) y :: ⟦StructFieldSet (FieldsV1ⁱᵐᵖˡ) "Raw", (#x, #y)⟧ ⤳[under] #(x <|FieldsV1.Raw' := y|>);
 }.
 
 Module Table.

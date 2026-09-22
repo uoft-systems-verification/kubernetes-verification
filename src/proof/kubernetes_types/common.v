@@ -20,15 +20,19 @@ Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-Axiom t : Type.
-Axiom eq_dec : EqDecision t.
-Global Existing Instance eq_dec.
-Axiom deepown : v1.Time.t → t → dfrac → iProp Σ.
+(* Keep the concrete time value, including its location pointer. As in
+   Perennial's time specifications, this models the value without dereferencing
+   the location; metadata operations only copy the timestamp. *)
+Definition t := time.Time.t.
+Global Instance eq_dec : EqDecision t.
+Proof. unfold t. solve_decision. Qed.
 
-(* The pure model intentionally leaves Time opaque.  This distinguished value
-   is the model of a zero-initialized metav1.Time. *)
-Axiom zero : t.
-Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.Time.t) zero dq.
+Definition deepown (c : v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ :=
+  ⌜ c.(v1.Time.Time') = v ⌝.
+
+Definition zero : t := zero_val time.Time.t.
+Lemma deepown_zero dq : ⊢ deepown (zero_val v1.Time.t) zero dq.
+Proof. rewrite /deepown /zero. iPureIntro. done. Qed.
 End def.
 End TimeV.
 
