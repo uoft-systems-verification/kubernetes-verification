@@ -201,8 +201,9 @@ Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
   "Hdeepown_matchexpressions_some" ∷ (match v.(MatchExpressions') with
     | Some match_expressions =>
         ∃ match_expressions_c,
-          deepown_list (DfracOwn 1) c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
+          deepown_list c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
             (λ requirement pure_requirement, LabelSelectorRequirementV.deepown requirement pure_requirement dq)
+            (DfracOwn 1)
     | None => True%I
     end).
 

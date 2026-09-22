@@ -13,7 +13,7 @@ Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
    read-only (e.g. by concurrent goroutines). *)
 Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
     {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
-    (dq : dfrac) (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) : iProp Σ :=
+    (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) (dq : dfrac) : iProp Σ :=
   c_slice ↦*{dq} cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
 
 Module TimeV.
@@ -33,6 +33,15 @@ Definition deepown (c : v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ :=
 Definition zero : t := zero_val time.Time.t.
 Lemma deepown_zero dq : ⊢ deepown (zero_val v1.Time.t) zero dq.
 Proof. rewrite /deepown /zero. iPureIntro. done. Qed.
+
+(* [deepown] is a pure equality, so it ignores its fraction. *)
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All. rewrite /deepown. iIntros "H". by iModIntro. Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. apply _. Qed.
 End def.
 End TimeV.
 

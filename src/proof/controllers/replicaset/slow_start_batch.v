@@ -19,7 +19,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export create.
 From New.proof.controllers.replicaset Require Export top_level.
-From New.proof.kubernetes_types Require Export persist.
+From New.proof.kubernetes_types Require Export pod replicaset.
 From New.proof Require Import sync.
 From New.golang.theory Require Import chan.
 From New.golang.theory.chan.au_spec Require Import chan_au_send.

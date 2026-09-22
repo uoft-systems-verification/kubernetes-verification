@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
 From New.proof.kubernetes_types Require Export common.
 
 Module OwnerReferenceV.
@@ -53,6 +53,31 @@ Definition list_valid (os: list t) : Prop :=
     os !! i1 = Some o1 ∧ o1.(Controller') = Some true ∧
     os !! i2 = Some o2 ∧ o2.(Controller') = Some true →
       i1 = i2.
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(Controller') with
+    | Some vc => ∃ cc, c.(v1.OwnerReference.Controller') ↦□ cc ∗ ⌜ cc = vc ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_controller_some]" as ">Hcontroller".
+  { destruct (v.(Controller')) as [vc|]; last done.
+    iDestruct "Hdeepown_controller_some" as (cc) "[Hcc %Hcc]".
+    iPersist "Hcc". iModIntro. iExists cc. by iFrame "# %". }
+  iAssert (|==> match v.(BlockOwnerDeletion') with
+    | Some vb => ∃ cb, c.(v1.OwnerReference.BlockOwnerDeletion') ↦□ cb ∗ ⌜ cb = vb ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_blockownerdeleton_some]" as ">Hblock".
+  { destruct (v.(BlockOwnerDeletion')) as [vb|]; last done.
+    iDestruct "Hdeepown_blockownerdeleton_some" as (cb) "[Hcb %Hcb]".
+    iPersist "Hcb". iModIntro. iExists cb. by iFrame "# %". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. destruct (v.(Controller')), (v.(BlockOwnerDeletion')); apply _. Qed.
 End def.
 
 Definition refers_to_controller v kind name uid : Prop :=
@@ -78,6 +103,23 @@ Definition deepown (c : v1.FieldsV1.t) (v : t) dq : iProp Σ :=
   | Some raw => c.(v1.FieldsV1.Raw') ↦*{dq} raw
   | None => True%I
   end).
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v with
+    | Some raw => c.(v1.FieldsV1.Raw') ↦*{DfracDiscarded} raw
+    | None => True%I
+    end)%I with "[Hdeepown_raw_some]" as ">Hraw".
+  { destruct v as [raw|]; last done.
+    by iMod (own_slice_persist with "Hdeepown_raw_some") as "$". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. destruct v; apply _. Qed.
 End def.
 End FieldsV1V.
 
@@ -120,6 +162,33 @@ Definition deepown (c : v1.ManagedFieldsEntry.t) (v : t) dq : iProp Σ :=
 Definition deepown_l l v dq : iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(Time') with
+    | Some vt => ∃ ct, c.(v1.ManagedFieldsEntry.Time') ↦□ ct ∗ TimeV.deepown ct vt DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_time_some]" as ">Htime".
+  { destruct (v.(Time')) as [vt|]; last done.
+    iDestruct "Hdeepown_time_some" as (ct) "[Hct Ht]".
+    iPersist "Hct". iMod (TimeV.deepown_persist with "Ht") as "Ht".
+    iModIntro. iExists ct. by iFrame "∗ #". }
+  iAssert (|==> match v.(FieldsV1') with
+    | Some vf => ∃ cf, c.(v1.ManagedFieldsEntry.FieldsV1') ↦□ cf ∗ FieldsV1V.deepown cf vf DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_fieldsv1_some]" as ">Hfieldsv1".
+  { destruct (v.(FieldsV1')) as [vf|]; last done.
+    iDestruct "Hdeepown_fieldsv1_some" as (cf) "[Hcf Hf]".
+    iPersist "Hcf". iMod (FieldsV1V.deepown_persist with "Hf") as "Hf".
+    iModIntro. iExists cf. by iFrame "∗ #". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. destruct (v.(Time')), (v.(FieldsV1')); apply _. Qed.
 End def.
 End ManagedFieldsEntryV.
 
@@ -358,6 +427,93 @@ Definition deepown (c: v1.ObjectMeta.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iMod (TimeV.deepown_persist with "Hdeepown_creationtimestamp") as "Hdeepown_creationtimestamp".
+  iAssert (|==> match v.(DeletionTimestamp') with
+    | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionTimestamp') ↦□ cd ∗ TimeV.deepown cd vd DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_deletiontimestamp_some]" as ">Hdeletiontimestamp".
+  { destruct (v.(DeletionTimestamp')) as [vd|]; last done.
+    iDestruct "Hdeepown_deletiontimestamp_some" as (cd) "[Hcd Ht]".
+    iPersist "Hcd". iMod (TimeV.deepown_persist with "Ht") as "Ht".
+    iModIntro. iExists cd. by iFrame "∗ #". }
+  iAssert (|==> match v.(DeletionGracePeriodSeconds') with
+    | Some vd => ∃ cd, c.(v1.ObjectMeta.DeletionGracePeriodSeconds') ↦□ cd ∗ ⌜ cd = vd ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_deletiongraceperiodseconds_some]" as ">Hgrace".
+  { destruct (v.(DeletionGracePeriodSeconds')) as [vd|]; last done.
+    iDestruct "Hdeepown_deletiongraceperiodseconds_some" as (cd) "[Hcd %Hcd]".
+    iPersist "Hcd". iModIntro. iExists cd. by iFrame "# %". }
+  iAssert (|==> match v.(Labels') with
+    | Some vl => ∃ cl, c.(v1.ObjectMeta.Labels') ↦${DfracDiscarded} cl ∗ ⌜ cl = vl ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_labels_some]" as ">Hlabels".
+  { destruct (v.(Labels')) as [vl|]; last done.
+    iDestruct "Hdeepown_labels_some" as (cl) "[Hcl %Hcl]".
+    iMod (own_map_persist with "Hcl") as "Hcl". iModIntro. iExists cl. by iFrame "∗ %". }
+  iAssert (|==> match v.(Annotations') with
+    | Some va => ∃ ca, c.(v1.ObjectMeta.Annotations') ↦${DfracDiscarded} ca ∗ ⌜ ca = va ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_annotations_some]" as ">Hannotations".
+  { destruct (v.(Annotations')) as [va|]; last done.
+    iDestruct "Hdeepown_annotations_some" as (ca) "[Hca %Hca]".
+    iMod (own_map_persist with "Hca") as "Hca". iModIntro. iExists ca. by iFrame "∗ %". }
+  iAssert (|==> match v.(OwnerReferences') with
+    | Some vos => ∃ cos, c.(v1.ObjectMeta.OwnerReferences') ↦*{DfracDiscarded} cos ∗
+        [∗ list] co;vo ∈ cos;vos, OwnerReferenceV.deepown co vo DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_ownerreferences_some]" as ">Howners".
+  { destruct (v.(OwnerReferences')) as [vos|]; last done.
+    iDestruct "Hdeepown_ownerreferences_some" as (cos) "[Hcos Hlist]".
+    iMod (own_slice_persist with "Hcos") as "Hcos".
+    iMod (big_sepL2_persist OwnerReferenceV.deepown with "Hlist") as "Hlist".
+    { intros. apply OwnerReferenceV.deepown_persist. }
+    iModIntro. iExists cos. by iFrame. }
+  iAssert (|==> match v.(Finalizers') with
+    | Some vfs => ∃ cfs, c.(v1.ObjectMeta.Finalizers') ↦*{DfracDiscarded} cfs ∗ ⌜ cfs = vfs ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_finalizers_some]" as ">Hfinalizers".
+  { destruct (v.(Finalizers')) as [vfs|]; last done.
+    iDestruct "Hdeepown_finalizers_some" as (cfs) "[Hcfs %Hcfs]".
+    iMod (own_slice_persist with "Hcfs") as "Hcfs". iModIntro. iExists cfs. by iFrame "∗ %". }
+  iAssert (|==> match v.(ManagedFields') with
+    | Some vms => ∃ cms, c.(v1.ObjectMeta.ManagedFields') ↦*{DfracDiscarded} cms ∗
+        [∗ list] cm;vm ∈ cms;vms, ManagedFieldsEntryV.deepown cm vm DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_managedfields_some]" as ">Hmanaged".
+  { destruct (v.(ManagedFields')) as [vms|]; last done.
+    iDestruct "Hdeepown_managedfields_some" as (cms) "[Hcms Hlist]".
+    iMod (own_slice_persist with "Hcms") as "Hcms".
+    iMod (big_sepL2_persist ManagedFieldsEntryV.deepown with "Hlist") as "Hlist".
+    { intros. apply ManagedFieldsEntryV.deepown_persist. }
+    iModIntro. iExists cms. by iFrame. }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All.
+  rewrite /deepown.
+  destruct (v.(DeletionTimestamp')), (v.(DeletionGracePeriodSeconds')), (v.(Labels')),
+    (v.(Annotations')), (v.(OwnerReferences')), (v.(Finalizers')), (v.(ManagedFields'));
+    apply _.
+Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof using All.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof using All. rewrite /deepown_l. apply _. Qed.
 End def.
 
 Section proof.

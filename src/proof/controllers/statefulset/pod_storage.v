@@ -464,10 +464,11 @@ Proof.
   Ltac restore_storage_pod pod_spec_c physical_volumes pod_meta_c pod
       dq_pod pod_l Hpod_l_not_null :=
     iAssert (∃ volumes,
-        deepown_list dq_pod pod_spec_c.(v1.PodSpec.Volumes') volumes
+        deepown_list pod_spec_c.(v1.PodSpec.Volumes') volumes
           (PodSpecV.volumes_list pod.(PodV.Spec'))
           (λ physical_volume pure_volume,
-            VolumeV.deepown physical_volume pure_volume dq_pod))%I
+            VolumeV.deepown physical_volume pure_volume dq_pod)
+          dq_pod)%I
       with "[Hpod_volumes_slice Hpod_volumes_deepown]" as
         "Hpod_spec_Hdeepown_volumes";
     [ iExists physical_volumes; rewrite /deepown_list; iFrame | ];
