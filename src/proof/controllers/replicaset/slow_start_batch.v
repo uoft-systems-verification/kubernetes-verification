@@ -117,7 +117,7 @@ Proof.
     "(%Hvalid' & %Hcreated & %Hkey_eq & %Hkey_fresh & %Huid_eq & Hdeepown_i &
       Hown_meta_frag & Hown_spec_frag & Hown_status_frag & #Hown_unreserved_key_frag &
       Hown_children_frag & Hown_grandchildren_frag)".
-  destruct kobj' as [pod'|rs'|pvc'|sts']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|dep']; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l']".
   iMod ("Hclose" $! pod_l' pod' key uid with
     "[$Hdeepown_l' $Hown_meta_frag $Hown_spec_frag $Hown_status_frag
