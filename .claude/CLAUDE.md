@@ -10,6 +10,8 @@ eval $(opam env --switch=kubernetes-verification --set-switch)
 opam switch show    # must print kubernetes-verification
 ```
 
+Once you switch, you never need to call `eval $(opam env …)` a second time.
+
 ## Project Structure
 
 This is a project for verifying Kubernetes controller implementations. The specifications and proofs are written in Rocq and depend on perennial, iris, and stdpp. The main content is in:

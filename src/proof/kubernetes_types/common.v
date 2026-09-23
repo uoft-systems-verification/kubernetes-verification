@@ -20,19 +20,28 @@ Module TimeV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-(* Keep the concrete time value, including its location pointer. As in
-   Perennial's time specifications, this models the value without dereferencing
-   the location; metadata operations only copy the timestamp. *)
-Definition t := time.Time.t.
+(* The view is the instant only. Go's [loc *time.Location] is dropped rather than
+   modelled as a pointer field, because
+   - [time.Location] is opaque in Perennial ([Axiom t], no field getters, no
+     [EqDecision]), so [eq_dec] below could not be derived through it; and
+   - every timestamp aliases one process-wide singleton, which [deepown] cannot own
+     the way it owns the allocations the API server makes.
+   No proof reads a zone. *)
+Record t := mk {
+  wall' : w64;
+  ext' : w64;
+}.
+
 Global Instance eq_dec : EqDecision t.
-Proof. unfold t. solve_decision. Qed.
+Proof. solve_decision. Qed.
 
 Definition deepown (c : v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ :=
-  ⌜ c.(v1.Time.Time') = v ⌝.
+  ⌜ c.(v1.Time.Time').(time.Time.wall') = v.(wall') ∧
+    c.(v1.Time.Time').(time.Time.ext') = v.(ext') ⌝.
 
-Definition zero : t := zero_val time.Time.t.
+Definition zero : t := mk (zero_val _) (zero_val _).
 Lemma deepown_zero dq : ⊢ deepown (zero_val v1.Time.t) zero dq.
-Proof. rewrite /deepown /zero. iPureIntro. done. Qed.
+Proof. rewrite /deepown /zero. iPureIntro. split; done. Qed.
 
 (* [deepown] is a pure equality, so it ignores its fraction. *)
 Lemma deepown_persist c v dq :

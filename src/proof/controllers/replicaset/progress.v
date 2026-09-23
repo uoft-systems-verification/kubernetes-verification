@@ -4,6 +4,7 @@ From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.replicaset Require Export get_indirectly_related_pods get_pods_to_delete top_level.
+From New.proof.controllers.replicaset Require Export common.
 From New.proof.controllers.replicaset Require Export slow_start_batch delete_batch.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
@@ -697,7 +698,9 @@ Proof.
         iNamedSuffix "Hi" "_inv".
         iDestruct (ghost_map_lookup with "Hpending_auth_inv Helem_this") as %Hlookup_pending.
         apply lookup_gset_to_gmap_Some in Hlookup_pending as [Hin_pending _].
-        pose proof (pending_size_pos _ _ Hin_pending) as Hpending_pos.
+        assert (1 ≤ size pending)%nat as Hpending_pos.
+        { destruct (decide (size pending = 0%nat)) as [Hz|Hnz]; last lia.
+          exfalso. apply size_empty_inv in Hz. Timeout 10 set_solver. }
         iDestruct "Hres_inv" as "[%Hdr|[%Hdr Hres_inv]]".
         { exfalso. specialize (Hdrained_inv Hdr). lia. }
         subst drained.
@@ -719,7 +722,11 @@ Proof.
         { iNext. iExists ctr, (ndeleted + 1)%nat, ndone, false, (pending ∖ {[PodV.key this_pod]}).
           iFrame "Hwg_ctr_inv Hpending_auth_inv Hdone_pool_inv Hdrained_var_inv".
           iSplitR; [iPureIntro; done|].
-          iSplitR; [iPureIntro; rewrite (pending_size_delete _ _ Hin_pending); lia|].
+          iSplitR.
+          { iPureIntro.
+            assert ({[PodV.key this_pod]} ⊆ pending) as Hsub.
+            { Timeout 10 set_solver. }
+            rewrite (size_difference _ _ Hsub) size_singleton. lia. }
           iSplitR; [iPureIntro; lia|].
           iSplitR.
           { iPureIntro. apply disjoint_difference_l2. exact Hpending_rest_inv. }

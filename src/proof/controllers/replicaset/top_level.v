@@ -47,10 +47,6 @@ Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
   pod_meta_except_resource_version_changed pods pods' ∨
   pod_spec_changed pods pods'.
 
-Lemma match_distance_replica_distance rs pods n :
-  rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n →
-  match_distance rs pods = replica_distance (length (filter is_pod_alive pods)) (sint.nat n).
-Proof. intros Hreplicas. unfold match_distance. rewrite Hreplicas. done. Qed.
 
 Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
   (* ReplicaSet-generated Pod names append a hyphen and five-character suffix;
@@ -133,9 +129,8 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
-(* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes at
-  most [burst] pods. It must be positive for the controller to make progress, and it
-  bounds the int32 sync.WaitGroup counter the controller adds it to. *)
+(* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes
+  at most [burst] pods. *)
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
@@ -146,6 +141,14 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      (* - > 0: otherwise [manageReplicas] clamps this sync to zero pods, and
+           neither disjunct below holds.
+         - < 2^31: [burst] bounds the delta [manageReplicas] passes to [wg.Add].
+           Perennial packs the WaitGroup counter into the top 32 bits of the state
+           word as Go does, so [own_WaitGroup] holds a [w32] and
+           [wp_WaitGroup__Add] truncates its [w64] delta to [w32], requiring
+           [0 ≤ oldc + delta < 2^31]. Past 2^31 the truncation turns the delta
+           negative and that obligation is unprovable. *)
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝

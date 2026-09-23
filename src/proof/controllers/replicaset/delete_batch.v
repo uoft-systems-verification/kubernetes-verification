@@ -152,22 +152,9 @@ Proof.
   rewrite big_sepL_fmap. iFrame.
 Qed.
 
-Lemma pending_size_pos (pending : gset KKey.t) k :
-  k ∈ pending → (1 ≤ size pending)%nat.
-Proof.
-  intros Hk.
-  destruct (decide (size pending = 0%nat)) as [Hz|Hnz]; last lia.
-  exfalso. apply size_empty_inv in Hz. Timeout 10 set_solver.
-Qed.
-
-Lemma pending_size_delete (pending : gset KKey.t) k :
-  k ∈ pending → size (pending ∖ {[k]}) = (size pending - 1)%nat.
-Proof.
-  intros Hk.
-  assert ({[k]} ⊆ pending) as Hsub. { Timeout 10 set_solver. }
-  rewrite (size_difference _ _ Hsub) size_singleton. done.
-Qed.
-
+(* Kept as a separate lemma: at the delete linearization point in progress.v the
+   context has dozens of hypotheses and [set_solver] times out there, while it is
+   instant with only these three variables in scope. *)
 Lemma union_pending_delete (rest pending : gset KKey.t) k :
   k ∈ pending → pending ## rest →
   (rest ∪ pending) ∖ {[k]} = rest ∪ (pending ∖ {[k]}).
