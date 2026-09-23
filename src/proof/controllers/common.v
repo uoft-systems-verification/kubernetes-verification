@@ -25,6 +25,7 @@ Local Set Default Proof Using "All".
 Definition is_pod_alive (pod: PodV.t): Prop :=
   pod.(PodV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None.
 
+
 Definition delete_options_with_uid (uid : types.UID.t) : DeleteOptionsV.t :=
   {|
     DeleteOptionsV.TypeMeta' := zero_val _;

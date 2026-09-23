@@ -1,4 +1,5 @@
 From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof Require Export util.
 
 Module app_listers := code.k8s_io.client_go.listers.apps.v1.v1.
 
@@ -45,6 +46,7 @@ Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
     list_to_set (C:=gset KKey.t) (PodV.key <$> pods') ∨
   pod_meta_except_resource_version_changed pods pods' ∨
   pod_spec_changed pods pods'.
+
 
 Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
   (* ReplicaSet-generated Pod names append a hyphen and five-character suffix;
@@ -127,19 +129,31 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
+(* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes
+  at most [burst] pods. *)
 (* Progress spec states that the controller either makes progress toward the desired state or has already reached the
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
-Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      (* - > 0: otherwise [manageReplicas] clamps this sync to zero pods, and
+           neither disjunct below holds.
+         - < 2^31: [burst] bounds the delta [manageReplicas] passes to [wg.Add].
+           Perennial packs the WaitGroup counter into the top 32 bits of the state
+           word as Go does, so [own_WaitGroup] holds a [w32] and
+           [wp_WaitGroup__Add] truncates its [w64] delta to [w32], requiring
+           [0 ≤ oldc + delta < 2^31]. Past 2^31 the truncation turns the delta
+           negative and that obligation is unprovable. *)
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ current_state_matches rs pods' ∨
@@ -150,16 +164,18 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) name
   desired state (or, does not cancel its previous progress) when the cluster state is *unready* for the controller to
   make progress. Here, unready means the controller has some terminating children objects, so the controller might need
   to wait for termination before making progress. *)
-Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs pods' (mutating_fractions dq) false ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
@@ -167,7 +183,8 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
 
 (* Stability spec states that the controller does not modify the cluster state if the state already matches the desired
   state. We use fractional ownerships owned_resources so the controller has no permission to modify the state. *)
-Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods : iProp Σ :=
+Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq pods
+    : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -176,7 +193,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) nam
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #namespace #name
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ rs pods (stability_fractions dq) true
   }}}.

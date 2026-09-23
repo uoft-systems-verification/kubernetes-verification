@@ -189,7 +189,7 @@ Axiom ReplicaSetsBySizeNewerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGl
 
 Axiom ExpectationsTimeout : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom SlowStartInitialBatchSize : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition SlowStartInitialBatchSize {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #1.
 
 Axiom PodNodeNameKeyIndex : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 

@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
 From New.proof.kubernetes_types Require Export objectmeta.
 From New.proof.kubernetes_types Require Import top_level.
 
@@ -90,6 +90,24 @@ Definition deepown (c : v1.VolumeSource.t) (v : t) dq : iProp Σ :=
     | None => True%I
     end).
 
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(PersistentVolumeClaim') with
+    | Some pvc => ∃ c_pvc, c.(v1.VolumeSource.PersistentVolumeClaim') ↦□ c_pvc ∗ ⌜ c_pvc = pvc ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_persistentvolumeclaim_some]" as ">Hpvc".
+  { destruct (v.(PersistentVolumeClaim')) as [pvc|]; last done.
+    iDestruct "Hdeepown_persistentvolumeclaim_some" as (c_pvc) "[Hc %Hc]".
+    iPersist "Hc". iModIntro. iExists c_pvc. by iFrame "# %". }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. destruct (v.(PersistentVolumeClaim')); apply _. Qed.
 End def.
 End VolumeSourceV.
 
@@ -119,6 +137,18 @@ Proof. unfold valid. apply _. Defined.
 Definition deepown (c : v1.Volume.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_name" ∷ ⌜c.(v1.Volume.Name') = v.(Name')⌝ ∗
   "Hdeepown_volumesource" ∷ VolumeSourceV.deepown c.(v1.Volume.VolumeSource') v.(VolumeSource') dq.
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iMod (VolumeSourceV.deepown_persist with "Hdeepown_volumesource") as "Hdeepown_volumesource".
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. apply _. Qed.
 End def.
 End VolumeV.
 
@@ -235,13 +265,28 @@ Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
   "Hdeepown_volumes" ∷
     (∃ volumes,
       deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v)
-      (λ volume pure_volume, VolumeV.deepown volume pure_volume dq)) ∗
+      (λ volume pure_volume, VolumeV.deepown volume pure_volume dq) dq) ∗
   "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
   "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iDestruct "Hdeepown_volumes" as (volumes) "[Hsl Hlist]".
+  iMod (own_slice_persist with "Hsl") as "Hsl".
+  iMod (big_sepL2_persist VolumeV.deepown with "Hlist") as "Hlist".
+  { intros. apply VolumeV.deepown_persist. }
+  iModIntro. iFrame "%". iExists volumes. rewrite /deepown_list. by iFrame.
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown /deepown_list. apply _. Qed.
 End def.
 End PodSpecV.
 
@@ -605,5 +650,30 @@ Proof.
   iExists (v1.PodTemplateSpec.mk cmeta cspec). iFrame.
 Qed.
 
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iMod (ObjectMetaV.deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
+  iMod (PodSpecV.deepown_persist with "Hdeepown_spec") as "Hdeepown_spec".
+  iModIntro. by iFrame.
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. apply _. Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof using All.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof using All. rewrite /deepown_l. apply _. Qed.
 End proof.
 End PodTemplateSpecV.

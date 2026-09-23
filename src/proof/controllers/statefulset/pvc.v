@@ -932,7 +932,8 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
           (StatefulSetSpecV.volume_claim_templates_list
             set.(StatefulSetV.Spec'))
           (λ claim_template_phy pure_claim_template,
-            PersistentVolumeClaimV.deepown claim_template_phy pure_claim_template dq) ∗
+            PersistentVolumeClaimV.deepown claim_template_phy pure_claim_template dq)
+          (DfracOwn 1) ∗
       "%Hclaim_templates_map_values" ∷
         ⌜ map_Forall (λ name claim_template_phy,
             claim_template_phy ∈ claim_templates_list ∧

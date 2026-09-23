@@ -300,6 +300,20 @@ Proof.
   iFrame.
 Qed.
 
+Lemma big_sepL2_persist {A B} (P : A → B → dfrac → iProp Σ) dq (cs : list A) (vs : list B) :
+  (∀ c v, P c v dq ⊢ |==> P c v DfracDiscarded) →
+  ([∗ list] c;v ∈ cs;vs, P c v dq) ⊢ |==> [∗ list] c;v ∈ cs;vs, P c v DfracDiscarded.
+Proof.
+  intros HP.
+  iInduction cs as [|c cs] "IH" forall (vs); destruct vs as [|v vs].
+  - rewrite !big_sepL2_nil. iIntros "_". iModIntro. done.
+  - iIntros "H". iDestruct (big_sepL2_nil_inv_l with "H") as %Hnil. discriminate Hnil.
+  - iIntros "H". iDestruct (big_sepL2_nil_inv_r with "H") as %Hnil. discriminate Hnil.
+  - rewrite !big_sepL2_cons. iIntros "[Hc Hcs]".
+    iMod (HP with "Hc") as "Hc". iMod ("IH" with "Hcs") as "Hcs".
+    iModIntro. by iFrame.
+Qed.
+
 End big_sepL_helpers.
 
 Lemma map_to_list_filter_perm {K A} `{Countable K} (m : gmap K A) (P : K * A → Prop) `{!∀ x, Decision (P x)} :

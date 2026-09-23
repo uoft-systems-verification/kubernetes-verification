@@ -5,6 +5,7 @@ From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.replicaset Require Export top_level.
+From New.proof.controllers.replicaset Require Export common.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
@@ -70,51 +71,9 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma active_pod_count_erased_meta_perm pods1 pods2 :
-  ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods1) ≡ₚ
-    ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods2) →
-  length (filter is_pod_alive pods1) = length (filter is_pod_alive pods2).
-Proof.
-  intros Hperm.
-  assert (Hcount : ∀ pods,
-    length (filter is_pod_alive pods) =
-    length (filter (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
-      (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods)))).
-  { intros pods. induction pods as [|pod pods IH]; simpl; first done.
-    destruct (decide (is_pod_alive pod)) as [Halive|Hnot_alive].
-    - destruct (decide ((ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta')).(ObjectMetaV.DeletionTimestamp') = None))
-        as [Herased_alive|Hnot_erased_alive].
-      + rewrite (filter_cons_True is_pod_alive pod pods Halive).
-        rewrite (filter_cons_True
-          (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
-          (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'))
-          (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods))
-          Herased_alive).
-        simpl. f_equal. exact IH.
-      + exfalso. apply Hnot_erased_alive.
-        unfold is_pod_alive, ObjectMetaV.without_resource_version in *.
-        destruct pod as [? [] ? ?]. exact Halive.
-    - destruct (decide ((ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta')).(ObjectMetaV.DeletionTimestamp') = None))
-        as [Herased_alive|Hnot_erased_alive].
-      + exfalso. apply Hnot_alive.
-        unfold is_pod_alive, ObjectMetaV.without_resource_version in *.
-        destruct pod as [? [] ? ?]. exact Herased_alive.
-      + rewrite (filter_cons_False is_pod_alive pod pods Hnot_alive).
-        rewrite (filter_cons_False
-          (λ meta : ObjectMetaV.t, meta.(ObjectMetaV.DeletionTimestamp') = None)
-          (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'))
-          (ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods))
-          Hnot_erased_alive).
-        exact IH. }
-  rewrite !Hcount.
-  apply Permutation_length.
-  apply perm_filter.
-  exact Hperm.
-Qed.
-
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_manageReplicas_stability (ctx : context.Context.t) (kube_client : loc)
+Lemma wp_manageReplicas_stability (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     sl rs_l ptrs active_pods rs n dq1 dq2 :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "Hsl" ∷ sl ↦* ptrs ∗
@@ -124,7 +83,7 @@ Lemma wp_manageReplicas_stability (ctx : context.Context.t) (kube_client : loc)
       "%Hn_nonneg" ∷ ⌜ 0 ≤ sint.Z n ⌝ ∗
       "%Hlen_active" ∷ ⌜ length active_pods = sint.nat n ⌝
   }}}
-    @! replicaset.manageReplicas #ctx #kube_client #sl #rs_l
+    @! replicaset.manageReplicas #ctx #kube_client #burst #sl #rs_l
   {{{ RET #interface.nil;
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;active_pods, PodV.deepown_l ptr pod dq1) ∗
@@ -155,8 +114,9 @@ Proof.
       rewrite Hreplicas_eq. iExists n. iSplitL. all: done.
 Qed.
 
-Lemma wp_syncReplicaSet_stability γ l (ctx : context.Context.t) (kube_client : loc) namespace name rs dq pods :
-  ⊢ stability_spec γ l ctx kube_client namespace name rs dq pods.
+Lemma wp_syncReplicaSet_stability γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64) namespace name rs dq
+    pods :
+  ⊢ stability_spec γ l ctx kube_client burst namespace name rs dq pods.
 Proof.
   unfold stability_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -166,6 +126,7 @@ Proof.
   wp_alloc_auto.
   rewrite exception_do_unseal /exception_do_def.
   wp_pures.
+  wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
   wp_alloc_auto. wp_pures.
@@ -297,7 +258,7 @@ Proof.
     rewrite Hreplicas_eq in Hmatch. simpl in Hmatch.
     rewrite (active_pod_count_erased_meta_perm all_pods pods Hall_meta_perm).
     exact Hmatch. }
-  wp_apply (wp_manageReplicas_stability ctx kube_client active_sl rs_l active_ptrs
+  wp_apply (wp_manageReplicas_stability ctx kube_client burst active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) rs_get n dq' 1 with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs]").
   { iFrame "#".
