@@ -152,6 +152,26 @@ func (s *State) objListBySelector(kind, namespace string, selector labels.Select
 	return filterByLabelSelector(s.objList(kind, namespace), selector)
 }
 
+// ReplicaSetControllerIndex is the name for the ReplicaSet store's index
+// function, mirroring controller.PodControllerIndex for Pods.
+//
+// It cannot be imported from k8s.io/kubernetes. Upstream does index ReplicaSets
+// by controller reference, but that index is unexported: replicaset's
+// controllerUIDIndex ("controllerUID"), registered on the rsInformer in
+// NewBaseController and read by getReplicaSetsWithSameController. It is also a
+// different index: it keys on the bare controllerRef.UID and indexes nothing at
+// all when the ReplicaSet has no controller, whereas the key used here is
+// namespace/Kind/Name/UID with the namespace itself as the orphan bucket. The
+// real Deployment controller uses no index -- getReplicaSetsForDeployment lists
+// ReplicaSets through a lister and reconciles ControllerRefs itself. So this
+// name is new, and it is declared here because k8s.io/kubernetes is a submodule
+// that is not modified.
+//
+// Only the name is new. The key function is upstream's:
+// controller.PodControllerIndexKey builds namespace/Kind/Name/UID from any
+// OwnerReference and does not depend on the indexed object being a Pod.
+const ReplicaSetControllerIndex = "replicaSetController"
+
 func index_of(indexName string, obj interface{}) ([]string, error) {
 	if indexName == "podController" {
 		pod, ok := obj.(*v1.Pod)
@@ -171,6 +191,12 @@ func index_of(indexName string, obj interface{}) ([]string, error) {
 			return nil, nil
 		}
 		return []string{string(controllerRef.UID)}, nil
+	} else if indexName == ReplicaSetControllerIndex {
+		rs, ok := obj.(*appsv1.ReplicaSet)
+		if !ok {
+			return nil, nil
+		}
+		return []string{controller.PodControllerIndexKey(rs.Namespace, metav1.GetControllerOf(rs))}, nil
 	} else {
 		return nil, fmt.Errorf("index %q does not exist", indexName)
 	}
