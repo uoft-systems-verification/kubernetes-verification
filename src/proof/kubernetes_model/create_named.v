@@ -696,4 +696,92 @@ Proof.
     iRight. iFrame. done.
 Qed.
 
+(* The ReplicaSet counterpart of [wp_State__PodCreate_named_available].
+
+   TODO: provide the Deleting variant too, mirroring
+   [wp_State__PodCreate_named] above. Only Available is here, because the
+   Deployment controller creates under a deterministic name while holding that
+   name's available reservation, which is what rules out the AlreadyExists
+   return. But [Deleting uid] is reachable -- an external actor can delete the
+   object at that name -- and until the Deleting variant exists the Deployment
+   controller's triples have to assume it away rather than handle it.
+
+   Unlike the Pod case this carries [ReplicaSetV.extra_valid] explicitly:
+   [ObjectSpecV.extra_valid] is [True] for every kind except ReplicaSet, where
+   it constrains the label selector. *)
+Lemma wp_State__ReplicaSetCreate_named_available γ l namespace key rs_l rs
+    parent_key parent_uid children :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hvalid" ∷ ⌜ ReplicaSetV.valid_create ReplicaSetV.kind namespace rs ⌝ ∗
+      "%Hname_nonempty" ∷
+        ⌜ rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
+      "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = {|
+        KKey.Kind' := ReplicaSetV.kind;
+        KKey.Name' := rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name');
+        KKey.Namespace' := namespace
+      |} ⌝ ∗
+      "%Hpr" ∷ ⌜ obj_parent_ref_is (KObjectV.ReplicaSet rs)
+          parent_key.(KKey.Kind') parent_key.(KKey.Name') parent_uid ⌝ ∗
+      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+  }}}
+    l @! (go.PointerType apimodel.State) @! "ReplicaSetCreate" #namespace #rs_l
+  {{{ rs_l' rs' uid, RET (#rs_l', #interface.nil);
+      "%Hvalid'" ∷ ⌜ ReplicaSetV.valid rs' ⌝ ∗
+      "%Hcreated" ∷ ⌜ ReplicaSetV.created namespace rs rs' ⌝ ∗
+      "%Hkey_eq'" ∷ ⌜ key = ReplicaSetV.key rs' ⌝ ∗
+      "%Hkey_fresh" ∷ ⌜ key ∉ children ⌝ ∗
+      "%Huid_eq" ∷ ⌜ uid = rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
+      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l' rs' 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 rs'.(ReplicaSetV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1
+        (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid 1
+        (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
+      "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1
+        (children ∪ {[key]}) ∗
+      "Hown_grandchildren_frag" ∷ own_children_frag γ key uid 1 ∅
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
+  wp_method_call. rewrite /apimodel.State__ReplicaSetCreateⁱᵐᵖˡ. wp_call. wp_auto.
+  iAssert (KObjectV.deepown_i
+      (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
+      (KObjectV.ReplicaSet rs) 1)
+    with "[Hdeepown_l]" as "Hdeepown_i".
+  { iExists rs_l.
+    iSplit; [iPureIntro; apply KObjectV.valid_interface_ReplicaSet|]. iFrame. }
+  wp_apply (wp_State__create_named_available
+    γ l ReplicaSetV.kind namespace key
+    (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
+    (KObjectV.ReplicaSet rs) parent_key parent_uid children
+    with "[$Hinit $Hisk $Hdeepown_i
+      $Hown_reserved_frag $Hown_children_frag]").
+  { iPureIntro.
+    split_and!; done. }
+  iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  (* [KObjectV.created] on two ReplicaSets *is* [ReplicaSetV.created]. *)
+  simpl in Hcreated.
+  iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".
+  wp_auto.
+  unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
+  change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
+  cbn [interface.ty interface.v].
+  replace
+    (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
+     then #rs_l' else #null)%V
+    with (#rs_l')%V by (rewrite decide_True; done).
+  replace
+    (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet))
+    with true by (symmetry; apply bool_decide_eq_true_2; done).
+  wp_auto.
+  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
+Qed.
+
 End proof.
