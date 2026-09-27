@@ -152,5 +152,32 @@ Definition Client__Deleteⁱᵐᵖˡ (T : go.type) : val :=
   else
     (λ: "c" "ctx" "name" "opts", Panic "unsupported Kubernetes object type")%V.
 
+(* Trusted Go equivalent for the status subresource used by ReplicaSets:
+
+   func (c *Client[T]) UpdateStatus(ctx context.Context, obj T, opts metav1.UpdateOptions) (T, error) {
+       switch typed := any(obj).(type) {
+       case *appsv1.ReplicaSet:
+           updated, err := apimodel.ModelState.ReplicaSetUpdateStatusTx(c.namespace, typed)
+           return any(updated).(T), err
+       default:
+           panic("unsupported Kubernetes object type for status update")
+       }
+   }
+
+   The write goes to the conflict-retrying ReplicaSetUpdateStatusTx, not to
+   ReplicaSetUpdateStatus: this assumes the controller's status writes never
+   meet a resource-version conflict. The real API server returns a conflict for
+   a stale resource version, but none arises while the controller holds the
+   ReplicaSet's status, and shares of its metadata and spec, since no other
+   writer can then change the object. The proof cannot derive this because the
+   kview fragments do not record resource versions. *)
+Definition Client__UpdateStatusⁱᵐᵖˡ (T : go.type) : val :=
+  (* [clientCreate] is the shared object-forwarding implementation: it does not
+     inspect options or perform a create itself; [method] selects the operation. *)
+  if decide (T = go.PointerType api_apps_v1.ReplicaSet) then
+    clientCreate T (go.PointerType api_apps_v1.ReplicaSet) "ReplicaSetUpdateStatusTx"%go
+  else
+    (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type for status update")%V.
+
 End code.
 End gentype.

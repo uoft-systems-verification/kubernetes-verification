@@ -135,7 +135,7 @@ Proof.
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
   rewrite Hkey_new.
-  iExists (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), (DfracOwn 1),
+  iExists (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), (DfracOwn 1), (DfracOwn 1),
     old_meta, None, None.
   iFrame "Hown_meta_frag".
   iSplit; first done.

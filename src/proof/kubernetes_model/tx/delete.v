@@ -440,7 +440,7 @@ Proof.
   iNamed "Hau_pre".
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
-  iExists uid, (DfracOwn 1), kmeta, None, None.
+  iExists uid, (DfracOwn 1), (DfracOwn 1), kmeta, None, None.
   iFrame "Hown_meta_frag".
   iSplit; first done.
   iSplit; first done.

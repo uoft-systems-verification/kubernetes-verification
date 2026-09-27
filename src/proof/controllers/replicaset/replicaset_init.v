@@ -1,6 +1,7 @@
 From New.proof Require Export fmt.
 From New.proof Require Export prelude.
 From New.proof Require Export sort_init.
+From New.proof Require Export reflect_init time.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.controllers Require Export common.
@@ -10,9 +11,13 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
+From New.proof.k8s_io.apiserver.pkg.util Require Export feature_init.
 From New.proof.k8s_io.client_go Require Export kubernetes_init.
 From New.proof.k8s_io.client_go.listers.apps Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
+From New.proof.k8s_io.kubernetes.pkg Require Export features_init.
+From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Export pod_init.
+From New.proof.k8s_io.utils Require Export clock_init ptr_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.controllers Require Export common_init.
 Require Export New.generatedproof.controllers.replicaset.

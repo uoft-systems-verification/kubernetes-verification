@@ -23,4 +23,5 @@ trusted = [
     "Client.Create",
     "Client.Delete",
     "Client.Get",
+    "Client.UpdateStatus",
 ]
