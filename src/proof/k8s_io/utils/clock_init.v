@@ -1,3 +1,4 @@
+From New.proof Require Export time.
 Require Export New.generatedproof.k8s_io.utils.clock.
 From New.proof Require Import proof_prelude.
 

@@ -3580,6 +3580,213 @@ Proof.
           exists obj'. simpl. rewrite lookup_insert_ne //. }
 Qed.
 
+(* A status write that keeps the stored metadata except its resource version
+   needs only the exclusive status fragment: every metadata fragment, at any
+   fraction, still agrees with the new object. *)
+Lemma update_status_kobj_same_meta a k uid status prev_obj obj:
+  valid_k_uid_obj k uid obj →
+  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
+  no_speculative_parent_reference (KObjectV.objectmeta obj) (proj_used_uid a) →
+  (proj_state a) !! k = Some prev_obj →
+  ObjectMetaV.without_resource_version (KObjectV.objectmeta prev_obj) =
+    ObjectMetaV.without_resource_version (KObjectV.objectmeta obj) →
+  (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
+    (●K a ⋅ ◯K (mk_status_frag k uid 1 status)) ~~>
+    (●K ((<[k := obj]> (proj_state a)), proj_used_uid a) ⋅
+      ◯K (mk_status_frag k uid 1 (KObjectV.status obj))).
+Proof.
+  intros Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hmeta_same Hspec_eq.
+  destruct Hkuid_obj as (Hkey_obj & Huid_obj & Hwf_obj & Hextra_obj).
+  assert ((KObjectV.objectmeta prev_obj).(ObjectMetaV.UID') = uid ∧
+      (KObjectV.objectmeta prev_obj).(ObjectMetaV.DeletionTimestamp') = None)
+    as [Huid_prev Hprev_living].
+  { rewrite Huid_obj. rewrite /ObjectMetaV.without_resource_version in Hmeta_same.
+    revert Hmeta_same Hdeletion_timestamp.
+    destruct (KObjectV.objectmeta prev_obj), (KObjectV.objectmeta obj).
+    simpl. intros Heq Hdel. inversion Heq. subst. done. }
+  apply view_update.
+  intros n bf [Hvalid [Hmeta [Hspec [Hstatus Hreservation]]]].
+  assert (Hstatus_bf_none : proj_status bf !! (k, uid) = None).
+  { destruct (proj_status bf !! (k, uid)) as [[dqf agf]|] eqn:Hbf; [|done].
+    exfalso.
+    assert (Hlookup :
+      (proj_status (mk_status_frag k uid 1 status ⋅ bf)) !! (k, uid) =
+      Some ((DfracOwn 1, to_agree (A := leibnizO ObjectStatusV.t) status) ⋅ (dqf, agf))).
+    { rewrite /proj_status /mk_status_frag /=.
+      rewrite lookup_op lookup_singleton_eq Hbf //. }
+    destruct (Hstatus _ _ Hlookup) as (status0 & _ & _ & Hvdq & _).
+    simpl in Hvdq.
+    pose proof (dfrac_valid_own_l dqf 1 Hvdq) as Hlt.
+    apply (Qp.lt_nge 1 1) in Hlt.
+    apply Hlt. done.
+  }
+  assert (Huid_prev_obj :
+    (KObjectV.objectmeta prev_obj).(ObjectMetaV.UID') =
+    (KObjectV.objectmeta obj).(ObjectMetaV.UID')).
+  { rewrite Huid_prev Huid_obj. done. }
+  split.
+  - eapply map_Forall_lookup_2.
+    intros k' obj' Hlookup_new.
+    destruct (decide (k' = k)) as [->|Hneq_k'].
+    + rewrite lookup_insert in Hlookup_new.
+      destruct (decide (k = k)) as [_|Hneq_k]; [|done].
+      inversion Hlookup_new; subst obj'.
+      pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hak) as Hkobj_prev.
+      destruct Hkobj_prev as (_ & _ & Huid_prev_in & _ & Huniq_prev & _).
+      split_and!. all: try done.
+      * rewrite -Huid_prev_obj. done.
+      * eapply map_Forall_lookup_2.
+        intros k'' obj'' Hlookup_new2 Huid_eq.
+        destruct (decide (k'' = k)) as [->|Hneq_k''].
+        { done. }
+        simpl in Hlookup_new2.
+        apply lookup_insert_Some in Hlookup_new2.
+        destruct Hlookup_new2 as [[Hk_eq _]|[Hk_neq Hlookup_old2]].
+        { congruence. }
+        eapply Huniq_prev; eauto.
+        rewrite Huid_prev_obj. done.
+    + simpl in Hlookup_new.
+      apply lookup_insert_Some in Hlookup_new.
+      destruct Hlookup_new as [[Hk_eq _]|[Hk_neq Hlookup_old]].
+      { congruence. }
+      pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup_old) as Hkobj_old.
+      destruct Hkobj_old as
+        (Hkey_old & Hwf_old & Huid_old_in & Hno_spec_old & Huniq_old & Hextra_old).
+      split_and!. all: try done.
+      eapply map_Forall_lookup_2.
+      intros k'' obj'' Hlookup_new2 Huid_eq.
+      destruct (decide (k'' = k)) as [->|Hneq_k''].
+      { rewrite lookup_insert in Hlookup_new2.
+        destruct (decide (k = k)) as [_|Hcontra]; [|done].
+        inversion Hlookup_new2; subst obj''.
+        eapply Huniq_old; [done|congruence].
+      }
+      simpl in Hlookup_new2.
+      apply lookup_insert_Some in Hlookup_new2.
+      destruct Hlookup_new2 as [[Hk_eq2 _]|[Hk_neq2 Hlookup_old2]].
+      { congruence. }
+      eapply Huniq_old; done.
+  - split_and!.
+    + intros [k' uid'] [dq' agree_meta'] Hlookup_new.
+      assert (Hlookup_old :
+        (proj_meta (mk_status_frag k uid 1 status ⋅ bf)) !! (k', uid') =
+        Some (dq', agree_meta')).
+      { rewrite /proj_meta /mk_status_frag /= in Hlookup_new |- *. done. }
+      destruct (Hmeta _ _ Hlookup_old) as (meta' & Hagree' & Hvdq' & Hobj').
+      destruct Hobj' as (obj' & Hlookup_obj' & Huid_obj' & Hliving_obj' & Hmeta_obj').
+      exists meta'. split_and!. all: try done.
+      destruct (decide (k' = k)) as [->|Hneq_k].
+      * rewrite Hak in Hlookup_obj'. inversion Hlookup_obj'. subst obj'.
+        exists obj. split_and!.
+        -- rewrite lookup_insert_eq. done.
+        -- rewrite -Huid_prev_obj. done.
+        -- exact Hdeletion_timestamp.
+        -- rewrite -Hmeta_same. done.
+      * exists obj'. split_and!. all: try done.
+        rewrite lookup_insert_ne; done.
+    + intros [k' uid'] [dq' agree_spec'] Hlookup_new.
+      assert (Hlookup_old :
+        (proj_spec (mk_status_frag k uid 1 status ⋅ bf)) !! (k', uid') =
+        Some (dq', agree_spec')).
+      { rewrite /proj_spec /mk_status_frag /= in Hlookup_new |- *. done. }
+      destruct (Hspec _ _ Hlookup_old) as (spec' & Hagree' & Huid' & Hvdq' & Hspec').
+      exists spec'. split_and!. all: try done.
+      intros obj0 Hlookup_obj0 Huid_obj0 Hliving_obj0.
+      destruct (decide (k' = k)) as [->|Hneq_k'].
+      * rewrite lookup_insert in Hlookup_obj0.
+        destruct (decide (k = k)) as [_|Hneq_k]; [|done].
+        inversion Hlookup_obj0. subst obj0.
+        rewrite <- Hspec_eq.
+        eapply Hspec'; [exact Hak| |exact Hprev_living].
+        rewrite Huid_prev_obj. done.
+      * simpl in Hlookup_obj0.
+        apply lookup_insert_Some in Hlookup_obj0.
+        destruct Hlookup_obj0 as [[Hk_eq _]|[Hk_neq Hlookup_old_obj0]].
+        { congruence. }
+        eapply Hspec'; done.
+    + intros [k' uid'] [dq' agree_status'] Hlookup_new.
+      destruct (decide ((k', uid') = (k, uid))) as [Heq_pair|Hneq_pair].
+      * inversion Heq_pair. subst k' uid'.
+        assert (Hlookup_k :
+          (proj_status (mk_status_frag k uid 1 (KObjectV.status obj) ⋅ bf)) !! (k, uid) =
+          Some (DfracOwn 1, to_agree (A := leibnizO ObjectStatusV.t) (KObjectV.status obj))).
+        { rewrite /proj_status /mk_status_frag /=.
+          rewrite lookup_op lookup_singleton_eq Hstatus_bf_none right_id //. }
+        rewrite Hlookup_k in Hlookup_new. inversion Hlookup_new. subst dq' agree_status'.
+        pose proof (map_Forall_lookup_1 _ _ _ _ Hvalid Hak) as Hkobj_prev.
+        destruct Hkobj_prev as (_ & _ & Huid_prev_in & _).
+        exists (KObjectV.status obj). split_and!. all: try done.
+        { rewrite -Huid_prev. done. }
+        intros obj0 Hlookup_obj0 Huid_obj0 Hliving_obj0.
+        rewrite lookup_insert in Hlookup_obj0.
+        destruct (decide (k = k)) as [_|Hneq_k]; [|done].
+        inversion Hlookup_obj0. subst obj0. done.
+      * assert (Hlookup_old :
+          (proj_status (mk_status_frag k uid 1 status ⋅ bf)) !! (k', uid') =
+          Some (dq', agree_status')).
+        { rewrite /proj_status /mk_status_frag /= in Hlookup_new |- *.
+          assert (Hne : (k, uid) ≠ (k', uid')) by (intros Heq; apply Hneq_pair; done).
+          rewrite lookup_op in Hlookup_new. rewrite lookup_op.
+          rewrite lookup_singleton_ne // in Hlookup_new.
+          rewrite lookup_singleton_ne //. }
+        destruct (Hstatus _ _ Hlookup_old) as
+          (status' & Hagree' & Huid' & Hvdq' & Hstatus').
+        exists status'. split_and!. all: try done.
+        intros obj0 Hlookup_obj0 Huid_obj0 Hliving_obj0.
+        destruct (decide (k' = k)) as [->|Hneq_k'].
+        { rewrite lookup_insert in Hlookup_obj0.
+          destruct (decide (k = k)) as [_|Hneq_k]; [|done].
+          inversion Hlookup_obj0. subst obj0.
+          exfalso.
+          apply Hneq_pair. congruence.
+        }
+        simpl in Hlookup_obj0.
+        apply lookup_insert_Some in Hlookup_obj0.
+        destruct Hlookup_obj0 as [[Hk_eq _]|[Hk_neq Hlookup_old_obj0]].
+        { congruence. }
+        eapply Hstatus'; done.
+    + intros k' classification Hlookup_new.
+      assert (Hlookup_old :
+        proj_key_classification (mk_status_frag k uid 1 status ⋅ bf) !! k' =
+          Some classification).
+      { move: Hlookup_new.
+        rewrite /proj_key_classification /mk_status_frag /= !left_id.
+        done. }
+      destruct (Hreservation _ _ Hlookup_old) as
+        [Hclassification_valid Hcompatible].
+      split; [exact Hclassification_valid|].
+      destruct classification as [agree|reservation_info|]; [exact Hcompatible| |done].
+      destruct reservation_info as [reservation_dq agree_status].
+      destruct Hcompatible as
+        (reservation & Hagree_reservation & Hvalid_reservation_dq & Hreserved & Hreservation_state).
+      exists reservation. split_and!; try done.
+      destruct reservation as [|reserved_uid|reserved_uid].
+      * assert (Hneq : k' ≠ k).
+        { intros ->. rewrite Hak in Hreservation_state. done. }
+        simpl. rewrite lookup_insert_ne //.
+      * destruct Hreservation_state as
+          (obj' & Hobj'_lookup & Hobj'_uid & Hobj'_living).
+        destruct (decide (k' = k)) as [->|Hneq].
+        { rewrite Hak in Hobj'_lookup. injection Hobj'_lookup as <-.
+          exists obj. split_and!;
+            [rewrite lookup_insert_eq; done
+            |congruence
+            |exact Hdeletion_timestamp]. }
+        { exists obj'. split_and!; try done.
+          rewrite lookup_insert_ne //. }
+      * assert (Hneq : k' ≠ k).
+        { intros ->.
+          destruct Hreservation_state as
+            [Habsent|(obj' & Hobj'_lookup & Hobj'_uid & Hobj'_terminating)].
+          - rewrite Hak in Habsent. done.
+          - rewrite Hak in Hobj'_lookup. injection Hobj'_lookup as <-.
+            exact (Hobj'_terminating Hprev_living). }
+        destruct Hreservation_state as [Habsent|Hpresent].
+        { left. rewrite lookup_insert_ne //. }
+        { right. destruct Hpresent as [obj' Hobj'].
+          exists obj'. simpl. rewrite lookup_insert_ne //. }
+Qed.
+
 Class kviewG Σ :=
   { #[global] kview_inG :: inG Σ (viewR view_rel); }.
 
@@ -4473,6 +4680,59 @@ Proof.
   iDestruct (own_op with "H") as "[H Hstatus]".
   iDestruct (own_op with "H") as "[Hauth Hmeta]".
   iFrame.
+Qed.
+
+Lemma update_status_kobj_same_meta_vs {γ state used_uid k uid status} prev_obj obj:
+  valid_k_uid_obj k uid obj →
+  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
+  no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
+  state !! k = Some prev_obj →
+  ObjectMetaV.without_resource_version (KObjectV.objectmeta prev_obj) =
+    ObjectMetaV.without_resource_version (KObjectV.objectmeta obj) →
+  (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
+  own_auth γ state used_uid -∗
+  own_status_frag γ k uid 1 status ==∗
+    own_auth γ (<[k := obj]> state) used_uid ∗
+    own_status_frag γ k uid 1 (KObjectV.status obj).
+Proof.
+  iIntros (Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hmeta_same Hspec_eq)
+    "Hauth Hstatus".
+  iMod (own_update_2 with "Hauth Hstatus") as "H".
+  { eapply update_status_kobj_same_meta; done. }
+  iModIntro.
+  iDestruct (own_op with "H") as "[Hauth Hstatus]".
+  iFrame.
+Qed.
+
+(* Status write with the metadata fragment at fraction [dq]: exclusive metadata
+   may change, while a shared fragment requires unchanged metadata. *)
+Lemma update_status_kobj_frac_vs {γ state used_uid k uid dq meta status} prev_obj obj:
+  valid_k_uid_obj k uid obj →
+  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
+  no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
+  state !! k = Some prev_obj →
+  (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
+  (dq = DfracOwn 1 ∨ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta) →
+  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta prev_obj) meta →
+  own_auth γ state used_uid -∗
+  own_meta_frag γ k uid dq meta -∗
+  own_status_frag γ k uid 1 status ==∗
+    own_auth γ (<[k := obj]> state) used_uid ∗
+    own_meta_frag γ k uid dq (KObjectV.objectmeta obj) ∗
+    own_status_frag γ k uid 1 (KObjectV.status obj).
+Proof.
+  iIntros (Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hspec_eq Hfrac Hmeta_prev)
+    "Hauth Hmeta Hstatus".
+  destruct Hfrac as [-> | Hmeta_obj].
+  - iApply (update_status_kobj_vs with "Hauth Hmeta Hstatus"); done.
+  - iMod (update_status_kobj_same_meta_vs prev_obj obj with "Hauth Hstatus")
+      as "[Hauth Hstatus]"; try done.
+    { rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_prev Hmeta_obj.
+      congruence. }
+    iModIntro. iFrame.
+    rewrite /own_meta_frag /mk_meta_frag.
+    rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_obj.
+    rewrite Hmeta_obj. iFrame.
 Qed.
 
 End kview.

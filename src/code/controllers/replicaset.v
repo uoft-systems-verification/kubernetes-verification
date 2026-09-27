@@ -9,13 +9,24 @@ Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.types.
+Require Export New.code.k8s_io.apiserver.pkg.util.feature.
 Require Export New.code.k8s_io.client_go.kubernetes.
 Require Export New.code.k8s_io.client_go.listers.apps.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
+Require Export New.code.k8s_io.kubernetes.pkg.features.
+Require Export New.code.k8s_io.utils.clock.
+Require Export New.code.fmt.
+Require Export New.code.reflect.
+Require Export New.code.time.
+Require Export New.code.k8s_io.apimachinery.pkg.labels.
+Require Export New.code.k8s_io.client_go.kubernetes.typed.apps.v1.
+Require Export New.code.k8s_io.kubernetes.pkg.api.v1.pod.
+Require Export New.code.k8s_io.utils.ptr.
 Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
 Module apis_meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 Module listers_apps_v1 := code.k8s_io.client_go.listers.apps.v1.v1.
+Module typed_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 From New.golang Require Import defn.
 Module pkg_id.
 Definition replicaset : go_string := "controllers/replicaset".
@@ -24,7 +35,15 @@ End pkg_id.
 Export pkg_id.
 Module replicaset.
 
+Definition ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "controllers/replicaset.ReplicaSetControllerFeatures"%go [].
+
+#[global] Opaque ReplicaSetControllerFeatures.
+
 Definition BurstReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #500.
+
+Definition statusUpdateRetries {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #1.
+
+Definition DefaultReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.DefaultReplicaSetControllerFeatures"%go.
 
 Definition getReplicaSetsWithSameController {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.getReplicaSetsWithSameController"%go.
 
@@ -40,10 +59,32 @@ Definition slowStartBatch {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_st
 
 Definition syncReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.syncReplicaSet"%go.
 
+Definition updateReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.updateReplicaSetStatus"%go.
+
+Definition calculateStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.calculateStatus"%go.
+
+Definition NewReplicaSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.NewReplicaSetCondition"%go.
+
+Definition GetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.GetCondition"%go.
+
+Definition SetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.SetCondition"%go.
+
+Definition RemoveCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.RemoveCondition"%go.
+
+Definition filterOutCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.filterOutCondition"%go.
+
+Definition derefInt32ToStr {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.derefInt32ToStr"%go.
+
+(* go: replica_set.go:41:6 *)
+Definition DefaultReplicaSetControllerFeaturesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: <>,
+    exception_do (return: (let: "$v0" := #true in
+     CompositeLiteral ReplicaSetControllerFeatures (LiteralValue [KeyedElement (Some (KeyField "EnableStatusTerminatingReplicas"%go)) (ElementExpression go.bool "$v0")]))).
+
 (* getReplicaSetsWithSameController returns a list of ReplicaSets with the same
    owner as the given ReplicaSet.
 
-   go: replica_set.go:33:6 *)
+   go: replica_set.go:47:6 *)
 Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -86,7 +127,7 @@ Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
 (* getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
    with the same controller owner as rs.
 
-   go: replica_set.go:52:6 *)
+   go: replica_set.go:66:6 *)
 Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -147,7 +188,7 @@ Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
         do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")))));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "relatedPods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:77:6 *)
+(* go: replica_set.go:91:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (GoAlloc go.int "diff") in
@@ -170,7 +211,7 @@ Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getPodsRankedByRelatedPodsOnSameNode ranks each pod by the number of active
    related pods colocated on its node.
 
-   go: replica_set.go:89:6 *)
+   go: replica_set.go:103:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "relatedPods") in
@@ -204,7 +245,7 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {g
      let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
      CompositeLiteral controller.ActivePodsWithRanks (LiteralValue [KeyedElement (Some (KeyField "Pods"%go)) (ElementExpression (go.SliceType (go.PointerType api_core_v1.Pod)) "$v0"); KeyedElement (Some (KeyField "Rank"%go)) (ElementExpression (go.SliceType go.int) "$v1"); KeyedElement (Some (KeyField "Now"%go)) (ElementExpression apis_meta_v1.Time "$v2")]))).
 
-(* go: replica_set.go:104:6 *)
+(* go: replica_set.go:118:6 *)
 Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "burstReplicas" "activePods" "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -364,7 +405,7 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
    It returns the number of successful calls to the function.
 
-   go: replica_set.go:193:6 *)
+   go: replica_set.go:207:6 *)
 Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "count" "initialBatchSize" "fn",
     exception_do (let: "fn" := (GoAlloc (go.FunctionType (go.Signature [] false [go.error])) "fn") in
@@ -427,11 +468,13 @@ Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       do:  ("remaining" <-[go.int] ((![go.int] "remaining") -⟨go.int⟩ (![go.int] "batchSize")))));;;
     return: (![go.int] "successes", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:219:6 *)
+(* go: replica_set.go:233:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "ctx" "kubeClient" "rsLister" "burstReplicas" "namespace" "name",
+  λ: "ctx" "kubeClient" "rsLister" "burstReplicas" "rscClock" "controllerFeatures" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "controllerFeatures" := (GoAlloc ReplicaSetControllerFeatures "controllerFeatures") in
+    let: "rscClock" := (GoAlloc clock.PassiveClock "rscClock") in
     let: "burstReplicas" := (GoAlloc go.int "burstReplicas") in
     let: "rsLister" := (GoAlloc listers_apps_v1.ReplicaSetLister "rsLister") in
     let: "kubeClient" := (GoAlloc (go.PointerType kubernetes.Clientset) "kubeClient") in
@@ -463,34 +506,356 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #());;;
-    let: "allActivePods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
+    let: "activePods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
     let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allRSPods") in
     (FuncResolve common.FilterActivePods [] #()) "$a0") in
-    do:  ("allActivePods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
+    do:  ("activePods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
+    let: "terminatingPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
+    (if: (let: "$a0" := features.DeploymentReplicaSetTerminatingReplicas in
+    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
+    then
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allRSPods") in
+      (FuncResolve controller.FilterTerminatingPods [] #()) "$a0") in
+      do:  ("terminatingPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")
+    else do:  #());;;
     let: "manageReplicasErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
     (if: Convert go.untyped_bool go.bool ((![go.PointerType apis_meta_v1.Time] (StructFieldRef apis_meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.PointerType apis_meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Time) UntypedNil))
     then
       let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
       let: "$a1" := (![go.PointerType kubernetes.Clientset] "kubeClient") in
       let: "$a2" := (![go.int] "burstReplicas") in
-      let: "$a3" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allActivePods") in
+      let: "$a3" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
       let: "$a4" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
       (FuncResolve manageReplicas [] #()) "$a0" "$a1" "$a2" "$a3" "$a4") in
       do:  ("manageReplicasErr" <-[go.error] "$r0")
     else do:  #());;;
+    let: "$r0" := ((MethodResolve (go.PointerType api_apps_v1.ReplicaSet) "DeepCopy"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")) #()) in
+    do:  ("rs" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    let: "now" := (GoAlloc time.Time (GoZeroVal time.Time #())) in
+    let: "$r0" := ((MethodResolve clock.PassiveClock "Now"%go (![clock.PassiveClock] "rscClock")) #()) in
+    do:  ("now" <-[time.Time] "$r0");;;
+    let: "newStatus" := (GoAlloc api_apps_v1.ReplicaSetStatus (GoZeroVal api_apps_v1.ReplicaSetStatus #())) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
+    let: "$a1" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
+    let: "$a2" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "terminatingPods") in
+    let: "$a3" := (![go.error] "manageReplicasErr") in
+    let: "$a4" := (![ReplicaSetControllerFeatures] "controllerFeatures") in
+    let: "$a5" := (![time.Time] "now") in
+    (FuncResolve calculateStatus [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    do:  ("newStatus" <-[api_apps_v1.ReplicaSetStatus] "$r0");;;
+    let: ("$ret0", "$ret1") := (let: "$a0" := (let: "$a0" := (![go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Namespace"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) in
+    (MethodResolve typed_apps_v1.AppsV1Interface "ReplicaSets"%go ((MethodResolve (go.PointerType kubernetes.Clientset) "AppsV1"%go (![go.PointerType kubernetes.Clientset] "kubeClient")) #())) "$a0") in
+    let: "$a1" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
+    let: "$a2" := (![api_apps_v1.ReplicaSetStatus] "newStatus") in
+    (FuncResolve updateReplicaSetStatus [] #()) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  "$r0";;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (![go.error] "err")
+    else do:  #());;;
     return: (![go.error] "manageReplicasErr")).
+
+(* updateReplicaSetStatus attempts to update the Status.Replicas of the given ReplicaSet, with a single GET/PUT retry.
+   Logging never affects the verified behavior, so the logger parameter and the
+   log statement below are commented out. The controllerFeatures parameter is
+   removed as well: upstream reads it only to build the terminating-replicas part
+   of that log message, so without logging it is unused.
+   func updateReplicaSetStatus(logger klog.Logger, c appsclient.ReplicaSetInterface, rs *apps.ReplicaSet, newStatus apps.ReplicaSetStatus, controllerFeatures ReplicaSetControllerFeatures) ( *apps.ReplicaSet, error) {
+
+   go: replica_set_utils.go:46:6 *)
+Definition updateReplicaSetStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "c" "rs" "newStatus",
+    exception_do (let: "newStatus" := (GoAlloc api_apps_v1.ReplicaSetStatus "newStatus") in
+    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "c" := (GoAlloc typed_apps_v1.ReplicaSetInterface "c") in
+    (if: (((((((![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "Replicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.int32⟩ (![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "Replicas"%go "newStatus"))) && ((![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "FullyLabeledReplicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.int32⟩ (![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "FullyLabeledReplicas"%go "newStatus")))) && ((![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "ReadyReplicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.int32⟩ (![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "ReadyReplicas"%go "newStatus")))) && ((![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "AvailableReplicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.int32⟩ (![go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "AvailableReplicas"%go "newStatus")))) && (let: "$a0" := (![go.PointerType go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "TerminatingReplicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) in
+    let: "$a1" := (![go.PointerType go.int32] (StructFieldRef api_apps_v1.ReplicaSetStatus "TerminatingReplicas"%go "newStatus")) in
+    (FuncResolve ptr.Equal [go.int32] #()) "$a0" "$a1")) && ((![go.int64] (StructFieldRef apis_meta_v1.ObjectMeta "Generation"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) =⟨go.int64⟩ (![go.int64] (StructFieldRef api_apps_v1.ReplicaSetStatus "ObservedGeneration"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))))) && (let: "$a0" := (Convert (go.SliceType api_apps_v1.ReplicaSetCondition) go.any (![go.SliceType api_apps_v1.ReplicaSetCondition] (StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))))) in
+    let: "$a1" := (Convert (go.SliceType api_apps_v1.ReplicaSetCondition) go.any (![go.SliceType api_apps_v1.ReplicaSetCondition] (StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go "newStatus"))) in
+    (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")
+    then return: (![go.PointerType api_apps_v1.ReplicaSet] "rs", Convert go.untyped_nil go.error UntypedNil)
+    else do:  #());;;
+    let: "$r0" := (![go.int64] (StructFieldRef apis_meta_v1.ObjectMeta "Generation"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "ObservedGeneration"%go "newStatus") <-[go.int64] "$r0");;;
+    let: "updateErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "getErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
+    let: "updateOptions" := (GoAlloc apis_meta_v1.UpdateOptions (GoZeroVal apis_meta_v1.UpdateOptions #())) in
+    let: "getOptions" := (GoAlloc apis_meta_v1.GetOptions (GoZeroVal apis_meta_v1.GetOptions #())) in
+    (let: "current" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
+    let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := #(W64 0) in
+    let: "$r1" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
+    do:  ("i" <-[go.int] "$r0");;;
+    do:  ("current" <-[go.PointerType api_apps_v1.ReplicaSet] "$r1");;;
+    (for: (λ: <>, #true); (λ: <>, do:  ("i" <-[go.int] ((![go.int] "i") +⟨go.int⟩ #(W64 1)))) := λ: <>,
+      let: "$r0" := (![api_apps_v1.ReplicaSetStatus] "newStatus") in
+      do:  ((StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "current")) <-[api_apps_v1.ReplicaSetStatus] "$r0");;;
+      let: ("$ret0", "$ret1") := (let: "$a0" := ((FuncResolve context.TODO [] #()) #()) in
+      let: "$a1" := (![go.PointerType api_apps_v1.ReplicaSet] "current") in
+      let: "$a2" := (![apis_meta_v1.UpdateOptions] "updateOptions") in
+      (MethodResolve typed_apps_v1.ReplicaSetInterface "UpdateStatus"%go (![typed_apps_v1.ReplicaSetInterface] "c")) "$a0" "$a1" "$a2") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+      do:  ("updateErr" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "updateErr") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)
+      else do:  #());;;
+      (if: Convert go.untyped_bool go.bool ((![go.int] "i") ≥⟨go.int⟩ (Convert go.untyped_int go.int statusUpdateRetries))
+      then break: #()
+      else do:  #());;;
+      (let: ("$ret0", "$ret1") := (let: "$a0" := ((FuncResolve context.TODO [] #()) #()) in
+      let: "$a1" := (![go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Name"%go (StructFieldRef api_apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType api_apps_v1.ReplicaSet] "current")))) in
+      let: "$a2" := (![apis_meta_v1.GetOptions] "getOptions") in
+      (MethodResolve typed_apps_v1.ReplicaSetInterface "Get"%go (![typed_apps_v1.ReplicaSetInterface] "c")) "$a0" "$a1" "$a2") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("current" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+      do:  ("getErr" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "getErr") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "getErr")
+      else do:  #()))));;;
+    return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "updateErr")).
+
+(* go: replica_set_utils.go:107:6 *)
+Definition calculateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "rs" "activePods" "terminatingPods" "manageReplicasErr" "controllerFeatures" "now",
+    exception_do (let: "now" := (GoAlloc time.Time "now") in
+    let: "controllerFeatures" := (GoAlloc ReplicaSetControllerFeatures "controllerFeatures") in
+    let: "manageReplicasErr" := (GoAlloc go.error "manageReplicasErr") in
+    let: "terminatingPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "terminatingPods") in
+    let: "activePods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "activePods") in
+    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "newStatus" := (GoAlloc api_apps_v1.ReplicaSetStatus (GoZeroVal api_apps_v1.ReplicaSetStatus #())) in
+    let: "$r0" := (![api_apps_v1.ReplicaSetStatus] (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))) in
+    do:  ("newStatus" <-[api_apps_v1.ReplicaSetStatus] "$r0");;;
+    let: "fullyLabeledReplicasCount" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := #(W64 0) in
+    do:  ("fullyLabeledReplicasCount" <-[go.int] "$r0");;;
+    let: "readyReplicasCount" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := #(W64 0) in
+    do:  ("readyReplicasCount" <-[go.int] "$r0");;;
+    let: "availableReplicasCount" := (GoAlloc go.int (GoZeroVal go.int #())) in
+    let: "$r0" := #(W64 0) in
+    do:  ("availableReplicasCount" <-[go.int] "$r0");;;
+    let: "templateLabel" := (GoAlloc labels.Selector (GoZeroVal labels.Selector #())) in
+    let: "$r0" := ((MethodResolve labels.Set' "AsSelectorPreValidated"%go (![go.MapType go.string go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Labels"%go (StructFieldRef api_core_v1.PodTemplateSpec "ObjectMeta"%go (StructFieldRef api_apps_v1.ReplicaSetSpec "Template"%go (StructFieldRef api_apps_v1.ReplicaSet "Spec"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))))))) #()) in
+    do:  ("templateLabel" <-[labels.Selector] "$r0");;;
+    let: "$range" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
+    (let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
+    slice.for_range (go.PointerType api_core_v1.Pod) "$range" (λ: "$key" "$value",
+      do:  ("pod" <-[go.PointerType api_core_v1.Pod] "$value");;;
+      do:  "$key";;;
+      (if: let: "$a0" := (Convert labels.Set' labels.Labels (![go.MapType go.string go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Labels"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "pod"))))) in
+      (MethodResolve labels.Selector "Matches"%go (![labels.Selector] "templateLabel")) "$a0"
+      then do:  ("fullyLabeledReplicasCount" <-[go.int] ((![go.int] "fullyLabeledReplicasCount") +⟨go.int⟩ #(W64 1)))
+      else do:  #());;;
+      (if: let: "$a0" := (![go.PointerType api_core_v1.Pod] "pod") in
+      (FuncResolve pod.IsPodReady [] #()) "$a0"
+      then
+        do:  ("readyReplicasCount" <-[go.int] ((![go.int] "readyReplicasCount") +⟨go.int⟩ #(W64 1)));;;
+        (if: let: "$a0" := (![go.PointerType api_core_v1.Pod] "pod") in
+        let: "$a1" := (![go.int32] (StructFieldRef api_apps_v1.ReplicaSetSpec "MinReadySeconds"%go (StructFieldRef api_apps_v1.ReplicaSet "Spec"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs")))) in
+        let: "$a2" := (let: "$v0" := (![time.Time] "now") in
+        CompositeLiteral apis_meta_v1.Time (LiteralValue [KeyedElement (Some (KeyField "Time"%go)) (ElementExpression time.Time "$v0")])) in
+        (FuncResolve pod.IsPodAvailable [] #()) "$a0" "$a1" "$a2"
+        then do:  ("availableReplicasCount" <-[go.int] ((![go.int] "availableReplicasCount") +⟨go.int⟩ #(W64 1)))
+        else do:  #())
+      else do:  #())));;;
+    let: "terminatingReplicasCount" := (GoAlloc (go.PointerType go.int32) (GoZeroVal (go.PointerType go.int32) #())) in
+    (if: (let: "$a0" := features.DeploymentReplicaSetTerminatingReplicas in
+    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
+    then
+      let: "$r0" := (let: "$a0" := (Convert go.int go.int32 (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "terminatingPods") in
+      (FuncResolve go.len [go.SliceType (go.PointerType api_core_v1.Pod)] #()) "$a0")) in
+      (FuncResolve ptr.To [go.int32] #()) "$a0") in
+      do:  ("terminatingReplicasCount" <-[go.PointerType go.int32] "$r0")
+    else do:  #());;;
+    let: "failureCond" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSetCondition) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSetCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![api_apps_v1.ReplicaSetStatus] (StructFieldRef api_apps_v1.ReplicaSet "Status"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))) in
+    let: "$a1" := api_apps_v1.ReplicaSetReplicaFailure in
+    (FuncResolve GetCondition [] #()) "$a0" "$a1") in
+    do:  ("failureCond" <-[go.PointerType api_apps_v1.ReplicaSetCondition] "$r0");;;
+    (if: Convert go.untyped_bool go.bool (((![go.error] "manageReplicasErr") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && ((![go.PointerType api_apps_v1.ReplicaSetCondition] "failureCond") =⟨go.PointerType api_apps_v1.ReplicaSetCondition⟩ (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSetCondition) UntypedNil)))
+    then
+      let: "reason" := (GoAlloc go.string (GoZeroVal go.string #())) in
+      (let: "diff" := (GoAlloc go.int (GoZeroVal go.int #())) in
+      let: "$r0" := ((let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
+      (FuncResolve go.len [go.SliceType (go.PointerType api_core_v1.Pod)] #()) "$a0") -⟨go.int⟩ (Convert go.int32 go.int (![go.int32] (![go.PointerType go.int32] (StructFieldRef api_apps_v1.ReplicaSetSpec "Replicas"%go (StructFieldRef api_apps_v1.ReplicaSet "Spec"%go (![go.PointerType api_apps_v1.ReplicaSet] "rs"))))))) in
+      do:  ("diff" <-[go.int] "$r0");;;
+      (if: Convert go.untyped_bool go.bool ((![go.int] "diff") <⟨go.int⟩ #(W64 0))
+      then
+        let: "$r0" := #"FailedCreate"%go in
+        do:  ("reason" <-[go.string] "$r0")
+      else
+        (if: Convert go.untyped_bool go.bool ((![go.int] "diff") >⟨go.int⟩ #(W64 0))
+        then
+          let: "$r0" := #"FailedDelete"%go in
+          do:  ("reason" <-[go.string] "$r0")
+        else do:  #())));;;
+      let: "cond" := (GoAlloc api_apps_v1.ReplicaSetCondition (GoZeroVal api_apps_v1.ReplicaSetCondition #())) in
+      let: "$r0" := (let: "$a0" := api_apps_v1.ReplicaSetReplicaFailure in
+      let: "$a1" := api_core_v1.ConditionTrue in
+      let: "$a2" := (![go.string] "reason") in
+      let: "$a3" := ((MethodResolve go.error "Error"%go (![go.error] "manageReplicasErr")) #()) in
+      (FuncResolve NewReplicaSetCondition [] #()) "$a0" "$a1" "$a2" "$a3") in
+      do:  ("cond" <-[api_apps_v1.ReplicaSetCondition] "$r0");;;
+      do:  (let: "$a0" := "newStatus" in
+      let: "$a1" := (![api_apps_v1.ReplicaSetCondition] "cond") in
+      (FuncResolve SetCondition [] #()) "$a0" "$a1")
+    else
+      (if: Convert go.untyped_bool go.bool (((![go.error] "manageReplicasErr") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && ((![go.PointerType api_apps_v1.ReplicaSetCondition] "failureCond") ≠⟨go.PointerType api_apps_v1.ReplicaSetCondition⟩ (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSetCondition) UntypedNil)))
+      then
+        do:  (let: "$a0" := "newStatus" in
+        let: "$a1" := api_apps_v1.ReplicaSetReplicaFailure in
+        (FuncResolve RemoveCondition [] #()) "$a0" "$a1")
+      else do:  #()));;;
+    let: "$r0" := (Convert go.int go.int32 (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
+    (FuncResolve go.len [go.SliceType (go.PointerType api_core_v1.Pod)] #()) "$a0")) in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "Replicas"%go "newStatus") <-[go.int32] "$r0");;;
+    let: "$r0" := (Convert go.int go.int32 (![go.int] "fullyLabeledReplicasCount")) in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "FullyLabeledReplicas"%go "newStatus") <-[go.int32] "$r0");;;
+    let: "$r0" := (Convert go.int go.int32 (![go.int] "readyReplicasCount")) in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "ReadyReplicas"%go "newStatus") <-[go.int32] "$r0");;;
+    let: "$r0" := (Convert go.int go.int32 (![go.int] "availableReplicasCount")) in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "AvailableReplicas"%go "newStatus") <-[go.int32] "$r0");;;
+    let: "$r0" := (![go.PointerType go.int32] "terminatingReplicasCount") in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "TerminatingReplicas"%go "newStatus") <-[go.PointerType go.int32] "$r0");;;
+    return: (![api_apps_v1.ReplicaSetStatus] "newStatus")).
+
+(* NewReplicaSetCondition creates a new replicaset condition.
+
+   go: replica_set_utils.go:158:6 *)
+Definition NewReplicaSetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "condType" "status" "reason" "msg",
+    exception_do (let: "msg" := (GoAlloc go.string "msg") in
+    let: "reason" := (GoAlloc go.string "reason") in
+    let: "status" := (GoAlloc api_core_v1.ConditionStatus "status") in
+    let: "condType" := (GoAlloc api_apps_v1.ReplicaSetConditionType "condType") in
+    return: (let: "$v0" := (![api_apps_v1.ReplicaSetConditionType] "condType") in
+     let: "$v1" := (![api_core_v1.ConditionStatus] "status") in
+     let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
+     let: "$v3" := (![go.string] "reason") in
+     let: "$v4" := (![go.string] "msg") in
+     CompositeLiteral api_apps_v1.ReplicaSetCondition (LiteralValue [KeyedElement (Some (KeyField "Type"%go)) (ElementExpression api_apps_v1.ReplicaSetConditionType "$v0"); KeyedElement (Some (KeyField "Status"%go)) (ElementExpression api_core_v1.ConditionStatus "$v1"); KeyedElement (Some (KeyField "LastTransitionTime"%go)) (ElementExpression apis_meta_v1.Time "$v2"); KeyedElement (Some (KeyField "Reason"%go)) (ElementExpression go.string "$v3"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v4")]))).
+
+(* GetCondition returns a replicaset condition with the provided type if it exists.
+
+   go: replica_set_utils.go:169:6 *)
+Definition GetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "status" "condType",
+    exception_do (let: "condType" := (GoAlloc api_apps_v1.ReplicaSetConditionType "condType") in
+    let: "status" := (GoAlloc api_apps_v1.ReplicaSetStatus "status") in
+    let: "$range" := (![go.SliceType api_apps_v1.ReplicaSetCondition] (StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go "status")) in
+    (let: "c" := (GoAlloc api_apps_v1.ReplicaSetCondition (GoZeroVal api_apps_v1.ReplicaSetCondition #())) in
+    slice.for_range api_apps_v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
+      do:  ("c" <-[api_apps_v1.ReplicaSetCondition] "$value");;;
+      do:  "$key";;;
+      (if: Convert go.untyped_bool go.bool ((![api_apps_v1.ReplicaSetConditionType] (StructFieldRef api_apps_v1.ReplicaSetCondition "Type"%go "c")) =⟨api_apps_v1.ReplicaSetConditionType⟩ (![api_apps_v1.ReplicaSetConditionType] "condType"))
+      then return: ("c")
+      else do:  #())));;;
+    return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSetCondition) UntypedNil)).
+
+(* SetCondition adds/replaces the given condition in the replicaset status. If the condition that we
+   are about to add already exists and has the same status and reason then we are not going to update.
+
+   go: replica_set_utils.go:180:6 *)
+Definition SetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "status" "condition",
+    exception_do (let: "condition" := (GoAlloc api_apps_v1.ReplicaSetCondition "condition") in
+    let: "status" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSetStatus) "status") in
+    let: "currentCond" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSetCondition) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSetCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![api_apps_v1.ReplicaSetStatus] (![go.PointerType api_apps_v1.ReplicaSetStatus] "status")) in
+    let: "$a1" := (![api_apps_v1.ReplicaSetConditionType] (StructFieldRef api_apps_v1.ReplicaSetCondition "Type"%go "condition")) in
+    (FuncResolve GetCondition [] #()) "$a0" "$a1") in
+    do:  ("currentCond" <-[go.PointerType api_apps_v1.ReplicaSetCondition] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((((![go.PointerType api_apps_v1.ReplicaSetCondition] "currentCond") ≠⟨go.PointerType api_apps_v1.ReplicaSetCondition⟩ (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSetCondition) UntypedNil)) && ((![api_core_v1.ConditionStatus] (StructFieldRef api_apps_v1.ReplicaSetCondition "Status"%go (![go.PointerType api_apps_v1.ReplicaSetCondition] "currentCond"))) =⟨api_core_v1.ConditionStatus⟩ (![api_core_v1.ConditionStatus] (StructFieldRef api_apps_v1.ReplicaSetCondition "Status"%go "condition")))) && ((![go.string] (StructFieldRef api_apps_v1.ReplicaSetCondition "Reason"%go (![go.PointerType api_apps_v1.ReplicaSetCondition] "currentCond"))) =⟨go.string⟩ (![go.string] (StructFieldRef api_apps_v1.ReplicaSetCondition "Reason"%go "condition"))))
+    then return: (#())
+    else do:  #());;;
+    let: "newConditions" := (GoAlloc (go.SliceType api_apps_v1.ReplicaSetCondition) (GoZeroVal (go.SliceType api_apps_v1.ReplicaSetCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![go.SliceType api_apps_v1.ReplicaSetCondition] (StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType api_apps_v1.ReplicaSetStatus] "status"))) in
+    let: "$a1" := (![api_apps_v1.ReplicaSetConditionType] (StructFieldRef api_apps_v1.ReplicaSetCondition "Type"%go "condition")) in
+    (FuncResolve filterOutCondition [] #()) "$a0" "$a1") in
+    do:  ("newConditions" <-[go.SliceType api_apps_v1.ReplicaSetCondition] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![go.SliceType api_apps_v1.ReplicaSetCondition] "newConditions") in
+    let: "$a1" := ((let: "$sl0" := (![api_apps_v1.ReplicaSetCondition] "condition") in
+    CompositeLiteral (go.SliceType api_apps_v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression api_apps_v1.ReplicaSetCondition "$sl0")]))) in
+    (FuncResolve go.append [go.SliceType api_apps_v1.ReplicaSetCondition] #()) "$a0" "$a1") in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType api_apps_v1.ReplicaSetStatus] "status")) <-[go.SliceType api_apps_v1.ReplicaSetCondition] "$r0");;;
+    return: #()).
+
+(* RemoveCondition removes the condition with the provided type from the replicaset status.
+
+   go: replica_set_utils.go:190:6 *)
+Definition RemoveConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "status" "condType",
+    exception_do (let: "condType" := (GoAlloc api_apps_v1.ReplicaSetConditionType "condType") in
+    let: "status" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSetStatus) "status") in
+    let: "$r0" := (let: "$a0" := (![go.SliceType api_apps_v1.ReplicaSetCondition] (StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType api_apps_v1.ReplicaSetStatus] "status"))) in
+    let: "$a1" := (![api_apps_v1.ReplicaSetConditionType] "condType") in
+    (FuncResolve filterOutCondition [] #()) "$a0" "$a1") in
+    do:  ((StructFieldRef api_apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType api_apps_v1.ReplicaSetStatus] "status")) <-[go.SliceType api_apps_v1.ReplicaSetCondition] "$r0");;;
+    return: #()).
+
+(* filterOutCondition returns a new slice of replicaset conditions without conditions with the provided type.
+
+   go: replica_set_utils.go:195:6 *)
+Definition filterOutConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "conditions" "condType",
+    exception_do (let: "condType" := (GoAlloc api_apps_v1.ReplicaSetConditionType "condType") in
+    let: "conditions" := (GoAlloc (go.SliceType api_apps_v1.ReplicaSetCondition) "conditions") in
+    let: "newConditions" := (GoAlloc (go.SliceType api_apps_v1.ReplicaSetCondition) (GoZeroVal (go.SliceType api_apps_v1.ReplicaSetCondition) #())) in
+    let: "$range" := (![go.SliceType api_apps_v1.ReplicaSetCondition] "conditions") in
+    (let: "c" := (GoAlloc api_apps_v1.ReplicaSetCondition (GoZeroVal api_apps_v1.ReplicaSetCondition #())) in
+    slice.for_range api_apps_v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
+      do:  ("c" <-[api_apps_v1.ReplicaSetCondition] "$value");;;
+      do:  "$key";;;
+      (if: Convert go.untyped_bool go.bool ((![api_apps_v1.ReplicaSetConditionType] (StructFieldRef api_apps_v1.ReplicaSetCondition "Type"%go "c")) =⟨api_apps_v1.ReplicaSetConditionType⟩ (![api_apps_v1.ReplicaSetConditionType] "condType"))
+      then continue: #()
+      else do:  #());;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType api_apps_v1.ReplicaSetCondition] "newConditions") in
+      let: "$a1" := ((let: "$sl0" := (![api_apps_v1.ReplicaSetCondition] "c") in
+      CompositeLiteral (go.SliceType api_apps_v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression api_apps_v1.ReplicaSetCondition "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType api_apps_v1.ReplicaSetCondition] #()) "$a0" "$a1") in
+      do:  ("newConditions" <-[go.SliceType api_apps_v1.ReplicaSetCondition] "$r0")));;;
+    return: (![go.SliceType api_apps_v1.ReplicaSetCondition] "newConditions")).
+
+(* go: replica_set_utils.go:206:6 *)
+Definition derefInt32ToStrⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "ptr",
+    exception_do (let: "ptr" := (GoAlloc (go.PointerType go.int32) "ptr") in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.int32] "ptr") =⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil))
+    then return: (#"nil"%go)
+    else do:  #());;;
+    return: (let: "$a0" := #"%d"%go in
+     let: "$a1" := ((let: "$sl0" := (Convert go.int32 go.any (![go.int32] (![go.PointerType go.int32] "ptr"))) in
+     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+     (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")).
 
 #[global] Instance info' : PkgInfo pkg_id.replicaset :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.sync.pkg_id.sync; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.sync.pkg_id.sync; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apiserver.pkg.util.feature.pkg_id.feature; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.features.pkg_id.features; code.k8s_io.utils.clock.pkg_id.clock; code.fmt.pkg_id.fmt; code.reflect.pkg_id.reflect; code.time.pkg_id.time; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.client_go.kubernetes.typed.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.api.v1.pod.pkg_id.pod; code.k8s_io.utils.ptr.pkg_id.ptr]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.replicaset (λ: <>,
-      exception_do (do:  (controller.initialize' #());;;
+      exception_do (do:  (ptr.initialize' #());;;
+      do:  (pod.initialize' #());;;
+      do:  (typed_apps_v1.initialize' #());;;
+      do:  (labels.initialize' #());;;
+      do:  (time.initialize' #());;;
+      do:  (reflect.initialize' #());;;
+      do:  (fmt.initialize' #());;;
+      do:  (clock.initialize' #());;;
+      do:  (features.initialize' #());;;
+      do:  (controller.initialize' #());;;
       do:  (listers_apps_v1.initialize' #());;;
       do:  (kubernetes.initialize' #());;;
+      do:  (feature.initialize' #());;;
       do:  (types.initialize' #());;;
       do:  (apis_meta_v1.initialize' #());;;
       do:  (errors.initialize' #());;;
@@ -503,8 +868,41 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (context.initialize' #()))
       ).
 
+Module ReplicaSetControllerFeatures.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  EnableStatusTerminatingReplicas' : bool;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+End ReplicaSetControllerFeatures.
+
+Definition ReplicaSetControllerFeatures'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "EnableStatusTerminatingReplicas"%go go.bool)
+].
+Program Definition ReplicaSetControllerFeatures'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetControllerFeatures'fds_unsealed).
+Global Instance equals_unfold_ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetControllerFeatures'fds =→ ReplicaSetControllerFeatures'fds_unsealed.
+Proof. rewrite /ReplicaSetControllerFeatures'fds seal_eq //. Qed.
+
+Definition ReplicaSetControllerFeaturesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetControllerFeatures'fds).
+
+Class ReplicaSetControllerFeatures_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ReplicaSetControllerFeatures_type_repr  :: go.TypeReprUnderlying ReplicaSetControllerFeaturesⁱᵐᵖˡ ReplicaSetControllerFeatures.t;
+  #[global] ReplicaSetControllerFeatures_underlying :: (ReplicaSetControllerFeatures) <u (ReplicaSetControllerFeaturesⁱᵐᵖˡ);
+  #[global] ReplicaSetControllerFeatures_get_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) :: ⟦StructFieldGet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", #x⟧ ⤳[under] #x.(ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas');
+  #[global] ReplicaSetControllerFeatures_set_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) y :: ⟦StructFieldSet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas' := y|>);
+}.
+
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
+  #[global] ReplicaSetControllerFeatures_instance :: ReplicaSetControllerFeatures_Assumptions;
+  #[global] DefaultReplicaSetControllerFeatures_unfold :: FuncUnfold DefaultReplicaSetControllerFeatures [] (DefaultReplicaSetControllerFeaturesⁱᵐᵖˡ);
   #[global] getReplicaSetsWithSameController_unfold :: FuncUnfold getReplicaSetsWithSameController [] (getReplicaSetsWithSameControllerⁱᵐᵖˡ);
   #[global] getIndirectlyRelatedPods_unfold :: FuncUnfold getIndirectlyRelatedPods [] (getIndirectlyRelatedPodsⁱᵐᵖˡ);
   #[global] getPodsToDelete_unfold :: FuncUnfold getPodsToDelete [] (getPodsToDeleteⁱᵐᵖˡ);
@@ -512,6 +910,14 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] manageReplicas_unfold :: FuncUnfold manageReplicas [] (manageReplicasⁱᵐᵖˡ);
   #[global] slowStartBatch_unfold :: FuncUnfold slowStartBatch [] (slowStartBatchⁱᵐᵖˡ);
   #[global] syncReplicaSet_unfold :: FuncUnfold syncReplicaSet [] (syncReplicaSetⁱᵐᵖˡ);
+  #[global] updateReplicaSetStatus_unfold :: FuncUnfold updateReplicaSetStatus [] (updateReplicaSetStatusⁱᵐᵖˡ);
+  #[global] calculateStatus_unfold :: FuncUnfold calculateStatus [] (calculateStatusⁱᵐᵖˡ);
+  #[global] NewReplicaSetCondition_unfold :: FuncUnfold NewReplicaSetCondition [] (NewReplicaSetConditionⁱᵐᵖˡ);
+  #[global] GetCondition_unfold :: FuncUnfold GetCondition [] (GetConditionⁱᵐᵖˡ);
+  #[global] SetCondition_unfold :: FuncUnfold SetCondition [] (SetConditionⁱᵐᵖˡ);
+  #[global] RemoveCondition_unfold :: FuncUnfold RemoveCondition [] (RemoveConditionⁱᵐᵖˡ);
+  #[global] filterOutCondition_unfold :: FuncUnfold filterOutCondition [] (filterOutConditionⁱᵐᵖˡ);
+  #[global] derefInt32ToStr_unfold :: FuncUnfold derefInt32ToStr [] (derefInt32ToStrⁱᵐᵖˡ);
   #[global] import_context_Assumption :: context.Assumptions;
   #[global] import_common_Assumption :: common.Assumptions;
   #[global] import_apimodel_Assumption :: apimodel.Assumptions;
@@ -522,8 +928,18 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_errors_Assumption :: errors.Assumptions;
   #[global] import_apis_meta_v1_Assumption :: apis_meta_v1.Assumptions;
   #[global] import_types_Assumption :: types.Assumptions;
+  #[global] import_feature_Assumption :: feature.Assumptions;
   #[global] import_kubernetes_Assumption :: kubernetes.Assumptions;
   #[global] import_listers_apps_v1_Assumption :: listers_apps_v1.Assumptions;
   #[global] import_controller_Assumption :: controller.Assumptions;
+  #[global] import_features_Assumption :: features.Assumptions;
+  #[global] import_clock_Assumption :: clock.Assumptions;
+  #[global] import_fmt_Assumption :: fmt.Assumptions;
+  #[global] import_reflect_Assumption :: reflect.Assumptions;
+  #[global] import_time_Assumption :: time.Assumptions;
+  #[global] import_labels_Assumption :: labels.Assumptions;
+  #[global] import_typed_apps_v1_Assumption :: typed_apps_v1.Assumptions;
+  #[global] import_pod_Assumption :: pod.Assumptions;
+  #[global] import_ptr_Assumption :: ptr.Assumptions;
 }.
 End replicaset.

@@ -17,6 +17,8 @@ translate = [
     "Set.Get",
     "Set.Has",
     "Set.Lookup",
+    "Set.AsSelectorPreValidated",
+    "SelectorFromValidatedSet",
     "Requirement.hasValue",
     "Requirement.Matches",
     "internalSelector.DeepCopy",

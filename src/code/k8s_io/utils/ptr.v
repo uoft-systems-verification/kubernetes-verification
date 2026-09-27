@@ -23,6 +23,22 @@ Definition Toⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (T : go.
     exception_do (let: "v" := (GoAlloc T "v") in
     return: ("v")).
 
+(* Equal returns true if both arguments are nil or both arguments
+   dereference to the same value.
+
+   go: ptr.go:65:6 *)
+Definition Equalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (T : go.type) : val :=
+  λ: "a" "b",
+    exception_do (let: "b" := (GoAlloc (go.PointerType T) "b") in
+    let: "a" := (GoAlloc (go.PointerType T) "a") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType T] "a") =⟨go.PointerType T⟩ (Convert go.untyped_nil (go.PointerType T) UntypedNil)) ≠⟨go.bool⟩ ((![go.PointerType T] "b") =⟨go.PointerType T⟩ (Convert go.untyped_nil (go.PointerType T) UntypedNil)))
+    then return: (#false)
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType T] "a") =⟨go.PointerType T⟩ (Convert go.untyped_nil (go.PointerType T) UntypedNil))
+    then return: (#true)
+    else do:  #());;;
+    return: ((![T] (![go.PointerType T] "a")) =⟨T⟩ (![T] (![go.PointerType T] "b")))).
+
 #[global] Instance info' : PkgInfo pkg_id.ptr :=
 {|
   pkg_imported_pkgs := []
@@ -39,5 +55,6 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] To_unfold T :: FuncUnfold To [T] (Toⁱᵐᵖˡ T);
+  #[global] Equal_unfold T :: FuncUnfold Equal [T] (Equalⁱᵐᵖˡ T);
 }.
 End ptr.

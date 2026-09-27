@@ -127,6 +127,26 @@ func (s *State) ReplicaSetUpdateTx(namespace string, rs *appsv1.ReplicaSet) (*ap
 	return updatedRS, nil
 }
 
+// ReplicaSetUpdateStatusTx writes a ReplicaSet status at the currently stored
+// resource version, retrying on conflict. The verified ReplicaSet controller
+// reaches it through the trusted client-go UpdateStatus shim: while the
+// controller holds the ReplicaSet's status, and shares of its metadata and
+// spec, no other writer can change the object, so the conflict the real API
+// server would report for a stale resource version does not arise.
+func (s *State) ReplicaSetUpdateStatusTx(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	obj, err := s.updateStatusTx("ReplicaSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return nil, fmt.Errorf("transactional status update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
+}
+
 func (s *State) updateStatusTx(kind, namespace string, obj interface{}) (interface{}, error) {
 	for {
 		objCopy := deepCopy(obj)

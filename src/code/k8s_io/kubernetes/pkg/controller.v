@@ -5,6 +5,7 @@ Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.labels.
 Require Export New.code.k8s_io.apimachinery.pkg.api.meta.
 Require Export New.code.k8s_io.apimachinery.pkg.runtime.
+Require Export New.code.k8s_io.kubernetes.pkg.api.v1.pod.
 Module core_v1 := code.k8s_io.api.core.v1.v1.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 From New.golang Require Import defn.
@@ -417,11 +418,39 @@ Definition GetPodFromTemplateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     do:  ((StructFieldRef core_v1.Pod "Spec"%go (![go.PointerType core_v1.Pod] "pod")) <-[core_v1.PodSpec] "$r0");;;
     return: (![go.PointerType core_v1.Pod] "pod", Convert go.untyped_nil go.error UntypedNil)).
 
+(* go: controller_utils.go:1011:6 *)
+Definition FilterTerminatingPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "pods",
+    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
+    let: "result" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
+    let: "$range" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
+    (let: "p" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
+    slice.for_range (go.PointerType core_v1.Pod) "$range" (λ: "$key" "$value",
+      do:  ("p" <-[go.PointerType core_v1.Pod] "$value");;;
+      do:  "$key";;;
+      (if: let: "$a0" := (![go.PointerType core_v1.Pod] "p") in
+      (FuncResolve IsPodTerminating [] #()) "$a0"
+      then
+        let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "result") in
+        let: "$a1" := ((let: "$sl0" := (![go.PointerType core_v1.Pod] "p") in
+        CompositeLiteral (go.SliceType (go.PointerType core_v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType core_v1.Pod) "$sl0")]))) in
+        (FuncResolve go.append [go.SliceType (go.PointerType core_v1.Pod)] #()) "$a0" "$a1") in
+        do:  ("result" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0")
+      else do:  #())));;;
+    return: (![go.SliceType (go.PointerType core_v1.Pod)] "result")).
+
 (* go: controller_utils.go:1085:6 *)
 Definition IsPodActiveⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "p",
     exception_do (let: "p" := (GoAlloc (go.PointerType core_v1.Pod) "p") in
     return: (((core_v1.PodSucceeded ≠⟨core_v1.PodPhase⟩ (![core_v1.PodPhase] (StructFieldRef core_v1.PodStatus "Phase"%go (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "p"))))) && (core_v1.PodFailed ≠⟨core_v1.PodPhase⟩ (![core_v1.PodPhase] (StructFieldRef core_v1.PodStatus "Phase"%go (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "p")))))) && ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "p")))) =⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil)))).
+
+(* go: controller_utils.go:1091:6 *)
+Definition IsPodTerminatingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "p",
+    exception_do (let: "p" := (GoAlloc (go.PointerType core_v1.Pod) "p") in
+    return: ((⟨go.bool⟩! (let: "$a0" := (![go.PointerType core_v1.Pod] "p") in
+     (FuncResolve pod.IsPodTerminal [] #()) "$a0")) && ((![go.PointerType meta_v1.Time] (StructFieldRef meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "p")))) ≠⟨go.PointerType meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType meta_v1.Time) UntypedNil)))).
 
 (* PodControllerIndexKey returns the index key to locate pods with the specified controller ownerReference.
    If ownerReference is nil, the returned key locates pods in the namespace without a controller ownerReference.
@@ -438,7 +467,7 @@ Definition PodControllerIndexKeyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 
 #[global] Instance info' : PkgInfo pkg_id.controller :=
 {|
-  pkg_imported_pkgs := [code.fmt.pkg_id.fmt; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime]
+  pkg_imported_pkgs := [code.fmt.pkg_id.fmt; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.kubernetes.pkg.api.v1.pod.pkg_id.pod]
 |}.
 
 Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
@@ -446,7 +475,8 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.controller (λ: <>,
-      exception_do (do:  (runtime.initialize' #());;;
+      exception_do (do:  (pod.initialize' #());;;
+      do:  (runtime.initialize' #());;;
       do:  (meta.initialize' #());;;
       do:  (labels.initialize' #());;;
       do:  (meta_v1.initialize' #());;;
@@ -986,7 +1016,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] getPodsFinalizers_unfold :: FuncUnfold getPodsFinalizers [] (getPodsFinalizersⁱᵐᵖˡ);
   #[global] getPodsAnnotationSet_unfold :: FuncUnfold getPodsAnnotationSet [] (getPodsAnnotationSetⁱᵐᵖˡ);
   #[global] GetPodFromTemplate_unfold :: FuncUnfold GetPodFromTemplate [] (GetPodFromTemplateⁱᵐᵖˡ);
+  #[global] FilterTerminatingPods_unfold :: FuncUnfold FilterTerminatingPods [] (FilterTerminatingPodsⁱᵐᵖˡ);
   #[global] IsPodActive_unfold :: FuncUnfold IsPodActive [] (IsPodActiveⁱᵐᵖˡ);
+  #[global] IsPodTerminating_unfold :: FuncUnfold IsPodTerminating [] (IsPodTerminatingⁱᵐᵖˡ);
   #[global] PodControllerIndexKey_unfold :: FuncUnfold PodControllerIndexKey [] (PodControllerIndexKeyⁱᵐᵖˡ);
   #[global] import_fmt_Assumption :: fmt.Assumptions;
   #[global] import_core_v1_Assumption :: core_v1.Assumptions;
@@ -994,5 +1026,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_labels_Assumption :: labels.Assumptions;
   #[global] import_meta_Assumption :: meta.Assumptions;
   #[global] import_runtime_Assumption :: runtime.Assumptions;
+  #[global] import_pod_Assumption :: pod.Assumptions;
 }.
 End controller.

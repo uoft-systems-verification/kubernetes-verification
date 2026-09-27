@@ -72,15 +72,17 @@ Proof.
   rewrite Hdeepown_deletiontimestamp_none. done.
 Qed.
 
-Lemma wp_FilterActivePods sl ptrs pods dq :
+(* The input slice is only read, so it may be shared ([dq_sl]) and is returned. *)
+Lemma wp_FilterActivePods sl dq_sl ptrs pods dq :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
-      "Hsl" ∷ sl ↦* ptrs ∗
+      "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
       "Hdeepown_l_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq)
   }}}
     @! common.FilterActivePods #sl
   {{{ sl' ptrs', RET #sl';
       sl' ↦* ptrs' ∗
-      ([∗ list] ptr;pod ∈ ptrs';filter is_pod_alive pods, PodV.deepown_l ptr pod dq)
+      ([∗ list] ptr;pod ∈ ptrs';filter is_pod_alive pods, PodV.deepown_l ptr pod dq) ∗
+      sl ↦*{dq_sl} ptrs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.

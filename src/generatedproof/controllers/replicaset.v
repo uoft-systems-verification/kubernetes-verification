@@ -2,21 +2,72 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.controllers.common.
+Require Export New.generatedproof.fmt.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
+Require Export New.generatedproof.k8s_io.apiserver.pkg.util.feature.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.
+Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.generatedproof.k8s_io.client_go.listers.apps.v1.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.features.
+Require Export New.generatedproof.k8s_io.utils.clock.
+Require Export New.generatedproof.k8s_io.utils.ptr.
 Require Export New.generatedproof.kubernetes_model.apimodel.
+Require Export New.generatedproof.reflect.
 Require Export New.generatedproof.sort.
 Require Export New.generatedproof.sync.
+Require Export New.generatedproof.time.
 Require Export New.golang.theory.
 Require Export New.code.controllers.replicaset.
 
 Set Default Proof Using "Type".
 
 Module replicaset.
+Module ReplicaSetControllerFeatures.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : replicaset.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ReplicaSetControllerFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (replicaset.ReplicaSetControllerFeatures.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "EnableStatusTerminatingReplicas" ∷ l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ReplicaSetControllerFeatures_into_val_typed
+   :
+  IntoValTypedUnderlying (replicaset.ReplicaSetControllerFeatures.t) (replicaset.ReplicaSetControllerFeaturesⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSetControllerFeatures_access_load_EnableStatusTerminatingReplicas l (v : (replicaset.ReplicaSetControllerFeatures.t)) dq :
+  AccessStrict
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetControllerFeatures_access_store_EnableStatusTerminatingReplicas l (v : (replicaset.ReplicaSetControllerFeatures.t)) EnableStatusTerminatingReplicas' :
+  AccessStrict
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦ (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦ EnableStatusTerminatingReplicas')
+    (l ↦ v) (l ↦ (v <|(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas') := EnableStatusTerminatingReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End ReplicaSetControllerFeatures.
+
 End replicaset.

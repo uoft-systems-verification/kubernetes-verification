@@ -6,6 +6,7 @@ From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
+From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -191,8 +192,8 @@ Proof.
   - exact Hspec.
 Qed.
 
-(** Trusted because [PodStatusV] deliberately keeps the status fields opaque,
-    while the imported Kubernetes implementation reads [status.phase]. *)
+(** Trusted because [PodStatusV] represents only the conditions, while the
+    imported Kubernetes implementation reads [status.phase]. *)
 Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
   {{{ is_pkg_init controller ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq
@@ -200,6 +201,88 @@ Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
     @! controller.IsPodActive #pod_l
   {{{ (active : bool), RET #active; PodV.deepown_l pod_l pod dq }}}.
 Proof. Admitted.
+
+(* A pod is terminating when it is not terminal and has a deletion timestamp.
+   The terminal check is trusted ([wp_IsPodTerminal]), so the result is some
+   boolean; the pod is unchanged. *)
+Lemma wp_IsPodTerminating (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
+  {{{ is_pkg_init controller ∗
+      "Hpod" ∷ PodV.deepown_l pod_l pod dq
+  }}}
+    @! controller.IsPodTerminating #pod_l
+  {{{ (terminating : bool), RET #terminating; PodV.deepown_l pod_l pod dq }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  wp_apply (wp_IsPodTerminal with "[$Hpod]").
+  iIntros (terminal) "Hpod".
+  destruct terminal; wp_auto.
+  - by iApply "HΦ".
+  - iDestruct "Hpod" as (c) "[Hl Hc]".
+    wp_auto.
+    iApply "HΦ". iExists c. iFrame.
+Qed.
+
+(* [FilterTerminatingPods] returns some of its input pods; only the length of
+   the result is used (for the terminating-replicas count). The input slice and
+   pods are only read and are returned. *)
+Lemma wp_FilterTerminatingPods sl dq_sl ptrs pods dq :
+  {{{ is_pkg_init controller ∗
+      "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
+      "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq)
+  }}}
+    @! controller.FilterTerminatingPods #sl
+  {{{ sl' (ptrs' : list loc), RET #sl';
+      sl' ↦* ptrs' ∗
+      ⌜ length ptrs' ≤ length ptrs ⌝ ∗
+      sl ↦*{dq_sl} ptrs ∗
+      ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq)
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H". wp_auto.
+  iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
+  iDestruct (big_sepL2_length with "Hpods") as %Hlen.
+  set I := (∃ (i : w64) (p : loc) (result : slice.t) (ptrs' : list loc),
+    "i" ∷ i_ptr ↦ i ∗
+    "p" ∷ p_ptr ↦ p ∗
+    "result" ∷ result_ptr ↦ result ∗
+    "Hresult" ∷ result ↦* ptrs' ∗
+    "Hresult_cap" ∷ own_slice_cap loc result (DfracOwn 1) ∗
+    "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq) ∗
+    "%Hresult_len" ∷ ⌜ length ptrs' ≤ sint.nat i ⌝ ∗
+    "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝)%I.
+  iAssert I with "[i p result Hpods]" as "Hloop".
+  { iExists (W64 0), null, slice.nil, []. iFrame.
+    iSplitR; first iApply own_slice_nil.
+    iSplitR; first iApply own_slice_cap_nil.
+    iPureIntro. simpl. word. }
+  wp_for "Hloop".
+  wp_if_destruct.
+  - list_elem ptrs (sint.Z i) as this_ptr.
+    assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod].
+    { apply lookup_lt_is_Some_2. rewrite -Hlen. apply (lookup_lt_Some _ _ _ Hthis_ptr_lookup). }
+    rewrite decide_True; first word.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr_lookup. }
+    iIntros "Hsl". wp_auto.
+    iDestruct (big_sepL2_lookup_acc with "Hpods") as "[Hthis Hpods]";
+      [exact Hthis_ptr_lookup|exact Hthis_pod|].
+    wp_apply (wp_IsPodTerminating with "[$Hthis]").
+    iIntros (terminating) "Hthis".
+    iDestruct ("Hpods" with "Hthis") as "Hpods".
+    destruct terminating; wp_auto.
+    + wp_apply wp_slice_literal. iSplitR; first done. iIntros (sl0) "[Hsl0 _]". wp_auto.
+      wp_apply (wp_slice_append with "[$Hresult $Hresult_cap $Hsl0]").
+      iIntros (result') "(Hresult & Hresult_cap & _)". wp_auto.
+      iApply wp_for_post_do. wp_auto.
+      iFrame "HΦ Hsl".
+      iExists (word.add i (W64 1)), this_ptr, result', (ptrs' ++ [this_ptr]). iFrame.
+      iPureIntro. rewrite length_app /=. split; word.
+    + iApply wp_for_post_do. wp_auto.
+      iFrame "HΦ Hsl".
+      iExists (word.add i (W64 1)), this_ptr, result, ptrs'. iFrame.
+      iPureIntro. split; word.
+  - iApply "HΦ". iFrame. iPureIntro. word.
+Qed.
 
 Lemma wp_getPodsLabelSet template_l template dq :
   {{{ "Hinit" ∷ is_pkg_init controller ∗

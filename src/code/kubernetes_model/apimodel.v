@@ -4924,7 +4924,49 @@ Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:130:17 *)
+(* ReplicaSetUpdateStatusTx writes a ReplicaSet status at the currently stored
+   resource version, retrying on conflict. The verified ReplicaSet controller
+   reaches it through the trusted client-go UpdateStatus shim: while the
+   controller holds the ReplicaSet's status, and shares of its metadata and
+   spec, no other writer can change the object, so the conflict the real API
+   server would report for a stale resource version does not arise.
+
+   go: transaction.go:136:17 *)
+Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "rs",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    (MethodResolve (go.PointerType State) "updateStatusTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional status update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+
+(* go: transaction.go:150:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5160,6 +5202,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ReplicaSetMutList_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetMutList" (State__ReplicaSetMutListⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdate" (State__ReplicaSetUpdateⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatus" (State__ReplicaSetUpdateStatusⁱᵐᵖˡ);
+  #[global] State'ptr_ReplicaSetUpdateStatusTx_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatusTx" (State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateTx" (State__ReplicaSetUpdateTxⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountCreate_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountCreate" (State__ServiceAccountCreateⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountGet_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountGet" (State__ServiceAccountGetⁱᵐᵖˡ);

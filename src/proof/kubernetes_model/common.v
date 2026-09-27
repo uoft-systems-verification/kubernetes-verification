@@ -85,6 +85,19 @@ Proof.
   wp_auto. done.
 Qed.
 
+(* deepCopy only reads its argument, so any fraction of it suffices. *)
+Lemma wp_deepCopy_frac i obj dq:
+  {{{ is_pkg_init apimodel ∗
+      KObjectV.deepown_i i obj dq
+  }}}
+    @! apimodel.deepCopy #(interface.ok i)
+  {{{ i', RET #(interface.ok i');
+      KObjectV.deepown_i i' obj 1 ∗
+      KObjectV.deepown_i i obj dq
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_deepCopy i obj:
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i obj 1
@@ -94,8 +107,7 @@ Lemma wp_deepCopy i obj:
       KObjectV.deepown_i i' obj 1 ∗
       KObjectV.deepown_i i obj 1
   }}}.
-Proof.
-Admitted.
+Proof. apply wp_deepCopy_frac. Qed.
 
 Definition storage_object_normalize (obj : KObjectV.t) : KObjectV.t :=
   KObjectV.update_objectmeta obj
