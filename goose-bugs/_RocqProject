@@ -1,0 +1,18 @@
+# Load paths for VsRocq: open this directory as the workspace, after ./run.sh.
+-Q gen/code New.code
+-Q gen/generatedproof New.generatedproof
+-Q proof GooseBugs
+-arg -w -arg -notation-overridden,-notation-incompatible-prefix,-redundant-canonical-projection
+proof/bug01_loop_var.v
+proof/bug02_shadowed_define.v
+proof/bug03_block_scope.v
+proof/bug04_defer_named_result.v
+proof/bug05_empty_block.v
+proof/bug06_method_value.v
+proof/bug07_tuple_assign.v
+proof/bug08_op_assign_twice.v
+proof/bug09_eval_order.v
+proof/bug10_nil_map.v
+proof/bug11_shift_count.v
+proof/bug12_u32_div.v
+proof/bug13_complement.v
