@@ -1,0 +1,6 @@
+-Q gen/code New.code
+-Q gen/generatedproof New.generatedproof
+-Q proof Repro
+-arg -w -arg -notation-overridden,-notation-incompatible-prefix,-redundant-canonical-projection
+
+proof/Repro.v
