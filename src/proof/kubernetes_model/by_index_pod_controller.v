@@ -243,11 +243,6 @@ Definition pod_storage_view (pod : PodV.t) : ObjectMetaV.t * ObjectSpecV.t :=
   (ObjectMetaV.without_resource_version pod.(PodV.ObjectMeta'),
    ObjectSpecV.PodSpec pod.(PodV.Spec')).
 
-Definition kobject_storage_view (obj : KObjectV.t) :
-    ObjectMetaV.t * ObjectSpecV.t :=
-  (ObjectMetaV.without_resource_version (KObjectV.objectmeta obj),
-   KObjectV.spec obj).
-
 Definition own_pod_storage_view_frag γ dq
     (view : ObjectMetaV.t * ObjectSpecV.t) : iProp Σ :=
   own_meta_frag γ (PodV.meta_key view.1)
