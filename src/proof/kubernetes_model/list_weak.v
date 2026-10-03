@@ -1,4 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import util.
 From New.proof.kubernetes_model Require Export list.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels.
 
@@ -90,136 +91,13 @@ Lemma wp_filterByLabelSelector_weak (kind : go_string) sl interfaces objs
   }}}.
 Proof.
   intros Hvalid Hextra_valid Hkind.
-  wp_start as "H". iNamed "H".
-  iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta)
-    as "#Hmeta_init".
-  { iPkgInit. }
-  iAssert (is_pkg_init v1) as "#Hv1_init".
-  { iPkgInit. }
-  wp_auto.
-  iDestruct (own_slice_len with "Hitems") as %[Hitems_len Hitems_nonneg].
-  rewrite map_length in Hitems_len.
-  iDestruct (big_sepL2_length with "Hobjects") as %Hobjects_len.
-  iPoseProof (own_slice_nil (V:=interface.t)) as "Hfiltered".
-  iPoseProof (own_slice_cap_nil (V:=interface.t)) as "Hfiltered_cap".
-  set I := (∃ (i : w64) (val : interface.t) (filtered_sl : slice.t)
-      (filtered_interfaces : list interface.t_ok)
-      (filtered_objs : list KObjectV.t),
-    "Hi" ∷ i_ptr ↦ i ∗
-    "Hval" ∷ val_ptr ↦ val ∗
-    "Hfiltered_items" ∷ filtered_items_ptr ↦ filtered_sl ∗
-    "Hfiltered" ∷ filtered_sl ↦* (interface.ok <$> filtered_interfaces) ∗
-    "Hfiltered_cap" ∷ own_slice_cap interface.t filtered_sl (DfracOwn 1) ∗
-    "Hremaining" ∷ ([∗ list] interface_i;obj ∈
-      drop (sint.nat i) interfaces;drop (sint.nat i) objs,
-      KObjectV.deepown_i interface_i obj 1) ∗
-    "Hfiltered_objects" ∷ ([∗ list] interface_i;obj ∈
-      filtered_interfaces;filtered_objs, KObjectV.deepown_i interface_i obj 1) ∗
-    "%Hi_bounds" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝ ∗
-    "%Hfiltered_valid" ∷ ⌜ Forall KObjectV.valid filtered_objs ⌝ ∗
-    "%Hfiltered_extra_valid" ∷
-      ⌜ Forall KObjectV.extra_valid filtered_objs ⌝ ∗
-    "%Hfiltered_kind" ∷
-      ⌜ Forall (λ obj, KObjectV.kind obj = kind) filtered_objs ⌝)%I.
-  iAssert I with
-    "[i val filtered_items Hfiltered Hfiltered_cap Hobjects]"
-    as "Hloop".
-  { iExists (W64 0), (zero_val interface.t), slice.nil, [], [].
-    rewrite !drop_0 !big_sepL2_nil /=.
-    iFrame "i val filtered_items Hfiltered Hfiltered_cap Hobjects".
-    iPureIntro. repeat split; try constructor; word. }
-  iClear "Hfiltered Hfiltered_cap".
-  wp_for "Hloop". wp_if_destruct.
-  -
-    assert (0 ≤ sint.Z i < sint.Z (slice.len sl)) as Hibounds by word.
-    list_elem interfaces (sint.Z i) as this_interface.
-    assert (∃ this_obj, objs !! sint.nat i = Some this_obj) as
-      [this_obj Hthis_obj_lookup].
-    { apply lookup_lt_is_Some_2. rewrite -Hobjects_len Hitems_len. word. }
-    assert ((interface.ok <$> interfaces) !! sint.nat i =
-      Some (interface.ok this_interface)) as Hthis_value_lookup.
-    { rewrite list_lookup_fmap Hthis_interface_lookup. done. }
-    rewrite decide_True.
-    { exact Hibounds. }
-    wp_apply (wp_load_slice_index (V:=interface.t)
-      (t:=go.InterfaceType []) sl (sint.Z i)
-      (interface.ok <$> interfaces) (DfracOwn 1)
-      (interface.ok this_interface) with "[$Hitems]");
-      [word|iPureIntro; exact Hthis_value_lookup|].
-    iIntros "Hitems". wp_auto.
-    assert (drop (sint.nat i) interfaces =
-      this_interface :: drop (S (sint.nat i)) interfaces) as Hdrop_interfaces.
-    { apply drop_S. exact Hthis_interface_lookup. }
-    assert (drop (sint.nat i) objs =
-      this_obj :: drop (S (sint.nat i)) objs) as Hdrop_objs.
-    { apply drop_S. exact Hthis_obj_lookup. }
-    iEval (rewrite Hdrop_interfaces Hdrop_objs) in "Hremaining".
-    iDestruct "Hremaining" as "[Hthis Hremaining]".
-    iDestruct "Hthis" as (this_l) "[%Hthis_interface Hthis]".
-    wp_apply wp_Accessor; first (iPureIntro; exact Hthis_interface).
-    iPoseProof (KObjectV.deepown_l_split with "Hthis") as
-      "(%Hthis_l_nonnull & Hthis_type & Hthis_meta & Hthis_spec & Hthis_status)".
-    wp_apply (wp_GetLabels_deepown_kobject this_interface this_l this_obj
-      with "[$Hv1_init $Hthis_meta]"). 1: done.
-    iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto.
-    wp_bind ((match selector with
-      | interface.ok selector_i =>
-          Val (#(methods selector_i.(interface.ty) "Matches"
-            selector_i.(interface.v)))
-      | interface.nil => Panic "nil interface"
-      end)
-      #(interface.ok (interface.mk labels.Set' #labels_l)))%E.
-    iApply (wp_Selector__Matches_resolved selector P labels_l
-      (KObjectV.objectmeta this_obj).(ObjectMetaV.Labels') 1
-      with "[$Hselector $Hlabels]").
-    iNext. iIntros (matches) "(#Hselector_again & Hlabels & %Hmatches)".
-    iPoseProof ("Hrestore_meta" with "Hlabels") as "Hthis_meta".
-    iPoseProof (KObjectV.deepown_l_restore _ _ _ Hthis_l_nonnull with
-      "[$Hthis_type $Hthis_meta $Hthis_spec $Hthis_status]") as "Hthis".
-    iAssert (KObjectV.deepown_i this_interface this_obj 1)
-      with "[Hthis]" as "Hthis".
-    { iExists this_l. iFrame "Hthis". iPureIntro. exact Hthis_interface. }
-    destruct matches.
-    + wp_auto.
-      wp_apply wp_slice_literal. iSplitR; first done.
-      iIntros (one_sl) "[Hone _]". wp_auto.
-      wp_apply (wp_slice_append with
-        "[$Hfiltered $Hfiltered_cap $Hone]").
-      iIntros (filtered_sl') "(Hfiltered & Hfiltered_cap & Hone)".
-      wp_auto. iApply wp_for_post_do. wp_auto.
-      iFrame "HΦ Hitems selector".
-      iExists (word.add i (W64 1)), (interface.ok this_interface),
-        filtered_sl', (filtered_interfaces ++ [this_interface]),
-        (filtered_objs ++ [this_obj]).
-      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext by word.
-      rewrite Hnext fmap_app /=.
-      iFrame.
-      simpl.
-      iPureIntro. repeat split; try word.
-      * apply Forall_app. split; [done|constructor; [|constructor]].
-        rewrite Forall_forall in Hvalid. apply Hvalid.
-        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
-        exact Hthis_obj_lookup.
-      * apply Forall_app. split; [done|constructor; [|constructor]].
-        rewrite Forall_forall in Hextra_valid. apply Hextra_valid.
-        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
-        exact Hthis_obj_lookup.
-      * apply Forall_app. split; [done|constructor; [|constructor]].
-        rewrite Forall_forall in Hkind. apply Hkind.
-        rewrite <-list_elem_of_In. eapply list_elem_of_lookup_2.
-        exact Hthis_obj_lookup.
-    + wp_auto. iApply wp_for_post_do. wp_auto.
-      iFrame "HΦ Hitems selector".
-      iExists (word.add i (W64 1)), (interface.ok this_interface),
-        filtered_sl, filtered_interfaces, filtered_objs.
-      assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as -> by word.
-      iFrame. simpl. iFrame. iPureIntro.
-      repeat split; try word; done.
-  -
-    assert (sint.nat i = length interfaces) as Hi_len.
-    { rewrite Hitems_len. word. }
-    iApply ("HΦ" $! filtered_sl filtered_interfaces filtered_objs).
-    iFrame. done.
+  iIntros (Φ) "H HΦ".
+  iApply (wp_filterByLabelSelector with "H").
+  iNext. iIntros (sl' interfaces') "[Hsl' Hobjs']".
+  iApply ("HΦ" $! sl' interfaces'
+    (filter (λ obj, P (KObjectV.objectmeta obj).(ObjectMetaV.Labels')) objs)).
+  iFrame.
+  iPureIntro. split_and!; by apply Forall_filter.
 Qed.
 
 (** Type-general weak Hoare specification for selector-based list calls. *)
@@ -251,38 +129,6 @@ Proof.
     Hvalid Hextra_valid Hkind with "[$Hpkg $Hselector $Hsl $Hobjs]").
   iNext. iIntros (sl' interfaces' objs') "Hpost". wp_auto.
   iApply "HΦ". iExact "Hpost".
-Qed.
-
-Lemma kobject_list_to_replica_sets objs :
-  Forall (λ obj, KObjectV.kind obj = ReplicaSetV.kind) objs →
-  ∃ replica_sets, objs = KObjectV.ReplicaSet <$> replica_sets.
-Proof.
-  induction 1 as [|obj objs Hkind _ [replica_sets ->]].
-  - exists []. done.
-  - destruct obj as [pod|replica_set|pvc|stateful_set|deployment];
-      simpl in Hkind; try discriminate.
-    exists (replica_set :: replica_sets). done.
-Qed.
-
-Lemma replica_set_interfaces_to_ptrs interfaces replica_sets :
-  ([∗ list] i;rs ∈ interfaces;replica_sets,
-    KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) -∗
-  ∃ ptrs,
-    ⌜ interfaces = (λ ptr, interface.mk
-      (go.PointerType v1.ReplicaSet) #ptr) <$> ptrs ⌝ ∗
-    ([∗ list] ptr;rs ∈ ptrs;replica_sets,
-      ReplicaSetV.deepown_l ptr rs 1).
-Proof.
-  revert replica_sets.
-  induction interfaces as [|i interfaces IH]; intros [|rs replica_sets]; simpl.
-  - iIntros "_". iExists []. iSplit; done.
-  - iIntros "H". iDestruct "H" as %[].
-  - iIntros "H". iDestruct "H" as %[].
-  - iIntros "[Hi Hrest]".
-    iDestruct "Hi" as (ptr) "[%Hi Hrs]".
-    simpl in Hi. destruct Hi as [Hi _]. subst i.
-    iDestruct (IH with "Hrest") as (ptrs) "[%Hinterfaces Hrest]".
-    iExists (ptr :: ptrs). iFrame. iPureIntro. simpl. f_equal. done.
 Qed.
 
 Local Lemma wp_State__ReplicaSetMutList_weak γ l (namespace : go_string)
