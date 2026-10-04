@@ -653,7 +653,7 @@ Proof.
     {| KKey.Kind' := "Deployment"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
-    uid dq kmeta (Some (ObjectSpecV.DeploymentSpec kspec)) None
+    uid dq dq kmeta (Some (ObjectSpecV.DeploymentSpec kspec)) None
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
