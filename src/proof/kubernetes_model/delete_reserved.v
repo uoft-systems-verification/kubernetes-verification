@@ -100,7 +100,7 @@ Proof.
     with "Hinv_Hphys_abs_rep") as "[Hdeepown_i Hother_rep]". rewrite Hlookup_phys. wp_auto.
   destruct i as [i|].
   2: { iExFalso. iExact "Hdeepown_i". }
-  wp_apply (wp_deepCopy i kobj with "[Hdeepown_i]").
+  wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
   { iFrame "#". iExact "Hdeepown_i". }
   iIntros (i1) "(Hdeepown_i1 & Hdeepown_i)". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l1]".
