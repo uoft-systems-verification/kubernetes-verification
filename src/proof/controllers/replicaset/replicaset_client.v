@@ -78,25 +78,9 @@ Definition is_rs_client (c : interface.t) (namespace : go_string) : iProp Σ :=
 #[global] Instance is_rs_client_persistent c namespace : Persistent (is_rs_client c namespace).
 Proof. apply _. Qed.
 
+(* [kubeClient.AppsV1().ReplicaSets(namespace)], in the form [wp_auto] leaves it
+   once the [AppsV1()] method on the clientset has been resolved. *)
 Lemma wp_AppsV1_ReplicaSets (kube_client : loc) namespace :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset }}}
-    (MethodResolve client_apps_v1.AppsV1Interface "ReplicaSets"%go
-      ((MethodResolve (go.PointerType kubernetes.Clientset) "AppsV1"%go #kube_client) #()))
-      #namespace
-  {{{ c, RET #c; is_rs_client c namespace }}}.
-Proof.
-  iIntros (Φ) "#Hpkg HΦ".
-  iApply wp_fupd.
-  wp_bind (MethodResolve (go.PointerType kubernetes.Clientset) _ _). wp_pure. wp_pures.
-  wp_method_call. rewrite /kubernetes.Clientset__AppsV1ⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_method_call. rewrite /trusted_client_apps_v1.AppsV1Client__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
-  iPersist "replicaSetClient".
-  iModIntro. iApply "HΦ". iExists _, _. iFrame "#". done.
-Qed.
-
-(* The same, once the [AppsV1()] method on the clientset has been resolved, as
-   [wp_auto] does when it reaches the call. *)
-Lemma wp_AppsV1_ReplicaSets_resolved (kube_client : loc) namespace :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset }}}
     (MethodResolve client_apps_v1.AppsV1Interface "ReplicaSets"%go
       (kube_client @! (go.PointerType kubernetes.Clientset) @! "AppsV1"%go #()))

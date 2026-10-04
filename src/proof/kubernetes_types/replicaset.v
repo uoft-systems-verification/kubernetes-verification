@@ -365,6 +365,9 @@ Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
 Definition key (v: t) : KKey.t :=
   meta_key v.(ObjectMeta').
 
+(* A status write keeps every represented field except the status (and the
+   resource version, which [ObjectMetaV.equiv_except_resource_version] ignores).
+   It says nothing about the new status itself. *)
 Definition status_only_changed (rs rs' : t) : Prop :=
   rs'.(TypeMeta') = rs.(TypeMeta') ∧
   ObjectMetaV.equiv_except_resource_version rs'.(ObjectMeta') rs.(ObjectMeta') ∧

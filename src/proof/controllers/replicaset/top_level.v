@@ -12,11 +12,6 @@ Definition current_state_matches (rs : ReplicaSetV.t) (pods : list PodV.t) : Pro
   | None => False
   end.
 
-(* Status writes preserve all represented fields except status and resource
-   version. This deliberately makes no status-count or successful-return claim. *)
-Definition rs_status_only_changed (rs rs' : ReplicaSetV.t) : Prop :=
-  ReplicaSetV.status_only_changed rs rs'.
-
 Definition match_distance (rs : ReplicaSetV.t) (pods : list PodV.t) : nat :=
   match rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') with
   | Some replicas =>
@@ -202,7 +197,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
      shim retries resource-version conflicts), which the bounds above rule out. *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
-      ⌜ rs_status_only_changed rs rs' ⌝ ∗
+      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
       ⌜ current_state_matches rs pods' ∨
         (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
   }}}.
@@ -235,7 +230,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
      to int32. The distance claim below holds either way. *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (err : interface.t), RET #err;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
-      ⌜ rs_status_only_changed rs rs' ⌝ ∗
+      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
   }}}.
 
@@ -264,7 +259,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       #rsc_clock #controller_features #namespace #name
   {{{ (rs' : ReplicaSetV.t) (err : interface.t), RET #err;
       owned_resources γ rs' pods (stability_fractions dq) true ∗
-      ⌜ rs_status_only_changed rs rs' ⌝
+      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝
   }}}.
 
 End specs.
