@@ -303,9 +303,6 @@ Record t := mk {
   Status' : go_string;
 }.
 
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Qed.
-
 (* Every represented field is a plain value, so the view is a function of the
    Go struct. *)
 Definition of_go (c : v1.PodCondition.t) : t :=

@@ -1149,7 +1149,7 @@ Proof.
   rewrite Hcopy_ns.
   wp_bind (MethodResolve _ "ReplicaSets"%go _ _)%E.
   (* Instantiated explicitly: applying the lemma directly fails to unify. *)
-  iPoseProof (wp_AppsV1_ReplicaSets_resolved kube_client
+  iPoseProof (wp_AppsV1_ReplicaSets kube_client
     rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) as "Hrs_client".
   iApply ("Hrs_client" with "[//]"). iNext. iIntros (c) "#Hclient". wp_auto.
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag".
@@ -1186,8 +1186,8 @@ Proof.
   { rewrite /ReplicaSetV.key /=. exact Hkey'. }
   assert (rs''.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
     rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Huid'' by exact Huid'.
-  assert (rs_status_only_changed rs rs'') as Hstatus_only.
-  { rewrite /rs_status_only_changed /ReplicaSetV.status_only_changed /=. split_and!; first done.
+  assert (ReplicaSetV.status_only_changed rs rs'') as Hstatus_only.
+  { rewrite /ReplicaSetV.status_only_changed /=. split_and!; first done.
     - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hget_Hmeta_eq |- *.
       congruence.
     - congruence. }
