@@ -20,7 +20,7 @@ package replicaset
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"reflect"
 	"time"
 
@@ -34,6 +34,9 @@ import (
 	appsclient "k8s.io/client-go/kubernetes/typed/apps/v1"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"k8s.io/kubernetes/pkg/features"
+	// The condition helpers are identical upstream; only calculateStatus and
+	// updateReplicaSetStatus (unexported, and adapted for Goose) are copied here.
+	upstreamrs "k8s.io/kubernetes/pkg/controller/replicaset"
 	"k8s.io/utils/ptr"
 )
 
@@ -132,7 +135,7 @@ func calculateStatus(rs *apps.ReplicaSet, activePods []*v1.Pod, terminatingPods 
 		terminatingReplicasCount = ptr.To(int32(len(terminatingPods)))
 	}
 
-	failureCond := GetCondition(rs.Status, apps.ReplicaSetReplicaFailure)
+	failureCond := upstreamrs.GetCondition(rs.Status, apps.ReplicaSetReplicaFailure)
 	if manageReplicasErr != nil && failureCond == nil {
 		var reason string
 		if diff := len(activePods) - int(*(rs.Spec.Replicas)); diff < 0 {
@@ -140,10 +143,10 @@ func calculateStatus(rs *apps.ReplicaSet, activePods []*v1.Pod, terminatingPods 
 		} else if diff > 0 {
 			reason = "FailedDelete"
 		}
-		cond := NewReplicaSetCondition(apps.ReplicaSetReplicaFailure, v1.ConditionTrue, reason, manageReplicasErr.Error())
-		SetCondition(&newStatus, cond)
+		cond := upstreamrs.NewReplicaSetCondition(apps.ReplicaSetReplicaFailure, v1.ConditionTrue, reason, manageReplicasErr.Error())
+		upstreamrs.SetCondition(&newStatus, cond)
 	} else if manageReplicasErr == nil && failureCond != nil {
-		RemoveCondition(&newStatus, apps.ReplicaSetReplicaFailure)
+		upstreamrs.RemoveCondition(&newStatus, apps.ReplicaSetReplicaFailure)
 	}
 
 	newStatus.Replicas = int32(len(activePods))
@@ -152,60 +155,4 @@ func calculateStatus(rs *apps.ReplicaSet, activePods []*v1.Pod, terminatingPods 
 	newStatus.AvailableReplicas = int32(availableReplicasCount)
 	newStatus.TerminatingReplicas = terminatingReplicasCount
 	return newStatus
-}
-
-// NewReplicaSetCondition creates a new replicaset condition.
-func NewReplicaSetCondition(condType apps.ReplicaSetConditionType, status v1.ConditionStatus, reason, msg string) apps.ReplicaSetCondition {
-	return apps.ReplicaSetCondition{
-		Type:               condType,
-		Status:             status,
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Message:            msg,
-	}
-}
-
-// GetCondition returns a replicaset condition with the provided type if it exists.
-func GetCondition(status apps.ReplicaSetStatus, condType apps.ReplicaSetConditionType) *apps.ReplicaSetCondition {
-	for _, c := range status.Conditions {
-		if c.Type == condType {
-			return &c
-		}
-	}
-	return nil
-}
-
-// SetCondition adds/replaces the given condition in the replicaset status. If the condition that we
-// are about to add already exists and has the same status and reason then we are not going to update.
-func SetCondition(status *apps.ReplicaSetStatus, condition apps.ReplicaSetCondition) {
-	currentCond := GetCondition(*status, condition.Type)
-	if currentCond != nil && currentCond.Status == condition.Status && currentCond.Reason == condition.Reason {
-		return
-	}
-	newConditions := filterOutCondition(status.Conditions, condition.Type)
-	status.Conditions = append(newConditions, condition)
-}
-
-// RemoveCondition removes the condition with the provided type from the replicaset status.
-func RemoveCondition(status *apps.ReplicaSetStatus, condType apps.ReplicaSetConditionType) {
-	status.Conditions = filterOutCondition(status.Conditions, condType)
-}
-
-// filterOutCondition returns a new slice of replicaset conditions without conditions with the provided type.
-func filterOutCondition(conditions []apps.ReplicaSetCondition, condType apps.ReplicaSetConditionType) []apps.ReplicaSetCondition {
-	var newConditions []apps.ReplicaSetCondition
-	for _, c := range conditions {
-		if c.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, c)
-	}
-	return newConditions
-}
-
-func derefInt32ToStr(ptr *int32) string {
-	if ptr == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%d", *ptr)
 }

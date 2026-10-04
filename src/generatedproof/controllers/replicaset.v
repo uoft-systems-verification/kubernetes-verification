@@ -2,7 +2,6 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.controllers.common.
-Require Export New.generatedproof.fmt.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
@@ -15,6 +14,7 @@ Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.generatedproof.k8s_io.client_go.listers.apps.v1.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.replicaset.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.features.
 Require Export New.generatedproof.k8s_io.utils.clock.
 Require Export New.generatedproof.k8s_io.utils.ptr.

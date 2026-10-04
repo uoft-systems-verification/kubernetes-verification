@@ -15,6 +15,7 @@ From New.proof.k8s_io.apiserver.pkg.util Require Export feature_init.
 From New.proof.k8s_io.client_go Require Export kubernetes_init.
 From New.proof.k8s_io.client_go.listers.apps Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
+From New.proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export features_init.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Export pod_init.
 From New.proof.k8s_io.utils Require Export clock_init ptr_init.
