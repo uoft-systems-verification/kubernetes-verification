@@ -4924,14 +4924,7 @@ Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* ReplicaSetUpdateStatusTx writes a ReplicaSet status at the currently stored
-   resource version, retrying on conflict. The verified ReplicaSet controller
-   reaches it through the trusted client-go UpdateStatus shim: while the
-   controller holds the ReplicaSet's status, and shares of its metadata and
-   spec, no other writer can change the object, so the conflict the real API
-   server would report for a stale resource version does not arise.
-
-   go: transaction.go:136:17 *)
+(* go: transaction.go:130:17 *)
 Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4966,7 +4959,7 @@ Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:150:17 *)
+(* go: transaction.go:144:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
