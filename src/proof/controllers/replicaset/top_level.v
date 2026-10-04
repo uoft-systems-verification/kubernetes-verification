@@ -244,6 +244,9 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      (* Require input parameter "rsc_clock" satisfies "clock_now_spec" specfication,
+      instead of taking "clock_now_spec" as an axiom, which is a stronger requirement
+      than the choice we used here. *)
       "#Hclock" ∷ clock_now_spec rsc_clock ∗
       "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true ∗
       (* Assumption, as in [input_requirement]: the status calculation builds a
