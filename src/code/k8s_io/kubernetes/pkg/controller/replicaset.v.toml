@@ -1,0 +1,15 @@
+# Only the condition helpers that controllers/replicaset imports instead of
+# copying; the rest of the upstream controller is not translated.
+translate = [
+    "NewReplicaSetCondition",
+    "GetCondition",
+    "SetCondition",
+    "RemoveCondition",
+    "filterOutCondition",
+]
+
+imports = [
+    "k8s.io/api/apps/v1",
+    "k8s.io/api/core/v1",
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
+]

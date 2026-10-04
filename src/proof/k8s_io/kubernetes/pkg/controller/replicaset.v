@@ -1,25 +1,25 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 From New.proof.kubernetes_types Require Export prelude.
+
+(* Specs for the upstream ReplicaSet condition helpers, which
+   controllers/replicaset imports instead of copying. *)
+Notation upstream_rs_pkg := code.k8s_io.kubernetes.pkg.controller.replicaset.pkg_id.replicaset.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
-  {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
+  {package_sem : code.k8s_io.kubernetes.pkg.controller.replicaset.replicaset.Assumptions}.
 Collection W := sem + package_sem.
-#[local] Instance base_common_sem : common.Assumptions | 100 :=
-  code.controllers.replicaset.replicaset.import_common_Assumption.
-#[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
-  apimodel.import_apis_meta_v1_Assumption.
+  code.k8s_io.kubernetes.pkg.controller.replicaset.replicaset.import_meta_v1_Assumption.
 #[local] Instance object_apps_v1_sem :
     code.k8s_io.api.apps.v1.v1.Assumptions :=
-  apimodel.import_api_apps_v1_Assumption.
+  code.k8s_io.kubernetes.pkg.controller.replicaset.replicaset.import_apps_v1_Assumption.
 #[local] Instance object_core_v1_sem :
     code.k8s_io.api.core.v1.v1.Assumptions :=
-  code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
+  code.k8s_io.kubernetes.pkg.controller.replicaset.replicaset.import_core_v1_Assumption.
 Local Set Default Proof Using "All".
 
 Definition keep_condition_c (ct : go_string) (c : api_apps_v1.ReplicaSetCondition.t) : Prop :=
@@ -27,7 +27,7 @@ Definition keep_condition_c (ct : go_string) (c : api_apps_v1.ReplicaSetConditio
 
 Lemma wp_filterOutCondition (sl : slice.t) (cs : list api_apps_v1.ReplicaSetCondition.t) dq
     (ct : go_string) :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗ sl ↦*{dq} cs }}}
+  {{{ is_pkg_init upstream_rs_pkg ∗ sl ↦*{dq} cs }}}
     @! replicaset.filterOutCondition #sl #ct
   {{{ (sl' : slice.t), RET #sl';
       sl ↦*{dq} cs ∗
@@ -129,7 +129,7 @@ Qed.
 
 Lemma wp_RemoveCondition status_l (status_c : api_apps_v1.ReplicaSetStatus.t) status
     (ct : go_string) :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+  {{{ is_pkg_init upstream_rs_pkg ∗
       status_l ↦ status_c ∗
       ReplicaSetStatusV.deepown status_c status DfracDiscarded
   }}}
@@ -199,7 +199,7 @@ Qed.
 
 (* [GetCondition] returns nil exactly when no condition has the given type. *)
 Lemma wp_GetCondition (status_c : api_apps_v1.ReplicaSetStatus.t) status (ct : go_string) :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+  {{{ is_pkg_init upstream_rs_pkg ∗
       ReplicaSetStatusV.deepown status_c status DfracDiscarded
   }}}
     @! replicaset.GetCondition #status_c #ct

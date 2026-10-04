@@ -1,5 +1,8 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.controllers.replicaset Require Export replicaset_init external_specs conditions.
+(* Imported before the controller's package so that [replicaset] below names
+   controllers/replicaset, not the upstream package of the same name. *)
+From New.proof.k8s_io.kubernetes.pkg.controller Require Import replicaset.
+From New.proof.controllers.replicaset Require Export replicaset_init external_specs.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels_validated_set.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
 From New.proof.kubernetes_types Require Export prelude.
