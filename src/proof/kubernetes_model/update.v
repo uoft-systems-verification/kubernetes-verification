@@ -70,7 +70,7 @@ Proof.
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
-  wp_apply (wp_deepCopy i kobj with "[Hdeepown_i]").
+  wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
   { iFrame "#". iExact "Hdeepown_i". }
   iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l]".
@@ -137,7 +137,7 @@ Proof.
   destruct old_i as [old_i|].
   2: { iExFalso. iExact "Hdeepown_old_i". }
   rewrite Hlookup_phys. wp_auto.
-  wp_apply (wp_deepCopy old_i old_kobj with "[Hdeepown_old_i]").
+  wp_apply (wp_deepCopy old_i old_kobj (DfracOwn 1) with "[Hdeepown_old_i]").
   { iFrame "#". iExact "Hdeepown_old_i". }
   iIntros (old_i1) "[Hdeepown_old_i1 Hdeepown_old_i]". wp_auto.
   iDestruct "Hdeepown_old_i1" as (old_l1) "[%Hvalid_interface_old Hdeepown_old_l]".
@@ -516,7 +516,7 @@ Proof.
     as "Hdeepown_l".
   set new_kmeta := (KObjectV.objectmeta updated_kobj <| ObjectMetaV.ResourceVersion' := rv |>).
   set new_kobj := KObjectV.update_objectmeta updated_kobj new_kmeta.
-  wp_apply (wp_deepCopy i1 new_kobj with "[Hdeepown_l]").
+  wp_apply (wp_deepCopy i1 new_kobj (DfracOwn 1) with "[Hdeepown_l]").
   { iFrame. iPureIntro. unfold new_kobj, new_kmeta. destruct updated_kobj; done. }
   iIntros (i1') "[Hdeepown_i1' Hdeepown_i1]". wp_auto.
   iApply fupd_wp.
