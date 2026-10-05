@@ -17,6 +17,7 @@ import (
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	// "k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/controller"
+	upstreamrs "k8s.io/kubernetes/pkg/controller/replicaset"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/utils/clock"
 )
@@ -27,20 +28,9 @@ import (
 // * scheduling the next availability check
 
 const (
-	// Realistic value of the burstReplica field for the replica set manager based off
-	// performance requirements for kubernetes 1.0.
-	BurstReplicas       = 500
+	// The number of times we retry updating a ReplicaSet's status.
 	statusUpdateRetries = 1
 )
-
-// ReplicaSetControllerFeatures can be set in accordance with the controller type.
-type ReplicaSetControllerFeatures struct {
-	EnableStatusTerminatingReplicas bool
-}
-
-func DefaultReplicaSetControllerFeatures() ReplicaSetControllerFeatures {
-	return ReplicaSetControllerFeatures{EnableStatusTerminatingReplicas: true}
-}
 
 // getReplicaSetsWithSameController returns a list of ReplicaSets with the same
 // owner as the given ReplicaSet.
@@ -230,7 +220,7 @@ func slowStartBatch(count int, initialBatchSize int, fn func() error) (int, erro
 	return successes, nil
 }
 
-func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, rscClock clock.PassiveClock, controllerFeatures ReplicaSetControllerFeatures, namespace, name string) error {
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, rscClock clock.PassiveClock, controllerFeatures upstreamrs.ReplicaSetControllerFeatures, namespace, name string) error {
 	// Logging never affects the verified behavior, so the logger is omitted.
 	// logger := klog.FromContext(ctx)
 	// use <namespace, name> localize a unique ReplicaSet

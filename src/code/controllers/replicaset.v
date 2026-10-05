@@ -13,6 +13,7 @@ Require Export New.code.k8s_io.apiserver.pkg.util.feature.
 Require Export New.code.k8s_io.client_go.kubernetes.
 Require Export New.code.k8s_io.client_go.listers.apps.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
+Require Export New.code.k8s_io.kubernetes.pkg.controller.replicaset.
 Require Export New.code.k8s_io.kubernetes.pkg.features.
 Require Export New.code.k8s_io.utils.clock.
 Require Export New.code.reflect.
@@ -20,7 +21,6 @@ Require Export New.code.time.
 Require Export New.code.k8s_io.apimachinery.pkg.labels.
 Require Export New.code.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.code.k8s_io.kubernetes.pkg.api.v1.pod.
-Require Export New.code.k8s_io.kubernetes.pkg.controller.replicaset.
 Require Export New.code.k8s_io.utils.ptr.
 Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
@@ -35,15 +35,7 @@ End pkg_id.
 Export pkg_id.
 Module replicaset.
 
-Definition ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.Named "controllers/replicaset.ReplicaSetControllerFeatures"%go [].
-
-#[global] Opaque ReplicaSetControllerFeatures.
-
-Definition BurstReplicas {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #500.
-
 Definition statusUpdateRetries {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #1.
-
-Definition DefaultReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.DefaultReplicaSetControllerFeatures"%go.
 
 Definition getReplicaSetsWithSameController {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.getReplicaSetsWithSameController"%go.
 
@@ -63,16 +55,10 @@ Definition updateReplicaSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 Definition calculateStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/replicaset.calculateStatus"%go.
 
-(* go: replica_set.go:41:6 *)
-Definition DefaultReplicaSetControllerFeaturesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: <>,
-    exception_do (return: (let: "$v0" := #true in
-     CompositeLiteral ReplicaSetControllerFeatures (LiteralValue [KeyedElement (Some (KeyField "EnableStatusTerminatingReplicas"%go)) (ElementExpression go.bool "$v0")]))).
-
 (* getReplicaSetsWithSameController returns a list of ReplicaSets with the same
    owner as the given ReplicaSet.
 
-   go: replica_set.go:47:6 *)
+   go: replica_set.go:37:6 *)
 Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -115,7 +101,7 @@ Definition getReplicaSetsWithSameControllerⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
 (* getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
    with the same controller owner as rs.
 
-   go: replica_set.go:66:6 *)
+   go: replica_set.go:56:6 *)
 Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -176,7 +162,7 @@ Definition getIndirectlyRelatedPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
         do:  ("relatedPods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")))));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "relatedPods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:91:6 *)
+(* go: replica_set.go:81:6 *)
 Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "filteredPods" "relatedPods" "diff",
     exception_do (let: "diff" := (GoAlloc go.int "diff") in
@@ -199,7 +185,7 @@ Definition getPodsToDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getPodsRankedByRelatedPodsOnSameNode ranks each pod by the number of active
    related pods colocated on its node.
 
-   go: replica_set.go:103:6 *)
+   go: replica_set.go:93:6 *)
 Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "podsToRank" "relatedPods",
     exception_do (let: "relatedPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "relatedPods") in
@@ -233,7 +219,7 @@ Definition getPodsRankedByRelatedPodsOnSameNodeⁱᵐᵖˡ {ext : ffi_syntax} {g
      let: "$v2" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
      CompositeLiteral controller.ActivePodsWithRanks (LiteralValue [KeyedElement (Some (KeyField "Pods"%go)) (ElementExpression (go.SliceType (go.PointerType api_core_v1.Pod)) "$v0"); KeyedElement (Some (KeyField "Rank"%go)) (ElementExpression (go.SliceType go.int) "$v1"); KeyedElement (Some (KeyField "Now"%go)) (ElementExpression apis_meta_v1.Time "$v2")]))).
 
-(* go: replica_set.go:118:6 *)
+(* go: replica_set.go:108:6 *)
 Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "burstReplicas" "activePods" "rs",
     exception_do (let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
@@ -393,7 +379,7 @@ Definition manageReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
    It returns the number of successful calls to the function.
 
-   go: replica_set.go:207:6 *)
+   go: replica_set.go:197:6 *)
 Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "count" "initialBatchSize" "fn",
     exception_do (let: "fn" := (GoAlloc (go.FunctionType (go.Signature [] false [go.error])) "fn") in
@@ -456,12 +442,12 @@ Definition slowStartBatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       do:  ("remaining" <-[go.int] ((![go.int] "remaining") -⟨go.int⟩ (![go.int] "batchSize")))));;;
     return: (![go.int] "successes", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: replica_set.go:233:6 *)
+(* go: replica_set.go:223:6 *)
 Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "burstReplicas" "rscClock" "controllerFeatures" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "controllerFeatures" := (GoAlloc ReplicaSetControllerFeatures "controllerFeatures") in
+    let: "controllerFeatures" := (GoAlloc replicaset.ReplicaSetControllerFeatures "controllerFeatures") in
     let: "rscClock" := (GoAlloc clock.PassiveClock "rscClock") in
     let: "burstReplicas" := (GoAlloc go.int "burstReplicas") in
     let: "rsLister" := (GoAlloc listers_apps_v1.ReplicaSetLister "rsLister") in
@@ -500,7 +486,7 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     do:  ("activePods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
     let: "terminatingPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
     (if: (let: "$a0" := features.DeploymentReplicaSetTerminatingReplicas in
-    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
+    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef replicaset.ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "allRSPods") in
       (FuncResolve controller.FilterTerminatingPods [] #()) "$a0") in
@@ -527,7 +513,7 @@ Definition syncReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "$a1" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "activePods") in
     let: "$a2" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "terminatingPods") in
     let: "$a3" := (![go.error] "manageReplicasErr") in
-    let: "$a4" := (![ReplicaSetControllerFeatures] "controllerFeatures") in
+    let: "$a4" := (![replicaset.ReplicaSetControllerFeatures] "controllerFeatures") in
     let: "$a5" := (![time.Time] "now") in
     (FuncResolve calculateStatus [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
     do:  ("newStatus" <-[api_apps_v1.ReplicaSetStatus] "$r0");;;
@@ -612,7 +598,7 @@ Definition updateReplicaSetStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 Definition calculateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs" "activePods" "terminatingPods" "manageReplicasErr" "controllerFeatures" "now",
     exception_do (let: "now" := (GoAlloc time.Time "now") in
-    let: "controllerFeatures" := (GoAlloc ReplicaSetControllerFeatures "controllerFeatures") in
+    let: "controllerFeatures" := (GoAlloc replicaset.ReplicaSetControllerFeatures "controllerFeatures") in
     let: "manageReplicasErr" := (GoAlloc go.error "manageReplicasErr") in
     let: "terminatingPods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "terminatingPods") in
     let: "activePods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) "activePods") in
@@ -655,7 +641,7 @@ Definition calculateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #())));;;
     let: "terminatingReplicasCount" := (GoAlloc (go.PointerType go.int32) (GoZeroVal (go.PointerType go.int32) #())) in
     (if: (let: "$a0" := features.DeploymentReplicaSetTerminatingReplicas in
-    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
+    (MethodResolve featuregate.FeatureGate "Enabled"%go (![featuregate.FeatureGate] (GlobalVarAddr feature.DefaultFeatureGate #()))) "$a0") && (![go.bool] (StructFieldRef replicaset.ReplicaSetControllerFeatures "EnableStatusTerminatingReplicas"%go "controllerFeatures"))
     then
       let: "$r0" := (let: "$a0" := (Convert go.int go.int32 (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "terminatingPods") in
       (FuncResolve go.len [go.SliceType (go.PointerType api_core_v1.Pod)] #()) "$a0")) in
@@ -716,14 +702,13 @@ Definition calculateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 
 #[global] Instance info' : PkgInfo pkg_id.replicaset :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.sync.pkg_id.sync; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apiserver.pkg.util.feature.pkg_id.feature; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.features.pkg_id.features; code.k8s_io.utils.clock.pkg_id.clock; code.reflect.pkg_id.reflect; code.time.pkg_id.time; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.client_go.kubernetes.typed.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.api.v1.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.controller.replicaset.pkg_id.replicaset; code.k8s_io.utils.ptr.pkg_id.ptr]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.controllers.common.pkg_id.common; code.kubernetes_model.apimodel.pkg_id.apimodel; code.sort.pkg_id.sort; code.sync.pkg_id.sync; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apiserver.pkg.util.feature.pkg_id.feature; code.k8s_io.client_go.kubernetes.pkg_id.kubernetes; code.k8s_io.client_go.listers.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.controller.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.features.pkg_id.features; code.k8s_io.utils.clock.pkg_id.clock; code.reflect.pkg_id.reflect; code.time.pkg_id.time; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.client_go.kubernetes.typed.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.api.v1.pod.pkg_id.pod; code.k8s_io.utils.ptr.pkg_id.ptr]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.replicaset (λ: <>,
       exception_do (do:  (ptr.initialize' #());;;
-      do:  (replicaset.initialize' #());;;
       do:  (pod.initialize' #());;;
       do:  (typed_apps_v1.initialize' #());;;
       do:  (labels.initialize' #());;;
@@ -731,6 +716,7 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (reflect.initialize' #());;;
       do:  (clock.initialize' #());;;
       do:  (features.initialize' #());;;
+      do:  (replicaset.initialize' #());;;
       do:  (controller.initialize' #());;;
       do:  (listers_apps_v1.initialize' #());;;
       do:  (kubernetes.initialize' #());;;
@@ -747,41 +733,8 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (context.initialize' #()))
       ).
 
-Module ReplicaSetControllerFeatures.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Record t :=
-mk {
-  EnableStatusTerminatingReplicas' : bool;
-}.
-
-#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
-#[global] Arguments mk : clear implicits.
-#[global] Arguments t : clear implicits.
-End def.
-End ReplicaSetControllerFeatures.
-
-Definition ReplicaSetControllerFeatures'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "EnableStatusTerminatingReplicas"%go go.bool)
-].
-Program Definition ReplicaSetControllerFeatures'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetControllerFeatures'fds_unsealed).
-Global Instance equals_unfold_ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetControllerFeatures'fds =→ ReplicaSetControllerFeatures'fds_unsealed.
-Proof. rewrite /ReplicaSetControllerFeatures'fds seal_eq //. Qed.
-
-Definition ReplicaSetControllerFeaturesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetControllerFeatures'fds).
-
-Class ReplicaSetControllerFeatures_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] ReplicaSetControllerFeatures_type_repr  :: go.TypeReprUnderlying ReplicaSetControllerFeaturesⁱᵐᵖˡ ReplicaSetControllerFeatures.t;
-  #[global] ReplicaSetControllerFeatures_underlying :: (ReplicaSetControllerFeatures) <u (ReplicaSetControllerFeaturesⁱᵐᵖˡ);
-  #[global] ReplicaSetControllerFeatures_get_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) :: ⟦StructFieldGet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", #x⟧ ⤳[under] #x.(ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas');
-  #[global] ReplicaSetControllerFeatures_set_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) y :: ⟦StructFieldSet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas' := y|>);
-}.
-
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ReplicaSetControllerFeatures_instance :: ReplicaSetControllerFeatures_Assumptions;
-  #[global] DefaultReplicaSetControllerFeatures_unfold :: FuncUnfold DefaultReplicaSetControllerFeatures [] (DefaultReplicaSetControllerFeaturesⁱᵐᵖˡ);
   #[global] getReplicaSetsWithSameController_unfold :: FuncUnfold getReplicaSetsWithSameController [] (getReplicaSetsWithSameControllerⁱᵐᵖˡ);
   #[global] getIndirectlyRelatedPods_unfold :: FuncUnfold getIndirectlyRelatedPods [] (getIndirectlyRelatedPodsⁱᵐᵖˡ);
   #[global] getPodsToDelete_unfold :: FuncUnfold getPodsToDelete [] (getPodsToDeleteⁱᵐᵖˡ);
@@ -805,6 +758,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_kubernetes_Assumption :: kubernetes.Assumptions;
   #[global] import_listers_apps_v1_Assumption :: listers_apps_v1.Assumptions;
   #[global] import_controller_Assumption :: controller.Assumptions;
+  #[global] import_replicaset_Assumption :: replicaset.Assumptions;
   #[global] import_features_Assumption :: features.Assumptions;
   #[global] import_clock_Assumption :: clock.Assumptions;
   #[global] import_reflect_Assumption :: reflect.Assumptions;
@@ -812,7 +766,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_labels_Assumption :: labels.Assumptions;
   #[global] import_typed_apps_v1_Assumption :: typed_apps_v1.Assumptions;
   #[global] import_pod_Assumption :: pod.Assumptions;
-  #[global] import_replicaset_Assumption :: replicaset.Assumptions;
   #[global] import_ptr_Assumption :: ptr.Assumptions;
 }.
 End replicaset.

@@ -163,7 +163,7 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
   desired state, assuming that the cluster state is *ready* for the controller to make progress.
   Here, ready means none of the controller's children objects (Pods) are terminating. *)
 Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
-    (rsc_clock : interface.t) (controller_features : replicaset.ReplicaSetControllerFeatures.t)
+    (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t)
     namespace name rs dq pods
     : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
@@ -207,7 +207,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
   make progress. Here, unready means the controller has some terminating children objects, so the controller might need
   to wait for termination before making progress. *)
 Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
-    (rsc_clock : interface.t) (controller_features : replicaset.ReplicaSetControllerFeatures.t)
+    (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t)
     namespace name rs dq pods
     : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
@@ -238,7 +238,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
    the observed pod count matches the desired count. Status may be updated and
    the sync may return an error. Status correctness is left to helper specs. *)
 Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
-    (rsc_clock : interface.t) (controller_features : replicaset.ReplicaSetControllerFeatures.t)
+    (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t)
     namespace name rs dq pods
     : iProp Σ :=
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗

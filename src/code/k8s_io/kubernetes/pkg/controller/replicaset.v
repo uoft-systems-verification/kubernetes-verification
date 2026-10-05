@@ -23,8 +23,6 @@ Definition ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalCo
 
 Axiom ReplicaSetControllerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ReplicaSetControllerFeaturesⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom BurstReplicas : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
 Axiom statusUpdateRetries : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
@@ -194,17 +192,32 @@ Class ReplicaSetController_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{
 Module ReplicaSetControllerFeatures.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  EnableStatusTerminatingReplicas' : bool;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End ReplicaSetControllerFeatures.
+
+Definition ReplicaSetControllerFeatures'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "EnableStatusTerminatingReplicas"%go go.bool)
+].
+Program Definition ReplicaSetControllerFeatures'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetControllerFeatures'fds_unsealed).
+Global Instance equals_unfold_ReplicaSetControllerFeatures {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetControllerFeatures'fds =→ ReplicaSetControllerFeatures'fds_unsealed.
+Proof. rewrite /ReplicaSetControllerFeatures'fds seal_eq //. Qed.
+
+Definition ReplicaSetControllerFeaturesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ReplicaSetControllerFeatures'fds).
 
 Class ReplicaSetControllerFeatures_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ReplicaSetControllerFeatures_type_repr  :: go.TypeReprUnderlying ReplicaSetControllerFeaturesⁱᵐᵖˡ ReplicaSetControllerFeatures.t;
   #[global] ReplicaSetControllerFeatures_underlying :: (ReplicaSetControllerFeatures) <u (ReplicaSetControllerFeaturesⁱᵐᵖˡ);
-  #[global] ReplicaSetControllerFeaturesⁱᵐᵖˡ_underlying :: (ReplicaSetControllerFeaturesⁱᵐᵖˡ) ↓u (ReplicaSetControllerFeaturesⁱᵐᵖˡ);
+  #[global] ReplicaSetControllerFeatures_get_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) :: ⟦StructFieldGet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", #x⟧ ⤳[under] #x.(ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas');
+  #[global] ReplicaSetControllerFeatures_set_EnableStatusTerminatingReplicas (x : ReplicaSetControllerFeatures.t) y :: ⟦StructFieldSet (ReplicaSetControllerFeaturesⁱᵐᵖˡ) "EnableStatusTerminatingReplicas", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas' := y|>);
 }.
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
