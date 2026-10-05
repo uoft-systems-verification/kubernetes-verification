@@ -45,8 +45,8 @@ Context {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Local Set Default Proof Using "All".
 
-(* As for Pod.DeepCopy, this generated Kubernetes method is outside the current
-   translation. The copy owns fresh mutable storage; the source is preserved. *)
+(* This lemma is outside the current translation. 
+   The copy owns fresh mutable storage; the source is preserved. *)
 Lemma wp_ReplicaSet__DeepCopy rs_l rs_phy rs dq_ptr dq :
   {{{ is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1 ∗
       rs_l ↦{dq_ptr} rs_phy ∗
