@@ -4,6 +4,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.k8s_io.kubernetes.pkg.controller Require Import replicaset.
 From New.proof.controllers.replicaset Require Export replicaset_init external_specs.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels_validated_set.
+From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
 From New.proof.kubernetes_types Require Export prelude.
 
@@ -59,7 +60,7 @@ Qed.
 Lemma status_deepown_counts (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t)
     r f rd av (tptr : loc) (topt : option w32) :
   ReplicaSetStatusV.deepown sc st DfracDiscarded -∗
-  (match topt with Some n => tptr ↦□ n | None => ⌜ tptr = null ⌝ end) -∗
+  opt_ptr_rep tptr topt DfracDiscarded -∗
   ReplicaSetStatusV.deepown
     (api_apps_v1.ReplicaSetStatus.mk r f rd av tptr
       sc.(api_apps_v1.ReplicaSetStatus.ObservedGeneration')
@@ -68,7 +69,7 @@ Lemma status_deepown_counts (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaS
       st.(ReplicaSetStatusV.ObservedGeneration') st.(ReplicaSetStatusV.Conditions'))
     DfracDiscarded.
 Proof.
-  rewrite /ReplicaSetStatusV.deepown. iIntros "H Ht". iNamed "H". simpl.
+  rewrite /ReplicaSetStatusV.deepown /opt_ptr_rep. iIntros "H Ht". iNamed "H". simpl.
   iFrame "# %". destruct topt as [n|]; simpl.
   - iDestruct (typed_pointsto_not_null with "Ht") as %Hnn.
     iFrame "Ht Hdeepown_conditions_some". iPureIntro.

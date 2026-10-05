@@ -249,93 +249,9 @@ Proof.
   iApply ("HΦ" with "Hpost").
 Qed.
 
-Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkey_def" ∷ ⌜ key = {|
-        KKey.Kind' := "ReplicaSet"%go;
-        KKey.Namespace' := namespace;
-        KKey.Name' := name
-      |} ⌝ ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
-  }}}
-    l @! (go.PointerType apimodel.State) @! "ReplicaSetMutGet" #namespace #name
-  {{{ rs_l rs, RET (#rs_l, #interface.nil);
-      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
-      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
-      "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
-      "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
-      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
-  }}}.
-Proof.
-  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
-  wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_apply (wp_State__get_some γ l
-    {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
-    uid dq dq kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec)) None
-    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
-  iIntros (i kobj) "Hpost". iNamed "Hpost".
-  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
-  destruct kobj as [pod|rs|pvc|sts|d]; try solve [simpl in Hspec_eq; done].
-  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
-  assert (Hspec_eq' : kspec = rs.(ReplicaSetV.Spec')) by congruence.
-  clear Hspec_eq.
-  rename Hspec_eq' into Hspec_eq.
-  iDestruct "Hdeepown_i" as (rs_l) "[%Hi Hdeepown_l]".
-  wp_auto.
-  unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
-  change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
-  cbn [interface.ty interface.v].
-  replace (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
-           then #rs_l else #null)%V with (#rs_l)%V by
-    (rewrite decide_True; done).
-  replace (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)) with true by
-    (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
-  iApply "HΦ". iFrame. iPureIntro. split_and!; done.
-Qed.
-
-Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hkey_def" ∷ ⌜ key = {|
-        KKey.Kind' := "ReplicaSet"%go;
-        KKey.Namespace' := namespace;
-        KKey.Name' := name
-      |} ⌝ ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
-  }}}
-    l @! (go.PointerType apimodel.State) @! "ReplicaSetGet" #namespace #name
-  {{{ rs_l rs, RET (#rs_l, #interface.nil);
-      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
-      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
-      "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
-      "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
-      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
-  }}}.
-Proof.
-  iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec
-    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
-  { iPureIntro. done. }
-  iIntros (rs_l rs) "Hpost".
-  wp_auto.
-  iApply ("HΦ" with "Hpost").
-Qed.
-
-(* Like [wp_State__ReplicaSetMutGet], but also ties the returned status to a
-   status fragment, which may be held at a different fraction than the
-   metadata and spec fragments. *)
-Lemma wp_State__ReplicaSetMutGet_status γ l key namespace name uid dq dq_status kmeta kspec kstatus :
+(* The status fragment may be held at a different fraction than the metadata
+   and spec fragments. *)
+Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -391,7 +307,7 @@ Proof.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
-Lemma wp_State__ReplicaSetGet_status γ l key namespace name uid dq dq_status kmeta kspec kstatus :
+Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta kspec kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -419,7 +335,7 @@ Lemma wp_State__ReplicaSetGet_status γ l key namespace name uid dq dq_status km
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_apply (wp_State__ReplicaSetMutGet_status γ l key namespace name uid dq dq_status kmeta kspec kstatus
+  wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (rs_l rs) "Hpost".

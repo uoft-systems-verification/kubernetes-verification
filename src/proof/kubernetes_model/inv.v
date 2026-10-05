@@ -34,6 +34,20 @@ Definition own_kview_auth γ state used_uid : iProp Σ :=
 Definition own_meta_frag γ k uid dq m : iProp Σ :=
   kview.own_meta_frag γ.(γ_state) k uid dq m.
 
+(* The metadata fragment does not record the resource version. *)
+Lemma own_meta_frag_equiv_except_resource_version {γ k uid dq meta1 meta2} :
+  ObjectMetaV.equiv_except_resource_version meta1 meta2 →
+  own_meta_frag γ k uid dq meta2 -∗
+  own_meta_frag γ k uid dq meta1.
+Proof.
+  iIntros (Hmeta_eq) "Hown_meta".
+  assert (kview.mk_meta_frag k uid dq meta1 = kview.mk_meta_frag k uid dq meta2) as Hfrag_eq.
+  { rewrite /kview.mk_meta_frag /ObjectMetaV.equiv_except_resource_version in Hmeta_eq |- *.
+    rewrite Hmeta_eq. done. }
+  rewrite /own_meta_frag /kview.own_meta_frag Hfrag_eq.
+  iExact "Hown_meta".
+Qed.
+
 Definition own_spec_frag γ k uid dq sp : iProp Σ :=
   kview.own_spec_frag γ.(γ_state) k uid dq sp.
 

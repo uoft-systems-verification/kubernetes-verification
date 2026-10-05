@@ -1,7 +1,6 @@
 From New.proof Require Import prelude empty_ffi wp_helpers.
+From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.controllers.replicaset Require Export replicaset_client external_specs calculate_status.
-
-Module ptrpkg := code.k8s_io.utils.ptr.ptr.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -61,39 +60,6 @@ Local Set Default Proof Using "All".
 Local Ltac split_bool :=
   match goal with |- context [bool_decide ?P] => destruct (bool_decide P) eqn:? end.
 
-(* An optional [*int32]: a readable cell or nil. *)
-Definition opt_ptr_rep (p : loc) (o : option w32) dq : iProp Σ :=
-  match o with
-  | Some n => p ↦{dq} n
-  | None => ⌜ p = null ⌝
-  end.
-
-#[global] Instance opt_ptr_rep_persistent p o : Persistent (opt_ptr_rep p o DfracDiscarded).
-Proof. rewrite /opt_ptr_rep. destruct o; apply _. Qed.
-
-Lemma wp_ptr_Equal_int32 (a b : loc) oa ob dqa dqb :
-  {{{ opt_ptr_rep a oa dqa ∗ opt_ptr_rep b ob dqb }}}
-    #(functions ptrpkg.Equal [go.int32]) #a #b
-  {{{ (r : bool), RET #r; opt_ptr_rep a oa dqa ∗ opt_ptr_rep b ob dqb }}}.
-Proof.
-  iIntros (Φ) "[Ha Hb] HΦ".
-  wp_func_call. rewrite /ptrpkg.Equalⁱᵐᵖˡ. wp_call. wp_auto.
-  destruct oa as [na|]; destruct ob as [nb|]; rewrite /opt_ptr_rep.
-  - iDestruct (typed_pointsto_not_null with "Ha") as %Ha.
-    iDestruct (typed_pointsto_not_null with "Hb") as %Hb.
-    rewrite (bool_decide_false (a = null)) // (bool_decide_false (b = null)) //.
-    wp_auto. rewrite (bool_decide_false (a = null)) //. wp_auto. iApply "HΦ". iFrame.
-  - iDestruct "Hb" as %->. iDestruct (typed_pointsto_not_null with "Ha") as %Ha.
-    rewrite (bool_decide_false (a = null)) // (bool_decide_true (null = null)) //.
-    wp_auto. iApply "HΦ". iFrame. done.
-  - iDestruct "Ha" as %->. iDestruct (typed_pointsto_not_null with "Hb") as %Hb.
-    rewrite (bool_decide_false (b = null)) // (bool_decide_true (null = null)) //.
-    wp_auto. iApply "HΦ". iFrame. done.
-  - iDestruct "Ha" as %->. iDestruct "Hb" as %->.
-    rewrite (bool_decide_true (null = null)) //.
-    wp_auto. iApply "HΦ". done.
-Qed.
-
 Lemma status_terminating_rep (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t) :
   ReplicaSetStatusV.deepown sc st DfracDiscarded ⊢
   opt_ptr_rep sc.(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
@@ -129,17 +95,6 @@ Lemma meta_equiv_key_uid (m1 m2 : ObjectMetaV.t) :
 Proof.
   rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
   destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
-Qed.
-
-Lemma meta_frag_equiv {γ k uid dq meta1 meta2} :
-  ObjectMetaV.equiv_except_resource_version meta1 meta2 →
-  own_meta_frag γ k uid dq meta2 -∗ own_meta_frag γ k uid dq meta1.
-Proof.
-  iIntros (Hmeta_eq) "Hown_meta".
-  assert (kview.mk_meta_frag k uid dq meta1 = kview.mk_meta_frag k uid dq meta2) as Hfrag_eq.
-  { rewrite /kview.mk_meta_frag /ObjectMetaV.equiv_except_resource_version in Hmeta_eq |- *.
-    rewrite Hmeta_eq. done. }
-  rewrite /own_meta_frag /kview.own_meta_frag Hfrag_eq. iExact "Hown_meta".
 Qed.
 
 (* [updateReplicaSetStatus] writes the requested status (with the observed
@@ -194,7 +149,7 @@ Proof.
       "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
   { Timeout 60 (repeat (split_bool; try wp_auto; try (iExists false; iFrame; done))).
-    all: wp_apply (wp_ptr_Equal_int32 with "[]");
+    all: wp_apply (wp_Equal_int32 with "[]");
       [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
     all: iIntros (r) "_".
     all: destruct r; try wp_auto; try (iExists false; iFrame; done).
@@ -309,7 +264,7 @@ Proof.
     { iPureIntro. rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_eq Hcur_meta |- *.
       congruence. }
     iSplit; first (iPureIntro; congruence).
-    iSplitL "Hown_meta_frag"; first (iApply (meta_frag_equiv with "Hown_meta_frag"); done).
+    iSplitL "Hown_meta_frag"; first (iApply (own_meta_frag_equiv_except_resource_version with "Hown_meta_frag"); done).
     iSplitL "Hown_spec_frag"; first done.
     iSplitL "Hown_status_frag"; first (rewrite Hstatus_eq; done).
     iPureIntro. right. word. }
