@@ -1,6 +1,9 @@
 From New.proof Require Import prelude empty_ffi wp_helpers.
 From New.proof.k8s_io.utils Require Import ptr.
-From New.proof.controllers.replicaset Require Export replicaset_client external_specs calculate_status.
+From New.proof Require Import reflect.
+From New.proof.controllers.replicaset Require Export replicaset_client calculate_status.
+
+Module goreflect := code.reflect.reflect.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -60,43 +63,6 @@ Local Set Default Proof Using "All".
 Local Ltac split_bool :=
   match goal with |- context [bool_decide ?P] => destruct (bool_decide P) eqn:? end.
 
-Lemma status_terminating_rep (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t) :
-  ReplicaSetStatusV.deepown sc st DfracDiscarded ⊢
-  opt_ptr_rep sc.(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
-    st.(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded.
-Proof.
-  rewrite /ReplicaSetStatusV.deepown /opt_ptr_rep. iIntros "H". iNamed "H".
-  destruct (st.(ReplicaSetStatusV.TerminatingReplicas')); first done.
-  iPureIntro. by apply Hdeepown_terminatingreplicas_none.
-Qed.
-
-Lemma status_deepown_observed_generation (sc : api_apps_v1.ReplicaSetStatus.t)
-    (st : ReplicaSetStatusV.t) (g : w64) dq :
-  ReplicaSetStatusV.deepown sc st dq ⊢
-  ReplicaSetStatusV.deepown (sc <| api_apps_v1.ReplicaSetStatus.ObservedGeneration' := g |>)
-    (st <| ReplicaSetStatusV.ObservedGeneration' := g |>) dq.
-Proof. rewrite /ReplicaSetStatusV.deepown. iIntros "H". iNamed "H". simpl. iFrame "∗ %". done. Qed.
-
-Lemma replicaset_deepown_set_status (c : api_apps_v1.ReplicaSet.t) (v : ReplicaSetV.t)
-    (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t) dq :
-  ReplicaSetV.deepown c v dq -∗ ReplicaSetStatusV.deepown sc st dq -∗
-  ReplicaSetV.deepown (c <| api_apps_v1.ReplicaSet.Status' := sc |>)
-    (v <| ReplicaSetV.Status' := st |>) dq.
-Proof.
-  rewrite /ReplicaSetV.deepown. iIntros "H Hst". iNamed "H". simpl. iFrame "∗ %".
-Qed.
-
-Lemma meta_equiv_key_uid (m1 m2 : ObjectMetaV.t) :
-  ObjectMetaV.equiv_except_resource_version m1 m2 →
-  ReplicaSetV.meta_key m1 = ReplicaSetV.meta_key m2 ∧
-  m1.(ObjectMetaV.UID') = m2.(ObjectMetaV.UID') ∧
-  m1.(ObjectMetaV.Namespace') = m2.(ObjectMetaV.Namespace') ∧
-  m1.(ObjectMetaV.Name') = m2.(ObjectMetaV.Name').
-Proof.
-  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
-  destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
-Qed.
-
 (* [updateReplicaSetStatus] writes the requested status (with the observed
    generation set), retrying once after a GET. Every outcome keeps the stored
    metadata (up to resource version) and spec; the status fragment follows the
@@ -137,10 +103,10 @@ Proof.
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') ⌝)%I as %Hgen.
   { iNamed "Hrs". iNamed "Hdeepown_objectmeta". done. }
   iApply wp_fupd.
-  iPoseProof (status_terminating_rep with "Hstatus") as "#Hnew_term".
+  iPoseProof (ReplicaSetStatusV.terminating_rep with "Hstatus") as "#Hnew_term".
   iAssert (opt_ptr_rep rs_phy.(v1.ReplicaSet.Status').(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
     rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
-  { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (status_terminating_rep with "Hst"). }
+  { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
   Timeout 120 wp_auto.
   (* The no-op check evaluates to some boolean. *)
   wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
@@ -154,14 +120,14 @@ Proof.
     all: iIntros (r) "_".
     all: destruct r; try wp_auto; try (iExists false; iFrame; done).
     all: split_bool; try wp_auto; try (iExists false; iFrame; done).
-    all: wp_apply wp_reflect_DeepEqual.
+    all: wp_apply wp_DeepEqual.
     all: iIntros (r) "_". all: iExists r; iFrame; done. }
   iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
   destruct b.
   { (* already up to date: nothing is written *)
     wp_auto. iApply ("HΦ" $! rs_l interface.nil rs). iModIntro. iFrame. iPureIntro. split; [done|by intros]. }
   Timeout 120 wp_auto.
-  iPoseProof (status_deepown_observed_generation _ _
+  iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
   set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
       (dqc : dfrac) (upd : loc) (uerr gerr : interface.t),
@@ -201,8 +167,8 @@ Proof.
     (cur <| ReplicaSetV.Status' := status <| ReplicaSetStatusV.ObservedGeneration' :=
       rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') |> |>)
     DfracDiscarded)%I with "[Hcur]" as "Hinput".
-  { iExists _. iFrame "Hcur_l". iApply (replicaset_deepown_set_status with "Hcur Hreq"). }
-  destruct (meta_equiv_key_uid _ _ Hcur_meta) as (Hkey_meta & Huid_meta & Hns_meta & Hname_meta).
+  { iExists _. iFrame "Hcur_l". iApply (ReplicaSetV.deepown_set_status with "Hcur Hreq"). }
+  destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hcur_meta) as (Hkey_meta & Huid_meta & Hns_meta & Hname_meta).
   assert (ReplicaSetV.key rs = ReplicaSetV.key cur) as Hkey_cur.
   { rewrite /ReplicaSetV.key Hkey_meta. done. }
   iEval (rewrite Hkey_cur -Huid_meta) in "Hmeta".

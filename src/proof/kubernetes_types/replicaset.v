@@ -1,4 +1,5 @@
 From New.proof Require Import prelude empty_ffi util.
+From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.kubernetes_types Require Export labelselector pod.
 From New.proof.kubernetes_types Require Import top_level.
 
@@ -320,6 +321,46 @@ Proof using All.
   rewrite /deepown. destruct (v.(TerminatingReplicas')), (v.(Conditions')); apply _.
 Qed.
 
+Lemma terminating_rep (sc : v1.ReplicaSetStatus.t) (st : t) :
+  deepown sc st DfracDiscarded ⊢
+  opt_ptr_rep sc.(v1.ReplicaSetStatus.TerminatingReplicas')
+    st.(TerminatingReplicas') DfracDiscarded.
+Proof.
+  rewrite /deepown /opt_ptr_rep. iIntros "H". iNamed "H".
+  destruct (st.(TerminatingReplicas')); first done.
+  iPureIntro. by apply Hdeepown_terminatingreplicas_none.
+Qed.
+
+Lemma deepown_set_observed_generation (sc : v1.ReplicaSetStatus.t)
+    (st : t) (g : w64) dq :
+  deepown sc st dq ⊢
+  deepown (sc <| v1.ReplicaSetStatus.ObservedGeneration' := g |>)
+    (st <| ObservedGeneration' := g |>) dq.
+Proof. rewrite /deepown. iIntros "H". iNamed "H". simpl. iFrame "∗ %". done. Qed.
+
+(* The status returned by [calculateStatus]: the counts and terminating
+   pointer are replaced, observed generation and conditions are kept. *)
+Lemma deepown_set_counts (sc : v1.ReplicaSetStatus.t) (st : t)
+    r f rd av (tptr : loc) (topt : option w32) :
+  deepown sc st DfracDiscarded -∗
+  opt_ptr_rep tptr topt DfracDiscarded -∗
+  deepown
+    (v1.ReplicaSetStatus.mk r f rd av tptr
+      sc.(v1.ReplicaSetStatus.ObservedGeneration')
+      sc.(v1.ReplicaSetStatus.Conditions'))
+    (mk r f rd av topt
+      st.(ObservedGeneration') st.(Conditions'))
+    DfracDiscarded.
+Proof.
+  rewrite /deepown /opt_ptr_rep. iIntros "H Ht". iNamed "H". simpl.
+  iFrame "# %". destruct topt as [n|]; simpl.
+  - iDestruct (typed_pointsto_not_null with "Ht") as %Hnn.
+    iFrame "Ht Hdeepown_conditions_some". iPureIntro.
+    split_and!; done.
+  - iDestruct "Ht" as %->. iFrame "Hdeepown_conditions_some". iPureIntro.
+    split_and!; done.
+Qed.
+
 End def.
 End ReplicaSetStatusV.
 
@@ -556,6 +597,26 @@ Proof.
   assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
   { destruct v. done. }
   iFrame.
+Qed.
+
+Lemma deepown_set_status (c : v1.ReplicaSet.t) (v : t)
+    (sc : v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t) dq :
+  deepown c v dq -∗ ReplicaSetStatusV.deepown sc st dq -∗
+  deepown (c <| v1.ReplicaSet.Status' := sc |>)
+    (v <| Status' := st |>) dq.
+Proof.
+  rewrite /deepown. iIntros "H Hst". iNamed "H". simpl. iFrame "∗ %".
+Qed.
+
+Lemma meta_equiv_key_uid (m1 m2 : ObjectMetaV.t) :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  meta_key m1 = meta_key m2 ∧
+  m1.(ObjectMetaV.UID') = m2.(ObjectMetaV.UID') ∧
+  m1.(ObjectMetaV.Namespace') = m2.(ObjectMetaV.Namespace') ∧
+  m1.(ObjectMetaV.Name') = m2.(ObjectMetaV.Name').
+Proof.
+  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
+  destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
 Qed.
 
 End proof.
