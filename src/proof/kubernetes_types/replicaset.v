@@ -186,25 +186,12 @@ Record t := mk {
 Global Instance eq_dec : EqDecision t.
 Proof. solve_decision. Qed.
 
-Definition deepown (c : v1.ReplicaSetCondition.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_type" ∷ ⌜ c.(v1.ReplicaSetCondition.Type') = v.(Type') ⌝ ∗
-  "%Hdeepown_status" ∷ ⌜ c.(v1.ReplicaSetCondition.Status') = v.(Status') ⌝ ∗
-  "Hdeepown_lasttransitiontime" ∷
-    TimeV.deepown c.(v1.ReplicaSetCondition.LastTransitionTime') v.(LastTransitionTime') dq ∗
-  "%Hdeepown_reason" ∷ ⌜ c.(v1.ReplicaSetCondition.Reason') = v.(Reason') ⌝ ∗
-  "%Hdeepown_message" ∷ ⌜ c.(v1.ReplicaSetCondition.Message') = v.(Message') ⌝.
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iMod (TimeV.deepown_persist with "Hdeepown_lasttransitiontime") as "Ht".
-  iModIntro. by iFrame "∗ # %".
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
+(* Every field is a plain value (the transition time is only its instant, see
+   [TimeV]), so the view is a function of the Go struct. *)
+Definition of_go (c : v1.ReplicaSetCondition.t) : t :=
+  mk c.(v1.ReplicaSetCondition.Type') c.(v1.ReplicaSetCondition.Status')
+    (TimeV.of_go c.(v1.ReplicaSetCondition.LastTransitionTime'))
+    c.(v1.ReplicaSetCondition.Reason') c.(v1.ReplicaSetCondition.Message').
 
 End def.
 End ReplicaSetConditionV.
@@ -283,8 +270,8 @@ Definition deepown (c : v1.ReplicaSetStatus.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_observedgeneration" ∷ ⌜ c.(v1.ReplicaSetStatus.ObservedGeneration') = v.(ObservedGeneration') ⌝ ∗
   "%Hdeepown_conditions_none" ∷ ⌜ c.(v1.ReplicaSetStatus.Conditions') = slice.nil ↔ v.(Conditions') = None ⌝ ∗
   "Hdeepown_conditions_some" ∷ (match v.(Conditions') with
-    | Some conditions => ∃ cs, deepown_list c.(v1.ReplicaSetStatus.Conditions') cs conditions
-        (λ c v, ReplicaSetConditionV.deepown c v dq) dq
+    | Some conditions => ∃ cs, c.(v1.ReplicaSetStatus.Conditions') ↦*{dq} cs ∗
+        ⌜ conditions = ReplicaSetConditionV.of_go <$> cs ⌝
     | None => True%I
     end).
 
@@ -317,22 +304,20 @@ Proof using All.
   { destruct (v.(TerminatingReplicas')); last done.
     by iPersist "Hdeepown_terminatingreplicas_some". }
   iAssert (|==> match v.(Conditions') with
-    | Some conditions => ∃ cs, deepown_list c.(v1.ReplicaSetStatus.Conditions') cs conditions
-        (λ c v, ReplicaSetConditionV.deepown c v DfracDiscarded) DfracDiscarded
+    | Some conditions => ∃ cs, c.(v1.ReplicaSetStatus.Conditions') ↦*□ cs ∗
+        ⌜ conditions = ReplicaSetConditionV.of_go <$> cs ⌝
     | None => True%I
     end)%I with "[Hdeepown_conditions_some]" as ">Hconditions".
   { destruct (v.(Conditions')); last done.
-    iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl Hlist]".
+    iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl %Hcs]".
     iMod (own_slice_persist with "Hsl") as "Hsl".
-    iMod (big_sepL2_persist ReplicaSetConditionV.deepown with "Hlist") as "Hlist".
-    { intros. apply ReplicaSetConditionV.deepown_persist. }
-    iModIntro. iExists cs. rewrite /deepown_list. by iFrame. }
+    iModIntro. iExists cs. by iFrame. }
   iModIntro. by iFrame "∗ # %".
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
 Proof using All.
-  rewrite /deepown /deepown_list. destruct (v.(TerminatingReplicas')), (v.(Conditions')); apply _.
+  rewrite /deepown. destruct (v.(TerminatingReplicas')), (v.(Conditions')); apply _.
 Qed.
 
 End def.

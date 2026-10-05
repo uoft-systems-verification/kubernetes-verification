@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
 From New.proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
 From New.proof.kubernetes_types Require Export prelude.
 
@@ -104,29 +104,6 @@ Definition conditions_without (ct : go_string)
       end
   end.
 
-Lemma big_sepL2_conditions_filter (cs : list api_apps_v1.ReplicaSetCondition.t)
-    (conds : list ReplicaSetConditionV.t) ct :
-  ([∗ list] c;v ∈ cs;conds, ReplicaSetConditionV.deepown (Σ:=Σ) c v DfracDiscarded) ⊢
-  ([∗ list] c;v ∈ filter (keep_condition_c ct) cs; filter (keep_condition ct) conds,
-    ReplicaSetConditionV.deepown c v DfracDiscarded).
-Proof.
-  iIntros "H".
-  iInduction cs as [|c cs] "IH" forall (conds); destruct conds as [|v conds].
-  - done.
-  - iDestruct (big_sepL2_nil_inv_l with "H") as %Hnil. discriminate Hnil.
-  - iDestruct (big_sepL2_nil_inv_r with "H") as %Hnil. discriminate Hnil.
-  - rewrite big_sepL2_cons. iDestruct "H" as "[#Hcv H]".
-    iAssert (⌜ c.(api_apps_v1.ReplicaSetCondition.Type') = v.(ReplicaSetConditionV.Type') ⌝)%I
-      as %Htype.
-    { iDestruct "Hcv" as "(%Htype & _)". done. }
-    rewrite !filter_cons.
-    destruct (decide (keep_condition_c ct c)) as [Hkeep|Hdrop];
-      [rewrite decide_True; first (rewrite /keep_condition -Htype; exact Hkeep)
-      |rewrite decide_False; first (rewrite /keep_condition -Htype; exact Hdrop)].
-    + rewrite big_sepL2_cons. iFrame "Hcv". iApply ("IH" with "H").
-    + iApply ("IH" with "H").
-Qed.
-
 Lemma wp_RemoveCondition status_l (status_c : api_apps_v1.ReplicaSetStatus.t) status
     (ct : go_string) :
   {{{ is_pkg_init upstream_rs_pkg ∗
@@ -147,23 +124,20 @@ Proof.
   iPoseProof "Hdeepown" as "Hdeepown'".
   rewrite {2}/ReplicaSetStatusV.deepown. iNamed "Hdeepown'".
   destruct status.(ReplicaSetStatusV.Conditions') as [conds|] eqn:Hconds.
-  - iDestruct "Hdeepown_conditions_some" as (cs) "[#Hsl #Hcs]".
+  - iDestruct "Hdeepown_conditions_some" as (cs) "[#Hsl %Hcs]".
     wp_apply (wp_filterOutCondition with "[$Hsl]").
     iIntros (sl') "(_ & Hsl' & %Hsl'_nil)". wp_auto.
     iMod (own_slice_persist with "Hsl'") as "#Hsl'".
-    iDestruct (big_sepL2_conditions_filter _ _ ct with "Hcs") as "#Hcs'".
-    iDestruct (big_sepL2_length with "Hcs'") as %Hlen'.
     iModIntro. iApply "HΦ". iFrame "Hl".
-    rewrite /ReplicaSetStatusV.deepown /conditions_without /=.
+    assert (filter (keep_condition ct) (ReplicaSetConditionV.of_go <$> cs) =
+      ReplicaSetConditionV.of_go <$> filter (keep_condition_c ct) cs) as Hfilter.
+    { apply filter_fmap_comm. intros. rewrite /keep_condition_c /keep_condition //. }
+    rewrite /ReplicaSetStatusV.deepown /conditions_without /= Hcs Hfilter.
     iFrame "# %".
-    destruct (filter (keep_condition ct) conds) as [|v kept] eqn:Hkept.
-    + iSplit; last done. iPureIntro.
-      rewrite Hsl'_nil. split; first done. intros _.
-      apply length_zero_iff_nil. rewrite Hlen'. done.
-    + iSplit.
-      { iPureIntro. rewrite Hsl'_nil. split; last done. intros Hnil.
-        rewrite Hnil in Hlen'. done. }
-      iExists (filter (keep_condition_c ct) cs). rewrite /deepown_list. iFrame "#".
+    destruct (filter (keep_condition_c ct) cs) as [|c kept]; simpl.
+    + iSplit; last done. iPureIntro. split; [done|intros _; by apply Hsl'_nil].
+    + iSplit; first (iPureIntro; split; intros H; [apply Hsl'_nil in H|]; done).
+      iExists (c :: kept). iFrame "#". done.
   - assert (status_c.(api_apps_v1.ReplicaSetStatus.Conditions') = slice.nil) as Hnil.
     { by apply Hdeepown_conditions_none. }
     rewrite Hnil.
@@ -174,27 +148,6 @@ Proof.
     iModIntro. iApply "HΦ". iFrame "Hl".
     rewrite /ReplicaSetStatusV.deepown /conditions_without /=.
     iFrame "# %". done.
-Qed.
-
-Lemma big_sepL2_conditions_forall (cs : list api_apps_v1.ReplicaSetCondition.t)
-    (conds : list ReplicaSetConditionV.t) ct :
-  ([∗ list] c;v ∈ cs;conds, ReplicaSetConditionV.deepown (Σ:=Σ) c v DfracDiscarded) ⊢
-  ⌜ Forall (keep_condition_c ct) cs ↔ Forall (keep_condition ct) conds ⌝.
-Proof.
-  iIntros "H".
-  iInduction cs as [|c cs] "IH" forall (conds); destruct conds as [|v conds].
-  - done.
-  - iDestruct (big_sepL2_nil_inv_l with "H") as %Hnil. discriminate Hnil.
-  - iDestruct (big_sepL2_nil_inv_r with "H") as %Hnil. discriminate Hnil.
-  - rewrite big_sepL2_cons. iDestruct "H" as "[Hcv H]".
-    iDestruct "Hcv" as "(%Htype & _)".
-    iDestruct ("IH" with "H") as %IH.
-    iPureIntro. split; intros Hall; apply Forall_cons_1 in Hall as [Hhead Htail];
-      apply Forall_cons_2.
-    + rewrite /keep_condition -Htype. exact Hhead.
-    + by apply IH.
-    + rewrite /keep_condition_c Htype. exact Hhead.
-    + by apply IH.
 Qed.
 
 (* [GetCondition] returns nil exactly when no condition has the given type. *)
@@ -210,13 +163,15 @@ Proof.
   wp_start as "#Hdeepown".
   rewrite /ReplicaSetStatusV.deepown. iNamed "Hdeepown".
   iAssert (∃ cs, status_c.(api_apps_v1.ReplicaSetStatus.Conditions') ↦*□ cs ∗
-    ([∗ list] c;v ∈ cs;default [] status.(ReplicaSetStatusV.Conditions'),
-      ReplicaSetConditionV.deepown c v DfracDiscarded))%I as (cs) "[#Hsl #Hcs]".
+    ⌜ default [] status.(ReplicaSetStatusV.Conditions') = ReplicaSetConditionV.of_go <$> cs ⌝)%I
+    as (cs) "[#Hsl %Hcs]".
   { destruct status.(ReplicaSetStatusV.Conditions') as [conds|] eqn:Hconds.
-    - iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl Hcs]". iExists cs. iFrame "#".
+    - iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl %Hcs]". iExists cs. by iFrame "#".
     - iExists []. rewrite (proj2 Hdeepown_conditions_none) //. iSplit; last done.
       iApply own_slice_nil. }
-  iDestruct (big_sepL2_conditions_forall _ _ ct with "Hcs") as %Hforall.
+  assert (Forall (keep_condition_c ct) cs ↔
+    Forall (keep_condition ct) (default [] status.(ReplicaSetStatusV.Conditions'))) as Hforall.
+  { by rewrite Hcs Forall_fmap. }
   set sl := status_c.(api_apps_v1.ReplicaSetStatus.Conditions').
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
   wp_auto.
