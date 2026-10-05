@@ -297,7 +297,7 @@ Proof.
   wp_pures. wp_store. wp_pures. wp_alloc now_ptr as "now". wp_pures. wp_load.
   (* now := rscClock.Now(), before the interface call is resolved. *)
   wp_bind (MethodResolve clock.PassiveClock "Now" _ _)%E.
-  iApply ("Hclock" with "[//]"). iNext. iIntros (now) "_". wp_auto.
+  rewrite Hclock. iApply (wp_RealClock__Now with "[//]"). iNext. iIntros (now) "_". wp_auto.
   iDestruct "Hcopy" as (copy_phy) "[Hcopy_l Hcopy]".
   wp_apply (wp_calculateStatus_no_manage_error with
     "[$Hcopy_l $Hcopy $Hactive_sl $Hactive_deepown_pods $Hterm_sl]").

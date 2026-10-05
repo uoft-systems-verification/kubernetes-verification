@@ -1,5 +1,6 @@
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof Require Export util.
+From New.proof.k8s_io.utils Require Export clock.
 
 Module app_listers := code.k8s_io.client_go.listers.apps.v1.v1.
 
@@ -108,13 +109,6 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-(* The injected clock may read private clock state, but cannot consume or alter
-   any of the caller's framed Kubernetes resources. *)
-Definition clock_now_spec (rsc_clock : interface.t) : iProp Σ :=
-  {{{ True }}}
-    (MethodResolve code.k8s_io.utils.clock.clock.PassiveClock "Now" #rsc_clock) #()
-  {{{ (now : time.Time.t), RET #now; True }}}.
-
 (* [rs_dq] covers ReplicaSet metadata and spec, which the controller only reads.
    Status is exclusive in both instances because every sync may write it. *)
 Record all_fractions := {
@@ -169,7 +163,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hclock" ∷ clock_now_spec rsc_clock ∗
+      "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       (* - > 0: otherwise [manageReplicas] clamps this sync to zero pods, and
@@ -213,7 +207,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hclock" ∷ clock_now_spec rsc_clock ∗
+      "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
@@ -244,10 +238,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      (* Require input parameter "rsc_clock" satisfies "clock_now_spec" specfication,
-      instead of taking "clock_now_spec" as an axiom, which is a stronger requirement
-      than the choice we used here. *)
-      "#Hclock" ∷ clock_now_spec rsc_clock ∗
+      "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true ∗
       (* Assumption, as in [input_requirement]: the status calculation builds a
          selector from the template labels, whose count must fit in a Go int. *)
