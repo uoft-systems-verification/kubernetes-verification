@@ -1,6 +1,8 @@
-# Only the condition helpers that controllers/replicaset imports instead of
-# copying; the rest of the upstream controller is not translated.
+# Only what controllers/replicaset imports instead of copying (the condition
+# helpers and ReplicaSetControllerFeatures); the rest of the upstream controller
+# is not translated.
 translate = [
+    "ReplicaSetControllerFeatures",
     "NewReplicaSetCondition",
     "GetCondition",
     "SetCondition",

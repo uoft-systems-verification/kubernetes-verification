@@ -38,13 +38,34 @@ Context {package_sem' : replicaset.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ReplicaSetControllerFeatures_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (replicaset.ReplicaSetControllerFeatures.t). Admitted.
+#[global]Program Instance ReplicaSetControllerFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (replicaset.ReplicaSetControllerFeatures.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "EnableStatusTerminatingReplicas" ∷ l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ReplicaSetControllerFeatures_into_val_typed
    :
   IntoValTypedUnderlying (replicaset.ReplicaSetControllerFeatures.t) (replicaset.ReplicaSetControllerFeaturesⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ReplicaSetControllerFeatures_access_load_EnableStatusTerminatingReplicas l (v : (replicaset.ReplicaSetControllerFeatures.t)) dq :
+  AccessStrict
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦{dq} (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ReplicaSetControllerFeatures_access_store_EnableStatusTerminatingReplicas l (v : (replicaset.ReplicaSetControllerFeatures.t)) EnableStatusTerminatingReplicas' :
+  AccessStrict
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦ (v.(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas')))
+    (l.[(replicaset.ReplicaSetControllerFeatures.t), "EnableStatusTerminatingReplicas"] ↦ EnableStatusTerminatingReplicas')
+    (l ↦ v) (l ↦ (v <|(replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas') := EnableStatusTerminatingReplicas'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ReplicaSetControllerFeatures.

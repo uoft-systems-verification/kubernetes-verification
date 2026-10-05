@@ -116,7 +116,7 @@ Proof.
 Qed.
 
 Lemma wp_syncReplicaSet_stability γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
-    (rsc_clock : interface.t) (controller_features : replicaset.ReplicaSetControllerFeatures.t) namespace name rs dq
+    (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) namespace name rs dq
     pods :
   ⊢ stability_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods.
 Proof.
@@ -235,7 +235,7 @@ Proof.
     iApply wp_DefaultFeatureGate_Enabled; first iPkgInit.
     iNext. iIntros (gate) "_".
     destruct gate; wp_auto;
-      [destruct (replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
+      [destruct (upstreamrs.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
         controller_features); wp_auto|].
     - wp_apply (wp_FilterTerminatingPods with "[$Hall_sl $Hall_deepown_pods]").
       iIntros (term_sl term_ptrs) "(Hterm_sl & %Hterm_len & Hall_sl & _)". wp_auto.

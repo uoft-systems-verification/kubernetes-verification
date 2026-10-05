@@ -54,7 +54,7 @@ Local Set Default Proof Using "All".
    availability helpers return. *)
 Lemma wp_calculateStatus_no_manage_error rs_l rs_phy rs active_sl active_ptrs active_pods
     terminating_sl (terminating_ptrs : list loc) dq
-    (controller_features : replicaset.ReplicaSetControllerFeatures.t) (now : time.Time.t) :
+    (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) (now : time.Time.t) :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       ⌜ ReplicaSetV.valid rs ⌝ ∗
       ⌜ Z.of_nat (size (default ∅
@@ -243,7 +243,7 @@ Proof.
       iNext. iIntros (gate) "_".
       destruct gate; wp_pures.
       - wp_load. wp_pures.
-        destruct (replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
+        destruct (upstreamrs.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
           controller_features); wp_pures.
         + wp_load. wp_pures.
           wp_func_call. rewrite /code.k8s_io.utils.ptr.ptr.Toⁱᵐᵖˡ. wp_call.

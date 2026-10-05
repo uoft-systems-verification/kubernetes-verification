@@ -22,6 +22,9 @@ From New.proof.k8s_io.utils Require Export clock_init ptr_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.controllers Require Export common_init.
 Require Export New.generatedproof.controllers.replicaset.
+(* The upstream package, also named [replicaset]; the controller imports
+   [ReplicaSetControllerFeatures] from it. *)
+Module upstreamrs := code.k8s_io.kubernetes.pkg.controller.replicaset.replicaset.
 From New.proof Require Import proof_prelude.
 
 
