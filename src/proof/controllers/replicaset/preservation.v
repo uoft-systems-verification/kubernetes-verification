@@ -76,7 +76,7 @@ Proof.
   wp_method_call. rewrite /trusted_generic_listers.ResourceIndexer__Getⁱᵐᵖˡ decide_True; try reflexivity.
   rewrite /trusted_generic_listers.resourceIndexerGet. wp_pures.
   wp_auto.
-  wp_apply (wp_State__ReplicaSetGet_status with "[$Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
+  wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
   { iFrame "#".
     iPureIntro.
     rewrite /ReplicaSetV.key /ReplicaSetV.meta_key Hnamespace_eq Hname_eq.
@@ -306,7 +306,7 @@ Proof.
     rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) as "Hrs_client".
   iApply ("Hrs_client" with "[//]"). iNext. iIntros (c) "#Hclient". wp_auto.
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag".
-  iPoseProof (meta_frag_equiv Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
+  iPoseProof (own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
   wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq

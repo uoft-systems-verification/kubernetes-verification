@@ -253,53 +253,6 @@ Proof.
     iExists i_orig. iFrame.
 Qed.
 
-Lemma wp_State__updateStatusTx γ l kind namespace i kobj old_meta old_status :
-  {{{ is_pkg_init apimodel ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid_status_update" ∷ ⌜ KObjectV.valid_status_update kind namespace old_meta old_status kobj ⌝ ∗
-      "%Hvalid_simple_update" ∷ ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝ ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
-      "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_status
-  }}}
-    l @! (go.PointerType apimodel.State) @! "updateStatusTx" #kind #namespace #(interface.ok i)
-  {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
-      "%Hvalid_updated" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hstatus_updated" ∷ ⌜ KObjectV.status_updated kobj kobj' ⌝ ∗
-      "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
-      "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.status kobj')
-  }}}.
-Proof.
-  iIntros (Φ) "(#Hinit & H) HΦ".
-  iNamed "H".
-  iApply wp_State__updateStatusTx_au.
-  iFrame "#".
-  iFrame "Hdeepown_i".
-  iEval (rewrite {1}/named).
-  iAuIntro.
-  iAssert ((
-    "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj)
-      (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
-    "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj)
-      (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_status ∗
-    "%Hvalid_status_update" ∷
-      ⌜ KObjectV.valid_status_update kind namespace old_meta old_status kobj ⌝ ∗
-    "%Hvalid_simple_update" ∷
-      ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝
-  )%I) with "[Hown_meta_frag Hown_status_frag]" as "Hpre".
-  { iFrame. iFrame "%". }
-  iAaccIntro with "Hpre".
-  - iIntros "Hpre".
-    iNamed "Hpre".
-    iFrame. done.
-  - iIntros (i' kobj') "Hpost".
-    iModIntro. iNext.
-    iApply ("HΦ" $! i' kobj').
-    iExact "Hpost".
-Qed.
-
-
 (* A transactional status write for a caller that owns the status fragment and
    holds shares of the metadata and, optionally, spec fragments, as the
    ReplicaSet controller does. Each attempt writes at the currently stored

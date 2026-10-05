@@ -192,7 +192,7 @@ Proof.
   try (rewrite !decide_True; try reflexivity).
   try wp_auto.
   rewrite Hns.
-  wp_apply (wp_State__ReplicaSetGet_status γ l key namespace name uid dq dq_status kmeta kspec kstatus
+  wp_apply (wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
     with "[$Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iFrame "#". done. }
   iIntros (rs_l rs) "Hpost".
