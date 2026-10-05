@@ -2,7 +2,8 @@ From New.proof Require Import prelude empty_ffi.
 (* Imported before the controller's package so that [replicaset] below names
    controllers/replicaset, not the upstream package of the same name. *)
 From New.proof.k8s_io.kubernetes.pkg.controller Require Import replicaset.
-From New.proof.controllers.replicaset Require Export replicaset_init external_specs.
+From New.proof.controllers.replicaset Require Export replicaset_init.
+From New.proof.k8s_io.apiserver.pkg.util Require Export feature.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels_validated_set.
 From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
@@ -37,46 +38,6 @@ Proof using package_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Local Set Default Proof Using "All".
-
-(* Borrow the label set of an object's metadata as a [labels_set_rep]. *)
-Lemma objectmeta_labels_rep (c : v1.ObjectMeta.t) (m : ObjectMetaV.t) dq :
-  ObjectMetaV.deepown c m dq ⊢
-    labels_set_rep c.(v1.ObjectMeta.Labels') m.(ObjectMetaV.Labels') dq ∗
-    (labels_set_rep c.(v1.ObjectMeta.Labels') m.(ObjectMetaV.Labels') dq -∗
-      ObjectMetaV.deepown c m dq).
-Proof.
-  rewrite /ObjectMetaV.deepown. iIntros "H". iNamed "H".
-  iSplitL "Hdeepown_labels_some".
-  - rewrite /labels_set_rep. iSplit; first done.
-    destruct (m.(ObjectMetaV.Labels')); last done.
-    iDestruct "Hdeepown_labels_some" as (cl) "[H ->]". iExact "H".
-  - iIntros "[_ Hl]". iFrame "∗ %".
-    destruct (m.(ObjectMetaV.Labels')); last done.
-    iExists _. iFrame. done.
-Qed.
-
-(* The status returned by [calculateStatus]: the counts and terminating
-   pointer are replaced, observed generation and conditions are kept. *)
-Lemma status_deepown_counts (sc : api_apps_v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t)
-    r f rd av (tptr : loc) (topt : option w32) :
-  ReplicaSetStatusV.deepown sc st DfracDiscarded -∗
-  opt_ptr_rep tptr topt DfracDiscarded -∗
-  ReplicaSetStatusV.deepown
-    (api_apps_v1.ReplicaSetStatus.mk r f rd av tptr
-      sc.(api_apps_v1.ReplicaSetStatus.ObservedGeneration')
-      sc.(api_apps_v1.ReplicaSetStatus.Conditions'))
-    (ReplicaSetStatusV.mk r f rd av topt
-      st.(ReplicaSetStatusV.ObservedGeneration') st.(ReplicaSetStatusV.Conditions'))
-    DfracDiscarded.
-Proof.
-  rewrite /ReplicaSetStatusV.deepown /opt_ptr_rep. iIntros "H Ht". iNamed "H". simpl.
-  iFrame "# %". destruct topt as [n|]; simpl.
-  - iDestruct (typed_pointsto_not_null with "Ht") as %Hnn.
-    iFrame "Ht Hdeepown_conditions_some". iPureIntro.
-    split_and!; done.
-  - iDestruct "Ht" as %->. iFrame "Hdeepown_conditions_some". iPureIntro.
-    split_and!; done.
-Qed.
 
 (* Contract for the management-success path used by the top-level proofs.
    Nested ownership becomes read-only because Go's status struct copy can share
@@ -207,7 +168,7 @@ Proof.
   - try wp_auto.
     wp_bind (MethodResolve featuregate.FeatureGate "Enabled"%go
       (![featuregate.FeatureGate] #(global_addr utilfeature.DefaultFeatureGate)) _)%E.
-    iApply wp_DefaultFeatureGate_Enabled; first done.
+    iApply wp_DefaultFeatureGate_Enabled; first iPkgInit.
     iNext. iIntros (gate) "_".
     destruct gate; try wp_auto.
     all: destruct (replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
@@ -226,10 +187,10 @@ Proof.
     all: try (rewrite /ReplicaSetV.deepown /ReplicaSetSpecV.deepown; iFrame "∗ # %"; done).
     all: iApply "HΦ"; iFrame "Hrs_l Hrs Hactive_sl Hpods Hterm_sl".
     all: iSplitR; [first
-      [ iApply (status_deepown_counts _ _ _ _ _ _ _ (Some _) with "Hrs_status' v")
-      | iApply (status_deepown_counts _ _ _ _ _ _ _ (Some _) with "Hrs_status v")
-      | iApply (status_deepown_counts _ _ _ _ _ _ _ None with "Hrs_status' []"); done
-      | iApply (status_deepown_counts _ _ _ _ _ _ _ None with "Hrs_status []"); done ]|].
+      [ iApply (ReplicaSetStatusV.deepown_set_counts _ _ _ _ _ _ _ (Some _) with "Hrs_status' v")
+      | iApply (ReplicaSetStatusV.deepown_set_counts _ _ _ _ _ _ _ (Some _) with "Hrs_status v")
+      | iApply (ReplicaSetStatusV.deepown_set_counts _ _ _ _ _ _ _ None with "Hrs_status' []"); done
+      | iApply (ReplicaSetStatusV.deepown_set_counts _ _ _ _ _ _ _ None with "Hrs_status []"); done ]|].
     all: iPureIntro; simpl.
     all: split_and!; [rewrite -Hpods_len Hactive_len1; word|done|].
     (* Every count fits in int32, so the conversions keep them non-negative and

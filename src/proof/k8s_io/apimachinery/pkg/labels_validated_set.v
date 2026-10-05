@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi sort.
 From New.proof.map Require Import len for_range.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_label_selector_conversion.
-From New.proof.kubernetes_types Require Import labelselector.
+From New.proof.kubernetes_types Require Import labelselector objectmeta.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -9,6 +9,23 @@ Context {sem : go.Semantics}
   {labels_sem : labels.Assumptions}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 Local Set Default Proof Using "All".
+
+(* Borrow the label set of an object's metadata as a [labels_set_rep]. *)
+Lemma objectmeta_labels_rep (c : v1.ObjectMeta.t) (m : ObjectMetaV.t) dq :
+  ObjectMetaV.deepown c m dq ⊢
+    labels_set_rep c.(v1.ObjectMeta.Labels') m.(ObjectMetaV.Labels') dq ∗
+    (labels_set_rep c.(v1.ObjectMeta.Labels') m.(ObjectMetaV.Labels') dq -∗
+      ObjectMetaV.deepown c m dq).
+Proof.
+  rewrite /ObjectMetaV.deepown. iIntros "H". iNamed "H".
+  iSplitL "Hdeepown_labels_some".
+  - rewrite /labels_set_rep. iSplit; first done.
+    destruct (m.(ObjectMetaV.Labels')); last done.
+    iDestruct "Hdeepown_labels_some" as (cl) "[H ->]". iExact "H".
+  - iIntros "[_ Hl]". iFrame "∗ %".
+    destruct (m.(ObjectMetaV.Labels')); last done.
+    iExists _. iFrame. done.
+Qed.
 
 Lemma match_labels_empty labels_set :
   LabelSelectorV.match_labels (Some ∅) labels_set ↔ selector_matches [] labels_set.

@@ -1008,7 +1008,7 @@ Proof.
     with "[terminatingPods Hall_sl allRSPods controllerFeatures]").
   { wp_bind (MethodResolve featuregate.FeatureGate "Enabled"%go
       (![featuregate.FeatureGate] #(global_addr utilfeature.DefaultFeatureGate)) _)%E.
-    iApply wp_DefaultFeatureGate_Enabled; first done.
+    iApply wp_DefaultFeatureGate_Enabled; first iPkgInit.
     iNext. iIntros (gate) "_".
     destruct gate; wp_auto;
       [destruct (replicaset.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
@@ -1181,7 +1181,7 @@ Proof.
      only in status and resource version. Its TypeMeta is not tracked by any
      fragment, so take [rs]'s. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
-  destruct (meta_equiv_key_uid _ _ Hmeta_changed) as (Hkey' & Huid' & _ & _).
+  destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hmeta_changed) as (Hkey' & Huid' & _ & _).
   assert (ReplicaSetV.key rs'' = ReplicaSetV.key rs_get) as Hkey''.
   { rewrite /ReplicaSetV.key /=. exact Hkey'. }
   assert (rs''.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =

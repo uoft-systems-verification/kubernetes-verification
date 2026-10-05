@@ -206,4 +206,17 @@ Lemma wp_IsPodTerminal (pod_l : loc) (p : PodV.t) dq :
   {{{ (b : bool), RET #b; PodV.deepown_l pod_l p dq }}}.
 Proof. Admitted.
 
+(* Trusted: availability also compares the ready condition's transition time
+   with [now], and the time operations it uses (metav1.Time.IsZero,
+   time.Time.Add and time.Time.Compare) are not modelled. This spec only
+   assumes that the helper terminates, returns some boolean, and leaves the pod
+   unchanged. Readiness alone is proven: see [wp_IsPodReady]. *)
+Lemma wp_IsPodAvailable pod_l pod dq (min_ready_seconds : w32) (now : val) :
+  {{{ is_pkg_init podutil_pkg ∗
+      PodV.deepown_l pod_l pod dq
+  }}}
+    @! podutil.IsPodAvailable #pod_l #min_ready_seconds now
+  {{{ (b : bool), RET #b; PodV.deepown_l pod_l pod dq }}}.
+Proof. Admitted.
+
 End proof.
