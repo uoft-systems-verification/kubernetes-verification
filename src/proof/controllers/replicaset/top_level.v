@@ -112,10 +112,10 @@ Local Set Default Proof Using "All".
 (* [rs_dq] covers ReplicaSet metadata and spec, which the controller only reads.
    Status is exclusive in both instances because every sync may write it. *)
 Record all_fractions := {
-  rs_dq : dfrac;
+  rs_dq        : dfrac;
   rs_status_dq : dfrac;
-  pod_dq : dfrac;
-  children_dq : dfrac;
+  pod_dq       : dfrac;
+  children_dq  : dfrac;
 }.
 
 Definition mutating_fractions dq : all_fractions :=
