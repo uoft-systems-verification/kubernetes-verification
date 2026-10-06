@@ -72,8 +72,8 @@ Proof.
   { iPkgInit. }
   wp_auto.
   wp_bind (null @! (go.PointerType app_listers.replicaSetLister) @! "ReplicaSets" #namespace)%E.
-  wp_method_call. rewrite /trusted_app_listers.replicaSetLister__ReplicaSetsⁱᵐᵖˡ. wp_call. try wp_auto.
-  wp_method_call. rewrite /trusted_generic_listers.ResourceIndexer__Getⁱᵐᵖˡ decide_True; try reflexivity.
+  wp_method_call. rewrite /trusted_app_listers.replicaSetLister__ReplicaSetsⁱᵐᵖˡ. wp_call.
+  wp_method_call. rewrite /trusted_generic_listers.ResourceIndexer__Getⁱᵐᵖˡ decide_True; [reflexivity|].
   rewrite /trusted_generic_listers.resourceIndexerGet. wp_pures.
   wp_auto.
   wp_apply (wp_State__ReplicaSetGet with "[$Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
@@ -93,7 +93,7 @@ Proof.
   assert (ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec')) as Hrs_spec_valid.
   { rewrite Hget_Hspec_eq. exact Hrs_get_spec_valid. }
   wp_auto.
-  rewrite decide_True; try reflexivity.
+  rewrite decide_True; [reflexivity|].
   wp_auto.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
@@ -148,7 +148,7 @@ Proof.
     "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
-    iPureIntro. split_and!; try done. }
+    iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods dq')
     "(Hall_sl & Hall_deepown_pods & %Hall_living_meta_perm & %Hall_valid & %Hall_nodup &
       Hdeepown_m_l_rs & Hall_deletion_observed_frags & Hactive_meta_frags &
@@ -260,10 +260,16 @@ Proof.
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
-    iPureIntro. split_and!; try done.
-    all: try (intros pod Hpod; apply list_elem_of_filter in Hpod as [Halive _]; exact Halive).
-    all: try lia.
-    rewrite app_nil_r; exact Hactive_nodup. }
+    iPureIntro. split_and!.
+    - done.
+    - done.
+    - intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive.
+    - done.
+    - done.
+    - done.
+    - lia.
+    - lia.
+    - rewrite app_nil_r. exact Hactive_nodup. }
   iIntros (pods_managed) "(%Hmanaged_len & %Hmanaged_alive & Hhas_terminating_children &
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag & (%active_ptrs' & %active_pods' & Hactive_sl & #Hactive_deepown_pods' &
@@ -314,26 +320,14 @@ Proof.
   { iFrame "#". done. }
   iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag & _)".
   destruct Hchanged as (Hmeta_changed & Hspec_changed).
-  wp_auto.  (* The ReplicaSet after the sync: the stored one, which differs from [rs]
-     only in status and resource version. Its TypeMeta is not tracked by any
-     fragment, so take [rs]'s. *)
+  wp_auto.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
-  destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hmeta_changed) as (Hkey' & Huid' & _ & _).
-  assert (ReplicaSetV.key rs'' = ReplicaSetV.key rs_get) as Hkey''.
-  { rewrite /ReplicaSetV.key /=. exact Hkey'. }
-  assert (rs''.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') =
-    rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')) as Huid'' by exact Huid'.
-  assert (ReplicaSetV.status_only_changed rs rs'') as Hstatus_only.
-  { rewrite /ReplicaSetV.status_only_changed /=. split_and!; first done.
-    - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hget_Hmeta_eq |- *.
-      congruence.
-    - congruence. }
-  iAssert (owned_resources γ rs'' pods_managed (mutating_fractions dq) false)%I
-    with "[Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags
-      Hown_children_frag Hown_terminating_children_frag]" as "Hresources".
-  { rewrite /owned_resources /= Hkey'' Huid'' -Hrs_key_eq -Hrs_uid_eq.
-    rewrite -Hspec_changed.
-    iFrame "∗ #". iPureIntro. exact Hpods'_nodup. }
+  iDestruct (owned_resources_after_status_update γ rs rs_get rs'
+      pods_managed (mutating_fractions dq) false
+      Hrs_key_eq Hrs_uid_eq Hget_Hmeta_eq Hget_Hspec_eq Hmeta_changed Hspec_changed Hpods'_nodup
+    with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
+      Hown_children_frag [$Hown_terminating_children_frag]")
+    as "[Hresources %Hstatus_only]".
   assert (match_distance rs pods_managed ≤ match_distance rs pods) as Hdistance.
   {
   (* one sync moves the live count toward the desired count by at most [burst] *)
