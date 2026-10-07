@@ -179,7 +179,13 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
          converts the counts of its active and terminating pods (both drawn
          from [pods]) to int32; a count of 2^31 or more wraps to a negative
          value, the status write is rejected, and the sync returns an error.
-         Real clusters are far below this bound. *)
+         Real clusters are far below this bound.
+         TODO: It is used only to show the status write succeeds, i.e. that the sync
+         returns nil. The rest of the postcondition holds either way: [pods']
+         is fixed by [manageReplicas] before the write, and [owned_resources]
+         and [status_only_changed] hold on both outcomes.
+         TODO (optional): drop this bound and return [RET #err], as
+         [preservation_spec] does, keeping the progress claim. *)
       "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝

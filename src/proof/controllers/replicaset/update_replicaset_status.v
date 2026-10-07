@@ -231,7 +231,7 @@ Proof.
     { iPureIntro. rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_eq Hcur_meta |- *.
       congruence. }
     iSplit; first (iPureIntro; congruence).
-    iSplitL "Hown_meta_frag"; first (iApply (own_meta_frag_equiv_except_resource_version with "Hown_meta_frag"); done).
+    iSplitL "Hown_meta_frag"; first (iApply (kview.own_meta_frag_equiv_except_resource_version with "Hown_meta_frag"); done).
     iSplitL "Hown_spec_frag"; first done.
     iSplitL "Hown_status_frag"; first (rewrite Hstatus_eq; done).
     iPureIntro. right. word. }
