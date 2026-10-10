@@ -4611,26 +4611,6 @@ Proof. Admitted.
 End def.
 End Lifecycle.
 
-Module ConditionStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ConditionStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConditionStatus.t). Admitted.
-
-#[global] Instance ConditionStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ConditionStatus.t) (v1.ConditionStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ConditionStatus.
-
 Module ContainerStateWaiting.
 Section def.
 
@@ -4871,26 +4851,6 @@ Proof. Admitted.
 End def.
 End PodPhase.
 
-Module PodConditionType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodConditionType.t). Admitted.
-
-#[global] Instance PodConditionType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodConditionType.t) (v1.PodConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodConditionType.
-
 Module PodCondition.
 Section def.
 
@@ -4900,13 +4860,118 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodCondition.t). Admitted.
+#[global]Program Instance PodCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.PodCondition.t), "Type"] ↦{dq} v.(v1.PodCondition.Type') ∗
+      "ObservedGeneration" ∷ l.[(v1.PodCondition.t), "ObservedGeneration"] ↦{dq} v.(v1.PodCondition.ObservedGeneration') ∗
+      "Status" ∷ l.[(v1.PodCondition.t), "Status"] ↦{dq} v.(v1.PodCondition.Status') ∗
+      "LastProbeTime" ∷ l.[(v1.PodCondition.t), "LastProbeTime"] ↦{dq} v.(v1.PodCondition.LastProbeTime') ∗
+      "LastTransitionTime" ∷ l.[(v1.PodCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.PodCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.PodCondition.t), "Reason"] ↦{dq} v.(v1.PodCondition.Reason') ∗
+      "Message" ∷ l.[(v1.PodCondition.t), "Message"] ↦{dq} v.(v1.PodCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodCondition.t) (v1.PodConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodCondition_access_load_Type l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Type"] ↦{dq} (v.(v1.PodCondition.Type')))
+    (l.[(v1.PodCondition.t), "Type"] ↦{dq} (v.(v1.PodCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_Type l (v : (v1.PodCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Type"] ↦ (v.(v1.PodCondition.Type')))
+    (l.[(v1.PodCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_ObservedGeneration l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodCondition.ObservedGeneration')))
+    (l.[(v1.PodCondition.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodCondition.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_ObservedGeneration l (v : (v1.PodCondition.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "ObservedGeneration"] ↦ (v.(v1.PodCondition.ObservedGeneration')))
+    (l.[(v1.PodCondition.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_Status l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Status"] ↦{dq} (v.(v1.PodCondition.Status')))
+    (l.[(v1.PodCondition.t), "Status"] ↦{dq} (v.(v1.PodCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_Status l (v : (v1.PodCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Status"] ↦ (v.(v1.PodCondition.Status')))
+    (l.[(v1.PodCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_LastProbeTime l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PodCondition.LastProbeTime')))
+    (l.[(v1.PodCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PodCondition.LastProbeTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_LastProbeTime l (v : (v1.PodCondition.t)) LastProbeTime' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "LastProbeTime"] ↦ (v.(v1.PodCondition.LastProbeTime')))
+    (l.[(v1.PodCondition.t), "LastProbeTime"] ↦ LastProbeTime')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.LastProbeTime') := LastProbeTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_LastTransitionTime l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PodCondition.LastTransitionTime')))
+    (l.[(v1.PodCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PodCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_LastTransitionTime l (v : (v1.PodCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "LastTransitionTime"] ↦ (v.(v1.PodCondition.LastTransitionTime')))
+    (l.[(v1.PodCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_Reason l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Reason"] ↦{dq} (v.(v1.PodCondition.Reason')))
+    (l.[(v1.PodCondition.t), "Reason"] ↦{dq} (v.(v1.PodCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_Reason l (v : (v1.PodCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Reason"] ↦ (v.(v1.PodCondition.Reason')))
+    (l.[(v1.PodCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCondition_access_load_Message l (v : (v1.PodCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Message"] ↦{dq} (v.(v1.PodCondition.Message')))
+    (l.[(v1.PodCondition.t), "Message"] ↦{dq} (v.(v1.PodCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCondition_access_store_Message l (v : (v1.PodCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.PodCondition.t), "Message"] ↦ (v.(v1.PodCondition.Message')))
+    (l.[(v1.PodCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.PodCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodCondition.
@@ -9452,13 +9517,272 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodStatus.t). Admitted.
+#[global]Program Instance PodStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ObservedGeneration" ∷ l.[(v1.PodStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.PodStatus.ObservedGeneration') ∗
+      "Phase" ∷ l.[(v1.PodStatus.t), "Phase"] ↦{dq} v.(v1.PodStatus.Phase') ∗
+      "Conditions" ∷ l.[(v1.PodStatus.t), "Conditions"] ↦{dq} v.(v1.PodStatus.Conditions') ∗
+      "Message" ∷ l.[(v1.PodStatus.t), "Message"] ↦{dq} v.(v1.PodStatus.Message') ∗
+      "Reason" ∷ l.[(v1.PodStatus.t), "Reason"] ↦{dq} v.(v1.PodStatus.Reason') ∗
+      "NominatedNodeName" ∷ l.[(v1.PodStatus.t), "NominatedNodeName"] ↦{dq} v.(v1.PodStatus.NominatedNodeName') ∗
+      "HostIP" ∷ l.[(v1.PodStatus.t), "HostIP"] ↦{dq} v.(v1.PodStatus.HostIP') ∗
+      "HostIPs" ∷ l.[(v1.PodStatus.t), "HostIPs"] ↦{dq} v.(v1.PodStatus.HostIPs') ∗
+      "PodIP" ∷ l.[(v1.PodStatus.t), "PodIP"] ↦{dq} v.(v1.PodStatus.PodIP') ∗
+      "PodIPs" ∷ l.[(v1.PodStatus.t), "PodIPs"] ↦{dq} v.(v1.PodStatus.PodIPs') ∗
+      "StartTime" ∷ l.[(v1.PodStatus.t), "StartTime"] ↦{dq} v.(v1.PodStatus.StartTime') ∗
+      "InitContainerStatuses" ∷ l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦{dq} v.(v1.PodStatus.InitContainerStatuses') ∗
+      "ContainerStatuses" ∷ l.[(v1.PodStatus.t), "ContainerStatuses"] ↦{dq} v.(v1.PodStatus.ContainerStatuses') ∗
+      "QOSClass" ∷ l.[(v1.PodStatus.t), "QOSClass"] ↦{dq} v.(v1.PodStatus.QOSClass') ∗
+      "EphemeralContainerStatuses" ∷ l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦{dq} v.(v1.PodStatus.EphemeralContainerStatuses') ∗
+      "Resize" ∷ l.[(v1.PodStatus.t), "Resize"] ↦{dq} v.(v1.PodStatus.Resize') ∗
+      "ResourceClaimStatuses" ∷ l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦{dq} v.(v1.PodStatus.ResourceClaimStatuses') ∗
+      "ExtendedResourceClaimStatus" ∷ l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦{dq} v.(v1.PodStatus.ExtendedResourceClaimStatus') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodStatus.t) (v1.PodStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodStatus_access_load_ObservedGeneration l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodStatus.ObservedGeneration')))
+    (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodStatus.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_ObservedGeneration l (v : (v1.PodStatus.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦ (v.(v1.PodStatus.ObservedGeneration')))
+    (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_Phase l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Phase"] ↦{dq} (v.(v1.PodStatus.Phase')))
+    (l.[(v1.PodStatus.t), "Phase"] ↦{dq} (v.(v1.PodStatus.Phase')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_Phase l (v : (v1.PodStatus.t)) Phase' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Phase"] ↦ (v.(v1.PodStatus.Phase')))
+    (l.[(v1.PodStatus.t), "Phase"] ↦ Phase')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.Phase') := Phase'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_Conditions l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Conditions"] ↦{dq} (v.(v1.PodStatus.Conditions')))
+    (l.[(v1.PodStatus.t), "Conditions"] ↦{dq} (v.(v1.PodStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_Conditions l (v : (v1.PodStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Conditions"] ↦ (v.(v1.PodStatus.Conditions')))
+    (l.[(v1.PodStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_Message l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Message"] ↦{dq} (v.(v1.PodStatus.Message')))
+    (l.[(v1.PodStatus.t), "Message"] ↦{dq} (v.(v1.PodStatus.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_Message l (v : (v1.PodStatus.t)) Message' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Message"] ↦ (v.(v1.PodStatus.Message')))
+    (l.[(v1.PodStatus.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_Reason l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Reason"] ↦{dq} (v.(v1.PodStatus.Reason')))
+    (l.[(v1.PodStatus.t), "Reason"] ↦{dq} (v.(v1.PodStatus.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_Reason l (v : (v1.PodStatus.t)) Reason' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Reason"] ↦ (v.(v1.PodStatus.Reason')))
+    (l.[(v1.PodStatus.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_NominatedNodeName l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦{dq} (v.(v1.PodStatus.NominatedNodeName')))
+    (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦{dq} (v.(v1.PodStatus.NominatedNodeName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_NominatedNodeName l (v : (v1.PodStatus.t)) NominatedNodeName' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦ (v.(v1.PodStatus.NominatedNodeName')))
+    (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦ NominatedNodeName')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.NominatedNodeName') := NominatedNodeName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_HostIP l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "HostIP"] ↦{dq} (v.(v1.PodStatus.HostIP')))
+    (l.[(v1.PodStatus.t), "HostIP"] ↦{dq} (v.(v1.PodStatus.HostIP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_HostIP l (v : (v1.PodStatus.t)) HostIP' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "HostIP"] ↦ (v.(v1.PodStatus.HostIP')))
+    (l.[(v1.PodStatus.t), "HostIP"] ↦ HostIP')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.HostIP') := HostIP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_HostIPs l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "HostIPs"] ↦{dq} (v.(v1.PodStatus.HostIPs')))
+    (l.[(v1.PodStatus.t), "HostIPs"] ↦{dq} (v.(v1.PodStatus.HostIPs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_HostIPs l (v : (v1.PodStatus.t)) HostIPs' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "HostIPs"] ↦ (v.(v1.PodStatus.HostIPs')))
+    (l.[(v1.PodStatus.t), "HostIPs"] ↦ HostIPs')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.HostIPs') := HostIPs'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_PodIP l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "PodIP"] ↦{dq} (v.(v1.PodStatus.PodIP')))
+    (l.[(v1.PodStatus.t), "PodIP"] ↦{dq} (v.(v1.PodStatus.PodIP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_PodIP l (v : (v1.PodStatus.t)) PodIP' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "PodIP"] ↦ (v.(v1.PodStatus.PodIP')))
+    (l.[(v1.PodStatus.t), "PodIP"] ↦ PodIP')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.PodIP') := PodIP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_PodIPs l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "PodIPs"] ↦{dq} (v.(v1.PodStatus.PodIPs')))
+    (l.[(v1.PodStatus.t), "PodIPs"] ↦{dq} (v.(v1.PodStatus.PodIPs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_PodIPs l (v : (v1.PodStatus.t)) PodIPs' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "PodIPs"] ↦ (v.(v1.PodStatus.PodIPs')))
+    (l.[(v1.PodStatus.t), "PodIPs"] ↦ PodIPs')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.PodIPs') := PodIPs'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_StartTime l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "StartTime"] ↦{dq} (v.(v1.PodStatus.StartTime')))
+    (l.[(v1.PodStatus.t), "StartTime"] ↦{dq} (v.(v1.PodStatus.StartTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_StartTime l (v : (v1.PodStatus.t)) StartTime' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "StartTime"] ↦ (v.(v1.PodStatus.StartTime')))
+    (l.[(v1.PodStatus.t), "StartTime"] ↦ StartTime')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.StartTime') := StartTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_InitContainerStatuses l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦{dq} (v.(v1.PodStatus.InitContainerStatuses')))
+    (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦{dq} (v.(v1.PodStatus.InitContainerStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_InitContainerStatuses l (v : (v1.PodStatus.t)) InitContainerStatuses' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦ (v.(v1.PodStatus.InitContainerStatuses')))
+    (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦ InitContainerStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.InitContainerStatuses') := InitContainerStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_ContainerStatuses l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦{dq} (v.(v1.PodStatus.ContainerStatuses')))
+    (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦{dq} (v.(v1.PodStatus.ContainerStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_ContainerStatuses l (v : (v1.PodStatus.t)) ContainerStatuses' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦ (v.(v1.PodStatus.ContainerStatuses')))
+    (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦ ContainerStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.ContainerStatuses') := ContainerStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_QOSClass l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "QOSClass"] ↦{dq} (v.(v1.PodStatus.QOSClass')))
+    (l.[(v1.PodStatus.t), "QOSClass"] ↦{dq} (v.(v1.PodStatus.QOSClass')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_QOSClass l (v : (v1.PodStatus.t)) QOSClass' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "QOSClass"] ↦ (v.(v1.PodStatus.QOSClass')))
+    (l.[(v1.PodStatus.t), "QOSClass"] ↦ QOSClass')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.QOSClass') := QOSClass'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_EphemeralContainerStatuses l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦{dq} (v.(v1.PodStatus.EphemeralContainerStatuses')))
+    (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦{dq} (v.(v1.PodStatus.EphemeralContainerStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_EphemeralContainerStatuses l (v : (v1.PodStatus.t)) EphemeralContainerStatuses' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦ (v.(v1.PodStatus.EphemeralContainerStatuses')))
+    (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦ EphemeralContainerStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.EphemeralContainerStatuses') := EphemeralContainerStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_Resize l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Resize"] ↦{dq} (v.(v1.PodStatus.Resize')))
+    (l.[(v1.PodStatus.t), "Resize"] ↦{dq} (v.(v1.PodStatus.Resize')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_Resize l (v : (v1.PodStatus.t)) Resize' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "Resize"] ↦ (v.(v1.PodStatus.Resize')))
+    (l.[(v1.PodStatus.t), "Resize"] ↦ Resize')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.Resize') := Resize'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_ResourceClaimStatuses l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦{dq} (v.(v1.PodStatus.ResourceClaimStatuses')))
+    (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦{dq} (v.(v1.PodStatus.ResourceClaimStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_ResourceClaimStatuses l (v : (v1.PodStatus.t)) ResourceClaimStatuses' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦ (v.(v1.PodStatus.ResourceClaimStatuses')))
+    (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦ ResourceClaimStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.ResourceClaimStatuses') := ResourceClaimStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodStatus_access_load_ExtendedResourceClaimStatus l (v : (v1.PodStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦{dq} (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
+    (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦{dq} (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodStatus_access_store_ExtendedResourceClaimStatus l (v : (v1.PodStatus.t)) ExtendedResourceClaimStatus' :
+  AccessStrict
+    (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦ (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
+    (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦ ExtendedResourceClaimStatus')
+    (l ↦ v) (l ↦ (v <|(v1.PodStatus.ExtendedResourceClaimStatus') := ExtendedResourceClaimStatus'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodStatus.

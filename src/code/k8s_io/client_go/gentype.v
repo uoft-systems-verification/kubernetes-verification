@@ -412,6 +412,7 @@ Class Client_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContex
   #[global] Client'ptr_Create_unfold T :: MethodUnfold (go.PointerType (Client T)) "Create" (Client__Createⁱᵐᵖˡ T);
   #[global] Client'ptr_Delete_unfold T :: MethodUnfold (go.PointerType (Client T)) "Delete" (Client__Deleteⁱᵐᵖˡ T);
   #[global] Client'ptr_Get_unfold T :: MethodUnfold (go.PointerType (Client T)) "Get" (Client__Getⁱᵐᵖˡ T);
+  #[global] Client'ptr_UpdateStatus_unfold T :: MethodUnfold (go.PointerType (Client T)) "UpdateStatus" (Client__UpdateStatusⁱᵐᵖˡ T);
 }.
 
 Module alsoLister.

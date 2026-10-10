@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
 From New.proof.kubernetes_types Require Export common.
 
 Module LabelSelectorRequirementV.
@@ -59,6 +59,22 @@ Definition deepown (c : v1.LabelSelectorRequirement.t) (v : t) dq : iProp Σ :=
         c.(v1.LabelSelectorRequirement.Values') ↦*{dq} values
     | None => True%I
     end).
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(Values') with
+    | Some values => c.(v1.LabelSelectorRequirement.Values') ↦*□ values
+    | None => True%I
+    end)%I with "[Hdeepown_values_some]" as ">Hvalues".
+  { destruct (v.(Values')); last done. iApply (own_slice_persist with "Hdeepown_values_some"). }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. destruct (v.(Values')); apply _. Qed.
 
 End def.
 End LabelSelectorRequirementV.
@@ -209,6 +225,37 @@ Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
 
 Definition deepown_l l v dq : iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+(* The match-expressions slice itself stays exclusively owned (see [deepown]);
+   everything else becomes read-only. *)
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(MatchLabels') with
+    | Some match_labels => ∃ match_labels_c,
+        c.(v1.LabelSelector.MatchLabels') ↦$□ match_labels_c ∗ ⌜match_labels_c = match_labels⌝
+    | None => True%I
+    end)%I with "[Hdeepown_matchlabels_some]" as ">Hlabels".
+  { destruct (v.(MatchLabels')); last done.
+    iDestruct "Hdeepown_matchlabels_some" as (mc) "[Hm %Hm]".
+    iMod (own_map_persist with "Hm") as "Hm". iModIntro. iExists mc. by iFrame "∗ %". }
+  iAssert (|==> match v.(MatchExpressions') with
+    | Some match_expressions => ∃ match_expressions_c,
+        deepown_list c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
+          (λ requirement pure_requirement,
+            LabelSelectorRequirementV.deepown requirement pure_requirement DfracDiscarded)
+          (DfracOwn 1)
+    | None => True%I
+    end)%I with "[Hdeepown_matchexpressions_some]" as ">Hexpressions".
+  { destruct (v.(MatchExpressions')); last done.
+    iDestruct "Hdeepown_matchexpressions_some" as (mec) "[Hsl Hlist]".
+    iMod (big_sepL2_persist (λ r pr dq, LabelSelectorRequirementV.deepown r pr dq) with "Hlist")
+      as "Hlist".
+    { intros. apply LabelSelectorRequirementV.deepown_persist. }
+    iModIntro. iExists mec. rewrite /deepown_list. by iFrame. }
+  iModIntro. by iFrame "∗ %".
+Qed.
 
 End def.
 End LabelSelectorV.

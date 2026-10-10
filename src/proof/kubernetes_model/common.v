@@ -85,14 +85,15 @@ Proof.
   wp_auto. done.
 Qed.
 
-Lemma wp_deepCopy i obj:
+(* deepCopy only reads its argument, so any fraction of it suffices. *)
+Lemma wp_deepCopy i obj dq:
   {{{ is_pkg_init apimodel ∗
-      KObjectV.deepown_i i obj 1
+      KObjectV.deepown_i i obj dq
   }}}
     @! apimodel.deepCopy #(interface.ok i)
   {{{ i', RET #(interface.ok i');
       KObjectV.deepown_i i' obj 1 ∗
-      KObjectV.deepown_i i obj 1
+      KObjectV.deepown_i i obj dq
   }}}.
 Proof.
 Admitted.

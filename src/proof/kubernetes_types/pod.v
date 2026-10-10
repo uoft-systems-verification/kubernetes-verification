@@ -290,6 +290,26 @@ Proof using All. rewrite /deepown /deepown_list. apply _. Qed.
 End def.
 End PodSpecV.
 
+Module PodConditionV.
+Section def.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}.
+
+(* Only the fields that pod readiness reads are represented. *)
+Record t := mk {
+  Type' : go_string;
+  Status' : go_string;
+}.
+
+(* Every represented field is a plain value, so the view is a function of the
+   Go struct. *)
+Definition of_go (c : v1.PodCondition.t) : t :=
+  mk c.(v1.PodCondition.Type') c.(v1.PodCondition.Status').
+End def.
+End PodConditionV.
+
 Module PodStatusV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -297,19 +317,53 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
+
+(* Only the conditions are represented, enough to prove pod readiness
+   (pod.IsPodReady). The other status fields, including Phase, stay
+   unrepresented. A nil and an empty conditions slice have the same view: no
+   represented operation distinguishes them. *)
+Record t := mk {
+  Conditions' : list PodConditionV.t;
+}.
+
+(* What the API server accepts and stores for a pod status is still abstract. *)
 Axiom valid: t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom deepown : v1.PodStatus.t → t → dfrac → iProp Σ.
-Axiom zero : t.
-Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.PodStatus.t) zero dq.
 Axiom created : t → t → Prop.
 Axiom updated : t → t → Prop.
 
+Definition deepown (c : v1.PodStatus.t) (v : t) dq : iProp Σ :=
+  ∃ cs, c.(v1.PodStatus.Conditions') ↦*{dq} cs ∗
+    ⌜ v.(Conditions') = PodConditionV.of_go <$> cs ⌝.
+
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+Definition zero : t := mk [].
+
+Lemma deepown_zero dq : ⊢ deepown (zero_val v1.PodStatus.t) zero dq.
+Proof. rewrite /deepown /zero. iExists []. iSplit; last done. iApply own_slice_nil. Qed.
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iIntros "(%cs & Hsl & %Hconds)".
+  iMod (own_slice_persist with "Hsl") as "Hsl". iModIntro. by iFrame.
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. apply _. Qed.
+
+(* Readiness as computed by pod.IsPodReady: the first condition of type
+   [Ready] must have status [True]. *)
+Definition ready (s : t) : bool :=
+  match list_find (λ c, c.(PodConditionV.Type') = "Ready"%go) s.(Conditions') with
+  | Some (_, c) => bool_decide (c.(PodConditionV.Status') = "True"%go)
+  | None => false
+  end.
 
 End def.
 End PodStatusV.
@@ -549,6 +603,34 @@ Proof.
   { destruct v. done. }
   iFrame.
 Qed.
+
+(* Pods are only read by the controllers, so their ownership can be made
+   read-only and shared, e.g. between the active and terminating filters. *)
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iMod (ObjectMetaV.deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
+  iMod (PodSpecV.deepown_persist with "Hdeepown_podspec") as "Hdeepown_podspec".
+  iMod (PodStatusV.deepown_persist with "Hdeepown_podstatus") as "Hdeepown_podstatus".
+  iModIntro. iFrame "∗ %".
+Qed.
+
+#[global] Instance deepown_persistent c v :
+  Persistent (deepown c v DfracDiscarded).
+Proof using All. rewrite /deepown. apply _. Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof using All.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof using All. rewrite /deepown_l. apply _. Qed.
 
 End proof.
 End PodV.

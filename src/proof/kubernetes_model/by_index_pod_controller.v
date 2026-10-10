@@ -7,6 +7,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+(* Since controller imports pod, core_v1.Assumptions is also reachable via podutil; prefer the
+   direct path so statements here match the list lemmas' postconditions. *)
+#[local] Existing Instance apimodel.import_api_core_v1_Assumption | 0.
 Local Set Default Proof Using "All".
 
 Definition podController_indexed_value pod : go_string :=

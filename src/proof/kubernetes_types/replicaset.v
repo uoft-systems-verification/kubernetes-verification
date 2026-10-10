@@ -1,4 +1,5 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
+From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.kubernetes_types Require Export labelselector pod.
 From New.proof.kubernetes_types Require Import top_level.
 
@@ -139,8 +140,62 @@ Definition deepown (c: v1.ReplicaSetSpec.t) (v: t) dq: iProp Σ :=
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(Replicas') with
+    | Some i => ∃ replicas, c.(v1.ReplicaSetSpec.Replicas') ↦□ replicas ∗ ⌜ replicas = i ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_replicas_some]" as ">Hreplicas".
+  { destruct (v.(Replicas')); last done.
+    iDestruct "Hdeepown_replicas_some" as (r) "[Hr %Hr]".
+    iPersist "Hr". iModIntro. iExists r. by iFrame "# %". }
+  iAssert (|==> match v.(Selector') with
+    | Some selector => ∃ selector_c,
+        c.(v1.ReplicaSetSpec.Selector') ↦□ selector_c ∗
+        LabelSelectorV.deepown selector_c selector DfracDiscarded
+    | None => True%I
+    end)%I with "[Hdeepown_selector_some]" as ">Hselector".
+  { destruct (v.(Selector')); last done.
+    iDestruct "Hdeepown_selector_some" as (sc) "[Hsc Hs]".
+    iPersist "Hsc". iMod (LabelSelectorV.deepown_persist with "Hs") as "Hs".
+    iModIntro. iExists sc. by iFrame "∗ #". }
+  iMod (PodTemplateSpecV.deepown_persist with "Hdeepown_template") as "Hdeepown_template".
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
 End def.
 End ReplicaSetSpecV.
+
+Module ReplicaSetConditionV.
+Section def.
+Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Record t := mk {
+  Type' : go_string;
+  Status' : go_string;
+  LastTransitionTime' : TimeV.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
+
+(* Every field is a plain value (the transition time is only its instant, see
+   [TimeV]), so the view is a function of the Go struct. *)
+Definition of_go (c : v1.ReplicaSetCondition.t) : t :=
+  mk c.(v1.ReplicaSetCondition.Type') c.(v1.ReplicaSetCondition.Status')
+    (TimeV.of_go c.(v1.ReplicaSetCondition.LastTransitionTime'))
+    c.(v1.ReplicaSetCondition.Reason') c.(v1.ReplicaSetCondition.Message').
+
+End def.
+End ReplicaSetConditionV.
 
 Module ReplicaSetStatusV.
 Section def.
@@ -149,26 +204,162 @@ Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {}.
-Axiom valid : t → Prop.
-Axiom valid_update : t → t → Prop.
-Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
-Global Existing Instance valid_update_dec.
-Axiom deepown : v1.ReplicaSetStatus.t → t → dfrac → iProp Σ.
+Record t := mk {
+  Replicas' : w32;
+  FullyLabeledReplicas' : w32;
+  ReadyReplicas' : w32;
+  AvailableReplicas' : w32;
+  TerminatingReplicas' : option w32;
+  ObservedGeneration' : w64;
+  (* Preserve nil versus empty: updateReplicaSetStatus uses reflect.DeepEqual. *)
+  Conditions' : option (list ReplicaSetConditionV.t);
+}.
 
-(* ReplicaSetStatus is opaque in this model; expose only the zero value needed
-   when a controller constructs a fresh ReplicaSet, mirroring [PodStatusV]. *)
-Axiom zero : t.
-Axiom deepown_zero : ∀ dq, ⊢ deepown (zero_val v1.ReplicaSetStatus.t) zero dq.
+Global Instance eq_dec : EqDecision t.
+Proof. solve_decision. Qed.
 
-Definition created (_input stored : t) : Prop :=
-  valid stored.
+(* ValidateReplicaSetStatus, kubernetes/pkg/apis/apps/validation/validation.go.
+   Conditions have no additional validation in that function. *)
+Definition valid (v : t) : Prop :=
+  0 ≤ sint.Z v.(Replicas') ∧
+  0 ≤ sint.Z v.(FullyLabeledReplicas') ∧
+  0 ≤ sint.Z v.(ReadyReplicas') ∧
+  0 ≤ sint.Z v.(AvailableReplicas') ∧
+  0 ≤ sint.Z v.(ObservedGeneration') ∧
+  (match v.(TerminatingReplicas') with
+   | Some n => 0 ≤ sint.Z n
+   | None => True
+   end) ∧
+  sint.Z v.(FullyLabeledReplicas') ≤ sint.Z v.(Replicas') ∧
+  sint.Z v.(ReadyReplicas') ≤ sint.Z v.(Replicas') ∧
+  sint.Z v.(AvailableReplicas') ≤ sint.Z v.(Replicas') ∧
+  sint.Z v.(AvailableReplicas') ≤ sint.Z v.(ReadyReplicas').
 
+(* A sufficient, feature-gate-independent request-validity condition. Dropping a
+   disabled TerminatingReplicas field can also make some invalid inputs valid;
+   those requests are deliberately not covered by this stronger precondition. *)
+Definition valid_update (_old input : t) : Prop := valid input.
+
+Global Instance valid_update_dec old input : Decision (valid_update old input).
+Proof.
+  unfold valid_update, valid.
+  destruct input.(TerminatingReplicas'); apply _.
+Defined.
+
+Definition zero : t := mk (W32 0) (W32 0) (W32 0) (W32 0) None (W64 0) None.
+
+(* PrepareForCreate clears the submitted status. *)
+Definition created (_input stored : t) : Prop := stored = zero.
+
+(* A conservative status-update relation: the status strategy may clear the
+   feature-gated count, but preserves every other represented status field.
+   This deliberately does not claim that every permitted outcome occurs. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  stored = input ∨ stored = input <| TerminatingReplicas' := None |>.
+
+Definition deepown (c : v1.ReplicaSetStatus.t) (v : t) dq : iProp Σ :=
+  "%Hdeepown_replicas" ∷ ⌜ c.(v1.ReplicaSetStatus.Replicas') = v.(Replicas') ⌝ ∗
+  "%Hdeepown_fullylabeledreplicas" ∷ ⌜ c.(v1.ReplicaSetStatus.FullyLabeledReplicas') = v.(FullyLabeledReplicas') ⌝ ∗
+  "%Hdeepown_readyreplicas" ∷ ⌜ c.(v1.ReplicaSetStatus.ReadyReplicas') = v.(ReadyReplicas') ⌝ ∗
+  "%Hdeepown_availablereplicas" ∷ ⌜ c.(v1.ReplicaSetStatus.AvailableReplicas') = v.(AvailableReplicas') ⌝ ∗
+  "%Hdeepown_terminatingreplicas_none" ∷
+    ⌜ c.(v1.ReplicaSetStatus.TerminatingReplicas') = null ↔ v.(TerminatingReplicas') = None ⌝ ∗
+  "Hdeepown_terminatingreplicas_some" ∷ (match v.(TerminatingReplicas') with
+    | Some n => c.(v1.ReplicaSetStatus.TerminatingReplicas') ↦{dq} n
+    | None => True%I
+    end) ∗
+  "%Hdeepown_observedgeneration" ∷ ⌜ c.(v1.ReplicaSetStatus.ObservedGeneration') = v.(ObservedGeneration') ⌝ ∗
+  "%Hdeepown_conditions_none" ∷ ⌜ c.(v1.ReplicaSetStatus.Conditions') = slice.nil ↔ v.(Conditions') = None ⌝ ∗
+  "Hdeepown_conditions_some" ∷ (match v.(Conditions') with
+    | Some conditions => ∃ cs, c.(v1.ReplicaSetStatus.Conditions') ↦*{dq} cs ∗
+        ⌜ conditions = ReplicaSetConditionV.of_go <$> cs ⌝
+    | None => True%I
+    end).
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+Lemma valid_zero : valid zero.
+Proof. rewrite /valid /zero /=. split_and!; word. Qed.
+
+Lemma valid_updated input stored : valid input → updated input stored → valid stored.
+Proof.
+  intros Hvalid [-> | ->]; first done.
+  destruct Hvalid as (? & ? & ? & ? & ? & _ & ? & ? & ? & ?).
+  rewrite /valid /=. split_and!; done.
+Qed.
+
+Lemma updated_replicas input stored : updated input stored → stored.(Replicas') = input.(Replicas').
+Proof. by intros [-> | ->]. Qed.
+
+Lemma deepown_zero dq : ⊢ deepown (zero_val v1.ReplicaSetStatus.t) zero dq.
+Proof. rewrite /deepown /zero /=. iFrame. iPureIntro. done. Qed.
+
+Lemma deepown_persist c v dq : deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iAssert (|==> match v.(TerminatingReplicas') with
+    | Some n => c.(v1.ReplicaSetStatus.TerminatingReplicas') ↦□ n
+    | None => True%I
+    end)%I with "[Hdeepown_terminatingreplicas_some]" as ">Hterminating".
+  { destruct (v.(TerminatingReplicas')); last done.
+    by iPersist "Hdeepown_terminatingreplicas_some". }
+  iAssert (|==> match v.(Conditions') with
+    | Some conditions => ∃ cs, c.(v1.ReplicaSetStatus.Conditions') ↦*□ cs ∗
+        ⌜ conditions = ReplicaSetConditionV.of_go <$> cs ⌝
+    | None => True%I
+    end)%I with "[Hdeepown_conditions_some]" as ">Hconditions".
+  { destruct (v.(Conditions')); last done.
+    iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl %Hcs]".
+    iMod (own_slice_persist with "Hsl") as "Hsl".
+    iModIntro. iExists cs. by iFrame. }
+  iModIntro. by iFrame "∗ # %".
+Qed.
+
+#[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
+Proof using All.
+  rewrite /deepown. destruct (v.(TerminatingReplicas')), (v.(Conditions')); apply _.
+Qed.
+
+Lemma terminating_rep (sc : v1.ReplicaSetStatus.t) (st : t) :
+  deepown sc st DfracDiscarded ⊢
+  opt_ptr_rep sc.(v1.ReplicaSetStatus.TerminatingReplicas')
+    st.(TerminatingReplicas') DfracDiscarded.
+Proof.
+  rewrite /deepown /opt_ptr_rep. iIntros "H". iNamed "H".
+  destruct (st.(TerminatingReplicas')); first done.
+  iPureIntro. by apply Hdeepown_terminatingreplicas_none.
+Qed.
+
+Lemma deepown_set_observed_generation (sc : v1.ReplicaSetStatus.t)
+    (st : t) (g : w64) dq :
+  deepown sc st dq ⊢
+  deepown (sc <| v1.ReplicaSetStatus.ObservedGeneration' := g |>)
+    (st <| ObservedGeneration' := g |>) dq.
+Proof. rewrite /deepown. iIntros "H". iNamed "H". simpl. iFrame "∗ %". done. Qed.
+
+(* The status returned by [calculateStatus]: the counts and terminating
+   pointer are replaced, observed generation and conditions are kept. *)
+Lemma deepown_set_counts (sc : v1.ReplicaSetStatus.t) (st : t)
+    r f rd av (tptr : loc) (topt : option w32) :
+  deepown sc st DfracDiscarded -∗
+  opt_ptr_rep tptr topt DfracDiscarded -∗
+  deepown
+    (v1.ReplicaSetStatus.mk r f rd av tptr
+      sc.(v1.ReplicaSetStatus.ObservedGeneration')
+      sc.(v1.ReplicaSetStatus.Conditions'))
+    (mk r f rd av topt
+      st.(ObservedGeneration') st.(Conditions'))
+    DfracDiscarded.
+Proof.
+  rewrite /deepown /opt_ptr_rep. iIntros "H Ht". iNamed "H". simpl.
+  iFrame "# %". destruct topt as [n|]; simpl.
+  - iDestruct (typed_pointsto_not_null with "Ht") as %Hnn.
+    iFrame "Ht Hdeepown_conditions_some". iPureIntro.
+    split_and!; done.
+  - iDestruct "Ht" as %->. iFrame "Hdeepown_conditions_some". iPureIntro.
+    split_and!; done.
+Qed.
 
 End def.
 End ReplicaSetStatusV.
@@ -199,6 +390,14 @@ Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
 
 Definition key (v: t) : KKey.t :=
   meta_key v.(ObjectMeta').
+
+(* A status write keeps every represented field except the status (and the
+   resource version, which [ObjectMetaV.equiv_except_resource_version] ignores).
+   It says nothing about the new status itself. *)
+Definition status_only_changed (rs rs' : t) : Prop :=
+  rs'.(TypeMeta') = rs.(TypeMeta') ∧
+  ObjectMetaV.equiv_except_resource_version rs'.(ObjectMeta') rs.(ObjectMeta') ∧
+  rs'.(Spec') = rs.(Spec').
 
 Definition valid (rs: t) : Prop :=
   valid_typemeta kind rs.(TypeMeta') ∧
@@ -267,6 +466,24 @@ Definition deepown (c: v1.ReplicaSet.t) (v: t) dq: iProp Σ :=
 
 Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
+
+Lemma deepown_persist c v dq :
+  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
+Proof using All.
+  rewrite /deepown. iNamed 1.
+  iMod (ObjectMetaV.deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
+  iMod (ReplicaSetSpecV.deepown_persist with "Hdeepown_spec") as "Hdeepown_spec".
+  iMod (ReplicaSetStatusV.deepown_persist with "Hdeepown_status") as "Hdeepown_status".
+  iModIntro. by iFrame "∗ %".
+Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof using All.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
 
 #[global]
 Instance top_level_instance : top_level Σ t :=
@@ -380,6 +597,26 @@ Proof.
   assert (update_objectmeta v v.(ObjectMeta') = v) as ->.
   { destruct v. done. }
   iFrame.
+Qed.
+
+Lemma deepown_set_status (c : v1.ReplicaSet.t) (v : t)
+    (sc : v1.ReplicaSetStatus.t) (st : ReplicaSetStatusV.t) dq :
+  deepown c v dq -∗ ReplicaSetStatusV.deepown sc st dq -∗
+  deepown (c <| v1.ReplicaSet.Status' := sc |>)
+    (v <| Status' := st |>) dq.
+Proof.
+  rewrite /deepown. iIntros "H Hst". iNamed "H". simpl. iFrame "∗ %".
+Qed.
+
+Lemma meta_equiv_key_uid (m1 m2 : ObjectMetaV.t) :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  meta_key m1 = meta_key m2 ∧
+  m1.(ObjectMetaV.UID') = m2.(ObjectMetaV.UID') ∧
+  m1.(ObjectMetaV.Namespace') = m2.(ObjectMetaV.Namespace') ∧
+  m1.(ObjectMetaV.Name') = m2.(ObjectMetaV.Name').
+Proof.
+  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
+  destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
 Qed.
 
 End proof.

@@ -14,7 +14,7 @@ packages = [
     "./pkg/apis/rbac",
     "./pkg/apis/rbac/install",
     "./pkg/controller",
-    # "./pkg/controller/replicaset",
+    "./pkg/controller/replicaset",
     # "./pkg/controller/replicaset/metrics",
     "./pkg/features",
     "./pkg/registry/apps/deployment",

@@ -11,14 +11,14 @@ Lemma wp_State__get_some_au γ l key :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    |={⊤,∅}=> ∃ uid dq kmeta kspec_o kstatus_o,
+    |={⊤,∅}=> ∃ uid dq dq_status kmeta kspec_o kstatus_o,
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
       "Hown_spec_frag" ∷ match kspec_o with
       | Some kspec => own_spec_frag γ key uid dq kspec
       | None => True
       end ∗
       "Hown_status_frag" ∷ match kstatus_o with
-      | Some kstatus => own_status_frag γ key uid dq kstatus
+      | Some kstatus => own_status_frag γ key uid dq_status kstatus
       | None => True
       end ∗
       "Hclose" ∷ (∀ i kobj,
@@ -33,7 +33,7 @@ Lemma wp_State__get_some_au γ l key :
         | None => True
         end ∗
         match kstatus_o with
-        | Some kstatus => own_status_frag γ key uid dq kstatus ∗ ⌜ kstatus = KObjectV.status kobj ⌝
+        | Some kstatus => own_status_frag γ key uid dq_status kstatus ∗ ⌜ kstatus = KObjectV.status kobj ⌝
         | None => True
         end
           ={∅,⊤}=∗ ▷ Φ (#(interface.ok i), #interface.nil)%V
@@ -58,7 +58,7 @@ Proof.
     { apply not_elem_of_dom. rewrite <- Hdom_eq.
       apply not_elem_of_dom. done. }
     iApply fupd_wp.
-    iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
+    iMod "Hau" as (uid dq dq_status kmeta kspec_o kstatus_o) "H". iNamed "H".
     iPoseProof (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
       as "(%obj & %Hlookup_abs' & %Huid_obj & %Hmeta_eq & %Huid_in)".
     assert (abs_state !! key ≠ None) as Hlookup_abs''.
@@ -78,7 +78,7 @@ Proof.
   wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
   iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto.
   iApply fupd_wp.
-  iMod "Hau" as (uid dq kmeta kspec_o kstatus_o) "H". iNamed "H".
+  iMod "Hau" as (uid dq dq_status kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
   destruct (Hin_auth Hlookup_abs) as [Hkey_eq [Hwf _]].
   iPoseProof (kview.own_auth_extra_valid_forall with "Hinv_Hown_abs")
@@ -115,7 +115,7 @@ Proof.
 Unshelve. all: try tc_solve.
 Qed.
 
-Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
+Lemma wp_State__get_some γ l key uid dq dq_status kmeta kspec_o kstatus_o :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
@@ -124,7 +124,7 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
       | None => True
       end ∗
       "Hown_status_frag" ∷ match kstatus_o with
-      | Some kstatus => own_status_frag γ key uid dq kstatus
+      | Some kstatus => own_status_frag γ key uid dq_status kstatus
       | None => True
       end
   }}}
@@ -144,7 +144,7 @@ Lemma wp_State__get_some γ l key uid dq kmeta kspec_o kstatus_o :
       end ∗
       match kstatus_o with
       | Some kstatus =>
-          "Hown_status_frag" ∷ own_status_frag γ key uid dq kstatus ∗
+          "Hown_status_frag" ∷ own_status_frag γ key uid dq_status kstatus ∗
           "%Hstatus_eq" ∷ ⌜ kstatus = KObjectV.status kobj ⌝
       | None => True
       end
@@ -189,7 +189,7 @@ Proof.
   wp_method_call. rewrite /apimodel.State__PodMutGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
-    uid dq kmeta (Some (ObjectSpecV.PodSpec kspec)) (Some (ObjectStatusV.PodStatus kstatus))
+    uid dq dq kmeta (Some (ObjectSpecV.PodSpec kspec)) (Some (ObjectStatusV.PodStatus kstatus))
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & Hown_status_frag & %Hstatus_eq)".
@@ -249,7 +249,9 @@ Proof.
   iApply ("HΦ" with "Hpost").
 Qed.
 
-Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
+(* The status fragment may be held at a different fraction than the metadata
+   and spec fragments. *)
+Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -258,7 +260,8 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
         KKey.Name' := name
       |} ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
   }}}
     l @! (go.PointerType apimodel.State) @! "ReplicaSetMutGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
@@ -267,24 +270,29 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec :
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
+      "%Hstatus_eq" ∷ ⌜ kstatus = rs.(ReplicaSetV.Status') ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
-    uid dq kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec)) None
-    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+    uid dq dq_status kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec))
+    (Some (ObjectStatusV.ReplicaSetStatus kstatus))
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
-  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
+  iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & Hown_status_frag & %Hstatus_eq)".
   destruct kobj as [pod|rs|pvc|sts|d]; try solve [simpl in Hspec_eq; done].
-  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
+  simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq, Hstatus_eq.
   assert (Hspec_eq' : kspec = rs.(ReplicaSetV.Spec')) by congruence.
-  clear Hspec_eq.
+  assert (Hstatus_eq' : kstatus = rs.(ReplicaSetV.Status')) by congruence.
+  clear Hspec_eq Hstatus_eq.
   rename Hspec_eq' into Hspec_eq.
+  rename Hstatus_eq' into Hstatus_eq.
   iDestruct "Hdeepown_i" as (rs_l) "[%Hi Hdeepown_l]".
   wp_auto.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
@@ -299,7 +307,7 @@ Proof.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
-Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
+Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta kspec kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_def" ∷ ⌜ key = {|
@@ -308,7 +316,8 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
         KKey.Name' := name
       |} ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
   }}}
     l @! (go.PointerType apimodel.State) @! "ReplicaSetGet" #namespace #name
   {{{ rs_l rs, RET (#rs_l, #interface.nil);
@@ -317,15 +326,17 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq kmeta kspec :
       "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
       "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
+      "%Hstatus_eq" ∷ ⌜ kstatus = rs.(ReplicaSetV.Status') ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec)
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq kmeta kspec
-    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
+  wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
+    with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (rs_l rs) "Hpost".
   wp_auto.
@@ -368,7 +379,7 @@ Proof.
     {| KKey.Kind' := "PersistentVolumeClaim"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
-    uid dq kmeta
+    uid dq dq kmeta
     (None : option ObjectSpecV.t) (None : option ObjectStatusV.t)
     with "Hget").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
@@ -465,7 +476,7 @@ Proof.
     {| KKey.Kind' := "StatefulSet"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
-    uid dq kmeta (Some (ObjectSpecV.StatefulSetSpec kspec)) None
+    uid dq dq kmeta (Some (ObjectSpecV.StatefulSetSpec kspec)) None
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
@@ -558,7 +569,7 @@ Proof.
     {| KKey.Kind' := "Deployment"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
-    uid dq kmeta (Some (ObjectSpecV.DeploymentSpec kspec)) None
+    uid dq dq kmeta (Some (ObjectSpecV.DeploymentSpec kspec)) None
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".

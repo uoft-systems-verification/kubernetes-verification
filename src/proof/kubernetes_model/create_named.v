@@ -68,7 +68,7 @@ Proof.
   wp_method_call. rewrite /apimodel.State__createⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
-  wp_apply (wp_deepCopy i kobj with "[Hdeepown_i]").
+  wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
   { iFrame "#". iExact "Hdeepown_i". }
   iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l]".
