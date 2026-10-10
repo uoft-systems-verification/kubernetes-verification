@@ -1,5 +1,7 @@
 SRC_DIR := 'src'
 PROJ_VFILES := $(shell find $(SRC_DIR) -name "*.v")
+CONTROLLER_VFILES := $(filter src/proof/controllers/%,$(PROJ_VFILES))
+NON_CONTROLLER_VFILES := $(filter-out $(CONTROLLER_VFILES),$(PROJ_VFILES))
 GOOSE_CONFIG_FILES := $(shell find $(SRC_DIR) -name "*.v.toml")
 GO_DIR := '.'
 GO_FILES := $(shell find $(GO_DIR) -name "*.go")
@@ -19,6 +21,13 @@ default: vo
 vo: $(PROJ_VFILES:.v=.vo)
 vos: $(PROJ_VFILES:.v=.vos)
 vok: $(PROJ_VFILES:.v=.vok)
+
+# CI checks the two proof groups independently, with lightweight dependencies
+# for the controller job. -vok checks proofs while loading .vos dependencies.
+vo-base: $(NON_CONTROLLER_VFILES:.v=.vo)
+vos-base: $(NON_CONTROLLER_VFILES:.v=.vos)
+vok-controllers: $(CONTROLLER_VFILES:.v=.vok)
+.PHONY: vo vos vok vo-base vos-base vok-controllers
 
 .goose-output: $(GO_FILES) $(GOOSE_CONFIG_FILES) goose.toml
 	@echo "GOOSE"
