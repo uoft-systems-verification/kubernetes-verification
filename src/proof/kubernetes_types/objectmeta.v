@@ -264,6 +264,12 @@ Record t := mk {
 Global Instance eq_dec : EqDecision t.
 Proof. solve_decision. Defined.
 
+Definition without_resource_version (m : t) : t :=
+  m <| ResourceVersion' := ""%go |>.
+
+Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
+  without_resource_version m1 = without_resource_version m2.
+
 (* [valid] is the complete invariant for metadata stored by the API server:
    it includes both validation and resource-independent normalization.
    Kubernetes clears the deprecated SelfLink field before storage.
@@ -312,25 +318,6 @@ Definition valid_create kind ns (m : t) : Prop :=
   valid_finalizers m.(Finalizers') ∧
   valid_managed_fields m.(ManagedFields').
 
-(** [expected] is the request metadata after resource-specific create
-    preparation. [stored] is the metadata stored by a successful create.
-    The server-generated UID, creation timestamp, and resource version are not
-    related to values supplied in the request. Generation is also omitted
-    because its create-time behavior is determined by each resource's strategy. *)
-Definition created ns expected stored : Prop :=
-  (if decide (expected.(Name') = ""%go)
-   then stored.(Name') ≠ ""%go
-   else stored.(Name') = expected.(Name')) ∧
-  stored.(Namespace') = ns ∧
-  stored.(GenerateName') = expected.(GenerateName') ∧
-  stored.(DeletionTimestamp') = None ∧
-  stored.(Annotations') = expected.(Annotations') ∧
-  stored.(Labels') = expected.(Labels') ∧
-  stored.(OwnerReferences') = expected.(OwnerReferences') ∧
-  stored.(Finalizers') = expected.(Finalizers') ∧
-  stored.(DeletionGracePeriodSeconds') = None ∧
-  stored.(SelfLink') = ""%go.
-
 (* m is the existing meta and m' is the meta passed to update.
    valid_simple_update states the precondition for a simple update to succeed.
    It essentially states that everything except Annotations and Labels remains unchanged.
@@ -356,6 +343,43 @@ Proof.
   unfold valid_simple_update.
   solve_decision.
 Qed.
+
+(** A sufficient request-shape condition for the controller updates currently
+    supported by the model. It is a top-level predicate over the existing and
+    submitted metadata and abstracts away preparation of unrepresented fields.
+    The first branch covers ordinary label/annotation updates. The second
+    covers controller release, whose request differs from the stored metadata
+    only in owner references and may omit the server-managed resource version.
+    [old] is the existing stored metadata.
+    [input] is the metadata submitted in the update request. *)
+Definition valid_update old input : Prop :=
+  (valid_simple_update old input ∨
+   equiv_except_resource_version
+     (old <| OwnerReferences' := input.(OwnerReferences') |>) input) ∧
+  valid_labels input.(Labels') ∧
+  valid_annotations input.(Annotations') ∧
+  valid_owner_references input.(OwnerReferences') ∧
+  valid_finalizers input.(Finalizers') ∧
+  valid_managed_fields input.(ManagedFields').
+
+(** [expected] is the request metadata after resource-specific create
+    preparation. [stored] is the metadata stored by a successful create.
+    The server-generated UID, creation timestamp, and resource version are not
+    related to values supplied in the request. Generation is also omitted
+    because its create-time behavior is determined by each resource's strategy. *)
+Definition created ns expected stored : Prop :=
+  (if decide (expected.(Name') = ""%go)
+   then stored.(Name') ≠ ""%go
+   else stored.(Name') = expected.(Name')) ∧
+  stored.(Namespace') = ns ∧
+  stored.(GenerateName') = expected.(GenerateName') ∧
+  stored.(DeletionTimestamp') = None ∧
+  stored.(Annotations') = expected.(Annotations') ∧
+  stored.(Labels') = expected.(Labels') ∧
+  stored.(OwnerReferences') = expected.(OwnerReferences') ∧
+  stored.(Finalizers') = expected.(Finalizers') ∧
+  stored.(DeletionGracePeriodSeconds') = None ∧
+  stored.(SelfLink') = ""%go.
 
 (* m is the meta passed to update and m' is the new meta after update.
    updated doesn't mention Generation and ResourceVersion because
@@ -516,31 +540,5 @@ Qed.
 Proof using All. rewrite /deepown_l. apply _. Qed.
 End def.
 
-Section proof.
 
-Definition without_resource_version (m : t) : t :=
-  m <| ResourceVersion' := ""%go |>.
-
-Definition equiv_except_resource_version (m1 m2 : t) : Prop :=
-  without_resource_version m1 = without_resource_version m2.
-
-(** A sufficient request-shape condition for the controller updates currently
-    supported by the model. It is a top-level predicate over the existing and
-    submitted metadata and abstracts away preparation of unrepresented fields.
-    The first branch covers ordinary label/annotation updates. The second
-    covers controller release, whose request differs from the stored metadata
-    only in owner references and may omit the server-managed resource version.
-    [old] is the existing stored metadata.
-    [input] is the metadata submitted in the update request. *)
-Definition valid_update old input : Prop :=
-  (valid_simple_update old input ∨
-   equiv_except_resource_version
-     (old <| OwnerReferences' := input.(OwnerReferences') |>) input) ∧
-  valid_labels input.(Labels') ∧
-  valid_annotations input.(Annotations') ∧
-  valid_owner_references input.(OwnerReferences') ∧
-  valid_finalizers input.(Finalizers') ∧
-  valid_managed_fields input.(ManagedFields').
-
-End proof.
 End ObjectMetaV.
