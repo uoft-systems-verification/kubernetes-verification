@@ -37,11 +37,12 @@ import (
 	deploymentstrategy "k8s.io/kubernetes/pkg/registry/apps/deployment"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
+	endpointstrategy "k8s.io/kubernetes/pkg/registry/core/endpoint"
 	pvcstrategy "k8s.io/kubernetes/pkg/registry/core/persistentvolumeclaim"
 	podstrategy "k8s.io/kubernetes/pkg/registry/core/pod"
+	servicestrategy "k8s.io/kubernetes/pkg/registry/core/service"
 	serviceaccountstrategy "k8s.io/kubernetes/pkg/registry/core/serviceaccount"
 	clusterrolestrategy "k8s.io/kubernetes/pkg/registry/rbac/clusterrole"
-
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
 )
@@ -102,6 +103,10 @@ func deepCopy(obj interface{}) interface{} {
 	case *corev1.Namespace:
 		return o.DeepCopy()
 	case *corev1.ServiceAccount:
+		return o.DeepCopy()
+	case *corev1.Service:
+		return o.DeepCopy()
+	case *corev1.Endpoints:
 		return o.DeepCopy()
 	case *appsv1.ReplicaSet:
 		return o.DeepCopy()
@@ -413,6 +418,18 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.ServiceAccount to internal ServiceAccount: %v", err))
 		}
 		return internalServiceAccount, nil
+	case *corev1.Service:
+		internalService := &core.Service{}
+		if err := legacyscheme.Scheme.Convert(typed, internalService, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Service to internal Service: %v", err))
+		}
+		return internalService, nil
+	case *corev1.Endpoints:
+		internalEndpoints := &core.Endpoints{}
+		if err := legacyscheme.Scheme.Convert(typed, internalEndpoints, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert v1.Endpoints to internal Endpoints: %v", err))
+		}
+		return internalEndpoints, nil
 	case *appsv1.ReplicaSet:
 		internalRS := &apps.ReplicaSet{}
 		if err := legacyscheme.Scheme.Convert(typed, internalRS, nil); err != nil {
@@ -458,6 +475,10 @@ func applySchemaDefaults(obj interface{}) error {
 	case *corev1.ServiceAccount:
 		// ServiceAccount has no schema defaults in release-1.34.
 		return nil
+	case *corev1.Service:
+		corev1defaults.SetObjectDefaults_Service(typed)
+	case *corev1.Endpoints:
+		corev1defaults.SetObjectDefaults_Endpoints(typed)
 	case *appsv1.ReplicaSet:
 		// SetObjectDefaults_ReplicaSet recursively applies all defaults:
 		// - ReplicaSet.Spec.Replicas defaults to 1
@@ -484,6 +505,10 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		pvcstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *core.ServiceAccount:
 		serviceaccountstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *core.Service:
+		servicestrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *core.Endpoints:
+		endpointstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.StatefulSet:
@@ -509,6 +534,10 @@ func applyAdmissionMutate(obj interface{}) error {
 	case *core.PersistentVolumeClaim:
 		applyPersistentVolumeClaimProtectionAdmission(typed)
 	case *core.ServiceAccount:
+		return nil
+	case *core.Service:
+		return nil
+	case *core.Endpoints:
 		return nil
 	case *apps.ReplicaSet:
 		return nil
@@ -551,6 +580,10 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 			typed.Status.Phase = core.ClaimPending
 		}
 	case *core.ServiceAccount:
+		return nil
+	case *core.Service:
+		return nil
+	case *core.Endpoints:
 		return nil
 	case *apps.ReplicaSet:
 		return nil
@@ -606,6 +639,10 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 		}
 	case *core.PersistentVolumeClaim:
 		return nil
+	case *core.Service:
+		return nil
+	case *core.Endpoints:
+		return nil
 	case *apps.ReplicaSet:
 		return nil
 	case *apps.StatefulSet:
@@ -634,6 +671,12 @@ func applyAdmissionValidate(obj interface{}) error {
 	case *core.ServiceAccount:
 		// This model does not mirror any ServiceAccount-specific validating admission plugins.
 		return nil
+	case *core.Service:
+		// This model does not mirror any Service-specific validating admission plugins.
+		return nil
+	case *core.Endpoints:
+		// This model does not mirror any Endpoints-specific validating admission plugins.
+		return nil
 	case *apps.ReplicaSet:
 		// This model does not mirror any ReplicaSet-specific validating admission plugins.
 		return nil
@@ -653,7 +696,7 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ClusterRole":
+	case "Pod", "PersistentVolumeClaim", "Service", "Endpoints", "ReplicaSet", "StatefulSet", "Deployment", "ClusterRole":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
@@ -686,6 +729,10 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 		return podstrategy.Strategy, nil
 	case *core.PersistentVolumeClaim:
 		return pvcstrategy.Strategy, nil
+	case *core.Service:
+		return servicestrategy.Strategy, nil
+	case *core.Endpoints:
+		return endpointstrategy.Strategy, nil
 	case *apps.ReplicaSet:
 		return rsstrategy.Strategy, nil
 	case *apps.StatefulSet:
@@ -705,6 +752,8 @@ func statusUpdateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrate
 		return podstrategy.StatusStrategy, nil
 	case *core.PersistentVolumeClaim:
 		return pvcstrategy.StatusStrategy, nil
+	case *core.Service:
+		return servicestrategy.StatusStrategy, nil
 	case *apps.ReplicaSet:
 		return rsstrategy.StatusStrategy, nil
 	case *apps.StatefulSet:
@@ -730,6 +779,14 @@ func applyStrategyValidate(obj interface{}, name string) error {
 	case *core.ServiceAccount:
 		if errs := serviceaccountstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "ServiceAccount"}, name, errs)
+		}
+	case *core.Service:
+		if errs := servicestrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "Service"}, name, errs)
+		}
+	case *core.Endpoints:
+		if errs := endpointstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "", Kind: "Endpoints"}, name, errs)
 		}
 	case *apps.ReplicaSet:
 		if errs := rsstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
@@ -761,6 +818,10 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		pvcstrategy.Strategy.Canonicalize(typed)
 	case *core.ServiceAccount:
 		serviceaccountstrategy.Strategy.Canonicalize(typed)
+	case *core.Service:
+		servicestrategy.Strategy.Canonicalize(typed)
+	case *core.Endpoints:
+		endpointstrategy.Strategy.Canonicalize(typed)
 	case *apps.ReplicaSet:
 		rsstrategy.Strategy.Canonicalize(typed)
 	case *apps.StatefulSet:
@@ -2129,6 +2190,159 @@ func (s *State) NamespaceGet(name string) (*corev1.Namespace, error) {
 	}
 
 	return namespace, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ServiceGet(namespace, name string) (*corev1.Service, error) {
+	return s.ServiceMutGet(namespace, name)
+}
+
+func (s *State) ServiceMutGet(namespace, name string) (*corev1.Service, error) {
+	obj, err := s.get(KKey{Kind: "Service", Namespace: namespace, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	service, ok := obj.(*corev1.Service)
+	if !ok {
+		return nil, fmt.Errorf("state entry for service %s/%s is not a *v1.Service", namespace, name)
+	}
+	return service, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ServiceList(namespace string, selector labels.Selector) ([]*corev1.Service, error) {
+	return s.ServiceMutList(namespace, selector)
+}
+
+func (s *State) ServiceMutList(namespace string, selector labels.Selector) ([]*corev1.Service, error) {
+	objs, err := s.objListBySelector("Service", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	services := make([]*corev1.Service, 0, len(objs))
+	for _, obj := range objs {
+		service, ok := obj.(*corev1.Service)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.Service")
+		}
+		services = append(services, service)
+	}
+	return services, nil
+}
+
+func (s *State) ServiceCreate(namespace string, service *corev1.Service) (*corev1.Service, error) {
+	obj, err := s.create("Service", namespace, service)
+	if err != nil {
+		return nil, err
+	}
+
+	createdService, ok := obj.(*corev1.Service)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+	return createdService, nil
+}
+
+func (s *State) ServiceUpdate(namespace string, service *corev1.Service) (*corev1.Service, error) {
+	obj, err := s.update("Service", namespace, service)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedService, ok := obj.(*corev1.Service)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+	return updatedService, nil
+}
+
+func (s *State) ServiceUpdateStatus(namespace string, service *corev1.Service) (*corev1.Service, error) {
+	obj, err := s.updateStatus("Service", namespace, service)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedService, ok := obj.(*corev1.Service)
+	if !ok {
+		return nil, fmt.Errorf("status update returned unexpected type %T", obj)
+	}
+	return updatedService, nil
+}
+
+func (s *State) ServiceDelete(namespace, name string, options metav1.DeleteOptions) error {
+	return s.delete(KKey{Kind: "Service", Namespace: namespace, Name: name}, options)
+}
+
+// Returned value must be treated as read-only.
+func (s *State) EndpointsGet(namespace, name string) (*corev1.Endpoints, error) {
+	return s.EndpointsMutGet(namespace, name)
+}
+
+func (s *State) EndpointsMutGet(namespace, name string) (*corev1.Endpoints, error) {
+	obj, err := s.get(KKey{Kind: "Endpoints", Namespace: namespace, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	endpoints, ok := obj.(*corev1.Endpoints)
+	if !ok {
+		return nil, fmt.Errorf("state entry for endpoints %s/%s is not a *v1.Endpoints", namespace, name)
+	}
+	return endpoints, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) EndpointsList(namespace string, selector labels.Selector) ([]*corev1.Endpoints, error) {
+	return s.EndpointsMutList(namespace, selector)
+}
+
+func (s *State) EndpointsMutList(namespace string, selector labels.Selector) ([]*corev1.Endpoints, error) {
+	objs, err := s.objListBySelector("Endpoints", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointsList := make([]*corev1.Endpoints, 0, len(objs))
+	for _, obj := range objs {
+		endpoints, ok := obj.(*corev1.Endpoints)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.Endpoints")
+		}
+		endpointsList = append(endpointsList, endpoints)
+	}
+	return endpointsList, nil
+}
+
+func (s *State) EndpointsCreate(namespace string, endpoints *corev1.Endpoints) (*corev1.Endpoints, error) {
+	obj, err := s.create("Endpoints", namespace, endpoints)
+	if err != nil {
+		return nil, err
+	}
+
+	createdEndpoints, ok := obj.(*corev1.Endpoints)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+	return createdEndpoints, nil
+}
+
+func (s *State) EndpointsUpdate(namespace string, endpoints *corev1.Endpoints) (*corev1.Endpoints, error) {
+	obj, err := s.update("Endpoints", namespace, endpoints)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedEndpoints, ok := obj.(*corev1.Endpoints)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+	return updatedEndpoints, nil
+}
+
+func (s *State) EndpointsDelete(namespace, name string, options metav1.DeleteOptions) error {
+	return s.delete(KKey{Kind: "Endpoints", Namespace: namespace, Name: name}, options)
 }
 
 // Returned value must be treated as read-only.
