@@ -1,12 +1,11 @@
 package deployment
 
 import (
-	"reflect"
-
 	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -53,12 +52,18 @@ func equalIgnoreHash(template1, template2 *v1.PodTemplateSpec) bool {
 	t2 := template2.DeepCopy()
 	delete(t1.Labels, deploymentUniqueLabelKey)
 	delete(t2.Labels, deploymentUniqueLabelKey)
-	return reflect.DeepEqual(t1, t2)
+	return equality.Semantic.DeepEqual(t1, t2)
 }
 
 // findNewReplicaSet returns the ReplicaSet whose template matches the
 // deployment's (ignoring the hash label). Under the no-collision assumption at
 // most one such ReplicaSet exists.
+//
+// TODO: upstream's FindNewReplicaSet first sorts rsList by creation timestamp
+// (oldest first, ties by name) and so deterministically picks the oldest match.
+// Here the first match in list order is taken, which is why the proofs assume
+// at most one match (unique_new_replica_set). Sorting needs a model of
+// creation timestamps, which are opaque here.
 func findNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) *apps.ReplicaSet {
 	for _, rs := range rsList {
 		if equalIgnoreHash(&rs.Spec.Template, &d.Spec.Template) {
@@ -68,9 +73,13 @@ func findNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) *apps.Repl
 	return nil
 }
 
-// findOldReplicaSets returns every ReplicaSet other than newRS.
-func findOldReplicaSets(rsList []*apps.ReplicaSet, newRS *apps.ReplicaSet) []*apps.ReplicaSet {
+// findOldReplicaSets returns every ReplicaSet in rsList other than the
+// deployment's new one, as upstream's FindOldReplicaSets does. Upstream also
+// returns the subset that still has replicas; rollout does not use it, so it is
+// omitted here.
+func findOldReplicaSets(d *apps.Deployment, rsList []*apps.ReplicaSet) []*apps.ReplicaSet {
 	old := []*apps.ReplicaSet{}
+	newRS := findNewReplicaSet(d, rsList)
 	for _, rs := range rsList {
 		if newRS != nil && rs.UID == newRS.UID {
 			continue
@@ -178,11 +187,11 @@ func reconcileOldReplicaSets(oldRSs []*apps.ReplicaSet) (bool, error) {
 
 // rollout performs one reconciliation step of a rollout.
 func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
+	oldRSs := findOldReplicaSets(d, rsList)
 	newRS, err := getNewReplicaSet(d, rsList)
 	if err != nil {
 		return err
 	}
-	oldRSs := findOldReplicaSets(rsList, newRS)
 
 	_, err = reconcileNewReplicaSet(newRS, d)
 	if err != nil {
