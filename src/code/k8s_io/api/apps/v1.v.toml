@@ -25,6 +25,7 @@ translate = [
     "ReplicaSetCondition",
     "ReplicaSetConditionType",
     "GroupName",
+    "DefaultDeploymentUniqueLabelKey",
     "StatefulSetPodNameLabel",
     "PodIndexLabel",
     "SchemeGroupVersion",

@@ -176,21 +176,29 @@ Proof.
   iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
   iDestruct (big_sepL2_length with "Hrss") as %Hptrs_rss_len.
   set P := (λ rs, template_matches (rs_template rs) (deployment_template d)).
+  (* The range loop's own index shares the name "i" with the Go loop variable,
+     so wp_auto does not allocate it. *)
+  wp_alloc i_ptr0 as "i0". wp_auto.
   (* The loop has scanned rss[0..i) without finding a matching template. *)
-  set I := (∃ (i : w64) (rs_ptr_value : loc),
-    "Hi_ptr" ∷ i_ptr ↦ i ∗
-    "Hd_ptr" ∷ d_ptr ↦ d_l ∗
+  set I := (∃ (i : w64) (i_value : w64),
+    "Hi_ptr" ∷ i_ptr0 ↦ i ∗
+    "Hdeployment_ptr" ∷ deployment_ptr ↦ d_l ∗
     "Hd" ∷ DeploymentV.deepown_l d_l d dq1 ∗
-    "Hrs_ptr" ∷ rs_ptr ↦ rs_ptr_value ∗
+    "Hi_value_ptr" ∷ i_ptr ↦ i_value ∗
     "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3) ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝ ∗
     "%Hnot_found" ∷ ⌜ ∀ j r, (j < sint.nat i)%nat → rss !! j = Some r → ¬ P r ⌝
   )%I.
-  iAssert I with "[i d Hd rs Hrss]" as "Hloop_inv".
-  { iExists (W64 0), null. iFrame.
+  iAssert I with "[i0 i deployment Hd Hrss]" as "Hloop_inv".
+  { iExists (W64 0), (W64 0). iFrame.
     iPureIntro. split; [word|]. intros j r Hj. exfalso. word. }
   wp_for "Hloop_inv". wp_if_destruct.
   - list_elem ptrs (sint.Z i) as this_ptr.
+    destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
+    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    { iPureIntro. exact Hthis_ptr_lookup. }
+    iIntros "Hsl". wp_auto.
+    (* The body reads rsList[i] itself rather than the range value. *)
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
@@ -251,7 +259,11 @@ Proof.
     wp_if_destruct.
     + (* This template matches, and Hnot_found rules out every earlier one, so
          this index is the one list_find picks. *)
-      iApply wp_for_post_return. wp_auto.
+      destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
+      wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+      { iPureIntro. exact Hthis_ptr_lookup. }
+      iIntros "Hsl".
+      wp_auto. iApply wp_for_post_return. wp_auto.
       assert (find_new_replica_set d rss = Some (sint.nat i, this_rs)) as Hfind.
       { apply list_find_Some. split_and!.
         - exact Hthis_rs_lookup.
@@ -260,8 +272,8 @@ Proof.
           eapply (Hnot_found j r); [lia|exact Hlookup|exact HP]. }
       iApply ("HΦ" $! this_ptr). rewrite Hfind. iFrame. done.
     + iApply wp_for_post_do. wp_auto.
-      iFrame "Hsl HΦ".
-      iExists (word.add i (W64 1)), this_ptr.
+      iFrame "Hsl HΦ rsList".
+      iExists (word.add i (W64 1)), _.
       iFrame.
       iPureIntro. split; [word|].
       intros j r Hj Hlookup HP.
@@ -305,8 +317,9 @@ Lemma wp_findOldReplicaSets d_l (d : DeploymentV.t) sl ptrs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  wp_apply wp_slice_literal. iSplitR; first done.
-  iIntros (old_sl0) "[Hold_sl Hold_cap]". wp_auto.
+  (* allRSs starts as a nil slice. *)
+  iPoseProof (own_slice_nil (V:=loc) (DfracOwn 1)) as "Hnil_sl".
+  iPoseProof (own_slice_cap_nil (V:=loc)) as "Hnil_cap".
   wp_apply (wp_findNewReplicaSet with "[$Hd $Hsl $Hrss]").
   iIntros (new_rs_l) "(Hfind & Hd & Hsl & Hrss)". wp_auto.
   remember (snd <$> find_new_replica_set d rss) as new_rs_o eqn:Hnew_rs_o.
@@ -341,10 +354,10 @@ Proof.
       iFrame "Hrss". iPureIntro. split; [done|discriminate].
     - iFrame "Hrss". iPureIntro. split; [done|]. intros _. exact Hnew. }
   set Q := (λ pr : loc * ReplicaSetV.t, rs_is_old new_rs_o pr.2).
-  (* [old] holds exactly the old ReplicaSets found among the first i entries. *)
+  (* [allRSs] holds exactly the old ReplicaSets found among the first i entries. *)
   set I := (∃ (i : w64) (rs_ptr_value : loc) (old_sl : slice.t),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
-    "Hold_ptr" ∷ old_ptr ↦ old_sl ∗
+    "Hold_ptr" ∷ allRSs_ptr ↦ old_sl ∗
     "Hrs_ptr" ∷ rs_ptr ↦ rs_ptr_value ∗
     "HnewRS_ptr" ∷ newRS_ptr ↦ new_rs_l ∗
     "Hold_sl" ∷ old_sl ↦* ((filter Q (take (sint.nat i) (zip ptrs rss))).*1) ∗
@@ -352,8 +365,11 @@ Proof.
     "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3) ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len sl) ⌝
   )%I.
-  iAssert I with "[i old rs newRS Hold_sl Hold_cap Hrss]" as "Hloop_inv".
-  { iExists (W64 0), null, _. iFrame. iPureIntro. word. }
+  iAssert I with "[i allRSs rs newRS Hrss]" as "Hloop_inv".
+  { iExists (W64 0), null, slice.nil. iFrame.
+    replace (sint.nat (W64 0)) with 0%nat by word. rewrite take_0 /=.
+    iFrame "Hnil_sl Hnil_cap". iPureIntro. word. }
+  iClear "Hnil_sl Hnil_cap".
   wp_for "Hloop_inv". wp_if_destruct.
   - list_elem ptrs (sint.Z i) as this_ptr.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
@@ -486,11 +502,14 @@ Qed.
 
 (* cloneAndAddLabel returns a fresh map holding [existing] plus one binding.
    [existing] is only read, and a nil map ranges as empty, hence [default ∅].
-   The result is fully owned: it is a map literal the callee just built. *)
+   The result is fully owned: it is a map literal the callee just built. With an
+   empty key it would return [existing] itself instead; the only caller passes
+   the non-empty pod-template-hash key, so the spec rules that case out. *)
 Lemma wp_cloneAndAddLabel existing_l (existing : option (gmap go_string go_string))
     (key value : go_string) dq :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "Hexisting" ∷ labels_opt_own existing_l existing dq
+      "Hexisting" ∷ labels_opt_own existing_l existing dq ∗
+      "%Hkey" ∷ ⌜ key ≠ ""%go ⌝
   }}}
     @! deployment.cloneAndAddLabel #existing_l #key #value
   {{{ (result_l : loc), RET #result_l;
@@ -499,6 +518,7 @@ Lemma wp_cloneAndAddLabel existing_l (existing : option (gmap go_string go_strin
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
+  rewrite bool_decide_eq_false_2 //. wp_auto.
   wp_apply wp_map_make1. iIntros (result_l) "Hresult".
   wp_auto.
   destruct existing as [m|].
@@ -506,21 +526,21 @@ Proof.
     wp_apply (wp_map_for_range_return_func (key_type:=go.string)
       (λ (keys : list go_string) i,
         ∃ (last_value last_key : go_string),
-          "v" ∷ v_ptr ↦ last_value ∗
-          "k" ∷ k_ptr ↦ last_key ∗
-          "result" ∷ result_ptr ↦ result_l ∗
+          "value" ∷ value_ptr ↦ last_value ∗
+          "key" ∷ key_ptr ↦ last_key ∗
+          "newLabels" ∷ newLabels_ptr ↦ result_l ∗
           "Hresult" ∷ result_l ↦$ map_prefix keys i m)%I
       with "Hexisting").
     { done. }
     iIntros (keys) "%Hkeys".
-    iSplitL "v k result Hresult".
+    iSplitL "value key newLabels Hresult".
     { iExists ""%go, ""%go. iFrame. rewrite map_prefix_empty. iFrame. }
     iSplitL "".
     { iModIntro. iIntros (i k0 v0) "%Hiter Hloop".
       destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
       destruct Hiter as [Hi_bounds [Hkey_lookup Hvalue_lookup]].
       destruct Hi_bounds as [Hi_nonneg Hi_upper].
-      iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+      iDestruct "Hloop" as (last_value last_key) "(value & key & newLabels & Hresult)".
       wp_pures. simpl subst'. wp_auto.
       wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
         go.string result_l (map_prefix keys i m) k0 v0 with "Hresult") as "Hresult".
@@ -528,7 +548,7 @@ Proof.
       iExists v0, k0. iFrame.
       rewrite -map_prefix_insert; done. }
     iIntros "Hexisting Hloop".
-    iDestruct "Hloop" as (last_value last_key) "(v & k & result & Hresult)".
+    iDestruct "Hloop" as (last_value last_key) "(value & key & newLabels & Hresult)".
     destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
     rewrite (map_prefix_all keys m Hkeys_dom Hkeys_len).
     wp_auto.
@@ -545,11 +565,13 @@ Qed.
 
 (* cloneSelectorAndAddLabel deep-copies the selector and sets one MatchLabels
    binding on the copy, allocating MatchLabels first if it was nil.  The source
-   is only read; the returned selector is fully owned. *)
+   is only read; the returned selector is fully owned. As for cloneAndAddLabel,
+   the empty-key case (which returns [selector] itself) is ruled out. *)
 Lemma wp_cloneSelectorAndAddLabel selector_l (selector : LabelSelectorV.t)
     (key value : go_string) dq :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "Hselector" ∷ LabelSelectorV.deepown_l selector_l selector dq
+      "Hselector" ∷ LabelSelectorV.deepown_l selector_l selector dq ∗
+      "%Hkey" ∷ ⌜ key ≠ ""%go ⌝
   }}}
     @! deployment.cloneSelectorAndAddLabel #selector_l #key #value
   {{{ (result_l : loc), RET #result_l;
@@ -559,6 +581,7 @@ Lemma wp_cloneSelectorAndAddLabel selector_l (selector : LabelSelectorV.t)
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
+  rewrite bool_decide_eq_false_2 //. wp_auto.
   (* meta/v1's proof module is not imported here — apps/v1 owns the [v1]
      shorthand — so the DeepCopy contract is named in full. *)
   iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1)
