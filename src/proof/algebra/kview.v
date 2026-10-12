@@ -4718,35 +4718,4 @@ Proof.
   iFrame.
 Qed.
 
-(* Status write with the metadata fragment at fraction [dq]: exclusive metadata
-   may change, while a shared fragment requires unchanged metadata. *)
-Lemma update_status_kobj_frac_vs {γ state used_uid k uid dq meta status} prev_obj obj:
-  valid_k_uid_obj k uid obj →
-  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None →
-  no_speculative_parent_reference (KObjectV.objectmeta obj) used_uid →
-  state !! k = Some prev_obj →
-  (KObjectV.spec prev_obj) = (KObjectV.spec obj) →
-  (dq = DfracOwn 1 ∨ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj) meta) →
-  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta prev_obj) meta →
-  own_auth γ state used_uid -∗
-  own_meta_frag γ k uid dq meta -∗
-  own_status_frag γ k uid 1 status ==∗
-    own_auth γ (<[k := obj]> state) used_uid ∗
-    own_meta_frag γ k uid dq (KObjectV.objectmeta obj) ∗
-    own_status_frag γ k uid 1 (KObjectV.status obj).
-Proof.
-  iIntros (Hkuid_obj Hdeletion_timestamp Hno_spec Hak Hspec_eq Hfrac Hmeta_prev)
-    "Hauth Hmeta Hstatus".
-  destruct Hfrac as [-> | Hmeta_obj].
-  - iApply (update_status_kobj_vs with "Hauth Hmeta Hstatus"); done.
-  - iMod (update_status_kobj_same_meta_vs prev_obj obj with "Hauth Hstatus")
-      as "[Hauth Hstatus]"; try done.
-    { rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_prev Hmeta_obj.
-      congruence. }
-    iModIntro. iFrame.
-    rewrite /own_meta_frag /mk_meta_frag.
-    rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_obj.
-    rewrite Hmeta_obj. iFrame.
-Qed.
-
 End kview.

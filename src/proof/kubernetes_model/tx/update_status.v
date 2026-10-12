@@ -11,41 +11,33 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Local Set Default Proof Using "All".
 
 (* A transactional status write: each attempt writes at the currently stored
-   resource version and conflicts are retried, so the write fails only if the
-   request itself is invalid. As in [wp_State__update_status_au], the request
-   keeps the stored metadata except for the resource version, so the metadata
-   fragment may be held at any fraction. The input is only read, at fraction
-   [dq_in]. *)
+   resource version and conflicts are retried. The request must be valid, so the
+   write always succeeds. As in [wp_State__update_status_au], the request keeps
+   the stored metadata except for the resource version, so the metadata fragment
+   may be held at any fraction. The input is only read, at fraction [dq_in]. *)
 Lemma wp_State__updateStatusTx γ l kind namespace i kobj dq_in uid dq kmeta kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind namespace kobj ⌝ ∗
+      "%Hvalid_status_update" ∷ ⌜ KObjectV.valid_status_update kind namespace kmeta kstatus kobj ⌝ ∗
       "%Hmeta_same" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj dq_in ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
       "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) uid 1 kstatus
   }}}
     l @! (go.PointerType apimodel.State) @! "updateStatusTx" #kind #namespace #(interface.ok i)
-  {{{ (ret : val), RET ret;
+  {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
       KObjectV.deepown_i i kobj dq_in ∗
       own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
-      ((∃ i' kobj',
-        ⌜ ret = (#(interface.ok i'), #interface.nil)%V ⌝ ∗
-        ⌜ KObjectV.valid kobj' ⌝ ∗
-        ⌜ KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-          KObjectV.status_updated kobj kobj' ⌝ ∗
-        ⌜ KObjectV.same_kind kobj kobj' ∧
-          ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj') kmeta ⌝ ∗
-        KObjectV.deepown_i i' kobj' 1 ∗
-        own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status kobj')) ∨
-       (∃ err,
-        ⌜ ret = (#interface.nil, #err)%V ⌝ ∗
-        ⌜ err ≠ interface.nil ∧ ¬ KObjectV.valid_status_update kind namespace kmeta kstatus kobj ⌝ ∗
-        own_status_frag γ (KObjectV.key kobj) uid 1 kstatus))
+      ⌜ KObjectV.valid kobj' ⌝ ∗
+      ⌜ KObjectV.status_updated kobj kobj' ⌝ ∗
+      ⌜ KObjectV.same_kind kobj kobj' ∧
+        ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj') kmeta ⌝ ∗
+      KObjectV.deepown_i i' kobj' 1 ∗
+      own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status kobj')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof Hrequest_ok as (Hkind_matches & Hname_not_empty & Huid_nonempty & Hns_matches & Hrv_valid &
+  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Hname_not_empty & Huid_nonempty & Hns_matches & Hrv_valid &
     Hvalid_typemeta & Hlabels & Hannotations & Howners & Hfinalizers & Hmanaged_fields).
   wp_auto.
   (* A conflict leaves every fragment as it was, so the loop just keeps them. *)
@@ -115,10 +107,9 @@ Proof.
     (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
     Hexisting_rv_valid.
   { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
-  (* A valid request stays valid at the stored resource version. *)
-  assert (KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-    KObjectV.valid_status_update kind namespace kmeta kstatus kobj_rv) as Hvalid_rv.
-  { intros Hvalid_status_update. subst kobj_rv kmeta_rv.
+  (* The request stays valid at the stored resource version. *)
+  assert (KObjectV.valid_status_update kind namespace kmeta kstatus kobj_rv) as Hvalid_rv.
+  { subst kobj_rv kmeta_rv.
     assert (ObjectMetaV.valid_update kmeta (KObjectV.objectmeta kobj)) as Hmeta.
     { destruct kstatus, kobj;
         rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
@@ -158,10 +149,7 @@ Proof.
   { subst kobj_rv kmeta_rv. destruct kobj; done. }
   rewrite Hkey_rv.
   iFrame "Hown_meta_frag Hown_status_frag".
-  iSplit.
-  { iPureIntro. subst kobj_rv kmeta_rv.
-    rewrite /status_update_request_ok in Hrequest_ok |- *.
-    destruct kobj; simpl in *; intuition. }
+  iSplit; first done.
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv. rewrite objectmeta_update_objectmeta.
     rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version
@@ -169,7 +157,7 @@ Proof.
     rewrite -Hmeta_same. destruct (KObjectV.objectmeta kobj); done. }
   iSplit.
   - iIntros (i' kobj') "Hsuccess".
-    iDestruct "Hsuccess" as "(%Hvalid_updated & %Hstatus_updated_if_valid & %Hpreserved & Hdeepown_i' &
+    iDestruct "Hsuccess" as "(%Hvalid_updated & %Hstatus_updated & %Hpreserved & Hdeepown_i' &
       Hown_meta_frag & Hown_status_frag)".
     destruct Hpreserved as (Hsame & Hequiv).
     iMod "Hmask" as "_". iModIntro. iNext.
@@ -179,37 +167,24 @@ Proof.
       (symmetry; apply bool_decide_false; exact conflict_error_nil).
     wp_auto.
     wp_for_post.
-    iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iLeft.
-    iExists i', kobj'. iFrame. iPureIntro. split_and!; try done.
-    + intros Hvalid_status_update.
-      pose proof (Hstatus_updated_if_valid (Hvalid_rv Hvalid_status_update)) as Hstatus_updated.
-      subst kobj_rv kmeta_rv.
+    iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iFrame. iPureIntro. split_and!; try done.
+    + subst kobj_rv kmeta_rv.
       revert Hstatus_updated.
       destruct kobj, kobj'; simpl; try done;
         intros (Htypemeta & Hmeta & Hstatus); split_and!; try done.
       all: rewrite /ObjectMetaV.updated in Hmeta |- *;
         destruct ObjectMeta', ObjectMeta'0; simpl in *; intuition congruence.
     + subst kobj_rv kmeta_rv. destruct kobj, kobj'; done.
-  - iIntros (err) "(%Herr_ne & %Hconflict_if_valid & Hown_meta_frag & Hown_status_frag)".
+  - (* Another writer advanced the resource version: retry. *)
+    iIntros (err) "(%Hconflict & Hown_meta_frag & Hown_status_frag)".
     iMod "Hmask" as "_". iModIntro. iNext.
     wp_auto.
     wp_apply (wp_IsConflict err with "[]").
-    destruct (decide (conflict_error err)) as [Hconflict|Hnot_conflict].
-    + (* Another writer advanced the resource version: retry. *)
-      replace (bool_decide (conflict_error err)) with true by
-        (symmetry; apply bool_decide_true; done).
-      wp_auto.
-      wp_for_post.
-      iFrame.
-    + (* Any other error means the request itself is invalid. *)
-      replace (bool_decide (conflict_error err)) with false by
-        (symmetry; apply bool_decide_false; done).
-      wp_auto.
-      wp_for_post.
-      iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iRight.
-      iExists err. iFrame. iPureIntro. split; first done. split; first done.
-      intros Hvalid_status_update.
-      apply Hnot_conflict, Hconflict_if_valid, Hvalid_rv, Hvalid_status_update.
+    replace (bool_decide (conflict_error err)) with true by
+      (symmetry; apply bool_decide_true; done).
+    wp_auto.
+    wp_for_post.
+    iFrame.
 Qed.
 
 End proof.

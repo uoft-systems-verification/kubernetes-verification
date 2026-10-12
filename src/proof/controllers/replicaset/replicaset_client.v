@@ -96,8 +96,8 @@ Proof.
 Qed.
 
 (* [c.UpdateStatus(ctx, rs, opts)] forwards to [State.ReplicaSetUpdateStatusTx], which retries
-   resource-version conflicts (see the trusted shim), so a failure means the requested status fails
-   the guard [ReplicaSetStatusV.valid_update]. *)
+   resource-version conflicts (see the trusted shim), so a requested status passing the guard
+   [ReplicaSetStatusV.valid_update] is always written. *)
 Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
     rs_l rs requested dq dq_in :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
@@ -106,6 +106,7 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
       "#Hclient" ∷ is_rs_client c namespace ∗
       "%Hnamespace" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
+      "%Hvalid_requested" ∷ ⌜ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested ⌝ ∗
       "Hinput" ∷ ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') ∗
@@ -113,25 +114,21 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
   }}}
     (MethodResolve client_apps_v1.ReplicaSetInterface "UpdateStatus"%go #c) ctx #rs_l opts
-  {{{ result_l rs' err, RET (#result_l, #err);
+  {{{ (result_l : loc) rs', RET (#result_l, #interface.nil);
       ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
       ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
       own_status_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
-      ((⌜ err = interface.nil ⌝ ∗
-        ⌜ ReplicaSetV.valid rs' ⌝ ∗
-        ⌜ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested →
-          ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
-        (* Disabled clause describing the returned object [result_l] (Go's
-           [updatedRS]); see [wp_State__ReplicaSetUpdateStatusTx] for what it
-           specifies and why it is disabled.
-        ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
-          ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
-            rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)) ∨
-       (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧
-          ¬ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested ⌝))
+      ⌜ ReplicaSetV.valid rs' ⌝ ∗
+      ⌜ ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
+      (* Disabled clause describing the returned object [result_l] (Go's
+         [updatedRS]); see [wp_State__ReplicaSetUpdateStatusTx] for what it
+         specifies and why it is disabled.
+      ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
+        ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
+          rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
@@ -148,56 +145,7 @@ Proof.
   wp_apply (wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_in
     with "[$Hisk $Hinput $Hmeta $Hstatus]").
   { iFrame "#". done. }
-  iIntros (result_l rs' err) "Hpost".
-  wp_auto. rewrite decide_True; try reflexivity. wp_auto.
-  iApply "HΦ". iExact "Hpost".
-Qed.
-
-(* [c.Get(ctx, name, opts)] forwards to [State.ReplicaSetGet]. *)
-Lemma wp_ReplicaSetInterface__Get γ l c namespace (ctx opts : val) name
-    key uid dq dq_status kmeta kspec kstatus :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hclient" ∷ is_rs_client c namespace ∗
-      "%Hkey_def" ∷ ⌜ key = {|
-        KKey.Kind' := "ReplicaSet"%go;
-        KKey.Namespace' := namespace;
-        KKey.Name' := name
-      |} ⌝ ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
-      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
-  }}}
-    (MethodResolve client_apps_v1.ReplicaSetInterface "Get"%go #c) ctx #name opts
-  {{{ rs_l rs, RET (#rs_l, #interface.nil);
-      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
-      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
-      "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
-      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
-      "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
-      "%Hstatus_eq" ∷ ⌜ kstatus = rs.(ReplicaSetV.Status') ⌝ ∗
-      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
-      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
-      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
-  }}}.
-Proof.
-  iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
-  iDestruct "Hclient" as (cl v) "(-> & %Hns & #Hcl)".
-  wp_bind (MethodResolve client_apps_v1.ReplicaSetInterface _ _). wp_pure. wp_pures.
-  wp_method_call. rewrite /trusted_client_gentype.Client__Getⁱᵐᵖˡ decide_True; try reflexivity.
-  rewrite /trusted_client_gentype.clientGet. wp_call.
-  rewrite /trusted_client_gentype.clientType. wp_auto.
-  change (go.PointerType trusted_code.k8s_io.client_go.gentype.api_apps_v1.ReplicaSet)
-    with (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet).
-  try (rewrite !decide_True; try reflexivity).
-  try wp_auto.
-  rewrite Hns.
-  wp_apply (wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
-    with "[$Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
-  { iFrame "#". done. }
-  iIntros (rs_l rs) "Hpost".
+  iIntros (result_l rs') "Hpost".
   wp_auto. rewrite decide_True; try reflexivity. wp_auto.
   iApply "HΦ". iExact "Hpost".
 Qed.

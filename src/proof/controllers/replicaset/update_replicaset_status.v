@@ -65,15 +65,18 @@ Local Ltac split_bool :=
   match goal with |- context [bool_decide ?P] => destruct (bool_decide P) eqn:? end.
 
 (* [updateReplicaSetStatus] writes the requested status (with the observed
-   generation set), retrying once after a GET. Every outcome keeps the stored
-   metadata (up to resource version) and spec; the status fragment follows the
-   stored status. *)
+   generation set). The caller shows that this status passes validation, so the
+   first write succeeds and the retry after a GET is never reached. The write
+   keeps the stored metadata (up to resource version) and spec; the status
+   fragment follows the stored status. *)
 Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hclient" ∷ is_rs_client c rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
+      "%Hvalid_status" ∷ ⌜ ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>) ⌝ ∗
       "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "Hrs" ∷ ReplicaSetV.deepown rs_phy rs DfracDiscarded ∗
       "#Hstatus" ∷ ReplicaSetStatusV.deepown status_c status DfracDiscarded ∗
@@ -85,7 +88,7 @@ Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
   }}}
     @! replicaset.updateReplicaSetStatus #c #rs_l #status_c
-  {{{ (result_l : loc) (err : interface.t) (rs' : ReplicaSetV.t), RET (#result_l, #err);
+  {{{ (result_l : loc) (rs' : ReplicaSetV.t), RET (#result_l, #interface.nil);
       ⌜ ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ∧
         rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
       own_meta_frag γ (ReplicaSetV.key rs)
@@ -93,10 +96,7 @@ Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
       own_spec_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ∗
       own_status_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
-      ⌜ err ≠ interface.nil →
-        ¬ ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
-          rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>) ⌝
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status'))
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -126,7 +126,7 @@ Proof.
   iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
   destruct b.
   { (* already up to date: nothing is written *)
-    wp_auto. iApply ("HΦ" $! rs_l interface.nil rs). iModIntro. iFrame. iPureIntro. split; [done|by intros]. }
+    wp_auto. iApply ("HΦ" $! rs_l rs). iModIntro. iFrame. iPureIntro. done. }
   Timeout 120 wp_auto.
   iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
@@ -178,63 +178,18 @@ Proof.
   wp_apply (wp_ReplicaSetInterface__UpdateStatus γ l c
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ cur_l cur _ dq DfracDiscarded
     with "[$Hinput $Hmeta $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. split; [by rewrite Hns_meta|done]. }
-  iIntros (result_l rs' uerr') "(%Hchanged & _ & Hmeta & Hstatus_frag & Hresult)".
+  { iFrame "#". iPureIntro. split_and!; [by rewrite Hns_meta|done|].
+    rewrite ReplicaSetStatusV.valid_update_iff Hgen. done. }
+  iIntros (result_l rs') "(%Hchanged & _ & Hmeta & Hstatus_frag & _ & _)".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".
   destruct Hchanged as (_ & Hmeta_changed & Hspec_changed).
-  iDestruct "Hresult" as "[(-> & _ & _) | %Hfailed]".
-  { (* success *)
-    wp_auto. iApply wp_for_post_return. wp_auto.
-    iApply ("HΦ" $! result_l interface.nil rs'). rewrite Hspec_changed Hcur_spec. iModIntro. iFrame.
-    iPureIntro. split_and!.
-    - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.
-      congruence.
-    - congruence.
-    - by intros. }
-  destruct Hfailed as (Herr_ne & -> & -> & Hinvalid).
-  rewrite ReplicaSetStatusV.valid_update_iff Hgen in Hinvalid.
-  destruct uerr' as [uerr_ok|]; [|done].
-  Timeout 120 wp_auto.
-  destruct Hi as [-> | ->].
-  2: { (* the retry also failed: give up *)
-    Timeout 120 wp_auto. iApply wp_for_post_break. Timeout 120 wp_auto.
-    iApply ("HΦ" $! null (interface.ok uerr_ok) cur). rewrite Hcur_spec. iModIntro. iFrame. iPureIntro.
-    split; [done|by intros]. }
-  Timeout 120 wp_auto.
-  wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  Timeout 60 wp_pures. wp_load. Timeout 60 wp_pures. wp_load.
-  Timeout 60 wp_pures. wp_load. Timeout 60 wp_pures. wp_load.
-  iAssert (⌜ cur_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') =
-    cur.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝)%I as %Hname_phy.
-  { iDestruct "Hcur_meta_own" as "Hcm". rewrite /named /ObjectMetaV.deepown.
-    iDestruct "Hcm" as "(%Hn & _)". done. }
-  wp_apply (wp_ReplicaSetInterface__Get γ l c rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _
-    (v1.ObjectMeta.Name' (v1.ReplicaSet.ObjectMeta' cur_phy))
-    (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (DfracOwn 1)
-    cur.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.Spec') cur.(ReplicaSetV.Status')
-    with "[$Hmeta $Hspec $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. rewrite /ReplicaSetV.key /ReplicaSetV.meta_key Hname_phy Hname_meta. done. }
-  iIntros (rs2_l rs2) "H". iNamed "H".
-  iDestruct "Hdeepown_l" as (rs2_phy) "[Hrs2_l Hrs2]".
-  Timeout 120 wp_auto.
-  iApply wp_for_post_do. Timeout 120 wp_auto.
-  iAssert I with "[i current updatedRS updateErr getErr Hrs2_l Hrs2 Hown_meta_frag Hown_spec_frag
-      Hown_status_frag]" as "Hloop".
-  { iExists (word.add (W64 0) (W64 1)), rs2_l, rs2_phy, rs2, (DfracOwn 1), null, (interface.ok uerr_ok),
-      interface.nil.
-    iFrame "i current updatedRS updateErr getErr Hrs2_l Hrs2".
-    simpl in Hvalid'.
-    iSplit; first done.
-    iSplit.
-    { iPureIntro. rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_eq Hcur_meta |- *.
-      congruence. }
-    iSplit; first (iPureIntro; congruence).
-    iSplitL "Hown_meta_frag"; first (iApply (kview.own_meta_frag_equiv_except_resource_version with "Hown_meta_frag"); done).
-    iSplitL "Hown_spec_frag"; first done.
-    iSplitL "Hown_status_frag"; first (rewrite Hstatus_eq; done).
-    iPureIntro. right. word. }
-  iFrame.
+  wp_auto. iApply wp_for_post_return. wp_auto.
+  iApply ("HΦ" $! result_l rs'). rewrite Hspec_changed Hcur_spec. iModIntro. iFrame.
+  iPureIntro. split.
+  - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.
+    congruence.
+  - congruence.
 Qed.
 
 (* After [updateReplicaSetStatus], the owned resources describe the stored

@@ -8,10 +8,10 @@ Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
 (* A status write, the counterpart of [wp_State__update_au] for the status
-   subresource. The request keeps the stored metadata except for the resource
-   version, so the metadata fragment may be held at any fraction and is returned
-   unchanged. Validity of the submitted status is not required: it only guards
-   the status relation on success and the conflict-only failure. *)
+   subresource. The request must be valid against the stored metadata and
+   status, so it succeeds unless another writer advanced the resource version.
+   The request keeps the stored metadata except for the resource version, so the
+   metadata fragment may be held at any fraction and is returned unchanged. *)
 Lemma wp_State__update_status_au γ l kind namespace i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗
@@ -20,13 +20,12 @@ Lemma wp_State__update_status_au γ l kind namespace i kobj :
     (|={⊤, ∅}=> ∃ uid dq kmeta kstatus,
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
       "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) uid 1 kstatus ∗
-      "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind namespace kobj ⌝ ∗
+      "%Hvalid_status_update" ∷ ⌜ KObjectV.valid_status_update kind namespace kmeta kstatus kobj ⌝ ∗
       "%Hmeta_same" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
       "Hclose" ∷ (
         (∀ i' kobj',
           ( ⌜ KObjectV.valid kobj' ⌝ ∗
-            ⌜ KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-              KObjectV.status_updated kobj kobj' ⌝ ∗
+            ⌜ KObjectV.status_updated kobj kobj' ⌝ ∗
             ⌜ KObjectV.same_kind kobj kobj' ∧
               ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj') kmeta ⌝ ∗
             KObjectV.deepown_i i' kobj' 1 ∗
@@ -34,8 +33,7 @@ Lemma wp_State__update_status_au γ l kind namespace i kobj :
             own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status kobj'))
             ={∅,⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
         (∀ err,
-          ( ⌜ err ≠ interface.nil ⌝ ∗
-            ⌜ KObjectV.valid_status_update kind namespace kmeta kstatus kobj → conflict_error err ⌝ ∗
+          ( ⌜ conflict_error err ⌝ ∗
             own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
             own_status_frag γ (KObjectV.key kobj) uid 1 kstatus)
             ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
@@ -48,7 +46,8 @@ Proof.
   2: {
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
-    exfalso. done.
+    exfalso. apply Hinvalid_status_update_input.
+    eapply valid_status_update_request_ok. exact Hvalid_status_update.
   }
   destruct Hvalid_status_update_input as
     (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
@@ -166,7 +165,7 @@ Proof.
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with
       "[Hown_meta_frag Hown_status_frag]") as "HΦ".
-    { iSplit; first done. iSplit; first (iPureIntro; by intros _). iFrame. }
+    { iSplit; first done. iFrame. }
     iModIntro.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
@@ -250,29 +249,11 @@ Proof.
     iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
     assert (KObjectV.status old_kobj = kstatus) as Hstatus_eq.
     { eapply Hstatus_found; done. }
-    iDestruct "Hclose" as "[_ Hclose_err]".
-    iMod ("Hclose_err" $! (interface.ok err_ok) with
-      "[Hown_meta_frag Hown_status_frag]") as "HΦ".
-    { iSplit; first done.
-      iSplit.
-      { iPureIntro. intros Hvalid. exfalso. apply Hinvalid_actual.
-        rewrite Hstatus_eq.
-        eapply valid_status_update_equiv_except_resource_version; last exact Hvalid.
-        symmetry. exact Hmeta_eq. }
-      iFrame. }
-    iModIntro.
-    iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
-      match i with
-      | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
-      | interface.nil => False%I
-      end)%I)
-      with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
-    { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs).
-      iFrame. }
-    iCombineNamed "Hinv_*" as "H".
-    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
-    { iNamed "H". iFrame. iFrame "#". done. }
-    iExact "HΦ".
+    (* The request is valid, so the helper cannot reject it. *)
+    exfalso. apply Hinvalid_actual.
+    rewrite Hstatus_eq.
+    eapply valid_status_update_equiv_except_resource_version; last exact Hvalid_status_update.
+    symmetry. exact Hmeta_eq.
   }
   subst err.
   iDestruct "Hvalidation" as (updated_kobj)
@@ -388,12 +369,12 @@ Proof.
       "[Hdeepown_old_i1 Hown_meta_frag Hown_status_frag]") as "HΦ".
     { iSplit; first (iPureIntro; exact Hvalid_old_kobj).
       iSplit.
-      { iPureIntro. intros Hvalid.
+      { iPureIntro.
         assert (KObjectV.valid_status_update (KObjectV.kind kobj)
             (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace')
             (KObjectV.objectmeta old_kobj) (KObjectV.status old_kobj) kobj) as Hvalid_actual.
         { rewrite Hstatus_eq.
-          eapply valid_status_update_equiv_except_resource_version; last exact Hvalid.
+          eapply valid_status_update_equiv_except_resource_version; last exact Hvalid_status_update.
           symmetry. exact Hmeta_eq. }
         by destruct (Hhelper_result_status_updated _ kobj old_kobj Hvalid_old_kobj Hvalid_actual
           Hprepared Hequiv_updated_old). }
@@ -557,12 +538,12 @@ Proof.
     "[Hdeepown_i1' Hown_meta_frag Hown_status_frag]") as "HΦ".
   { iSplit; first done.
     iSplit.
-    { iPureIntro. intros Hvalid.
+    { iPureIntro.
       assert (KObjectV.valid_status_update (KObjectV.kind kobj)
           (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace')
           (KObjectV.objectmeta old_kobj) (KObjectV.status old_kobj) kobj) as Hvalid_actual.
       { rewrite Hstatus_eq.
-        eapply valid_status_update_equiv_except_resource_version; last exact Hvalid.
+        eapply valid_status_update_equiv_except_resource_version; last exact Hvalid_status_update.
         symmetry. exact Hmeta_eq. }
       by destruct (Hhelper_result_status_updated _ kobj new_kobj Hvalid_old_kobj Hvalid_actual
         Hprepared Hequiv_updated_new). }

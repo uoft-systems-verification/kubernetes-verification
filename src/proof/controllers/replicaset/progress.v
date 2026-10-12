@@ -178,7 +178,7 @@ Proof.
   { iFrame "#".
     iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
-    Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
+    %Hall_pods_bound & Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
   wp_auto.
   (* The pods are only read: share them between the two filters, management
      and the status calculation. *)
@@ -359,19 +359,12 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
-  wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq
-    with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
-  { iFrame "#". done. }
-  iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag &
-    %Herr_invalid)".
-  destruct Hchanged as (Hmeta_changed & Hspec_changed).
-  wp_auto.  (* The status write succeeds: all pods the ReplicaSet owns are among [pods]
+  (* The written status is valid: all pods the ReplicaSet owns are among [pods]
      (fewer than 2^31), so both counts fit in int32, and the observed
      generation is the non-negative generation of [rs]. *)
-  assert (err = interface.nil) as ->.
-  { destruct (decide (err = interface.nil)) as [|Herr_ne]; first done.
-    exfalso. apply (Herr_invalid Herr_ne).
-    pose proof (Permutation_length Hall_meta_perm) as Hall_pods_len.
+  assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
+      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
+  { pose proof (Permutation_length Hall_meta_perm) as Hall_pods_len.
     rewrite !length_fmap in Hall_pods_len.
     pose proof (Permutation_length Hactive_perm) as Hactive_len'.
     pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
@@ -380,6 +373,12 @@ Proof.
     - lia.
     - pose proof (f_equal ObjectMetaV.Generation' Hget_Hmeta_fields) as Hgen.
       simpl in Hgen. rewrite Hgen. exact Hgeneration_nonneg. }
+  wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq
+    with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
+  { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
+  iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
+  destruct Hchanged as (Hmeta_changed & Hspec_changed).
+  wp_auto.
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
@@ -388,7 +387,6 @@ Proof.
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hpod_meta_frags_post Hpod_unreserved_key_frags_post
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "[Hresources %Hstatus_only]".
-  wp_auto.
   iApply ("HΦ" $! rs'' (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)
     with "[$Hresources]").
   iPureIntro. split; first exact Hstatus_only.

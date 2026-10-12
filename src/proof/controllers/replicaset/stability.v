@@ -207,7 +207,7 @@ Proof.
   { iFrame "#".
     iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
-    Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
+    %Hall_pods_bound & Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
   wp_auto.
   (* The pods are only read: share them between the two filters and the
      status calculation. *)
@@ -320,10 +320,22 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
+  iDestruct (big_sepL2_length with "Hall_deepown_pods") as %Hall_ptrs_len.
+  (* The written status is valid: the ReplicaSet owns fewer than 2^31 pods
+     (the trusted list bound), so both counts fit in int32, and the observed
+     generation is the non-negative generation of [rs]. *)
+  assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
+      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
+  { pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
+    apply Hstatus_valid.
+    - lia.
+    - lia.
+    - pose proof (f_equal ObjectMetaV.Generation' Hget_Hmeta_fields) as Hgen.
+      simpl in Hgen. rewrite Hgen. exact Hgeneration_nonneg. }
   wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
-  { iFrame "#". done. }
-  iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag & _)".
+  { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
+  iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
   destruct Hchanged as (Hmeta_changed & Hspec_changed).
   wp_auto.
   iAssert (([∗ list] pod ∈ pods,
@@ -355,9 +367,7 @@ Proof.
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags Hown_pod_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "[Hresources %Hstatus_only]".
-  destruct err; wp_auto.
-  - iApply ("HΦ" $! rs'' with "[$Hresources //]").
-  - iApply ("HΦ" $! rs'' with "[$Hresources //]").
+  iApply ("HΦ" $! rs'' with "[$Hresources //]").
 Qed.
 
 End proof.

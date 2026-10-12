@@ -445,6 +445,19 @@ Definition status_update_request_ok (kind namespace : go_string) (kobj : KObject
   valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
   valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
 
+Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  status_update_request_ok kind namespace kobj.
+Proof.
+  intros Hvalid_status_update. rewrite /status_update_request_ok.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; tauto.
+Qed.
+
 (** This is the single trusted semantic contract for a successful status-update
     helper call. [old] and [helper_input] are the objects passed to the helper,
     and [helper_result] is the mutated input object after it returns.
@@ -476,36 +489,6 @@ Definition applyValidationAndDefaultingOnStatusUpdate_updated
     KObjectV.typemeta stored = KObjectV.typemeta input ∧
     ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
     KObjectV.spec stored = KObjectV.spec old).
-
-(** Top-level status-update validation, caller preparation, and a successful
-    helper call establish the object invariant for the helper result. TypeMeta
-    validity follows from these premises and is not a separate assumption. *)
-Lemma applyValidationAndDefaultingOnStatusUpdate_updated_implies_valid :
-  ∀ request_kind namespace old input helper_input helper_result,
-    KObjectV.valid old →
-    KObjectV.valid_status_update request_kind namespace
-      (KObjectV.objectmeta old) (KObjectV.status old) input →
-    update_prepared_for_helper namespace old input helper_input →
-    applyValidationAndDefaultingOnStatusUpdate_updated namespace old helper_input helper_result →
-    KObjectV.valid helper_result.
-Proof.
-  intros request_kind namespace old input helper_input helper_result Hvalid
-    Hvalid_status_update Hprepared Hupdated.
-  destruct Hupdated as (_ & Hvalid_result & _).
-  apply Hvalid_result; first exact Hvalid.
-  assert (valid_typemeta (KObjectV.kind input) (KObjectV.typemeta input))
-    as Hvalid_typemeta_input.
-  { destruct (KObjectV.status old), input;
-      rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
-      rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
-        ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-        ?/DeploymentV.valid_status_update
-        /ObjectMetaV.valid_update in Hvalid_status_update;
-      try contradiction; tauto. }
-  destruct Hprepared as (_ & _ & _ & ->).
-  rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-  exact Hvalid_typemeta_input.
-Qed.
 
 (** General contract used when the status-update helper may reject an update.
     On failure the new object may already have been mutated, so the

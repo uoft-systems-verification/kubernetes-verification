@@ -62,8 +62,8 @@ Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
     ≤ 2 ^ 63 - 1 ∧
   (* Assumption: the generation is non-negative. updateReplicaSetStatus copies
      it into Status.ObservedGeneration, which status validation
-     (ReplicaSetStatusV.valid_request) requires to be non-negative; otherwise
-     the status write fails and the sync returns an error. The API server starts
+     (ReplicaSetStatusV.valid_request) requires to be non-negative, and the
+     status write is only specified for a valid status. The API server starts
      generations at 1 and only increments them, but ObjectMetaV.valid
      deliberately does not constrain the generation (see objectmeta.v), so the
      bound is required of the input here. *)
@@ -178,14 +178,10 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
       (* Assumption: the ReplicaSet owns fewer than 2^31 pods. calculateStatus
          converts the counts of its active and terminating pods (both drawn
          from [pods]) to int32; a count of 2^31 or more wraps to a negative
-         value, the status write is rejected, and the sync returns an error.
-         Real clusters are far below this bound.
-         TODO: It is used only to show the status write succeeds, i.e. that the sync
-         returns nil. The rest of the postcondition holds either way: [pods']
-         is fixed by [manageReplicas] before the write, and [owned_resources]
-         and [status_only_changed] hold on both outcomes.
-         TODO (optional): drop this bound and return [RET #err], as
-         [preservation_spec] does, keeping the progress claim. *)
+         value and the status is invalid. Real clusters are far below this
+         bound.
+         TODO: implied by the trusted list bound [model_state_size_bound], as
+         used by [preservation_spec] and [stability_spec]; drop it. *)
       "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
@@ -193,8 +189,9 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
   (* The sync succeeds: [manageReplicas] succeeds under these preconditions, and
-     the status write fails only for an invalid status (the trusted UpdateStatus
-     shim retries resource-version conflicts), which the bounds above rule out. *)
+     the computed status is valid under the bounds above, so the status write
+     succeeds (the trusted UpdateStatus shim retries resource-version
+     conflicts). *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
       ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
@@ -222,12 +219,11 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
   }}}
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
-  (* Unlike [progress_spec], the sync may return an error. [manageReplicas]
-     succeeds, but the status write fails if the computed status is invalid,
-     and here that cannot be ruled out: the ReplicaSet may own terminating
-     pods, which [owned_resources ... false] does not count, and with 2^31 or
-     more of them the terminating-replicas count wraps negative when converted
-     to int32. The distance claim below holds either way. *)
+  (* The postcondition allows an error. The ReplicaSet may own terminating
+     pods, which [owned_resources ... false] does not count; their number is
+     bounded only by the trusted list bound [model_state_size_bound], under
+     which the computed status is valid and the status write succeeds. The
+     distance claim below holds either way. *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (err : interface.t), RET #err;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
       ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
@@ -251,6 +247,10 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       "%Hlabels_bound" ∷ ⌜ Z.of_nat (size (default ∅
         rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')))
         ≤ 2 ^ 63 - 1 ⌝ ∗
+      (* Assumption, as in [input_requirement]: the generation is non-negative.
+         The status write copies it into Status.ObservedGeneration, which
+         status validation requires to be non-negative. *)
+      "%Hgeneration_nonneg" ∷ ⌜ 0 ≤ sint.Z rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
