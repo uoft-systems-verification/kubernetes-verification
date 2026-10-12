@@ -105,4 +105,56 @@ Definition find_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     : option (nat * ReplicaSetV.t) :=
   list_find (λ rs, template_matches (rs_template rs) (deployment_template d)) rss.
 
+(* scaleReplicaSet rewrites only the replica count. *)
+Definition rs_scaled_spec (rs : ReplicaSetV.t) (n : w32) : ReplicaSetSpecV.t :=
+  ReplicaSetSpecV.mk
+    (Some n)
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.MinReadySeconds')
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Selector')
+    rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').
+
+(* The ReplicaSet [scaleReplicaSet] submits: the deep copy with nothing but the
+   replica count overwritten. *)
+Definition rs_scaled (rs : ReplicaSetV.t) (n : w32) : ReplicaSetV.t :=
+  rs <| ReplicaSetV.Spec' := rs_scaled_spec rs n |>.
+
+(* Rescaling preserves everything admission looks at. The replica count is the
+   only field that changes, and a non-negative count is still admissible. *)
+Lemma rs_scaled_spec_valid_create rs n :
+  ReplicaSetSpecV.valid_create rs.(ReplicaSetV.Spec') →
+  0 ≤ sint.Z n →
+  ReplicaSetSpecV.valid_create (rs_scaled_spec rs n).
+Proof.
+  rewrite /ReplicaSetSpecV.valid_create /rs_scaled_spec /=.
+  intros (_ & Hmin & Hsel & Htmpl) Hn. split_and!; done.
+Qed.
+
+Lemma rs_scaled_valid_create request_kind ns rs n :
+  ReplicaSetV.valid rs →
+  0 ≤ sint.Z n →
+  request_kind = ReplicaSetV.kind →
+  ns = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') →
+  ReplicaSetV.valid_create request_kind ns (rs_scaled rs n).
+Proof.
+  rewrite /ReplicaSetV.valid /ReplicaSetV.valid_create /rs_scaled /=.
+  intros (Htm & _ & Hmeta & Hspec & _) Hn Hkind Hns.
+  pose proof Hmeta as (_ & _ & _ & Hns_nonempty & Hns_valid & _).
+  split_and!.
+  - exact Hkind.
+  - rewrite Hns. exact Hns_nonempty.
+  - rewrite Hns. exact Hns_valid.
+  - eapply valid_typemeta_valid_create_typemeta. exact Htm.
+  - (* A valid stored ObjectMeta is admissible on create, as for
+       [PodV.valid_create_of_valid]. *)
+    unfold ObjectMetaV.valid in Hmeta. unfold ObjectMetaV.valid_create.
+    destruct Hmeta as (Hgenerate_name & Hname_nonempty & Hname & Hnamespace_nonempty &
+      Hnamespace_valid & Huid & Hlabels & Hannotations & Howner_references & Hfinalizers &
+      Hmanaged_fields & Hself_link).
+    case_decide; first contradiction.
+    split; [split; assumption|].
+    split; [right; split; [assumption|symmetry; exact Hns]|].
+    repeat split; assumption.
+  - apply rs_scaled_spec_valid_create; [exact (proj1 Hspec)|exact Hn].
+Qed.
+
 End proof.
