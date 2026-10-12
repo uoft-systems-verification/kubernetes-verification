@@ -95,7 +95,7 @@ Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
       own_status_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ⌜ err ≠ interface.nil →
-        ¬ ReplicaSetStatusV.valid (status <| ReplicaSetStatusV.ObservedGeneration' :=
+        ¬ ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
           rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>) ⌝
   }}}.
 Proof.
@@ -193,7 +193,7 @@ Proof.
     - congruence.
     - by intros. }
   destruct Hfailed as (Herr_ne & -> & -> & Hinvalid).
-  rewrite Hgen in Hinvalid.
+  rewrite ReplicaSetStatusV.valid_update_iff Hgen in Hinvalid.
   destruct uerr' as [uerr_ok|]; [|done].
   Timeout 120 wp_auto.
   destruct Hi as [-> | ->].

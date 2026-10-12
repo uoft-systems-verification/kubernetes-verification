@@ -79,7 +79,7 @@ Lemma wp_calculateStatus_no_manage_error rs_l rs_phy rs active_sl active_ptrs ac
         rs.(ReplicaSetV.Status').(ReplicaSetStatusV.ObservedGeneration') ⌝ ∗
       ⌜ Z.of_nat (length active_pods) < 2 ^ 31 → Z.of_nat (length terminating_ptrs) < 2 ^ 31 →
         ∀ g : w64, 0 ≤ sint.Z g →
-        ReplicaSetStatusV.valid (status <| ReplicaSetStatusV.ObservedGeneration' := g |>) ⌝
+        ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' := g |>) ⌝
   }}}.
 Proof.
   wp_start as "(%Hvalid & %Hbound & Hrs_l & Hrs & Hactive_sl & Hpods & Hterm_sl)".
@@ -300,7 +300,7 @@ Proof.
       intros Hactive_bound Hterm_bound g Hg.
       rewrite -Hpods_len Hactive_len1 in Hactive_bound. rewrite Hterm_len1 in Hterm_bound.
       destruct Hcounts as (Hav & Hrd & Hfl).
-      rewrite /ReplicaSetStatusV.valid /=.
+      rewrite /ReplicaSetStatusV.valid_request /=.
       (* Keep only the arithmetic facts, so [word] works in a small context. *)
       clear - Hi Hge Hav Hrd Hfl Hactive_bound Hterm_bound Hg Hterm_len2 Hactive_len2 Htopt.
       destruct Htopt as [-> | ->]; split_and!; word.

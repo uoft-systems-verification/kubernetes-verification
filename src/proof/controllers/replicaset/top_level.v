@@ -62,8 +62,8 @@ Definition input_requirement (rs : ReplicaSetV.t) : Prop :=
     ≤ 2 ^ 63 - 1 ∧
   (* Assumption: the generation is non-negative. updateReplicaSetStatus copies
      it into Status.ObservedGeneration, which status validation
-     (ReplicaSetStatusV.valid) requires to be non-negative; otherwise the status
-     write fails and the sync returns an error. The API server starts
+     (ReplicaSetStatusV.valid_request) requires to be non-negative; otherwise
+     the status write fails and the sync returns an error. The API server starts
      generations at 1 and only increments them, but ObjectMetaV.valid
      deliberately does not constrain the generation (see objectmeta.v), so the
      bound is required of the input here. *)

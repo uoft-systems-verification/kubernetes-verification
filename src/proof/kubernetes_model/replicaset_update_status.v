@@ -14,10 +14,10 @@ Local Set Default Proof Using "All".
    never touches the spec, so the caller's spec fragment stays framed. The input
    is the caller's own object: the model only reads a deep copy, so any fraction
    [dq_in] suffices and it is returned in both outcomes. Resource-version
-   conflicts are retried, so a failure means the requested status is invalid. A
-   request whose status is invalid may still succeed (for example when a
-   disabled field is dropped), so the status relation on success is only
-   guaranteed for a valid requested status. [rs'] is [rs] with the stored
+   conflicts are retried, so a failure means the requested status fails the
+   guard [ReplicaSetStatusV.valid_update]. A request failing the guard may still
+   succeed (with the feature gate off, a dropped field is not validated), so the
+   status relation on success is only guaranteed under the guard. [rs'] is [rs] with the stored
    metadata and status. The returned object itself is currently not described;
    see the disabled clause in the success branch. *)
 Lemma wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_in :
@@ -41,7 +41,7 @@ Lemma wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ((⌜ err = interface.nil ⌝ ∗
         ⌜ ReplicaSetV.valid rs' ⌝ ∗
-        ⌜ ReplicaSetStatusV.valid requested →
+        ⌜ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested →
           ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
         (* Disabled clause describing the returned object. [result_l] (Go's
            [updatedRS] in [updateReplicaSetStatus]) is a fresh copy of the stored
@@ -55,7 +55,8 @@ Lemma wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_
         ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
           ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
             rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)) ∨
-       (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧ ¬ ReplicaSetStatusV.valid requested ⌝))
+       (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧
+          ¬ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested ⌝))
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -64,8 +65,8 @@ Proof.
   pose proof Hvalid_meta as (_ & Hname_nonempty & _ & _ & _ & Hvalid_uid & Hlabels &
     Hannotations & Howners & Hfinalizers & Hmanaged_fields & _).
   pose proof (valid_uid_non_empty _ Hvalid_uid) as Huid_nonempty.
-  (* A valid requested status makes the whole request valid. *)
-  assert (ReplicaSetStatusV.valid requested →
+  (* A status passing the guard makes the whole request valid. *)
+  assert (ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested →
     KObjectV.valid_status_update "ReplicaSet"%go namespace rs.(ReplicaSetV.ObjectMeta')
       (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status')) (KObjectV.ReplicaSet input))
     as Hvalid_request.

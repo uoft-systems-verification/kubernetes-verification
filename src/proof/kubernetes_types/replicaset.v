@@ -218,9 +218,11 @@ Record t := mk {
 Global Instance eq_dec : EqDecision t.
 Proof. solve_decision. Qed.
 
-(* ValidateReplicaSetStatus, kubernetes/pkg/apis/apps/validation/validation.go.
-   Conditions have no additional validation in that function. *)
-Definition valid (v : t) : Prop :=
+(* The admission check on a status: ValidateReplicaSetStatus,
+   kubernetes/pkg/apis/apps/validation/validation.go. Conditions have no
+   additional validation in that function. A status-update request is checked
+   on its prepared status, see [valid_update]. *)
+Definition valid_request (v : t) : Prop :=
   0 ≤ sint.Z v.(Replicas') ∧
   0 ≤ sint.Z v.(FullyLabeledReplicas') ∧
   0 ≤ sint.Z v.(ReadyReplicas') ∧
@@ -235,15 +237,52 @@ Definition valid (v : t) : Prop :=
   sint.Z v.(AvailableReplicas') ≤ sint.Z v.(Replicas') ∧
   sint.Z v.(AvailableReplicas') ≤ sint.Z v.(ReadyReplicas').
 
-(* A sufficient, feature-gate-independent request-validity condition. Dropping a
-   disabled TerminatingReplicas field can also make some invalid inputs valid;
-   those requests are deliberately not covered by this stronger precondition. *)
-Definition valid_update (_old input : t) : Prop := valid input.
+Global Instance valid_request_dec v : Decision (valid_request v).
+Proof.
+  unfold valid_request.
+  destruct v.(TerminatingReplicas'); apply _.
+Defined.
+
+(* A stored status passed [valid_request]: creation stores [zero], and a status
+   update stores its prepared status after validating it. Storage changes no
+   represented field, so the invariant adds nothing to the admission check. *)
+Definition valid (v : t) : Prop :=
+  valid_request v.
+
+(* The status strategy's PrepareForUpdate (dropDisabledStatusFields): while the
+   DeploymentReplicaSetTerminatingReplicas gate is off, the submitted
+   TerminatingReplicas is dropped unless the stored status already has one.
+   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/replicaset/strategy.go#L226-L232 *)
+Definition drop_disabled_status_fields (gate : bool) (old input : t) : t :=
+  if gate then input
+  else match old.(TerminatingReplicas') with
+       | Some _ => input
+       | None => input <| TerminatingReplicas' := None |>
+       end.
+
+(* The guard of a status write: Kubernetes validates the prepared status
+   (ValidateReplicaSetStatusUpdate after PrepareForUpdate). The model does not
+   fix the feature gate, so the guard requires acceptance for either value. *)
+Definition valid_update (old input : t) : Prop :=
+  ∀ gate, valid_request (drop_disabled_status_fields gate old input).
+
+(* With the gate on the submitted status is validated unchanged, and dropping
+   TerminatingReplicas only removes a check, so the old status plays no role. *)
+Lemma valid_update_iff old input :
+  valid_update old input ↔ valid_request input.
+Proof.
+  split.
+  - intros Hvalid. exact (Hvalid true).
+  - intros Hvalid [|]; first done.
+    rewrite /drop_disabled_status_fields.
+    destruct old.(TerminatingReplicas'); first done.
+    rewrite /valid_request /= in Hvalid |- *. tauto.
+Qed.
 
 Global Instance valid_update_dec old input : Decision (valid_update old input).
 Proof.
-  unfold valid_update, valid.
-  destruct input.(TerminatingReplicas'); apply _.
+  destruct (decide (valid_request input)) as [Hvalid|Hinvalid];
+    [left|right]; rewrite valid_update_iff; done.
 Defined.
 
 Definition zero : t := mk (W32 0) (W32 0) (W32 0) (W32 0) None (W64 0) None.
@@ -280,13 +319,13 @@ Definition deepown_l l v dq: iProp Σ :=
   ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Lemma valid_zero : valid zero.
-Proof. rewrite /valid /zero /=. split_and!; word. Qed.
+Proof. rewrite /valid /valid_request /zero /=. split_and!; word. Qed.
 
-Lemma valid_updated input stored : valid input → updated input stored → valid stored.
+Lemma valid_updated input stored : valid_request input → updated input stored → valid stored.
 Proof.
   intros Hvalid [-> | ->]; first done.
   destruct Hvalid as (? & ? & ? & ? & ? & _ & ? & ? & ? & ?).
-  rewrite /valid /=. split_and!; done.
+  rewrite /valid /valid_request /=. split_and!; done.
 Qed.
 
 Lemma updated_replicas input stored : updated input stored → stored.(Replicas') = input.(Replicas').

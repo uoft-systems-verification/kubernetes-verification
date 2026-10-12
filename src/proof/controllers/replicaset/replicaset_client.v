@@ -96,8 +96,8 @@ Proof.
 Qed.
 
 (* [c.UpdateStatus(ctx, rs, opts)] forwards to [State.ReplicaSetUpdateStatusTx], which retries
-   resource-version conflicts (see the trusted shim), so a failure means the requested status is
-   invalid. *)
+   resource-version conflicts (see the trusted shim), so a failure means the requested status fails
+   the guard [ReplicaSetStatusV.valid_update]. *)
 Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
     rs_l rs requested dq dq_in :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
@@ -122,7 +122,7 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ((⌜ err = interface.nil ⌝ ∗
         ⌜ ReplicaSetV.valid rs' ⌝ ∗
-        ⌜ ReplicaSetStatusV.valid requested →
+        ⌜ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested →
           ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
         (* Disabled clause describing the returned object [result_l] (Go's
            [updatedRS]); see [wp_State__ReplicaSetUpdateStatusTx] for what it
@@ -130,7 +130,8 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
         ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
           ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
             rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)) ∨
-       (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧ ¬ ReplicaSetStatusV.valid requested ⌝))
+       (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧
+          ¬ ReplicaSetStatusV.valid_update rs.(ReplicaSetV.Status') requested ⌝))
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
