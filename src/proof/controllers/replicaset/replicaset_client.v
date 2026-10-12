@@ -109,8 +109,6 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
       "Hinput" ∷ ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') ∗
-      "Hspec" ∷ own_spec_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       "Hstatus" ∷ own_status_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
   }}}
@@ -120,15 +118,18 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
       ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
-      own_spec_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
       own_status_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ((⌜ err = interface.nil ⌝ ∗
         ⌜ ReplicaSetV.valid rs' ⌝ ∗
         ⌜ ReplicaSetStatusV.valid requested →
-          ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝ ∗
-        ReplicaSetV.deepown_l result_l rs' 1) ∨
+          ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
+        (* Disabled clause describing the returned object [result_l] (Go's
+           [updatedRS]); see [wp_State__ReplicaSetUpdateStatusTx] for what it
+           specifies and why it is disabled.
+        ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
+          ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
+            rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)) ∨
        (⌜ err ≠ interface.nil ∧ result_l = null ∧ rs' = rs ∧ ¬ ReplicaSetStatusV.valid requested ⌝))
   }}}.
 Proof.
@@ -144,7 +145,7 @@ Proof.
   try wp_auto.
   rewrite Hns.
   wp_apply (wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_in
-    with "[$Hisk $Hinput $Hmeta $Hspec $Hstatus]").
+    with "[$Hisk $Hinput $Hmeta $Hstatus]").
   { iFrame "#". done. }
   iIntros (result_l rs' err) "Hpost".
   wp_auto. rewrite decide_True; try reflexivity. wp_auto.

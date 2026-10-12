@@ -91,7 +91,7 @@ Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
       own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
       own_spec_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ∗
       own_status_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ⌜ err ≠ interface.nil →
@@ -173,21 +173,20 @@ Proof.
   assert (ReplicaSetV.key rs = ReplicaSetV.key cur) as Hkey_cur.
   { rewrite /ReplicaSetV.key Hkey_meta. done. }
   iEval (rewrite Hkey_cur -Huid_meta) in "Hmeta".
-  iEval (rewrite Hkey_cur -Huid_meta -Hcur_spec) in "Hspec".
   iEval (rewrite Hkey_cur -Huid_meta) in "Hstatus_frag".
+  (* The spec fragment is not needed by the status write and stays framed. *)
   wp_apply (wp_ReplicaSetInterface__UpdateStatus γ l c
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ cur_l cur _ dq DfracDiscarded
-    with "[$Hinput $Hmeta $Hspec $Hstatus_frag]") --no-auto.
+    with "[$Hinput $Hmeta $Hstatus_frag]") --no-auto.
   { iFrame "#". iPureIntro. split; [by rewrite Hns_meta|done]. }
-  iIntros (result_l rs' uerr') "(%Hchanged & _ & Hmeta & Hspec & Hstatus_frag & Hresult)".
+  iIntros (result_l rs' uerr') "(%Hchanged & _ & Hmeta & Hstatus_frag & Hresult)".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
-  iEval (rewrite -Hkey_cur Huid_meta Hcur_spec) in "Hspec".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".
   destruct Hchanged as (_ & Hmeta_changed & Hspec_changed).
-  iDestruct "Hresult" as "[(-> & _ & _ & _) | %Hfailed]".
+  iDestruct "Hresult" as "[(-> & _ & _) | %Hfailed]".
   { (* success *)
     wp_auto. iApply wp_for_post_return. wp_auto.
-    iApply ("HΦ" $! result_l interface.nil rs'). iModIntro. iFrame.
+    iApply ("HΦ" $! result_l interface.nil rs'). rewrite Hspec_changed Hcur_spec. iModIntro. iFrame.
     iPureIntro. split_and!.
     - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.
       congruence.
@@ -200,7 +199,7 @@ Proof.
   destruct Hi as [-> | ->].
   2: { (* the retry also failed: give up *)
     Timeout 120 wp_auto. iApply wp_for_post_break. Timeout 120 wp_auto.
-    iApply ("HΦ" $! null (interface.ok uerr_ok) cur). iModIntro. iFrame. iPureIntro.
+    iApply ("HΦ" $! null (interface.ok uerr_ok) cur). rewrite Hcur_spec. iModIntro. iFrame. iPureIntro.
     split; [done|by intros]. }
   Timeout 120 wp_auto.
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
@@ -254,7 +253,7 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
   own_meta_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
     fractions.(rs_dq) rs'.(ReplicaSetV.ObjectMeta') -∗
   own_spec_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
-    fractions.(rs_dq) (ObjectSpecV.ReplicaSetSpec rs_get.(ReplicaSetV.Spec')) -∗
+    fractions.(rs_dq) (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) -∗
   own_status_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
     fractions.(rs_status_dq) (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) -∗
   ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod)
@@ -279,7 +278,7 @@ Proof.
   { rewrite /ReplicaSetV.key /=. exact Hkey'. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hchildren Hterminating".
   iSplitL.
-  - rewrite /owned_resources /= Hkey'' Huid' Hspec_changed.
+  - rewrite /owned_resources /= Hkey'' Huid'.
     iFrame "∗ #". iPureIntro. exact Hnodup.
   - iPureIntro. rewrite /ReplicaSetV.status_only_changed /=. split_and!.
     + done.

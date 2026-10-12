@@ -401,20 +401,33 @@ Proof.
     try contradiction; intuition.
 Qed.
 
+(** Metadata that agrees except for the resource version is a simple update. *)
+Lemma equiv_except_resource_version_valid_simple_update m m' :
+  ObjectMetaV.equiv_except_resource_version m' m →
+  ObjectMetaV.valid_simple_update m m'.
+Proof.
+  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version
+    /ObjectMetaV.valid_simple_update.
+  destruct m, m'; simpl. intros Heq. inversion Heq; subst. split_and!; done.
+Qed.
+
 (** Identity facts a status writer can read off a metadata fragment at any
-    fraction, when the submitted metadata keeps the stored identity. *)
+    fraction, when the submitted metadata keeps the stored metadata except for
+    the resource version. *)
 Lemma own_meta_frag_status_identity γ key uid dq kmeta kobj :
-  ObjectMetaV.valid_simple_update kmeta (KObjectV.objectmeta kobj) →
+  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
   own_meta_frag γ key uid dq kmeta -∗
   ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ∧
     kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝.
 Proof.
-  iIntros (Hsimple) "Hmeta".
+  iIntros (Hmeta_same) "Hmeta".
   rewrite /own_meta_frag.
   iPoseProof (kview.own_meta_valid with "Hmeta") as
     "(_ & _ & %Huid_meta & _ & %Hmeta_living)".
   iPureIntro. split; last done.
-  rewrite Huid_meta. rewrite /ObjectMetaV.valid_simple_update in Hsimple. symmetry. tauto.
+  rewrite Huid_meta.
+  pose proof (equiv_except_resource_version_valid_simple_update _ _ Hmeta_same) as Hsimple.
+  rewrite /ObjectMetaV.valid_simple_update in Hsimple. symmetry. tauto.
 Qed.
 
 (** The request-level part of [KObjectV.valid_status_update]: everything except
@@ -431,19 +444,6 @@ Definition status_update_request_ok (kind namespace : go_string) (kobj : KObject
   valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
   valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
   valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
-
-Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
-  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-  status_update_request_ok kind namespace kobj.
-Proof.
-  intros Hvalid_status_update. rewrite /status_update_request_ok.
-  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
-    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
-      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-      ?/DeploymentV.valid_status_update
-      /ObjectMetaV.valid_update in Hvalid_status_update;
-    try contradiction; tauto.
-Qed.
 
 (** This is the single trusted semantic contract for a successful status-update
     helper call. [old] and [helper_input] are the objects passed to the helper,
