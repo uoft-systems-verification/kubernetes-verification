@@ -4,12 +4,12 @@ import (
 	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/controller"
+	deploymentutil "k8s.io/kubernetes/pkg/controller/deployment/util"
+	labelsutil "k8s.io/kubernetes/pkg/util/labels"
 )
 
 // A simplified deployment controller. The following features are not included:
@@ -43,18 +43,6 @@ func replicasOfRS(rs *apps.ReplicaSet) int32 {
 	return *rs.Spec.Replicas
 }
 
-// equalIgnoreHash returns true if two given podTemplateSpec are equal, ignoring
-// the diff in value of Labels[pod-template-hash]. It matches upstream's
-// EqualIgnoreHash (pkg/controller/deployment/util/deployment_util.go).
-func equalIgnoreHash(template1, template2 *v1.PodTemplateSpec) bool {
-	t1Copy := template1.DeepCopy()
-	t2Copy := template2.DeepCopy()
-	// Remove hash labels from template.Labels before comparing
-	delete(t1Copy.Labels, apps.DefaultDeploymentUniqueLabelKey)
-	delete(t2Copy.Labels, apps.DefaultDeploymentUniqueLabelKey)
-	return equality.Semantic.DeepEqual(t1Copy, t2Copy)
-}
-
 // findNewReplicaSet returns the new RS this given deployment targets (the one
 // with the same pod template), as upstream's FindNewReplicaSet does.
 //
@@ -67,7 +55,7 @@ func equalIgnoreHash(template1, template2 *v1.PodTemplateSpec) bool {
 // exist yet.
 func findNewReplicaSet(deployment *apps.Deployment, rsList []*apps.ReplicaSet) *apps.ReplicaSet {
 	for i := range rsList {
-		if equalIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
+		if deploymentutil.EqualIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
 			return rsList[i]
 		}
 	}
@@ -97,24 +85,6 @@ func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) 
 		allRSs = append(allRSs, rs)
 	}
 	return allRSs
-}
-
-// cloneAndAddLabel clones the given map and returns a new map with the given
-// key and value added. Returns the given map, if labelKey is empty. It matches
-// upstream's CloneAndAddLabel (pkg/util/labels/labels.go), which goose does not
-// translate.
-func cloneAndAddLabel(labels map[string]string, labelKey, labelValue string) map[string]string {
-	if labelKey == "" {
-		// Don't need to add a label.
-		return labels
-	}
-	// Clone.
-	newLabels := map[string]string{}
-	for key, value := range labels {
-		newLabels[key] = value
-	}
-	newLabels[labelKey] = labelValue
-	return newLabels
 }
 
 // cloneSelectorAndAddLabel clones the given selector and returns a new
@@ -166,7 +136,7 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 
 	newRSTemplate := *d.Spec.Template.DeepCopy()
 	podTemplateSpecHash := controller.ComputeHash(&newRSTemplate, nil)
-	newRSTemplate.Labels = cloneAndAddLabel(d.Spec.Template.Labels, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
+	newRSTemplate.Labels = labelsutil.CloneAndAddLabel(d.Spec.Template.Labels, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
 	newRSSelector := cloneSelectorAndAddLabel(d.Spec.Selector, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
 
 	replicas := replicasOf(d)

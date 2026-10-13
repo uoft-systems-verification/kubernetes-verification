@@ -1,5 +1,4 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.map Require Import for_range.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
 From New.proof.kubernetes_types Require Export prelude.
@@ -136,23 +135,6 @@ Proof.
     iApply "HΦ". done.
 Qed.
 
-Lemma wp_equalIgnoreHash t1_l t2_l c1 c2 tv1 tv2 dq1 dq2 :
-  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "Ht1_l" ∷ t1_l ↦{dq1} c1 ∗
-      "Ht1" ∷ PodTemplateSpecV.deepown c1 tv1 dq1 ∗
-      "Ht2_l" ∷ t2_l ↦{dq2} c2 ∗
-      "Ht2" ∷ PodTemplateSpecV.deepown c2 tv2 dq2
-  }}}
-    @! deployment.equalIgnoreHash #t1_l #t2_l
-  {{{ RET #(bool_decide (template_matches tv1 tv2));
-      t1_l ↦{dq1} c1 ∗
-      PodTemplateSpecV.deepown c1 tv1 dq1 ∗
-      t2_l ↦{dq2} c2 ∗
-      PodTemplateSpecV.deepown c2 tv2 dq2
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_findNewReplicaSet d_l (d : DeploymentV.t) sl ptrs (rss : list ReplicaSetV.t)
     dq1 dq2 dq3 :
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
@@ -207,7 +189,7 @@ Proof.
     { apply lookup_lt_is_Some_2. rewrite -Hptrs_rss_len Hsl_len1. word. }
     iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
       [exact Hthis_ptr_lookup|exact Hthis_rs_lookup|].
-    (* equalIgnoreHash takes &rs.Spec.Template and &d.Spec.Template, so both
+    (* EqualIgnoreHash takes &rs.Spec.Template and &d.Spec.Template, so both
        specs have to be split all the way down to their Template fields. *)
     iPoseProof (ReplicaSetV.deepown_l_split with "Hthis") as
       "(%Hthis_not_null & Hthis_typemeta & Hthis_objectmeta_l & Hthis_spec_l & Hthis_status_l)".
@@ -223,7 +205,7 @@ Proof.
     iNamedPrefix "Hd_spec_fields" "Hdf_".
     iNamedPrefix "Hthis_spec" "Hrs_".
     iNamedPrefix "Hd_spec" "Hd_".
-    wp_apply (wp_equalIgnoreHash with
+    wp_apply (wp_EqualIgnoreHash with
       "[$Hrsf_Template $Hrs_Hdeepown_template $Hdf_Template $Hd_Hdeepown_template]").
     iIntros "(Hrsf_Template & Hrs_Hdeepown_template & Hdf_Template & Hd_Hdeepown_template)".
     (* Put both objects back together before branching. *)
@@ -500,72 +482,9 @@ Proof.
     iApply ("HΦ" $! old_sl). rewrite Htake. iFrame.
 Qed.
 
-(* cloneAndAddLabel returns a fresh map holding [existing] plus one binding.
-   [existing] is only read, and a nil map ranges as empty, hence [default ∅].
-   The result is fully owned: it is a map literal the callee just built. With an
-   empty key it would return [existing] itself instead; the only caller passes
-   the non-empty pod-template-hash key, so the spec rules that case out. *)
-Lemma wp_cloneAndAddLabel existing_l (existing : option (gmap go_string go_string))
-    (key value : go_string) dq :
-  {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
-      "Hexisting" ∷ labels_opt_own existing_l existing dq ∗
-      "%Hkey" ∷ ⌜ key ≠ ""%go ⌝
-  }}}
-    @! deployment.cloneAndAddLabel #existing_l #key #value
-  {{{ (result_l : loc), RET #result_l;
-      labels_opt_own existing_l existing dq ∗
-      result_l ↦$ (<[key := value]> (default ∅ existing))
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  rewrite bool_decide_eq_false_2 //. wp_auto.
-  wp_apply wp_map_make1. iIntros (result_l) "Hresult".
-  wp_auto.
-  destruct existing as [m|].
-  - (* The copy loop fills [result] with the map_prefix of the keys seen so far. *)
-    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
-      (λ (keys : list go_string) i,
-        ∃ (last_value last_key : go_string),
-          "value" ∷ value_ptr ↦ last_value ∗
-          "key" ∷ key_ptr ↦ last_key ∗
-          "newLabels" ∷ newLabels_ptr ↦ result_l ∗
-          "Hresult" ∷ result_l ↦$ map_prefix keys i m)%I
-      with "Hexisting").
-    { done. }
-    iIntros (keys) "%Hkeys".
-    iSplitL "value key newLabels Hresult".
-    { iExists ""%go, ""%go. iFrame. rewrite map_prefix_empty. iFrame. }
-    iSplitL "".
-    { iModIntro. iIntros (i k0 v0) "%Hiter Hloop".
-      destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
-      destruct Hiter as [Hi_bounds [Hkey_lookup Hvalue_lookup]].
-      destruct Hi_bounds as [Hi_nonneg Hi_upper].
-      iDestruct "Hloop" as (last_value last_key) "(value & key & newLabels & Hresult)".
-      wp_pures. simpl subst'. wp_auto.
-      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
-        go.string result_l (map_prefix keys i m) k0 v0 with "Hresult") as "Hresult".
-      iRight. iSplit; [done|].
-      iExists v0, k0. iFrame.
-      rewrite -map_prefix_insert; done. }
-    iIntros "Hexisting Hloop".
-    iDestruct "Hloop" as (last_value last_key) "(value & key & newLabels & Hresult)".
-    destruct Hkeys as [Hkeys_dom [Hkeys_len Hkeys_nodup]].
-    rewrite (map_prefix_all keys m Hkeys_dom Hkeys_len).
-    wp_auto.
-    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
-      go.string result_l m key value with "Hresult") as "Hresult".
-    iApply ("HΦ" $! result_l). iFrame.
-  - (* A nil source map ranges zero times, leaving [result] empty. *)
-    iDestruct "Hexisting" as %->.
-    wp_apply (wp_map_for_range_nil go.string go.string).
-    wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
-      go.string result_l ∅ key value with "Hresult") as "Hresult".
-    iApply ("HΦ" $! result_l). iFrame. done.
-Qed.
-
 (* cloneSelectorAndAddLabel deep-copies the selector and sets one MatchLabels
    binding on the copy, allocating MatchLabels first if it was nil.  The source
-   is only read; the returned selector is fully owned. As for cloneAndAddLabel,
+   is only read; the returned selector is fully owned. As for labels.CloneAndAddLabel,
    the empty-key case (which returns [selector] itself) is ruled out. *)
 Lemma wp_cloneSelectorAndAddLabel selector_l (selector : LabelSelectorV.t)
     (key value : go_string) dq :

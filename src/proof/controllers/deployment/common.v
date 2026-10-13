@@ -5,6 +5,8 @@ From New.proof.kubernetes_types Require Export prelude.
 From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
+From New.proof.k8s_io.kubernetes.pkg.controller.deployment Require Export util.
+From New.proof.k8s_io.kubernetes.pkg.util Require Export labels.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 Section proof.
@@ -66,16 +68,6 @@ Definition rs_opt_own (l : loc) (rs_o : option ReplicaSetV.t) dq : iProp Σ :=
   | None => ⌜ l = null ⌝
   end.
 
-(* Ownership of a possibly-nil map[string]string argument.  ObjectMetaV models
-   an absent label/annotation map as None, and Go ranges over a nil map without
-   faulting, so cloneAndAddLabel must accept both. *)
-Definition labels_opt_own (l : loc)
-    (m_o : option (gmap go_string go_string)) dq : iProp Σ :=
-  match m_o with
-  | Some m => l ↦${dq} m
-  | None => ⌜ l = null ⌝
-  end.
-
 (* cloneSelectorAndAddLabel returns a copy of [selector] whose MatchLabels are
    [selector]'s plus one binding.  A nil MatchLabels is first replaced by a fresh
    empty map, so the result's MatchLabels is always Some. *)
@@ -110,21 +102,6 @@ Defined.
 Definition old_replica_set_pairs (ptrs : list loc) (rss : list ReplicaSetV.t)
     (new_rs_o : option ReplicaSetV.t) : list (loc * ReplicaSetV.t) :=
   filter (λ pr, rs_is_old new_rs_o pr.2) (zip ptrs rss).
-
-(* TODO: un-axiomatize. Once PodTemplateSpecV carries enough structure to state
-   template equality, template_matches should become a Definition (equality of
-   the templates after deleting the pod-template-hash label from each
-   ObjectMeta), the two axioms below should become proved lemmas, and
-   wp_equalIgnoreHash in replica_sets.v should be discharged rather than
-   Admitted.
-
-   equalIgnoreHash compares pod templates ignoring the pod-template-hash label.
-   PodTemplateSpecV is axiomatized, so the comparison relation and the spec
-   below are trusted, mirroring controller.v's pod_from_template. *)
-Parameter template_matches : PodTemplateSpecV.t → PodTemplateSpecV.t → Prop.
-Axiom template_matches_dec : ∀ t1 t2, Decision (template_matches t1 t2).
-#[global] Existing Instance template_matches_dec.
-Axiom template_matches_sym : ∀ t1 t2, template_matches t1 t2 → template_matches t2 t1.
 
 Definition rs_template (rs : ReplicaSetV.t) : PodTemplateSpecV.t :=
   rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').
