@@ -140,7 +140,9 @@ Lemma wp_findNewReplicaSet d_l (d : DeploymentV.t) sl ptrs (rss : list ReplicaSe
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq1 ∗
       "Hsl" ∷ sl ↦*{dq2} ptrs ∗
-      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3)
+      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3) ∗
+      "%Hlabels" ∷ ⌜ template_has_labels (deployment_template d) ∧
+        Forall (λ rs, template_has_labels (rs_template rs)) rss ⌝
   }}}
     @! deployment.findNewReplicaSet #d_l #sl
   {{{ (rs_l : loc), RET #rs_l;
@@ -205,8 +207,11 @@ Proof.
     iNamedPrefix "Hd_spec_fields" "Hdf_".
     iNamedPrefix "Hthis_spec" "Hrs_".
     iNamedPrefix "Hd_spec" "Hd_".
+    assert (template_has_labels (rs_template this_rs)) as Hthis_labels.
+    { exact (Forall_lookup_1 _ _ _ _ (proj2 Hlabels) Hthis_rs_lookup). }
     wp_apply (wp_EqualIgnoreHash with
       "[$Hrsf_Template $Hrs_Hdeepown_template $Hdf_Template $Hd_Hdeepown_template]").
+    { iPureIntro. split; [exact Hthis_labels|exact (proj1 Hlabels)]. }
     iIntros "(Hrsf_Template & Hrs_Hdeepown_template & Hdf_Template & Hd_Hdeepown_template)".
     (* Put both objects back together before branching. *)
     iCombineNamed "Hrsf_*" as "Hrs_spec_fields".
@@ -286,7 +291,9 @@ Lemma wp_findOldReplicaSets d_l (d : DeploymentV.t) sl ptrs
   {{{ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "Hd" ∷ DeploymentV.deepown_l d_l d dq1 ∗
       "Hsl" ∷ sl ↦*{dq2} ptrs ∗
-      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3)
+      "Hrss" ∷ ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3) ∗
+      "%Hlabels" ∷ ⌜ template_has_labels (deployment_template d) ∧
+        Forall (λ rs, template_has_labels (rs_template rs)) rss ⌝
   }}}
     @! deployment.findOldReplicaSets #d_l #sl
   {{{ sl', RET #sl';
@@ -302,7 +309,7 @@ Proof.
   (* allRSs starts as a nil slice. *)
   iPoseProof (own_slice_nil (V:=loc) (DfracOwn 1)) as "Hnil_sl".
   iPoseProof (own_slice_cap_nil (V:=loc)) as "Hnil_cap".
-  wp_apply (wp_findNewReplicaSet with "[$Hd $Hsl $Hrss]").
+  wp_apply (wp_findNewReplicaSet with "[$Hd $Hsl $Hrss]"); first done.
   iIntros (new_rs_l) "(Hfind & Hd & Hsl & Hrss)". wp_auto.
   remember (snd <$> find_new_replica_set d rss) as new_rs_o eqn:Hnew_rs_o.
   (* [newRS] is nil exactly when no template matches; otherwise it is the
