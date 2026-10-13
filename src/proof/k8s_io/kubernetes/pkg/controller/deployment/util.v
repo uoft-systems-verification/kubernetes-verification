@@ -20,7 +20,14 @@ Definition template_has_labels (t : PodTemplateSpecV.t) : Prop :=
    templates. It is reflection-based, so goose cannot translate it, and it
    compares every PodSpec field while PodSpecV models only a few, so its result
    is not determined by the model values. It is therefore left abstract, like
-   storage_object_normalize in kubernetes_model/common.v. *)
+   storage_object_normalize in kubernetes_model/common.v.
+
+   TODO: model every PodSpec field in PodSpecV. Then define equality between
+   PodTemplateSpecV values (as Semantic.DeepEqual compares them, including
+   treating nil and empty slices and maps as equal), and remove this Parameter
+   and the two Axioms below. wp_Semantic_DeepEqual_PodTemplateSpec would then
+   be stated with that equality; it stays trusted, since DeepEqual is
+   reflection-based. *)
 Parameter template_semantic_eq : PodTemplateSpecV.t → PodTemplateSpecV.t → Prop.
 Axiom template_semantic_eq_dec : ∀ t1 t2, Decision (template_semantic_eq t1 t2).
 #[global] Existing Instance template_semantic_eq_dec.
