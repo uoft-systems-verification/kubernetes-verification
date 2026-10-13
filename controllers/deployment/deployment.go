@@ -87,30 +87,6 @@ func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) 
 	return allRSs
 }
 
-// cloneSelectorAndAddLabel clones the given selector and returns a new
-// selector with the given key and value added. Returns the given selector, if
-// labelKey is empty.
-//
-// TODO: upstream's CloneSelectorAndAddLabel (pkg/util/labels/labels.go) builds
-// the copy field by field: a fresh MatchLabels map filled by a loop, and a
-// MatchExpressions slice copied element by element with each Values slice
-// copied too. Here selector.DeepCopy() produces the same result. Matching
-// upstream needs a proof of the nested MatchExpressions copy loop.
-func cloneSelectorAndAddLabel(selector *metav1.LabelSelector, labelKey, labelValue string) *metav1.LabelSelector {
-	if labelKey == "" {
-		// Don't need to add a label.
-		return selector
-	}
-
-	// Clone.
-	newSelector := selector.DeepCopy()
-	if newSelector.MatchLabels == nil {
-		newSelector.MatchLabels = map[string]string{}
-	}
-	newSelector.MatchLabels[labelKey] = labelValue
-	return newSelector
-}
-
 // scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
 // scaled=false) when the count already matches.
 func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSet, error) {
@@ -137,7 +113,7 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 	newRSTemplate := *d.Spec.Template.DeepCopy()
 	podTemplateSpecHash := controller.ComputeHash(&newRSTemplate, nil)
 	newRSTemplate.Labels = labelsutil.CloneAndAddLabel(d.Spec.Template.Labels, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
-	newRSSelector := cloneSelectorAndAddLabel(d.Spec.Selector, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
+	newRSSelector := labelsutil.CloneSelectorAndAddLabel(d.Spec.Selector, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
 
 	replicas := replicasOf(d)
 	newRS := &apps.ReplicaSet{

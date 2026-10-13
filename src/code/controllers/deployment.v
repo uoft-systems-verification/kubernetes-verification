@@ -27,8 +27,6 @@ Definition findNewReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go
 
 Definition findOldReplicaSets {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.findOldReplicaSets"%go.
 
-Definition cloneSelectorAndAddLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.cloneSelectorAndAddLabel"%go.
-
 Definition scaleReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.scaleReplicaSet"%go.
 
 Definition getNewReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.getNewReplicaSet"%go.
@@ -126,41 +124,10 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
       do:  ("allRSs" <-[go.SliceType (go.PointerType apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "allRSs")).
 
-(* cloneSelectorAndAddLabel clones the given selector and returns a new
-   selector with the given key and value added. Returns the given selector, if
-   labelKey is empty.
-
-   TODO: upstream's CloneSelectorAndAddLabel (pkg/util/labels/labels.go) builds
-   the copy field by field: a fresh MatchLabels map filled by a loop, and a
-   MatchExpressions slice copied element by element with each Values slice
-   copied too. Here selector.DeepCopy() produces the same result. Matching
-   upstream needs a proof of the nested MatchExpressions copy loop.
-
-   go: deployment.go:99:6 *)
-Definition cloneSelectorAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "selector" "labelKey" "labelValue",
-    exception_do (let: "labelValue" := (GoAlloc go.string "labelValue") in
-    let: "labelKey" := (GoAlloc go.string "labelKey") in
-    let: "selector" := (GoAlloc (go.PointerType meta_v1.LabelSelector) "selector") in
-    (if: Convert go.untyped_bool go.bool ((![go.string] "labelKey") =⟨go.string⟩ #""%go)
-    then return: (![go.PointerType meta_v1.LabelSelector] "selector")
-    else do:  #());;;
-    let: "newSelector" := (GoAlloc (go.PointerType meta_v1.LabelSelector) (GoZeroVal (go.PointerType meta_v1.LabelSelector) #())) in
-    let: "$r0" := ((MethodResolve (go.PointerType meta_v1.LabelSelector) "DeepCopy"%go (![go.PointerType meta_v1.LabelSelector] "selector")) #()) in
-    do:  ("newSelector" <-[go.PointerType meta_v1.LabelSelector] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.MapType go.string go.string] (StructFieldRef meta_v1.LabelSelector "MatchLabels"%go (![go.PointerType meta_v1.LabelSelector] "newSelector"))) =⟨go.MapType go.string go.string⟩ (Convert go.untyped_nil (go.MapType go.string go.string) UntypedNil))
-    then
-      let: "$r0" := (CompositeLiteral (go.MapType go.string go.string) (LiteralValue [])) in
-      do:  ((StructFieldRef meta_v1.LabelSelector "MatchLabels"%go (![go.PointerType meta_v1.LabelSelector] "newSelector")) <-[go.MapType go.string go.string] "$r0")
-    else do:  #());;;
-    let: "$r0" := (![go.string] "labelValue") in
-    do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef meta_v1.LabelSelector "MatchLabels"%go (![go.PointerType meta_v1.LabelSelector] "newSelector"))) (![go.string] "labelKey") "$r0");;;
-    return: (![go.PointerType meta_v1.LabelSelector] "newSelector")).
-
 (* scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
    scaled=false) when the count already matches.
 
-   go: deployment.go:116:6 *)
+   go: deployment.go:92:6 *)
 Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs" "newScale",
     exception_do (let: "newScale" := (GoAlloc go.int32 "newScale") in
@@ -191,7 +158,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
    deterministic name and the deployment's replica count if it does not exist.
 
-   go: deployment.go:131:6 *)
+   go: deployment.go:107:6 *)
 Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -221,7 +188,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     let: "$r0" := (let: "$a0" := (![go.PointerType meta_v1.LabelSelector] (StructFieldRef apps_v1.DeploymentSpec "Selector"%go (StructFieldRef apps_v1.Deployment "Spec"%go (![go.PointerType apps_v1.Deployment] "d")))) in
     let: "$a1" := apps_v1.DefaultDeploymentUniqueLabelKey in
     let: "$a2" := (![go.string] "podTemplateSpecHash") in
-    (FuncResolve cloneSelectorAndAddLabel [] #()) "$a0" "$a1" "$a2") in
+    (FuncResolve util_labels.CloneSelectorAndAddLabel [] #()) "$a0" "$a1" "$a2") in
     do:  ("newRSSelector" <-[go.PointerType meta_v1.LabelSelector] "$r0");;;
     let: "replicas" := (GoAlloc go.int32 (GoZeroVal go.int32 #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType apps_v1.Deployment] "d") in
@@ -269,7 +236,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:172:6 *)
+   go: deployment.go:148:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -290,7 +257,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:178:6 *)
+   go: deployment.go:154:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "oldRSs") in
@@ -325,7 +292,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:193:6 *)
+   go: deployment.go:169:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -368,7 +335,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
 (* filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
    whose controller reference points at the deployment.
 
-   go: deployment.go:211:6 *)
+   go: deployment.go:187:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -406,7 +373,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:226:6 *)
+(* go: deployment.go:202:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -468,7 +435,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] replicasOfRS_unfold :: FuncUnfold replicasOfRS [] (replicasOfRSⁱᵐᵖˡ);
   #[global] findNewReplicaSet_unfold :: FuncUnfold findNewReplicaSet [] (findNewReplicaSetⁱᵐᵖˡ);
   #[global] findOldReplicaSets_unfold :: FuncUnfold findOldReplicaSets [] (findOldReplicaSetsⁱᵐᵖˡ);
-  #[global] cloneSelectorAndAddLabel_unfold :: FuncUnfold cloneSelectorAndAddLabel [] (cloneSelectorAndAddLabelⁱᵐᵖˡ);
   #[global] scaleReplicaSet_unfold :: FuncUnfold scaleReplicaSet [] (scaleReplicaSetⁱᵐᵖˡ);
   #[global] getNewReplicaSet_unfold :: FuncUnfold getNewReplicaSet [] (getNewReplicaSetⁱᵐᵖˡ);
   #[global] reconcileNewReplicaSet_unfold :: FuncUnfold reconcileNewReplicaSet [] (reconcileNewReplicaSetⁱᵐᵖˡ);
