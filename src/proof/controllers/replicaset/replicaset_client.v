@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export get replicaset_update_status.
+From New.proof.kubernetes_model Require Export get.
+From New.proof.kubernetes_model.replicaset Require Export update_status.
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof.k8s_io.client_go Require Export kubernetes_init gentype_init.
 

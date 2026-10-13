@@ -194,6 +194,7 @@ Qed.
 
 (** Trusted because [PodStatusV] represents only the conditions, while the
     imported Kubernetes implementation reads [status.phase]. *)
+(* TODO: prove once [status.phase] is translated into [PodStatusV]. *)
 Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
   {{{ is_pkg_init controller ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq

@@ -211,6 +211,8 @@ Proof. Admitted.
    time.Time.Add and time.Time.Compare) are not modelled. This spec only
    assumes that the helper terminates, returns some boolean, and leaves the pod
    unchanged. Readiness alone is proven: see [wp_IsPodReady]. *)
+(* TODO: prove once metav1.Time.IsZero, time.Time.Add and time.Time.Compare are
+   translated. *)
 Lemma wp_IsPodAvailable pod_l pod dq (min_ready_seconds : w32) (now : val) :
   {{{ is_pkg_init podutil_pkg ∗
       PodV.deepown_l pod_l pod dq
