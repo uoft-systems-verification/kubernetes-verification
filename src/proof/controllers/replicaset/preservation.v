@@ -332,15 +332,15 @@ Proof.
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
   { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
   iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
-  destruct Hchanged as (Hmeta_changed & Hspec_changed).
+  destruct Hchanged as (Hmeta_changed & _).
   wp_auto.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       pods_managed (mutating_fractions dq) false
-      Hrs_key_eq Hrs_uid_eq Hget_Hmeta_eq Hget_Hspec_eq Hmeta_changed Hspec_changed Hpods'_nodup
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
-    as "[Hresources %Hstatus_only]".
+    as "Hresources".
   assert (match_distance rs pods_managed ≤ match_distance rs pods) as Hdistance.
   {
   (* one sync moves the live count toward the desired count by at most [burst] *)

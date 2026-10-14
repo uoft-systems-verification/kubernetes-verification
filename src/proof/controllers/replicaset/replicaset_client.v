@@ -116,7 +116,8 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
   }}}
     (MethodResolve client_apps_v1.ReplicaSetInterface "UpdateStatus"%go #c) ctx #rs_l opts
   {{{ (result_l : loc) rs', RET (#result_l, #interface.nil);
-      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
+      ⌜ ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ∧
+        rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
       ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗

@@ -32,7 +32,8 @@ Lemma wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_
   }}}
     l @! (go.PointerType apimodel.State) @! "ReplicaSetUpdateStatusTx" #namespace #rs_l
   {{{ (result_l : loc) rs', RET (#result_l, #interface.nil);
-      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
+      ⌜ ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ∧
+        rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
       ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       own_meta_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
@@ -102,7 +103,7 @@ Proof.
     (rs <| ReplicaSetV.ObjectMeta' := rs_c.(ReplicaSetV.ObjectMeta') |>
         <| ReplicaSetV.Status' := rs_c.(ReplicaSetV.Status') |>)).
   iFrame "Hinput Hstatus". iSplit.
-  { iPureIntro. rewrite /ReplicaSetV.status_only_changed /=. split_and!; done. }
+  { iPureIntro. simpl. split; done. }
   iSplitL "Hmeta".
   { iApply (kview.own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hmeta"). }
   iSplit.

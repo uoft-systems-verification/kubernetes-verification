@@ -336,7 +336,7 @@ Proof.
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
   { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
   iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
-  destruct Hchanged as (Hmeta_changed & Hspec_changed).
+  destruct Hchanged as (Hmeta_changed & _).
   wp_auto.
   iAssert (([∗ list] pod ∈ pods,
       own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
@@ -363,11 +363,11 @@ Proof.
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       pods (stability_fractions dq) true
-      Hrs_key_eq Hrs_uid_eq Hget_Hmeta_eq Hget_Hspec_eq Hmeta_changed Hspec_changed Hpods_nodup
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags Hown_pod_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
-    as "[Hresources %Hstatus_only]".
-  iApply ("HΦ" $! rs'' with "[$Hresources //]").
+    as "Hresources".
+  iApply ("HΦ" $! rs'' with "[$Hresources]").
 Qed.
 
 End proof.

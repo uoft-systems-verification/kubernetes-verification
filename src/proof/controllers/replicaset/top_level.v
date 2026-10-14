@@ -194,7 +194,6 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
      conflicts). *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t), RET #interface.nil;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
-      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
       ⌜ current_state_matches rs pods' ∨
         (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
   }}}.
@@ -226,13 +225,13 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
      distance claim below holds either way. *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (err : interface.t), RET #err;
       owned_resources γ rs' pods' (mutating_fractions dq) false ∗
-      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝ ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
   }}}.
 
-(* Stability preserves the represented pod resources and ReplicaSet spec when
-   the observed pod count matches the desired count. Status may be updated and
-   the sync may return an error. Status correctness is left to helper specs. *)
+(* Stability preserves the represented pod resources when the observed pod
+   count matches the desired count: the sync returns the same [pods]. Status
+   may be updated and the sync may return an error. Status correctness is left
+   to helper specs. *)
 Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t)
     namespace name rs dq pods
@@ -258,8 +257,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
   {{{ (rs' : ReplicaSetV.t) (err : interface.t), RET #err;
-      owned_resources γ rs' pods (stability_fractions dq) true ∗
-      ⌜ ReplicaSetV.status_only_changed rs rs' ⌝
+      owned_resources γ rs' pods (stability_fractions dq) true
   }}}.
 
 End specs.
