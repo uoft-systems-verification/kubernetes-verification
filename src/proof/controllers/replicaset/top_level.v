@@ -175,14 +175,13 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
            [0 ≤ oldc + delta < 2^31]. Past 2^31 the truncation turns the delta
            negative and that obligation is unprovable. *)
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
-      (* Assumption: the ReplicaSet owns fewer than 2^31 pods. calculateStatus
-         converts the counts of its active and terminating pods (both drawn
-         from [pods]) to int32; a count of 2^31 or more wraps to a negative
-         value and the status is invalid. Real clusters are far below this
-         bound.
-         TODO: implied by the trusted list bound [model_state_size_bound], as
-         used by [preservation_spec] and [stability_spec]; drop it. *)
-      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
+      (* TODO: calculateStatus converts the counts of the listed pods to int32,
+         so they must be fewer than 2^31. That bound currently comes from the
+         trusted [model_state_size_bound], through the pod listing spec. Once
+         the terminating-children fragment carries a bound and that lemma is
+         removed, require [Z.of_nat (length pods) < 2 ^ 31] here and in
+         [stability_spec], and [length pods + terminating_bound < 2 ^ 31] in
+         [preservation_spec]. *)
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
@@ -241,15 +240,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true ∗
-      (* Assumption, as in [input_requirement]: the status calculation builds a
-         selector from the template labels, whose count must fit in a Go int. *)
-      "%Hlabels_bound" ∷ ⌜ Z.of_nat (size (default ∅
-        rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')))
-        ≤ 2 ^ 63 - 1 ⌝ ∗
-      (* Assumption, as in [input_requirement]: the generation is non-negative.
-         The status write copies it into Status.ObservedGeneration, which
-         status validation requires to be non-negative. *)
-      "%Hgeneration_nonneg" ∷ ⌜ 0 ≤ sint.Z rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') ⌝ ∗
+      "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝

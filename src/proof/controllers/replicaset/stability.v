@@ -124,6 +124,8 @@ Proof.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
+  unfold input_requirement in Hinput_requirement.
+  destruct Hinput_requirement as (_ & _ & Hlabels_bound & Hgeneration_nonneg).
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel".

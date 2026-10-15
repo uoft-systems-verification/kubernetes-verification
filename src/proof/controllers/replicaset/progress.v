@@ -359,8 +359,8 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
-  (* The written status is valid: all pods the ReplicaSet owns are among [pods]
-     (fewer than 2^31), so both counts fit in int32, and the observed
+  (* The written status is valid: the listed pods are fewer than 2^31 (the
+     listing's trusted bound), so both counts fit in int32, and the observed
      generation is the non-negative generation of [rs]. *)
   assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
