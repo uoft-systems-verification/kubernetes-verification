@@ -108,14 +108,14 @@ Proof.
   iAssert (opt_ptr_rep rs_phy.(v1.ReplicaSet.Status').(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
     rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
   { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
-  Timeout 120 wp_auto.
+  wp_auto.
   (* The no-op check evaluates to some boolean. *)
   wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
     FuncResolve goreflect.DeepEqual [] #() "$a0" "$a1") else #false)%E.
   iApply (wp_wand _ _ _ (λ v, ∃ b : bool, ⌜ v = #b ⌝ ∗
       "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
-  { Timeout 60 (repeat (split_bool; try wp_auto; try (iExists false; iFrame; done))).
+  { repeat (split_bool; try wp_auto; try (iExists false; iFrame; done)).
     all: wp_apply (wp_Equal_int32 with "[]");
       [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
     all: iIntros (r) "_".
@@ -127,7 +127,7 @@ Proof.
   destruct b.
   { (* already up to date: nothing is written *)
     wp_auto. iApply ("HΦ" $! rs_l rs). iModIntro. iFrame. iPureIntro. done. }
-  Timeout 120 wp_auto.
+  wp_auto.
   iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
   set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
@@ -157,8 +157,10 @@ Proof.
   iMod (ReplicaSetV.deepown_persist with "Hcur") as "Hcur".
   iDestruct "Hcur" as "(%Hcur_tm & #Hcur_meta_own & Hcur_spec_own & #Hcur_st)".
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  Timeout 60 wp_pures.
-  wp_load. Timeout 60 wp_pures. wp_load. Timeout 60 wp_pures. wp_load.
+  wp_pures.
+  wp_load. wp_pures.
+  wp_load. wp_pures.
+  wp_load.
   (* The current object with the requested status, read-only from now on. *)
   iPersist "Hcur_l".
   iAssert (ReplicaSetV.deepown cur_phy cur DfracDiscarded)%I

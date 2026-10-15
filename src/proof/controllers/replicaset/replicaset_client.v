@@ -125,12 +125,12 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
       ⌜ ReplicaSetV.valid rs' ⌝ ∗
       ⌜ ReplicaSetStatusV.updated requested rs'.(ReplicaSetV.Status') ⌝
-      (* Disabled clause describing the returned object [result_l] (Go's
-         [updatedRS]); see [wp_State__ReplicaSetUpdateStatusTx] for what it
-         specifies and why it is disabled.
-      ∗ ∃ rs_c, ReplicaSetV.deepown_l result_l rs_c 1 ∗
-        ⌜ rs_c.(ReplicaSetV.ObjectMeta') = rs'.(ReplicaSetV.ObjectMeta') ∧
-          rs_c.(ReplicaSetV.Status') = rs'.(ReplicaSetV.Status') ⌝ *)
+      (* The returned object [result_l] (Go's [updatedRS]) is not described:
+         the verified controller discards it ([_, err = updateReplicaSetStatus(...)]
+         in controllers/replicaset/replica_set.go). Its ownership is available
+         from [wp_State__ReplicaSetUpdateStatusTx_same_meta] when a caller needs it,
+         for example the availability requeue that reads
+         [updatedRS.Spec.MinReadySeconds]. *)
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
@@ -144,12 +144,38 @@ Proof.
   try (rewrite !decide_True; try reflexivity).
   try wp_auto.
   rewrite Hns.
-  wp_apply (wp_State__ReplicaSetUpdateStatusTx γ l namespace rs_l rs requested dq dq_in
+  set input := rs <| ReplicaSetV.Status' := requested |>.
+  pose proof Hvalid as (Hvalid_typemeta & Hvalid_rv & Hvalid_meta & Hvalid_spec & _).
+  pose proof Hvalid_meta as (_ & Hname_nonempty & _ & _ & _ & Hvalid_uid & Hlabels &
+    Hannotations & Howners & Hfinalizers & Hmanaged_fields & _).
+  pose proof (valid_uid_non_empty _ Hvalid_uid) as Huid_nonempty.
+  (* The guard on the status makes the whole request valid. *)
+  assert (ReplicaSetV.valid_status_update ReplicaSetV.kind namespace rs.(ReplicaSetV.ObjectMeta')
+      rs.(ReplicaSetV.Status') input) as Hvalid_request.
+  { rewrite /ReplicaSetV.valid_status_update /=.
+    split_and!; try done.
+    rewrite /ObjectMetaV.valid_update. split_and!; try done.
+    left. rewrite /ObjectMetaV.valid_simple_update. split_and!; done. }
+  wp_apply (wp_State__ReplicaSetUpdateStatusTx_same_meta γ l namespace rs_l input dq_in
+    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.Status')
     with "[$Hisk $Hinput $Hmeta $Hstatus]").
-  { iFrame "#". done. }
-  iIntros (result_l rs') "Hpost".
+  { iFrame "#". iPureIntro. split; done. }
+  iIntros (result_l rs_c) "(Hinput & Hmeta & %Hvalid' & %Hupdated & %Hmeta_eq & _ & Hstatus)".
   wp_auto. rewrite decide_True; try reflexivity. wp_auto.
-  iApply "HΦ". iExact "Hpost".
+  (* [rs'] is [rs] with the stored metadata and status. *)
+  iApply ("HΦ" $! result_l
+    (rs <| ReplicaSetV.ObjectMeta' := rs_c.(ReplicaSetV.ObjectMeta') |>
+        <| ReplicaSetV.Status' := rs_c.(ReplicaSetV.Status') |>)).
+  iFrame "Hinput Hstatus". iSplit.
+  { iPureIntro. simpl. split; done. }
+  iSplitL "Hmeta".
+  { iApply (kview.own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hmeta"). }
+  iSplit.
+  { iPureIntro. destruct Hvalid' as (_ & Hrv' & Hmeta' & _ & Hstatus').
+    rewrite /ReplicaSetV.valid /=. split_and!; done. }
+  iPureIntro.
+  rewrite /ReplicaSetV.status_updated in Hupdated.
+  destruct Hupdated as (_ & _ & Hstatus_updated). exact Hstatus_updated.
 Qed.
 
 End proof.
