@@ -377,96 +377,9 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_ok
   }}}.
 Proof. Admitted.
 
-Lemma valid_update_equiv_except_resource_version m1 m2 input :
-  ObjectMetaV.equiv_except_resource_version m1 m2 →
-  ObjectMetaV.valid_update m1 input →
-  ObjectMetaV.valid_update m2 input.
-Proof.
-  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
-  destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
-Qed.
-
-Lemma valid_status_update_equiv_except_resource_version kind namespace m1 m2 kstatus input :
-  ObjectMetaV.equiv_except_resource_version m1 m2 →
-  KObjectV.valid_status_update kind namespace m1 kstatus input →
-  KObjectV.valid_status_update kind namespace m2 kstatus input.
-Proof.
-  intros Heq Hvalid.
-  pose proof (valid_update_equiv_except_resource_version m1 m2 (KObjectV.objectmeta input) Heq)
-    as Htransfer.
-  destruct kstatus, input; rewrite /KObjectV.valid_status_update /= in Hvalid Htransfer |- *;
-    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
-      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-      ?/DeploymentV.valid_status_update in Hvalid |- *;
-    try contradiction; intuition.
-Qed.
-
-(** Metadata that agrees except for the resource version is a simple update. *)
-Lemma equiv_except_resource_version_valid_simple_update m m' :
-  ObjectMetaV.equiv_except_resource_version m' m →
-  ObjectMetaV.valid_simple_update m m'.
-Proof.
-  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version
-    /ObjectMetaV.valid_simple_update.
-  destruct m, m'; simpl. intros Heq. inversion Heq; subst. split_and!; done.
-Qed.
-
-(** Identity facts a status writer can read off a metadata fragment at any
-    fraction, when the submitted metadata keeps the stored metadata except for
-    the resource version. *)
-Lemma own_meta_frag_status_identity γ key uid dq kmeta kobj :
-  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
-  own_meta_frag γ key uid dq kmeta -∗
-  ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ∧
-    kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝.
-Proof.
-  iIntros (Hmeta_same) "Hmeta".
-  rewrite /own_meta_frag.
-  iPoseProof (kview.own_meta_valid with "Hmeta") as
-    "(_ & _ & %Huid_meta & _ & %Hmeta_living)".
-  iPureIntro. split; last done.
-  rewrite Huid_meta.
-  pose proof (equiv_except_resource_version_valid_simple_update _ _ Hmeta_same) as Hsimple.
-  rewrite /ObjectMetaV.valid_simple_update in Hsimple. symmetry. tauto.
-Qed.
-
-(** The request-level part of [KObjectV.valid_status_update]: everything except
-    the validity of the submitted status. *)
-Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
-  kind = KObjectV.kind kobj ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
-  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
-  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
-  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
-  valid_labels (KObjectV.objectmeta kobj).(ObjectMetaV.Labels') ∧
-  valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
-  valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
-  valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
-  valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
-
-Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
-  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-  status_update_request_ok kind namespace kobj.
-Proof.
-  intros Hvalid_status_update. rewrite /status_update_request_ok.
-  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
-    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
-      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-      ?/DeploymentV.valid_status_update
-      /ObjectMetaV.valid_update in Hvalid_status_update;
-    try contradiction; tauto.
-Qed.
-
 (** This is the single trusted semantic contract for a successful status-update
     helper call. [old] and [helper_input] are the objects passed to the helper,
-    and [helper_result] is the mutated input object after it returns.
-
-    The third conjunct holds even when the request status is not known to be
-    valid: rest.BeforeUpdate only copies generation, UID, timestamps, and grace
-    period from [old] (which [valid_simple_update] makes agree with the input),
-    and every status strategy's PrepareForUpdate resets the spec to [old]'s.
-    kubernetes/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go *)
+    and [helper_result] is the mutated input object after it returns. *)
 Definition applyValidationAndDefaultingOnStatusUpdate_updated
     (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
   (∀ request_kind input stored,
@@ -479,16 +392,37 @@ Definition applyValidationAndDefaultingOnStatusUpdate_updated
     KObjectV.spec stored = KObjectV.spec old) ∧
   (KObjectV.valid old →
     valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
-    KObjectV.valid helper_result) ∧
-  (∀ input stored,
+    KObjectV.valid helper_result).
+
+(** Top-level status-update validation, caller preparation, and a successful
+    helper call establish the object invariant for the helper result. TypeMeta
+    validity follows from these premises and is not a separate assumption. *)
+Lemma applyValidationAndDefaultingOnStatusUpdate_updated_implies_valid :
+  ∀ request_kind namespace old input helper_input helper_result,
+    KObjectV.valid old →
+    KObjectV.valid_status_update request_kind namespace
+      (KObjectV.objectmeta old) (KObjectV.status old) input →
     update_prepared_for_helper namespace old input helper_input →
-    (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace →
-    ObjectMetaV.valid_simple_update (KObjectV.objectmeta old) (KObjectV.objectmeta input) →
-    update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.same_kind input stored ∧
-    KObjectV.typemeta stored = KObjectV.typemeta input ∧
-    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
-    KObjectV.spec stored = KObjectV.spec old).
+    applyValidationAndDefaultingOnStatusUpdate_updated namespace old helper_input helper_result →
+    KObjectV.valid helper_result.
+Proof.
+  intros request_kind namespace old input helper_input helper_result Hvalid
+    Hvalid_status_update Hprepared Hupdated.
+  destruct Hupdated as (_ & Hvalid_result).
+  apply Hvalid_result; first exact Hvalid.
+  assert (valid_typemeta (KObjectV.kind input) (KObjectV.typemeta input))
+    as Hvalid_typemeta_input.
+  { destruct (KObjectV.status old), input;
+      rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+      rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+        ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+        ?/DeploymentV.valid_status_update
+        /ObjectMetaV.valid_update in Hvalid_status_update;
+      try contradiction; tauto. }
+  destruct Hprepared as (_ & _ & _ & ->).
+  rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
+  exact Hvalid_typemeta_input.
+Qed.
 
 (** General contract used when the status-update helper may reject an update.
     On failure the new object may already have been mutated, so the
@@ -551,55 +485,6 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok
           namespace old_obj new_obj updated_obj ⌝
   }}}.
 Proof. Admitted.
-
-(** Combines the two helper contracts: a request satisfying the modeled
-    validity condition succeeds as in [_ok]; otherwise [_general] applies, and
-    an error is known to come from a request outside that condition. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_cases
-    new_i new_l new_obj old_i old_l old_obj dq
-    (request_kind namespace : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
-      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ (err : interface.t), RET #err;
-      (⌜ err = interface.nil ⌝ ∗
-        ∃ updated_obj,
-          KObjectV.deepown_l new_l updated_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-          ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-              namespace old_obj new_obj updated_obj ⌝) ∨
-      (⌜ err ≠ interface.nil ⌝ ∗
-        ⌜ ¬ KObjectV.valid_status_update request_kind namespace
-              (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
-        ∃ failed_obj,
-          KObjectV.deepown_l new_l failed_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
-  }}}.
-Proof.
-  iIntros (Φ) "(#Hinit & %Hnew & %Hold & %Hvalid_old & %Hsame & %Hprepared & Hnew_l & Hold_l) HΦ".
-  destruct (Classical_Prop.classic (KObjectV.valid_status_update request_kind namespace
-      (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input)) as [Hvalid|Hinvalid].
-  - wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_ok _ _ _ _ _ _ _
-      request_kind namespace input with "[$Hnew_l $Hold_l]").
-    { iFrame "#". iPureIntro. split_and!; done. }
-    iIntros (updated_obj) "(Hnew_l & Hold_l & %Hvalid_interface & %Hupdated)".
-    iApply "HΦ". iLeft. iSplit; first done. iExists updated_obj. iFrame. done.
-  - wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_general with "[$Hnew_l $Hold_l]").
-    { iFrame "#". iPureIntro. split_and!; done. }
-    iIntros (err) "[(%Herr & H) | (%Herr & %Hnot_conflict & H)]".
-    + iApply "HΦ". iLeft. iSplit; first done. iExact "H".
-    + iApply "HΦ". iRight. iSplit; first done. iSplit; first done. iExact "H".
-Qed.
 
 Lemma wp_allowUnconditionalUpdate (kind : go_string) :
   {{{ is_pkg_init apimodel }}}

@@ -294,7 +294,9 @@ Proof.
   pose proof (Hhelper_result_status_updated (KObjectV.kind kobj) kobj updated_kobj
     Hvalid_old_kobj Hvalid_status_update_actual Hprepared
     Hequiv_updated_refl) as (Hstatus_updated_kobj & _).
-  pose proof (proj1 (proj2 Hhelper_updated) Hvalid_old_kobj Hvalid_typemeta)
+  pose proof (applyValidationAndDefaultingOnStatusUpdate_updated_implies_valid
+    (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') old_kobj kobj kobj updated_kobj
+    Hvalid_old_kobj Hvalid_status_update_actual Hprepared Hhelper_updated)
     as Hvalid_updated_kobj.
   assert (KObjectV.same_kind kobj updated_kobj ∧
       ObjectStatusV.updated (KObjectV.status kobj) (KObjectV.status updated_kobj) ∧
@@ -311,12 +313,11 @@ Proof.
   { destruct kobj, updated_kobj;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
         /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
-        ?/DeploymentV.status_updated /=
+        /DeploymentV.status_updated /=
         in Hstatus_updated_kobj |- *; try contradiction.
     all: split_and!; try done.
     all: try (f_equal; tauto).
-    all: rewrite /ObjectMetaV.updated ?/pod_objectmeta_after_conversion /= in Hstatus_updated_kobj;
-      tauto. }
+    all: rewrite /ObjectMetaV.updated in Hstatus_updated_kobj; tauto. }
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID') ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') =
@@ -479,11 +480,9 @@ Proof.
   { destruct kobj, new_kobj;
       rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
         /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
-        ?/DeploymentV.status_updated /=
+        /DeploymentV.status_updated /=
         in Hstatus_updated_new |- *;
-      try contradiction;
-      rewrite /ObjectMetaV.updated ?/pod_objectmeta_after_conversion /= in Hstatus_updated_new |- *;
-      tauto. }
+      try contradiction; rewrite /ObjectMetaV.updated in Hstatus_updated_new |- *; tauto. }
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID')) as Huid_new_old.
   { rewrite Huid_new. exact Hinput_uid_old. }

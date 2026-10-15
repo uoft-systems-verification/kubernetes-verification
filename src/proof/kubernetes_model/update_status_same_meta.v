@@ -7,6 +7,136 @@ Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Lemma valid_update_equiv_except_resource_version m1 m2 input :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  ObjectMetaV.valid_update m1 input →
+  ObjectMetaV.valid_update m2 input.
+Proof.
+  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
+  destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done.
+Qed.
+
+Lemma valid_status_update_equiv_except_resource_version kind namespace m1 m2 kstatus input :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  KObjectV.valid_status_update kind namespace m1 kstatus input →
+  KObjectV.valid_status_update kind namespace m2 kstatus input.
+Proof.
+  intros Heq Hvalid.
+  pose proof (valid_update_equiv_except_resource_version m1 m2 (KObjectV.objectmeta input) Heq)
+    as Htransfer.
+  destruct kstatus, input; rewrite /KObjectV.valid_status_update /= in Hvalid Htransfer |- *;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update in Hvalid |- *;
+    try contradiction; intuition.
+Qed.
+
+(** Metadata that agrees except for the resource version is a simple update. *)
+Lemma equiv_except_resource_version_valid_simple_update m m' :
+  ObjectMetaV.equiv_except_resource_version m' m →
+  ObjectMetaV.valid_simple_update m m'.
+Proof.
+  rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version
+    /ObjectMetaV.valid_simple_update.
+  destruct m, m'; simpl. intros Heq. inversion Heq; subst. split_and!; done.
+Qed.
+
+(** Identity facts a status writer can read off a metadata fragment at any
+    fraction, when the submitted metadata keeps the stored metadata except for
+    the resource version. *)
+Lemma own_meta_frag_status_identity γ key uid dq kmeta kobj :
+  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
+  own_meta_frag γ key uid dq kmeta -∗
+  ⌜ uid = (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ∧
+    kmeta.(ObjectMetaV.DeletionTimestamp') = None ⌝.
+Proof.
+  iIntros (Hmeta_same) "Hmeta".
+  rewrite /own_meta_frag.
+  iPoseProof (kview.own_meta_valid with "Hmeta") as
+    "(_ & _ & %Huid_meta & _ & %Hmeta_living)".
+  iPureIntro. split; last done.
+  rewrite Huid_meta.
+  pose proof (equiv_except_resource_version_valid_simple_update _ _ Hmeta_same) as Hsimple.
+  rewrite /ObjectMetaV.valid_simple_update in Hsimple. symmetry. tauto.
+Qed.
+
+(** The request-level part of [KObjectV.valid_status_update]: everything except
+    the validity of the submitted status. *)
+Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
+  kind = KObjectV.kind kobj ∧
+  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
+  (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
+  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
+  valid_labels (KObjectV.objectmeta kobj).(ObjectMetaV.Labels') ∧
+  valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
+  valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
+  valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
+  valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
+
+Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  status_update_request_ok kind namespace kobj.
+Proof.
+  intros Hvalid_status_update. rewrite /status_update_request_ok.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; tauto.
+Qed.
+
+(** Trusted: the metadata half of a successful status-update helper call, used
+    only by [wp_State__update_status_same_meta_au]. For a request whose metadata
+    is a simple update of [old], the stored object keeps the request's kind,
+    TypeMeta and metadata (except the resource version, so the generation too)
+    and [old]'s spec. This holds even when the request status is not known to be
+    valid: rest.BeforeUpdate only copies generation, UID, timestamps, and grace
+    period from [old] (which [valid_simple_update] makes agree with the input),
+    and every status strategy's PrepareForUpdate resets the spec to [old]'s.
+    kubernetes/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go *)
+Definition applyValidationAndDefaultingOnStatusUpdate_meta_preserved
+    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
+  ∀ input stored,
+    update_prepared_for_helper namespace old input helper_input →
+    (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace →
+    ObjectMetaV.valid_simple_update (KObjectV.objectmeta old) (KObjectV.objectmeta input) →
+    update_objects_equiv_except_resource_version helper_result stored →
+    KObjectV.same_kind input stored ∧
+    KObjectV.typemeta stored = KObjectV.typemeta input ∧
+    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
+    KObjectV.spec stored = KObjectV.spec old.
+
+(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_ok] together with
+    [applyValidationAndDefaultingOnStatusUpdate_meta_preserved]. *)
+Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
+    new_i new_l new_obj old_i old_l old_obj dq
+    (request_kind namespace : go_string) input :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
+      ⌜ KObjectV.valid_status_update request_kind namespace
+          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
+      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
+      #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ updated_obj, RET #interface.nil;
+      KObjectV.deepown_l new_l updated_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+          namespace old_obj new_obj updated_obj ⌝ ∗
+      ⌜ applyValidationAndDefaultingOnStatusUpdate_meta_preserved
+          namespace old_obj new_obj updated_obj ⌝
+  }}}.
+Proof. Admitted.
+
 (* A variant of [wp_State__update_status_au] for a request that keeps the stored
    metadata except for the resource version ([Hmeta_same]). The write then
    leaves the metadata unchanged, so the metadata fragment may be held at any
@@ -215,9 +345,6 @@ Proof.
   { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
-  assert (KObjectV.same_kind old_kobj kobj) as Hsame_kind_old_input.
-  { destruct old_kobj, kobj; simpl in Hkey_old_new |- *; try done;
-      unfold KObjectV.key in Hkey_old_new; simpl in Hkey_old_new; congruence. }
   assert (update_prepared_for_helper
       (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') old_kobj kobj kobj) as Hprepared.
   { rewrite /update_prepared_for_helper. split_and!.
@@ -228,16 +355,13 @@ Proof.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]]; destruct meta; done. }
-  wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_cases _ _ _ _ _ _ _
-    (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') kobj
-    with "[$Hdeepown_l $Hdeepown_old_l]").
-  { iFrame "#". iPureIntro. split_and!; done. }
-  iIntros (err) "[(%Herr_nil & Hvalidation) | (%Herr_ne & %Hinvalid_actual & Hvalidation)]".
+  (* The request is valid against the stored object: otherwise opening the
+     atomic update contradicts [Hvalid_status_update]. *)
+  destruct (Classical_Prop.classic (KObjectV.valid_status_update (KObjectV.kind kobj)
+      (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace')
+      (KObjectV.objectmeta old_kobj) (KObjectV.status old_kobj) kobj))
+    as [Hvalid_status_update_actual|Hinvalid_actual].
   2: {
-    iDestruct "Hvalidation" as
-      (failed_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_failed)".
-    change (err ≠ interface.nil) in Herr_ne.
-    destruct err as [err_ok|]; [|done]. wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     rewrite -Hkey_new.
@@ -250,18 +374,19 @@ Proof.
     iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
     assert (KObjectV.status old_kobj = kstatus) as Hstatus_eq.
     { eapply Hstatus_found; done. }
-    (* The request is valid, so the helper cannot reject it. *)
     exfalso. apply Hinvalid_actual.
     rewrite Hstatus_eq.
     eapply valid_status_update_equiv_except_resource_version; last exact Hvalid_status_update.
     symmetry. exact Hmeta_eq.
   }
-  subst err.
-  iDestruct "Hvalidation" as (updated_kobj)
-    "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated & %Hhelper_updated)".
+  wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta _ _ _ _ _ _ _
+    (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') kobj
+    with "[$Hdeepown_l $Hdeepown_old_l]").
+  { iFrame "#". iPureIntro. split_and!; done. }
+  iIntros (updated_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_updated &
+    %Hhelper_updated & %Hhelper_result_preserved)".
   wp_auto.
-  pose proof Hhelper_updated as
-    (Hhelper_result_status_updated & Hhelper_result_valid & Hhelper_result_preserved).
+  pose proof Hhelper_updated as (Hhelper_result_status_updated & Hhelper_result_valid).
   assert (update_objects_equiv_except_resource_version updated_kobj updated_kobj)
     as Hequiv_updated_refl.
   { rewrite /update_objects_equiv_except_resource_version
