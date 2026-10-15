@@ -1,3 +1,4 @@
+From New.proof.k8s_io.apimachinery.pkg.runtime Require Export serializer_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export runtime_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.legacyscheme.
 From New.proof Require Import proof_prelude.

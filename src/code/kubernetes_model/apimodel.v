@@ -39,6 +39,11 @@ Require Export New.code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.
 Require Export New.code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.
 Require Export New.code.k8s_io.kubernetes.pkg.apis.apps.install.
 Require Export New.code.k8s_io.kubernetes.pkg.apis.rbac.install.
+Require Export New.code.encoding.json.
+Require Export New.code.net.http.
+Require Export New.code.gopkg_in.evanphx.json_patch_v4.
+Require Export New.code.k8s_io.apimachinery.pkg.util.mergepatch.
+Require Export New.code.k8s_io.apimachinery.pkg.util.strategicpatch.
 Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
 Module api_rbac_v1 := code.k8s_io.api.rbac.v1.v1.
@@ -4721,6 +4726,514 @@ Definition State__ClusterRoleUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType api_rbac_v1.ClusterRole] "updatedCR", Convert go.untyped_nil go.error UntypedNil)).
 
+(* patch models non-apply PATCH requests with default PatchOptions. Application
+   and validation are atomic with respect to other model operations. The result
+   follows the ordinary or status update strategy, including defaulting, UID/RV
+   preconditions, generation changes, and deletion after finalizer removal.
+   Reference: staging/src/k8s.io/apiserver/pkg/endpoints/handlers/patch.go.
+
+   go: patch.go:28:17 *)
+Definition State__patchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "kind" "namespace" "name" "patchType" "data" "subresources",
+    with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "kind" := (GoAlloc go.string "kind") in
+    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
+    (λ: <>,
+      "$f" #();;
+      "$oldf" #()
+      )));;;
+    (if: Convert go.untyped_bool go.bool ((((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.JSONPatchType) && ((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.MergePatchType)) && ((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.StrategicMergePatchType))
+    then
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnsupportedMediaType) in
+       let: "$a1" := #"PATCH"%go in
+       let: "$a2" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+       let: "$a3" := (![go.string] "name") in
+       let: "$a4" := #"unsupported patch type"%go in
+       let: "$a5" := #(W64 0) in
+       let: "$a6" := #false in
+       (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+    else do:  #());;;
+    let: "status" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "$r0" := (((let: "$a0" := (![go.SliceType go.string] "subresources") in
+    (FuncResolve go.len [go.SliceType go.string] #()) "$a0") =⟨go.int⟩ #(W64 1)) && ((![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "subresources", #(W64 0)))) =⟨go.string⟩ #"status"%go)) in
+    do:  ("status" <-[go.bool] "$r0");;;
+    (if: ((let: "$a0" := (![go.SliceType go.string] "subresources") in
+    (FuncResolve go.len [go.SliceType go.string] #()) "$a0") >⟨go.int⟩ #(W64 0)) && (⟨go.bool⟩! (![go.bool] "status"))
+    then
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+       let: "$a1" := (![go.string] "name") in
+       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "existing" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (map.lookup2 KKey (go.InterfaceType []) (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (let: "$v0" := (![go.string] "kind") in
+    let: "$v1" := (![go.string] "namespace") in
+    let: "$v2" := (![go.string] "name") in
+    CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")]))) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("existing" <-[go.InterfaceType []] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+       let: "$a1" := (![go.string] "name") in
+       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+    else do:  #());;;
+    (if: ![go.bool] "status"
+    then
+      let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: "legacy" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "existing") in
+      (FuncResolve convertVersionedToLegacy [] #()) "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("legacy" <-[go.InterfaceType []] "$r0");;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
+      else do:  #());;;
+      (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "legacy") in
+      (FuncResolve statusUpdateStrategyForLegacyObject [] #()) "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  "$r0";;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+         let: "$a1" := (![go.string] "name") in
+         (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+      else do:  #()))
+    else do:  #());;;
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (TypeAssert runtime.Object (![go.InterfaceType []] "existing")) in
+    let: "$a1" := (![types.PatchType] "patchType") in
+    let: "$a2" := (![go.SliceType go.byte] "data") in
+    let: "$a3" := (![go.string] "name") in
+    (FuncResolve applyPatchToObject [] #()) "$a0" "$a1" "$a2" "$a3") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[runtime.Object] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
+    (FuncResolve meta.Accessor [] #()) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool (((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) ≠⟨go.string⟩ (![go.string] "name"))
+    then
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"the name of the object (%s) does not match the name on the URL (%s)"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #())) in
+       let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+    else do:  #());;;
+    (if: ![go.bool] "status"
+    then
+      let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "kind") in
+      let: "$a1" := (![go.string] "namespace") in
+      let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
+      let: "$a3" := #false in
+      (MethodResolve (go.PointerType State) "updateStatusLocked"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3")) in
+      return: ("$ret0", "$ret1")
+    else do:  #());;;
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "kind") in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
+    let: "$a3" := #false in
+    (MethodResolve (go.PointerType State) "updateLocked"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3")) in
+    return: ("$ret0", "$ret1")).
+
+(* applyPatchToObject handles the versioned wire representation and decoding.
+   The caller validates patchType and holds the state lock through persistence.
+
+   go: patch.go:73:6 *)
+Definition applyPatchToObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "existing" "patchType" "data" "name",
+    exception_do (let: "name" := (GoAlloc go.string "name") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "existing" := (GoAlloc runtime.Object "existing") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "gvks" := (GoAlloc (go.SliceType schema.GroupVersionKind) (GoZeroVal (go.SliceType schema.GroupVersionKind) #())) in
+    let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![runtime.Object] "existing") in
+    (MethodResolve (go.PointerType runtime.Scheme) "ObjectKinds"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    let: "$r2" := "$ret2" in
+    do:  ("gvks" <-[go.SliceType schema.GroupVersionKind] "$r0");;;
+    do:  "$r1";;;
+    do:  ("err" <-[go.error] "$r2");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType schema.GroupVersionKind] "gvks") in
+    (FuncResolve go.len [go.SliceType schema.GroupVersionKind] #()) "$a0") ≠⟨go.int⟩ #(W64 1))
+    then
+      return: (Convert go.untyped_nil runtime.Object UntypedNil, let: "$a0" := #"expected one registered GVK for %T, got %v"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert runtime.Object go.any (![runtime.Object] "existing")) in
+       let: "$sl1" := (Convert (go.SliceType schema.GroupVersionKind) go.any (![go.SliceType schema.GroupVersionKind] "gvks")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    let: "codec" := (GoAlloc runtime.Codec (GoZeroVal runtime.Codec #())) in
+    let: "$r0" := (let: "$a0" := ((let: "$sl0" := ((MethodResolve (go.PointerType schema.GroupVersionKind) "GroupVersion"%go (IndexRef (go.SliceType schema.GroupVersionKind) (![go.SliceType schema.GroupVersionKind] "gvks", #(W64 0)))) #()) in
+    CompositeLiteral (go.SliceType schema.GroupVersion) (LiteralValue [KeyedElement None (ElementExpression schema.GroupVersion "$sl0")]))) in
+    (MethodResolve (go.PointerType serializer.CodecFactory) "LegacyCodec"%go (GlobalVarAddr legacyscheme.Codecs #())) "$a0") in
+    do:  ("codec" <-[runtime.Codec] "$r0");;;
+    let: "original" := (GoAlloc (go.SliceType go.byte) (GoZeroVal (go.SliceType go.byte) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert runtime.Codec runtime.Encoder (![runtime.Codec] "codec")) in
+    let: "$a1" := (![runtime.Object] "existing") in
+    (FuncResolve runtime.Encode [] #()) "$a0" "$a1") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("original" <-[go.SliceType go.byte] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "patched" := (GoAlloc (go.SliceType go.byte) (GoZeroVal (go.SliceType go.byte) #())) in
+    let: "$sw" := (![types.PatchType] "patchType") in
+    (if: "$sw" =⟨types.PatchType⟩ types.JSONPatchType
+    then
+      let: "decodeErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
+      let: "patch" := (GoAlloc jsonpatch.Patch (GoZeroVal jsonpatch.Patch #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "data") in
+      (FuncResolve jsonpatch.DecodePatch [] #()) "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("patch" <-[jsonpatch.Patch] "$r0");;;
+      do:  ("decodeErr" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "decodeErr") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then
+        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "decodeErr")) #()) in
+         (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+      else do:  #());;;
+      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![jsonpatch.Patch] "patch") in
+      (FuncResolve go.len [jsonpatch.Patch] #()) "$a0") >⟨go.int⟩ #(W64 10000))
+      then
+        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := #"too many JSON patch operations"%go in
+         (FuncResolve errors.NewRequestEntityTooLargeError [] #()) "$a0"))
+      else do:  #());;;
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
+      (MethodResolve (go.PointerType jsonpatch.Patch) "Apply"%go "patch") "$a0") in
+      let: "$r0" := "$ret0" in
+      let: "$r1" := "$ret1" in
+      do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
+      do:  ("err" <-[go.error] "$r1");;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then
+        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnprocessableEntity) in
+         let: "$a1" := #""%go in
+         let: "$a2" := (CompositeLiteral schema.GroupResource (LiteralValue [])) in
+         let: "$a3" := #""%go in
+         let: "$a4" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
+         let: "$a5" := #(W64 0) in
+         let: "$a6" := #false in
+         (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+      else do:  #())
+    else
+      (if: "$sw" =⟨types.PatchType⟩ types.MergePatchType
+      then
+        let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
+        let: "$a1" := (![go.SliceType go.byte] "data") in
+        (FuncResolve jsonpatch.MergePatch [] #()) "$a0" "$a1") in
+        let: "$r0" := "$ret0" in
+        let: "$r1" := "$ret1" in
+        do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
+        do:  ("err" <-[go.error] "$r1")
+      else
+        (if: "$sw" =⟨types.PatchType⟩ types.StrategicMergePatchType
+        then
+          let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
+          let: "$a1" := (![go.SliceType go.byte] "data") in
+          let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "existing")) in
+          (FuncResolve strategicpatch.StrategicMergePatch [] #()) "$a0" "$a1" "$a2") in
+          let: "$r0" := "$ret0" in
+          let: "$r1" := "$ret1" in
+          do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
+          do:  ("err" <-[go.error] "$r1")
+        else do:  #())));;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then
+      (if: Convert go.untyped_bool go.bool (((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr mergepatch.ErrNoListOfLists #()))) || ((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr mergepatch.ErrPatchContentNotMatchRetainKeys #()))))
+      then
+        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnprocessableEntity) in
+         let: "$a1" := #""%go in
+         let: "$a2" := (CompositeLiteral schema.GroupResource (LiteralValue [])) in
+         let: "$a3" := #""%go in
+         let: "$a4" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
+         let: "$a5" := #(W64 0) in
+         let: "$a6" := #false in
+         (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+      else do:  #());;;
+      return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
+       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+    else do:  #());;;
+    let: "obj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![schema.GroupVersionKind] (IndexRef (go.SliceType schema.GroupVersionKind) (![go.SliceType schema.GroupVersionKind] "gvks", #(W64 0)))) in
+    (MethodResolve (go.PointerType runtime.Scheme) "New"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[runtime.Object] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool ((![types.PatchType] "patchType") =⟨types.PatchType⟩ types.StrategicMergePatchType)
+    then
+      let: "$r0" := (let: "$a0" := (![go.SliceType go.byte] "patched") in
+      let: "$a1" := (Convert runtime.Object go.any (![runtime.Object] "obj")) in
+      (FuncResolve json.Unmarshal [] #()) "$a0" "$a1") in
+      do:  ("err" <-[go.error] "$r0")
+    else
+      let: "$r0" := (let: "$a0" := (Convert runtime.Codec runtime.Decoder (![runtime.Codec] "codec")) in
+      let: "$a1" := (![go.SliceType go.byte] "patched") in
+      let: "$a2" := (![runtime.Object] "obj") in
+      (FuncResolve runtime.DecodeInto [] #()) "$a0" "$a1" "$a2") in
+      do:  ("err" <-[go.error] "$r0"));;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then
+      return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (CompositeLiteral schema.GroupKind (LiteralValue [])) in
+       let: "$a1" := (![go.string] "name") in
+       let: "$a2" := (let: "$v0" := (let: "$a0" := (let: "$a0" := #"patch"%go in
+       let: "$a1" := #slice.nil in
+       (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
+       let: "$a1" := (Convert go.string (go.InterfaceType []) (Convert (go.SliceType go.byte) go.string (![go.SliceType go.byte] "patched"))) in
+       let: "$a2" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
+       (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
+       CompositeLiteral field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$v0")])) in
+       (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+    else do:  #());;;
+    do:  (let: "$a0" := ((MethodResolve schema.ObjectKind "GroupVersionKind"%go ((MethodResolve runtime.Object "GetObjectKind"%go (![runtime.Object] "existing")) #())) #()) in
+    (MethodResolve schema.ObjectKind "SetGroupVersionKind"%go ((MethodResolve runtime.Object "GetObjectKind"%go (![runtime.Object] "obj")) #())) "$a0");;;
+    return: (![runtime.Object] "obj", Convert go.untyped_nil go.error UntypedNil)).
+
+(* PodPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:135:17 *)
+Definition State__PodPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* PersistentVolumeClaimPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:144:17 *)
+Definition State__PersistentVolumeClaimPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* ReplicaSetPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:153:17 *)
+Definition State__ReplicaSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* StatefulSetPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:162:17 *)
+Definition State__StatefulSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* DeploymentPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:171:17 *)
+Definition State__DeploymentPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* ServiceAccountPatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:180:17 *)
+Definition State__ServiceAccountPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ServiceAccount"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_core_v1.ServiceAccount) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
+(* ClusterRolePatch applies a patch to the named object, optionally to its status subresource.
+
+   go: patch.go:189:17 *)
+Definition State__ClusterRolePatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "name" "patchType" "data" "subresources",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
+    let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
+    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
+    let: "$a1" := #""%go in
+    let: "$a2" := (![go.string] "name") in
+    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a4" := (![go.SliceType go.byte] "data") in
+    let: "$a5" := (![go.SliceType go.string] "subresources") in
+    (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    return: (TypeAssert (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+
 (* go: transaction.go:14:6 *)
 Definition preconditionUIDMismatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
@@ -5059,13 +5572,18 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 
 #[global] Instance info' : PkgInfo pkg_id.apimodel :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.fmt.pkg_id.fmt; code.math.rand.pkg_id.rand; code.reflect.pkg_id.reflect; code.strconv.pkg_id.strconv; code.sync.pkg_id.sync; code.time.pkg_id.time; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.api.rbac.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.api.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.util.uuid.pkg_id.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.k8s_io.apiserver.pkg.endpoints.request.pkg_id.request; code.k8s_io.apiserver.pkg.registry.generic.registry.pkg_id.registry; code.k8s_io.apiserver.pkg.registry.rest.pkg_id.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.pkg_id.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.pkg_id.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.core.pkg_id.core; code.k8s_io.kubernetes.pkg.apis.core.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.rbac.pkg_id.rbac; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.registry.apps.deployment.pkg_id.deployment; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.registry.apps.statefulset.pkg_id.statefulset; code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.pkg_id.persistentvolumeclaim; code.k8s_io.kubernetes.pkg.registry.core.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.pkg_id.serviceaccount; code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.pkg_id.clusterrole; code.k8s_io.kubernetes.pkg.apis.apps.install.pkg_id.install; code.k8s_io.kubernetes.pkg.apis.rbac.install.pkg_id.install]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.fmt.pkg_id.fmt; code.math.rand.pkg_id.rand; code.reflect.pkg_id.reflect; code.strconv.pkg_id.strconv; code.sync.pkg_id.sync; code.time.pkg_id.time; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.api.rbac.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.api.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.util.uuid.pkg_id.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.k8s_io.apiserver.pkg.endpoints.request.pkg_id.request; code.k8s_io.apiserver.pkg.registry.generic.registry.pkg_id.registry; code.k8s_io.apiserver.pkg.registry.rest.pkg_id.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.pkg_id.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.pkg_id.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.core.pkg_id.core; code.k8s_io.kubernetes.pkg.apis.core.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.rbac.pkg_id.rbac; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.registry.apps.deployment.pkg_id.deployment; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.registry.apps.statefulset.pkg_id.statefulset; code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.pkg_id.persistentvolumeclaim; code.k8s_io.kubernetes.pkg.registry.core.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.pkg_id.serviceaccount; code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.pkg_id.clusterrole; code.k8s_io.kubernetes.pkg.apis.apps.install.pkg_id.install; code.k8s_io.kubernetes.pkg.apis.rbac.install.pkg_id.install; code.encoding.json.pkg_id.json; code.net.http.pkg_id.http; code.gopkg_in.evanphx.json_patch_v4.pkg_id.jsonpatch; code.k8s_io.apimachinery.pkg.util.mergepatch.pkg_id.mergepatch; code.k8s_io.apimachinery.pkg.util.strategicpatch.pkg_id.strategicpatch]
 |}.
 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.apimodel (λ: <>,
       exception_do (do:  (go.GlobalAlloc ModelState (go.PointerType State) #());;;
+      do:  (strategicpatch.initialize' #());;;
+      do:  (mergepatch.initialize' #());;;
+      do:  (jsonpatch.initialize' #());;;
+      do:  (http.initialize' #());;;
+      do:  (json.initialize' #());;;
       do:  (rbac_install.initialize' #());;;
       do:  (apps_install.initialize' #());;;
       do:  (clusterrole.initialize' #());;;
@@ -5165,6 +5683,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ClusterRoleList_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleList" (State__ClusterRoleListⁱᵐᵖˡ);
   #[global] State'ptr_ClusterRoleMutGet_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleMutGet" (State__ClusterRoleMutGetⁱᵐᵖˡ);
   #[global] State'ptr_ClusterRoleMutList_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleMutList" (State__ClusterRoleMutListⁱᵐᵖˡ);
+  #[global] State'ptr_ClusterRolePatch_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRolePatch" (State__ClusterRolePatchⁱᵐᵖˡ);
   #[global] State'ptr_ClusterRoleUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleUpdate" (State__ClusterRoleUpdateⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentCreate_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentCreate" (State__DeploymentCreateⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentDelete_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentDelete" (State__DeploymentDeleteⁱᵐᵖˡ);
@@ -5172,6 +5691,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_DeploymentList_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentList" (State__DeploymentListⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentMutGet_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentMutGet" (State__DeploymentMutGetⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentMutList_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentMutList" (State__DeploymentMutListⁱᵐᵖˡ);
+  #[global] State'ptr_DeploymentPatch_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentPatch" (State__DeploymentPatchⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentUpdate_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentUpdate" (State__DeploymentUpdateⁱᵐᵖˡ);
   #[global] State'ptr_DeploymentUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "DeploymentUpdateStatus" (State__DeploymentUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_Index_unfold :: MethodUnfold (go.PointerType (State)) "Index" (State__Indexⁱᵐᵖˡ);
@@ -5182,6 +5702,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_PersistentVolumeClaimList_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimList" (State__PersistentVolumeClaimListⁱᵐᵖˡ);
   #[global] State'ptr_PersistentVolumeClaimMutGet_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimMutGet" (State__PersistentVolumeClaimMutGetⁱᵐᵖˡ);
   #[global] State'ptr_PersistentVolumeClaimMutList_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimMutList" (State__PersistentVolumeClaimMutListⁱᵐᵖˡ);
+  #[global] State'ptr_PersistentVolumeClaimPatch_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimPatch" (State__PersistentVolumeClaimPatchⁱᵐᵖˡ);
   #[global] State'ptr_PersistentVolumeClaimUpdate_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimUpdate" (State__PersistentVolumeClaimUpdateⁱᵐᵖˡ);
   #[global] State'ptr_PersistentVolumeClaimUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "PersistentVolumeClaimUpdateStatus" (State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_PodCreate_unfold :: MethodUnfold (go.PointerType (State)) "PodCreate" (State__PodCreateⁱᵐᵖˡ);
@@ -5190,6 +5711,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_PodList_unfold :: MethodUnfold (go.PointerType (State)) "PodList" (State__PodListⁱᵐᵖˡ);
   #[global] State'ptr_PodMutGet_unfold :: MethodUnfold (go.PointerType (State)) "PodMutGet" (State__PodMutGetⁱᵐᵖˡ);
   #[global] State'ptr_PodMutList_unfold :: MethodUnfold (go.PointerType (State)) "PodMutList" (State__PodMutListⁱᵐᵖˡ);
+  #[global] State'ptr_PodPatch_unfold :: MethodUnfold (go.PointerType (State)) "PodPatch" (State__PodPatchⁱᵐᵖˡ);
   #[global] State'ptr_PodUpdate_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdate" (State__PodUpdateⁱᵐᵖˡ);
   #[global] State'ptr_PodUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdateStatus" (State__PodUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_PodUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "PodUpdateTx" (State__PodUpdateTxⁱᵐᵖˡ);
@@ -5199,17 +5721,20 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ReplicaSetList_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetList" (State__ReplicaSetListⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetMutGet_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetMutGet" (State__ReplicaSetMutGetⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetMutList_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetMutList" (State__ReplicaSetMutListⁱᵐᵖˡ);
+  #[global] State'ptr_ReplicaSetPatch_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetPatch" (State__ReplicaSetPatchⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdate" (State__ReplicaSetUpdateⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatus" (State__ReplicaSetUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateTx" (State__ReplicaSetUpdateTxⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountCreate_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountCreate" (State__ServiceAccountCreateⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountGet_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountGet" (State__ServiceAccountGetⁱᵐᵖˡ);
+  #[global] State'ptr_ServiceAccountPatch_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountPatch" (State__ServiceAccountPatchⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetCreate_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetCreate" (State__StatefulSetCreateⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetDelete_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetDelete" (State__StatefulSetDeleteⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetGet_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetGet" (State__StatefulSetGetⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetList_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetList" (State__StatefulSetListⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetMutGet_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetMutGet" (State__StatefulSetMutGetⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetMutList_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetMutList" (State__StatefulSetMutListⁱᵐᵖˡ);
+  #[global] State'ptr_StatefulSetPatch_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetPatch" (State__StatefulSetPatchⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetUpdate" (State__StatefulSetUpdateⁱᵐᵖˡ);
   #[global] State'ptr_StatefulSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "StatefulSetUpdateStatus" (State__StatefulSetUpdateStatusⁱᵐᵖˡ);
   #[global] State'ptr_create_unfold :: MethodUnfold (go.PointerType (State)) "create" (State__createⁱᵐᵖˡ);
@@ -5222,6 +5747,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_objList_unfold :: MethodUnfold (go.PointerType (State)) "objList" (State__objListⁱᵐᵖˡ);
   #[global] State'ptr_objListBySelector_unfold :: MethodUnfold (go.PointerType (State)) "objListBySelector" (State__objListBySelectorⁱᵐᵖˡ);
   #[global] State'ptr_objListLocked_unfold :: MethodUnfold (go.PointerType (State)) "objListLocked" (State__objListLockedⁱᵐᵖˡ);
+  #[global] State'ptr_patch_unfold :: MethodUnfold (go.PointerType (State)) "patch" (State__patchⁱᵐᵖˡ);
   #[global] State'ptr_update_unfold :: MethodUnfold (go.PointerType (State)) "update" (State__updateⁱᵐᵖˡ);
   #[global] State'ptr_updateLocked_unfold :: MethodUnfold (go.PointerType (State)) "updateLocked" (State__updateLockedⁱᵐᵖˡ);
   #[global] State'ptr_updateStatus_unfold :: MethodUnfold (go.PointerType (State)) "updateStatus" (State__updateStatusⁱᵐᵖˡ);
@@ -5313,6 +5839,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] storageObjectDeepEqual_unfold :: FuncUnfold storageObjectDeepEqual [] (storageObjectDeepEqualⁱᵐᵖˡ);
   #[global] shouldDeleteDuringUpdate_unfold :: FuncUnfold shouldDeleteDuringUpdate [] (shouldDeleteDuringUpdateⁱᵐᵖˡ);
   #[global] deletionTimestampForDelete_unfold :: FuncUnfold deletionTimestampForDelete [] (deletionTimestampForDeleteⁱᵐᵖˡ);
+  #[global] applyPatchToObject_unfold :: FuncUnfold applyPatchToObject [] (applyPatchToObjectⁱᵐᵖˡ);
   #[global] preconditionUIDMismatch_unfold :: FuncUnfold preconditionUIDMismatch [] (preconditionUIDMismatchⁱᵐᵖˡ);
   #[global] setPreconditionResourceVersion_unfold :: FuncUnfold setPreconditionResourceVersion [] (setPreconditionResourceVersionⁱᵐᵖˡ);
   #[global] import_context_Assumption :: context.Assumptions;
@@ -5355,5 +5882,10 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_clusterrole_Assumption :: clusterrole.Assumptions;
   #[global] import_apps_install_Assumption :: apps_install.Assumptions;
   #[global] import_rbac_install_Assumption :: rbac_install.Assumptions;
+  #[global] import_json_Assumption :: json.Assumptions;
+  #[global] import_http_Assumption :: http.Assumptions;
+  #[global] import_jsonpatch_Assumption :: jsonpatch.Assumptions;
+  #[global] import_mergepatch_Assumption :: mergepatch.Assumptions;
+  #[global] import_strategicpatch_Assumption :: strategicpatch.Assumptions;
 }.
 End apimodel.
