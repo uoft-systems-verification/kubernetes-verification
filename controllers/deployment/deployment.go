@@ -1,16 +1,15 @@
 package deployment
 
 import (
-	"reflect"
-
 	"kubernetes_model/apimodel"
 
 	apps "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/controller"
+	deploymentutil "k8s.io/kubernetes/pkg/controller/deployment/util"
+	labelsutil "k8s.io/kubernetes/pkg/util/labels"
 )
 
 // A simplified deployment controller. The following features are not included:
@@ -30,8 +29,6 @@ import (
 // consulted, which also sidesteps the fact that the simplified ReplicaSet
 // controller never writes status.
 
-const deploymentUniqueLabelKey = "pod-template-hash"
-
 func replicasOf(d *apps.Deployment) int32 {
 	if d.Spec.Replicas == nil {
 		return 1
@@ -46,56 +43,48 @@ func replicasOfRS(rs *apps.ReplicaSet) int32 {
 	return *rs.Spec.Replicas
 }
 
-// equalIgnoreHash reports whether two pod templates are equal ignoring the
-// pod-template-hash label.
-func equalIgnoreHash(template1, template2 *v1.PodTemplateSpec) bool {
-	t1 := template1.DeepCopy()
-	t2 := template2.DeepCopy()
-	delete(t1.Labels, deploymentUniqueLabelKey)
-	delete(t2.Labels, deploymentUniqueLabelKey)
-	return reflect.DeepEqual(t1, t2)
-}
-
-// findNewReplicaSet returns the ReplicaSet whose template matches the
-// deployment's (ignoring the hash label). Under the no-collision assumption at
-// most one such ReplicaSet exists.
-func findNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) *apps.ReplicaSet {
-	for _, rs := range rsList {
-		if equalIgnoreHash(&rs.Spec.Template, &d.Spec.Template) {
-			return rs
+// findNewReplicaSet returns the new RS this given deployment targets (the one
+// with the same pod template), as upstream's FindNewReplicaSet does.
+//
+// TODO: upstream's FindNewReplicaSet first sorts rsList with
+// sort.Sort(controller.ReplicaSetsByCreationTimestamp(rsList)) (oldest first,
+// ties by name) and so deterministically picks the oldest match. Here the first
+// match in list order is taken. Adding the sort needs translations of
+// metav1.Time.Before/Equal, time.Time.Before/Equal, and
+// ReplicaSetsByCreationTimestamp, plus a spec for sort.Sort, none of which
+// exist yet.
+func findNewReplicaSet(deployment *apps.Deployment, rsList []*apps.ReplicaSet) *apps.ReplicaSet {
+	for i := range rsList {
+		if deploymentutil.EqualIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
+			return rsList[i]
 		}
 	}
+	// new ReplicaSet does not exist.
 	return nil
 }
 
-// findOldReplicaSets returns every ReplicaSet other than newRS.
-func findOldReplicaSets(rsList []*apps.ReplicaSet, newRS *apps.ReplicaSet) []*apps.ReplicaSet {
-	old := []*apps.ReplicaSet{}
+// findOldReplicaSets returns the old replica sets targeted by the given
+// Deployment, with the given slice of RSes, as upstream's FindOldReplicaSets
+// does.
+//
+// TODO: upstream returns two slices, (requiredRSs, allRSs), where requiredRSs
+// keeps only the old ReplicaSets with *rs.Spec.Replicas != 0. Only allRSs is
+// returned here; rollout discards requiredRSs, just as upstream's
+// getAllReplicaSetsAndSyncRevision does. Computing it dereferences
+// rs.Spec.Replicas, which upstream relies on API defaulting to make non-nil;
+// the model does not default it, so the spec would need that as a
+// precondition.
+func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) []*apps.ReplicaSet {
+	var allRSs []*apps.ReplicaSet
+	newRS := findNewReplicaSet(deployment, rsList)
 	for _, rs := range rsList {
+		// Filter out new replica set
 		if newRS != nil && rs.UID == newRS.UID {
 			continue
 		}
-		old = append(old, rs)
+		allRSs = append(allRSs, rs)
 	}
-	return old
-}
-
-func cloneAndAddLabel(existing map[string]string, key, value string) map[string]string {
-	result := map[string]string{}
-	for k, v := range existing {
-		result[k] = v
-	}
-	result[key] = value
-	return result
-}
-
-func cloneSelectorAndAddLabel(selector *metav1.LabelSelector, key, value string) *metav1.LabelSelector {
-	newSelector := selector.DeepCopy()
-	if newSelector.MatchLabels == nil {
-		newSelector.MatchLabels = map[string]string{}
-	}
-	newSelector.MatchLabels[key] = value
-	return newSelector
+	return allRSs
 }
 
 // scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
@@ -123,8 +112,8 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 
 	newRSTemplate := *d.Spec.Template.DeepCopy()
 	podTemplateSpecHash := controller.ComputeHash(&newRSTemplate, nil)
-	newRSTemplate.Labels = cloneAndAddLabel(d.Spec.Template.Labels, deploymentUniqueLabelKey, podTemplateSpecHash)
-	newRSSelector := cloneSelectorAndAddLabel(d.Spec.Selector, deploymentUniqueLabelKey, podTemplateSpecHash)
+	newRSTemplate.Labels = labelsutil.CloneAndAddLabel(d.Spec.Template.Labels, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
+	newRSSelector := labelsutil.CloneSelectorAndAddLabel(d.Spec.Selector, apps.DefaultDeploymentUniqueLabelKey, podTemplateSpecHash)
 
 	replicas := replicasOf(d)
 	newRS := &apps.ReplicaSet{
@@ -178,11 +167,11 @@ func reconcileOldReplicaSets(oldRSs []*apps.ReplicaSet) (bool, error) {
 
 // rollout performs one reconciliation step of a rollout.
 func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
+	oldRSs := findOldReplicaSets(d, rsList)
 	newRS, err := getNewReplicaSet(d, rsList)
 	if err != nil {
 		return err
 	}
-	oldRSs := findOldReplicaSets(rsList, newRS)
 
 	_, err = reconcileNewReplicaSet(newRS, d)
 	if err != nil {

@@ -241,7 +241,7 @@ Axiom RetainPersistentVolumeClaimRetentionPolicyType : ∀ {ext : ffi_syntax} {g
 
 Axiom DeletePersistentVolumeClaimRetentionPolicyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom DefaultDeploymentUniqueLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition DefaultDeploymentUniqueLabelKey {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"pod-template-hash"%go.
 
 Definition RecreateDeploymentStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Recreate"%go.
 

@@ -1,0 +1,8 @@
+translate = [
+    "CloneAndAddLabel",
+    "CloneSelectorAndAddLabel",
+]
+
+imports = [
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
+]
