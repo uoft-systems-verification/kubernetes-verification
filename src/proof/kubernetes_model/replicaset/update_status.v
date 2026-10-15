@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export update_status.
-From New.proof.kubernetes_model.tx Require Import update_status.
+From New.proof.kubernetes_model.tx Require Import update_status_same_meta.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -74,7 +74,7 @@ Proof.
     (KObjectV.ReplicaSet input) dq_in) with "[Hinput]" as "Hdeepown_i".
   { iExists rs_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_ReplicaSet|]. iFrame. }
   change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
-  wp_apply (wp_State__updateStatusTx γ l "ReplicaSet"%go namespace
+  wp_apply (wp_State__updateStatusTx_same_meta γ l "ReplicaSet"%go namespace
     (interface.mk (go.PointerType v1.ReplicaSet) #rs_l) (KObjectV.ReplicaSet input) dq_in
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta')
     (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
