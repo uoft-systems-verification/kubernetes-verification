@@ -1,6 +1,6 @@
 module perennial-cli-demo
 
-go 1.26
+go 1.26.0
 
 tool github.com/mit-pdos/perennial-cli
 
