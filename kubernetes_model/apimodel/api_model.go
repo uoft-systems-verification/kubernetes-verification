@@ -48,22 +48,22 @@ import (
 
 // What's missing in this model:
 //
-// (1) Server-side apply patches (ApplyPatchType)
+// (1) Server-side apply: client-go Apply(...) / ApplyStatus(...), or Patch(...) with
+//     types.ApplyPatchType (alias types.ApplyYAMLPatchType) / types.ApplyCBORPatchType.
+//     Patch(...) with types.JSONPatchType, types.MergePatchType, or types.StrategicMergePatchType is supported.
 //
-// (2) Transition validation during Update: validate that state transitions are valid (e.g., Phase changes)
-//
-// (3) API options, e.g., CreateOption / UpdateOptions
+// (2) API options, e.g., CreateOption / UpdateOptions
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/types.go#L579
 //
-// (4) Admission webhooks and admission plugins
+// (3) Admission webhooks and admission plugins
 //     - Validating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/validating/plugin.go
 //     - Mutating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/mutating/plugin.go
 //     - Built-in plugins: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/kubeapiserver/admission/exclusion/resources.go
 //
-// (5) Warnings collection - Collects warnings during create/update (non-fatal issues)
+// (4) Warnings collection - Collects warnings during create/update (non-fatal issues)
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L133 (WarningsOnCreate)
 //
-// (6) BeginCreate/FinishCreate/AfterCreate hooks
+// (5) BeginCreate/FinishCreate/AfterCreate hooks
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L490-L499
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L551-L553
 
