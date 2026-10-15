@@ -1,1 +1,4 @@
-
+# Patch application uses JSON decoding and upstream patch libraries. Keep this
+# new API boundary opaque until specifications for those libraries are added.
+translate = ["*", "!State.patch", "!State.*Patch", "!applyPatchToObject"]
+imports = ["*", "!encoding/json", "!net/http", "!gopkg.in/evanphx/json-patch.v4", "!k8s.io/apimachinery/pkg/util/mergepatch", "!k8s.io/apimachinery/pkg/util/strategicpatch"]
