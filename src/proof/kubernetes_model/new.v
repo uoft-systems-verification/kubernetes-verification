@@ -1,4 +1,4 @@
-From New.proof.kubernetes_model Require Export common.
+From New.proof.kubernetes_model Require Export common admitted.
 From New.proof Require Import prelude empty_ffi.
 
 Section proof.

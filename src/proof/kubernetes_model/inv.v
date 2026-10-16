@@ -96,20 +96,6 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "%Hused_uid_eq_dom_phys_used_uid" ∷ ⌜ used_uid = dom phys_used_uid ⌝ ∗ 
     "%Hused_uid_eq_set_map_used_reference" ∷ ⌜ used_uid = (set_map (λ v, snd v) used_reference) ⌝.
 
-(** Trusted assumption: the cluster stores fewer than 2^31 objects. Controllers
-    convert object counts to int32 (for example the ReplicaSet status counts),
-    so a list call must return fewer than 2^31 objects for those counts to stay
-    valid. Real clusters are many orders of magnitude smaller; etcd's storage
-    quota bounds the number of objects. The lemma returns its resources so that
-    callers can keep them. *)
-Lemma model_state_size_bound l phys_state_l (phys_state : gmap KKey.t interface.t) :
-  l.[(apimodel.State.t), "m"] ↦ phys_state_l -∗
-  phys_state_l ↦$ phys_state -∗
-  ⌜ Z.of_nat (size phys_state) < 2 ^ 31 ⌝ ∗
-  l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
-  phys_state_l ↦$ phys_state.
-Proof. Admitted.
-
 Definition is_kubernetes γ l : iProp Σ :=
   ∃ (mu_l: loc),
     "Hmu" ∷ l.[(apimodel.State.t), "mu"] ↦□ mu_l ∗

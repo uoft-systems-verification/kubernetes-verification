@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.map Require Import for_range.
 From New.proof Require Import util.
-From New.proof.kubernetes_model Require Export inv common.
+From New.proof.kubernetes_model Require Export inv common admitted.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels.
 
 Section proof.

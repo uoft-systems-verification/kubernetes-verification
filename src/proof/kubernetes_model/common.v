@@ -10,6 +10,130 @@ Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Local Set Default Proof Using "All".
 
+Definition storage_object_normalize (obj : KObjectV.t) : KObjectV.t :=
+  KObjectV.update_objectmeta obj
+    ((KObjectV.objectmeta obj)
+       <| ObjectMetaV.ResourceVersion' := ""%go |>
+       <| ObjectMetaV.SelfLink' := ""%go |>).
+
+(** [create_prepared_for_helper] describes the private object copy passed to
+    [applyValidationAndDefaulting]. [State.create] is below request decoding, so
+    it preserves TypeMeta. It wipes system metadata, fills the request
+    namespace, generates a creation timestamp and UID, and generates a name
+    when the request omits one. *)
+Definition create_prepared_for_helper
+    (namespace name : go_string) (input helper_input : KObjectV.t) : Prop :=
+  let input_meta := KObjectV.objectmeta input in
+  let helper_meta := KObjectV.objectmeta helper_input in
+  name = helper_meta.(ObjectMetaV.Name') ∧
+  name ≠ ""%go ∧
+  valid_name (KObjectV.kind input) name ∧
+  valid_uid helper_meta.(ObjectMetaV.UID') ∧
+  (if decide (input_meta.(ObjectMetaV.Name') = ""%go)
+   then input_meta.(ObjectMetaV.GenerateName') ≠ ""%go
+   else name = input_meta.(ObjectMetaV.Name')) ∧
+  helper_input =
+    KObjectV.update_objectmeta input
+      (input_meta <| ObjectMetaV.Name' := name |>
+                  <| ObjectMetaV.Namespace' := namespace |>
+                  <| ObjectMetaV.SelfLink' := ""%go |>
+                  <| ObjectMetaV.UID' := helper_meta.(ObjectMetaV.UID') |>
+                  <| ObjectMetaV.CreationTimestamp' := helper_meta.(ObjectMetaV.CreationTimestamp') |>
+                  <| ObjectMetaV.DeletionTimestamp' := None |>
+                  <| ObjectMetaV.DeletionGracePeriodSeconds' := None |>).
+
+Definition valid_without_resource_version (obj : KObjectV.t) : Prop :=
+  valid_typemeta (KObjectV.kind obj) (KObjectV.typemeta obj) ∧
+  ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj) ∧
+  ObjectSpecV.valid (KObjectV.spec obj) ∧
+  ObjectStatusV.valid (KObjectV.status obj).
+
+(** [update_objects_equiv_except_resource_version] relates two views of the
+    same object when only the server-managed resource version may differ.
+    Storage establishes this relation between the helper result and the stored
+    object. *)
+Definition update_objects_equiv_except_resource_version (obj1 obj2 : KObjectV.t) : Prop :=
+  KObjectV.same_kind obj1 obj2 ∧
+  KObjectV.typemeta obj1 = KObjectV.typemeta obj2 ∧
+  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj1) (KObjectV.objectmeta obj2) ∧
+  KObjectV.spec obj1 = KObjectV.spec obj2 ∧
+  KObjectV.status obj1 = KObjectV.status obj2.
+
+(** [update_prepared_for_helper] describes the object that the update caller
+    passes to an update or status-update validation/defaulting helper. [input]
+    is the object submitted to the request. The caller fills an empty namespace
+    with [namespace]. It fills an omitted resource version from [old], while a
+    nonempty submitted resource version must already equal the old one. Schema
+    defaulting and the remaining normalization happen inside the helper, not in
+    this preparation relation. *)
+Definition update_prepared_for_helper
+    (namespace : go_string) (old input helper_input : KObjectV.t) : Prop :=
+  ((KObjectV.objectmeta input).(ObjectMetaV.Namespace') = ""%go ∨
+   (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace) ∧
+  ((KObjectV.objectmeta input).(ObjectMetaV.ResourceVersion') = ""%go ∨
+   (KObjectV.objectmeta input).(ObjectMetaV.ResourceVersion') =
+     (KObjectV.objectmeta old).(ObjectMetaV.ResourceVersion')) ∧
+  KObjectV.key old = KObjectV.key helper_input ∧
+  helper_input =
+    KObjectV.update_objectmeta input
+      ((KObjectV.objectmeta input) <| ObjectMetaV.Namespace' := namespace |>
+                                   <| ObjectMetaV.ResourceVersion' :=
+                                        (KObjectV.objectmeta old).(ObjectMetaV.ResourceVersion') |>).
+
+(** This is the single trusted semantic contract for a successful ordinary
+    update-helper call. [old] and [helper_input] are the objects passed to the
+    helper, and [helper_result] is the mutated input object after it returns.
+
+    The first two conjuncts expose facts needed by callers that separately own
+    status or rely on an unchanged spec. The remaining conjuncts connect the
+    helper result to the public end-to-end update relation and invariants. *)
+Definition applyValidationAndDefaultingOnUpdate_updated
+    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
+  KObjectV.status helper_result = KObjectV.status old ∧
+  (KObjectV.spec helper_input = KObjectV.spec old →
+    KObjectV.spec helper_result = KObjectV.spec old) ∧
+  (∀ input stored,
+    update_prepared_for_helper namespace old input helper_input →
+    update_objects_equiv_except_resource_version helper_result stored →
+    KObjectV.updated input stored) ∧
+  (KObjectV.valid old →
+    valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
+    KObjectV.valid helper_result) ∧
+  (KObjectV.extra_valid old → KObjectV.extra_valid helper_result).
+
+(** This is the single trusted semantic contract for a successful status-update
+    helper call. [old] and [helper_input] are the objects passed to the helper,
+    and [helper_result] is the mutated input object after it returns. *)
+Definition applyValidationAndDefaultingOnStatusUpdate_updated
+    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
+  (∀ request_kind input stored,
+    KObjectV.valid old →
+    KObjectV.valid_status_update request_kind namespace
+      (KObjectV.objectmeta old) (KObjectV.status old) input →
+    update_prepared_for_helper namespace old input helper_input →
+    update_objects_equiv_except_resource_version helper_result stored →
+    KObjectV.status_updated input stored ∧
+    KObjectV.spec stored = KObjectV.spec old) ∧
+  (KObjectV.valid old →
+    valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
+    KObjectV.valid helper_result).
+
+Definition delete_tx_preconditions_with_rv (options : DeleteOptionsV.t) (rv : go_string) :
+    PreconditionsV.t :=
+  match options.(DeleteOptionsV.Preconditions') with
+  | None => {|
+      PreconditionsV.UID' := None;
+      PreconditionsV.ResourceVersion' := Some rv;
+    |}
+  | Some preconditions =>
+      preconditions <| PreconditionsV.ResourceVersion' := Some rv |>
+  end.
+
+Definition delete_tx_options_with_rv (options : DeleteOptionsV.t) (rv : go_string) :
+    DeleteOptionsV.t :=
+  options <| DeleteOptionsV.Preconditions' :=
+    Some (delete_tx_preconditions_with_rv options rv) |>.
+
 #[global] Instance KKey_into_val_inj : go.IntoValInj KKey.t.
 Proof.
   constructor. intros k1 k2 Heq.
@@ -85,25 +209,6 @@ Proof.
   wp_auto. done.
 Qed.
 
-(* deepCopy only reads its argument, so any fraction of it suffices. *)
-Lemma wp_deepCopy i obj dq:
-  {{{ is_pkg_init apimodel ∗
-      KObjectV.deepown_i i obj dq
-  }}}
-    @! apimodel.deepCopy #(interface.ok i)
-  {{{ i', RET #(interface.ok i');
-      KObjectV.deepown_i i' obj 1 ∗
-      KObjectV.deepown_i i obj dq
-  }}}.
-Proof.
-Admitted.
-
-Definition storage_object_normalize (obj : KObjectV.t) : KObjectV.t :=
-  KObjectV.update_objectmeta obj
-    ((KObjectV.objectmeta obj)
-       <| ObjectMetaV.ResourceVersion' := ""%go |>
-       <| ObjectMetaV.SelfLink' := ""%go |>).
-
 Lemma objectmeta_update_objectmeta obj m :
   KObjectV.objectmeta (KObjectV.update_objectmeta obj m) = m.
 Proof. destruct obj; done. Qed.
@@ -172,99 +277,4 @@ Proof.
   rewrite /storage_object_normalize !KObjectV.spec_update_objectmeta in Hspec_eq.
   exact Hspec_eq.
 Qed.
-
-Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
-  {{{ is_pkg_init apimodel ∗
-      KObjectV.deepown_i i1 obj1 dq1 ∗
-      KObjectV.deepown_i i2 obj2 dq2
-  }}}
-    @! apimodel.storageObjectDeepEqual #(interface.ok i1) #(interface.ok i2)
-  {{{ v, RET #v;
-      KObjectV.deepown_i i1 obj1 dq1 ∗
-      KObjectV.deepown_i i2 obj2 dq2 ∗
-      ⌜ v = true ↔ storage_object_normalize obj1 = storage_object_normalize obj2 ⌝
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_deletionTimestampForDelete (graceful: bool) (gracePeriod: w64) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.deletionTimestampForDelete #graceful #gracePeriod
-  {{{ l c v, RET #l;
-      l ↦ c ∗
-      TimeV.deepown c v 1
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ used_rv
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewRVAndUpdate" #()
-  {{{ rv, RET #rv;
-      ⌜ used_rv !! rv = None ⌝ ∗
-      ⌜ valid_resource_version rv ⌝ ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ <[rv:=()]> used_rv
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_validateObjectMeta i (kind : go_string) l o m dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface i l o ⌝ ∗
-      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
-      ⌜ ObjectMetaV.valid kind m ⌝
-  }}}
-    @! apimodel.validateObjectMeta #(interface.ok i) #kind
-  {{{ RET #interface.nil;
-      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_parseResourceVersion rv :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ valid_resource_version rv ⌝
-  }}}
-    @! apimodel.parseResourceVersion #rv
-  {{{ (ret : w64), RET (#ret, #interface.nil);
-    True
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newUpdateUIDConflictError (kind name existing_uid uid : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newUpdateUIDConflictError #kind #name #existing_uid #uid
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
 End proof.

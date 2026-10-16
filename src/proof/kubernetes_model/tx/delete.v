@@ -159,27 +159,6 @@ Proof.
     rewrite /precondition_uid_mismatch Hpreconditions /=. done.
 Qed.
 
-Definition delete_tx_preconditions_with_rv (options : DeleteOptionsV.t) (rv : go_string) :
-    PreconditionsV.t :=
-  match options.(DeleteOptionsV.Preconditions') with
-  | None => {|
-      PreconditionsV.UID' := None;
-      PreconditionsV.ResourceVersion' := Some rv;
-    |}
-  | Some preconditions =>
-      preconditions <| PreconditionsV.ResourceVersion' := Some rv |>
-  end.
-
-Definition delete_tx_options_with_rv (options : DeleteOptionsV.t) (rv : go_string) :
-    DeleteOptionsV.t :=
-  options <| DeleteOptionsV.Preconditions' :=
-    Some (delete_tx_preconditions_with_rv options rv) |>.
-
-Axiom delete_tx_options_with_rv_valid :
-  ∀ options rv,
-    DeleteOptionsV.valid options →
-    DeleteOptionsV.valid (delete_tx_options_with_rv options rv).
-
 Lemma delete_tx_options_with_rv_preconditions_match_uid options rv uid :
   delete_preconditions_match_uid options uid →
   delete_preconditions_match_uid (delete_tx_options_with_rv options rv) uid.

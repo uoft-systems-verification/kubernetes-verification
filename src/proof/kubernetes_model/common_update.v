@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export common.
+From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
 (** Important modeling assumption: we currently ignore fields that are not
@@ -146,17 +146,6 @@ Proof.
   - exact Hmeta_living.
 Qed.
 
-(** [update_objects_equiv_except_resource_version] relates two views of the
-    same object when only the server-managed resource version may differ.
-    Storage establishes this relation between the helper result and the stored
-    object. *)
-Definition update_objects_equiv_except_resource_version (obj1 obj2 : KObjectV.t) : Prop :=
-  KObjectV.same_kind obj1 obj2 ∧
-  KObjectV.typemeta obj1 = KObjectV.typemeta obj2 ∧
-  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta obj1) (KObjectV.objectmeta obj2) ∧
-  KObjectV.spec obj1 = KObjectV.spec obj2 ∧
-  KObjectV.status obj1 = KObjectV.status obj2.
-
 Lemma kobject_updated_parent_ref input stored :
   KObjectV.updated input stored →
   obj_parent_ref stored = obj_parent_ref input.
@@ -254,48 +243,6 @@ Proof.
     try (replace SelfLink' with SelfLink'0 by congruence; done).
 Qed.
 
-(** [update_prepared_for_helper] describes the object that the update caller
-    passes to an update or status-update validation/defaulting helper. [input]
-    is the object submitted to the request. The caller fills an empty namespace
-    with [namespace]. It fills an omitted resource version from [old], while a
-    nonempty submitted resource version must already equal the old one. Schema
-    defaulting and the remaining normalization happen inside the helper, not in
-    this preparation relation. *)
-Definition update_prepared_for_helper
-    (namespace : go_string) (old input helper_input : KObjectV.t) : Prop :=
-  ((KObjectV.objectmeta input).(ObjectMetaV.Namespace') = ""%go ∨
-   (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace) ∧
-  ((KObjectV.objectmeta input).(ObjectMetaV.ResourceVersion') = ""%go ∨
-   (KObjectV.objectmeta input).(ObjectMetaV.ResourceVersion') =
-     (KObjectV.objectmeta old).(ObjectMetaV.ResourceVersion')) ∧
-  KObjectV.key old = KObjectV.key helper_input ∧
-  helper_input =
-    KObjectV.update_objectmeta input
-      ((KObjectV.objectmeta input) <| ObjectMetaV.Namespace' := namespace |>
-                                   <| ObjectMetaV.ResourceVersion' :=
-                                        (KObjectV.objectmeta old).(ObjectMetaV.ResourceVersion') |>).
-
-(** This is the single trusted semantic contract for a successful ordinary
-    update-helper call. [old] and [helper_input] are the objects passed to the
-    helper, and [helper_result] is the mutated input object after it returns.
-
-    The first two conjuncts expose facts needed by callers that separately own
-    status or rely on an unchanged spec. The remaining conjuncts connect the
-    helper result to the public end-to-end update relation and invariants. *)
-Definition applyValidationAndDefaultingOnUpdate_updated
-    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
-  KObjectV.status helper_result = KObjectV.status old ∧
-  (KObjectV.spec helper_input = KObjectV.spec old →
-    KObjectV.spec helper_result = KObjectV.spec old) ∧
-  (∀ input stored,
-    update_prepared_for_helper namespace old input helper_input →
-    update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.updated input stored) ∧
-  (KObjectV.valid old →
-    valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
-    KObjectV.valid helper_result) ∧
-  (KObjectV.extra_valid old → KObjectV.extra_valid helper_result).
-
 (** Top-level validation, preparation by the update caller, and a successful
     helper call establish the object invariant for the helper result. TypeMeta
     validity follows from these premises and is not a separate assumption. *)
@@ -320,62 +267,6 @@ Proof.
       ?/DeploymentV.valid_update in Hvalid_update;
     try contradiction; tauto.
 Qed.
-
-(** General contract used when the helper may reject an update. On failure the
-    new object may already have been mutated, so the postcondition returns an
-    unconstrained view of that same allocation instead of the original view. *)
-Lemma wp_applyValidationAndDefaultingOnUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ (err : interface.t), RET #err;
-      (⌜ err = interface.nil ⌝ ∗
-        ∃ updated_obj,
-          KObjectV.deepown_l new_l updated_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-          ⌜ applyValidationAndDefaultingOnUpdate_updated namespace old_obj new_obj updated_obj ⌝) ∨
-      (⌜ err ≠ interface.nil ⌝ ∗
-        ⌜ ¬ conflict_error err ⌝ ∗
-        ∃ failed_obj,
-          KObjectV.deepown_l new_l failed_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
-  }}}.
-Proof. Admitted.
-
-(** Strong contract for an update satisfying the modeled sufficient validity
-    condition. [input] is the submitted update object and [new_obj] is the
-    prepared object passed to the helper. Under the modeling assumption above,
-    validation of unmodeled fields adds no precondition. The old object is
-    read-only; the helper mutates the new object and returns its resulting
-    view. *)
-Lemma wp_applyValidationAndDefaultingOnUpdate_ok
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.valid_update (KObjectV.kind input) namespace
-          (KObjectV.objectmeta old_obj) (KObjectV.spec old_obj) input ⌝ ∗
-      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnUpdate #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ applyValidationAndDefaultingOnUpdate_updated namespace old_obj new_obj updated_obj ⌝
-  }}}.
-Proof. Admitted.
 
 (** The request-level part of [KObjectV.valid_status_update]: everything except
     the validity of the submitted status. *)
@@ -425,23 +316,6 @@ Proof.
     try contradiction; intuition.
 Qed.
 
-(** This is the single trusted semantic contract for a successful status-update
-    helper call. [old] and [helper_input] are the objects passed to the helper,
-    and [helper_result] is the mutated input object after it returns. *)
-Definition applyValidationAndDefaultingOnStatusUpdate_updated
-    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
-  (∀ request_kind input stored,
-    KObjectV.valid old →
-    KObjectV.valid_status_update request_kind namespace
-      (KObjectV.objectmeta old) (KObjectV.status old) input →
-    update_prepared_for_helper namespace old input helper_input →
-    update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.status_updated input stored ∧
-    KObjectV.spec stored = KObjectV.spec old) ∧
-  (KObjectV.valid old →
-    valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
-    KObjectV.valid helper_result).
-
 (** Top-level status-update validation, caller preparation, and a successful
     helper call establish the object invariant for the helper result. TypeMeta
     validity follows from these premises and is not a separate assumption. *)
@@ -471,162 +345,5 @@ Proof.
   rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
   exact Hvalid_typemeta_input.
 Qed.
-
-(** General contract used when the status-update helper may reject an update.
-    On failure the new object may already have been mutated, so the
-    postcondition returns an unconstrained view of that same allocation instead
-    of the original view. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ (err : interface.t), RET #err;
-      (⌜ err = interface.nil ⌝ ∗
-        ∃ updated_obj,
-          KObjectV.deepown_l new_l updated_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-          ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-              namespace old_obj new_obj updated_obj ⌝) ∨
-      (⌜ err ≠ interface.nil ⌝ ∗
-        ⌜ ¬ conflict_error err ⌝ ∗
-        ∃ failed_obj,
-          KObjectV.deepown_l new_l failed_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
-  }}}.
-Proof. Admitted.
-
-(** Strong contract for a status update satisfying the modeled sufficient
-    validity condition. [input] is the submitted status-update object and
-    [new_obj] is the prepared object passed to the helper. Under the modeling
-    assumption above, validation of unmodeled fields adds no precondition. The
-    old object is read-only; the helper mutates the new object and returns its
-    resulting view. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok
-    new_i new_l new_obj old_i old_l old_obj dq
-    (request_kind namespace : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.valid_status_update request_kind namespace
-          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
-      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-          namespace old_obj new_obj updated_obj ⌝
-  }}}.
-Proof. Admitted.
-
-(** Trusted: the metadata half of a successful status-update helper call, used
-    only by [wp_State__update_status_same_meta_au]. For a request whose metadata
-    is a simple update of [old], the stored object keeps the request's kind,
-    TypeMeta and metadata (except the resource version, so the generation too)
-    and [old]'s spec. This holds even when the request status is not known to be
-    valid: rest.BeforeUpdate only copies generation, UID, timestamps, and grace
-    period from [old] (which [valid_simple_update] makes agree with the input),
-    and every status strategy's PrepareForUpdate resets the spec to [old]'s.
-    kubernetes/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go *)
-Definition applyValidationAndDefaultingOnStatusUpdate_meta_preserved
-    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
-  ∀ input stored,
-    update_prepared_for_helper namespace old input helper_input →
-    (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace →
-    ObjectMetaV.valid_simple_update (KObjectV.objectmeta old) (KObjectV.objectmeta input) →
-    update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.same_kind input stored ∧
-    KObjectV.typemeta stored = KObjectV.typemeta input ∧
-    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
-    KObjectV.spec stored = KObjectV.spec old.
-
-(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_ok] together with
-    [applyValidationAndDefaultingOnStatusUpdate_meta_preserved]. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
-    new_i new_l new_obj old_i old_l old_obj dq
-    (request_kind namespace : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.valid_status_update request_kind namespace
-          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
-      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-          namespace old_obj new_obj updated_obj ⌝ ∗
-      ⌜ applyValidationAndDefaultingOnStatusUpdate_meta_preserved
-          namespace old_obj new_obj updated_obj ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_allowUnconditionalUpdate (kind : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.allowUnconditionalUpdate #kind
-  {{{ (ret : bool), RET #ret;
-      True
-  }}}.
-Proof. Admitted.
-
-(* This is not a complete spec for shouldDeleteDuringUpdate, but it is sufficient
-   because we only need to prove that it returns false when DeletionTimestamp is nil. *)
-Lemma wp_shouldDeleteDuringUpdate_false new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') = None ⌝
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate #(interface.ok new_i) #(interface.ok old_i)
-  {{{ RET #false;
-    KObjectV.deepown_l new_l new_obj dq ∗
-    KObjectV.deepown_l old_l old_obj dq
-  }}}.
-Proof. Admitted.
-
-(* General ownership-preserving specification.  Release updates also apply to
-   terminating objects, for which Kubernetes may return either boolean.  The
-   caller handles both the update and immediate-deletion branches. *)
-Lemma wp_shouldDeleteDuringUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate
-      #(interface.ok new_i) #(interface.ok old_i)
-  {{{ (should_delete : bool), RET #should_delete;
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ should_delete = true →
-        (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
-  }}}.
-Proof. Admitted.
 
 End proof.

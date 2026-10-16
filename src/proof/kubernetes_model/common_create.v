@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export common.
+From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
 (** Important modeling assumption: we currently ignore fields that are not
@@ -19,69 +19,6 @@ Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ used_uid
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewUIDAndUpdate" #()
-  {{{ uid, RET #uid;
-      ⌜ used_uid !! uid = None ⌝ ∗
-      ⌜ valid_uid uid ⌝ ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ <[uid:=()]> used_uid
-  }}}.
-Proof.
-Admitted.
-
-Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
-  {{{ is_pkg_init apimodel ∗
-      ⌜ valid_generate_name kind generate_name ⌝ ∗
-      ⌜ length generate_name ≤ 58 ⌝ ∗
-      l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewName" #kind #namespace #generate_name
-  {{{ (new_name: go_string), RET #new_name;
-      ⌜ new_name ≠ ""%go ⌝ ∗
-      ⌜ valid_name kind new_name ⌝ ∗
-      ⌜ phys_state !! {| KKey.Kind' := kind; KKey.Namespace' := namespace; KKey.Name' := new_name;|} = None ⌝ ∗
-      ⌜ ∀ kind namespace,
-          ¬ reserved_key_pred {| KKey.Kind' := kind;
-                             KKey.Namespace' := namespace;
-                             KKey.Name' := new_name |} ⌝ ∗
-      l.[(apimodel.State.t), "m"] ↦ m_ptr ∗
-      m_ptr ↦$ phys_state
-  }}}.
-Proof.
-Admitted.
-
-(** [create_prepared_for_helper] describes the private object copy passed to
-    [applyValidationAndDefaulting]. [State.create] is below request decoding, so
-    it preserves TypeMeta. It wipes system metadata, fills the request
-    namespace, generates a creation timestamp and UID, and generates a name
-    when the request omits one. *)
-Definition create_prepared_for_helper
-    (namespace name : go_string) (input helper_input : KObjectV.t) : Prop :=
-  let input_meta := KObjectV.objectmeta input in
-  let helper_meta := KObjectV.objectmeta helper_input in
-  name = helper_meta.(ObjectMetaV.Name') ∧
-  name ≠ ""%go ∧
-  valid_name (KObjectV.kind input) name ∧
-  valid_uid helper_meta.(ObjectMetaV.UID') ∧
-  (if decide (input_meta.(ObjectMetaV.Name') = ""%go)
-   then input_meta.(ObjectMetaV.GenerateName') ≠ ""%go
-   else name = input_meta.(ObjectMetaV.Name')) ∧
-  helper_input =
-    KObjectV.update_objectmeta input
-      (input_meta <| ObjectMetaV.Name' := name |>
-                  <| ObjectMetaV.Namespace' := namespace |>
-                  <| ObjectMetaV.SelfLink' := ""%go |>
-                  <| ObjectMetaV.UID' := helper_meta.(ObjectMetaV.UID') |>
-                  <| ObjectMetaV.CreationTimestamp' := helper_meta.(ObjectMetaV.CreationTimestamp') |>
-                  <| ObjectMetaV.DeletionTimestamp' := None |>
-                  <| ObjectMetaV.DeletionGracePeriodSeconds' := None |>).
-
 (** [create_stored_from_helper_result] describes the mutation after the helper
     succeeds. Generic metadata validation is read-only. Storage then assigns a
     fresh resource version, stores the object, and returns a deep copy. *)
@@ -94,23 +31,6 @@ Definition create_stored_from_helper_result
   KObjectV.spec helper_result = KObjectV.spec stored ∧
   KObjectV.status helper_result = KObjectV.status stored ∧
   valid_resource_version (KObjectV.objectmeta stored).(ObjectMetaV.ResourceVersion').
-
-Definition valid_without_resource_version (obj : KObjectV.t) : Prop :=
-  valid_typemeta (KObjectV.kind obj) (KObjectV.typemeta obj) ∧
-  ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj) ∧
-  ObjectSpecV.valid (KObjectV.spec obj) ∧
-  ObjectStatusV.valid (KObjectV.status obj).
-
-(** This is the single trusted semantic contract for a successful helper
-    call. *)
-Definition create_helper_result
-    (namespace : go_string) (input helper_input helper_result : KObjectV.t) : Prop :=
-  KObjectV.created namespace input helper_result ∧
-  valid_without_resource_version helper_result ∧
-  (KObjectV.objectmeta helper_result).(ObjectMetaV.Name') =
-    (KObjectV.objectmeta helper_input).(ObjectMetaV.Name') ∧
-  (KObjectV.objectmeta helper_result).(ObjectMetaV.UID') =
-    (KObjectV.objectmeta helper_input).(ObjectMetaV.UID').
 
 Lemma create_stored_from_helper_result_created namespace input helper_result stored :
   KObjectV.created namespace input helper_result →
@@ -197,25 +117,5 @@ Proof.
   - rewrite -Hspec_eq. exact Hspec.
   - rewrite -Hstatus_eq. exact Hstatus.
 Qed.
-
-(** Strong contract for a create satisfying the modeled sufficient validity
-    condition. [input] is the submitted create object and [helper_input] is the
-    prepared private copy passed to the helper. Under the modeling assumption
-    above, validation of unmodeled fields adds no precondition. *)
-Lemma wp_applyValidationAndDefaulting_ok
-    i l helper_input (request_kind namespace name : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface i l helper_input ⌝ ∗
-      ⌜ KObjectV.valid_create request_kind namespace input ⌝ ∗
-      ⌜ create_prepared_for_helper namespace name input helper_input ⌝ ∗
-      KObjectV.deepown_l l helper_input 1
-  }}}
-    @! apimodel.applyValidationAndDefaulting #(interface.ok i) #name
-  {{{ helper_result, RET #interface.nil;
-      KObjectV.deepown_l l helper_result 1 ∗
-      ⌜ KObjectV.valid_interface i l helper_result ⌝ ∗
-      ⌜ create_helper_result namespace input helper_input helper_result ⌝
-  }}}.
-Proof. Admitted.
 
 End proof.

@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export common.
+From New.proof.kubernetes_model Require Export common admitted.
 
 (* Lightweight infrastructure shared by the Delete variants and updates
    whose success path may remove an object. *)
@@ -46,23 +46,7 @@ Proof.
     + left. done.
   - left. done.
 Qed.
-
-(* [ValidateDeleteOptions] is part of the untranslated Kubernetes validation
-   package.  [DeleteOptionsV.valid] is its pure-model counterpart. *)
-Axiom ErrorList_underlying_slice :
-  field.ErrorList ↓u go.SliceType (go.PointerType field.Error).
 #[local] Existing Instance ErrorList_underlying_slice.
-
-Axiom wp_ValidateDeleteOptions_valid : ∀ l options dq,
-  {{{ is_pkg_init apimodel ∗
-      DeleteOptionsV.deepown_l l options dq ∗
-      ⌜ DeleteOptionsV.valid options ⌝
-  }}}
-    @! v1_validation.ValidateDeleteOptions #l
-  {{{ (errs : field.ErrorList.t), RET #errs;
-      ⌜ (#errs : val) = #slice.nil ⌝ ∗
-      DeleteOptionsV.deepown_l l options dq
-  }}}.
 
 Lemma wp_validateDeleteOptions l options dq :
   {{{ is_pkg_init apimodel ∗
@@ -455,30 +439,6 @@ Proof.
     iApply "HΦ". iFrame. iPureIntro.
     left. split; [rewrite /delete_preconditions_match Hpreconditions /=; done|done].
 Qed.
-
-(* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
-Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
-Axiom delete_pending_graceful : KObjectV.t -> bool.
-Axiom delete_new_grace_period_seconds : KObjectV.t -> DeleteOptionsV.t -> option w64.
-
-Lemma wp_checkGracefulDelete i l o options_l options :
-  {{{ is_pkg_init apimodel ∗
-      "%Hvalid_i" ∷ ⌜ KObjectV.valid_interface i l o ⌝ ∗
-      "Hdeepown_l" ∷ KObjectV.deepown_l l o 1 ∗
-      "Hdeepown_options_l" ∷ DeleteOptionsV.deepown_l options_l options 1
-  }}}
-    @! apimodel.checkGracefulDelete #(interface.ok i) #options_l
-  {{{ graceful pendingGraceful options',
-      RET (#graceful, #pendingGraceful, #interface.nil);
-      KObjectV.deepown_l l o 1 ∗
-      DeleteOptionsV.deepown_l options_l options' 1 ∗
-      ⌜ pendingGraceful = true → (KObjectV.objectmeta o).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ ∗
-      ⌜ graceful = delete_graceful o options ⌝ ∗
-      ⌜ pendingGraceful = delete_pending_graceful o ⌝ ∗
-      ⌜ options' = (options <| DeleteOptionsV.GracePeriodSeconds' := delete_new_grace_period_seconds o options |>) ⌝
-  }}}.
-Proof.
-Admitted.
 
 Definition delete_orphan_finalizer : go_string := "orphan"%go.
 Definition delete_foreground_finalizer : go_string := "foregroundDeletion"%go.

@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_model Require Export common.
+From New.proof.kubernetes_model Require Export common admitted.
 
 (* Lightweight infrastructure shared by the ordinary and reserved Get
    variants. *)
