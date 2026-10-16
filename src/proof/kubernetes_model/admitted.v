@@ -166,20 +166,6 @@ Admitted.
 
 Context `{!kubernetesModelG Σ}.
 
-(** Trusted assumption: the cluster stores fewer than 2^31 objects. Controllers
-    convert object counts to int32 (for example the ReplicaSet status counts),
-    so a list call must return fewer than 2^31 objects for those counts to stay
-    valid. Real clusters are many orders of magnitude smaller; etcd's storage
-    quota bounds the number of objects. The lemma returns its resources so that
-    callers can keep them. *)
-Lemma model_state_size_bound l phys_state_l (phys_state : gmap KKey.t interface.t) :
-  l.[(apimodel.State.t), "m"] ↦ phys_state_l -∗
-  phys_state_l ↦$ phys_state -∗
-  ⌜ Z.of_nat (size phys_state) < 2 ^ 31 ⌝ ∗
-  l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
-  phys_state_l ↦$ phys_state.
-Proof. Admitted.
-
 Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
   {{{ is_pkg_init apimodel ∗
       l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
