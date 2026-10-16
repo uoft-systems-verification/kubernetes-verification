@@ -964,7 +964,7 @@ Qed.
 
 (* Living children plus terminating children are all the children. The
    ReplicaSet analogue of [living_terminating_child_pod_keys_partition]. This
-   is what turns "[terminating_children.No], so no terminating children" into
+   is what turns "a terminating bound of 0, so no terminating children" into
    "the children fragment already lists every child the listing can return". *)
 Lemma living_terminating_child_rs_keys_partition
     (abs_state : gmap KKey.t KObjectV.t) parent_key parent_uid :
@@ -1215,7 +1215,7 @@ Qed.
 
    The listed ReplicaSets are every ReplicaSet in the namespace. Their
    restriction to the parent's children, cut down to the living ones, is the
-   caller's framed list whatever [has_terminating_children] is: both
+   caller's framed list whatever [terminating_bound] is: both
    [own_children_frag] and [own_meta_frag] are about living objects. Their
    whole restriction to the parent's children is the framed list only when no
    child is terminating. *)
@@ -1223,7 +1223,7 @@ Local Lemma wp_State__objList_ReplicaSet_au γ l namespace :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    |={⊤,∅}=> ∃ rss rs_dqs has_terminating_children parent_key parent_uid
+    |={⊤,∅}=> ∃ rss rs_dqs terminating_bound parent_key parent_uid
         children_keys children_dq,
       "Hown_meta_frags" ∷ ([∗ list] rs;rs_dq ∈ rss;rs_dqs,
         own_meta_frag γ (ReplicaSetV.key rs)
@@ -1236,7 +1236,7 @@ Local Lemma wp_State__objList_ReplicaSet_au γ l namespace :
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid has_terminating_children ∗
+        parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
@@ -1245,7 +1245,7 @@ Local Lemma wp_State__objList_ReplicaSet_au γ l namespace :
         sl ↦* (interface.ok <$> interfaces) ∗
         ([∗ list] i;rs ∈ interfaces;all_rss,
           KObjectV.deepown_i i (KObjectV.ReplicaSet rs) 1) ∗
-        ⌜ has_terminating_children = terminating_children.No →
+        ⌜ terminating_bound = 0%nat →
             rs_storage_view <$> filter (λ rs, obj_parent_ref (KObjectV.ReplicaSet rs) =
               Some (parent_key, parent_uid)) all_rss ≡ₚ
             rs_storage_view <$> rss ⌝ ∗
@@ -1269,7 +1269,7 @@ Local Lemma wp_State__objList_ReplicaSet_au γ l namespace :
             (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))) ∗
         own_children_frag γ parent_key parent_uid children_dq children_keys ∗
         own_terminating_children_frag γ parent_key parent_uid
-          has_terminating_children
+          terminating_bound
           ={∅,⊤}=∗ ▷ Φ #sl)
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "objList"
         #ReplicaSetV.kind #namespace {{ Φ }}.
@@ -1317,7 +1317,7 @@ Proof.
   { rewrite -list_fmap_compose in Hobjs_nodup. exact Hobjs_nodup. }
   iApply fupd_wp.
   iMod "Hau" as
-    (rss rs_dqs has_terminating_children parent_key parent_uid children_keys
+    (rss rs_dqs terminating_bound parent_key parent_uid children_keys
       children_dq) "H".
   iDestruct "H" as
     "(Hown_meta_frags & Hown_spec_frags & Hown_children_frag &
@@ -1327,7 +1327,9 @@ Proof.
     as "(%Hchildren_keys_eq & %Hin_used_reference)".
   iPoseProof (terminating_children.own_auth_frag_valid with
     "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
-    "%Hterminating_empty".
+    "%Hterminating_size".
+  pose proof (terminating_children.terminating_children_bound_zero _ _ _ Hterminating_size)
+    as Hterminating_empty.
   iPoseProof (kview.own_meta_spec_list_exists_dqs_sep
     ReplicaSetV.key ReplicaSetV.ObjectMeta'
     (λ rs, ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
@@ -1366,7 +1368,7 @@ Proof.
     - exact Hlook_up_full. }
   (* In a good environment the children fragment already lists every child,
      so the permutation covers all of them. *)
-  assert (Hcombined_dom : has_terminating_children = terminating_children.No →
+  assert (Hcombined_dom : terminating_bound = 0%nat →
     list_to_set (ReplicaSetV.key <$> rss) =
       filter (λ key, KKey.Kind' key = ReplicaSetV.kind)
         (dom (filter
@@ -1402,7 +1404,7 @@ Proof.
         { rewrite -Hterminating_rs_keys_empty. exact Hkey. }
         rewrite elem_of_empty in Hempty. exact Hempty.
     - exact Hpartition. }
-  assert (Hfull_perm : has_terminating_children = terminating_children.No →
+  assert (Hfull_perm : terminating_bound = 0%nat →
     rs_storage_view <$> filter (λ rs, obj_parent_ref (KObjectV.ReplicaSet rs) =
       Some (parent_key, parent_uid)) all_rss ≡ₚ
     rs_storage_view <$> rss).
@@ -1459,7 +1461,7 @@ Local Lemma wp_State__objList_ReplicaSet γ l namespace rss rs_dqs
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No ∗
+        parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
@@ -1490,7 +1492,7 @@ Local Lemma wp_State__objList_ReplicaSet γ l namespace rss rs_dqs
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No
+        parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1499,7 +1501,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists rss, rs_dqs, terminating_children.No, parent_key, parent_uid,
+  iExists rss, rs_dqs, 0%nat, parent_key, parent_uid,
     children_keys, children_dq.
   iFrame "%". iFrame.
   iIntros (sl interfaces all_rss) "Hpost".
@@ -1532,7 +1534,7 @@ Local Lemma wp_State__objListBySelector_ReplicaSet γ l namespace selector rss
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No ∗
+        parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
@@ -1563,7 +1565,7 @@ Local Lemma wp_State__objListBySelector_ReplicaSet γ l namespace selector rss
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No
+        parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
@@ -1612,7 +1614,7 @@ Local Lemma wp_State__ReplicaSetMutList_children γ l namespace selector rss
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No ∗
+        parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
@@ -1642,7 +1644,7 @@ Local Lemma wp_State__ReplicaSetMutList_children γ l namespace selector rss
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No
+        parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
@@ -1751,7 +1753,7 @@ Lemma wp_State__ReplicaSetList_children γ l namespace selector rss rs_dqs
          Without it the listing can return a terminating child the caller
          holds no fragment for, and [Hview_perm] below would be false. *)
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No ∗
+        parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (ReplicaSetV.key <$> rss) ⌝ ∗
       "%Hns_eq" ∷ ⌜ namespace = parent_key.(KKey.Namespace') ⌝ ∗
       "%Hdom_eq" ∷ ⌜ list_to_set (ReplicaSetV.key <$> rss) =
@@ -1785,7 +1787,7 @@ Lemma wp_State__ReplicaSetList_children γ l namespace selector rss rs_dqs
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid
         children_dq children_keys ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ
-        parent_key parent_uid terminating_children.No
+        parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".

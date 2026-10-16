@@ -257,7 +257,7 @@ Proof.
   iEval (rewrite Hall_key_perm -Hset_key -Hset_uid) in
     "Hown_children_frag".
   iAssert (own_terminating_children_frag γ (StatefulSetV.key sts)
-      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No)
+      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 0%nat)
     with "[Hown_terminating_children_frag]"
     as "Hown_terminating_children_frag".
   { rewrite Hset_key Hset_uid. iExact "Hown_terminating_children_frag". }
