@@ -89,13 +89,20 @@ func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) 
 
 // scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
 // scaled=false) when the count already matches.
+//
+// TODO: upstream's scaleReplicaSet (pkg/controller/deployment/sync.go) also
+// takes the deployment, keeps the desired/max-replicas annotations up to date
+// (and updates when only they differ), and records a ScalingReplicaSet event.
+// This controller models neither annotations nor events. Upstream also reads
+// and writes *rs.Spec.Replicas directly, relying on API defaulting to make it
+// non-nil; here replicasOfRS treats nil as 0 and the copy gets a fresh pointer.
 func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSet, error) {
 	if replicasOfRS(rs) == newScale {
 		return false, rs, nil
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := apimodel.ModelState.ReplicaSetUpdate(rsCopy.Namespace, rsCopy)
+	updated, err := apimodel.ModelState.ReplicaSetUpdateTx(rsCopy.Namespace, rsCopy)
 	if err != nil {
 		return false, rs, err
 	}

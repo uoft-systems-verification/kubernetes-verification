@@ -127,7 +127,14 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
 (* scaleReplicaSet sets a ReplicaSet's replica count. It is a no-op (and reports
    scaled=false) when the count already matches.
 
-   go: deployment.go:92:6 *)
+   TODO: upstream's scaleReplicaSet (pkg/controller/deployment/sync.go) also
+   takes the deployment, keeps the desired/max-replicas annotations up to date
+   (and updates when only they differ), and records a ScalingReplicaSet event.
+   This controller models neither annotations nor events. Upstream also reads
+   and writes *rs.Spec.Replicas directly, relying on API defaulting to make it
+   non-nil; here replicasOfRS treats nil as 0 and the copy gets a fresh pointer.
+
+   go: deployment.go:99:6 *)
 Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rs" "newScale",
     exception_do (let: "newScale" := (GoAlloc go.int32 "newScale") in
@@ -145,7 +152,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "updated" := (GoAlloc (go.PointerType apps_v1.ReplicaSet) (GoZeroVal (go.PointerType apps_v1.ReplicaSet) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef apps_v1.ReplicaSet "ObjectMeta"%go (![go.PointerType apps_v1.ReplicaSet] "rsCopy")))) in
     let: "$a1" := (![go.PointerType apps_v1.ReplicaSet] "rsCopy") in
-    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+    (MethodResolve (go.PointerType apimodel.State) "ReplicaSetUpdateTx"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("updated" <-[go.PointerType apps_v1.ReplicaSet] "$r0");;;
@@ -158,7 +165,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
    deterministic name and the deployment's replica count if it does not exist.
 
-   go: deployment.go:107:6 *)
+   go: deployment.go:114:6 *)
 Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -236,7 +243,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:148:6 *)
+   go: deployment.go:155:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -257,7 +264,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:154:6 *)
+   go: deployment.go:161:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "oldRSs") in
@@ -292,7 +299,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:169:6 *)
+   go: deployment.go:176:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType apps_v1.ReplicaSet)) "rsList") in
@@ -335,7 +342,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
 (* filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
    whose controller reference points at the deployment.
 
-   go: deployment.go:187:6 *)
+   go: deployment.go:194:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType apps_v1.Deployment) "d") in
@@ -373,7 +380,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType apps_v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:202:6 *)
+(* go: deployment.go:209:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
