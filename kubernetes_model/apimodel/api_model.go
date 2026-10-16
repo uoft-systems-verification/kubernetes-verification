@@ -48,22 +48,22 @@ import (
 
 // What's missing in this model:
 //
-// (1) Patch (JSON Patch, Merge Patch, Strategic Merge Patch)
+// (1) Server-side apply: client-go Apply(...) / ApplyStatus(...), or Patch(...) with
+//     types.ApplyPatchType (alias types.ApplyYAMLPatchType) / types.ApplyCBORPatchType.
+//     Patch(...) with types.JSONPatchType, types.MergePatchType, or types.StrategicMergePatchType is supported.
 //
-// (2) Transition validation during Update: validate that state transitions are valid (e.g., Phase changes)
-//
-// (3) API options, e.g., CreateOption / UpdateOptions
+// (2) API options, e.g., CreateOption / UpdateOptions
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/types.go#L579
 //
-// (4) Admission webhooks and admission plugins
+// (3) Admission webhooks and admission plugins
 //     - Validating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/validating/plugin.go
 //     - Mutating webhooks: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/mutating/plugin.go
 //     - Built-in plugins: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/kubeapiserver/admission/exclusion/resources.go
 //
-// (5) Warnings collection - Collects warnings during create/update (non-fatal issues)
+// (4) Warnings collection - Collects warnings during create/update (non-fatal issues)
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L133 (WarningsOnCreate)
 //
-// (6) BeginCreate/FinishCreate/AfterCreate hooks
+// (5) BeginCreate/FinishCreate/AfterCreate hooks
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L490-L499
 //     Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L551-L553
 
@@ -604,7 +604,7 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 			policy := *oldPod.Spec.PreemptionPolicy
 			typed.Spec.PreemptionPolicy = &policy
 		}
-	case *core.PersistentVolumeClaim:
+	case *core.PersistentVolumeClaim, *core.ServiceAccount:
 		return nil
 	case *apps.ReplicaSet:
 		return nil
@@ -653,7 +653,7 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ClusterRole":
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ServiceAccount", "ClusterRole":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
@@ -682,6 +682,8 @@ func parseResourceVersion(resourceVersion string) (uint64, error) {
 
 func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, error) {
 	switch obj.(type) {
+	case *core.ServiceAccount:
+		return serviceaccountstrategy.Strategy, nil
 	case *core.Pod:
 		return podstrategy.Strategy, nil
 	case *core.PersistentVolumeClaim:
@@ -1011,6 +1013,12 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	return s.updateLocked(kind, namespace, obj, true)
+}
+
+// updateLocked requires s.mu to be held.
+func (s *State) updateLocked(kind, namespace string, obj interface{}, uidPrecondition bool) (interface{}, error) {
+
 	objCopy := deepCopy(obj)
 
 	metadata, err := meta.Accessor(objCopy)
@@ -1044,8 +1052,8 @@ func (s *State) update(kind, namespace string, obj interface{}) (interface{}, er
 		return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
 	}
 
-	// A non-empty UID on the incoming object acts like a storage precondition in the real update path.
-	if uid := metadata.GetUID(); uid != "" && uid != existingMetadata.GetUID() {
+	// PUT supplies a UID storage precondition; PATCH validates UID immutability instead.
+	if uid := metadata.GetUID(); uidPrecondition && uid != "" && uid != existingMetadata.GetUID() {
 		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
 	}
 
@@ -1111,6 +1119,12 @@ func (s *State) updateStatus(kind, namespace string, obj interface{}) (interface
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	return s.updateStatusLocked(kind, namespace, obj, true)
+}
+
+// updateStatusLocked requires s.mu to be held.
+func (s *State) updateStatusLocked(kind, namespace string, obj interface{}, uidPrecondition bool) (interface{}, error) {
+
 	objCopy := deepCopy(obj)
 
 	metadata, err := meta.Accessor(objCopy)
@@ -1144,7 +1158,7 @@ func (s *State) updateStatus(kind, namespace string, obj interface{}) (interface
 		return nil, fmt.Errorf("failed to access existing object metadata: %w", err)
 	}
 
-	if uid := metadata.GetUID(); uid != "" && uid != existingMetadata.GetUID() {
+	if uid := metadata.GetUID(); uidPrecondition && uid != "" && uid != existingMetadata.GetUID() {
 		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
 	}
 

@@ -1449,8 +1449,6 @@ Axiom Signalⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go
 
 Axiom Lifecycleⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ConditionStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom ContainerStateWaitingⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ContainerStateRunningⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -1474,10 +1472,6 @@ Axiom ContainerUserⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 Axiom LinuxContainerUserⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodPhaseⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PodConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PodConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodResizeStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -1584,8 +1578,6 @@ Axiom HostIPⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go
 Axiom EphemeralContainerCommonⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom EphemeralContainerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PodStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodStatusResultⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -2169,7 +2161,7 @@ Axiom SIGRTMAXMINUS1 : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
 Axiom SIGRTMAX : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom ConditionTrue : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ConditionTrue {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"True"%go.
 
 Axiom ConditionFalse : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -2195,7 +2187,7 @@ Axiom ContainersReady : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
 Axiom PodInitialized : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom PodReady : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition PodReady {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Ready"%go.
 
 Axiom PodScheduled : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -6420,17 +6412,16 @@ Class Lifecycle_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCon
 Module ConditionStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End ConditionStatus.
 
+Definition ConditionStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class ConditionStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ConditionStatus_type_repr  :: go.TypeReprUnderlying ConditionStatusⁱᵐᵖˡ ConditionStatus.t;
   #[global] ConditionStatus_underlying :: (ConditionStatus) <u (ConditionStatusⁱᵐᵖˡ);
-  #[global] ConditionStatusⁱᵐᵖˡ_underlying :: (ConditionStatusⁱᵐᵖˡ) ↓u (ConditionStatusⁱᵐᵖˡ);
 }.
 
 Module ContainerStateWaiting.
@@ -6628,33 +6619,71 @@ Class PodPhase_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCont
 Module PodConditionType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End PodConditionType.
 
+Definition PodConditionTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class PodConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PodConditionType_type_repr  :: go.TypeReprUnderlying PodConditionTypeⁱᵐᵖˡ PodConditionType.t;
   #[global] PodConditionType_underlying :: (PodConditionType) <u (PodConditionTypeⁱᵐᵖˡ);
-  #[global] PodConditionTypeⁱᵐᵖˡ_underlying :: (PodConditionTypeⁱᵐᵖˡ) ↓u (PodConditionTypeⁱᵐᵖˡ);
 }.
 
 Module PodCondition.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.PodConditionType.t;
+  ObservedGeneration' : w64;
+  Status' : v1.ConditionStatus.t;
+  LastProbeTime' : v1.Time.t;
+  LastTransitionTime' : v1.Time.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PodCondition.
+
+Definition PodCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go PodConditionType);
+  (go.FieldDecl "ObservedGeneration"%go go.int64);
+  (go.FieldDecl "Status"%go ConditionStatus);
+  (go.FieldDecl "LastProbeTime"%go v1.Time);
+  (go.FieldDecl "LastTransitionTime"%go v1.Time);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "Message"%go go.string)
+].
+Program Definition PodCondition'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PodCondition'fds_unsealed).
+Global Instance equals_unfold_PodCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PodCondition'fds =→ PodCondition'fds_unsealed.
+Proof. rewrite /PodCondition'fds seal_eq //. Qed.
+
+Definition PodConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PodCondition'fds).
 
 Class PodCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PodCondition_type_repr  :: go.TypeReprUnderlying PodConditionⁱᵐᵖˡ PodCondition.t;
   #[global] PodCondition_underlying :: (PodCondition) <u (PodConditionⁱᵐᵖˡ);
-  #[global] PodConditionⁱᵐᵖˡ_underlying :: (PodConditionⁱᵐᵖˡ) ↓u (PodConditionⁱᵐᵖˡ);
+  #[global] PodCondition_get_Type (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(PodCondition.Type');
+  #[global] PodCondition_set_Type (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.Type' := y|>);
+  #[global] PodCondition_get_ObservedGeneration (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "ObservedGeneration", #x⟧ ⤳[under] #x.(PodCondition.ObservedGeneration');
+  #[global] PodCondition_set_ObservedGeneration (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "ObservedGeneration", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.ObservedGeneration' := y|>);
+  #[global] PodCondition_get_Status (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(PodCondition.Status');
+  #[global] PodCondition_set_Status (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.Status' := y|>);
+  #[global] PodCondition_get_LastProbeTime (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "LastProbeTime", #x⟧ ⤳[under] #x.(PodCondition.LastProbeTime');
+  #[global] PodCondition_set_LastProbeTime (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "LastProbeTime", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.LastProbeTime' := y|>);
+  #[global] PodCondition_get_LastTransitionTime (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "LastTransitionTime", #x⟧ ⤳[under] #x.(PodCondition.LastTransitionTime');
+  #[global] PodCondition_set_LastTransitionTime (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "LastTransitionTime", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.LastTransitionTime' := y|>);
+  #[global] PodCondition_get_Reason (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(PodCondition.Reason');
+  #[global] PodCondition_set_Reason (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.Reason' := y|>);
+  #[global] PodCondition_get_Message (x : PodCondition.t) :: ⟦StructFieldGet (PodConditionⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(PodCondition.Message');
+  #[global] PodCondition_set_Message (x : PodCondition.t) y :: ⟦StructFieldSet (PodConditionⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|PodCondition.Message' := y|>);
 }.
 
 Module PodResizeStatus.
@@ -7715,17 +7744,100 @@ Class EphemeralContainer_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!G
 Module PodStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  ObservedGeneration' : w64;
+  Phase' : v1.PodPhase.t;
+  Conditions' : slice.t;
+  Message' : go_string;
+  Reason' : go_string;
+  NominatedNodeName' : go_string;
+  HostIP' : go_string;
+  HostIPs' : slice.t;
+  PodIP' : go_string;
+  PodIPs' : slice.t;
+  StartTime' : loc;
+  InitContainerStatuses' : slice.t;
+  ContainerStatuses' : slice.t;
+  QOSClass' : v1.PodQOSClass.t;
+  EphemeralContainerStatuses' : slice.t;
+  Resize' : v1.PodResizeStatus.t;
+  ResourceClaimStatuses' : slice.t;
+  ExtendedResourceClaimStatus' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PodStatus.
+
+Definition PodStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "ObservedGeneration"%go go.int64);
+  (go.FieldDecl "Phase"%go PodPhase);
+  (go.FieldDecl "Conditions"%go (go.SliceType PodCondition));
+  (go.FieldDecl "Message"%go go.string);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "NominatedNodeName"%go go.string);
+  (go.FieldDecl "HostIP"%go go.string);
+  (go.FieldDecl "HostIPs"%go (go.SliceType HostIP));
+  (go.FieldDecl "PodIP"%go go.string);
+  (go.FieldDecl "PodIPs"%go (go.SliceType PodIP));
+  (go.FieldDecl "StartTime"%go (go.PointerType v1.Time));
+  (go.FieldDecl "InitContainerStatuses"%go (go.SliceType ContainerStatus));
+  (go.FieldDecl "ContainerStatuses"%go (go.SliceType ContainerStatus));
+  (go.FieldDecl "QOSClass"%go PodQOSClass);
+  (go.FieldDecl "EphemeralContainerStatuses"%go (go.SliceType ContainerStatus));
+  (go.FieldDecl "Resize"%go PodResizeStatus);
+  (go.FieldDecl "ResourceClaimStatuses"%go (go.SliceType PodResourceClaimStatus));
+  (go.FieldDecl "ExtendedResourceClaimStatus"%go (go.PointerType PodExtendedResourceClaimStatus))
+].
+Program Definition PodStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PodStatus'fds_unsealed).
+Global Instance equals_unfold_PodStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PodStatus'fds =→ PodStatus'fds_unsealed.
+Proof. rewrite /PodStatus'fds seal_eq //. Qed.
+
+Definition PodStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PodStatus'fds).
 
 Class PodStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PodStatus_type_repr  :: go.TypeReprUnderlying PodStatusⁱᵐᵖˡ PodStatus.t;
   #[global] PodStatus_underlying :: (PodStatus) <u (PodStatusⁱᵐᵖˡ);
-  #[global] PodStatusⁱᵐᵖˡ_underlying :: (PodStatusⁱᵐᵖˡ) ↓u (PodStatusⁱᵐᵖˡ);
+  #[global] PodStatus_get_ObservedGeneration (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "ObservedGeneration", #x⟧ ⤳[under] #x.(PodStatus.ObservedGeneration');
+  #[global] PodStatus_set_ObservedGeneration (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "ObservedGeneration", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.ObservedGeneration' := y|>);
+  #[global] PodStatus_get_Phase (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "Phase", #x⟧ ⤳[under] #x.(PodStatus.Phase');
+  #[global] PodStatus_set_Phase (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "Phase", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.Phase' := y|>);
+  #[global] PodStatus_get_Conditions (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "Conditions", #x⟧ ⤳[under] #x.(PodStatus.Conditions');
+  #[global] PodStatus_set_Conditions (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "Conditions", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.Conditions' := y|>);
+  #[global] PodStatus_get_Message (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(PodStatus.Message');
+  #[global] PodStatus_set_Message (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.Message' := y|>);
+  #[global] PodStatus_get_Reason (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(PodStatus.Reason');
+  #[global] PodStatus_set_Reason (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.Reason' := y|>);
+  #[global] PodStatus_get_NominatedNodeName (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "NominatedNodeName", #x⟧ ⤳[under] #x.(PodStatus.NominatedNodeName');
+  #[global] PodStatus_set_NominatedNodeName (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "NominatedNodeName", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.NominatedNodeName' := y|>);
+  #[global] PodStatus_get_HostIP (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "HostIP", #x⟧ ⤳[under] #x.(PodStatus.HostIP');
+  #[global] PodStatus_set_HostIP (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "HostIP", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.HostIP' := y|>);
+  #[global] PodStatus_get_HostIPs (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "HostIPs", #x⟧ ⤳[under] #x.(PodStatus.HostIPs');
+  #[global] PodStatus_set_HostIPs (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "HostIPs", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.HostIPs' := y|>);
+  #[global] PodStatus_get_PodIP (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "PodIP", #x⟧ ⤳[under] #x.(PodStatus.PodIP');
+  #[global] PodStatus_set_PodIP (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "PodIP", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.PodIP' := y|>);
+  #[global] PodStatus_get_PodIPs (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "PodIPs", #x⟧ ⤳[under] #x.(PodStatus.PodIPs');
+  #[global] PodStatus_set_PodIPs (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "PodIPs", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.PodIPs' := y|>);
+  #[global] PodStatus_get_StartTime (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "StartTime", #x⟧ ⤳[under] #x.(PodStatus.StartTime');
+  #[global] PodStatus_set_StartTime (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "StartTime", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.StartTime' := y|>);
+  #[global] PodStatus_get_InitContainerStatuses (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "InitContainerStatuses", #x⟧ ⤳[under] #x.(PodStatus.InitContainerStatuses');
+  #[global] PodStatus_set_InitContainerStatuses (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "InitContainerStatuses", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.InitContainerStatuses' := y|>);
+  #[global] PodStatus_get_ContainerStatuses (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "ContainerStatuses", #x⟧ ⤳[under] #x.(PodStatus.ContainerStatuses');
+  #[global] PodStatus_set_ContainerStatuses (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "ContainerStatuses", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.ContainerStatuses' := y|>);
+  #[global] PodStatus_get_QOSClass (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "QOSClass", #x⟧ ⤳[under] #x.(PodStatus.QOSClass');
+  #[global] PodStatus_set_QOSClass (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "QOSClass", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.QOSClass' := y|>);
+  #[global] PodStatus_get_EphemeralContainerStatuses (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "EphemeralContainerStatuses", #x⟧ ⤳[under] #x.(PodStatus.EphemeralContainerStatuses');
+  #[global] PodStatus_set_EphemeralContainerStatuses (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "EphemeralContainerStatuses", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.EphemeralContainerStatuses' := y|>);
+  #[global] PodStatus_get_Resize (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "Resize", #x⟧ ⤳[under] #x.(PodStatus.Resize');
+  #[global] PodStatus_set_Resize (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "Resize", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.Resize' := y|>);
+  #[global] PodStatus_get_ResourceClaimStatuses (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "ResourceClaimStatuses", #x⟧ ⤳[under] #x.(PodStatus.ResourceClaimStatuses');
+  #[global] PodStatus_set_ResourceClaimStatuses (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "ResourceClaimStatuses", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.ResourceClaimStatuses' := y|>);
+  #[global] PodStatus_get_ExtendedResourceClaimStatus (x : PodStatus.t) :: ⟦StructFieldGet (PodStatusⁱᵐᵖˡ) "ExtendedResourceClaimStatus", #x⟧ ⤳[under] #x.(PodStatus.ExtendedResourceClaimStatus');
+  #[global] PodStatus_set_ExtendedResourceClaimStatus (x : PodStatus.t) y :: ⟦StructFieldSet (PodStatusⁱᵐᵖˡ) "ExtendedResourceClaimStatus", (#x, #y)⟧ ⤳[under] #(x <|PodStatus.ExtendedResourceClaimStatus' := y|>);
 }.
 
 Module PodStatusResult.

@@ -72,15 +72,17 @@ Proof.
   rewrite Hdeepown_deletiontimestamp_none. done.
 Qed.
 
-Lemma wp_FilterActivePods sl ptrs pods dq :
+(* The input slice is only read, so it may be shared ([dq_sl]) and is returned. *)
+Lemma wp_FilterActivePods sl dq_sl ptrs pods dq :
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
-      "Hsl" ∷ sl ↦* ptrs ∗
+      "Hsl" ∷ sl ↦*{dq_sl} ptrs ∗
       "Hdeepown_l_pods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq)
   }}}
     @! common.FilterActivePods #sl
   {{{ sl' ptrs', RET #sl';
       sl' ↦* ptrs' ∗
-      ([∗ list] ptr;pod ∈ ptrs';filter is_pod_alive pods, PodV.deepown_l ptr pod dq)
+      ([∗ list] ptr;pod ∈ ptrs';filter is_pod_alive pods, PodV.deepown_l ptr pod dq) ∗
+      sl ↦*{dq_sl} ptrs
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
@@ -216,6 +218,7 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
           ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
       ⌜ Forall PodV.valid all_pods ⌝ ∗
       ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
+      ⌜ Z.of_nat (length all_pods) < 2 ^ 31 ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
       ([∗ list] pod ∈ terminating_pods all_pods,
         own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
@@ -665,6 +668,7 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
           (PodV.ObjectMeta' <$> pods) ⌝ ∗
       ⌜ Forall PodV.valid pods' ⌝ ∗
       ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+      ⌜ Z.of_nat (length pods') < 2 ^ 31 ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
       ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod)
@@ -698,7 +702,7 @@ Proof.
   iNext.
   iIntros (sl ptrs pods' dq') "H".
   iDestruct "H" as
-    "(Hsl & Hpods & %Hliving_meta_perm & %Hmeta_perm & %Hpods_valid & %Hpods_nodup &
+    "(Hsl & Hpods & %Hliving_meta_perm & %Hmeta_perm & %Hpods_valid & %Hpods_nodup & %Hpods_len &
       Hdeepown_l_meta & #Hown_deletion_observed_frags & Hown_pod_meta_frags & Hown_children_frag &
       Hown_terminating_children_frag)".
   specialize (Hmeta_perm eq_refl).
@@ -747,6 +751,7 @@ Lemma wp_FilterPodsByOwner_uniform_combined γ l owner owner_kind meta dq1 dq2
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
       ⌜ Forall PodV.valid all_pods ⌝ ∗
       ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
+      ⌜ Z.of_nat (length all_pods) < 2 ^ 31 ⌝ ∗
       ObjectMetaV.deepown_l owner meta dq1 ∗
       ([∗ list] pod ∈ terminating_pods all_pods,
         own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
@@ -778,7 +783,7 @@ Proof.
   iIntros (sl ptrs all_pods dq') "H".
   iDestruct "H" as
     "(Hsl & Hpods & %Hliving_meta_perm & %Hquiescent_meta_perm &
-      %Hpods_valid & %Hpods_nodup & Hdeepown_l_meta & #Hown_deletion_observed_frags &
+      %Hpods_valid & %Hpods_nodup & %Hpods_len & Hdeepown_l_meta & #Hown_deletion_observed_frags &
       Hown_pod_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
   subst pod_dqs.
   iEval (rewrite big_sepL2_replicate_r; [done|]) in "Hown_pod_meta_frags".

@@ -80,8 +80,9 @@ Proof.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|].
   iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_".
-  rewrite exception_do_unseal /exception_do_def. wp_auto.
-  wp_apply (wp_deepCopy i kobj with "[Hdeepown_i]").
+  wp_auto.
+  wp_method_call. rewrite /apimodel.State__updateLockedⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
   { iFrame "#". iExact "Hdeepown_i". }
   iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l]".
@@ -144,7 +145,7 @@ Proof.
   destruct old_i as [old_i|].
   2: { iExFalso. iExact "Hdeepown_old_i". }
   rewrite Hlookup_phys. wp_auto.
-  wp_apply (wp_deepCopy old_i old_kobj with "[Hdeepown_old_i]").
+  wp_apply (wp_deepCopy old_i old_kobj (DfracOwn 1) with "[Hdeepown_old_i]").
   { iFrame "#". iExact "Hdeepown_old_i". }
   iIntros (old_i1) "[Hdeepown_old_i1 Hdeepown_old_i]". wp_auto.
   iDestruct "Hdeepown_old_i1" as
@@ -220,7 +221,7 @@ Proof.
     { rewrite (big_sepM2_delete _ phys_state abs_state key _ _
         Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
-    rewrite return_val_unseal /return_val_def. wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
       with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
@@ -494,7 +495,7 @@ Proof.
     (KObjectV.objectmeta updated_kobj <|
       ObjectMetaV.ResourceVersion' := rv |>).
   set new_kobj := KObjectV.update_objectmeta updated_kobj new_kmeta.
-  wp_apply (wp_deepCopy i1 new_kobj with "[Hdeepown_l]").
+  wp_apply (wp_deepCopy i1 new_kobj (DfracOwn 1) with "[Hdeepown_l]").
   { iFrame. iPureIntro. unfold new_kobj, new_kmeta.
     destruct updated_kobj; done. }
   iIntros (i1') "[Hdeepown_i1' Hdeepown_i1]". wp_auto.
@@ -696,7 +697,7 @@ Proof.
     end)%I) with "[Hdeepown_i1 Hother_rep]" as "Hinv_Hphys_abs_rep".
   { rewrite big_sepM2_insert_delete. iFrame. }
   iCombineNamed "Hinv_*" as "H".
-  rewrite return_val_unseal /return_val_def. wp_auto.
+  rewrite ?return_val_unseal /return_val_def. try wp_auto.
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
     with "[$Hown_Mutex H]").
   { iNamed "H". iFrame "#". iFrame.

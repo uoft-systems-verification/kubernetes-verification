@@ -7,6 +7,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Context `{!kubernetesModelG Σ}.
+(* Since controller imports pod, core_v1.Assumptions is also reachable via podutil; prefer the
+   direct path so statements here match the list lemmas' postconditions. *)
+#[local] Existing Instance apimodel.import_api_core_v1_Assumption | 0.
 Local Set Default Proof Using "All".
 
 Definition podController_indexed_value pod : go_string :=
@@ -846,6 +849,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         ⌜ Forall PodV.valid pods' ⌝ ∗
         ⌜ Forall (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods' ⌝ ∗
         ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
+        ⌜ Z.of_nat (length pods') < 2 ^ 31 ⌝ ∗
         ([∗ list] pod ∈ terminating_pods pods',
           own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
         ([∗ list] pod;pod_dq ∈ living_pods;living_pod_dqs,
@@ -873,6 +877,20 @@ Proof.
     $Hinv_Hphys_abs_rep]").
   iIntros (sl interfaces pods) "(Hsl & Hdeepown_i_interfaces & %Hlist_result & %Hpods_valid & %Hpods_nodup &
     Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto.
+  (* The listed pods are among the stored objects, of which there are fewer
+     than 2^31 (trusted [model_state_size_bound]). *)
+  iDestruct (model_state_size_bound with "Hinv_Hstate_m_addr Hinv_Hown_phys")
+    as "(%Hphys_size & Hinv_Hstate_m_addr & Hinv_Hown_phys)".
+  iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_phys_abs.
+  assert (Z.of_nat (length pods) < 2 ^ 31) as Hpods_len_bound.
+  { pose proof (Permutation_length Hlist_result) as Hlen.
+    rewrite !length_fmap length_map_to_list in Hlen.
+    pose proof (map_size_filter (λ kv : KKey.t * KObjectV.t, kv.1.(KKey.Kind') = "Pod"%go) abs_state)
+      as Hfilter_size.
+    assert (size phys_state = size abs_state) as Hsize_eq.
+    { rewrite -(size_dom (D:=gset KKey.t) phys_state) -(size_dom (D:=gset KKey.t) abs_state).
+      rewrite Hdom_phys_abs. done. }
+    lia. }
   iPoseProof own_slice_nil as "Hslice_nil".
   iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
@@ -1113,6 +1131,9 @@ Proof.
       - rewrite Hchildren_keys_eq in Hdom_eq. exact Hdom_eq.
       - exact Hlook_up.
     }
+    assert (Z.of_nat (length returned_pods) < 2 ^ 31) as Hreturned_len.
+    { unfold returned_pods. eapply Z.le_lt_trans; last exact Hpods_len_bound.
+      apply inj_le. apply length_filter. }
     destruct include_specs.
     all: iSimpl in "Hown_spec_frags".
     1: iPoseProof (kview.own_meta_spec_list_exists_dqs_sep
@@ -1136,7 +1157,7 @@ Proof.
           pod_storage_view <$> filter pod_is_living returned_pods ≡ₚ
             pod_storage_view <$> living_pods) by discriminate.
     Ltac close_index_case gammax lx slx interfacesx returned
-        Hmetax Hlivingmetax Hstoragex Hvalidx Hnodupx :=
+        Hmetax Hlivingmetax Hstoragex Hvalidx Hnodupx Hlenx :=
       iMod ("Hclose" $! slx interfacesx returned (DfracOwn 1)
         with "[Hown_meta_frags Hown_spec_frags
           Hown_children_frag Hown_terminating_children_frag Hsl' Hlist_pre]") as "HΦ";
@@ -1152,7 +1173,8 @@ Proof.
           rewrite -list_elem_of_In in Hpod;
           apply list_elem_of_filter in Hpod as [Hparent _]; exact Hparent
         | eapply sublist_NoDup; [exact Hnodupx|];
-          apply fmap_sublist, sublist_filter ]
+          apply fmap_sublist, sublist_filter
+        | exact Hlenx ]
       | ];
       iModIntro;
       iCombineNamed "Hinv_*" as "H";
@@ -1161,7 +1183,7 @@ Proof.
       [ iNamed "H"; iFrame; iFrame "#"; iPureIntro; split_and!; done
       | iApply "HΦ" ].
     all: close_index_case γ l sl' interfaces' returned_pods
-      Hmeta_perm Hliving_meta_perm Hstorage_perm Hpods_valid Hpods_nodup.
+      Hmeta_perm Hliving_meta_perm Hstorage_perm Hpods_valid Hpods_nodup Hreturned_len.
 Qed.
 
 Lemma wp_State__ByIndex_podController γ l indexed_value pods pod_dqs parent_key parent_uid children_keys children_dq :
@@ -1209,7 +1231,7 @@ Proof.
   iIntros (sl interfaces pods_ret dq') "Hpost".
   iDestruct "Hpost" as
     "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm & %Hpods_valid &
-      %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags & _ &
+      %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags & _ &
       Hown_children_frag & Hown_terminating_children_frag)".
   specialize (Hmeta_perm eq_refl).
   iMod "Hmask" as "_".
@@ -1271,7 +1293,7 @@ Proof.
   iIntros (sl interfaces pods_ret dq') "Hpost".
   iDestruct "Hpost" as
     "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm & %Hpods_valid &
-      %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags &
+      %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags &
       Hown_spec_frags & Hown_children_frag &
       Hown_terminating_children_frag)".
   specialize (Hmeta_perm eq_refl).
@@ -1333,6 +1355,7 @@ Lemma wp_State__ByIndex_podController_combined γ l indexed_value
       "%Hparent_refs" ∷ ⌜ Forall (λ pod,
         obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) all_pods ⌝ ∗
       "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
+      "%Hpods_len" ∷ ⌜ Z.of_nat (length all_pods) < 2 ^ 31 ⌝ ∗
       "Hown_deletion_observed_frags" ∷ ([∗ list] pod ∈ terminating_pods all_pods,
         own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
@@ -1353,7 +1376,7 @@ Proof.
   iIntros (sl interfaces all_pods dq') "Hpost".
   iDestruct "Hpost" as
     "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm &
-      %Hpods_valid & %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags & _ &
+      %Hpods_valid & %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags & _ &
       Hown_children_frag & Hown_terminating_children_frag)".
   iMod "Hmask" as "_".
   iModIntro. iNext.
@@ -1419,7 +1442,7 @@ Proof.
   iIntros (sl interfaces all_pods dq') "Hpost".
   iDestruct "Hpost" as
     "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm &
-      %Hpods_valid & %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags &
+      %Hpods_valid & %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags &
       Hown_spec_frags & Hown_children_frag & Hown_terminating_children_frag)".
   specialize (Hstorage_perm eq_refl).
   assert (has_terminating_children = terminating_children.No →
@@ -1578,7 +1601,7 @@ Proof.
   iIntros (sl interfaces pods' dq') "Hpost".
   iDestruct "Hpost" as
     "(Hsl & Hpods & %Hmeta_perm & %Hliving_meta_perm & %Hstorage_perm & %Hpods_valid &
-      %Hparent_refs & %Hpods_nodup & #Hown_deletion_observed_frags & Hown_meta_frags &
+      %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags &
       Hown_spec_frags & Hown_children_frag &
       Hown_terminating_children_frag)".
   specialize (Hmeta_perm eq_refl).

@@ -92,7 +92,7 @@ Proof.
   iAssert I with "[obj Hdeepown_i Hau]" as "Hloop_inv".
   { iExists i. iFrame. }
   wp_for "Hloop_inv".
-  wp_apply (wp_deepCopy i_orig kobj with "[Hdeepown_i_orig]").
+  wp_apply (wp_deepCopy i_orig kobj (DfracOwn 1) with "[Hdeepown_i_orig]").
   { iFrame "#". iExact "Hdeepown_i_orig". }
   iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
   iDestruct "Hdeepown_i_copy" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
@@ -120,7 +120,7 @@ Proof.
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
   rewrite Hkey_new.
-  iExists (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), (DfracOwn 1),
+  iExists (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), (DfracOwn 1), (DfracOwn 1),
     old_meta, (Some old_spec), None.
   iFrame "Hown_meta_frag Hown_spec_frag".
   iSplit; first done.

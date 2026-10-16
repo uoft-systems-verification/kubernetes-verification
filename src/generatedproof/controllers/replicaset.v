@@ -6,13 +6,23 @@ Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
+Require Export New.generatedproof.k8s_io.apiserver.pkg.util.feature.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.
+Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.generatedproof.k8s_io.client_go.listers.apps.v1.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.replicaset.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.features.
+Require Export New.generatedproof.k8s_io.utils.clock.
+Require Export New.generatedproof.k8s_io.utils.ptr.
 Require Export New.generatedproof.kubernetes_model.apimodel.
+Require Export New.generatedproof.reflect.
 Require Export New.generatedproof.sort.
 Require Export New.generatedproof.sync.
+Require Export New.generatedproof.time.
 Require Export New.golang.theory.
 Require Export New.code.controllers.replicaset.
 

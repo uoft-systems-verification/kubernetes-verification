@@ -1,3 +1,7 @@
+From New.proof.encoding Require Export json_init.
+From New.proof.net Require Export http_init.
+From New.proof.gopkg_in.evanphx Require Export json_patch_v4_init.
+From New.proof.k8s_io.apimachinery.pkg.util Require Export mergepatch_init strategicpatch_init.
 From New.proof Require Export prelude.
 From New.proof Require Export sync fmt time context.
 From New.proof.k8s_io.api.apps Require Export v1_init.

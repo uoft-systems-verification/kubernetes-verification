@@ -1,4 +1,6 @@
 translate = [
+    "ConditionStatus",
+    "ConditionTrue",
     "PodPending",
     "PodRunning",
     "PodSucceeded",
@@ -26,7 +28,9 @@ translate = [
     "Pod.SetSelfLink",
     "Pod.SetUID",
     "PodSpec",
-    # "PodStatus",
+    # PodStatus is translated so pod readiness (pod.IsPodReady) can be proven; its
+    # field types other than PodCondition stay opaque.
+    "PodStatus",
     # "Affinity",
     # "Container",
     # "ContainerStatus",
@@ -35,7 +39,9 @@ translate = [
     # "HostAlias",
     # "HostIP",
     # "LocalObjectReference",
-    # "PodCondition",
+    "PodCondition",
+    "PodConditionType",
+    "PodReady",
     # "PodDNSConfig",
     # "PodExtendedResourceClaimStatus",
     # "PodIP",

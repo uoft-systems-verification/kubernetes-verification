@@ -5,6 +5,10 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR/.."
 
+# Goose emits standard-library declarations, which can change between Go patch
+# releases. Use the exact version from go.mod even if a newer Go is installed.
+export GOTOOLCHAIN="go$(awk '$1 == "go" { print $2; exit }' go.mod)"
+
 go tool perennial-cli goose --config goose-kubernetes.toml
 go tool perennial-cli goose --config goose-kubernetes-model.toml
 go tool perennial-cli goose --config goose-controllers.toml

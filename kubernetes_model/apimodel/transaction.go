@@ -169,3 +169,17 @@ func (s *State) updateStatusTx(kind, namespace string, obj interface{}) (interfa
 		return updatedObj, err
 	}
 }
+
+func (s *State) ReplicaSetUpdateStatusTx(namespace string, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	obj, err := s.updateStatusTx("ReplicaSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.ReplicaSet)
+	if !ok {
+		return nil, fmt.Errorf("transactional status update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
+}

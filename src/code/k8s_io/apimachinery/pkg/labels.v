@@ -217,6 +217,21 @@ Definition Set__Lookupⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
     do:  ("exists" <-[go.bool] "$r1");;;
     return: (![go.string] "val", ![go.bool] "exists")).
 
+(* AsSelectorPreValidated converts labels into a selector, but
+   assumes that labels are already validated and thus doesn't
+   perform any validation.
+   According to our measurements this is significantly faster
+   in codepaths that matter at high scale.
+   Note: this method copies the Set; if the Set is immutable, consider wrapping it with ValidatedSetSelector
+   instead, which does not copy.
+
+   go: labels.go:91:15 *)
+Definition Set__AsSelectorPreValidatedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "ls" <>,
+    exception_do (let: "ls" := (GoAlloc Set' "ls") in
+    return: (let: "$a0" := (![Set'] "ls") in
+     (FuncResolve SelectorFromValidatedSet [] #()) "$a0")).
+
 (* Everything returns a selector that matches all labels.
 
    go: selector.go:95:6 *)
@@ -802,6 +817,43 @@ Definition validateLabelValueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     else do:  #()));;;
     return: (Convert go.untyped_nil (go.PointerType field.Error) UntypedNil)).
 
+(* SelectorFromValidatedSet returns a Selector which will match exactly the given Set.
+   A nil and empty Sets are considered equivalent to Everything().
+   It assumes that Set is already validated and doesn't do any validation.
+   Note: this method copies the Set; if the Set is immutable, consider wrapping it with ValidatedSetSelector
+   instead, which does not copy.
+
+   go: selector.go:976:6 *)
+Definition SelectorFromValidatedSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "ls",
+    exception_do (let: "ls" := (GoAlloc Set' "ls") in
+    (if: Convert go.untyped_bool go.bool (((![Set'] "ls") =⟨Set'⟩ (Convert go.untyped_nil Set' UntypedNil)) || ((let: "$a0" := (![Set'] "ls") in
+    (FuncResolve go.len [Set'] #()) "$a0") =⟨go.int⟩ #(W64 0)))
+    then return: (Convert internalSelector Selector (CompositeLiteral internalSelector (LiteralValue [])))
+    else do:  #());;;
+    let: "requirements" := (GoAlloc (go.SliceType Requirement) (GoZeroVal (go.SliceType Requirement) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType Requirement] #()) #(W64 0) (let: "$a0" := (![Set'] "ls") in
+    (FuncResolve go.len [Set'] #()) "$a0")) in
+    do:  ("requirements" <-[go.SliceType Requirement] "$r0");;;
+    let: "$range" := (![Set'] "ls") in
+    (let: "value" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    let: "label" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    map.for_range go.string go.string "$range" (λ: "$key" "$value",
+      do:  ("value" <-[go.string] "$value");;;
+      do:  ("label" <-[go.string] "$key");;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType Requirement] "requirements") in
+      let: "$a1" := ((let: "$sl0" := (let: "$v0" := (![go.string] "label") in
+      let: "$v1" := selection.Equals in
+      let: "$v2" := (let: "$v0" := (![go.string] "value") in
+      CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")])) in
+      CompositeLiteral Requirement (LiteralValue [KeyedElement (Some (KeyField "key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "operator"%go)) (ElementExpression selection.Operator "$v1"); KeyedElement (Some (KeyField "strValues"%go)) (ElementExpression (go.SliceType go.string) "$v2")])) in
+      CompositeLiteral (go.SliceType Requirement) (LiteralValue [KeyedElement None (ElementExpression Requirement "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType Requirement] #()) "$a0" "$a1") in
+      do:  ("requirements" <-[go.SliceType Requirement] "$r0")));;;
+    do:  (let: "$a0" := (Convert ByKey sort.Interface (![go.SliceType Requirement] "requirements")) in
+    (FuncResolve sort.Sort [] #()) "$a0");;;
+    return: (Convert internalSelector Selector (![go.SliceType Requirement] "requirements"))).
+
 #[global] Instance info' : PkgInfo pkg_id.labels :=
 {|
   pkg_imported_pkgs := [code.sort.pkg_id.sort; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.strconv.pkg_id.strconv; code.k8s_io.klog.v2.pkg_id.klog; code.k8s_io.apimachinery.pkg.selection.pkg_id.selection; code.k8s_io.apimachinery.pkg.util.validation.pkg_id.validation]
@@ -859,9 +911,11 @@ Definition Set'ⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.t
 Class Set_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] Set_underlying :: (Set') <u (Set'ⁱᵐᵖˡ);
+  #[global] Set_AsSelectorPreValidated_unfold :: MethodUnfold (Set') "AsSelectorPreValidated" (Set__AsSelectorPreValidatedⁱᵐᵖˡ);
   #[global] Set_Get_unfold :: MethodUnfold (Set') "Get" (Set__Getⁱᵐᵖˡ);
   #[global] Set_Has_unfold :: MethodUnfold (Set') "Has" (Set__Hasⁱᵐᵖˡ);
   #[global] Set_Lookup_unfold :: MethodUnfold (Set') "Lookup" (Set__Lookupⁱᵐᵖˡ);
+  #[global] Set'ptr_AsSelectorPreValidated_unfold :: MethodUnfold (go.PointerType (Set')) "AsSelectorPreValidated" (λ: "$r", MethodResolve (Set') "AsSelectorPreValidated" (![(Set')] "$r"));
   #[global] Set'ptr_Get_unfold :: MethodUnfold (go.PointerType (Set')) "Get" (λ: "$r", MethodResolve (Set') "Get" (![(Set')] "$r"));
   #[global] Set'ptr_Has_unfold :: MethodUnfold (go.PointerType (Set')) "Has" (λ: "$r", MethodResolve (Set') "Has" (![(Set')] "$r"));
   #[global] Set'ptr_Lookup_unfold :: MethodUnfold (go.PointerType (Set')) "Lookup" (λ: "$r", MethodResolve (Set') "Lookup" (![(Set')] "$r"));
@@ -1151,6 +1205,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] NewRequirement_unfold :: FuncUnfold NewRequirement [] (NewRequirementⁱᵐᵖˡ);
   #[global] validateLabelKey_unfold :: FuncUnfold validateLabelKey [] (validateLabelKeyⁱᵐᵖˡ);
   #[global] validateLabelValue_unfold :: FuncUnfold validateLabelValue [] (validateLabelValueⁱᵐᵖˡ);
+  #[global] SelectorFromValidatedSet_unfold :: FuncUnfold SelectorFromValidatedSet [] (SelectorFromValidatedSetⁱᵐᵖˡ);
   #[global] import_sort_Assumption :: sort.Assumptions;
   #[global] import_field_Assumption :: field.Assumptions;
   #[global] import_strconv_Assumption :: strconv.Assumptions;

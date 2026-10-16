@@ -35,6 +35,9 @@ Record t := mk {
 Global Instance eq_dec : EqDecision t.
 Proof. solve_decision. Qed.
 
+Definition of_go (c : v1.Time.t) : t :=
+  mk c.(v1.Time.Time').(time.Time.wall') c.(v1.Time.Time').(time.Time.ext').
+
 Definition deepown (c : v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ :=
   ⌜ c.(v1.Time.Time').(time.Time.wall') = v.(wall') ∧
     c.(v1.Time.Time').(time.Time.ext') = v.(ext') ⌝.
