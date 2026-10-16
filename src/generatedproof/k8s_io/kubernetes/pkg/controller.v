@@ -6,6 +6,7 @@ Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.meta.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.api.v1.pod.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.
 

@@ -259,7 +259,7 @@ Axiom OnDeleteDaemonSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobal
 
 Axiom DefaultDaemonSetUniqueLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom ReplicaSetReplicaFailure : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ReplicaSetReplicaFailure {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"ReplicaFailure"%go.
 
 Definition xxx_messageInfo_ControllerRevision {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/api/apps/v1.xxx_messageInfo_ControllerRevision"%go.
 

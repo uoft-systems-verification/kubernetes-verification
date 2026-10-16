@@ -5570,6 +5570,41 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
+(* go: transaction.go:173:17 *)
+Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "namespace" "rs",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "namespace" := (GoAlloc go.string "namespace") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
+    let: "$a1" := (![go.string] "namespace") in
+    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    (MethodResolve (go.PointerType State) "updateStatusTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional status update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+
 #[global] Instance info' : PkgInfo pkg_id.apimodel :=
 {|
   pkg_imported_pkgs := [code.context.pkg_id.context; code.fmt.pkg_id.fmt; code.math.rand.pkg_id.rand; code.reflect.pkg_id.reflect; code.strconv.pkg_id.strconv; code.sync.pkg_id.sync; code.time.pkg_id.time; code.k8s_io.api.apps.v1.pkg_id.v1; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.api.rbac.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.api.errors.pkg_id.errors; code.k8s_io.apimachinery.pkg.api.meta.pkg_id.meta; code.k8s_io.apimachinery.pkg.api.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.pkg_id.validation; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.util.uuid.pkg_id.uuid; code.k8s_io.apimachinery.pkg.util.validation.field.pkg_id.field; code.k8s_io.apiserver.pkg.endpoints.request.pkg_id.request; code.k8s_io.apiserver.pkg.registry.generic.registry.pkg_id.registry; code.k8s_io.apiserver.pkg.registry.rest.pkg_id.rest; code.k8s_io.kubernetes.pkg.api.legacyscheme.pkg_id.legacyscheme; code.k8s_io.kubernetes.pkg.apis.apps.pkg_id.apps; code.k8s_io.kubernetes.pkg.apis.apps.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.core.pkg_id.core; code.k8s_io.kubernetes.pkg.apis.core.v1.pkg_id.v1; code.k8s_io.kubernetes.pkg.apis.rbac.pkg_id.rbac; code.k8s_io.kubernetes.pkg.controller.pkg_id.controller; code.k8s_io.kubernetes.pkg.registry.apps.deployment.pkg_id.deployment; code.k8s_io.kubernetes.pkg.registry.apps.replicaset.pkg_id.replicaset; code.k8s_io.kubernetes.pkg.registry.apps.statefulset.pkg_id.statefulset; code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.pkg_id.persistentvolumeclaim; code.k8s_io.kubernetes.pkg.registry.core.pod.pkg_id.pod; code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.pkg_id.serviceaccount; code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.pkg_id.clusterrole; code.k8s_io.kubernetes.pkg.apis.apps.install.pkg_id.install; code.k8s_io.kubernetes.pkg.apis.rbac.install.pkg_id.install; code.encoding.json.pkg_id.json; code.net.http.pkg_id.http; code.gopkg_in.evanphx.json_patch_v4.pkg_id.jsonpatch; code.k8s_io.apimachinery.pkg.util.mergepatch.pkg_id.mergepatch; code.k8s_io.apimachinery.pkg.util.strategicpatch.pkg_id.strategicpatch]
@@ -5724,6 +5759,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ReplicaSetPatch_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetPatch" (State__ReplicaSetPatchⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdate" (State__ReplicaSetUpdateⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateStatus_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatus" (State__ReplicaSetUpdateStatusⁱᵐᵖˡ);
+  #[global] State'ptr_ReplicaSetUpdateStatusTx_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateStatusTx" (State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ);
   #[global] State'ptr_ReplicaSetUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "ReplicaSetUpdateTx" (State__ReplicaSetUpdateTxⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountCreate_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountCreate" (State__ServiceAccountCreateⁱᵐᵖˡ);
   #[global] State'ptr_ServiceAccountGet_unfold :: MethodUnfold (go.PointerType (State)) "ServiceAccountGet" (State__ServiceAccountGetⁱᵐᵖˡ);

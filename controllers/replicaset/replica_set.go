@@ -12,20 +12,24 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientset "k8s.io/client-go/kubernetes"
 	appslisters "k8s.io/client-go/listers/apps/v1"
+	// "k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/controller"
+	upstreamrs "k8s.io/kubernetes/pkg/controller/replicaset"
+	"k8s.io/kubernetes/pkg/features"
+	"k8s.io/utils/clock"
 )
 
 // A simplified replicaset controller. The following features are not included:
 // * adoption and release
-// * managing status
 // * expectations, informers and the work queue
+// * scheduling the next availability check
 
 const (
-	// Realistic value of the burstReplica field for the replica set manager based off
-	// performance requirements for kubernetes 1.0.
-	BurstReplicas = 500
+	// The number of times we retry updating a ReplicaSet's status.
+	statusUpdateRetries = 1
 )
 
 // getReplicaSetsWithSameController returns a list of ReplicaSets with the same
@@ -216,7 +220,9 @@ func slowStartBatch(count int, initialBatchSize int, fn func() error) (int, erro
 	return successes, nil
 }
 
-func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, namespace, name string) error {
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, rscClock clock.PassiveClock, controllerFeatures upstreamrs.ReplicaSetControllerFeatures, namespace, name string) error {
+	// Logging never affects the verified behavior, so the logger is omitted.
+	// logger := klog.FromContext(ctx)
 	// use <namespace, name> localize a unique ReplicaSet
 	rs, err := rsLister.ReplicaSets(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
@@ -231,11 +237,28 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 		return err
 	}
 
-	allActivePods := common.FilterActivePods(allRSPods)
+	activePods := common.FilterActivePods(allRSPods)
+	var terminatingPods []*v1.Pod
+	if utilfeature.DefaultFeatureGate.Enabled(features.DeploymentReplicaSetTerminatingReplicas) && controllerFeatures.EnableStatusTerminatingReplicas {
+		// As with activePods, ownership was already checked by FilterPodsByOwner.
+		// Selector-based claiming remains outside this simplified controller.
+		terminatingPods = controller.FilterTerminatingPods(allRSPods)
+	}
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(ctx, kubeClient, burstReplicas, allActivePods, rs)
+		manageReplicasErr = manageReplicas(ctx, kubeClient, burstReplicas, activePods, rs)
+	}
+	rs = rs.DeepCopy()
+	// Keep one time for status and the future next-availability-check calculation.
+	now := rscClock.Now()
+	newStatus := calculateStatus(rs, activePods, terminatingPods, manageReplicasErr, controllerFeatures, now)
+
+	// Always updates status as pods come up or die. The updated object will also
+	// be used when availability requeue scheduling is added.
+	_, err = updateReplicaSetStatus(kubeClient.AppsV1().ReplicaSets(rs.Namespace), rs, newStatus)
+	if err != nil {
+		return err
 	}
 
 	return manageReplicasErr

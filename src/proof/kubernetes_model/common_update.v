@@ -377,6 +377,54 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_ok
   }}}.
 Proof. Admitted.
 
+(** The request-level part of [KObjectV.valid_status_update]: everything except
+    the validity of the submitted status. *)
+Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
+  kind = KObjectV.kind kobj ∧
+  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
+  (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
+  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
+  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
+  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
+  valid_labels (KObjectV.objectmeta kobj).(ObjectMetaV.Labels') ∧
+  valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
+  valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
+  valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
+  valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
+
+Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  status_update_request_ok kind namespace kobj.
+Proof.
+  intros Hvalid_status_update. rewrite /status_update_request_ok.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; tauto.
+Qed.
+
+(** The status-update guard depends on the stored metadata only up to its
+    resource version. *)
+Lemma valid_status_update_equiv_except_resource_version kind namespace m1 m2 kstatus input :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  KObjectV.valid_status_update kind namespace m1 kstatus input →
+  KObjectV.valid_status_update kind namespace m2 kstatus input.
+Proof.
+  intros Heq Hvalid.
+  assert (ObjectMetaV.valid_update m1 (KObjectV.objectmeta input) →
+      ObjectMetaV.valid_update m2 (KObjectV.objectmeta input)) as Htransfer.
+  { revert Heq.
+    rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
+    destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done. }
+  destruct kstatus, input; rewrite /KObjectV.valid_status_update /= in Hvalid Htransfer |- *;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update in Hvalid |- *;
+    try contradiction; intuition.
+Qed.
+
 (** This is the single trusted semantic contract for a successful status-update
     helper call. [old] and [helper_input] are the objects passed to the helper,
     and [helper_result] is the mutated input object after it returns. *)
@@ -482,6 +530,55 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok
       KObjectV.deepown_l old_l old_obj dq ∗
       ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
       ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+          namespace old_obj new_obj updated_obj ⌝
+  }}}.
+Proof. Admitted.
+
+(** Trusted: the metadata half of a successful status-update helper call, used
+    only by [wp_State__update_status_same_meta_au]. For a request whose metadata
+    is a simple update of [old], the stored object keeps the request's kind,
+    TypeMeta and metadata (except the resource version, so the generation too)
+    and [old]'s spec. This holds even when the request status is not known to be
+    valid: rest.BeforeUpdate only copies generation, UID, timestamps, and grace
+    period from [old] (which [valid_simple_update] makes agree with the input),
+    and every status strategy's PrepareForUpdate resets the spec to [old]'s.
+    kubernetes/staging/src/k8s.io/apiserver/pkg/registry/rest/update.go *)
+Definition applyValidationAndDefaultingOnStatusUpdate_meta_preserved
+    (namespace : go_string) (old helper_input helper_result : KObjectV.t) : Prop :=
+  ∀ input stored,
+    update_prepared_for_helper namespace old input helper_input →
+    (KObjectV.objectmeta input).(ObjectMetaV.Namespace') = namespace →
+    ObjectMetaV.valid_simple_update (KObjectV.objectmeta old) (KObjectV.objectmeta input) →
+    update_objects_equiv_except_resource_version helper_result stored →
+    KObjectV.same_kind input stored ∧
+    KObjectV.typemeta stored = KObjectV.typemeta input ∧
+    ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
+    KObjectV.spec stored = KObjectV.spec old.
+
+(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_ok] together with
+    [applyValidationAndDefaultingOnStatusUpdate_meta_preserved]. *)
+Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
+    new_i new_l new_obj old_i old_l old_obj dq
+    (request_kind namespace : go_string) input :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
+      ⌜ KObjectV.valid_status_update request_kind namespace
+          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
+      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
+      #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ updated_obj, RET #interface.nil;
+      KObjectV.deepown_l new_l updated_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+          namespace old_obj new_obj updated_obj ⌝ ∗
+      ⌜ applyValidationAndDefaultingOnStatusUpdate_meta_preserved
           namespace old_obj new_obj updated_obj ⌝
   }}}.
 Proof. Admitted.
