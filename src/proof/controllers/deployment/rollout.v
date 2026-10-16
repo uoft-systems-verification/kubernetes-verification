@@ -104,8 +104,11 @@ Proof.
     { iPkgInit. }
     iAssert (is_pkg_init apimodel) as "#Hapimodel". { iPkgInit. }
     iEval (rewrite /named /rs_opt_own) in "Hrs".
-    wp_apply (wp_ReplicaSet__DeepCopy rs_l rs dq with "[$Happsv1 $Hrs]").
-    iIntros (copy_l) "(Hcopy & Hrs)".
+    iDestruct "Hrs" as (rs_phy) "[Hrs_ptr Hrs]".
+    wp_apply (wp_ReplicaSet__DeepCopy rs_l rs_phy rs dq dq with "[$Happsv1 $Hrs_ptr $Hrs]").
+    iIntros (copy_l) "(Hcopy & Hrs_ptr & Hrs)".
+    iAssert (ReplicaSetV.deepown_l rs_l rs dq) with "[Hrs_ptr Hrs]" as "Hrs".
+    { iExists rs_phy. iFrame. }
     wp_auto.
     iPoseProof (ReplicaSetV.deepown_l_split with "Hcopy") as
       "(%Hcopy_nn & Hc_tm & Hc_om & Hc_spec & Hc_st)".
