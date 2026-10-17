@@ -462,7 +462,12 @@ Definition mutating_fractions dq : all_fractions :=
 Definition stability_fractions dq : all_fractions :=
   {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
 
-Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
+(* TODO: Consider replacing [ready] with [terminating_bound = 0]. [ready] now
+   only selects the shape of [Hreserved_pod_frags], and a bound of 0 does not
+   imply that every missing pod key's reservation is available: a deleted pod's
+   reservation stays [Deleting] until a Get observes NotFound
+   ([wp_State__get_deleting_reserved]). *)
+Definition owned_resources γ sts pods pvcs fractions (ready : bool) (terminating_bound : nat) : iProp Σ :=
   "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
     sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
   "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts)
@@ -484,13 +489,8 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
         ∃ uid, own_deleting_reserved_frag γ fractions.(pod_dq) key uid)%I ∗
   "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts)
     sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(children_dq) (list_to_set (PodV.key <$> pods)) ∗
-  "Hown_terminating_children_frag" ∷
-    (if ready then
-      own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
-    else
-      ∃ has_terminating_children, own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I ∗
+  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key sts)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
   "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
     own_meta_frag γ (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') fractions.(pvc_dq)
@@ -508,30 +508,30 @@ Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true 0%nat ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+  {{{ pods' pvcs' (terminating_bound' : nat) (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false terminating_bound' ∗
       ⌜ current_state_matches sts pods' pvcs' ∨
         (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
   }}}.
 
-Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition preservation_spec γ l namespace name sts dq pods pvcs terminating_bound : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false terminating_bound ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+  {{{ pods' pvcs' (terminating_bound' : nat) (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false terminating_bound' ∗
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
   }}}.
 
@@ -539,14 +539,14 @@ Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true 0%nat ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;
-      owned_resources γ sts pods pvcs (stability_fractions dq) true
+      owned_resources γ sts pods pvcs (stability_fractions dq) true 0%nat
   }}}.
 
 End specs.

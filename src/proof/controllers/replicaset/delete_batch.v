@@ -83,15 +83,15 @@ Lemma wp_State__PodDelete_au γ l key namespace name options_c options uid kmeta
     "%Hdelete_preconditions_rv_none" ∷ ⌜ delete_options_preconditions_resource_version_none options ⌝ ∗
     "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
     "#Hown_unreserved_key_frag" ∷ own_unreserved_key_frag γ key ∗
-    "Hau" ∷ (|={⊤,∅}=> ∃ children has_terminating_children,
+    "Hau" ∷ (|={⊤,∅}=> ∃ children terminating_bound,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
       "Hown_terminating_children_frag" ∷
-        own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+        own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "Hclose" ∷ (
         own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
         own_deletion_observed_frag γ key uid ∗
-        own_terminating_children_frag γ parent_key parent_uid terminating_children.Maybe
+        own_terminating_children_frag γ parent_key parent_uid (S terminating_bound)
         ={∅,⊤}=∗ ▷ Φ #interface.nil))
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "PodDelete" #namespace #name #options_c {{ Φ }}.
 Proof.
@@ -105,8 +105,8 @@ Proof.
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     options_c options).
   iFrame "#". iFrame "Hdeepown_options". iSplit; [done|].
-  iMod "Hau" as (children has_terminating_children) "H". iNamed "H".
-  iModIntro. iExists uid, kmeta, parent_key, parent_uid, children, has_terminating_children.
+  iMod "Hau" as (children terminating_bound) "H". iNamed "H".
+  iModIntro. iExists uid, kmeta, parent_key, parent_uid, children, terminating_bound.
   iSplit; [done|]. iSplit; [done|].
   iFrame "Hown_meta_frag Hown_children_frag Hown_terminating_children_frag".
   iFrame "#".
@@ -134,7 +134,7 @@ Definition delete_batch_inv_body γ γwg γd (γm : gname) γdr (bs : w64) pk pu
     "%Hdrained" ∷ ⌜ drained = true → ndone = sint.nat bs ⌝ ∗
     "Hres" ∷ (⌜ drained = true ⌝ ∨ (⌜ drained = false ⌝ ∗
       own_children_frag γ pk puid 1 (rest ∪ pending) ∗
-      ∃ has_terminating_children, own_terminating_children_frag γ pk puid has_terminating_children)).
+      ∃ terminating_bound, own_terminating_children_frag γ pk puid terminating_bound)).
 
 (** One marker per targeted pod, keyed by the pod's key. *)
 Lemma alloc_pending_markers (pods : list PodV.t) :
