@@ -8,6 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
@@ -38,11 +39,11 @@ func (s *State) deleteTx(key KKey, options metav1.DeleteOptions) error {
 		}
 
 		if preconditionUIDMismatch(optionsCopy, metadata) {
-			return newPreconditionUIDConflictError(
-				key.Kind,
+			return apierrors.NewConflict(
+				schema.GroupResource{Resource: key.Kind},
 				metadata.GetName(),
-				string(*optionsCopy.Preconditions.UID),
-				string(metadata.GetUID()),
+				fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
+					string(*optionsCopy.Preconditions.UID), string(metadata.GetUID())),
 			)
 		}
 

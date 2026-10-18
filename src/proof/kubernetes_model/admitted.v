@@ -91,38 +91,6 @@ Lemma wp_parseResourceVersion rv :
   }}}.
 Proof. Admitted.
 
-Lemma wp_newUpdateResourceVersionConflictError (kind name old_rv new_rv : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newUpdateResourceVersionConflictError #kind #name #old_rv #new_rv
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newUpdateUIDConflictError (kind name existing_uid uid : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newUpdateUIDConflictError #kind #name #existing_uid #uid
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newPreconditionUIDConflictError (kind name uid1 uid2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionUIDConflictError #kind #name #uid1 #uid2
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
-Lemma wp_newPreconditionRVConflictError (kind name rv1 rv2: go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.newPreconditionRVConflictError #kind #name #rv1 #rv2
-  {{{ err, RET #err;
-      ⌜ conflict_error err ⌝
-  }}}.
-Proof. Admitted.
-
 (* [ValidateDeleteOptions] is part of the untranslated Kubernetes validation
    package.  [DeleteOptionsV.valid] is its pure-model counterpart. *)
 Axiom ErrorList_underlying_slice :

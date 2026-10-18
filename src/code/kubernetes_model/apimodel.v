@@ -132,14 +132,6 @@ Definition shouldDeleteDependents {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 Definition deletionFinalizersForGarbageCollection {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.deletionFinalizersForGarbageCollection"%go.
 
-Definition newPreconditionUIDConflictError {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.newPreconditionUIDConflictError"%go.
-
-Definition newUpdateUIDConflictError {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.newUpdateUIDConflictError"%go.
-
-Definition newUpdateResourceVersionConflictError {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.newUpdateResourceVersionConflictError"%go.
-
-Definition newPreconditionRVConflictError {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.newPreconditionRVConflictError"%go.
-
 Definition validateDeleteOptions {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.validateDeleteOptions"%go.
 
 Definition validateDeletePreconditions {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "kubernetes_model/apimodel.validateDeletePreconditions"%go.
@@ -2278,11 +2270,15 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  ("uid" <-[types.UID] "$r0");;;
     (if: ((![go.bool] "uidPrecondition") && ((![types.UID] "uid") ≠⟨types.UID⟩ #""%go)) && ((![types.UID] "uid") ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.string] "kind") in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       let: "$a2" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
-       let: "$a3" := (![types.UID] "uid") in
-       (FuncResolve newUpdateUIDConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+       let: "$a2" := (let: "$a0" := #"UID mismatch: expected %q, got %q"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert types.UID go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #())) in
+       let: "$sl1" := (Convert types.UID go.any (![types.UID] "uid")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
     let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
@@ -2337,11 +2333,15 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  ("rv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") ≠⟨go.string⟩ (![go.string] "existingRv"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.string] "kind") in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       let: "$a2" := (![go.string] "existingRv") in
-       let: "$a3" := (![go.string] "rv") in
-       (FuncResolve newUpdateResourceVersionConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+       let: "$a2" := (let: "$a0" := #"resourceVersion mismatch: expected %q, got %q"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "existingRv")) in
+       let: "$sl1" := (Convert go.string go.any (![go.string] "rv")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
     let: "$a1" := (![go.InterfaceType []] "existingObjCopy") in
@@ -2372,7 +2372,7 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     return: (let: "$a0" := (![go.InterfaceType []] "objCopy") in
      (FuncResolve deepCopy [] #()) "$a0", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1118:17 *)
+(* go: api_model.go:1126:17 *)
 Definition State__updateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2395,7 +2395,7 @@ Definition State__updateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
 
 (* updateStatusLocked requires s.mu to be held.
 
-   go: api_model.go:1126:17 *)
+   go: api_model.go:1134:17 *)
 Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj" "uidPrecondition",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -2483,11 +2483,15 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     do:  ("uid" <-[types.UID] "$r0");;;
     (if: ((![go.bool] "uidPrecondition") && ((![types.UID] "uid") ≠⟨types.UID⟩ #""%go)) && ((![types.UID] "uid") ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.string] "kind") in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       let: "$a2" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
-       let: "$a3" := (![types.UID] "uid") in
-       (FuncResolve newUpdateUIDConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+       let: "$a2" := (let: "$a0" := #"UID mismatch: expected %q, got %q"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert types.UID go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #())) in
+       let: "$sl1" := (Convert types.UID go.any (![types.UID] "uid")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
     let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
@@ -2542,11 +2546,15 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     do:  ("rv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") ≠⟨go.string⟩ (![go.string] "existingRv"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.string] "kind") in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       let: "$a2" := (![go.string] "existingRv") in
-       let: "$a3" := (![go.string] "rv") in
-       (FuncResolve newUpdateResourceVersionConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+       let: "$a2" := (let: "$a0" := #"resourceVersion mismatch: expected %q, got %q"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "existingRv")) in
+       let: "$sl1" := (Convert go.string go.any (![go.string] "rv")) in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
     let: "$a1" := (![go.InterfaceType []] "existingObjCopy") in
@@ -2580,7 +2588,7 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
 (* shouldOrphanDependents determines if the orphan finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L888-L925
 
-   go: api_model.go:1213:6 *)
+   go: api_model.go:1229:6 *)
 Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2618,7 +2626,7 @@ Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 (* shouldDeleteDependents determines if the foreground deletion finalizer should be set based on DeleteOptions.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L927-L966
 
-   go: api_model.go:1247:6 *)
+   go: api_model.go:1263:6 *)
 Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2657,7 +2665,7 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
    It returns whether the finalizer list needs updating and the new finalizer list.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L976-L1005
 
-   go: api_model.go:1282:6 *)
+   go: api_model.go:1298:6 *)
 Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2732,78 +2740,10 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} 
       else do:  #())));;;
     return: (#false, ![go.SliceType go.string] "oldFinalizers")).
 
-(* go: api_model.go:1326:6 *)
-Definition newPreconditionUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "kind" "name" "preconditionUID" "uid",
-    exception_do (let: "uid" := (GoAlloc go.string "uid") in
-    let: "preconditionUID" := (GoAlloc go.string "preconditionUID") in
-    let: "name" := (GoAlloc go.string "name") in
-    let: "kind" := (GoAlloc go.string "kind") in
-    return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-     CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-     let: "$a1" := (![go.string] "name") in
-     let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
-     let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "preconditionUID")) in
-     let: "$sl1" := (Convert go.string go.any (![go.string] "uid")) in
-     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-     (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-     (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
-
-(* go: api_model.go:1334:6 *)
-Definition newUpdateUIDConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "kind" "name" "existingUID" "uid",
-    exception_do (let: "uid" := (GoAlloc types.UID "uid") in
-    let: "existingUID" := (GoAlloc types.UID "existingUID") in
-    let: "name" := (GoAlloc go.string "name") in
-    let: "kind" := (GoAlloc go.string "kind") in
-    return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-     CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-     let: "$a1" := (![go.string] "name") in
-     let: "$a2" := (let: "$a0" := #"UID mismatch: expected %q, got %q"%go in
-     let: "$a1" := ((let: "$sl0" := (Convert types.UID go.any (![types.UID] "existingUID")) in
-     let: "$sl1" := (Convert types.UID go.any (![types.UID] "uid")) in
-     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-     (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-     (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
-
-(* go: api_model.go:1342:6 *)
-Definition newUpdateResourceVersionConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "kind" "name" "existingResourceVersion" "resourceVersion",
-    exception_do (let: "resourceVersion" := (GoAlloc go.string "resourceVersion") in
-    let: "existingResourceVersion" := (GoAlloc go.string "existingResourceVersion") in
-    let: "name" := (GoAlloc go.string "name") in
-    let: "kind" := (GoAlloc go.string "kind") in
-    return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-     CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-     let: "$a1" := (![go.string] "name") in
-     let: "$a2" := (let: "$a0" := #"resourceVersion mismatch: expected %q, got %q"%go in
-     let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "existingResourceVersion")) in
-     let: "$sl1" := (Convert go.string go.any (![go.string] "resourceVersion")) in
-     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-     (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-     (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
-
-(* go: api_model.go:1350:6 *)
-Definition newPreconditionRVConflictErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "kind" "name" "preconditionRV" "rv",
-    exception_do (let: "rv" := (GoAlloc go.string "rv") in
-    let: "preconditionRV" := (GoAlloc go.string "preconditionRV") in
-    let: "name" := (GoAlloc go.string "name") in
-    let: "kind" := (GoAlloc go.string "kind") in
-    return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-     CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-     let: "$a1" := (![go.string] "name") in
-     let: "$a2" := (let: "$a0" := #"the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified"%go in
-     let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "preconditionRV")) in
-     let: "$sl1" := (Convert go.string go.any (![go.string] "rv")) in
-     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-     (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-     (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))).
-
 (* validateDeleteOptions checks structural DeleteOptions validation that upstream performs in BeforeDelete.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L80-L81
 
-   go: api_model.go:1360:6 *)
+   go: api_model.go:1344:6 *)
 Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -2827,7 +2767,7 @@ Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
    Returns a Conflict error if preconditions don't match.
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go (BeforeDelete)
 
-   go: api_model.go:1374:6 *)
+   go: api_model.go:1358:6 *)
 Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
@@ -2840,22 +2780,30 @@ Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     then
       (if: Convert go.untyped_bool go.bool ((![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()))
       then
-        return: (let: "$a0" := (![go.string] "kind") in
+        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         let: "$a2" := (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) in
-         let: "$a3" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         (FuncResolve newPreconditionUIDConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+         let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #())
     else do:  #());;;
     (if: Convert go.untyped_bool go.bool ((![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))) ≠⟨go.PointerType go.string⟩ (Convert go.untyped_nil (go.PointerType go.string) UntypedNil))
     then
       (if: Convert go.untyped_bool go.bool ((![go.string] (![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) ≠⟨go.string⟩ ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()))
       then
-        return: (let: "$a0" := (![go.string] "kind") in
+        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         let: "$a2" := (![go.string] (![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) in
-         let: "$a3" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         (FuncResolve newPreconditionRVConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+         let: "$a2" := (let: "$a0" := #"the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified"%go in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] (![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #())
     else do:  #());;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
@@ -2864,7 +2812,7 @@ Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
    Returns (graceful, pendingGraceful, error).
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L162-L191
 
-   go: api_model.go:1401:6 *)
+   go: api_model.go:1393:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "options",
     exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
@@ -3031,7 +2979,7 @@ Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
    selfLink differences. This can still diverge from upstream in edge cases where storage
    normalization or Go representation details affect equality.
 
-   go: api_model.go:1510:6 *)
+   go: api_model.go:1502:6 *)
 Definition storageObjectDeepEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj1" "obj2",
     exception_do (let: "obj2" := (GoAlloc (go.InterfaceType []) "obj2") in
@@ -3070,7 +3018,7 @@ Definition storageObjectDeepEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
      let: "$a1" := (![go.InterfaceType []] "obj2Copy") in
      (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")).
 
-(* go: api_model.go:1526:6 *)
+(* go: api_model.go:1518:6 *)
 Definition shouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "objCopy" "existingObjCopy",
     exception_do (let: "existingObjCopy" := (GoAlloc (go.InterfaceType []) "existingObjCopy") in
@@ -3087,7 +3035,7 @@ Definition shouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L163-L165
    Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L1022-L1028
 
-   go: api_model.go:1535:6 *)
+   go: api_model.go:1527:6 *)
 Definition deletionTimestampForDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "graceful" "gracePeriod",
     exception_do (let: "gracePeriod" := (GoAlloc go.int64 "gracePeriod") in
@@ -3106,7 +3054,7 @@ Definition deletionTimestampForDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     do:  ("now" <-[apis_meta_v1.Time] "$r0");;;
     return: ("now")).
 
-(* go: api_model.go:1547:17 *)
+(* go: api_model.go:1539:17 *)
 Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3249,7 +3197,7 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1646:17 *)
+   go: api_model.go:1638:17 *)
 Definition State__PodGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3260,7 +3208,7 @@ Definition State__PodGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (MethodResolve (go.PointerType State) "PodMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1650:17 *)
+(* go: api_model.go:1642:17 *)
 Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3302,7 +3250,7 @@ Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1672:17 *)
+   go: api_model.go:1664:17 *)
 Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3313,7 +3261,7 @@ Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     (MethodResolve (go.PointerType State) "PodMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1676:17 *)
+(* go: api_model.go:1668:17 *)
 Definition State__PodMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3361,7 +3309,7 @@ Definition State__PodMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       do:  ("pods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "pods", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1694:17 *)
+(* go: api_model.go:1686:17 *)
 Definition State__PodCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3396,7 +3344,7 @@ Definition State__PodCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "createdPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1708:17 *)
+(* go: api_model.go:1700:17 *)
 Definition State__PodUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3431,7 +3379,7 @@ Definition State__PodUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1722:17 *)
+(* go: api_model.go:1714:17 *)
 Definition State__PodUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3466,7 +3414,7 @@ Definition State__PodUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1736:17 *)
+(* go: api_model.go:1728:17 *)
 Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3485,7 +3433,7 @@ Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1747:17 *)
+   go: api_model.go:1739:17 *)
 Definition State__ReplicaSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3496,7 +3444,7 @@ Definition State__ReplicaSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     (MethodResolve (go.PointerType State) "ReplicaSetMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1751:17 *)
+(* go: api_model.go:1743:17 *)
 Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3538,7 +3486,7 @@ Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1773:17 *)
+   go: api_model.go:1765:17 *)
 Definition State__ReplicaSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3549,7 +3497,7 @@ Definition State__ReplicaSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     (MethodResolve (go.PointerType State) "ReplicaSetMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1777:17 *)
+(* go: api_model.go:1769:17 *)
 Definition State__ReplicaSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3597,7 +3545,7 @@ Definition State__ReplicaSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("rss" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "rss", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1795:17 *)
+(* go: api_model.go:1787:17 *)
 Definition State__ReplicaSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3632,7 +3580,7 @@ Definition State__ReplicaSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "createdRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1809:17 *)
+(* go: api_model.go:1801:17 *)
 Definition State__ReplicaSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3667,7 +3615,7 @@ Definition State__ReplicaSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1823:17 *)
+(* go: api_model.go:1815:17 *)
 Definition State__ReplicaSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3702,7 +3650,7 @@ Definition State__ReplicaSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1837:17 *)
+(* go: api_model.go:1829:17 *)
 Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3721,7 +3669,7 @@ Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1843:17 *)
+   go: api_model.go:1835:17 *)
 Definition State__PersistentVolumeClaimGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3732,7 +3680,7 @@ Definition State__PersistentVolumeClaimGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
     (MethodResolve (go.PointerType State) "PersistentVolumeClaimMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1847:17 *)
+(* go: api_model.go:1839:17 *)
 Definition State__PersistentVolumeClaimMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3774,7 +3722,7 @@ Definition State__PersistentVolumeClaimMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1869:17 *)
+   go: api_model.go:1861:17 *)
 Definition State__PersistentVolumeClaimListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3785,7 +3733,7 @@ Definition State__PersistentVolumeClaimListⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
     (MethodResolve (go.PointerType State) "PersistentVolumeClaimMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1873:17 *)
+(* go: api_model.go:1865:17 *)
 Definition State__PersistentVolumeClaimMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3833,7 +3781,7 @@ Definition State__PersistentVolumeClaimMutListⁱᵐᵖˡ {ext : ffi_syntax} {go
       do:  ("claims" <-[go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "claims", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1891:17 *)
+(* go: api_model.go:1883:17 *)
 Definition State__PersistentVolumeClaimCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3868,7 +3816,7 @@ Definition State__PersistentVolumeClaimCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_
     else do:  #());;;
     return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "createdPVC", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1905:17 *)
+(* go: api_model.go:1897:17 *)
 Definition State__PersistentVolumeClaimUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3903,7 +3851,7 @@ Definition State__PersistentVolumeClaimUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_
     else do:  #());;;
     return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1919:17 *)
+(* go: api_model.go:1911:17 *)
 Definition State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3938,7 +3886,7 @@ Definition State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax
     else do:  #());;;
     return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1933:17 *)
+(* go: api_model.go:1925:17 *)
 Definition State__PersistentVolumeClaimDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3957,7 +3905,7 @@ Definition State__PersistentVolumeClaimDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1939:17 *)
+   go: api_model.go:1931:17 *)
 Definition State__StatefulSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -3968,7 +3916,7 @@ Definition State__StatefulSetGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     (MethodResolve (go.PointerType State) "StatefulSetMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1943:17 *)
+(* go: api_model.go:1935:17 *)
 Definition State__StatefulSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4010,7 +3958,7 @@ Definition State__StatefulSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:1965:17 *)
+   go: api_model.go:1957:17 *)
 Definition State__StatefulSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4021,7 +3969,7 @@ Definition State__StatefulSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     (MethodResolve (go.PointerType State) "StatefulSetMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:1969:17 *)
+(* go: api_model.go:1961:17 *)
 Definition State__StatefulSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4069,7 +4017,7 @@ Definition State__StatefulSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
       do:  ("sets" <-[go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "sets", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:1987:17 *)
+(* go: api_model.go:1979:17 *)
 Definition State__StatefulSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4104,7 +4052,7 @@ Definition State__StatefulSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.StatefulSet] "createdSS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2001:17 *)
+(* go: api_model.go:1993:17 *)
 Definition State__StatefulSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4139,7 +4087,7 @@ Definition State__StatefulSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2015:17 *)
+(* go: api_model.go:2007:17 *)
 Definition State__StatefulSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4174,7 +4122,7 @@ Definition State__StatefulSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2029:17 *)
+(* go: api_model.go:2021:17 *)
 Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4193,7 +4141,7 @@ Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2035:17 *)
+   go: api_model.go:2027:17 *)
 Definition State__DeploymentGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4204,7 +4152,7 @@ Definition State__DeploymentGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     (MethodResolve (go.PointerType State) "DeploymentMutGet"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:2039:17 *)
+(* go: api_model.go:2031:17 *)
 Definition State__DeploymentMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4250,7 +4198,7 @@ Definition State__DeploymentMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2061:17 *)
+   go: api_model.go:2053:17 *)
 Definition State__DeploymentListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4261,7 +4209,7 @@ Definition State__DeploymentListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     (MethodResolve (go.PointerType State) "DeploymentMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:2065:17 *)
+(* go: api_model.go:2057:17 *)
 Definition State__DeploymentMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4309,7 +4257,7 @@ Definition State__DeploymentMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("deployments" <-[go.SliceType (go.PointerType api_apps_v1.Deployment)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_apps_v1.Deployment)] "deployments", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2083:17 *)
+(* go: api_model.go:2075:17 *)
 Definition State__DeploymentCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4344,7 +4292,7 @@ Definition State__DeploymentCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.Deployment] "createdDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2097:17 *)
+(* go: api_model.go:2089:17 *)
 Definition State__DeploymentUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4379,7 +4327,7 @@ Definition State__DeploymentUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2111:17 *)
+(* go: api_model.go:2103:17 *)
 Definition State__DeploymentUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4414,7 +4362,7 @@ Definition State__DeploymentUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2125:17 *)
+(* go: api_model.go:2117:17 *)
 Definition State__DeploymentDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4433,7 +4381,7 @@ Definition State__DeploymentDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2131:17 *)
+   go: api_model.go:2123:17 *)
 Definition State__NamespaceGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4472,7 +4420,7 @@ Definition State__NamespaceGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2149:17 *)
+   go: api_model.go:2141:17 *)
 Definition State__ServiceAccountGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4512,7 +4460,7 @@ Definition State__ServiceAccountGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType api_core_v1.ServiceAccount] "serviceAccount", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2170:17 *)
+(* go: api_model.go:2162:17 *)
 Definition State__ServiceAccountCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "serviceAccount",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4549,7 +4497,7 @@ Definition State__ServiceAccountCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2185:17 *)
+   go: api_model.go:2177:17 *)
 Definition State__ClusterRoleGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4558,7 +4506,7 @@ Definition State__ClusterRoleGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     (MethodResolve (go.PointerType State) "ClusterRoleMutGet"%go (![go.PointerType State] "s")) "$a0")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:2189:17 *)
+(* go: api_model.go:2181:17 *)
 Definition State__ClusterRoleMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "name",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4602,7 +4550,7 @@ Definition State__ClusterRoleMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 
 (* Returned value must be treated as read-only.
 
-   go: api_model.go:2211:17 *)
+   go: api_model.go:2203:17 *)
 Definition State__ClusterRoleListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4611,7 +4559,7 @@ Definition State__ClusterRoleListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     (MethodResolve (go.PointerType State) "ClusterRoleMutList"%go (![go.PointerType State] "s")) "$a0")) in
     return: ("$ret0", "$ret1")).
 
-(* go: api_model.go:2215:17 *)
+(* go: api_model.go:2207:17 *)
 Definition State__ClusterRoleMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4658,7 +4606,7 @@ Definition State__ClusterRoleMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
       do:  ("clusterRoles" <-[go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "$r0")));;;
     return: (![go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "clusterRoles", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2233:17 *)
+(* go: api_model.go:2225:17 *)
 Definition State__ClusterRoleCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "cr",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -4692,7 +4640,7 @@ Definition State__ClusterRoleCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType api_rbac_v1.ClusterRole] "createdCR", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: api_model.go:2246:17 *)
+(* go: api_model.go:2238:17 *)
 Definition State__ClusterRoleUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "cr",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5234,14 +5182,14 @@ Definition State__ClusterRolePatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     else do:  #());;;
     return: (TypeAssert (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:14:6 *)
+(* go: transaction.go:15:6 *)
 Definition preconditionUIDMismatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
     let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
     return: ((((![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")) ≠⟨go.PointerType apis_meta_v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Preconditions) UntypedNil)) && ((![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")))) ≠⟨go.PointerType types.UID⟩ (Convert go.untyped_nil (go.PointerType types.UID) UntypedNil))) && ((![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options"))))) ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())))).
 
-(* go: transaction.go:18:6 *)
+(* go: transaction.go:19:6 *)
 Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
@@ -5258,7 +5206,7 @@ Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
     do:  ((StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) <-[go.PointerType go.string] "$r0");;;
     return: #()).
 
-(* go: transaction.go:26:17 *)
+(* go: transaction.go:27:17 *)
 Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5297,11 +5245,15 @@ Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       let: "$a1" := (![apis_meta_v1.Object] "metadata") in
       (FuncResolve preconditionUIDMismatch [] #()) "$a0" "$a1"
       then
-        return: (let: "$a0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
+        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
+         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         let: "$a2" := (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "optionsCopy"))))) in
-         let: "$a3" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()) in
-         (FuncResolve newPreconditionUIDConflictError [] #()) "$a0" "$a1" "$a2" "$a3")
+         let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "optionsCopy")))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
+         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #());;;
       do:  (let: "$a0" := "optionsCopy" in
       let: "$a1" := (![apis_meta_v1.Object] "metadata") in
@@ -5316,7 +5268,7 @@ Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.error] "err"))).
 
-(* go: transaction.go:59:17 *)
+(* go: transaction.go:60:17 *)
 Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5408,7 +5360,7 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
-(* go: transaction.go:102:17 *)
+(* go: transaction.go:103:17 *)
 Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5443,7 +5395,7 @@ Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     else do:  #());;;
     return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:116:17 *)
+(* go: transaction.go:117:17 *)
 Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5478,7 +5430,7 @@ Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     else do:  #());;;
     return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:130:17 *)
+(* go: transaction.go:131:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5570,7 +5522,7 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
-(* go: transaction.go:173:17 *)
+(* go: transaction.go:174:17 *)
 Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5865,10 +5817,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] shouldOrphanDependents_unfold :: FuncUnfold shouldOrphanDependents [] (shouldOrphanDependentsⁱᵐᵖˡ);
   #[global] shouldDeleteDependents_unfold :: FuncUnfold shouldDeleteDependents [] (shouldDeleteDependentsⁱᵐᵖˡ);
   #[global] deletionFinalizersForGarbageCollection_unfold :: FuncUnfold deletionFinalizersForGarbageCollection [] (deletionFinalizersForGarbageCollectionⁱᵐᵖˡ);
-  #[global] newPreconditionUIDConflictError_unfold :: FuncUnfold newPreconditionUIDConflictError [] (newPreconditionUIDConflictErrorⁱᵐᵖˡ);
-  #[global] newUpdateUIDConflictError_unfold :: FuncUnfold newUpdateUIDConflictError [] (newUpdateUIDConflictErrorⁱᵐᵖˡ);
-  #[global] newUpdateResourceVersionConflictError_unfold :: FuncUnfold newUpdateResourceVersionConflictError [] (newUpdateResourceVersionConflictErrorⁱᵐᵖˡ);
-  #[global] newPreconditionRVConflictError_unfold :: FuncUnfold newPreconditionRVConflictError [] (newPreconditionRVConflictErrorⁱᵐᵖˡ);
   #[global] validateDeleteOptions_unfold :: FuncUnfold validateDeleteOptions [] (validateDeleteOptionsⁱᵐᵖˡ);
   #[global] validateDeletePreconditions_unfold :: FuncUnfold validateDeletePreconditions [] (validateDeletePreconditionsⁱᵐᵖˡ);
   #[global] checkGracefulDelete_unfold :: FuncUnfold checkGracefulDelete [] (checkGracefulDeleteⁱᵐᵖˡ);

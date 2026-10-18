@@ -186,10 +186,17 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   wp_if_destruct.
   2: {
-    wp_apply wp_newUpdateResourceVersionConflictError.
-    iIntros (err) "%Herr_conflict".
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+    wp_apply (wp_Errorf with "[$Herror_args]").
+    iIntros (error_cause) "_". wp_auto.
+    wp_apply (wp_NewConflict
+      {| schema.GroupResource.Group' := ""%go;
+         schema.GroupResource.Resource' := KObjectV.kind kobj |}
+      (KObjectV.objectmeta kobj).(ObjectMetaV.Name') (interface.ok error_cause)).
+    iIntros (err_l) "%Herr_conflict". wp_auto.
+    set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (conflict_error_not_nil err Herr_conflict) as Herr_not_nil.
-    wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     rewrite -Hkey_new.

@@ -145,8 +145,16 @@ Proof.
     wp_apply (wp_GetUID_deepown_kobject old_i1 old_l1 old_kobj with
       "[$Hdeepown_m_old_l]"). 1: done.
     iIntros "Hdeepown_m_old_l". wp_auto.
-    wp_apply wp_newUpdateUIDConflictError.
-    iIntros (err) "%Herr_conflict".
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+    wp_apply (wp_Errorf with "[$Herror_args]").
+    iIntros (error_cause) "_". wp_auto.
+    wp_apply (wp_NewConflict
+      {| schema.GroupResource.Group' := ""%go;
+         schema.GroupResource.Resource' := KObjectV.kind kobj |}
+      (KObjectV.objectmeta kobj).(ObjectMetaV.Name') (interface.ok error_cause)).
+    iIntros (err_l) "%Herr_conflict". wp_auto.
+    set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (conflict_error_not_nil err Herr_conflict) as Herr_ne.
     iApply fupd_wp.
     iMod "Hau" as (witness_meta witness_spec)
@@ -161,7 +169,7 @@ Proof.
       end)%I) with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
     { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
-    wp_auto. rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
@@ -182,10 +190,17 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   wp_if_destruct.
   2: {
-    wp_apply wp_newUpdateResourceVersionConflictError.
-    iIntros (err) "%Herr_conflict".
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+    wp_apply (wp_Errorf with "[$Herror_args]").
+    iIntros (error_cause) "_". wp_auto.
+    wp_apply (wp_NewConflict
+      {| schema.GroupResource.Group' := ""%go;
+         schema.GroupResource.Resource' := KObjectV.kind kobj |}
+      (KObjectV.objectmeta kobj).(ObjectMetaV.Name') (interface.ok error_cause)).
+    iIntros (err_l) "%Herr_conflict". wp_auto.
+    set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (conflict_error_not_nil err Herr_conflict) as Herr_ne.
-    wp_auto.
     iApply fupd_wp.
     iMod "Hau" as (witness_meta witness_spec)
       "(#Hdeletion_observed & %Hvalid_update_witness & [_ Hclose])".

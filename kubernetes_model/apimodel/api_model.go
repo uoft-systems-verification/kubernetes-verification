@@ -1054,7 +1054,11 @@ func (s *State) updateLocked(kind, namespace string, obj interface{}, uidPrecond
 
 	// PUT supplies a UID storage precondition; PATCH validates UID immutability instead.
 	if uid := metadata.GetUID(); uidPrecondition && uid != "" && uid != existingMetadata.GetUID() {
-		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("UID mismatch: expected %q, got %q", existingMetadata.GetUID(), uid),
+		)
 	}
 
 	rv := metadata.GetResourceVersion()
@@ -1087,7 +1091,11 @@ func (s *State) updateLocked(kind, namespace string, obj interface{}, uidPrecond
 
 	rv = metadata.GetResourceVersion()
 	if rv != existingRv {
-		return nil, newUpdateResourceVersionConflictError(kind, name, existingRv, rv)
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingRv, rv),
+		)
 	}
 
 	if err = applyValidationAndDefaultingOnUpdate(objCopy, existingObjCopy, namespace); err != nil {
@@ -1159,7 +1167,11 @@ func (s *State) updateStatusLocked(kind, namespace string, obj interface{}, uidP
 	}
 
 	if uid := metadata.GetUID(); uidPrecondition && uid != "" && uid != existingMetadata.GetUID() {
-		return nil, newUpdateUIDConflictError(kind, name, existingMetadata.GetUID(), uid)
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("UID mismatch: expected %q, got %q", existingMetadata.GetUID(), uid),
+		)
 	}
 
 	rv := metadata.GetResourceVersion()
@@ -1186,7 +1198,11 @@ func (s *State) updateStatusLocked(kind, namespace string, obj interface{}, uidP
 
 	rv = metadata.GetResourceVersion()
 	if rv != existingRv {
-		return nil, newUpdateResourceVersionConflictError(kind, name, existingRv, rv)
+		return nil, errors.NewConflict(
+			schema.GroupResource{Resource: kind},
+			name,
+			fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingRv, rv),
+		)
 	}
 
 	if err = applyValidationAndDefaultingOnStatusUpdate(objCopy, existingObjCopy, namespace); err != nil {
@@ -1323,38 +1339,6 @@ func deletionFinalizersForGarbageCollection(metadata metav1.Object, options *met
 	return false, oldFinalizers
 }
 
-func newPreconditionUIDConflictError(kind string, name string, preconditionUID string, uid string) error {
-	return errors.NewConflict(
-		schema.GroupResource{Resource: kind},
-		name,
-		fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
-			preconditionUID, uid))
-}
-
-func newUpdateUIDConflictError(kind string, name string, existingUID types.UID, uid types.UID) error {
-	return errors.NewConflict(
-		schema.GroupResource{Resource: kind},
-		name,
-		fmt.Errorf("UID mismatch: expected %q, got %q", existingUID, uid),
-	)
-}
-
-func newUpdateResourceVersionConflictError(kind string, name string, existingResourceVersion string, resourceVersion string) error {
-	return errors.NewConflict(
-		schema.GroupResource{Resource: kind},
-		name,
-		fmt.Errorf("resourceVersion mismatch: expected %q, got %q", existingResourceVersion, resourceVersion),
-	)
-}
-
-func newPreconditionRVConflictError(kind string, name string, preconditionRV string, rv string) error {
-	return errors.NewConflict(
-		schema.GroupResource{Resource: kind},
-		name,
-		fmt.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
-			preconditionRV, rv))
-}
-
 // validateDeleteOptions checks structural DeleteOptions validation that upstream performs in BeforeDelete.
 // Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go#L80-L81
 func validateDeleteOptions(options *metav1.DeleteOptions) error {
@@ -1379,16 +1363,24 @@ func validateDeletePreconditions(metadata metav1.Object, options *metav1.DeleteO
 	// Check UID precondition
 	if options.Preconditions.UID != nil {
 		if *options.Preconditions.UID != metadata.GetUID() {
-			return newPreconditionUIDConflictError(kind, metadata.GetName(),
-				string(*options.Preconditions.UID), string(metadata.GetUID()))
+			return errors.NewConflict(
+				schema.GroupResource{Resource: kind},
+				metadata.GetName(),
+				fmt.Errorf("the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated",
+					string(*options.Preconditions.UID), string(metadata.GetUID())),
+			)
 		}
 	}
 
 	// Check ResourceVersion precondition
 	if options.Preconditions.ResourceVersion != nil {
 		if *options.Preconditions.ResourceVersion != metadata.GetResourceVersion() {
-			return newPreconditionRVConflictError(kind, metadata.GetName(),
-				string(*options.Preconditions.ResourceVersion), string(metadata.GetResourceVersion()))
+			return errors.NewConflict(
+				schema.GroupResource{Resource: kind},
+				metadata.GetName(),
+				fmt.Errorf("the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified",
+					string(*options.Preconditions.ResourceVersion), string(metadata.GetResourceVersion())),
+			)
 		}
 	}
 

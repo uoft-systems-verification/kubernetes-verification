@@ -187,9 +187,16 @@ Proof.
               wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
               iIntros "Hdeepown_m_l".
               wp_auto.
-              wp_apply wp_newPreconditionRVConflictError.
-              iIntros (err) "%Hconflict".
-              wp_auto.
+              wp_apply wp_slice_literal. iSplitR; first done.
+              iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+              wp_apply (wp_Errorf with "[$Herror_args]").
+              iIntros (error_cause) "_". wp_auto.
+              wp_apply (wp_NewConflict
+                {| schema.GroupResource.Group' := ""%go;
+                   schema.GroupResource.Resource' := kind |}
+                m.(ObjectMetaV.Name') (interface.ok error_cause)).
+              iIntros (err_l) "%Hconflict". wp_auto.
+              set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
               iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
                 | Some rv' => ∃ rv_c',
                     v1.Preconditions.ResourceVersion' preconditions_c ↦{dq} rv_c' ∗
@@ -259,9 +266,16 @@ Proof.
         wp_apply (wp_GetUID_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
         wp_auto.
-        wp_apply wp_newPreconditionUIDConflictError.
-        iIntros (err) "%Hconflict".
-        wp_auto.
+        wp_apply wp_slice_literal. iSplitR; first done.
+        iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+        wp_apply (wp_Errorf with "[$Herror_args]").
+        iIntros (error_cause) "_". wp_auto.
+        wp_apply (wp_NewConflict
+          {| schema.GroupResource.Group' := ""%go;
+             schema.GroupResource.Resource' := kind |}
+          m.(ObjectMetaV.Name') (interface.ok error_cause)).
+        iIntros (err_l) "%Hconflict". wp_auto.
+        set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some uid' => ∃ uid_c',
               v1.Preconditions.UID' preconditions_c ↦{dq} uid_c' ∗
@@ -355,9 +369,16 @@ Proof.
            wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
            wp_auto.
-           wp_apply wp_newPreconditionRVConflictError.
-           iIntros (err) "%Hconflict".
-           wp_auto.
+           wp_apply wp_slice_literal. iSplitR; first done.
+           iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+           wp_apply (wp_Errorf with "[$Herror_args]").
+           iIntros (error_cause) "_". wp_auto.
+           wp_apply (wp_NewConflict
+             {| schema.GroupResource.Group' := ""%go;
+                schema.GroupResource.Resource' := kind |}
+             m.(ObjectMetaV.Name') (interface.ok error_cause)).
+           iIntros (err_l) "%Hconflict". wp_auto.
+           set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
            iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
              | Some rv' => ∃ rv_c',
                  v1.Preconditions.ResourceVersion' preconditions_c ↦{dq} rv_c' ∗
