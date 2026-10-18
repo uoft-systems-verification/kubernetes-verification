@@ -332,7 +332,7 @@ Proof.
   wp_auto.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods_managed (mutating_fractions dq) terminating_bound'
+      pods_managed (mutating_fractions dq) false terminating_bound'
       Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")

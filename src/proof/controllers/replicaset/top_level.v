@@ -124,7 +124,7 @@ Definition mutating_fractions dq : all_fractions :=
 Definition stability_fractions dq : all_fractions :=
   {| rs_dq := dq; rs_status_dq := 1; pod_dq := dq; children_dq := dq |}.
 
-Definition owned_resources γ rs pods fractions (terminating_bound : nat) : iProp Σ :=
+Definition owned_resources γ rs pods fractions (ready : bool) (terminating_bound : nat) : iProp Σ :=
   "Hown_rs_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs)
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(rs_dq) 
       rs.(ReplicaSetV.ObjectMeta') ∗
@@ -142,8 +142,13 @@ Definition owned_resources γ rs pods fractions (terminating_bound : nat) : iPro
   "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(children_dq) 
       (list_to_set (PodV.key <$> pods)) ∗
-  "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
+  "Hown_terminating_children_frag" ∷
+    (if ready then
+      own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 0%nat
+    else
+      own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I ∗
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
 (* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes
@@ -159,7 +164,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
-      "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) 0%nat ∗
+      "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true 0%nat ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       (* - > 0: otherwise [manageReplicas] clamps this sync to zero pods, and
            neither disjunct below holds.
@@ -183,7 +188,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
      succeeds (the trusted UpdateStatus shim retries resource-version
      conflicts). *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (terminating_bound' : nat), RET #interface.nil;
-      owned_resources γ rs' pods' (mutating_fractions dq) terminating_bound' ∗
+      owned_resources γ rs' pods' (mutating_fractions dq) false terminating_bound' ∗
       ⌜ current_state_matches rs pods' ∨
         (pods_progress_observed pods pods' ∧ match_distance rs pods' < match_distance rs pods) ⌝
   }}}.
@@ -200,7 +205,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
-      "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) terminating_bound ∗
+      "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false terminating_bound ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       (* calculateStatus converts the counts of the listed pods to int32. The
@@ -212,7 +217,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (terminating_bound' : nat) (err : interface.t), RET #err;
-      owned_resources γ rs' pods' (mutating_fractions dq) terminating_bound' ∗
+      owned_resources γ rs' pods' (mutating_fractions dq) false terminating_bound' ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝
   }}}.
 
@@ -228,7 +233,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
-      "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) 0%nat ∗
+      "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true 0%nat ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       (* As in [progress_spec]. *)
       "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
@@ -239,7 +244,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
   {{{ (rs' : ReplicaSetV.t) (err : interface.t), RET #err;
-      owned_resources γ rs' pods (stability_fractions dq) 0%nat
+      owned_resources γ rs' pods (stability_fractions dq) true 0%nat
   }}}.
 
 End specs.
