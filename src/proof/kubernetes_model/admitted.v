@@ -264,7 +264,8 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general
 Proof. Admitted.
 
 (** Trusted: the metadata half of a successful status-update helper call, used
-    only by [wp_State__update_status_same_meta_au]. For a request whose metadata
+    only by [wp_State__update_status_same_meta_au] and
+    [wp_State__update_status_same_meta_general_au]. For a request whose metadata
     is a simple update of [old], the stored object keeps the request's kind,
     TypeMeta and metadata (except the resource version, so the generation too)
     and [old]'s spec. This holds even when the request status is not known to be
@@ -309,6 +310,39 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
           namespace old_obj new_obj updated_obj ⌝ ∗
       ⌜ applyValidationAndDefaultingOnStatusUpdate_meta_preserved
           namespace old_obj new_obj updated_obj ⌝
+  }}}.
+Proof. Admitted.
+
+(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_general] together
+    with [applyValidationAndDefaultingOnStatusUpdate_meta_preserved] on success.
+    The request status need not be valid, so the helper may reject it. *)
+Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general_same_meta
+    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
+      #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ (err : interface.t), RET #err;
+      (⌜ err = interface.nil ⌝ ∗
+        ∃ updated_obj,
+          KObjectV.deepown_l new_l updated_obj 1 ∗
+          KObjectV.deepown_l old_l old_obj dq ∗
+          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+          ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+              namespace old_obj new_obj updated_obj ⌝ ∗
+          ⌜ applyValidationAndDefaultingOnStatusUpdate_meta_preserved
+              namespace old_obj new_obj updated_obj ⌝) ∨
+      (⌜ err ≠ interface.nil ⌝ ∗
+        ⌜ ¬ conflict_error err ⌝ ∗
+        ∃ failed_obj,
+          KObjectV.deepown_l new_l failed_obj 1 ∗
+          KObjectV.deepown_l old_l old_obj dq ∗
+          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
   }}}.
 Proof. Admitted.
 

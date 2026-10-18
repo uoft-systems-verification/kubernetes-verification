@@ -208,14 +208,14 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false terminating_bound ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
-      (* calculateStatus converts the counts of the listed pods to int32. The
-         listing returns [pods] and at most [terminating_bound] terminating pods. *)
-      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods + terminating_bound) < 2 ^ 31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
       #rsc_clock #controller_features #namespace #name
+  (* The status write may be rejected, for example when a pod count overflows
+     int32 in calculateStatus; the sync then returns that error. Pods are not
+     written after it, so the distance claim holds either way. *)
   {{{ (rs' : ReplicaSetV.t) (pods' : list PodV.t) (terminating_bound' : nat) (err : interface.t), RET #err;
       owned_resources γ rs' pods' (mutating_fractions dq) false terminating_bound' ∗
       ⌜ match_distance rs pods' ≤ match_distance rs pods ⌝

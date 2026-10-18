@@ -311,25 +311,14 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
-  iDestruct (big_sepL2_length with "Hall_deepown_pods") as %Hall_ptrs_len.
-  (* The written status is valid: the listed pods number at most
-     [length pods + terminating_bound] < 2^31, so both counts fit in int32, and
-     the observed generation is the non-negative generation of [rs]. *)
-  assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
-      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
-  { pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
-    pose proof (Permutation_length Hactive_perm) as Hactive_len'.
-    apply Hstatus_valid.
-    - lia.
-    - lia.
-    - pose proof (f_equal ObjectMetaV.Generation' Hget_Hmeta_fields) as Hgen.
-      simpl in Hgen. rewrite Hgen. exact Hgeneration_nonneg. }
-  wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq
+  (* The computed status may be invalid (a pod count may overflow int32), so the
+     write may be rejected; the ReplicaSet's fragments come back either way. *)
+  wp_apply (wp_updateReplicaSetStatus_general γ l c copy_l copy_phy rs_get status_c status dq
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
-  { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
-  iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
+  { iFrame "#". iPureIntro. done. }
+  iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
   destruct Hchanged as (Hmeta_changed & _).
-  wp_auto.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
+  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       pods_managed (mutating_fractions dq) false terminating_bound'
@@ -353,7 +342,9 @@ Proof.
     rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hpods_active_len.
     lia.
   }
-  iApply ("HΦ" $! rs'' pods_managed terminating_bound' with "[$Hresources //]").
+  (* if err != nil { return err }; return manageReplicasErr *)
+  destruct err as [err_ok|]; wp_auto;
+    iApply ("HΦ" $! rs'' pods_managed terminating_bound' with "[$Hresources //]").
 Qed.
 
 End proof.

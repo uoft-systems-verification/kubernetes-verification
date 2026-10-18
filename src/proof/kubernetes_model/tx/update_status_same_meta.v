@@ -190,4 +190,154 @@ Proof.
     iFrame.
 Qed.
 
+(* A variant of [wp_State__updateStatusTx_same_meta] that does not require the
+   requested status to be valid: the write either succeeds as there, without a
+   description of the stored status beyond its validity, or returns an error
+   and leaves the status fragment unchanged. *)
+Lemma wp_State__updateStatusTx_same_meta_general γ l kind namespace i kobj dq_in uid dq kmeta kstatus :
+  {{{ is_pkg_init apimodel ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind namespace kobj ⌝ ∗
+      "%Hmeta_same" ∷ ⌜ ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta ⌝ ∗
+      "Hdeepown_i" ∷ KObjectV.deepown_i i kobj dq_in ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
+      "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) uid 1 kstatus
+  }}}
+    l @! (go.PointerType apimodel.State) @! "updateStatusTx" #kind #namespace #(interface.ok i)
+  {{{ (ret err : interface.t), RET (#ret, #err);
+      KObjectV.deepown_i i kobj dq_in ∗
+      own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
+      ((⌜ err = interface.nil ⌝ ∗
+        ∃ i' kobj',
+          ⌜ ret = interface.ok i' ⌝ ∗
+          ⌜ KObjectV.valid kobj' ⌝ ∗
+          ⌜ KObjectV.same_kind kobj kobj' ∧
+            ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj') kmeta ⌝ ∗
+          KObjectV.deepown_i i' kobj' 1 ∗
+          own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status kobj')) ∨
+       (⌜ err ≠ interface.nil ⌝ ∗
+        own_status_frag γ (KObjectV.key kobj) uid 1 kstatus))
+  }}}.
+Proof.
+  wp_start as "H". iNamed "H".
+  pose proof Hrequest_ok as (Hkind_matches & Hname_not_empty & Huid_nonempty & Hns_matches & Hrv_valid &
+    Hvalid_typemeta & Hlabels & Hannotations & Howners & Hfinalizers & Hmanaged_fields).
+  wp_auto.
+  (* A conflict leaves every fragment as it was, so the loop just keeps them. *)
+  set I := (
+    "obj" ∷ obj_ptr ↦ interface.ok i ∗
+    "Hdeepown_i" ∷ KObjectV.deepown_i i kobj dq_in ∗
+    "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
+    "Hown_status_frag" ∷ own_status_frag γ (KObjectV.key kobj) uid 1 kstatus)%I.
+  iAssert I with "[obj Hdeepown_i Hown_meta_frag Hown_status_frag]" as "Hloop_inv".
+  { iFrame. }
+  wp_for "Hloop_inv".
+  wp_apply (wp_deepCopy i kobj dq_in with "[$Hdeepown_i]").
+  iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i]". wp_auto.
+  iDestruct "Hdeepown_i_copy" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
+  wp_apply wp_Accessor. 1: iPureIntro; done.
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
+    "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
+  wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
+  { iPureIntro. split. 1: done. right. done. }
+  iIntros "Hdeepown_metadata". wp_auto.
+  wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
+  iIntros "Hdeepown_metadata". wp_auto.
+  rewrite bool_decide_false //. wp_auto.
+  set key := {|
+    KKey.Kind' := kind;
+    KKey.Name' := ObjectMetaV.Name' (KObjectV.objectmeta kobj);
+    KKey.Namespace' := namespace
+  |}.
+  assert (key = KObjectV.key kobj) as Hkey_new.
+  { unfold key. rewrite Hkind_matches Hns_matches. destruct kobj; done. }
+  rewrite Hkey_new.
+  wp_apply (wp_State__get_some γ l (KObjectV.key kobj) uid dq (DfracOwn 1) kmeta None (Some kstatus)
+    with "[$Hown_meta_frag $Hown_status_frag]").
+  { iFrame "#". }
+  iIntros (existing_i existing_kobj) "Hget".
+  iDestruct "Hget" as "(%Hvalid_existing & %Hextra_valid_existing & %Hkey_existing & %Hmeta_eq &
+    Hdeepown_existing_i & Hown_meta_frag & _ & Hown_status_frag & %Hstatus_eq)".
+  wp_auto.
+  iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
+  wp_apply wp_Accessor. 1: iPureIntro; done.
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
+    "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
+      Hdeepown_existing_status)".
+  wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
+    "[$Hdeepown_existing_metadata]"). 1: done.
+  iIntros "Hdeepown_existing_metadata". wp_auto.
+  wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
+    "[$Hdeepown_metadata]"). 1: done.
+  iIntros "Hdeepown_metadata". wp_auto.
+  assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := namespace |>) =
+    KObjectV.objectmeta kobj) as Hnamespace_noop.
+  { rewrite Hns_matches. destruct (KObjectV.objectmeta kobj); done. }
+  iEval (rewrite Hnamespace_noop) in "Hdeepown_metadata".
+  set kmeta_rv := (KObjectV.objectmeta kobj <| ObjectMetaV.ResourceVersion' :=
+    ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>).
+  set kobj_rv := KObjectV.update_objectmeta kobj kmeta_rv.
+  iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hkobj_l_not_null with
+    "[$Htypemeta $Hdeepown_metadata $Hdeepown_spec $Hdeepown_status]") as
+    "Hdeepown_l".
+  iAssert (KObjectV.deepown_i i_copy kobj_rv 1) with "[Hdeepown_l]" as
+    "Hdeepown_i_copy".
+  { iExists kobj_l. iSplit.
+    { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
+    iFrame. }
+  assert (valid_resource_version
+    (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
+    Hexisting_rv_valid.
+  { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
+  (* The request identity and metadata stay valid at the stored resource version. *)
+  assert (status_update_request_ok kind namespace kobj_rv) as Hrequest_ok_rv.
+  { subst kobj_rv kmeta_rv.
+    rewrite /status_update_request_ok KObjectV.kind_update_objectmeta
+      KObjectV.typemeta_update_objectmeta objectmeta_update_objectmeta.
+    destruct (KObjectV.objectmeta kobj); simpl in *. split_and!; done. }
+  wp_apply (wp_State__update_status_same_meta_general_au γ l kind namespace i_copy kobj_rv).
+  iFrame "#". iFrame "Hdeepown_i_copy".
+  iSplit; first (iPureIntro; exact Hrequest_ok_rv).
+  iApply fupd_mask_intro.
+  { Timeout 10 set_solver. }
+  iIntros "Hmask".
+  iExists uid, dq, kmeta, kstatus.
+  assert (KObjectV.key kobj_rv = KObjectV.key kobj) as Hkey_rv.
+  { subst kobj_rv kmeta_rv. destruct kobj; done. }
+  rewrite Hkey_rv.
+  iFrame "Hown_meta_frag Hown_status_frag".
+  iSplit.
+  { iPureIntro. subst kobj_rv kmeta_rv. rewrite objectmeta_update_objectmeta.
+    rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version
+      in Hmeta_same |- *.
+    rewrite -Hmeta_same. destruct (KObjectV.objectmeta kobj); done. }
+  iSplit.
+  - iIntros (i' kobj') "Hsuccess".
+    iDestruct "Hsuccess" as "(%Hvalid_updated & %Hpreserved & Hdeepown_i' &
+      Hown_meta_frag & Hown_status_frag)".
+    destruct Hpreserved as (Hsame & Hequiv).
+    iMod "Hmask" as "_". iModIntro. iNext.
+    wp_auto.
+    wp_apply (wp_IsConflict interface.nil with "[]").
+    replace (bool_decide (conflict_error interface.nil)) with false by
+      (symmetry; apply bool_decide_false; exact conflict_error_nil).
+    wp_auto.
+    wp_for_post.
+    iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iLeft. iSplit; first done.
+    iExists i', kobj'. iFrame. iPureIntro. split_and!; try done.
+    subst kobj_rv kmeta_rv. destruct kobj, kobj'; done.
+  - iIntros (err) "(%Herr_ne & Hown_meta_frag & Hown_status_frag)".
+    iMod "Hmask" as "_". iModIntro. iNext.
+    wp_auto.
+    wp_apply (wp_IsConflict err with "[]").
+    destruct (bool_decide (conflict_error err)); wp_auto.
+    + (* Another writer advanced the resource version: retry. *)
+      wp_for_post.
+      iFrame.
+    + (* Any other error, such as a rejected status, is returned. *)
+      wp_for_post.
+      iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iRight. iFrame. done.
+Qed.
+
 End proof.
