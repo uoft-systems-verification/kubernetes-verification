@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         rocq-version: ["9.1.0"]
-        proof-group: [base, controllers]
+        proof-group: [base, apimodel, controllers]
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
@@ -31,15 +31,8 @@ jobs:
         run: |
           opam pin add --no-action -k path .
           opam install --deps-only .
-      - name: Check base proofs
-        if: matrix.proof-group == 'base'
-        run: /usr/bin/time -p make -j2 vo-base
-      - name: Build controller dependencies without proofs
-        if: matrix.proof-group == 'controllers'
-        run: /usr/bin/time -p make -j2 vos-base
-      - name: Check controller proofs using vos dependencies
-        if: matrix.proof-group == 'controllers'
-        run: /usr/bin/time -p make -j2 vok-controllers
+      - name: Check ${{ matrix.proof-group }} proofs using vos dependencies
+        run: /usr/bin/time -p make -j2 vok-${{ matrix.proof-group }}
 
   check-goose:
     runs-on: ubuntu-latest
