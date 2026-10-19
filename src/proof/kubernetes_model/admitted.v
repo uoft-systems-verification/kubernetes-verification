@@ -43,16 +43,6 @@ Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
 Proof.
 Admitted.
 
-Lemma wp_deletionTimestampForDelete (graceful: bool) (gracePeriod: w64) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.deletionTimestampForDelete #graceful #gracePeriod
-  {{{ l c v, RET #l;
-      l ↦ c ∗
-      TimeV.deepown c v 1
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
   {{{ is_pkg_init apimodel ∗
       l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
@@ -290,36 +280,6 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general
   }}}.
 Proof. Admitted.
 
-(** Strong contract for a status update satisfying the modeled sufficient
-    validity condition. [input] is the submitted status-update object and
-    [new_obj] is the prepared object passed to the helper. Under the modeling
-    assumption above, validation of unmodeled fields adds no precondition. The
-    old object is read-only; the helper mutates the new object and returns its
-    resulting view. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok
-    new_i new_l new_obj old_i old_l old_obj dq
-    (request_kind namespace : go_string) input :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.valid old_obj ⌝ ∗
-      ⌜ KObjectV.valid_status_update request_kind namespace
-          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
-      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ updated_obj, RET #interface.nil;
-      KObjectV.deepown_l new_l updated_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-          namespace old_obj new_obj updated_obj ⌝
-  }}}.
-Proof. Admitted.
-
 (** Trusted: the metadata half of a successful status-update helper call, used
     only by [wp_State__update_status_same_meta_au]. For a request whose metadata
     is a simple update of [old], the stored object keeps the request's kind,
@@ -341,8 +301,8 @@ Definition applyValidationAndDefaultingOnStatusUpdate_meta_preserved
     ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta stored) (KObjectV.objectmeta input) ∧
     KObjectV.spec stored = KObjectV.spec old.
 
-(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_ok] together with
-    [applyValidationAndDefaultingOnStatusUpdate_meta_preserved]. *)
+(** Trusted success contract including metadata preservation. The ordinary
+    success specification is derived from this contract in [common_update.v]. *)
 Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
     new_i new_l new_obj old_i old_l old_obj dq
     (request_kind namespace : go_string) input :
@@ -368,56 +328,5 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
           namespace old_obj new_obj updated_obj ⌝
   }}}.
 Proof. Admitted.
-
-Lemma wp_allowUnconditionalUpdate (kind : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.allowUnconditionalUpdate #kind
-  {{{ (ret : bool), RET #ret;
-      True
-  }}}.
-Proof. Admitted.
-
-(* This is not a complete spec for shouldDeleteDuringUpdate, but it is sufficient
-   because we only need to prove that it returns false when DeletionTimestamp is nil. *)
-Lemma wp_shouldDeleteDuringUpdate_false new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') = None ⌝
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate #(interface.ok new_i) #(interface.ok old_i)
-  {{{ RET #false;
-    KObjectV.deepown_l new_l new_obj dq ∗
-    KObjectV.deepown_l old_l old_obj dq
-  }}}.
-Proof. Admitted.
-
-(* General ownership-preserving specification.  Release updates also apply to
-   terminating objects, for which Kubernetes may return either boolean.  The
-   caller handles both the update and immediate-deletion branches. *)
-Lemma wp_shouldDeleteDuringUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.shouldDeleteDuringUpdate
-      #(interface.ok new_i) #(interface.ok old_i)
-  {{{ (should_delete : bool), RET #should_delete;
-      KObjectV.deepown_l new_l new_obj dq ∗
-      KObjectV.deepown_l old_l old_obj dq ∗
-      ⌜ should_delete = true →
-        (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
-  }}}.
-Proof. Admitted.
-
-Axiom delete_tx_options_with_rv_valid :
-  ∀ options rv,
-    DeleteOptionsV.valid options →
-    DeleteOptionsV.valid (delete_tx_options_with_rv options rv).
 
 End proof.

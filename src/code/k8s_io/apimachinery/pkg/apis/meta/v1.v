@@ -1413,6 +1413,23 @@ Definition ObjectMeta__SetManagedFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
     do:  ((StructFieldRef ObjectMeta "ManagedFields"%go (![go.PointerType ObjectMeta] "meta")) <-[go.SliceType ManagedFieldsEntry] "$r0");;;
     return: #()).
 
+(* NewTime returns a wrapped instance of the provided time
+
+   go: time.go:45:6 *)
+Definition NewTimeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "time",
+    exception_do (let: "time" := (GoAlloc time.Time "time") in
+    return: (let: "$v0" := (![time.Time] "time") in
+     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression time.Time "$v0")]))).
+
+(* Now returns the current local time.
+
+   go: time.go:56:6 *)
+Definition Nowⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: <>,
+    exception_do (return: (let: "$v0" := ((FuncResolve time.Now [] #()) #()) in
+     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression time.Time "$v0")]))).
+
 #[global] Instance info' : PkgInfo pkg_id.v1 :=
 {|
   pkg_imported_pkgs := [code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.utils.ptr.pkg_id.ptr; code.fmt.pkg_id.fmt; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.time.pkg_id.time; code.k8s_io.apimachinery.pkg.selection.pkg_id.selection]
@@ -1726,6 +1743,8 @@ Class Time_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext}
   #[global] Time_underlying :: (Time) <u (Timeⁱᵐᵖˡ);
   #[global] Time_get_Time (x : Time.t) :: ⟦StructFieldGet (Timeⁱᵐᵖˡ) "Time", #x⟧ ⤳[under] #x.(Time.Time');
   #[global] Time_set_Time (x : Time.t) y :: ⟦StructFieldSet (Timeⁱᵐᵖˡ) "Time", (#x, #y)⟧ ⤳[under] #(x <|Time.Time' := y|>);
+  #[global] Time_Add_unfold :: MethodUnfold (Time) "Add" (λ: "$r", MethodResolve time.Time "Add" (StructFieldGet (Time) "Time" "$r" ))%V;
+  #[global] Time'ptr_Add_unfold :: MethodUnfold (go.PointerType (Time)) "Add" (λ: "$r", MethodResolve (go.PointerType time.Time) "Add" (StructFieldRef Time "Time"%go "$r"));
 }.
 
 Module Timestamp.
@@ -2938,6 +2957,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] GetControllerOfNoCopy_unfold :: FuncUnfold GetControllerOfNoCopy [] (GetControllerOfNoCopyⁱᵐᵖˡ);
   #[global] NewControllerRef_unfold :: FuncUnfold NewControllerRef [] (NewControllerRefⁱᵐᵖˡ);
   #[global] LabelSelectorAsSelector_unfold :: FuncUnfold LabelSelectorAsSelector [] (LabelSelectorAsSelectorⁱᵐᵖˡ);
+  #[global] NewTime_unfold :: FuncUnfold NewTime [] (NewTimeⁱᵐᵖˡ);
+  #[global] Now_unfold :: FuncUnfold Now [] (Nowⁱᵐᵖˡ);
   #[global] import_schema_Assumption :: schema.Assumptions;
   #[global] import_ptr_Assumption :: ptr.Assumptions;
   #[global] import_fmt_Assumption :: fmt.Assumptions;

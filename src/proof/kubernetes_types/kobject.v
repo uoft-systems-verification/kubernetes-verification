@@ -242,7 +242,8 @@ Inductive t :=
 | StatefulSet (sts : StatefulSetV.t)
 | Deployment (d : DeploymentV.t).
 
-(** These are Go interface-membership facts, not method-call specifications.
+(** Supported objects implement both [metav1.Object] and [runtime.Object].
+    These are Go interface-membership facts, not method-call specifications.
     [go.type_set_contains] consults the semantic [method_set], while the
     generated [MethodUnfold] instances for direct and promoted methods constrain
     only method execution. The current generated package assumptions do not
@@ -251,15 +252,21 @@ Inductive t :=
     method-set lookup facts. *)
 Class ObjectInterfaceAssumptions : Prop := {
   pod_is_object :
-    go.type_set_contains (go.PointerType v1.Pod) v1.Object = true;
+    go.type_set_contains (go.PointerType v1.Pod) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
   replicaset_is_object :
-    go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true;
+    go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.ReplicaSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
   persistentvolumeclaim_is_object :
-    go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true;
+    go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.PersistentVolumeClaim)
+      code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
   statefulset_is_object :
-    go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true;
+    go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
   deployment_is_object :
-    go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true;
+    go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
 }.
 
 Definition typemeta o : v1.TypeMeta.t :=
@@ -531,19 +538,25 @@ Definition valid_interface i (l: loc) v: Prop :=
   match v with
   | Pod _ =>
       i = interface.mk (go.PointerType v1.Pod) #l ∧
-      go.type_set_contains (go.PointerType v1.Pod) v1.Object = true
+      go.type_set_contains (go.PointerType v1.Pod) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   | ReplicaSet _ =>
       i = interface.mk (go.PointerType v1.ReplicaSet) #l ∧
-      go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true
+      go.type_set_contains (go.PointerType v1.ReplicaSet) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.ReplicaSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   | PersistentVolumeClaim _ =>
       i = interface.mk (go.PointerType v1.PersistentVolumeClaim) #l ∧
-      go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true
+      go.type_set_contains (go.PointerType v1.PersistentVolumeClaim) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.PersistentVolumeClaim)
+        code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   | StatefulSet _ =>
       i = interface.mk (go.PointerType v1.StatefulSet) #l ∧
-      go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true
+      go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   | Deployment _ =>
       i = interface.mk (go.PointerType v1.Deployment) #l ∧
-      go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true
+      go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   end.
 
 Definition deepown_i i v dq: iProp Σ :=

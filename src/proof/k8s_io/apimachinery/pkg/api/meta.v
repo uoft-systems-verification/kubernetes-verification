@@ -24,7 +24,7 @@ Lemma wp_Accessor i l o:
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  destruct o; simpl in Hi; destruct Hi as [-> Hcontains]; wp_auto;
+  destruct o; simpl in Hi; destruct Hi as [-> [Hcontains _]]; wp_auto;
     rewrite Hcontains; wp_auto.
   all: iApply "HΦ"; done.
 Qed.

@@ -10,13 +10,25 @@ Context `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : v1.Assumptions}.
 Local Set Default Proof Using "All".
 
+Lemma wp_NewTime (t : time.Time.t) :
+  {{{ is_pkg_init v1 }}}
+    @! v1.NewTime #t
+  {{{ RET #(v1.Time.mk t); True }}}.
+Proof. wp_start as "#Hinit". wp_auto. iApply "HΦ". done. Qed.
+
 Lemma wp_Now :
   {{{ is_pkg_init v1 }}}
     @! v1.Now #()
   {{{ c v, RET #c;
     TimeV.deepown c v 1
   }}}.
-Proof. Admitted.
+Proof.
+  wp_start as "#Hinit".
+  wp_apply New.proof.time.wp_Now.
+  iIntros (t) "_". wp_auto.
+  iApply ("HΦ" $! (v1.Time.mk t) (TimeV.of_go (v1.Time.mk t))).
+  rewrite /TimeV.deepown /TimeV.of_go /=. done.
+Qed.
 
 Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗

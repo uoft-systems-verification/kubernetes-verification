@@ -17,8 +17,159 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
-Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
+
+Lemma wp_allowUnconditionalUpdate (kind : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.allowUnconditionalUpdate #kind
+  {{{ (ret : bool) (err : error.t), RET (#ret, #err);
+      True
+  }}}.
+Proof.
+  wp_start as "#Hinit".
+  wp_auto.
+  do 7 (wp_if_destruct; first (iApply "HΦ"; done)).
+  wp_apply wp_slice_literal. iSplitR; first done.
+  iIntros (args_sl) "[Hargs _]". wp_auto.
+  wp_apply (wp_Errorf with "[$Hargs]").
+  iIntros (err) "_". wp_auto.
+  iApply "HΦ". done.
+Qed.
+
+(* Release updates may either retain a terminating object or delete it. *)
+Lemma wp_shouldDeleteDuringUpdate_general
+    new_i new_l new_obj old_i old_l old_obj dq :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.shouldDeleteDuringUpdate #(interface.ok new_i) #(interface.ok old_i)
+  {{{ (should_delete : bool), RET #should_delete;
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ should_delete = true → (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝
+  }}}.
+Proof.
+  wp_start as "(%Hnew_i & %Hold_i & Hnew & Hold)".
+  assert (Hnew_runtime : go.type_set_contains new_i.(interface.ty)
+      code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true).
+  { destruct new_obj; simpl in Hnew_i; destruct Hnew_i as [-> [_ Hruntime]]; done. }
+  assert (Hold_runtime : go.type_set_contains old_i.(interface.ty)
+      code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true).
+  { destruct old_obj; simpl in Hold_i; destruct Hold_i as [-> [_ Hruntime]]; done. }
+  iDestruct (KObjectV.deepown_l_split with "Hnew") as
+    "(%Hnew_not_null & Hnew_type & Hnew_meta & Hnew_spec & Hnew_status)".
+  iDestruct (KObjectV.deepown_l_split with "Hold") as
+    "(%Hold_not_null & Hold_type & Hold_meta & Hold_spec & Hold_status)".
+  iDestruct "Hnew_meta" as (new_c) "[Hnew_meta Hnew_deepown]".
+  iDestruct "Hold_meta" as (old_c) "[Hold_meta Hold_deepown]".
+  iAssert (∀ b : bool,
+      KObjectV.objectmeta_ptr new_l new_obj ↦{dq} new_c -∗
+      KObjectV.objectmeta_ptr old_l old_obj ↦{dq} old_c -∗
+      ObjectMetaV.deepown old_c (KObjectV.objectmeta old_obj) dq -∗
+      ⌜ b = true → (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None ⌝ -∗
+      Φ #b)%I with
+    "[HΦ Hnew_type Hnew_spec Hnew_status Hnew_deepown Hold_type Hold_spec Hold_status]" as "Hdone".
+  { iIntros (b) "Hnew_meta Hold_meta Hold_deepown %Htimestamp".
+    iApply "HΦ". iSplitL "Hnew_type Hnew_meta Hnew_spec Hnew_status Hnew_deepown".
+    { iApply (KObjectV.deepown_l_restore new_l new_obj dq Hnew_not_null).
+      iFrame "Hnew_type Hnew_spec Hnew_status". iExists new_c. iFrame. }
+    iSplitL.
+    { iApply (KObjectV.deepown_l_restore old_l old_obj dq Hold_not_null).
+      iFrame "Hold_type Hold_spec Hold_status". iExists old_c. iFrame. }
+    done. }
+  wp_auto.
+  wp_func_call. wp_call. wp_auto.
+  rewrite Hnew_runtime. wp_auto.
+  rewrite Hold_runtime. wp_auto.
+  wp_func_call. wp_call. wp_auto.
+  wp_apply (wp_Accessor new_i new_l new_obj). { done. }
+  wp_apply (wp_Accessor old_i old_l old_obj). { done. }
+  wp_apply (wp_GetFinalizers_kobject new_i new_l new_obj new_c dq with "[$Hnew_meta]").
+  { done. }
+  iIntros "Hnew_meta". wp_auto. wp_if_destruct.
+  { iApply ("Hdone" $! false with "Hnew_meta Hold_meta Hold_deepown"). done. }
+  wp_apply (wp_GetDeletionTimestamp_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
+  { done. }
+  iIntros "Hold_meta". wp_auto. wp_if_destruct.
+  { iApply ("Hdone" $! false with "Hnew_meta Hold_meta Hold_deepown"). done. }
+  iNamed "Hold_deepown".
+  assert (Hold_timestamp : (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None).
+  { intros Hnone. pose proof (proj2 Hdeepown_deletiontimestamp_none Hnone). congruence. }
+  wp_apply (wp_GetDeletionGracePeriodSeconds_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
+  { done. }
+  iIntros "Hold_meta". wp_auto. wp_if_destruct.
+  { iApply ("Hdone" $! true with "Hnew_meta Hold_meta [-]").
+    { rewrite /ObjectMetaV.deepown. iFrame. done. }
+    done. }
+  destruct (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionGracePeriodSeconds') as [seconds|] eqn:Hgrace.
+  2: { exfalso. pose proof (proj2 Hdeepown_deletiongraceperiodseconds_none eq_refl). congruence. }
+  iDestruct "Hdeepown_deletiongraceperiodseconds_some" as (cd) "[Hgrace %Hcd]". subst cd.
+  wp_apply (wp_GetDeletionGracePeriodSeconds_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
+  { done. }
+  iIntros "Hold_meta". wp_auto.
+  iApply ("Hdone" $! (bool_decide (seconds = W64 0)) with "Hnew_meta Hold_meta [-]").
+  { rewrite /ObjectMetaV.deepown Hgrace /=. iFrame. done. }
+  done.
+Qed.
+
+Lemma wp_shouldDeleteDuringUpdate_false new_i new_l new_obj old_i old_l old_obj dq :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') = None ⌝
+  }}}
+    @! apimodel.shouldDeleteDuringUpdate #(interface.ok new_i) #(interface.ok old_i)
+  {{{ RET #false;
+      KObjectV.deepown_l new_l new_obj dq ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & %Hnew_i & %Hold_i & Hnew & Hold & %Hnone) HΦ".
+  wp_apply (wp_shouldDeleteDuringUpdate_general with "[$Hinit $Hnew $Hold]").
+  { done. }
+  iIntros (b) "(Hnew & Hold & %Htimestamp)".
+  assert (b = false) as ->.
+  { destruct b; last done. exfalso. exact (Htimestamp eq_refl Hnone). }
+  iApply "HΦ". iFrame.
+Qed.
+
+Context `{!kubernetesModelG Σ}.
+
+(** Success follows from the stronger metadata-preservation contract. *)
+Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok
+    new_i new_l new_obj old_i old_l old_obj dq
+    (request_kind namespace : go_string) input :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
+      ⌜ KObjectV.valid_status_update request_kind namespace
+          (KObjectV.objectmeta old_obj) (KObjectV.status old_obj) input ⌝ ∗
+      ⌜ update_prepared_for_helper namespace old_obj input new_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
+      #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ updated_obj, RET #interface.nil;
+      KObjectV.deepown_l new_l updated_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq ∗
+      ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+      ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+          namespace old_obj new_obj updated_obj ⌝
+  }}}.
+Proof.
+  iIntros (Φ) "Hpre HΦ".
+  wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
+    new_i new_l new_obj old_i old_l old_obj dq request_kind namespace input with "Hpre").
+  iIntros (updated_obj) "(Hnew & Hold & Hinterface & Hupdated & _)".
+  iApply ("HΦ" $! updated_obj). iFrame.
+Qed.
 
 Lemma own_update_frag_identity γ state used_uid key uid {dq} request_kind namespace old_meta old_spec input :
   KObjectV.valid_update request_kind namespace old_meta old_spec input →

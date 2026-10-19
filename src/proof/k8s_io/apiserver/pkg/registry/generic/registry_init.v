@@ -1,3 +1,8 @@
+From New.proof Require Export context.
+From New.proof.k8s_io.apimachinery.pkg.api Require Export meta_init.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export runtime_init.
+From New.proof.k8s_io.apimachinery.pkg.util Require Export runtime_init.
 Require Export New.generatedproof.k8s_io.apiserver.pkg.registry.generic.registry.
 From New.proof Require Import proof_prelude.
 

@@ -9,6 +9,32 @@ Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Local Set Default Proof Using "All".
 
+Lemma wp_deletionTimestampForDelete (graceful : bool) (gracePeriod : w64) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.deletionTimestampForDelete #graceful #gracePeriod
+  {{{ l c v, RET #l;
+      l ↦ c ∗
+      TimeV.deepown c v 1
+  }}}.
+Proof.
+  wp_start as "#Hinit".
+  wp_auto.
+  destruct graceful.
+  - wp_auto.
+    wp_apply v1.wp_Now.
+    iIntros (now_c now_v) "_". wp_auto.
+    wp_method_call. wp_auto.
+    wp_apply wp_Time__Add.
+    iIntros (new_time) "_". wp_auto.
+    wp_apply v1.wp_NewTime.
+    iApply ("HΦ" $! _ (v1.Time.mk new_time) (TimeV.of_go (v1.Time.mk new_time))).
+    iFrame. rewrite /TimeV.deepown /TimeV.of_go /=. done.
+  - wp_auto.
+    wp_apply v1.wp_Now.
+    iIntros (now_c now_v) "Hdeepown". wp_auto.
+    iApply ("HΦ" $! _ now_c now_v). iFrame.
+Qed.
+
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with
   | None => True

@@ -465,7 +465,7 @@ Proof.
     delete_tx_options_with_rv options
       (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta kobj))).
   assert (Hvalid_options_rv : DeleteOptionsV.valid options_rv).
-  { apply delete_tx_options_with_rv_valid. done. }
+  { exact Hvalid_options. }
   assert (Hdelete_preconditions_uid_rv :
     delete_preconditions_match_uid options_rv uid).
   { subst options_rv.
