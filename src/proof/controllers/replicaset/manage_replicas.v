@@ -227,7 +227,7 @@ Proof. rewrite big_sepL_fmap. done. Qed.
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
-    sl rs_l ptrs active_pods inactive_pods rs n has_terminating_children :
+    sl rs_l ptrs active_pods inactive_pods rs n terminating_bound :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
@@ -245,7 +245,7 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burs
       "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods ++ inactive_pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children ∗
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
       "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid ReplicaSetV.kind rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
       "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝ ∗
       "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
@@ -260,8 +260,8 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burs
   {{{ pods', RET #interface.nil;
       ⌜ length pods' = capped_replica_count (length active_pods) (sint.nat n) (sint.nat burst) ⌝ ∗
       ⌜ ∀ pod, pod ∈ pods' → is_pod_alive pod ⌝ ∗
-      (∃ has_terminating_children', own_terminating_children_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children') ∗
+      (∃ terminating_bound', own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound') ∗
       ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta')) ∗
       ([∗ list] pod ∈ pods', own_unreserved_key_frag γ (PodV.key pod)) ∗
@@ -453,7 +453,7 @@ Proof.
       - apply Hactive_pods. exact Hin.
       - apply Hcreated_alive. exact Hin. }
     iSplitL "Hown_terminating_children_frag".
-    { iExists has_terminating_children. iFrame "Hown_terminating_children_frag". }
+    { iExists terminating_bound. iFrame "Hown_terminating_children_frag". }
     iSplitL "Hown_active_pod_meta_frags Hcreated_meta_frags".
     { rewrite big_sepL_app. iFrame. }
     iSplit.
@@ -491,7 +491,7 @@ Proof.
         unfold capped_replica_count. destruct (decide _); lia. }
       iSplit; first (iPureIntro; exact Hactive_pods).
       iSplitL "Hown_terminating_children_frag".
-      { iExists has_terminating_children. iFrame "Hown_terminating_children_frag". }
+      { iExists terminating_bound. iFrame "Hown_terminating_children_frag". }
       iFrame "Hown_active_pod_meta_frags
         Hown_active_pod_unreserved_key_frags Hown_children_frag".
       (* Nothing to do: the slice and the ReplicaSet are unchanged. *)

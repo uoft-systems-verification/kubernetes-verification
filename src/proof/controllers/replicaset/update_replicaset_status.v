@@ -198,7 +198,7 @@ Qed.
    ReplicaSet: [rs'] (from the status write) with [rs]'s TypeMeta, which no
    fragment tracks. [rs_get] is the ReplicaSet the sync read; the ReplicaSet's
    own fragments are keyed by it, the children fragments by [rs]. *)
-Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready : bool) :
+Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready : bool) terminating_bound :
   ReplicaSetV.key rs = ReplicaSetV.key rs_get →
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') →
   ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs_get.(ReplicaSetV.ObjectMeta') →
@@ -216,11 +216,12 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
     fractions.(children_dq) (list_to_set (PodV.key <$> pods)) -∗
   (if ready then
      own_terminating_children_frag γ (ReplicaSetV.key rs)
-       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_children.No
+       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 0%nat
    else
-     ∃ has_terminating_children, own_terminating_children_frag γ (ReplicaSetV.key rs)
-       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children) -∗
-  owned_resources γ (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pods fractions ready.
+     own_terminating_children_frag γ (ReplicaSetV.key rs)
+       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound) -∗
+  owned_resources γ (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pods fractions ready
+    terminating_bound.
 Proof.
   intros Hrs_key_eq Hrs_uid_eq Hmeta_changed Hnodup.
   iIntros "Hmeta Hspec Hstatus Hpods #Hunreserved Hchildren Hterminating".

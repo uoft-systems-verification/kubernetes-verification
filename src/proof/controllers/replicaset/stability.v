@@ -209,7 +209,7 @@ Proof.
   { iFrame "#".
     iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
-    %Hall_pods_bound & Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
+    Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
   wp_auto.
   (* The pods are only read: share them between the two filters and the
      status calculation. *)
@@ -323,12 +323,14 @@ Proof.
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
   iDestruct (big_sepL2_length with "Hall_deepown_pods") as %Hall_ptrs_len.
-  (* The written status is valid: the ReplicaSet owns fewer than 2^31 pods
-     (the trusted list bound), so both counts fit in int32, and the observed
+  (* The written status is valid: the listed pods are a permutation of [pods],
+     which are fewer than 2^31, so both counts fit in int32, and the observed
      generation is the non-negative generation of [rs]. *)
   assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
   { pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
+    pose proof (Permutation_length Hall_meta_perm) as Hall_pods_len.
+    rewrite !length_fmap in Hall_pods_len.
     apply Hstatus_valid.
     - lia.
     - lia.
@@ -364,7 +366,7 @@ Proof.
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods (stability_fractions dq) true
+      pods (stability_fractions dq) true 0%nat
       Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags Hown_pod_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")

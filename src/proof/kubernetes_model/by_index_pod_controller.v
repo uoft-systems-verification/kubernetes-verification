@@ -817,7 +817,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    |={⊤,∅}=> ∃ living_pods living_pod_dqs (include_specs : bool) has_terminating_children parent_key parent_uid children_keys children_dq,
+    |={⊤,∅}=> ∃ living_pods living_pod_dqs (include_specs : bool) terminating_bound parent_key parent_uid children_keys children_dq,
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;living_pod_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_spec_frags" ∷
@@ -827,7 +827,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
               (ObjectSpecV.PodSpec pod.(PodV.Spec')))
          else True)%I ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
         parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
@@ -840,7 +840,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
       "Hclose" ∷ (∀ sl interfaces pods' dq',
         sl ↦* (interface.ok <$> interfaces) ∗
         ([∗ list] i;pod ∈ interfaces;pods', KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
-        ⌜ has_terminating_children = terminating_children.No →
+        ⌜ terminating_bound = 0%nat →
           ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> pods') ≡ₚ
             ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
         ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> filter pod_is_living pods') ≡ₚ
@@ -849,7 +849,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
         ⌜ Forall PodV.valid pods' ⌝ ∗
         ⌜ Forall (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) pods' ⌝ ∗
         ⌜ NoDup (PodV.key <$> pods') ⌝ ∗
-        ⌜ Z.of_nat (length pods') < 2 ^ 31 ⌝ ∗
+        ⌜ (length pods' ≤ length living_pods + terminating_bound)%nat ⌝ ∗
         ([∗ list] pod ∈ terminating_pods pods',
           own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
         ([∗ list] pod;pod_dq ∈ living_pods;living_pod_dqs,
@@ -860,7 +860,7 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
               (ObjectSpecV.PodSpec pod.(PodV.Spec')))
          else True)%I ∗
         own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-        own_terminating_children_frag γ parent_key parent_uid has_terminating_children
+        own_terminating_children_frag γ parent_key parent_uid terminating_bound
           ={∅,⊤}=∗ ▷ Φ (#sl, #interface.nil)%V
       )
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "ByIndex" #"Pod"%go #"podController"%go #indexed_value {{ Φ }}.
@@ -877,20 +877,6 @@ Proof.
     $Hinv_Hphys_abs_rep]").
   iIntros (sl interfaces pods) "(Hsl & Hdeepown_i_interfaces & %Hlist_result & %Hpods_valid & %Hpods_nodup &
     Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto.
-  (* The listed pods are among the stored objects, of which there are fewer
-     than 2^31 (trusted [model_state_size_bound]). *)
-  iDestruct (model_state_size_bound with "Hinv_Hstate_m_addr Hinv_Hown_phys")
-    as "(%Hphys_size & Hinv_Hstate_m_addr & Hinv_Hown_phys)".
-  iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_phys_abs.
-  assert (Z.of_nat (length pods) < 2 ^ 31) as Hpods_len_bound.
-  { pose proof (Permutation_length Hlist_result) as Hlen.
-    rewrite !length_fmap length_map_to_list in Hlen.
-    pose proof (map_size_filter (λ kv : KKey.t * KObjectV.t, kv.1.(KKey.Kind') = "Pod"%go) abs_state)
-      as Hfilter_size.
-    assert (size phys_state = size abs_state) as Hsize_eq.
-    { rewrite -(size_dom (D:=gset KKey.t) phys_state) -(size_dom (D:=gset KKey.t) abs_state).
-      rewrite Hdom_phys_abs. done. }
-    lia. }
   iPoseProof own_slice_nil as "Hslice_nil".
   iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
@@ -1001,7 +987,7 @@ Proof.
       iFrame.
   - iApply fupd_wp.
     iMod "Hau" as
-      (living_pods living_pod_dqs include_specs has_terminating_children parent_key parent_uid
+      (living_pods living_pod_dqs include_specs terminating_bound parent_key parent_uid
         children_keys children_dq)
       "H".
     iDestruct "H" as
@@ -1022,7 +1008,9 @@ Proof.
       as "(%Hchildren_keys_eq & %Hin_used_reference)".
     iPoseProof (terminating_children.own_auth_frag_valid with
       "Hinv_Hown_terminating_children Hown_terminating_children_frag") as
-      "%Hterminating_empty".
+      "%Hterminating_size".
+    pose proof (terminating_children.terminating_children_bound_zero _ _ _ Hterminating_size)
+      as Hterminating_empty.
     iPoseProof (kview.own_auth_valid_forall with "Hinv_Hown_abs") as
       "%Habs_valid".
     destruct Hslash_free as (Hkind_slash_free & Hns_slash_free & Hname_slash_free & Huid_slash_free).
@@ -1057,7 +1045,7 @@ Proof.
       (terminating_pods returned_pods) Hobserved
       with "Hinv_Hown_deletion_observations") as
       "(Hinv_Hown_deletion_observations & #Hown_deletion_observed_frags)".
-    assert (Hcombined_dom : has_terminating_children = terminating_children.No →
+    assert (Hcombined_dom : terminating_bound = 0%nat →
       list_to_set (PodV.key <$> living_pods) =
         filter (λ key, KKey.Kind' key = "Pod"%go)
           (dom (filter
@@ -1093,7 +1081,7 @@ Proof.
           { rewrite -Hterminating_pod_keys_empty. exact Hkey. }
           rewrite elem_of_empty in Hempty. exact Hempty.
       - exact Hpartition. }
-    assert (Hmeta_perm : has_terminating_children = terminating_children.No →
+    assert (Hmeta_perm : terminating_bound = 0%nat →
       ObjectMetaV.without_resource_version <$>
         (PodV.ObjectMeta' <$> returned_pods) ≡ₚ
         ObjectMetaV.without_resource_version <$>
@@ -1131,9 +1119,42 @@ Proof.
       - rewrite Hchildren_keys_eq in Hdom_eq. exact Hdom_eq.
       - exact Hlook_up.
     }
-    assert (Z.of_nat (length returned_pods) < 2 ^ 31) as Hreturned_len.
-    { unfold returned_pods. eapply Z.le_lt_trans; last exact Hpods_len_bound.
-      apply inj_le. apply length_filter. }
+    (* The living returned pods correspond to [living_pods]. The terminating
+       ones are distinct terminating children of the parent, so the fragment
+       bounds their number. *)
+    assert (length returned_pods ≤ length living_pods + terminating_bound)%nat as Hreturned_len.
+    { pose proof (Permutation_length Hliving_meta_perm) as Hliving_len.
+      rewrite !length_fmap in Hliving_len.
+      set terminating_returned := filter (λ pod, ¬ pod_is_living pod) returned_pods.
+      assert (length returned_pods =
+          length (filter pod_is_living returned_pods) + length terminating_returned)%nat as Hsplit.
+      { rewrite -length_app. apply Permutation_length. symmetry. apply filter_app_complement. }
+      assert (NoDup (PodV.key <$> terminating_returned)) as Hterminating_nodup.
+      { eapply sublist_NoDup; first exact Hpods_nodup.
+        apply fmap_sublist. rewrite /terminating_returned /returned_pods.
+        etrans; apply sublist_filter. }
+      assert (list_to_set (C:=gset KKey.t) (PodV.key <$> terminating_returned) ⊆
+          terminating_children.terminating_children abs_state (parent_key, parent_uid)) as Hsubset.
+      { intros key Hkey.
+        apply elem_of_list_to_set, list_elem_of_fmap in Hkey as (pod & -> & Hpod).
+        apply list_elem_of_filter in Hpod as [Hterminating Hreturned].
+        apply list_elem_of_filter in Hreturned as [Hparent Hpod].
+        assert (KObjectV.Pod pod ∈ KObjectV.Pod <$> pods) as Hpod_obj.
+        { apply list_elem_of_fmap. exists pod. done. }
+        rewrite Hlist_result in Hpod_obj.
+        apply list_elem_of_fmap in Hpod_obj as ([key obj] & Hobj & Hentry).
+        simpl in Hobj. subst obj.
+        apply elem_of_map_to_list in Hentry.
+        apply map_lookup_filter_Some in Hentry as [Hlookup _].
+        destruct (Habs_valid key (KObjectV.Pod pod) Hlookup) as (Hkey & _). subst key.
+        unfold terminating_children.terminating_children.
+        apply elem_of_dom. exists (KObjectV.Pod pod).
+        apply map_lookup_filter_Some. split; first exact Hlookup.
+        apply terminating_children.terminating_obj_parent_ref_eq_some.
+        split; [exact Hterminating|exact Hparent]. }
+      apply subseteq_size in Hsubset.
+      rewrite size_list_to_set // length_fmap in Hsubset.
+      lia. }
     destruct include_specs.
     all: iSimpl in "Hown_spec_frags".
     1: iPoseProof (kview.own_meta_spec_list_exists_dqs_sep
@@ -1192,7 +1213,7 @@ Lemma wp_State__ByIndex_podController γ l indexed_value pods pod_dqs parent_key
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
         parent_key.(KKey.Kind') ++ "/"%go ++ parent_key.(KKey.Name') ++ "/"%go ++ parent_uid ⌝ ∗
@@ -1216,7 +1237,7 @@ Lemma wp_State__ByIndex_podController γ l indexed_value pods pod_dqs parent_key
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1225,7 +1246,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists pods, pod_dqs, false, terminating_children.No, parent_key, parent_uid,
+  iExists pods, pod_dqs, false, 0%nat, parent_key, parent_uid,
     children_keys, children_dq.
   simpl. iFrame "%". iFrame.
   iIntros (sl interfaces pods_ret dq') "Hpost".
@@ -1250,7 +1271,7 @@ Lemma wp_State__ByIndex_podController_with_spec γ l indexed_value pods pod_dqs 
       "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value =
         parent_key.(KKey.Namespace') ++ "/"%go ++
@@ -1278,7 +1299,7 @@ Lemma wp_State__ByIndex_podController_with_spec γ l indexed_value pods pod_dqs 
       "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ pods;pod_dqs,
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1287,7 +1308,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists pods, pod_dqs, true, terminating_children.No, parent_key, parent_uid,
+  iExists pods, pod_dqs, true, 0%nat, parent_key, parent_uid,
     children_keys, children_dq.
   simpl. iFrame "%". iFrame.
   iIntros (sl interfaces pods_ret dq') "Hpost".
@@ -1320,15 +1341,15 @@ Qed.
 
 (* General metadata-only owner-index rule: the returned Go slice contains
    every matching Pod, while metadata ownership remains attached only to the
-   living projection. The opaque terminating-children has_terminating_children is framed. *)
+   living projection. The terminating-children bound is framed. *)
 Lemma wp_State__ByIndex_podController_combined γ l indexed_value
-    living_pods pod_dqs parent_key parent_uid children_keys children_dq has_terminating_children :
+    living_pods pod_dqs parent_key parent_uid children_keys children_dq terminating_bound :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value =
         parent_key.(KKey.Namespace') ++ "/"%go ++
@@ -1348,20 +1369,20 @@ Lemma wp_State__ByIndex_podController_combined γ l indexed_value
       "%Hliving_meta_perm" ∷ ⌜ ObjectMetaV.without_resource_version <$>
         (PodV.ObjectMeta' <$> filter pod_is_living all_pods) ≡ₚ
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
-      "%Hquiescent_meta_perm" ∷ ⌜ has_terminating_children = terminating_children.No →
+      "%Hquiescent_meta_perm" ∷ ⌜ terminating_bound = 0%nat →
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> all_pods) ≡ₚ
         ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid all_pods ⌝ ∗
       "%Hparent_refs" ∷ ⌜ Forall (λ pod,
         obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) all_pods ⌝ ∗
       "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> all_pods) ⌝ ∗
-      "%Hpods_len" ∷ ⌜ Z.of_nat (length all_pods) < 2 ^ 31 ⌝ ∗
+      "%Hpods_len" ∷ ⌜ (length all_pods ≤ length living_pods + terminating_bound)%nat ⌝ ∗
       "Hown_deletion_observed_frags" ∷ ([∗ list] pod ∈ terminating_pods all_pods,
         own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1370,7 +1391,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists living_pods, pod_dqs, false, has_terminating_children, parent_key, parent_uid,
+  iExists living_pods, pod_dqs, false, terminating_bound, parent_key, parent_uid,
     children_keys, children_dq.
   simpl. iFrame "%". iFrame.
   iIntros (sl interfaces all_pods dq') "Hpost".
@@ -1388,9 +1409,9 @@ Qed.
 
 (* General owner-index rule: the returned Go slice contains every matching
    Pod, while linear metadata/specification ownership remains attached only to
-   the living projection.  The opaque terminating-control has_terminating_children is framed. *)
+   the living projection.  The terminating-children bound is framed. *)
 Lemma wp_State__ByIndex_podController_combined_with_spec γ l indexed_value
-    living_pods pod_dqs parent_key parent_uid children_keys children_dq has_terminating_children :
+    living_pods pod_dqs parent_key parent_uid children_keys children_dq terminating_bound :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
@@ -1398,7 +1419,7 @@ Lemma wp_State__ByIndex_podController_combined_with_spec γ l indexed_value
       "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value =
         parent_key.(KKey.Namespace') ++ "/"%go ++
@@ -1415,7 +1436,7 @@ Lemma wp_State__ByIndex_podController_combined_with_spec γ l indexed_value
       "Hsl" ∷ sl ↦* (interface.ok <$> interfaces) ∗
       "Hpods" ∷ ([∗ list] i;pod ∈ interfaces;all_pods, KObjectV.deepown_i i (KObjectV.Pod pod) dq') ∗
       "%Hliving_storage_perm" ∷ ⌜ pod_storage_view <$> filter pod_is_living all_pods ≡ₚ pod_storage_view <$> living_pods ⌝ ∗
-      "%Hquiescent_storage_perm" ∷ ⌜ has_terminating_children = terminating_children.No →
+      "%Hquiescent_storage_perm" ∷ ⌜ terminating_bound = 0%nat →
         pod_storage_view <$> all_pods ≡ₚ pod_storage_view <$> living_pods ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid all_pods ⌝ ∗
       "%Hparent_refs" ∷ ⌜ Forall (λ pod, obj_parent_ref (KObjectV.Pod pod) = Some (parent_key, parent_uid)) all_pods ⌝ ∗
@@ -1427,7 +1448,7 @@ Lemma wp_State__ByIndex_podController_combined_with_spec γ l indexed_value
       "Hown_spec_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1436,7 +1457,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists living_pods, pod_dqs, true, has_terminating_children, parent_key, parent_uid,
+  iExists living_pods, pod_dqs, true, terminating_bound, parent_key, parent_uid,
     children_keys, children_dq.
   simpl. iFrame "%". iFrame.
   iIntros (sl interfaces all_pods dq') "Hpost".
@@ -1445,7 +1466,7 @@ Proof.
       %Hpods_valid & %Hparent_refs & %Hpods_nodup & %Hpods_len & #Hown_deletion_observed_frags & Hown_meta_frags &
       Hown_spec_frags & Hown_children_frag & Hown_terminating_children_frag)".
   specialize (Hstorage_perm eq_refl).
-  assert (has_terminating_children = terminating_children.No →
+  assert (terminating_bound = 0%nat →
       pod_storage_view <$> all_pods ≡ₚ pod_storage_view <$> living_pods)
     as Hquiescent_storage_perm.
   { intros Hquiescent. specialize (Hmeta_perm Hquiescent).
@@ -1474,7 +1495,7 @@ Lemma wp_State__ByIndex_podController_uniform γ l indexed_value pods parent_key
       "Hown_meta_frags" ∷ ([∗ list] pod ∈ pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
         parent_key.(KKey.Kind') ++ "/"%go ++
@@ -1500,7 +1521,7 @@ Lemma wp_State__ByIndex_podController_uniform γ l indexed_value pods parent_key
       "Hown_meta_frags" ∷ ([∗ list] pod ∈ pods',
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1543,7 +1564,7 @@ Lemma wp_State__ByIndex_podController_uniform_with_spec γ l indexed_value pods 
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value = parent_key.(KKey.Namespace') ++ "/"%go ++
         parent_key.(KKey.Kind') ++ "/"%go ++
@@ -1568,7 +1589,7 @@ Lemma wp_State__ByIndex_podController_uniform_with_spec γ l indexed_value pods 
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_children.No
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid 0%nat
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1595,7 +1616,7 @@ Proof.
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".
-  iExists pods, pod_dqs, true, terminating_children.No, parent_key, parent_uid,
+  iExists pods, pod_dqs, true, 0%nat, parent_key, parent_uid,
     children_keys, children_dq.
   simpl. iFrame "%". iFrame.
   iIntros (sl interfaces pods' dq') "Hpost".
@@ -1657,13 +1678,13 @@ Proof.
 Qed.
 
 Lemma wp_State__ByIndex_podController_uniform_combined γ l indexed_value living_pods parent_key parent_uid
-    children_keys pod_dq children_dq has_terminating_children :
+    children_keys pod_dq children_dq terminating_bound :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_meta_frags" ∷ ([∗ list] pod ∈ living_pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value =
         parent_key.(KKey.Namespace') ++ "/"%go ++
@@ -1691,7 +1712,7 @@ Lemma wp_State__ByIndex_podController_uniform_combined γ l indexed_value living
       "Hown_living_meta_frags" ∷ ([∗ list] pod ∈ filter pod_is_living all_pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta')) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1703,7 +1724,7 @@ Proof.
     iExact "Hown_meta_frags". }
   wp_apply (wp_State__ByIndex_podController_combined
     γ l indexed_value living_pods pod_dqs parent_key parent_uid
-    children_keys children_dq has_terminating_children with "[-HΦ]").
+    children_keys children_dq terminating_bound with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }
   iIntros (sl interfaces all_pods dq') "H". iNamed "H".
   subst pod_dqs.
@@ -1721,14 +1742,14 @@ Proof.
 Qed.
 
 Lemma wp_State__ByIndex_podController_uniform_combined_with_spec γ l indexed_value living_pods parent_key parent_uid
-  children_keys pod_dq children_dq has_terminating_children :
+  children_keys pod_dq children_dq terminating_bound :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hown_pod_frags" ∷ ([∗ list] pod ∈ living_pods,
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
       "%Hindexed_value_eq" ∷ ⌜ indexed_value =
         parent_key.(KKey.Namespace') ++ "/"%go ++
@@ -1753,7 +1774,7 @@ Lemma wp_State__ByIndex_podController_uniform_combined_with_spec γ l indexed_va
         own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq pod.(PodV.ObjectMeta') ∗
         own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') pod_dq (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid children_dq children_keys ∗
-      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid has_terminating_children
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid terminating_bound
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -1777,7 +1798,7 @@ Proof.
     iExact "Hown_spec_frags". }
   wp_apply (wp_State__ByIndex_podController_combined_with_spec
     γ l indexed_value living_pods pod_dqs parent_key parent_uid
-    children_keys children_dq has_terminating_children with "[-HΦ]").
+    children_keys children_dq terminating_bound with "[-HΦ]").
   { iFrame "#". iFrame "%". iFrame. }
   iIntros (sl interfaces all_pods dq') "H". iNamed "H".
   subst pod_dqs.

@@ -56,14 +56,14 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) namespace name rs
-    dq pods :
-  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods.
+    dq pods terminating_bound :
+  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods
+      terminating_bound.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
-  iDestruct "Hown_terminating_children_frag" as (has_terminating_children) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as (Hrs_name_short & Hrs_template_finalizers_valid & Hlabels_bound & Hgeneration_nonneg).
   iAssert (is_pkg_init common) as "#Hcommon_init".
@@ -150,7 +150,7 @@ Proof.
   { iFrame "#".
     iPureIntro. split_and!; done. }
   iIntros (all_sl all_ptrs all_pods dq')
-    "(Hall_sl & Hall_deepown_pods & %Hall_living_meta_perm & %Hall_valid & %Hall_nodup & %Hall_pods_bound &
+    "(Hall_sl & Hall_deepown_pods & %Hall_living_meta_perm & %Hall_valid & %Hall_nodup & %Hall_pods_len &
       Hdeepown_m_l_rs & Hall_deletion_observed_frags & Hactive_meta_frags &
       Hown_children_frag & Hown_terminating_children_frag)".
   wp_auto.
@@ -256,7 +256,7 @@ Proof.
   iMod (ReplicaSetV.deepown_l_persist with "Hdeepown_l_rs") as "Hdeepown_l_rs".
   wp_apply (wp_manageReplicas γ l ctx kube_client burst active_sl rs_l active_ptrs
     (filter is_pod_alive all_pods) []
-    rs_get n has_terminating_children with
+    rs_get n terminating_bound with
     "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
@@ -274,17 +274,13 @@ Proof.
     Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
     Hown_children_frag & (%active_ptrs' & %active_pods' & Hactive_sl & #Hactive_deepown_pods' &
       %Hactive_perm) & Hdeepown_l_rs)".
-  iDestruct "Hhas_terminating_children" as (has_terminating_children') "Hown_terminating_children_frag".
+  iDestruct "Hhas_terminating_children" as (terminating_bound') "Hown_terminating_children_frag".
   wp_auto.
   iEval (rewrite app_nil_r) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
   iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
     with "Hmanaged_meta_frags") as "%Hpods'_nodup".
-  iAssert (∃ has_terminating_children, own_terminating_children_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') has_terminating_children)%I
-    with "[Hown_terminating_children_frag]" as "Hown_terminating_children_frag".
-  { iExists has_terminating_children'. iFrame. }
   (* rs = rs.DeepCopy() *)
   iDestruct "Hdeepown_l_rs" as (rs_phy) "[Hrs_l Hrs]".
   wp_apply (wp_ReplicaSet__DeepCopy with "[$Hrs_l $Hrs]").
@@ -316,9 +312,9 @@ Proof.
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
   iDestruct (big_sepL2_length with "Hall_deepown_pods") as %Hall_ptrs_len.
-  (* The written status is valid: the ReplicaSet owns fewer than 2^31 pods
-     (the trusted list bound), so both counts fit in int32, and the observed
-     generation is the non-negative generation of [rs]. *)
+  (* The written status is valid: the listed pods number at most
+     [length pods + terminating_bound] < 2^31, so both counts fit in int32, and
+     the observed generation is the non-negative generation of [rs]. *)
   assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
   { pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
@@ -336,7 +332,7 @@ Proof.
   wp_auto.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods_managed (mutating_fractions dq) false
+      pods_managed (mutating_fractions dq) false terminating_bound'
       Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
@@ -357,7 +353,7 @@ Proof.
     rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hpods_active_len.
     lia.
   }
-  iApply ("HΦ" $! rs'' pods_managed with "[$Hresources //]").
+  iApply ("HΦ" $! rs'' pods_managed terminating_bound' with "[$Hresources //]").
 Qed.
 
 End proof.
