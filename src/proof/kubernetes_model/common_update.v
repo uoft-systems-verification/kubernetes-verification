@@ -419,20 +419,19 @@ Proof.
     try contradiction; tauto.
 Qed.
 
-(** The request-level part of [KObjectV.valid_status_update]: everything except
-    the validity of the submitted status. *)
+(** The request-level part of [KObjectV.valid_status_update] that a status
+    write needs even when the submitted status may be invalid: [kind] and
+    [namespace] name the object's key, the name, UID and resource version rule
+    out the early rejections, and a valid TypeMeta keeps the stored object
+    valid. The other metadata need not be checked: the request keeps the
+    stored metadata up to the resource version, so it is valid already. *)
 Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
   kind = KObjectV.kind kobj ∧
   (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
   (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
   namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
   valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
-  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
-  valid_labels (KObjectV.objectmeta kobj).(ObjectMetaV.Labels') ∧
-  valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
-  valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
-  valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
-  valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
+  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
 
 Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
   KObjectV.valid_status_update kind namespace kmeta kstatus kobj →

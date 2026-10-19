@@ -81,8 +81,7 @@ Proof.
   }
   destruct Hvalid_status_update_input as
     (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
-      Hvalid_typemeta & Hlabels & Hannotations & Howners &
-      Hfinalizers & Hmanaged_fields).
+      Hvalid_typemeta).
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
@@ -639,8 +638,7 @@ Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   destruct Hrequest_ok as
     (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
-      Hvalid_typemeta & Hlabels & Hannotations & Howners &
-      Hfinalizers & Hmanaged_fields).
+      Hvalid_typemeta).
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
