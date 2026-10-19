@@ -54,13 +54,9 @@ Axiom OmitValueTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
 Axiom ErrorTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ErrorListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom pathOptionsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PathOptionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom Pathⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ErrorTypeNotFound : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -117,6 +113,29 @@ Definition WithPath {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string :
 Definition ToPath {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/util/validation/field.ToPath"%go.
 
 Definition NewPath {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/util/validation/field.NewPath"%go.
+
+(* NewPath creates a root Path object.
+
+   go: path.go:56:6 *)
+Definition NewPathⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "name" "moreNames",
+    exception_do (let: "moreNames" := (GoAlloc (go.SliceType go.string) "moreNames") in
+    let: "name" := (GoAlloc go.string "name") in
+    let: "r" := (GoAlloc (go.PointerType Path) (GoZeroVal (go.PointerType Path) #())) in
+    let: "$r0" := (GoAlloc Path (let: "$v0" := (![go.string] "name") in
+    let: "$v1" := UntypedNil in
+    CompositeLiteral Path (LiteralValue [KeyedElement (Some (KeyField "name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "parent"%go)) (ElementExpression go.untyped_nil "$v1")]))) in
+    do:  ("r" <-[go.PointerType Path] "$r0");;;
+    let: "$range" := (![go.SliceType go.string] "moreNames") in
+    (let: "anotherName" := (GoAlloc go.string (GoZeroVal go.string #())) in
+    slice.for_range go.string "$range" (λ: "$key" "$value",
+      do:  ("anotherName" <-[go.string] "$value");;;
+      do:  "$key";;;
+      let: "$r0" := (GoAlloc Path (let: "$v0" := (![go.string] "anotherName") in
+      let: "$v1" := (![go.PointerType Path] "r") in
+      CompositeLiteral Path (LiteralValue [KeyedElement (Some (KeyField "name"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "parent"%go)) (ElementExpression (go.PointerType Path) "$v1")]))) in
+      do:  ("r" <-[go.PointerType Path] "$r0")));;;
+    return: (![go.PointerType Path] "r")).
 
 #[global] Instance info' : PkgInfo pkg_id.field :=
 {|
@@ -216,17 +235,16 @@ Class ErrorType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCon
 Module ErrorList.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := slice.t.
+#[global] Arguments t : clear implicits.
 End def.
 End ErrorList.
 
+Definition ErrorListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.SliceType (go.PointerType Error).
+
 Class ErrorList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ErrorList_type_repr  :: go.TypeReprUnderlying ErrorListⁱᵐᵖˡ ErrorList.t;
   #[global] ErrorList_underlying :: (ErrorList) <u (ErrorListⁱᵐᵖˡ);
-  #[global] ErrorListⁱᵐᵖˡ_underlying :: (ErrorListⁱᵐᵖˡ) ↓u (ErrorListⁱᵐᵖˡ);
 }.
 
 Module pathOptions.
@@ -264,17 +282,40 @@ Class PathOption_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCo
 Module Path.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  name' : go_string;
+  index' : go_string;
+  parent' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End Path.
+
+Definition Path'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "name"%go go.string);
+  (go.FieldDecl "index"%go go.string);
+  (go.FieldDecl "parent"%go (go.PointerType Path))
+].
+Program Definition Path'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Path'fds_unsealed).
+Global Instance equals_unfold_Path {ext : ffi_syntax} {go_gctx : GoGlobalContext} : Path'fds =→ Path'fds_unsealed.
+Proof. rewrite /Path'fds seal_eq //. Qed.
+
+Definition Pathⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (Path'fds).
 
 Class Path_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] Path_type_repr  :: go.TypeReprUnderlying Pathⁱᵐᵖˡ Path.t;
   #[global] Path_underlying :: (Path) <u (Pathⁱᵐᵖˡ);
-  #[global] Pathⁱᵐᵖˡ_underlying :: (Pathⁱᵐᵖˡ) ↓u (Pathⁱᵐᵖˡ);
+  #[global] Path_get_name (x : Path.t) :: ⟦StructFieldGet (Pathⁱᵐᵖˡ) "name", #x⟧ ⤳[under] #x.(Path.name');
+  #[global] Path_set_name (x : Path.t) y :: ⟦StructFieldSet (Pathⁱᵐᵖˡ) "name", (#x, #y)⟧ ⤳[under] #(x <|Path.name' := y|>);
+  #[global] Path_get_index (x : Path.t) :: ⟦StructFieldGet (Pathⁱᵐᵖˡ) "index", #x⟧ ⤳[under] #x.(Path.index');
+  #[global] Path_set_index (x : Path.t) y :: ⟦StructFieldSet (Pathⁱᵐᵖˡ) "index", (#x, #y)⟧ ⤳[under] #(x <|Path.index' := y|>);
+  #[global] Path_get_parent (x : Path.t) :: ⟦StructFieldGet (Pathⁱᵐᵖˡ) "parent", #x⟧ ⤳[under] #x.(Path.parent');
+  #[global] Path_set_parent (x : Path.t) y :: ⟦StructFieldSet (Pathⁱᵐᵖˡ) "parent", (#x, #y)⟧ ⤳[under] #(x <|Path.parent' := y|>);
 }.
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
@@ -288,6 +329,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] pathOptions_instance :: pathOptions_Assumptions;
   #[global] PathOption_instance :: PathOption_Assumptions;
   #[global] Path_instance :: Path_Assumptions;
+  #[global] NewPath_unfold :: FuncUnfold NewPath [] (NewPathⁱᵐᵖˡ);
   #[global] import_errors_Assumption :: errors.Assumptions;
 }.
 End field.

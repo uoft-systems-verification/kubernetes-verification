@@ -48,6 +48,7 @@ packages = [
     "./staging/src/k8s.io/apimachinery/pkg/util/errors",
     "./staging/src/k8s.io/apimachinery/pkg/util/mergepatch",
     "./staging/src/k8s.io/apimachinery/pkg/util/runtime",
+    "./staging/src/k8s.io/apimachinery/pkg/util/sets",
     "./staging/src/k8s.io/apimachinery/pkg/util/strategicpatch",
     "./staging/src/k8s.io/apimachinery/pkg/util/validation",
     "./staging/src/k8s.io/apimachinery/pkg/watch",

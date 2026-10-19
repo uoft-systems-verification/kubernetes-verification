@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export common admitted.
+From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Import validation.
 
 (* Lightweight infrastructure shared by the Delete variants and updates
    whose success path may remove an object. *)
@@ -72,7 +73,6 @@ Proof.
     + left. done.
   - left. done.
 Qed.
-#[local] Existing Instance ErrorList_underlying_slice.
 
 Lemma wp_validateDeleteOptions l options dq :
   {{{ is_pkg_init apimodel ∗
@@ -89,9 +89,9 @@ Proof.
   wp_auto.
   wp_apply (wp_ValidateDeleteOptions_valid with "[$Hdeepown_l]").
   { iFrame "#". done. }
-  iIntros (errs) "(%Herrs_nil & Hdeepown_l)".
+  iIntros (errs) "(%Herrs_len & Hdeepown_l)".
   wp_auto.
-  rewrite Herrs_nil.
+  rewrite Herrs_len.
   wp_auto.
   iApply "HΦ".
   iFrame.
@@ -199,7 +199,9 @@ Proof.
               { rewrite Hpreconditions /=.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
-                with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+                with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
                 iFrame. iPureIntro. done. }
@@ -245,7 +247,9 @@ Proof.
               { rewrite Hpreconditions /=.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
-                with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+                with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
                 iFrame. iPureIntro. done. }
@@ -278,7 +282,9 @@ Proof.
            { rewrite Hpreconditions /=.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
-             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
              iFrame. iPureIntro. done. }
@@ -324,7 +330,8 @@ Proof.
         { rewrite Hpreconditions /=.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
-          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -381,7 +388,9 @@ Proof.
            { rewrite Hpreconditions /=.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
-             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
              iFrame. iPureIntro. done. }
@@ -427,7 +436,9 @@ Proof.
            { rewrite Hpreconditions /=.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
-             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+             with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
              iFrame. iPureIntro. done. }
@@ -460,7 +471,8 @@ Proof.
         { rewrite Hpreconditions /=.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
-          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -479,7 +491,8 @@ Proof.
     rewrite Hpreconditions_null_decide /=.
     wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
-      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
       iFrame. iPureIntro. done. }
@@ -694,8 +707,8 @@ Proof.
     wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
     rewrite Horphan_nonnull_decide /=. wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
-      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-        Horphan_l Hdeepown_propagationpolicy_some]" as "Hoptions".
+      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! orphan). iFrame. iPureIntro.
@@ -719,8 +732,8 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_nonnull_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hpolicy_l]" as "Hoptions".
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
       wp_if_destruct.
@@ -853,7 +866,8 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_null_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some]"
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
@@ -998,8 +1012,8 @@ Proof.
     wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
     rewrite Horphan_nonnull_decide /=. wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
-      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-        Horphan_l Hdeepown_propagationpolicy_some]" as "Hoptions".
+      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! false). iFrame. iPureIntro.
@@ -1023,8 +1037,8 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_nonnull_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hpolicy_l]" as "Hoptions".
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
       wp_if_destruct.
@@ -1159,7 +1173,8 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_null_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some]"
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }

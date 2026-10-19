@@ -17,6 +17,21 @@ Definition opt_ptr_rep {V} `{!TypedPointsto (Σ:=Σ) V} (p : loc) (o : option V)
   Persistent (opt_ptr_rep p o DfracDiscarded).
 Proof. rewrite /opt_ptr_rep. destruct o; apply _. Qed.
 
+Lemma wp_Deref_bool (p : loc) (value : option bool) (fallback : bool) dq :
+  {{{ opt_ptr_rep p value dq }}}
+    #(functions ptr.Deref [go.bool]) #p #fallback
+  {{{ RET #(default fallback value); opt_ptr_rep p value dq }}}.
+Proof using W.
+  iIntros (Φ) "Hp HΦ".
+  wp_func_call. rewrite /ptr.Derefⁱᵐᵖˡ. wp_call. wp_auto.
+  destruct value as [value|]; rewrite /opt_ptr_rep.
+  - iDestruct (typed_pointsto_not_null with "Hp") as %Hp.
+    rewrite (bool_decide_false (p = null)) //. wp_auto.
+    iApply "HΦ". iFrame.
+  - iDestruct "Hp" as %->. wp_auto.
+    iApply "HΦ". done.
+Qed.
+
 (* [Equal] is generic, but stepping its final comparison needs a concrete
    comparable type, so the spec is stated per element type. *)
 Lemma wp_Equal_int32 (a b : loc) (oa ob : option w32) dqa dqb :

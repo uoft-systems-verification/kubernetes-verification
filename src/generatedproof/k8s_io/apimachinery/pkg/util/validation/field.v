@@ -107,26 +107,6 @@ Proof. Admitted.
 End def.
 End ErrorType.
 
-Module ErrorList.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : field.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ErrorList_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (field.ErrorList.t). Admitted.
-
-#[global] Instance ErrorList_into_val_typed
-   :
-  IntoValTypedUnderlying (field.ErrorList.t) (field.ErrorListⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ErrorList.
-
 Module pathOptions.
 Section def.
 
@@ -176,13 +156,62 @@ Context {package_sem' : field.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Path_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (field.Path.t). Admitted.
+#[global]Program Instance Path_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (field.Path.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "name" ∷ l.[(field.Path.t), "name"] ↦{dq} v.(field.Path.name') ∗
+      "index" ∷ l.[(field.Path.t), "index"] ↦{dq} v.(field.Path.index') ∗
+      "parent" ∷ l.[(field.Path.t), "parent"] ↦{dq} v.(field.Path.parent') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Path_into_val_typed
    :
   IntoValTypedUnderlying (field.Path.t) (field.Pathⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Path_access_load_name l (v : (field.Path.t)) dq :
+  AccessStrict
+    (l.[(field.Path.t), "name"] ↦{dq} (v.(field.Path.name')))
+    (l.[(field.Path.t), "name"] ↦{dq} (v.(field.Path.name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Path_access_store_name l (v : (field.Path.t)) name' :
+  AccessStrict
+    (l.[(field.Path.t), "name"] ↦ (v.(field.Path.name')))
+    (l.[(field.Path.t), "name"] ↦ name')
+    (l ↦ v) (l ↦ (v <|(field.Path.name') := name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Path_access_load_index l (v : (field.Path.t)) dq :
+  AccessStrict
+    (l.[(field.Path.t), "index"] ↦{dq} (v.(field.Path.index')))
+    (l.[(field.Path.t), "index"] ↦{dq} (v.(field.Path.index')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Path_access_store_index l (v : (field.Path.t)) index' :
+  AccessStrict
+    (l.[(field.Path.t), "index"] ↦ (v.(field.Path.index')))
+    (l.[(field.Path.t), "index"] ↦ index')
+    (l ↦ v) (l ↦ (v <|(field.Path.index') := index'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Path_access_load_parent l (v : (field.Path.t)) dq :
+  AccessStrict
+    (l.[(field.Path.t), "parent"] ↦{dq} (v.(field.Path.parent')))
+    (l.[(field.Path.t), "parent"] ↦{dq} (v.(field.Path.parent')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Path_access_store_parent l (v : (field.Path.t)) parent' :
+  AccessStrict
+    (l.[(field.Path.t), "parent"] ↦ (v.(field.Path.parent')))
+    (l.[(field.Path.t), "parent"] ↦ parent')
+    (l ↦ v) (l ↦ (v <|(field.Path.parent') := parent'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Path.

@@ -36,6 +36,8 @@ Definition delete_options_with_uid (uid : types.UID.t) : DeleteOptionsV.t :=
     |};
     DeleteOptionsV.OrphanDependents' := None;
     DeleteOptionsV.PropagationPolicy' := None;
+    DeleteOptionsV.DryRun' := [];
+    DeleteOptionsV.IgnoreStoreReadErrorWithClusterBreakingPotential' := None;
   |}.
 
 Lemma wp_NewDeleteOptionsWithUID uid :
@@ -57,6 +59,8 @@ Proof.
   { iDestruct (typed_pointsto_not_null with "Hpreconditions_ptr") as %Hpreconditions_ptr_not_null. done. }
   iApply "HΦ".
   rewrite /delete_options_with_uid /DeleteOptionsV.deepown /PreconditionsV.deepown /=.
+  iPoseProof (own_slice_nil (V:=go_string) (DfracOwn 1)) as "Hdryrun".
+  iFrame "Hdryrun".
   iFrame.
   iPureIntro.
   split_and!; try done.

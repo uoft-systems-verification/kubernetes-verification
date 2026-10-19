@@ -23,6 +23,19 @@ Definition Toⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (T : go.
     exception_do (let: "v" := (GoAlloc T "v") in
     return: ("v")).
 
+(* Deref dereferences ptr and returns the value it points to if no nil, or else
+   returns def.
+
+   go: ptr.go:56:6 *)
+Definition Derefⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (T : go.type) : val :=
+  λ: "ptr" "def",
+    exception_do (let: "def" := (GoAlloc T "def") in
+    let: "ptr" := (GoAlloc (go.PointerType T) "ptr") in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType T] "ptr") ≠⟨go.PointerType T⟩ (Convert go.untyped_nil (go.PointerType T) UntypedNil))
+    then return: (![T] (![go.PointerType T] "ptr"))
+    else do:  #());;;
+    return: (![T] "def")).
+
 (* Equal returns true if both arguments are nil or both arguments
    dereference to the same value.
 
@@ -55,6 +68,7 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] To_unfold T :: FuncUnfold To [T] (Toⁱᵐᵖˡ T);
+  #[global] Deref_unfold T :: FuncUnfold Deref [T] (Derefⁱᵐᵖˡ T);
   #[global] Equal_unfold T :: FuncUnfold Equal [T] (Equalⁱᵐᵖˡ T);
 }.
 End ptr.

@@ -80,7 +80,8 @@ Proof.
           as "Hdeepown_preconditions_some".
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
-          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -109,7 +110,8 @@ Proof.
           as "Hdeepown_preconditions_some".
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
-          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+          with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -138,7 +140,8 @@ Proof.
         as "Hdeepown_preconditions_some".
       { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+          Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options".
       { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
       iApply "HΦ". iFrame. iPureIntro.
@@ -152,7 +155,8 @@ Proof.
     rewrite Hpreconditions_null_decide /=.
     wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
-      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+      with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
     iApply "HΦ". iFrame. iPureIntro.
@@ -267,7 +271,9 @@ Proof.
         iFrame. }
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
-        with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+        with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
         rewrite /DeleteOptionsV.deepown /delete_tx_options_with_rv
@@ -303,7 +309,9 @@ Proof.
         iFrame. }
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
-        with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+        with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
         rewrite /DeleteOptionsV.deepown /delete_tx_options_with_rv
@@ -351,7 +359,9 @@ Proof.
       iFrame. }
     iAssert (DeleteOptionsV.deepown_l options_l
       (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
-      with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some]"
+      with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
+        Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+        Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options_l".
     { iExists (options_c <| v1.DeleteOptions.Preconditions' := preconditions_ptr |>).
       iFrame "Hoptions_l".
@@ -363,12 +373,15 @@ Proof.
     iApply "HΦ". iFrame.
 Qed.
 
+(* The transaction adds a resource-version precondition, which upstream
+   validation forbids when unsafe deletion is enabled. *)
 Lemma wp_State__deleteTx_au γ l key options_c options:
   ∀ Φ,
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
     "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
     "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
+    "%Hsafe_delete" ∷ ⌜ options.(DeleteOptionsV.IgnoreStoreReadErrorWithClusterBreakingPotential') ≠ Some true ⌝ ∗
     "Hau" ∷ AU <{ ∃∃ uid kmeta parent_key parent_uid children terminating_bound,
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
@@ -465,7 +478,9 @@ Proof.
     delete_tx_options_with_rv options
       (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta kobj))).
   assert (Hvalid_options_rv : DeleteOptionsV.valid options_rv).
-  { exact Hvalid_options. }
+  { destruct Hvalid_options as [Hpolicy [Hdryrun Hignore]].
+    split; first exact Hpolicy. split; first exact Hdryrun.
+    intros Henabled. exfalso. apply Hsafe_delete. exact Henabled. }
   assert (Hdelete_preconditions_uid_rv :
     delete_preconditions_match_uid options_rv uid).
   { subst options_rv.
@@ -534,6 +549,7 @@ Lemma wp_State__deleteTx γ l key options_c options uid kmeta parent_key parent_
       "#Hisk" ∷ is_kubernetes γ l ∗
       "Hdeepown_options" ∷ DeleteOptionsV.deepown options_c options 1 ∗
       "%Hvalid_options" ∷ ⌜ DeleteOptionsV.valid options ⌝ ∗
+      "%Hsafe_delete" ∷ ⌜ options.(DeleteOptionsV.IgnoreStoreReadErrorWithClusterBreakingPotential') ≠ Some true ⌝ ∗
       "%Hkey_in" ∷ ⌜ key ∈ children ⌝ ∗
       "%Hdelete_preconditions_uid" ∷ ⌜ delete_preconditions_match_uid options uid ⌝ ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗

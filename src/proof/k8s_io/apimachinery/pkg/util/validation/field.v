@@ -4,6 +4,7 @@ From New.proof.k8s_io.apimachinery.pkg.util.validation Require Export field_init
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : field.Assumptions}.
+Collection W := sem + package_sem.
 Local Set Default Proof Using "All".
 
 (** These weak path specifications deliberately hide path formatting.  A nil
@@ -36,5 +37,17 @@ Lemma wp_ErrorList__ToAggregate_nil (errors_l : loc) :
       errors_l ↦ (zero_val field.ErrorList.t)
   }}}.
 Proof. Admitted.
+
+(* Validations on the success path only construct single-component paths. *)
+Lemma wp_NewPath_single (name : go_string) :
+  {{{ is_pkg_init field }}}
+    @! field.NewPath #name #slice.nil
+  {{{ (l : loc), RET #l; True }}}.
+Proof using W.
+  wp_start as "_". wp_auto.
+  wp_alloc path_ptr as "Hpath". wp_auto.
+  wp_for.
+  iApply "HΦ". done.
+Qed.
 
 End proof.

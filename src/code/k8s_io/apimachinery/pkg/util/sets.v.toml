@@ -1,0 +1,4 @@
+# Generic method bodies use Set[T].Method; unfolding instances use Set.Method.
+translate = ["Empty", "Set", "String", "cast", "String.HasAll", "Set.HasAll", "Set.Has", "Set[T].HasAll", "Set[T].Has"]
+
+imports = ["!*"]

@@ -81,23 +81,6 @@ Lemma wp_parseResourceVersion rv :
   }}}.
 Proof. Admitted.
 
-(* [ValidateDeleteOptions] is part of the untranslated Kubernetes validation
-   package.  [DeleteOptionsV.valid] is its pure-model counterpart. *)
-Axiom ErrorList_underlying_slice :
-  field.ErrorList ↓u go.SliceType (go.PointerType field.Error).
-#[local] Existing Instance ErrorList_underlying_slice.
-
-Axiom wp_ValidateDeleteOptions_valid : ∀ l options dq,
-  {{{ is_pkg_init apimodel ∗
-      DeleteOptionsV.deepown_l l options dq ∗
-      ⌜ DeleteOptionsV.valid options ⌝
-  }}}
-    @! v1_validation.ValidateDeleteOptions #l
-  {{{ (errs : field.ErrorList.t), RET #errs;
-      ⌜ (#errs : val) = #slice.nil ⌝ ∗
-      DeleteOptionsV.deepown_l l options dq
-  }}}.
-
 (* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
 Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
 Axiom delete_pending_graceful : KObjectV.t -> bool.
