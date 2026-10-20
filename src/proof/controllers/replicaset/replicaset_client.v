@@ -188,7 +188,6 @@ Lemma wp_ReplicaSetInterface__UpdateStatus_general γ l c namespace (ctx opts : 
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "#Hclient" ∷ is_rs_client c namespace ∗
-      "%Hnamespace" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "Hinput" ∷ ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
       "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
@@ -221,10 +220,6 @@ Proof.
   rewrite Hns.
   set input := rs <| ReplicaSetV.Status' := requested |>.
   pose proof Hvalid as (Hvalid_typemeta & Hvalid_rv & Hvalid_meta & Hvalid_spec & _).
-  (* The request's identity and metadata are those of the valid [rs]. *)
-  assert (status_update_request_ok ReplicaSetV.kind namespace (KObjectV.ReplicaSet input))
-    as Hrequest_ok.
-  { rewrite /status_update_request_ok /=. split_and!; done. }
   wp_apply (wp_State__ReplicaSetUpdateStatusTx_same_meta_general γ l namespace rs_l input dq_in
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.Status')
     with "[$Hisk $Hinput $Hmeta $Hstatus]").

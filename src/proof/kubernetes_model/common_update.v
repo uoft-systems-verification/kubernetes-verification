@@ -420,22 +420,22 @@ Proof.
 Qed.
 
 (** The request-level part of [KObjectV.valid_status_update] that a status
-    write needs even when the submitted status may be invalid: [kind] and
-    [namespace] name the object's key, the resource version rules out the
-    early rejections, and a valid TypeMeta keeps the stored object valid.
-    An empty name need not be ruled out, as the write then fails with a bad
-    request. The other metadata, the UID included, need not be checked: the
-    request keeps the stored metadata up to the resource version, so it is
-    valid already. *)
-Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
+    write needs even when the submitted status may be invalid: [kind] is the
+    object's kind, the resource version rules out the early rejections, and a
+    valid TypeMeta keeps the stored object valid. An empty name or a request
+    namespace other than the object's need not be ruled out: the write then
+    fails, with a bad request or because the requested key holds no object with
+    the request's UID. The other metadata, the UID included, need not be
+    checked: the request keeps the stored metadata up to the resource version,
+    so it is valid already. *)
+Definition status_update_request_ok (kind : go_string) (kobj : KObjectV.t) : Prop :=
   kind = KObjectV.kind kobj ∧
-  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
   valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
   valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
 
 Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
   KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-  status_update_request_ok kind namespace kobj.
+  status_update_request_ok kind kobj.
 Proof.
   intros Hvalid_status_update. rewrite /status_update_request_ok.
   destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
@@ -450,6 +450,20 @@ Qed.
 Lemma valid_status_update_name_nonempty kind namespace kmeta kstatus kobj :
   KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
   (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go.
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
+Qed.
+
+(** A valid status update is sent to the object's namespace. *)
+Lemma valid_status_update_namespace kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace').
 Proof.
   intros Hvalid_status_update.
   destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;

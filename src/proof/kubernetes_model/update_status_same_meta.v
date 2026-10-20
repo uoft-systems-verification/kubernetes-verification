@@ -90,18 +90,20 @@ Lemma wp_State__update_status_same_meta_au γ l kind namespace i kobj :
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  destruct (Classical_Prop.classic (status_update_request_ok kind namespace kobj ∧
+  destruct (Classical_Prop.classic (status_update_request_ok kind kobj ∧
+    namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
     (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go))
     as [Hvalid_status_update_input|Hinvalid_status_update_input].
   2: {
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
-    exfalso. apply Hinvalid_status_update_input. split.
+    exfalso. apply Hinvalid_status_update_input. split_and!.
     - eapply valid_status_update_request_ok. exact Hvalid_status_update.
+    - eapply valid_status_update_namespace. exact Hvalid_status_update.
     - eapply valid_status_update_name_nonempty. exact Hvalid_status_update.
   }
   destruct Hvalid_status_update_input as
-    [(Hkind_matches & Hns_matches & Hrv_valid & Hvalid_typemeta) Hname_nonempty].
+    [(Hkind_matches & Hrv_valid & Hvalid_typemeta) [Hns_matches Hname_nonempty]].
   (* The request keeps the stored UID, which is non-empty. *)
   destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
   { iApply fupd_wp.
@@ -630,16 +632,196 @@ all: try apply _.
 all: try done.
 Qed.
 
+(** A status write whose request carries the UID of the object at [key] but
+    names another key fails and leaves the store unchanged: the requested key
+    holds no object, or one with another UID. *)
+Lemma wp_State__update_status_other_key_au γ l kind namespace i kobj key :
+  ∀ Φ,
+    is_pkg_init apimodel ∗
+    is_kubernetes γ l ∗
+    "%Hkey_ne" ∷ ⌜ {| KKey.Kind' := kind; KKey.Name' := (KObjectV.objectmeta kobj).(ObjectMetaV.Name');
+                     KKey.Namespace' := namespace |} ≠ key ⌝ ∗
+    "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
+    (|={⊤, ∅}=> ∃ uid dq kmeta,
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "%Huid" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') = uid ⌝ ∗
+      "Hclose" ∷ (∀ err,
+        ⌜ err ≠ interface.nil ⌝ ∗ own_meta_frag γ key uid dq kmeta ={∅,⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
+    ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
+Proof.
+  iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
+  (* The request carries the stored UID, which is non-empty. *)
+  destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
+  { iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+    rewrite /own_meta_frag.
+    iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as
+      "(_ & _ & %Huid_meta & %Hvalid_meta & _)".
+    exfalso. destruct Hvalid_meta as (_ & _ & _ & _ & _ & Hvalid_uid & _).
+    apply (valid_uid_non_empty _ Hvalid_uid). rewrite -Huid_meta -Huid. exact Huid_empty. }
+  wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  wp_method_call. rewrite /apimodel.State__updateStatusLockedⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
+  { iFrame "#". iExact "Hdeepown_i". }
+  iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto.
+  iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l]".
+  wp_apply wp_Accessor. 1: iPureIntro; done.
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
+    "(%Hl1_not_null & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
+  wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace_general with "[$Hdeepown_m_l]").
+  { iPureIntro. done. }
+  iIntros (err_ns) "[[%Herr_ns_nil Hdeepown_m_l] | %Herr_ns_ne]".
+  2: {
+    (* Namespaces that are both set and differ are rejected. *)
+    destruct err_ns as [err_ns_ok|]; [|done]. wp_auto.
+    iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+    iMod ("Hclose" $! (interface.ok err_ns_ok) with "[$Hown_meta_frag]") as "HΦ".
+    { done. }
+    iModIntro.
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iExact "HΦ". }
+  subst err_ns. wp_auto.
+  wp_apply (wp_GetName_deepown_kobject i1 l1 kobj with "[$Hdeepown_m_l]"). 1: done.
+  iIntros "Hdeepown_m_l". wp_auto.
+  simpl.
+  destruct (decide (ObjectMetaV.Name' (KObjectV.objectmeta kobj) = ""%go)) as [Hname_empty|Hname_nonempty].
+  { (* A request without a name is rejected as a bad request before the lookup. *)
+    rewrite (bool_decide_true _ Hname_empty). wp_auto.
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (reason_args_sl) "[Hreason_args _]". wp_auto.
+    wp_apply (wp_fmt_Sprintf with "[$Hreason_args]").
+    iIntros (reason) "_". wp_auto.
+    wp_apply wp_NewBadRequest.
+    iIntros (err_l) "_". wp_auto.
+    iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+    iMod ("Hclose" $! (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) with
+      "[$Hown_meta_frag]") as "HΦ".
+    { done. }
+    iModIntro.
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iExact "HΦ". }
+  rewrite bool_decide_false //. wp_auto.
+  wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
+  iIntros "Hinv_Hown_phys". wp_auto.
+  iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
+  set key' := {|
+    KKey.Kind' := kind;
+    KKey.Name' := ObjectMetaV.Name' (KObjectV.objectmeta kobj);
+    KKey.Namespace' := namespace
+  |}.
+  destruct (bool_decide (is_Some (phys_state !! key'))) eqn:Hdecide.
+  2: {
+    (* The requested key holds no object. *)
+    wp_auto.
+    wp_apply (wp_NewNotFound
+      {| schema.GroupResource.Group' := ""%go;
+         schema.GroupResource.Resource' := kind |}
+      (ObjectMetaV.Name' (KObjectV.objectmeta kobj))).
+    iIntros (err_l) "%Hnot_found". wp_auto.
+    set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
+    pose proof (not_found_error_not_nil err Hnot_found) as Herr_not_nil.
+    iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+    iMod ("Hclose" $! err with "[$Hown_meta_frag]") as "HΦ".
+    { done. }
+    iModIntro.
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iExact "HΦ". }
+  assert (∃ old_i, phys_state !! key' = Some old_i) as [old_i Hlookup_phys].
+  { apply bool_decide_eq_true in Hdecide. done. }
+  assert (∃ old_kobj, abs_state !! key' = Some old_kobj) as [old_kobj Hlookup_abs].
+  { apply elem_of_dom. rewrite <- Hdom_eq. apply elem_of_dom. eexists. done. }
+  iDestruct (big_sepM2_delete _ phys_state abs_state key' _ _ Hlookup_phys Hlookup_abs with "Hinv_Hphys_abs_rep")
+    as "(Hdeepown_old_i & Hother_rep)".
+  destruct old_i as [old_i|].
+  2: { iExFalso. iExact "Hdeepown_old_i". }
+  rewrite Hlookup_phys. wp_auto.
+  wp_apply (wp_deepCopy old_i old_kobj (DfracOwn 1) with "[Hdeepown_old_i]").
+  { iFrame "#". iExact "Hdeepown_old_i". }
+  iIntros (old_i1) "[Hdeepown_old_i1 Hdeepown_old_i]". wp_auto.
+  iDestruct "Hdeepown_old_i1" as (old_l1) "[%Hvalid_interface_old Hdeepown_old_l]".
+  wp_apply wp_Accessor. 1: iPureIntro; done.
+  iPoseProof (KObjectV.deepown_l_split with "Hdeepown_old_l") as
+    "(%Hold_l1_not_null & Hdeepown_t_old_l & Hdeepown_m_old_l & Hdeepown_s_old_l & Hdeepown_st_old_l)".
+  wp_apply (wp_GetUID_deepown_kobject i1 l1 kobj with "[$Hdeepown_m_l]"). 1: done.
+  iIntros "Hdeepown_m_l". wp_auto.
+  simpl.
+  wp_if_destruct.
+  1: { exfalso. done. }
+  rewrite bool_decide_false //. wp_auto.
+  wp_apply (wp_GetUID_deepown_kobject old_i1 old_l1 old_kobj with
+    "[$Hdeepown_m_old_l]"). 1: done.
+  iIntros "Hdeepown_m_old_l". wp_auto.
+  wp_if_destruct.
+  { (* The object at the requested key carries the request's UID, which is
+       that of the object at [key], so the requested key is [key]. *)
+    iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+    iDestruct (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
+      as %(obj & Hlookup_obj & Huid_obj & _ & _).
+    iPoseProof (kview.own_auth_valid2 key' old_kobj with "Hinv_Hown_abs") as "%Hauth_old".
+    1: done.
+    destruct Hauth_old as (_ & _ & _ & _ & Huid_unique_old).
+    exfalso. apply Hkey_ne.
+    apply (map_Forall_lookup_1 _ _ _ _ Huid_unique_old Hlookup_obj).
+    rewrite Huid_obj -Huid. symmetry. done. }
+  (* Otherwise the UID check reports a conflict. *)
+  wp_apply (wp_GetUID_deepown_kobject old_i1 old_l1 old_kobj with
+    "[$Hdeepown_m_old_l]"). 1: done.
+  iIntros "Hdeepown_m_old_l". wp_auto.
+  wp_apply wp_slice_literal. iSplitR; first done.
+  iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+  wp_apply (wp_Errorf with "[$Herror_args]").
+  iIntros (error_cause) "_". wp_auto.
+  wp_apply (wp_NewConflict
+    {| schema.GroupResource.Group' := ""%go;
+       schema.GroupResource.Resource' := kind |}
+    (ObjectMetaV.Name' (KObjectV.objectmeta kobj)) (interface.ok error_cause)).
+  iIntros (err_l) "%Herr_conflict". wp_auto.
+  set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
+  pose proof (conflict_error_not_nil err Herr_conflict) as Herr_not_nil.
+  iApply fupd_wp.
+  iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
+  iMod ("Hclose" $! err with "[$Hown_meta_frag]") as "HΦ".
+  { done. }
+  iModIntro.
+  iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
+    match i with
+    | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
+    | interface.nil => False%I
+    end)%I)
+    with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
+  { rewrite (big_sepM2_delete _ phys_state abs_state key' _ _ Hlookup_phys Hlookup_abs).
+    iFrame. }
+  iCombineNamed "Hinv_*" as "H".
+  wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+  { iNamed "H". iFrame. iFrame "#". done. }
+  iExact "HΦ".
+Unshelve.
+all: try apply _.
+all: try done.
+Qed.
+
 (* A variant of [wp_State__update_status_same_meta_au] that does not require the
    request status to be valid ([Hrequest_ok] only covers the request's identity
    and metadata). Validation may then reject the write, which leaves the stored
    object and both fragments unchanged; a success does not describe the stored
    status beyond its validity. *)
-Lemma wp_State__update_status_same_meta_general_au γ l kind namespace i kobj :
+Lemma wp_State__update_status_same_meta_general_au γ l kind (namespace : go_string) i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind namespace kobj ⌝ ∗
+    "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind kobj ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
     (|={⊤, ∅}=> ∃ uid dq kmeta kstatus,
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
@@ -662,8 +844,28 @@ Lemma wp_State__update_status_same_meta_general_au γ l kind namespace i kobj :
       )%I
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
-  iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  destruct Hrequest_ok as (Hkind_matches & Hns_matches & Hrv_valid & Hvalid_typemeta).
+  iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau".
+  destruct Hrequest_ok as (Hkind_matches & Hrv_valid & Hvalid_typemeta).
+  destruct (decide (namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace'))) as
+    [Hns_matches|Hns_ne].
+  2: {
+    (* Another namespace names another key, where no object carries the
+       request's UID. *)
+    iApply (wp_State__update_status_other_key_au γ l kind namespace i kobj (KObjectV.key kobj)).
+    iFrame "#". iFrame "Hdeepown_i".
+    iSplit.
+    { iPureIntro. intros Hkey_eq. apply Hns_ne.
+      apply (f_equal KKey.Namespace') in Hkey_eq. simpl in Hkey_eq.
+      rewrite Hkey_eq. destruct kobj; done. }
+    iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
+    iDestruct (own_meta_frag_status_identity _ _ _ _ _ kobj Hmeta_same with "Hown_meta_frag") as
+      %[Huid_kobj _].
+    iModIntro. iExists uid, dq, kmeta. iFrame "Hown_meta_frag".
+    iSplit; first done.
+    iIntros (err) "[%Herr_ne Hown_meta_frag]".
+    iDestruct "Hclose" as "[_ Hclose_err]".
+    iApply ("Hclose_err" $! err with "[$Hown_meta_frag $Hown_status_frag]"). done. }
+  iNamed "Hkinv".
   (* The request keeps the stored UID, which is non-empty. *)
   destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
   { iApply fupd_wp.

@@ -308,7 +308,7 @@ Proof.
   wp_apply (wp_ReplicaSetInterface__UpdateStatus_general γ l c
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ cur_l cur _ dq DfracDiscarded
     with "[$Hinput $Hmeta $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. split; [by rewrite Hns_meta|done]. }
+  { iFrame "#". iPureIntro. done. }
   iIntros (result_l werr rs') "(%Hchanged & _ & Hmeta & Hstatus_frag & %Hvalid_rs')".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".

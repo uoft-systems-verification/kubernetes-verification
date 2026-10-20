@@ -52,4 +52,21 @@ Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns i l o m :
   }}}.
 Proof. Admitted.
 
+(* A variant of [wp_EnsureObjectNamespaceMatchesRequestNamespace] that does not
+   require the namespaces to agree: the call either leaves the object in the
+   request namespace or, when both namespaces are set and differ, returns an
+   error. *)
+Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace_general ns i l o m :
+  {{{ is_pkg_init rest ∗
+      ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1
+  }}}
+    @! rest.EnsureObjectNamespaceMatchesRequestNamespace #ns #(interface.ok i)
+  {{{ (err : interface.t), RET #err;
+      (⌜ err = interface.nil ⌝ ∗
+        ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) (m <| ObjectMetaV.Namespace' := ns |>) 1) ∨
+      ⌜ err ≠ interface.nil ⌝
+  }}}.
+Proof. Admitted.
+
 End proof.

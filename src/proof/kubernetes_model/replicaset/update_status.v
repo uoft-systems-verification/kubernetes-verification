@@ -73,10 +73,11 @@ Qed.
    require the requested status to be valid: the write either succeeds as there,
    without a description of the stored status beyond its validity, or returns
    an error and leaves the status fragment unchanged. *)
-Lemma wp_State__ReplicaSetUpdateStatusTx_same_meta_general γ l namespace rs_l rs dq_in uid dq kmeta kstatus :
+Lemma wp_State__ReplicaSetUpdateStatusTx_same_meta_general γ l (namespace : go_string) rs_l rs dq_in
+    uid dq kmeta kstatus :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hrequest_ok" ∷ ⌜ status_update_request_ok ReplicaSetV.kind namespace (KObjectV.ReplicaSet rs) ⌝ ∗
+      "%Hvalid_typemeta" ∷ ⌜ valid_typemeta ReplicaSetV.kind rs.(ReplicaSetV.TypeMeta') ⌝ ∗
       "%Hmeta_same" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs dq_in ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (ReplicaSetV.key rs) uid dq kmeta ∗
