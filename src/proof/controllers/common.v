@@ -36,7 +36,7 @@ Definition delete_options_with_uid (uid : types.UID.t) : DeleteOptionsV.t :=
     |};
     DeleteOptionsV.OrphanDependents' := None;
     DeleteOptionsV.PropagationPolicy' := None;
-    DeleteOptionsV.DryRun' := [];
+    DeleteOptionsV.DryRun' := None;
     DeleteOptionsV.IgnoreStoreReadErrorWithClusterBreakingPotential' := None;
   |}.
 

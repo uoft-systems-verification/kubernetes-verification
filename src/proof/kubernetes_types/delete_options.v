@@ -45,7 +45,7 @@ Record t := mk {
   Preconditions' : option PreconditionsV.t;
   OrphanDependents' : option bool;
   PropagationPolicy' : option go_string;
-  DryRun' : list go_string;
+  DryRun' : option (list go_string);
   IgnoreStoreReadErrorWithClusterBreakingPotential' : option bool;
 }.
 
@@ -71,7 +71,10 @@ Definition deepown (c: v1.DeleteOptions.t) (v: t) dq: iProp Σ :=
   | Some vpp => ∃ cpp, c.(v1.DeleteOptions.PropagationPolicy') ↦{dq} cpp ∗ ⌜ cpp = vpp ⌝
   | None => True%I
   end) ∗
-  "Hdeepown_dryrun" ∷ c.(v1.DeleteOptions.DryRun') ↦*{dq} v.(DryRun') ∗
+  (* TODO: Refactor predicates for other slice fields to separate nilness from
+     ownership of the contents using [default []], as below. *)
+  "%Hdeepown_dryrun_none" ∷ ⌜ c.(v1.DeleteOptions.DryRun') = slice.nil ↔ v.(DryRun') = None ⌝ ∗
+  "Hdeepown_dryrun" ∷ c.(v1.DeleteOptions.DryRun') ↦*{dq} default [] v.(DryRun') ∗
   "%Hdeepown_ignorestorereaderror_none" ∷
     ⌜ c.(v1.DeleteOptions.IgnoreStoreReadErrorWithClusterBreakingPotential') = null ↔
       v.(IgnoreStoreReadErrorWithClusterBreakingPotential') = None ⌝ ∗
@@ -100,9 +103,9 @@ Definition valid (options : t) : Prop :=
       policy = "Orphan"%go
   | _, None => True
   end) ∧
-  Forall (λ directive, directive = "All"%go) options.(DryRun') ∧
+  Forall (λ directive, directive = "All"%go) (default [] options.(DryRun')) ∧
   (options.(IgnoreStoreReadErrorWithClusterBreakingPotential') = Some true →
-    options.(DryRun') = [] ∧
+    default [] options.(DryRun') = [] ∧
     options.(PropagationPolicy') = None ∧
     options.(OrphanDependents') = None ∧
     options.(GracePeriodSeconds') = None ∧
