@@ -737,6 +737,7 @@ Proof.
           (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')).
         iFrame "#".
         iSplitL "Hdeepown_do"; [iExact "Hdeepown_do"|].
+        iSplit; [iPureIntro; exact Hvalid_do|].
         iSplit; [iPureIntro; rewrite /PodV.key /PodV.meta_key /=; done|].
         iSplit; [iPureIntro; rewrite /delete_preconditions_match /delete_options_with_uid /=; done|].
         iSplit; [iPureIntro; rewrite /delete_options_preconditions_resource_version_none /delete_options_with_uid /=; done|].
