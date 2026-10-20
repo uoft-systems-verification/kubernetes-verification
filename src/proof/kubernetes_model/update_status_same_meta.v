@@ -1,5 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export update_status.
+From New.proof Require Import wp_helpers.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -71,17 +72,18 @@ Lemma wp_State__update_status_same_meta_au γ l kind namespace i kobj :
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  destruct (Classical_Prop.classic (status_update_request_ok kind namespace kobj))
+  destruct (Classical_Prop.classic (status_update_request_ok kind namespace kobj ∧
+    (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go))
     as [Hvalid_status_update_input|Hinvalid_status_update_input].
   2: {
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
-    exfalso. apply Hinvalid_status_update_input.
-    eapply valid_status_update_request_ok. exact Hvalid_status_update.
+    exfalso. apply Hinvalid_status_update_input. split.
+    - eapply valid_status_update_request_ok. exact Hvalid_status_update.
+    - eapply valid_status_update_name_nonempty. exact Hvalid_status_update.
   }
   destruct Hvalid_status_update_input as
-    (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
-      Hvalid_typemeta).
+    [(Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta) Hname_nonempty].
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
@@ -637,8 +639,7 @@ Lemma wp_State__update_status_same_meta_general_au γ l kind namespace i kobj :
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   destruct Hrequest_ok as
-    (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
-      Hvalid_typemeta).
+    (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta).
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
@@ -655,6 +656,26 @@ Proof.
   iIntros "Hdeepown_m_l". wp_auto.
   wp_apply (wp_GetName_deepown_kobject i1 l1 kobj with "[$Hdeepown_m_l]"). 1: done.
   iIntros "Hdeepown_m_l". wp_auto.
+  destruct (decide (ObjectMetaV.Name' (KObjectV.objectmeta kobj) = ""%go)) as [Hname_empty|Hname_nonempty].
+  { (* A request without a name is rejected as a bad request before the lookup. *)
+    rewrite (bool_decide_true _ Hname_empty). wp_auto.
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (reason_args_sl) "[Hreason_args _]". wp_auto.
+    wp_apply (wp_fmt_Sprintf with "[$Hreason_args]").
+    iIntros (reason) "_". wp_auto.
+    wp_apply wp_NewBadRequest.
+    iIntros (err_l) "_". wp_auto.
+    iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
+    iDestruct "Hclose" as "[_ Hclose_err]".
+    iMod ("Hclose_err" $! (interface.mk_ok (go.PointerType api_errors.StatusError) #err_l) with
+      "[Hown_meta_frag Hown_status_frag]") as "HΦ".
+    { iSplit; first done. iFrame. }
+    iModIntro.
+    iCombineNamed "Hinv_*" as "H".
+    wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+    { iNamed "H". iFrame. iFrame "#". done. }
+    iExact "HΦ". }
   rewrite bool_decide_false //. wp_auto.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
   iIntros "Hinv_Hown_phys". wp_auto.

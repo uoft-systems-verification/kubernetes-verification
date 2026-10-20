@@ -421,13 +421,13 @@ Qed.
 
 (** The request-level part of [KObjectV.valid_status_update] that a status
     write needs even when the submitted status may be invalid: [kind] and
-    [namespace] name the object's key, the name, UID and resource version rule
-    out the early rejections, and a valid TypeMeta keeps the stored object
-    valid. The other metadata need not be checked: the request keeps the
+    [namespace] name the object's key, the UID and resource version rule out
+    the early rejections, and a valid TypeMeta keeps the stored object valid.
+    An empty name need not be ruled out, as the write then fails with a bad
+    request. The other metadata need not be checked: the request keeps the
     stored metadata up to the resource version, so it is valid already. *)
 Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
   kind = KObjectV.kind kobj ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
   (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
   namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
   valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
@@ -444,6 +444,20 @@ Proof.
       ?/DeploymentV.valid_status_update
       /ObjectMetaV.valid_update in Hvalid_status_update;
     try contradiction; tauto.
+Qed.
+
+(** A valid status update names the object. *)
+Lemma valid_status_update_name_nonempty kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go.
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
 Qed.
 
 (** The status-update guard depends on the stored metadata only up to its

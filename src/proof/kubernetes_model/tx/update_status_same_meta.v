@@ -3,6 +3,7 @@ From New.proof.kubernetes_model Require Export update_status_same_meta.
 From New.proof.kubernetes_model.tx Require Export update_status.
 From New.proof.kubernetes_model Require Import common_update get.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
+From New.proof Require Import wp_helpers.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -40,8 +41,9 @@ Lemma wp_State__updateStatusTx_same_meta γ l kind namespace i kobj dq_in uid dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Hname_not_empty & Huid_nonempty & Hns_matches & Hrv_valid &
+  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid &
     Hvalid_typemeta).
+  pose proof (valid_status_update_name_nonempty _ _ _ _ _ Hvalid_status_update) as Hname_not_empty.
   wp_auto.
   (* A conflict leaves every fragment as it was, so the loop just keeps them. *)
   set I := (
@@ -220,8 +222,7 @@ Lemma wp_State__updateStatusTx_same_meta_general γ l kind namespace i kobj dq_i
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof Hrequest_ok as (Hkind_matches & Hname_not_empty & Huid_nonempty & Hns_matches & Hrv_valid &
-    Hvalid_typemeta).
+  pose proof Hrequest_ok as (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta).
   wp_auto.
   (* A conflict leaves every fragment as it was, so the loop just keeps them. *)
   set I := (
@@ -244,6 +245,17 @@ Proof.
   wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto.
+  destruct (decide (ObjectMetaV.Name' (KObjectV.objectmeta kobj) = ""%go)) as [Hname_empty|Hname_not_empty].
+  { (* A request without a name is rejected as a bad request. *)
+    rewrite (bool_decide_true _ Hname_empty). wp_auto.
+    wp_apply wp_slice_literal. iSplitR; first done.
+    iIntros (reason_args_sl) "[Hreason_args _]". wp_auto.
+    wp_apply (wp_fmt_Sprintf with "[$Hreason_args]").
+    iIntros (reason) "_". wp_auto.
+    wp_apply wp_NewBadRequest.
+    iIntros (err_l) "_". wp_auto.
+    wp_for_post.
+    iApply "HΦ". iFrame "Hdeepown_i Hown_meta_frag". iRight. iFrame. done. }
   rewrite bool_decide_false //. wp_auto.
   set key := {|
     KKey.Kind' := kind;

@@ -221,7 +221,7 @@ Proof.
   rewrite Hns.
   set input := rs <| ReplicaSetV.Status' := requested |>.
   pose proof Hvalid as (Hvalid_typemeta & Hvalid_rv & Hvalid_meta & Hvalid_spec & _).
-  pose proof Hvalid_meta as (_ & Hname_nonempty & _ & _ & _ & Hvalid_uid & _).
+  pose proof Hvalid_meta as (_ & _ & _ & _ & _ & Hvalid_uid & _).
   pose proof (valid_uid_non_empty _ Hvalid_uid) as Huid_nonempty.
   (* The request's identity and metadata are those of the valid [rs]. *)
   assert (status_update_request_ok ReplicaSetV.kind namespace (KObjectV.ReplicaSet input))
