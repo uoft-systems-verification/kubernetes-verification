@@ -41,8 +41,7 @@ Lemma wp_State__updateStatusTx_same_meta γ l kind namespace i kobj dq_in uid dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Hrv_valid &
-    Hvalid_typemeta).
+  pose proof (valid_status_update_kind _ _ _ _ _ Hvalid_status_update) as Hkind_matches.
   pose proof (valid_status_update_namespace _ _ _ _ _ Hvalid_status_update) as Hns_matches.
   pose proof (valid_status_update_name_nonempty _ _ _ _ _ Hvalid_status_update) as Hname_not_empty.
   wp_auto.
@@ -368,7 +367,7 @@ Proof.
     Hexisting_rv_valid.
   { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
   (* The request identity and metadata stay valid at the stored resource version. *)
-  assert (status_update_request_ok kind kobj_rv) as Hrequest_ok_rv.
+  assert (status_update_request_ok kobj_rv) as Hrequest_ok_rv.
   { subst kobj_rv kmeta_rv.
     rewrite /status_update_request_ok KObjectV.kind_update_objectmeta
       KObjectV.typemeta_update_objectmeta objectmeta_update_objectmeta.

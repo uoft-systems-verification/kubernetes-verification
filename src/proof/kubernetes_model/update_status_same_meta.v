@@ -90,7 +90,7 @@ Lemma wp_State__update_status_same_meta_au γ l kind namespace i kobj :
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  destruct (Classical_Prop.classic (status_update_request_ok kind kobj ∧
+  destruct (Classical_Prop.classic (kind = KObjectV.kind kobj ∧ status_update_request_ok kobj ∧
     namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
     (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go))
     as [Hvalid_status_update_input|Hinvalid_status_update_input].
@@ -98,12 +98,13 @@ Proof.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     exfalso. apply Hinvalid_status_update_input. split_and!.
+    - eapply valid_status_update_kind. exact Hvalid_status_update.
     - eapply valid_status_update_request_ok. exact Hvalid_status_update.
     - eapply valid_status_update_namespace. exact Hvalid_status_update.
     - eapply valid_status_update_name_nonempty. exact Hvalid_status_update.
   }
   destruct Hvalid_status_update_input as
-    [(Hkind_matches & Hrv_valid & Hvalid_typemeta) [Hns_matches Hname_nonempty]].
+    (Hkind_matches & (Hrv_valid & Hvalid_typemeta) & Hns_matches & Hname_nonempty).
   (* The request keeps the stored UID, which is non-empty. *)
   destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
   { iApply fupd_wp.
@@ -813,15 +814,16 @@ all: try done.
 Qed.
 
 (* A variant of [wp_State__update_status_same_meta_au] that does not require the
-   request status to be valid ([Hrequest_ok] only covers the request's identity
-   and metadata). Validation may then reject the write, which leaves the stored
+   request status to be valid ([Hrequest_ok] only covers the request's resource
+   version and TypeMeta), nor the request kind and namespace to name the
+   object's key. Validation may then reject the write, which leaves the stored
    object and both fragments unchanged; a success does not describe the stored
    status beyond its validity. *)
-Lemma wp_State__update_status_same_meta_general_au γ l kind (namespace : go_string) i kobj :
+Lemma wp_State__update_status_same_meta_general_au γ l (kind namespace : go_string) i kobj :
   ∀ Φ,
     is_pkg_init apimodel ∗
     is_kubernetes γ l ∗
-    "%Hrequest_ok" ∷ ⌜ status_update_request_ok kind kobj ⌝ ∗
+    "%Hrequest_ok" ∷ ⌜ status_update_request_ok kobj ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
     (|={⊤, ∅}=> ∃ uid dq kmeta kstatus,
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
@@ -845,18 +847,15 @@ Lemma wp_State__update_status_same_meta_general_au γ l kind (namespace : go_str
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau".
-  destruct Hrequest_ok as (Hkind_matches & Hrv_valid & Hvalid_typemeta).
-  destruct (decide (namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace'))) as
-    [Hns_matches|Hns_ne].
+  destruct Hrequest_ok as (Hrv_valid & Hvalid_typemeta).
+  destruct (decide ({| KKey.Kind' := kind; KKey.Name' := ObjectMetaV.Name' (KObjectV.objectmeta kobj);
+      KKey.Namespace' := namespace |} = KObjectV.key kobj)) as [Hkey_matches|Hkey_ne].
   2: {
-    (* Another namespace names another key, where no object carries the
-       request's UID. *)
+    (* Another kind or namespace names another key, where no object carries
+       the request's UID. *)
     iApply (wp_State__update_status_other_key_au γ l kind namespace i kobj (KObjectV.key kobj)).
     iFrame "#". iFrame "Hdeepown_i".
-    iSplit.
-    { iPureIntro. intros Hkey_eq. apply Hns_ne.
-      apply (f_equal KKey.Namespace') in Hkey_eq. simpl in Hkey_eq.
-      rewrite Hkey_eq. destruct kobj; done. }
+    iSplit; first done.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct (own_meta_frag_status_identity _ _ _ _ _ kobj Hmeta_same with "Hown_meta_frag") as
       %[Huid_kobj _].
@@ -865,6 +864,11 @@ Proof.
     iIntros (err) "[%Herr_ne Hown_meta_frag]".
     iDestruct "Hclose" as "[_ Hclose_err]".
     iApply ("Hclose_err" $! err with "[$Hown_meta_frag $Hown_status_frag]"). done. }
+  assert (kind = KObjectV.kind kobj ∧ namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace'))
+    as [Hkind_matches Hns_matches].
+  { pose proof (f_equal KKey.Kind' Hkey_matches) as Hkind_eq.
+    pose proof (f_equal KKey.Namespace' Hkey_matches) as Hns_eq.
+    destruct kobj; simpl in Hkind_eq, Hns_eq; split; done. }
   iNamed "Hkinv".
   (* The request keeps the stored UID, which is non-empty. *)
   destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
