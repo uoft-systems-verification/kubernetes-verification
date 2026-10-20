@@ -37,6 +37,24 @@ Proof.
   rewrite /ObjectMetaV.valid_simple_update in Hsimple. symmetry. tauto.
 Qed.
 
+(** A request that keeps the stored metadata except for the resource version
+    carries the stored UID, which is non-empty. *)
+Lemma own_meta_frag_request_uid_nonempty γ key uid dq kmeta kobj :
+  ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
+  own_meta_frag γ key uid dq kmeta -∗
+  ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝.
+Proof.
+  iIntros (Hmeta_same) "Hmeta".
+  iDestruct (own_meta_frag_status_identity _ _ _ _ _ kobj Hmeta_same with "Hmeta") as
+    %[Huid_kobj _].
+  rewrite /own_meta_frag.
+  iPoseProof (kview.own_meta_valid with "Hmeta") as
+    "(_ & _ & %Huid_meta & %Hvalid_meta & _)".
+  iPureIntro. rewrite -Huid_kobj Huid_meta.
+  destruct Hvalid_meta as (_ & _ & _ & _ & _ & Hvalid_uid & _).
+  apply valid_uid_non_empty. exact Hvalid_uid.
+Qed.
+
 (* A variant of [wp_State__update_status_au] for a request that keeps the stored
    metadata except for the resource version ([Hmeta_same]). The write then
    leaves the metadata unchanged, so the metadata fragment may be held at any
@@ -83,7 +101,14 @@ Proof.
     - eapply valid_status_update_name_nonempty. exact Hvalid_status_update.
   }
   destruct Hvalid_status_update_input as
-    [(Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta) Hname_nonempty].
+    [(Hkind_matches & Hns_matches & Hrv_valid & Hvalid_typemeta) Hname_nonempty].
+  (* The request keeps the stored UID, which is non-empty. *)
+  destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
+  { iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
+    iPoseProof (own_meta_frag_request_uid_nonempty _ _ _ _ _ kobj Hmeta_same with "Hown_meta_frag")
+      as "%Huid_nonempty".
+    exfalso. done. }
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
@@ -638,8 +663,14 @@ Lemma wp_State__update_status_same_meta_general_au γ l kind namespace i kobj :
     ) -∗ WP l @! (go.PointerType apimodel.State) @! "updateStatus" #kind #namespace #(interface.ok i) {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
-  destruct Hrequest_ok as
-    (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta).
+  destruct Hrequest_ok as (Hkind_matches & Hns_matches & Hrv_valid & Hvalid_typemeta).
+  (* The request keeps the stored UID, which is non-empty. *)
+  destruct (decide ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') = ""%go)) as [Huid_empty|Huid_nonempty].
+  { iApply fupd_wp.
+    iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
+    iPoseProof (own_meta_frag_request_uid_nonempty _ _ _ _ _ kobj Hmeta_same with "Hown_meta_frag")
+      as "%Huid_nonempty".
+    exfalso. done. }
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.

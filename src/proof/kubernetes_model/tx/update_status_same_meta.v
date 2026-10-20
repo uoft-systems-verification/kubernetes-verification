@@ -41,7 +41,7 @@ Lemma wp_State__updateStatusTx_same_meta γ l kind namespace i kobj dq_in uid dq
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid &
+  pose proof (valid_status_update_request_ok _ _ _ _ _ Hvalid_status_update) as (Hkind_matches & Hns_matches & Hrv_valid &
     Hvalid_typemeta).
   pose proof (valid_status_update_name_nonempty _ _ _ _ _ Hvalid_status_update) as Hname_not_empty.
   wp_auto.
@@ -222,7 +222,7 @@ Lemma wp_State__updateStatusTx_same_meta_general γ l kind namespace i kobj dq_i
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  pose proof Hrequest_ok as (Hkind_matches & Huid_nonempty & Hns_matches & Hrv_valid & Hvalid_typemeta).
+  pose proof Hrequest_ok as (Hkind_matches & Hns_matches & Hrv_valid & Hvalid_typemeta).
   wp_auto.
   (* A conflict leaves every fragment as it was, so the loop just keeps them. *)
   set I := (

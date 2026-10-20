@@ -421,14 +421,14 @@ Qed.
 
 (** The request-level part of [KObjectV.valid_status_update] that a status
     write needs even when the submitted status may be invalid: [kind] and
-    [namespace] name the object's key, the UID and resource version rule out
-    the early rejections, and a valid TypeMeta keeps the stored object valid.
+    [namespace] name the object's key, the resource version rules out the
+    early rejections, and a valid TypeMeta keeps the stored object valid.
     An empty name need not be ruled out, as the write then fails with a bad
-    request. The other metadata need not be checked: the request keeps the
-    stored metadata up to the resource version, so it is valid already. *)
+    request. The other metadata, the UID included, need not be checked: the
+    request keeps the stored metadata up to the resource version, so it is
+    valid already. *)
 Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
   kind = KObjectV.kind kobj ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
   namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
   valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
   valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
