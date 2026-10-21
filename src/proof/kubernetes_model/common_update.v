@@ -420,16 +420,16 @@ Proof.
 Qed.
 
 (** The request-level part of [KObjectV.valid_status_update] that a status
-    write needs even when the submitted status may be invalid: the resource
-    version rules out the early rejections, and a valid TypeMeta keeps the
-    stored object valid. An empty name, or a request kind or namespace other
-    than the object's, need not be ruled out: the write then fails, with a bad
-    request or because the requested key holds no object with the request's
-    UID. The other metadata, the UID included, need not be checked: the request
-    keeps the stored metadata up to the resource version, so it is valid
-    already. *)
+    write needs even when the submitted status may be invalid: a valid TypeMeta
+    keeps the stored object valid, as the write stores the request's TypeMeta
+    unchecked. An empty name, or a request kind or namespace other than the
+    object's, need not be ruled out: the write then fails, with a bad request or
+    because the requested key holds no object with the request's UID. Neither
+    does the resource version: an empty one is replaced by the stored one, and
+    any other one fails to parse, conflicts, or is the stored one. The other
+    metadata, the UID included, need not be checked: the request keeps the
+    stored metadata up to the resource version, so it is valid already. *)
 Definition status_update_request_ok (kobj : KObjectV.t) : Prop :=
-  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
   valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
 
 Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
@@ -443,6 +443,20 @@ Proof.
       ?/DeploymentV.valid_status_update
       /ObjectMetaV.valid_update in Hvalid_status_update;
     try contradiction; tauto.
+Qed.
+
+(** A valid status update carries a valid resource version. *)
+Lemma valid_status_update_resource_version kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion').
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
 Qed.
 
 (** A valid status update names the object. *)
@@ -485,6 +499,17 @@ Proof.
       ?/DeploymentV.valid_status_update
       /ObjectMetaV.valid_update in Hvalid_status_update;
     try contradiction; simpl; tauto.
+Qed.
+
+(** Every object kind allows an update without a resource version. *)
+Lemma wp_allowUnconditionalUpdate_kind (kobj : KObjectV.t) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.allowUnconditionalUpdate #(KObjectV.kind kobj)
+  {{{ RET (#true, #interface.nil); True }}}.
+Proof.
+  wp_start. wp_auto.
+  destruct kobj; simpl; rewrite ?/PodV.kind ?/ReplicaSetV.kind ?/PersistentVolumeClaimV.kind
+    ?/StatefulSetV.kind ?/DeploymentV.kind; wp_auto; by iApply "HΦ".
 Qed.
 
 (** The status-update guard depends on the stored metadata only up to its

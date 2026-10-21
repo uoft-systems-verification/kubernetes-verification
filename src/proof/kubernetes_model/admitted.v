@@ -81,6 +81,28 @@ Lemma wp_parseResourceVersion rv :
   }}}.
 Proof. Admitted.
 
+(* A variant of [wp_parseResourceVersion] for any resource version:
+   [strconv.ParseUint] is untranslated, so parsing may fail. *)
+Lemma wp_parseResourceVersion_general (rv : go_string) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.parseResourceVersion #rv
+  {{{ (ret : w64) (err : interface.t), RET (#ret, #err);
+    True
+  }}}.
+Proof. Admitted.
+
+(* The error reports the parse error's message, which calls [Error] on an
+   error value of an untranslated type. *)
+Lemma wp_malformedUpdateResourceVersionError (err : interface.t) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ err ≠ interface.nil ⌝
+  }}}
+    @! apimodel.malformedUpdateResourceVersionError #err
+  {{{ (err' : interface.t), RET #err';
+    ⌜ err' ≠ interface.nil ⌝
+  }}}.
+Proof. Admitted.
+
 (* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
 Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
 Axiom delete_pending_graceful : KObjectV.t -> bool.

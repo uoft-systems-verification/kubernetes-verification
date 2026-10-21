@@ -362,16 +362,12 @@ Proof.
   { iExists kobj_l. iSplit.
     { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
-  assert (valid_resource_version
-    (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
-    Hexisting_rv_valid.
-  { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
-  (* The request identity and metadata stay valid at the stored resource version. *)
+  (* The request TypeMeta stays valid at the stored resource version. *)
   assert (status_update_request_ok kobj_rv) as Hrequest_ok_rv.
   { subst kobj_rv kmeta_rv.
     rewrite /status_update_request_ok KObjectV.kind_update_objectmeta
-      KObjectV.typemeta_update_objectmeta objectmeta_update_objectmeta.
-    destruct (KObjectV.objectmeta kobj); simpl in *. split_and!; done. }
+      KObjectV.typemeta_update_objectmeta.
+    exact Hvalid_typemeta. }
   wp_apply (wp_State__update_status_same_meta_general_au γ l kind namespace i_copy kobj_rv).
   iFrame "#". iFrame "Hdeepown_i_copy".
   iSplit; first (iPureIntro; exact Hrequest_ok_rv).
