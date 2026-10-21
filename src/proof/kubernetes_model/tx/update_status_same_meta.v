@@ -243,7 +243,7 @@ Proof.
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace_general with "[$Hdeepown_metadata]").
   { iPureIntro. done. }
-  iIntros (err_ns) "[[%Herr_ns_nil Hdeepown_metadata] | %Herr_ns_ne]".
+  iIntros (err_ns) "[[%Herr_ns_nil Hdeepown_metadata] | (%Herr_ns_ne & _ & _)]".
   2: {
     (* Namespaces that are both set and differ are rejected. *)
     destruct err_ns as [err_ns_ok|]; [|done]. wp_auto.

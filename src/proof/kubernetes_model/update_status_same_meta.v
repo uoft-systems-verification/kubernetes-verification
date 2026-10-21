@@ -673,7 +673,7 @@ Proof.
     "(%Hl1_not_null & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace_general with "[$Hdeepown_m_l]").
   { iPureIntro. done. }
-  iIntros (err_ns) "[[%Herr_ns_nil Hdeepown_m_l] | %Herr_ns_ne]".
+  iIntros (err_ns) "[[%Herr_ns_nil Hdeepown_m_l] | (%Herr_ns_ne & _ & _)]".
   2: {
     (* Namespaces that are both set and differ are rejected. *)
     destruct err_ns as [err_ns_ok|]; [|done]. wp_auto.

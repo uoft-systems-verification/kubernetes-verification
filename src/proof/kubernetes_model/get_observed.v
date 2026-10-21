@@ -91,6 +91,8 @@ Proof.
     iLeft. iPureIntro. split; done.
 Qed.
 
+
+(* TODO: @Xudong, we may merge this lemma into wp_State__get_observed. *)
 (** Lookup without any fragment: the key may be absent or hold any stored
     object. *)
 Lemma wp_State__get_general γ l key :
