@@ -28,9 +28,9 @@ Class top_level (Σ : gFunctors) (V : Type) := {
     object created from the input, e.g., whether some fields from the stored object are the same as the input one,
     or the same as after normalization/defaulting. *)
   created : go_string → V → V → Prop;
-  (* updated relates the object submitted to the update request to the object
-    stored after a successful update. It does not constrain the stored status. *)
-  updated : V → V → Prop;
+  (* updated takes the stored old spec and relates the submitted object to
+    the object stored after a successful update. It does not constrain the stored status. *)
+  updated : update_spec → V → V → Prop;
   (* status_updated relates the object submitted to the status update request
     to the object stored after a successful status update. It does not
     constrain the stored spec. *)

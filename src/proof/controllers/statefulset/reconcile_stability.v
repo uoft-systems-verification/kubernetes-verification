@@ -630,11 +630,9 @@ Lemma wp_reconcileDesiredPods_stability γ model_l set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (Hset_typemeta_valid & Hset_rv_valid & Hset_meta_valid &
       Hset_spec_valid & Hset_status_valid).
-  assert (StatefulSetV.valid set) as Hset_valid.
-  { split_and!; done. }
   destruct Hmatch as [Hpods_match Hpvcs_match].
   pose proof (pods_match_members set pods Hpods_match) as Hpods_members.
   destruct Hpods_match as (Hpod_keys & Hpods_alive & Hpods_match).
@@ -795,7 +793,7 @@ Lemma wp_reconcileCondemnedPod_stability set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
+  pose proof Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
   pose proof (pods_match_members set pods Hpods_match) as Hmembers.
   pose proof (pods_match_no_condemned set pods Hpods_match)
     as Hno_condemned.
@@ -842,7 +840,7 @@ Lemma wp_reconcileOutdatedPod_stability set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
+  pose proof Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
   pose proof (pods_match_members set pods Hpods_match) as Hmembers.
   pose proof (pods_match_no_outdated set pods Hpods_match)
     as Hno_outdated.
@@ -861,6 +859,7 @@ Proof.
   wp_apply (wp_largestOutdatedPod set_l pods_sl set ptrs pods
     dq_set dq_pods with "[$Hset $Hpods_sl $Hpods]").
   { iPureIntro. split_and!.
+    - exact Hset_valid.
     - exact Hset_spec_valid.
     - exact Hpod_name_len.
     - eapply Forall_impl; last exact Hmembers.

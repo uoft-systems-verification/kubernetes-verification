@@ -2297,7 +2297,7 @@ Lemma desired_pvc_name_valid set ordinal name :
     (desired_pvc_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') name ordinal).
 Proof.
-  intros (_ & _ & Hpvc_valid) Hordinal Hname.
+  intros (_ & _ & Hpvc_valid & _) Hordinal Hname.
   unfold pvc_claim_template_names in Hname.
   apply list_elem_of_fmap_1 in Hname as (claim & -> & Hclaim).
   rewrite Forall_forall in Hpvc_valid.
@@ -2356,11 +2356,11 @@ Lemma new_statefulset_pod_requirements set ordinal controller_ref
   obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ∧
-  pod_match set pod.
+  pod_creation_request_matches set pod.
 Proof.
   intros Hset_valid Hinput Hordinal Hcontroller Hcontroller_valid
     [Hclaim_names_nodup Hclaim_names].
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (_ & _ & Hset_meta & Hset_spec & _).
   destruct Hset_spec as [Hset_spec_create _].
   destruct Hset_spec_create as
@@ -2368,7 +2368,17 @@ Proof.
   destruct Htemplate as
     (Htemplate_labels & Htemplate_annotations & Hpreserved_valid & _).
   destruct Hinput as
-    (Hpod_names_valid & Htemplate_finalizers & Hpvc_valid).
+    (Hpod_names_valid & Htemplate_finalizers & Hpvc_valid & Hpod_create_fields).
+  pose proof (Hpod_create_fields ordinal claim_template_names Hordinal
+    Hclaim_names_nodup Hclaim_names) as (Hspec_fields & Hann_fields & Hprepared_fields).
+  change (PodAPI.validate_spec (PodAPI.schema_defaults
+    (new_statefulset_pod set ordinal controller_ref claim_template_names).(PodV.Spec')) = true) in Hspec_fields.
+  change (PodAPI.validate_annotations
+    (new_statefulset_pod set ordinal controller_ref claim_template_names).(PodV.ObjectMeta').(ObjectMetaV.Annotations')
+    (PodV.prepared_spec (new_statefulset_pod set ordinal controller_ref claim_template_names)) = true) in Hann_fields.
+  change (PodAPI.validate_spec
+    (PodV.prepared_spec (new_statefulset_pod set ordinal controller_ref claim_template_names)) = true)
+    in Hprepared_fields.
   pose proof (Hpod_names_valid ordinal Hordinal) as Hpod_name_valid.
   assert ((ordinal ≤ go_int32_max_nat)%nat) as Hordinal_bound.
   { pose proof (statefulset_replicas_le_go_int32_max set). lia. }
@@ -2520,6 +2530,9 @@ Proof.
       * destruct Hservice_valid as [->|Hservice].
         -- left. done.
         -- right. exact Hservice.
+      * exact Hspec_fields.
+    + exact Hann_fields.
+    + exact Hprepared_fields.
   - destruct Hcontroller as
       (Hcontroller_kind & Hcontroller_name & Hcontroller_uid &
        Hblock & Hcontroller_flag).
@@ -2529,7 +2542,7 @@ Proof.
       controller.generated_pod_meta. simpl.
     rewrite Hcontroller_flag. simpl.
     rewrite Hcontroller_kind Hcontroller_name Hcontroller_uid. done.
-  - split.
+  - unfold pod_creation_request_matches. split.
     + unfold pod_identity_matches, new_statefulset_pod, init_storage,
         init_identity, update_identity, PodV.update_objectmeta,
         controller.generated_pod, controller.generated_pod_meta.
@@ -2545,12 +2558,16 @@ Proof.
            intros Hlabels. inversion Hlabels.
         -- rewrite lookup_insert_eq. done.
       * rewrite lookup_insert_eq. done.
-    + unfold pod_immutable_matches, new_statefulset_pod, init_storage,
-        init_identity. simpl. split_and!; try done.
+    + unfold new_statefulset_pod, init_storage, init_identity,
+        without_statefulset_fields, PodAPI.without_managed.
+      simpl. split_and!; try done.
+      exists ordinal. unfold update_identity, controller.generated_pod,
+        controller.generated_pod_meta, PodV.update_objectmeta,
+        desired_pod_labels, desired_pod_annotations. simpl. done.
 Qed.
 
 Lemma created_statefulset_pod_properties set ordinal pod pod' :
-  pod_match set pod →
+  pod_creation_request_matches set pod →
   pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
     desired_pod_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal →
@@ -2558,14 +2575,31 @@ Lemma created_statefulset_pod_properties set ordinal pod pod' :
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
     (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
     pod'.(PodV.ObjectMeta') →
-  ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
-    (ObjectSpecV.PodSpec pod'.(PodV.Spec')) →
+  pod'.(PodV.Spec') = PodV.prepared_spec pod →
   PodV.key pod' = desired_pod_key set ordinal ∧
   is_pod_alive pod' ∧
   pod_has_int32_member_key set pod' ∧
   pod_match set pod'.
 Proof.
-  intros [Hidentity Himmutable] Hpod_name Hmeta_created Hspec_created.
+  intros (Hidentity & Hhostname & Hsubdomain & Hstorage & Hraw_spec &
+    request_ordinal & Hrequest_name & Hrequest_labels & Hrequest_annotations)
+    Hpod_name Hmeta_created Hprepared_spec.
+  assert (request_ordinal = ordinal) as ->.
+  { pose proof (parse_member_name_complete
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') _ request_ordinal Hrequest_name) as Hrequest_parse.
+    pose proof (parse_member_name_complete
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') _ ordinal Hpod_name) as Hpod_parse.
+    congruence. }
+  assert (Hparse : parse_pod_ordinal pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = Some ordinal).
+  { rewrite Hpod_name /parse_pod_ordinal.
+    rewrite (pod_ordinal_suffix_last_dash
+      (desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') (decimal_string ordinal)).
+    - rewrite /desired_pod_name. change "-"%go with [byte_dash]. by rewrite List.app_assoc.
+    - intros Hin. pose proof (decimal_string_dash_free ordinal) as Hfree.
+      unfold dash_free in Hfree. rewrite Forall_forall in Hfree.
+      apply (Hfree byte_dash); [by rewrite -list_elem_of_In|done].
+    - simpl. apply parse_decimal_string_decimal_string. }
   unfold ObjectMetaV.created in Hmeta_created.
   destruct Hmeta_created as
     (Hname & Hnamespace & Hgenerate_name & Hdeletion & Hannotations &
@@ -2577,8 +2611,6 @@ Proof.
   rewrite decide_False in Hname.
   1: exact Hpod_name_nonempty.
   simpl in Hname, Hnamespace, Hdeletion, Hlabels.
-  unfold ObjectSpecV.created in Hspec_created. simpl in Hspec_created.
-  unfold PodSpecV.created in Hspec_created.
   assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
     as Hpod_namespace.
@@ -2613,9 +2645,16 @@ Proof.
       rewrite Hname Hlabels Hnamespace.
       unfold pod_identity_matches in Hidentity.
       rewrite Hpod_namespace in Hidentity. exact Hidentity.
-    + apply (proj1 (pod_immutable_matches_key_spec_eq set pod pod'
-        (eq_sym Hkey) (eq_sym Hspec_created))).
-      exact Himmutable.
+    + unfold pod_immutable_matches. split_and!.
+      * rewrite Hprepared_spec /PodV.prepared_spec /PodAPI.create_spec /= Hname. exact Hhostname.
+      * rewrite Hprepared_spec /PodV.prepared_spec /PodAPI.create_spec /=. exact Hsubdomain.
+      * pose proof (proj2 (pod_storage_matches_prepared set pod) Hstorage) as Hprepared_storage.
+        unfold pod_storage_matches in Hprepared_storage |- *.
+        rewrite Hname Hprepared_spec. exact Hprepared_storage.
+      * rewrite Hname Hprepared_spec /PodV.prepared_spec Hrequest_labels Hrequest_annotations.
+        unfold desired_prepared_spec. rewrite Hparse /=.
+        unfold without_statefulset_fields in Hraw_spec |- *.
+        rewrite PodAPI.create_spec_without_managed Hraw_spec. done.
 Qed.
 
 Lemma pod_distance_append_matching set pods pod :
@@ -2898,7 +2937,7 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (Hset_typemeta_valid & Hset_rv_valid & Hset_meta_valid &
       Hset_spec_valid & Hset_status_valid).
   pose proof (statefulset_replicas_le_go_int32_max set)
@@ -3123,7 +3162,7 @@ Proof.
       { exfalso. apply (proj1 Hterminating eq_refl). exact Hlocal_alive. }
       wp_auto.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
             (StatefulSetSpecV.volume_claim_templates_list
@@ -3353,7 +3392,7 @@ Proof.
     + simpl in Hfind. subst pod_l.
       pose proof Hinput_requirement as Hinput_requirement'.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (StatefulSetV.valid set) as Hset_valid'.
       { split_and!; done. }
       pose proof (Hgenerated_names (sint.nat ordinal) Hordinal_lt)
@@ -3380,7 +3419,7 @@ Proof.
         obj_parent_ref_is (KObjectV.Pod new_pod) StatefulSetV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ∧
-        pod_match set new_pod) as Hnew_pod_requirements.
+        pod_creation_request_matches set new_pod) as Hnew_pod_requirements.
       { apply new_statefulset_pod_requirements; done. }
       destruct Hnew_pod_requirements as
         (Hnew_pod_name & Hnew_pod_valid_create & Hnew_pod_parent &
@@ -3457,7 +3496,7 @@ Proof.
       pose proof (created_statefulset_pod_properties set
         (sint.nat ordinal) new_pod stored_pod'
         Hnew_pod_match Hnew_pod_name Hcreate_Hpod_meta_created
-        Hcreate_Hpod_spec_created) as
+        Hcreate_Hpod_prepared_spec) as
         (Hstored_pod_key & Hstored_pod_alive & Hstored_pod_member &
           Hstored_pod_match).
       set current_pods' := current_pods ++ [stored_pod'].
@@ -3674,7 +3713,7 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
       pod_has_int32_member_name
@@ -3986,7 +4025,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
       pod_has_int32_member_name

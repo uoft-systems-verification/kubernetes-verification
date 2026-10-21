@@ -40,33 +40,42 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+(* The helper makes a shallow copy. Shared nested fields must be read-only. *)
 Lemma wp_withoutStatefulSetFields
-    (spec_c : v1.PodSpec.t) (spec : PodSpecV.t) dq :
-  {{{ PodSpecV.deepown spec_c spec dq }}}
+    (spec_c : v1.PodSpec.t) (spec : PodSpecV.t) :
+  {{{ PodSpecV.deepown spec_c spec DfracDiscarded }}}
     @! statefulset.withoutStatefulSetFields #spec_c
   {{{ result_c, RET #result_c;
-      PodSpecV.deepown spec_c spec dq ∗
-      PodSpecV.deepown result_c (without_statefulset_fields spec) dq
+      PodSpecV.deepown spec_c spec DfracDiscarded ∗
+      PodSpecV.deepown result_c (without_statefulset_fields spec) DfracDiscarded
   }}}.
 Proof.
-  wp_start as "Hspec".
-  iNamed "Hspec".
+  wp_start as "#Hspec".
+  iPoseProof "Hspec" as "Hfields".
+  iEval (rewrite PodSpecV.deepown_split) in "Hfields".
+  iNamed "Hfields".
   wp_auto.
-  iApply "HΦ".
-  iSplitL "Hdeepown_volumes".
-  - rewrite /PodSpecV.deepown. iFrame. done.
-  - rewrite /PodSpecV.deepown /without_statefulset_fields /=.
-    iSplit; first done.
-    iSplitL.
-    + iExists []. rewrite /deepown_list big_sepL2_nil.
-      iSplit; [iApply own_slice_nil|done].
-    + done.
+  iApply "HΦ". iFrame "Hspec".
+  iEval (rewrite PodSpecV.deepown_split /without_statefulset_fields /PodAPI.without_managed /=).
+  iSplitR; first done.
+  iSplitR.
+  { iExists ([] : list v1.Volume.t). rewrite /deepown_list big_sepL2_nil.
+    iSplit; [iApply (own_slice_nil (V := v1.Volume.t))|done]. }
+  iFrame "% # ∗".
+  iSplitR; first done.
+  iSplitR; first done.
+  iApply (deepown_slice_cap_nil (C := v1.Volume.t)).
+Unshelve. exact v1.Volume.t.
 Qed.
 
 Lemma wp_podSpecMatches set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) dq_set dq_pod :
   {{{ StatefulSetV.deepown_l set_l set dq_set ∗
-      PodV.deepown_l pod_l pod dq_pod
+      PodV.deepown_l pod_l pod dq_pod ∗
+      ⌜ StatefulSetV.valid set ⌝ ∗
+      ⌜ Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤ go_int_max ⌝ ∗
+      ⌜ pod_has_int32_member_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+          pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.podSpecMatches #set_l #pod_l
   {{{ (ret : bool), RET #ret;
@@ -83,6 +92,7 @@ Lemma wp_largestOutdatedPod set_l pods_sl
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods,
         PodV.deepown_l ptr pod dq_pods) ∗
+      "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hspec_valid" ∷ ⌜ StatefulSetSpecV.valid set.(StatefulSetV.Spec') ⌝ ∗
       "%Hpod_name_len" ∷ ⌜ Forall (λ pod,
         Z.of_nat (length pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) ≤
@@ -193,6 +203,10 @@ Proof.
         (symmetry; apply bool_decide_eq_false_2; done).
       wp_auto.
       wp_apply (wp_podSpecMatches with "[$Hset $Hfound_pod]").
+      { iPureIntro. split; first done.
+        split.
+        - apply Hpod_name_len_lookup. by apply list_elem_of_lookup_2 in Hfound_pod_lookup.
+        - rewrite Forall_lookup in Hpods_members. eapply Hpods_members; done. }
       iIntros (matches) "(%Hmatches & Hset & Hfound_pod)".
       iSpecialize ("Hpods_restore" with "Hfound_pod").
       iRename "Hpods_restore" into "Hpods".

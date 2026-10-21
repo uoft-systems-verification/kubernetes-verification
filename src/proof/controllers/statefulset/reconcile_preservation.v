@@ -445,7 +445,7 @@ Proof.
         exact (proj1 Hpending Hlocal_alive). }
       wp_auto.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
             (StatefulSetSpecV.volume_claim_templates_list
@@ -673,7 +673,7 @@ Proof.
     + simpl in Hfind. subst pod_l.
       pose proof Hinput_requirement as Hinput_requirement'.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (StatefulSetV.valid set) as Hset_valid'.
       { split_and!; done. }
       pose proof (Hgenerated_names (sint.nat ordinal) Hordinal_lt)
@@ -700,7 +700,7 @@ Proof.
         obj_parent_ref_is (KObjectV.Pod new_pod) StatefulSetV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ∧
-        pod_match set new_pod) as Hnew_pod_requirements.
+        pod_creation_request_matches set new_pod) as Hnew_pod_requirements.
       { apply new_statefulset_pod_requirements; done. }
       destruct Hnew_pod_requirements as
         (Hnew_pod_name & Hnew_pod_valid_create & Hnew_pod_parent &
@@ -813,7 +813,7 @@ Proof.
       pose proof (created_statefulset_pod_properties set
         (sint.nat ordinal) new_pod stored_pod'
         Hnew_pod_match Hnew_pod_name Hcreate_Hpod_meta_created
-        Hcreate_Hpod_spec_created) as
+        Hcreate_Hpod_prepared_spec) as
         (Hstored_pod_key & Hstored_pod_alive & Hstored_pod_member &
           Hstored_pod_match).
       assert (pod_key_not_reserved (filter (pending_pod set) pods)

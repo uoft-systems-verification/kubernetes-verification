@@ -1,5 +1,9 @@
 translate = [
     "Quantity",
+    "Format",
+    "Scale",
+    "infDecAmount",
+    "int64Amount",
 ]
 
-imports = ["!*"]
+imports = ["gopkg.in/inf.v0"]

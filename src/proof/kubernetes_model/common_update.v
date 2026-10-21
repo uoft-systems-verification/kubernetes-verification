@@ -2,22 +2,42 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
-(** Important modeling assumption: we currently ignore fields that are not
-    represented by the Kubernetes view types. In particular, we assume that
-    validation of those Go fields always succeeds. We will gradually add those
-    fields to the view types and verify their validation. Proofs using the
-    specifications of [applyValidationAndDefaultingOnUpdate] and
-    [applyValidationAndDefaultingOnStatusUpdate] do not need to own or reason
-    about the unmodeled fields.
-
-    TODO: [KObjectV.deepown_l] must existentially own all reachable Go fields,
-    including unmodeled fields, so helper calls cannot mutate memory outside
-    their separation-logic footprint. *)
+(** Pod update contracts use the complete recursive view and the full-input
+    defaulting/validation contracts in [PodAPI]. The upstream implementations
+    remain trusted library boundaries. Other resources still have partial
+    views and assume that validation of omitted fields succeeds; their
+    reachable-memory footprints also need the recursive treatment used by Pod. *)
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Local Set Default Proof Using "All".
+
+Lemma valid_body_update_resource_version obj rv :
+  KObjectV.valid_body (KObjectV.update_objectmeta obj
+    (KObjectV.objectmeta obj <| ObjectMetaV.ResourceVersion' := rv |>)) ↔
+  KObjectV.valid_body obj.
+Proof. destruct obj; done. Qed.
+
+Lemma valid_update_equiv_except_resource_version kind namespace m1 m2 kspec input :
+  ObjectMetaV.equiv_except_resource_version m1 m2 →
+  KObjectV.valid_update kind namespace m1 kspec input →
+  KObjectV.valid_update kind namespace m2 kspec input.
+Proof.
+  intros Heq Hvalid.
+  assert (ObjectMetaV.valid_update m1 (KObjectV.objectmeta input) →
+      ObjectMetaV.valid_update m2 (KObjectV.objectmeta input)) as Htransfer.
+  { revert Heq.
+    rewrite /ObjectMetaV.equiv_except_resource_version /ObjectMetaV.without_resource_version.
+    destruct m1, m2; simpl. intros Heq. inversion Heq; subst. done. }
+  assert (m1.(ObjectMetaV.Annotations') = m2.(ObjectMetaV.Annotations')) as Hannotations.
+  { apply (f_equal ObjectMetaV.Annotations') in Heq. exact Heq. }
+  destruct kspec, input; rewrite /KObjectV.valid_update /= in Hvalid Htransfer |- *;
+    rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
+      ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
+      ?/DeploymentV.valid_update in Hvalid |- *;
+    try contradiction; rewrite -?Hannotations; intuition.
+Qed.
 
 Lemma wp_allowUnconditionalUpdate (kind : go_string) :
   {{{ is_pkg_init apimodel }}}
@@ -297,14 +317,14 @@ Proof.
   - exact Hmeta_living.
 Qed.
 
-Lemma kobject_updated_parent_ref input stored :
-  KObjectV.updated input stored →
+Lemma kobject_updated_parent_ref {old_spec} input stored :
+  KObjectV.updated old_spec input stored →
   obj_parent_ref stored = obj_parent_ref input.
 Proof.
   intros Hupdated. rewrite /obj_parent_ref.
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.Namespace') =
       (KObjectV.objectmeta input).(ObjectMetaV.Namespace')) as Hnamespace.
-  { destruct input, stored;
+  { destruct old_spec, input, stored;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
         /DeploymentV.updated /= in Hupdated |- *;
@@ -312,7 +332,7 @@ Proof.
       rewrite /ObjectMetaV.updated in Hmeta; tauto. }
   assert ((KObjectV.objectmeta stored).(ObjectMetaV.OwnerReferences') =
     (KObjectV.objectmeta input).(ObjectMetaV.OwnerReferences')) as Howners.
-  { destruct input, stored;
+  { destruct old_spec, input, stored;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
         /DeploymentV.updated /= in Hupdated |- *;

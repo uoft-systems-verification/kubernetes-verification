@@ -884,34 +884,45 @@ func applyValidationAndDefaultingOnStatusUpdate(newObj, oldObj interface{}, name
 	return nil
 }
 
-func applyValidationAndDefaulting(obj interface{}, name string) error {
+// prepareForCreate runs the mutation stages shared by stored creates and
+// controller previews. Validation follows this stage on the API write path.
+func prepareForCreate(obj interface{}) (interface{}, error) {
 	// This applies OpenAPI schema defaults like DNSPolicy=ClusterFirst, RestartPolicy=Always, etc.
 	// In real k8s, this happens in the decoder before the handler even sees the object.
 	// We do it here because we don't have a full decode pipeline.
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L127
 	if err := applySchemaDefaults(obj); err != nil {
-		return err
+		return nil, err
 	}
 	legacyObj, err := convertVersionedToLegacy(obj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Apply mutating admission.
 	// In real k8s, this runs in the create handler before storage create:
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L202-L206
 	if err := applyAdmissionMutate(legacyObj); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Apply the strategy's PrepareForCreate hook.
 	// This is part of rest.BeforeCreate in the storage layer:
 	// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/rest/create.go#L120
 	if err := applyStrategyPrepareForCreate(legacyObj); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := applyPostPrepareCreateDefaults(legacyObj); err != nil {
+		return nil, err
+	}
+
+	return legacyObj, nil
+}
+
+func applyValidationAndDefaulting(obj interface{}, name string) error {
+	legacyObj, err := prepareForCreate(obj)
+	if err != nil {
 		return err
 	}
 

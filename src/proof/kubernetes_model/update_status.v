@@ -524,7 +524,7 @@ Proof.
           -- rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
           -- rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
              destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-          -- rewrite KObjectV.spec_update_objectmeta. exact Hupdated_valid_spec.
+          -- apply valid_body_update_resource_version. exact Hupdated_valid_spec.
           -- rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status.
         * apply KObjectV.extra_valid_update_objectmeta.
           rewrite /KObjectV.extra_valid Hspec_eq.

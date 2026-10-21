@@ -1,0 +1,7 @@
+translate = [
+    "Int",
+    "Word",
+    "nat",
+]
+
+imports = ["!*"]

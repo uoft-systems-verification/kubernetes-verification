@@ -42,6 +42,18 @@ Definition preserved_template_volumes (spec : t) : list VolumeV.t :=
     (λ volume, volume.(VolumeV.Name') ∉ volume_claim_template_names spec)
     (PodSpecV.volumes_list spec.(Template').(PodTemplateSpecV.Spec')).
 
+Definition effective_template_spec (spec : t) : PodSpecV.t :=
+  let template_spec := (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec') in
+  let names := elements (list_to_set (C:=gset go_string) (volume_claim_template_names spec)) in
+  let claims := (λ name, VolumeV.mk name
+    (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' :=
+      Some (v1.PersistentVolumeClaimVolumeSource.mk name false) |>)) <$> names in
+  let volumes := if decide (names = []) then template_spec.(PodSpecV.Volumes')
+    else Some (claims ++ filter (λ volume, volume.(VolumeV.Name') ∉ names)
+      (PodSpecV.volumes_list template_spec)) in
+  template_spec <| PodSpecV.Volumes' := volumes |>
+    <| PodSpecV.Hostname' := ""%go |> <| PodSpecV.Subdomain' := ""%go |>.
+
 (* The projection of StatefulSet's effective Pod-template validation onto the
    represented metadata and PodSpec fields. Kubernetes clears the template's
    Hostname and Subdomain because the controller overwrites them, so neither
@@ -53,7 +65,12 @@ Definition valid_template (spec : t) : Prop :=
   valid_labels spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') ∧
   valid_annotations spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') ∧
   Forall VolumeV.valid (preserved_template_volumes spec) ∧
-  NoDup (VolumeV.Name' <$> preserved_template_volumes spec).
+  NoDup (VolumeV.Name' <$> preserved_template_volumes spec) ∧
+  PodAPI.validate_template spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
+    (drop_legacy_init_container_annotations
+      spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations')) (effective_template_spec spec) = true ∧
+  (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec').(PodSpecV.RestartPolicy') = "Always"%go ∧
+  (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec').(PodSpecV.ActiveDeadlineSeconds') = None.
 
 Global Instance valid_template_dec spec : Decision (valid_template spec).
 Proof. unfold valid_template. apply _. Defined.
@@ -82,7 +99,8 @@ Definition valid_create (spec : t) : Prop :=
 
 (* A stored StatefulSet spec satisfies admission validation. Schema defaulting
    has additionally made [Replicas'] non-nil, zeroed the TypeMeta of embedded
-   PVC templates, and normalized those embedded PVC specs.
+   PVC templates, and normalized those embedded PVC specs. Its Pod template is
+   already prepared in the model's fixed feature configuration.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
 Definition valid (spec : t) : Prop :=
   valid_create spec ∧
@@ -90,7 +108,8 @@ Definition valid (spec : t) : Prop :=
   Forall (λ pvc,
     pvc.(PersistentVolumeClaimV.TypeMeta') = zero_val v1.TypeMeta.t ∧
     PersistentVolumeClaimSpecV.valid_embedded pvc.(PersistentVolumeClaimV.Spec'))
-    (volume_claim_templates_list spec).
+    (volume_claim_templates_list spec) ∧
+  PodTemplateSpecV.normalized spec.(Template') = spec.(Template').
 
 (* Of the represented fields, Kubernetes permits updates to Replicas and the
    Pod template. Selector, volume-claim templates, and service name remain
@@ -130,8 +149,7 @@ Definition created (input stored : t) : Prop :=
   stored.(Replicas') = Some (default (W32 1) input.(Replicas')) ∧
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') =
-    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
-      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |> ∧
+    PodTemplateSpecV.normalized input.(Template') ∧
   stored.(ServiceName') = input.(ServiceName') ∧
   (stored.(VolumeClaimTemplates') = None ↔ input.(VolumeClaimTemplates') = None) ∧
   Forall2
@@ -331,7 +349,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

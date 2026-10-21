@@ -159,8 +159,9 @@ Lemma generated_pod_valid_create template parent_name ref namespace :
   KObjectV.valid_create "Pod"%go namespace
     (KObjectV.Pod (generated_pod template parent_name (Some [ref]))).
 Proof.
-  intros (Hlabels & Hannotations & Hspec) Hname Hlen Hfinalizers Href
-    Hnamespace_nonempty Hnamespace_valid.
+  intros Htemplate Hname Hlen Hfinalizers Href Hnamespace_nonempty Hnamespace_valid.
+  pose proof (PodTemplateSpecV.generated_spec_valid template Htemplate) as [Hannotations_full Hspec_full].
+  destruct Htemplate as (Hlabels & Hannotations & Hspec & _).
   rewrite /KObjectV.valid_create /= /PodV.valid_create
     /generated_pod /generated_pod_meta /=.
   split_and!.
@@ -190,11 +191,11 @@ Proof.
         simpl in *; [exact Hfinalizers|constructor].
     + apply valid_managed_fields_none.
   - exact Hspec.
+  - exact Hannotations_full.
+  - exact Hspec_full.
 Qed.
 
-(** Trusted because [PodStatusV] represents only the conditions, while the
-    imported Kubernetes implementation reads [status.phase]. *)
-(* TODO: prove once [status.phase] is translated into [PodStatusV]. *)
+(** The complete status view includes Phase; the helper only reads the Pod. *)
 Lemma wp_IsPodActive (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
   {{{ is_pkg_init controller ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq

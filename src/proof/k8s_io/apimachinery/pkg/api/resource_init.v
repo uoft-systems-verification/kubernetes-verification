@@ -1,3 +1,4 @@
+From New.proof.gopkg_in Require Export inf_v0_init.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.resource.
 From New.proof Require Import proof_prelude.
 

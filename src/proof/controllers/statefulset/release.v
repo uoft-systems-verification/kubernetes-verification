@@ -828,11 +828,11 @@ Proof.
           pod.(PodV.Spec')).
     { unfold release_pod_input. done. }
     assert (Hreleased_pod_valid_create :
-        PodV.valid_create PodV.kind
+        PodV.valid_update_input PodV.kind
           (release_pod_input set pod).(PodV.ObjectMeta').(
             ObjectMetaV.Namespace')
           (release_pod_input set pod)).
-    { eapply PodV.valid_create_of_valid; done. }
+    { eapply PodV.valid_update_input_of_valid; done. }
     assert (Hreleased_pod_name_nonempty :
         (release_pod_input set pod).(PodV.ObjectMeta').(
           ObjectMetaV.Name') ≠ ""%go).
@@ -870,19 +870,25 @@ Proof.
     { rewrite Hreleased_pod_spec.
       apply PodSpecV.valid_update_refl.
       destruct Hreleased_pod_valid as (_ & _ & _ & Hspec & _).
-      exact Hspec. }
+      exact (proj1 Hspec). }
     assert (Hreleased_pod_valid_update :
         KObjectV.valid_update PodV.kind
           (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
           pod.(PodV.ObjectMeta') (ObjectSpecV.PodSpec pod.(PodV.Spec'))
           (KObjectV.Pod (release_pod_input set pod))).
     { rewrite /KObjectV.valid_update /= /PodV.valid_update.
-      split_and!; done. }
+      split_and!; try done.
+      destruct Hreleased_pod_valid as (_ & _ & _ & [Hspec Hannotations] & _).
+      pose proof Hspec as (_ & _ & Hfixed & _).
+      rewrite /release_pod_input /= in Hannotations, Hfixed |- *.
+      rewrite Hfixed. exact Hannotations. }
     rewrite HupdatedPod_meta_Hdeepown_namespace.
     iAssert (is_pkg_init apimodel) as "#Hapimodel".
     { iPkgInit. }
     destruct terminating.
     + iSimpl in "Hrelease_ownership".
+      assert (PodV.valid_body (release_pod_input set pod)) as Hreleased_pod_valid_body.
+      { destruct Hreleased_pod_valid as (_ & _ & _ & Hbody & _). exact Hbody. }
       iDestruct "Hrelease_ownership" as
         "(%Hterminating & #Hown_deletion_observed_frag & Hown_terminating_children_frag)".
       iEval (rewrite Hreleased_pod_key Hreleased_pod_uid) in "Hown_deletion_observed_frag".

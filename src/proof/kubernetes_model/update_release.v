@@ -29,7 +29,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
     "Hclose" ∷ (
       (∀ i' kobj',
         ( "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-          "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+          "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
           "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
           "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
           "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}))
@@ -45,7 +45,7 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   destruct (Classical_Prop.classic (
-      KObjectV.valid_create kind namespace kobj ∧
+      KObjectV.valid_update_input kind namespace kobj ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
       valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -61,18 +61,18 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /=;
+        /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
   destruct Hvalid_update_input as
     (Hvalid & Hname_nonempty & Hvalid_typemeta & Huid_nonempty & Hrv_valid &
       Hns_matches).
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
-  { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+  { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       tauto. }
@@ -331,55 +331,30 @@ Proof.
   { exact (Habs_extra_valid key old_kobj Hlookup_abs). }
   assert (KObjectV.key old_kobj = KObjectV.key kobj) as Hkey_old_new.
   { rewrite <-Hkey_old. exact Hkey_new. }
-  assert (ObjectSpecV.valid_update (KObjectV.spec old_kobj) (KObjectV.spec kobj))
-    as Hvalid_spec_update.
-  { rewrite <-Hspec_old.
-    pose proof Hvalid_old_kobj as Hvalid_old_copy.
-    destruct Hvalid_old_copy as (_ & _ & _ & Hvalid_old_spec & _).
-    destruct (KObjectV.spec old_kobj); simpl.
-    - apply PodSpecV.valid_update_refl. exact Hvalid_old_spec.
-    - apply ReplicaSetSpecV.valid_update_refl.
-      destruct Hvalid_old_spec as (Hvalid_create & _). exact Hvalid_create.
-    - apply PersistentVolumeClaimSpecV.valid_update_refl.
-      destruct Hvalid_old_spec as (Hvalid_create & _). exact Hvalid_create.
-    - apply StatefulSetSpecV.valid_update_refl.
-      destruct Hvalid_old_spec as (Hvalid_create & _). exact Hvalid_create.
-    - apply DeploymentSpecV.valid_update_refl.
-      destruct Hvalid_old_spec as ((replicas & Hreplicas & Hnonneg) & Hrest).
-      split; last exact Hrest.
-      rewrite Hreplicas. exact Hnonneg. }
-  assert (ObjectMetaV.valid_update (KObjectV.objectmeta old_kobj)
-      (KObjectV.objectmeta kobj)) as Hvalid_meta_update_actual.
-  { rewrite /ObjectMetaV.valid_update. split.
-    - right. exact Howner_references_only_old.
-    - assert (ObjectMetaV.valid_create (KObjectV.kind kobj)
-          (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace')
-          (KObjectV.objectmeta kobj)) as Hvalid_create_meta.
-      { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
-          rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
-            ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-            ?/DeploymentV.valid_create in Hvalid;
-          tauto. }
-      rewrite /ObjectMetaV.valid_create in Hvalid_create_meta.
-      rewrite decide_False in Hvalid_create_meta.
-      1: exact Hname_nonempty.
-      destruct Hvalid_create_meta as
-        (_ & _ & Hlabels & Hannotations & Howners & Hfinalizers & Hmanaged_fields).
-      split_and!; done. }
-  assert (KObjectV.valid_update
+  destruct (Classical_Prop.classic (KObjectV.valid_update
       (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace')
-      (KObjectV.objectmeta old_kobj) (KObjectV.spec old_kobj) kobj)
-    as Hvalid_update_actual.
-  { destruct old_kobj, kobj; rewrite /KObjectV.valid_update /=;
-      rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
-        ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-        ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create
-        /KObjectV.valid_create /= in Hvalid |- *;
-      simpl in Hvalid_meta_update_actual, Hvalid_spec_update;
-      try contradiction; tauto. }
+      (KObjectV.objectmeta old_kobj) (KObjectV.spec old_kobj) kobj))
+    as [Hvalid_update_actual|Hinvalid_update_actual].
+  2: {
+    iApply fupd_wp.
+    iMod "Hau" as (key0 uid old_meta old_spec children) "H". iNamed "H".
+    iPoseProof (own_update_frag_identity _ _ _ _ _ _ _ _ _ _ Hvalid_update with
+      "Hinv_Hown_abs Hown_meta_frag Hown_spec_frag") as
+      "(%Hkey_eq & %Huid_eq & %Hno_deletion_timestamp)".
+    assert (key0 = key) as ->.
+    { rewrite Hkey_eq. symmetry. exact Hkey_new. }
+    iPoseProof (kview.own_meta_exists2 Hlookup_abs with "Hinv_Hown_abs Hown_meta_frag")
+      as "(%Huid_obj & %Hmeta_eq & %Huid_in)".
+    iPoseProof (kview.own_meta_living Hlookup_abs with "Hinv_Hown_abs Hown_meta_frag")
+      as "%Hold_living".
+    iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
+    assert (KObjectV.spec old_kobj = old_spec) as Hactual_spec_eq.
+    { eapply Hspec_found; done. }
+    exfalso. apply Hinvalid_update_actual.
+    rewrite Hactual_spec_eq.
+    eapply valid_update_equiv_except_resource_version; last exact Hvalid_update.
+    symmetry. exact Hmeta_eq.
+  }
   assert (update_prepared_for_helper
       (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') old_kobj kobj kobj) as Hprepared.
   { rewrite /update_prepared_for_helper. split_and!.
@@ -417,7 +392,7 @@ Proof.
       (KObjectV.objectmeta updated_kobj).(ObjectMetaV.UID') =
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID'))
     as (Hsame_kind & Hname_updated & Hnamespace_updated & Huid_updated).
-  { destruct kobj, updated_kobj;
+  { destruct old_kobj, kobj, updated_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
         /DeploymentV.updated /= in Hupdated_kobj |- *;
@@ -425,7 +400,7 @@ Proof.
   assert (KObjectV.key old_kobj = KObjectV.key updated_kobj) as Hsame_key.
   { rewrite Hkey_old_new /KObjectV.key.
     rewrite Hname_updated Hnamespace_updated.
-    destruct kobj, updated_kobj; simpl in Hsame_kind |- *; try done. }
+    destruct old_kobj, kobj, updated_kobj; simpl in Hsame_kind |- *; try done. }
   assert (KObjectV.spec updated_kobj = KObjectV.spec old_kobj)
     as Hspec_updated_old.
   { apply Hhelper_spec_eq. symmetry. exact Hspec_old. }
@@ -560,6 +535,7 @@ Proof.
       /ObjectMetaV.without_resource_version; destruct ObjectMeta'; done. }
   pose proof (Hhelper_result_updated kobj new_kobj Hprepared Hequiv_updated_new)
     as Hupdated_new.
+  rewrite Hstored_spec_eq in Hupdated_new.
   assert (KObjectV.same_kind kobj new_kobj ∧
       (KObjectV.objectmeta new_kobj).(ObjectMetaV.Name') =
         (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ∧
@@ -571,7 +547,7 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp'))
     as (Hsame_kind_new & Hname_new & Hnamespace_stored_new & Huid_new &
       Hdeletion_timestamp_new).
-  { destruct kobj, new_kobj;
+  { destruct old_spec, kobj, new_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
         /DeploymentV.updated /= in Hupdated_new |- *;
@@ -587,7 +563,7 @@ Proof.
     - rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
     - rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
       destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-    - rewrite KObjectV.spec_update_objectmeta. exact Hupdated_valid_spec.
+    - apply valid_body_update_resource_version. exact Hupdated_valid_spec.
     - rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status. }
   assert (kview.valid_k_uid_obj key uid new_kobj)
     as Hvalid_kuid_new.

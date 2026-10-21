@@ -122,6 +122,7 @@ Proof.
     "[Hpod_objectmeta_field Hpod_objectmeta]".
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c) "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   Ltac restore_identity_objects set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
@@ -158,7 +159,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
         pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
@@ -221,7 +222,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
     [ iExists pod_spec_c; iFrame | ];
@@ -273,7 +274,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
     [ iExists pod_spec_c; iFrame | ];
@@ -512,7 +513,7 @@ Proof.
   iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
   iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
     with "[Hpod_spec]" as "Hpod_spec".
-  { iNamed "Hpod_spec". iFrame. done. }
+  { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
     with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
   { iExists pod_spec_c. iFrame. }
@@ -563,6 +564,7 @@ Proof.
     "[Hpod_objectmeta_field Hpod_objectmeta]".
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c) "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   wp_auto.
   wp_apply (wp_ordinalOf
@@ -690,7 +692,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
       with "[Hpod_spec]" as "Hpod_spec".
-    { iNamed "Hpod_spec". iFrame. done. }
+    { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
     { iExists pod_spec_c. iFrame. }
@@ -801,7 +803,7 @@ Proof.
   iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
   iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
     with "[Hpod_spec]" as "Hpod_spec".
-  { iNamed "Hpod_spec". iFrame. done. }
+  { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
     with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
   { iExists pod_spec_c. iFrame. }
@@ -853,6 +855,7 @@ Proof.
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c)
     "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   wp_auto.
   iEval (rewrite Hpod_meta_Hdeepown_name
@@ -893,7 +896,7 @@ Proof.
         <| PodSpecV.Subdomain' :=
             set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
     with "[Hpod_spec]" as "Hpod_spec".
-  { rewrite /PodSpecV.deepown /=. iFrame. done. }
+  { iNamed "Hpod_spec". iEval (rewrite PodSpecV.deepown_split /=). iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
       ((update_identity set pod ordinal).(PodV.Spec')
         <| PodSpecV.Hostname' :=

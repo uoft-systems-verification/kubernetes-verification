@@ -87,6 +87,7 @@ Lemma wp_scaleReplicaSet γ model_l rs_l (rs : ReplicaSetV.t)
         ( "%Hscaled" ∷ ⌜ rs_replicas rs ≠ new_scale ∧ scaled = true ⌝ ∗
           "Hrs'" ∷ ReplicaSetV.deepown_l rs'_l rs' 1 ∗
           "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated
+              (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
               (ObjectSpecV.ReplicaSetSpec (rs_scaled_spec rs new_scale))
               (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝))
   }}}.

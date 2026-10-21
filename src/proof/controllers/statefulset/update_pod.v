@@ -185,7 +185,7 @@ Proof.
         (ObjectSpecV.PodSpec
           (update_identity set pod ordinal).(PodV.Spec'))).
   { unfold ObjectSpecV.valid_update, update_identity. cbn.
-    apply PodSpecV.valid_update_refl. exact Hspec_valid. }
+    apply PodSpecV.valid_update_refl. exact (proj1 Hspec_valid). }
   split_and!; done.
 Qed.
 
@@ -246,6 +246,7 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
                 pod'.(PodV.ObjectMeta') ⌝ ∗
           "%Hspec_updated" ∷
             ⌜ ObjectSpecV.updated
+                (ObjectSpecV.PodSpec pod.(PodV.Spec'))
                 (ObjectSpecV.PodSpec
                   (update_identity set pod ordinal).(PodV.Spec'))
                 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝))
@@ -287,11 +288,11 @@ Proof.
           ObjectMetaV.UID')).
     { symmetry. exact Hinput_uid'. }
     assert (Hinput_valid_create :
-        PodV.valid_create PodV.kind
+        PodV.valid_update_input PodV.kind
           (update_identity set pod ordinal).(PodV.ObjectMeta').(
             ObjectMetaV.Namespace')
           (update_identity set pod ordinal)).
-    { eapply PodV.valid_create_of_valid; done. }
+    { eapply PodV.valid_update_input_of_valid; done. }
     assert (Hinput_uid_nonempty :
         (update_identity set pod ordinal).(PodV.ObjectMeta').(
           ObjectMetaV.UID') ≠ ""%go).
@@ -307,6 +308,8 @@ Proof.
       destruct Hinput_valid as
         (Hinput_typemeta & Hinput_resource_version & Hinput_meta_valid &
           Hinput_spec_valid & Hinput_status_valid).
+      destruct Hinput_spec_valid as (Hinput_spec_valid & Hinput_annotations_valid).
+      pose proof Hinput_spec_valid as (_ & _ & Hinput_spec_fixed & _).
       pose proof Hinput_meta_valid as Hinput_meta_valid'.
       unfold ObjectMetaV.valid in Hinput_meta_valid'.
       destruct Hinput_meta_valid' as
@@ -316,7 +319,8 @@ Proof.
           Hfinalizers_valid & Hmanaged_fields_valid & Hselflink).
       split_and!; try done.
       - unfold ObjectMetaV.valid_update.
-        split_and!; try done. left. exact Hvalid_meta_update. }
+        split_and!; try done. left. exact Hvalid_meta_update.
+      - rewrite /update_identity /= Hinput_spec_fixed. exact Hinput_annotations_valid. }
     wp_auto.
     iAssert
       (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
@@ -378,7 +382,7 @@ Proof.
       (PodV.key pod)
       pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
       pod.(PodV.ObjectMeta')
-      (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+      pod.(PodV.Spec')
       with "[$HupdatedPod $Hown_meta $Hown_spec]").
     { iFrame "#".
       iPureIntro.
@@ -394,7 +398,8 @@ Proof.
     { unfold ObjectSpecV.updated, PodSpecV.updated in
         Hupdate_Hspec_updated.
       simpl in Hupdate_Hspec_updated.
-      exact Hupdate_Hspec_updated. }
+      pose proof Hpod_valid as (_ & _ & _ & Hbody & _).
+      eapply PodSpecV.updated_same_spec; [exact (proj1 Hbody)|done|exact Hupdate_Hspec_updated]. }
     wp_auto.
     iApply ("HΦ" $! returned_pod).
     iFrame "Hset Hpod Hupdate_Hown_meta_frag

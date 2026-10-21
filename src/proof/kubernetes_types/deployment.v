@@ -26,8 +26,9 @@ Record t := mk {
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L638-L675 *)
 (* This is the projection of Kubernetes' Deployment spec validation onto the
    represented fields. The template is validated exactly as a ReplicaSet's is
-   (both go through ValidatePodTemplateSpecForReplicaSet); checks on unmodeled
-   PodSpec fields are outside this projection. *)
+   (both go through ValidatePodTemplateSpecForReplicaSet). PodSpec fields are
+   complete; other Deployment fields remain outside this projection. Stored
+   templates are prepared in the model's fixed feature configuration. *)
 Definition valid (spec : t) : Prop :=
   (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
   0 ≤ sint.Z spec.(MinReadySeconds') ∧
@@ -36,7 +37,8 @@ Definition valid (spec : t) : Prop :=
     LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid spec.(Template').
+  PodTemplateSpecV.valid spec.(Template') ∧
+  PodTemplateSpecV.normalized spec.(Template') = spec.(Template').
 
 (* On create the replica count may be omitted; defaulting fills in 1:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L38-L43 *)
@@ -86,7 +88,7 @@ Proof. intros (Hreplicas & _). exact Hreplicas. Qed.
 
 Lemma valid_template v :
   valid v → PodTemplateSpecV.valid v.(Template').
-Proof. intros (_ & _ & _ & Htemplate). exact Htemplate. Qed.
+Proof. intros (_ & _ & _ & Htemplate & _). exact Htemplate. Qed.
 
 (* Creation fills an omitted replica count with one and removes obsolete
    init-container annotations from the Pod template during version conversion.
@@ -100,8 +102,7 @@ Definition created (input stored : t) : Prop :=
   stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') =
-    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
-      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |>.
+    PodTemplateSpecV.normalized input.(Template').
 
 (* Likewise on update: decoder defaulting precedes PrepareForUpdate, which
    restores the old status and bumps the generation without otherwise changing
@@ -126,7 +127,8 @@ Proof.
     + exists (W32 1). split; [exact Hreplicas'|word].
   - rewrite Hminready'. exact Hminready.
   - rewrite Hselector' Htemplate'. exact Hselector.
-  - rewrite Htemplate'. apply PodTemplateSpecV.valid_after_conversion. exact Htemplate.
+  - rewrite Htemplate'. apply PodTemplateSpecV.normalized_valid. exact Htemplate.
+  - rewrite Htemplate'. apply PodTemplateSpecV.normalized_idempotent.
 Qed.
 
 Definition deepown (c: v1.DeploymentSpec.t) (v: t) dq: iProp Σ :=
@@ -292,7 +294,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

@@ -550,7 +550,8 @@ Proof.
           split_and!. all: try done.
         }
         destruct kobj; done.
-      + destruct kobj; done.
+      + unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
+        destruct kobj; done.
       + destruct kobj; done.
     - apply KObjectV.extra_valid_update_objectmeta.
       exact Hextra_valid_kobj.

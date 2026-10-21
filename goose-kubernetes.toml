@@ -1,6 +1,8 @@
 rocq = "src"
 go_path = "./kubernetes/"
 packages = [
+    "math/big",
+    "./vendor/gopkg.in/inf.v0",
     "regexp",
     "./pkg/api/legacyscheme",
     "./pkg/api/v1/pod",

@@ -47,11 +47,11 @@ jobs:
         run: |
           ./scripts/goose.sh
 
-          changes="$(git status --short --untracked-files=all -- src/code src/generatedproof)"
+          changes="$(git status --short --untracked-files=all -- src/code src/generatedproof src/proof/kubernetes_types/pod_fields.v)"
           if [[ -n "$changes" ]]; then
             echo "Goose generated changes; run ./scripts/goose.sh and commit the results:"
             printf '%s\n' "$changes"
-            git diff -- src/code src/generatedproof
+            git diff -- src/code src/generatedproof src/proof/kubernetes_types/pod_fields.v
             exit 1
           fi
 

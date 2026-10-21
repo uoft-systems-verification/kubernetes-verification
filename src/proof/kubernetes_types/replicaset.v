@@ -40,12 +40,14 @@ Definition valid_create (rs : t) : Prop :=
       selector rs.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
   PodTemplateSpecV.valid rs.(Template').
 
-(* A stored ReplicaSet spec satisfies admission validation, and schema
-   defaulting has additionally made [Replicas'] non-nil.
+(* A stored ReplicaSet spec satisfies admission validation, has a non-nil
+   replica count, and has a prepared template in the fixed feature configuration.
+   The latter excludes legacy disabled fields that update preparation retains.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L806-L854 *)
 Definition valid (rs : t) : Prop :=
   valid_create rs ∧
-  ∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas.
+  (∃ replicas, rs.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
+  PodTemplateSpecV.normalized rs.(Template') = rs.(Template').
 
 (* Kubernetes allows the represented replica count, minimum-ready duration,
    and Pod template to change, but keeps the selector immutable. Update
@@ -79,8 +81,7 @@ Definition created (input stored : t) : Prop :=
   stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') =
-    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
-      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |>.
+    PodTemplateSpecV.normalized input.(Template').
 
 Definition updated (input stored : t) : Prop :=
   created input stored.
@@ -110,7 +111,7 @@ Qed.
 
 Lemma valid_replicas v :
   valid v → ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
-Proof. intros (_ & Hreplicas). exact Hreplicas. Qed.
+Proof. intros (_ & Hreplicas & _). exact Hreplicas. Qed.
 
 Lemma valid_template v :
   valid v → PodTemplateSpecV.valid v.(Template').
@@ -525,7 +526,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

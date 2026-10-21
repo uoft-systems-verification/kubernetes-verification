@@ -23,7 +23,7 @@ Lemma wp_State__updateTx_au γ l kind namespace i kobj :
       "%Hvalid_simple_update" ∷ ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.spec kobj'),
@@ -34,7 +34,7 @@ Proof.
   iIntros (Φ) "(#Hinit & #Hkinv & H)".
   iNamed "H".
   destruct (Classical_Prop.classic (
-      KObjectV.valid_create kind namespace kobj ∧
+      KObjectV.valid_update_input kind namespace kobj ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
       valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -51,18 +51,18 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /=;
+        /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
   destruct Hvalid_update_input as
     (Hvalid & Hname_nonempty & Hvalid_typemeta & Huid_nonempty & Hrv_valid &
       Hns_matches).
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
-  { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+  { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       tauto. }
@@ -80,7 +80,7 @@ Proof.
         ⌜ ObjectMetaV.valid_simple_update old_meta (KObjectV.objectmeta kobj) ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj)
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
@@ -173,7 +173,7 @@ Proof.
   iFrame "Hown_meta_frag Hown_spec_frag".
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
-    assert (KObjectV.valid_create kind namespace kobj ∧
+    assert (KObjectV.valid_update_input kind namespace kobj ∧
         (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
         valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -187,12 +187,12 @@ Proof.
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
           ?/DeploymentV.valid_update
-          ?/PodV.valid_create ?/ReplicaSetV.valid_create
+          ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
           ?/DeploymentV.valid_create
-          /KObjectV.valid_create /=;
+          /KObjectV.valid_update_input /=;
         try contradiction; tauto. }
-    assert (KObjectV.valid_create kind namespace
+    assert (KObjectV.valid_update_input kind namespace
         (KObjectV.update_objectmeta kobj
           ((KObjectV.objectmeta kobj) <| ObjectMetaV.ResourceVersion' :=
             ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>))) as Hcreate_rv.
@@ -200,7 +200,7 @@ Proof.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]]; simpl;
-        rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
           ?/DeploymentV.valid_create;
         intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
@@ -225,10 +225,10 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /= in Hcreate_rv |- *;
+        /KObjectV.valid_update_input /= in Hcreate_rv Hvalid_update |- *;
       try contradiction; tauto. }
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
@@ -240,10 +240,10 @@ Proof.
     iDestruct "Hsuccess" as
       "(%Hvalid' & %Hupdated &
         Hdeepown_i & Hown_meta_frag & Hown_spec_frag)".
-    assert (KObjectV.updated kobj kobj') as Hupdated_original.
+    assert (KObjectV.updated old_spec kobj kobj') as Hupdated_original.
     { subst kobj_rv kmeta_rv.
       revert Hupdated.
-      destruct kobj, kobj'; simpl; try done;
+      destruct old_spec, kobj, kobj'; simpl; try done;
         intros (Htypemeta & Hmeta & Hspec); split_and!; try done.
       all: rewrite /ObjectMetaV.updated in Hmeta |- *;
         destruct ObjectMeta', ObjectMeta'0; simpl in *; intuition congruence. }
@@ -293,7 +293,7 @@ Lemma wp_State__updateTx γ l kind namespace i kobj old_meta old_spec :
     l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
   {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.objectmeta kobj') ∗
       "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 (KObjectV.spec kobj')
@@ -331,17 +331,17 @@ Lemma wp_State__PodUpdateTx γ l namespace pod_l pod key uid kmeta kspec :
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hkey_eq" ∷ ⌜ key = PodV.key pod ⌝ ∗
       "%Huid_eq" ∷ ⌜ uid = pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ⌝ ∗
-      "%Hvalid_update" ∷ ⌜ KObjectV.valid_update PodV.kind namespace kmeta kspec (KObjectV.Pod pod) ⌝ ∗
+      "%Hvalid_update" ∷ ⌜ KObjectV.valid_update PodV.kind namespace kmeta (ObjectSpecV.PodSpec kspec) (KObjectV.Pod pod) ⌝ ∗
       "%Hvalid_simple_update" ∷ ⌜ ObjectMetaV.valid_simple_update kmeta pod.(PodV.ObjectMeta') ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 kmeta ∗
-      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 kspec
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid 1 (ObjectSpecV.PodSpec kspec)
   }}}
     l @! (go.PointerType apimodel.State) @!
       "PodUpdateTx" #namespace #pod_l
   {{{ pod_l' pod', RET (#pod_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
-      "%Hupdated" ∷ ⌜ PodV.updated pod pod' ⌝ ∗
+      "%Hupdated" ∷ ⌜ PodV.updated kspec pod pod' ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
@@ -359,7 +359,7 @@ Proof.
   iEval (rewrite Hkey_eq Huid_eq) in "Hown_meta_frag Hown_spec_frag".
   wp_apply (wp_State__updateTx γ l PodV.kind namespace
     (interface.mk (go.PointerType v1.Pod) #pod_l)
-    (KObjectV.Pod pod) kmeta kspec
+    (KObjectV.Pod pod) kmeta (ObjectSpecV.PodSpec kspec)
     with "[$Hinit $Hisk $Hdeepown_i $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. split; done. }
   iIntros (i' kobj') "Hpost".
@@ -431,7 +431,7 @@ Lemma wp_State__ReplicaSetUpdateTx γ l namespace rs_l rs key uid kmeta kspec :
       "%Hvalid'" ∷ ⌜ ReplicaSetV.valid rs' ⌝ ∗
       "%Hmeta_updated" ∷ ⌜ ObjectMetaV.updated rs.(ReplicaSetV.ObjectMeta') rs'.(ReplicaSetV.ObjectMeta') ⌝ ∗
       "%Hspec_updated" ∷
-        ⌜ ObjectSpecV.updated (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝ ∗
+        ⌜ ObjectSpecV.updated kspec (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ ReplicaSetV.key rs' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l' rs' 1 ∗
@@ -463,6 +463,7 @@ Proof.
     with "[$Hinit $Hisk $Hdeepown_i $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. split; done. }
   iIntros (i' kobj') "Hpost". iNamed "Hpost".
+  destruct kspec; simpl in Hvalid_spec_update; try contradiction.
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
   simpl in Hupdated.
   destruct Hupdated as (_ & Hmeta_updated & Hspec_updated).

@@ -45,7 +45,7 @@ Definition create_prepared_for_helper
 Definition valid_without_resource_version (obj : KObjectV.t) : Prop :=
   valid_typemeta (KObjectV.kind obj) (KObjectV.typemeta obj) ∧
   ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj) ∧
-  ObjectSpecV.valid (KObjectV.spec obj) ∧
+  KObjectV.valid_body obj ∧
   ObjectStatusV.valid (KObjectV.status obj).
 
 (** [update_objects_equiv_except_resource_version] relates two views of the
@@ -95,7 +95,7 @@ Definition applyValidationAndDefaultingOnUpdate_updated
   (∀ input stored,
     update_prepared_for_helper namespace old input helper_input →
     update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.updated input stored) ∧
+    KObjectV.updated (KObjectV.spec old) input stored) ∧
   (KObjectV.valid old →
     valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
     KObjectV.valid helper_result) ∧

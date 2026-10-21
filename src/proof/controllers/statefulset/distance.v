@@ -235,9 +235,7 @@ Definition pod_view_immutable_matches sts
         sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
       pod_view_storage_matches sts view ∧
       without_statefulset_fields spec =
-        without_statefulset_fields
-          sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(
-            PodTemplateSpecV.Spec')
+        desired_prepared_spec sts (pod_view_meta view).(ObjectMetaV.Name')
   | _ => False
   end.
 
@@ -298,6 +296,9 @@ Proof.
   destruct (decide (pod_view_storage_matches sts
     (meta, ObjectSpecV.PodSpec p))) as [Hstorage|Hstorage].
   2: { right. intros (_ & _ & H & _). contradiction. }
+  destruct (decide (without_statefulset_fields p =
+    desired_prepared_spec sts meta.(ObjectMetaV.Name'))) as [Hspec|Hspec].
+  2: { right. intros (_ & _ & _ & H). contradiction. }
   left. split_and!; try done.
 Defined.
 

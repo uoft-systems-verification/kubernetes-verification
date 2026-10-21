@@ -1,5 +1,8 @@
+(** Complete recursive Pod, PodSpec, and PodStatus views.
+    Field representation and ownership cover every field; validation and API
+    preparation below still contain the existing model abstractions. *)
 From New.proof Require Import prelude empty_ffi util.
-From New.proof.kubernetes_types Require Export objectmeta.
+From New.proof.kubernetes_types Require Export objectmeta pod_fields.
 From New.proof.kubernetes_types Require Import top_level.
 
 (** Conversion between versioned and internal Pods removes these obsolete
@@ -54,158 +57,130 @@ Proof.
     exact Hsize.
 Qed.
 
+(** Semantic boundary for imported Kubernetes routines. These functions act
+    on complete recursive field views, including nil/empty distinctions. Their
+    bodies remain opaque, just as the upstream Go defaulting and validation
+    calls do in the Goose translation. They describe the checked-out model's
+    feature-gate and admission configuration, not an arbitrary cluster.
+
+    [create_spec] and [create_status] include schema defaults, conversion,
+    mutating admission, PrepareForCreate, and conversion back to v1. Only
+    labels and annotations from metadata affect these fields. In particular,
+    PrepareForCreate is NOT assumed idempotent (affinity selector merging can
+    append requirements). [update_spec] uses the stored old spec and the
+    update-specific strategy instead.
+
+    Sources: kubernetes_model/apimodel/api_model.go;
+    kubernetes/pkg/apis/core/v1/{defaults,zz_generated.defaults}.go;
+    kubernetes/pkg/registry/core/pod/strategy.go;
+    kubernetes/pkg/apis/core/validation/validation.go. *)
+Lemma drop_legacy_init_container_annotations_idempotent annotations :
+  drop_legacy_init_container_annotations (drop_legacy_init_container_annotations annotations) =
+    drop_legacy_init_container_annotations annotations.
+Proof.
+  destruct annotations as [annotations|]; last done.
+  unfold drop_legacy_init_container_annotations, legacy_init_container_annotation_keys; simpl.
+  f_equal. apply map_eq. intros key. repeat rewrite lookup_delete. repeat case_decide; done.
+Qed.
+
+Module PodAPI.
+Definition string_map := option (gmap go_string go_string).
+Parameter schema_defaults : PodFields.PodSpecV.t → PodFields.PodSpecV.t.
+Parameter template_defaults : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
+(** Preparation never changes volume names, PVC references, Hostname, or
+    Subdomain. Other volume-source fields are defaulted/prepared recursively.
+    The rest of the spec does not depend on these three controller-managed
+    fields; making that decomposition explicit avoids assuming identity for
+    containers, probes, tolerations, affinity, or any other nested fields. *)
+Definition without_managed (spec : PodFields.PodSpecV.t) : PodFields.PodSpecV.t :=
+  spec <| PodFields.PodSpecV.Volumes' := None |>
+    <| PodFields.PodSpecV.Hostname' := ""%go |> <| PodFields.PodSpecV.Subdomain' := ""%go |>.
+Parameter create_unmanaged_spec : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
+Parameter create_volume_source : PodFields.VolumeSourceV.t → PodFields.VolumeSourceV.t.
+Definition create_volume (volume : PodFields.VolumeV.t) : PodFields.VolumeV.t :=
+  let source := volume.(PodFields.VolumeV.VolumeSource') in
+  volume <| PodFields.VolumeV.VolumeSource' :=
+    (create_volume_source source) <| PodFields.VolumeSourceV.PersistentVolumeClaim' :=
+      source.(PodFields.VolumeSourceV.PersistentVolumeClaim') |> |>.
+Definition create_spec labels annotations (spec : PodFields.PodSpecV.t) : PodFields.PodSpecV.t :=
+  (create_unmanaged_spec labels annotations (without_managed spec))
+    <| PodFields.PodSpecV.Volumes' := fmap (M:=option) (fmap (M:=list) create_volume)
+      spec.(PodFields.PodSpecV.Volumes') |>
+    <| PodFields.PodSpecV.Hostname' := spec.(PodFields.PodSpecV.Hostname') |>
+    <| PodFields.PodSpecV.Subdomain' := spec.(PodFields.PodSpecV.Subdomain') |>.
+
+Lemma without_managed_idempotent spec :
+  without_managed (without_managed spec) = without_managed spec.
+Proof. destruct spec. done. Qed.
+Lemma create_spec_without_managed labels annotations spec :
+  without_managed (create_spec labels annotations spec) =
+    without_managed (create_spec labels annotations (without_managed spec)).
+Proof. unfold create_spec, without_managed. destruct spec. done. Qed.
+(** Scheduling-gate conditions use metav1.Now, so status preparation is a
+    relation over complete results rather than a deterministic function. *)
+Parameter create_status : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodStatusV.t → Prop.
+Parameter update_spec : PodFields.PodSpecV.t → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
+Parameter validate_spec : PodFields.PodSpecV.t → bool.
+Parameter validate_spec_update : PodFields.PodSpecV.t → PodFields.PodSpecV.t → bool.
+Parameter validate_annotations : string_map → PodFields.PodSpecV.t → bool.
+Parameter validate_annotations_update : string_map → PodFields.PodSpecV.t →
+  string_map → PodFields.PodSpecV.t → bool.
+Parameter validate_template : string_map → string_map → PodFields.PodSpecV.t → bool.
+End PodAPI.
+
 Module VolumeSourceV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-
-Record t := mk {
-  PersistentVolumeClaim' : option v1.PersistentVolumeClaimVolumeSource.t;
-}.
-
-Global Instance persistent_volume_claim_volume_source_eq_dec :
-  EqDecision v1.PersistentVolumeClaimVolumeSource.t.
-Proof. solve_decision. Qed.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Qed.
-
+Include PodFields.VolumeSourceV.
 Definition valid (source : t) : Prop :=
   match source.(PersistentVolumeClaim') with
   | Some pvc => valid_dns1123_subdomain pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName')
   | None => True
   end.
-
 Global Instance valid_dec source : Decision (valid source).
 Proof. unfold valid. destruct source.(PersistentVolumeClaim'); apply _. Defined.
+Section ownership.
+Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.
+Context {sem : go.Semantics}
+  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
+  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
+  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Local Set Default Proof Using "All".
 
-Definition deepown (c : v1.VolumeSource.t) (v : t) dq : iProp Σ :=
+Definition deepown_rest (c : v1.VolumeSource.t) (v : t) dq : iProp Σ :=
+  deepown (c <| v1.VolumeSource.PersistentVolumeClaim' := null |>)
+    (v <| PersistentVolumeClaim' := None |>) dq.
+
+Lemma deepown_split c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_persistentvolumeclaim_none" ∷
     ⌜c.(v1.VolumeSource.PersistentVolumeClaim') = null ↔ v.(PersistentVolumeClaim') = None⌝ ∗
   "Hdeepown_persistentvolumeclaim_some" ∷ (match v.(PersistentVolumeClaim') with
     | Some pvc => ∃ c_pvc, c.(v1.VolumeSource.PersistentVolumeClaim') ↦{dq} c_pvc ∗ ⌜c_pvc = pvc⌝
     | None => True%I
-    end).
-
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> match v.(PersistentVolumeClaim') with
-    | Some pvc => ∃ c_pvc, c.(v1.VolumeSource.PersistentVolumeClaim') ↦□ c_pvc ∗ ⌜ c_pvc = pvc ⌝
-    | None => True%I
-    end)%I with "[Hdeepown_persistentvolumeclaim_some]" as ">Hpvc".
-  { destruct (v.(PersistentVolumeClaim')) as [pvc|]; last done.
-    iDestruct "Hdeepown_persistentvolumeclaim_some" as (c_pvc) "[Hc %Hc]".
-    iPersist "Hc". iModIntro. iExists c_pvc. by iFrame "# %". }
-  iModIntro. by iFrame "∗ # %".
+    end) ∗
+  "Hdeepown_rest" ∷ deepown_rest c v dq.
+Proof.
+  iSplit.
+  - rewrite /deepown. iNamed 1.
+    iDestruct "Hdeepown_persistentvolumeclaim" as "[%Hnil Hpvc]".
+    iFrame "%". iSplitL "Hpvc"; first done.
+    rewrite /deepown_rest /deepown /=. iFrame.
+    iApply deepown_ptr_nil.
+  - iIntros "(%Hnil & Hpvc & Hrest)".
+    rewrite /deepown_rest /deepown /=. iNamed "Hrest". iNamed "Hdeepown_rest".
+    iFrame. rewrite /deepown_ptr. iFrame "%".
 Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. destruct (v.(PersistentVolumeClaim')); apply _. Qed.
-End def.
+End ownership.
 End VolumeSourceV.
 
 Module VolumeV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-
-Record t := mk {
-  Name' : go_string;
-  VolumeSource' : VolumeSourceV.t;
-}.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Qed.
-
+Include PodFields.VolumeV.
 Definition valid (volume : t) : Prop :=
-  valid_dns1123_label volume.(Name') ∧
-  VolumeSourceV.valid volume.(VolumeSource').
-
+  valid_dns1123_label volume.(Name') ∧ VolumeSourceV.valid volume.(VolumeSource').
 Global Instance valid_dec volume : Decision (valid volume).
 Proof. unfold valid. apply _. Defined.
-
-Definition deepown (c : v1.Volume.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_name" ∷ ⌜c.(v1.Volume.Name') = v.(Name')⌝ ∗
-  "Hdeepown_volumesource" ∷ VolumeSourceV.deepown c.(v1.Volume.VolumeSource') v.(VolumeSource') dq.
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iMod (VolumeSourceV.deepown_persist with "Hdeepown_volumesource") as "Hdeepown_volumesource".
-  iModIntro. by iFrame "∗ # %".
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
-End def.
 End VolumeV.
 
 Module PodSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-
-Record t :=
-mk {
-  Volumes' : option (list VolumeV.t);
-  Hostname' : go_string;
-  Subdomain' : go_string;
-
-  (* InitContainers' : slice.t; *)
-  (* Containers' : slice.t; *)
-  (* EphemeralContainers' : slice.t; *)
-  (* RestartPolicy' : v1.RestartPolicy.t; *)
-  (* TerminationGracePeriodSeconds' : loc; *)
-  (* ActiveDeadlineSeconds' : loc; *)
-  (* DNSPolicy' : v1.DNSPolicy.t; *)
-  (* NodeSelector' : map.t; *)
-  (* ServiceAccountName' : go_string; *)
-  (* DeprecatedServiceAccount' : go_string; *)
-  (* AutomountServiceAccountToken' : loc; *)
-  (* NodeName' : go_string; *)
-  (* HostNetwork' : bool; *)
-  (* HostPID' : bool; *)
-  (* HostIPC' : bool; *)
-  (* ShareProcessNamespace' : loc; *)
-  (* SecurityContext' : loc; *)
-  (* ImagePullSecrets' : slice.t; *)
-  (* Affinity' : loc; *)
-  (* SchedulerName' : go_string; *)
-  (* Tolerations' : slice.t; *)
-  (* HostAliases' : slice.t; *)
-  (* PriorityClassName' : go_string; *)
-  (* Priority' : loc; *)
-  (* DNSConfig' : loc; *)
-  (* ReadinessGates' : slice.t; *)
-  (* RuntimeClassName' : loc; *)
-  (* EnableServiceLinks' : loc; *)
-  (* PreemptionPolicy' : loc; *)
-  (* Overhead' : v1.ResourceList.t; *)
-  (* TopologySpreadConstraints' : slice.t; *)
-  (* SetHostnameAsFQDN' : loc; *)
-  (* OS' : loc; *)
-  (* HostUsers' : loc; *)
-  (* SchedulingGates' : slice.t; *)
-  (* ResourceClaims' : slice.t; *)
-  (* Resources' : loc; *)
-  (* HostnameOverride' : loc; *)
-}.
-
+Include PodFields.PodSpecV.
 (* Kubernetes validation and semantic equality treat a nil volume slice and
    an allocated empty slice identically. The option-valued field above keeps
    the concrete distinction for representation-sensitive operations, while
@@ -217,155 +192,119 @@ Definition volumes_list (spec : t) : list VolumeV.t :=
 Definition valid_create (spec : t) : Prop :=
   Forall VolumeV.valid (volumes_list spec) ∧
   (spec.(Hostname') = ""%go ∨ valid_dns1123_label spec.(Hostname')) ∧
-  (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')).
+  (spec.(Subdomain') = ""%go ∨ valid_dns1123_label spec.(Subdomain')) ∧
+  PodAPI.validate_spec (PodAPI.schema_defaults spec) = true.
 
 Global Instance valid_create_dec spec : Decision (valid_create spec).
 Proof. unfold valid_create. apply _. Defined.
 
-(* The represented PodSpec fields require no additional storage
-   normalization, so stored validity equals the admission predicate. *)
+(* Stored specs satisfy full spec validation and are fixed points of the
+   update-specific preparation path. Create preparation is deliberately not
+   required to be idempotent. *)
 Definition valid (spec : t) : Prop :=
-  valid_create spec.
+  valid_create spec ∧
+  PodAPI.validate_spec spec = true ∧
+  PodAPI.update_spec spec spec = spec ∧
+  PodAPI.validate_spec_update spec spec = true.
 
 (* Pod update validation treats Volumes, Hostname, and Subdomain as immutable.
    Update preparation does not change these represented fields, so this
    request-level predicate already accounts for preparation. The relation does
    not assume that [old] satisfies anything stronger than [valid_create].
-   Upstream permits updates to a small set of other fields, none of which are
-   modeled here:
+   The full validator below additionally checks every represented field of
+   the update-prepared spec, including the exceptions for mutable fields:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L5571-L5675 *)
 Definition valid_update (old input : t) : Prop :=
   valid_create input ∧
   volumes_list input = volumes_list old ∧
   input.(Hostname') = old.(Hostname') ∧
-  input.(Subdomain') = old.(Subdomain').
+  input.(Subdomain') = old.(Subdomain') ∧
+  PodAPI.validate_spec_update old (PodAPI.update_spec old input) = true.
 
 Global Instance valid_update_dec old input :
   Decision (valid_update old input).
 Proof. unfold valid_update. apply _. Defined.
 
 Lemma valid_update_refl spec :
-  valid_create spec →
-  valid_update spec spec.
-Proof. unfold valid_update. done. Qed.
-
-(* The represented PodSpec fields are not changed by create-time defaulting. *)
-Definition created (input stored : t) : Prop :=
-  stored = input.
-
-(* None of the PodSpec fields represented by [t] are defaulted by the API
-   server during update. Thus the normalized projection equals the submitted
-   projection. *)
-Definition updated (input stored : t) : Prop :=
-  stored = input.
-
-Definition deepown (c: v1.PodSpec.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_volumes_none" ∷
-    ⌜c.(v1.PodSpec.Volumes') = slice.nil ↔ v.(Volumes') = None⌝ ∗
-  "Hdeepown_volumes" ∷
-    (∃ volumes,
-      deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v)
-      (λ volume pure_volume, VolumeV.deepown volume pure_volume dq) dq) ∗
-  "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
-  "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iDestruct "Hdeepown_volumes" as (volumes) "[Hsl Hlist]".
-  iMod (own_slice_persist with "Hsl") as "Hsl".
-  iMod (big_sepL2_persist VolumeV.deepown with "Hlist") as "Hlist".
-  { intros. apply VolumeV.deepown_persist. }
-  iModIntro. iFrame "%". iExists volumes. rewrite /deepown_list. by iFrame.
+  valid spec → valid_update spec spec.
+Proof.
+  intros (Hcreate & _ & Hfixed & Hvalidate).
+  unfold valid_update. rewrite Hfixed. done.
 Qed.
 
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown /deepown_list. apply _. Qed.
-End def.
-End PodSpecV.
+(** Both relations retain all output fields. Metadata-dependent preparation
+    is exposed exactly by [PodV.created]; these projections existentially hide
+    its metadata arguments for the generic ObjectSpec interface. *)
+Definition created (input stored : t) : Prop :=
+  ∃ labels annotations, stored = PodAPI.create_spec labels annotations input.
 
-Module PodConditionV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}.
+Definition updated (old input stored : t) : Prop :=
+  stored = PodAPI.update_spec old input.
 
-(* Only the fields that pod readiness reads are represented. *)
-Record t := mk {
-  Type' : go_string;
-  Status' : go_string;
-}.
+Lemma updated_same_spec old input stored :
+  valid old → input = old → updated old input stored → stored = old.
+Proof. intros (_ & _ & Hfixed & _) -> Hupdated. by rewrite /updated Hfixed in Hupdated. Qed.
 
-(* Every represented field is a plain value, so the view is a function of the
-   Go struct. *)
-Definition of_go (c : v1.PodCondition.t) : t :=
-  mk c.(v1.PodCondition.Type') c.(v1.PodCondition.Status').
-End def.
-End PodConditionV.
-
-Module PodStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
+Section ownership.
+Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+Local Set Default Proof Using "All".
 
-(* Only the conditions are represented, enough to prove pod readiness
-   (pod.IsPodReady). The other status fields, including Phase, stay
-   unrepresented. A nil and an empty conditions slice have the same view: no
-   represented operation distinguishes them. *)
-Record t := mk {
-  Conditions' : list PodConditionV.t;
-}.
+(** Ownership of every field other than the three fields managed by StatefulSet. *)
+Definition deepown_rest (c : v1.PodSpec.t) (v : t) dq : iProp Σ :=
+  deepown
+    (c <| v1.PodSpec.Volumes' := slice.nil |> <| v1.PodSpec.Hostname' := ""%go |>
+      <| v1.PodSpec.Subdomain' := ""%go |>)
+    (v <| Volumes' := None |> <| Hostname' := ""%go |> <| Subdomain' := ""%go |>) dq.
 
-(* What the API server accepts and stores for a pod status is still abstract. *)
-Axiom valid: t → Prop.
+Lemma deepown_split c v dq : deepown c v dq ⊣⊢
+  "%Hdeepown_volumes_none" ∷ ⌜c.(v1.PodSpec.Volumes') = slice.nil ↔ v.(Volumes') = None⌝ ∗
+  "Hdeepown_volumes" ∷ (∃ volumes,
+    deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v) (λ c v, VolumeV.deepown c v dq) dq) ∗
+  "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
+  "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝ ∗
+  "Hdeepown_volumes_cap" ∷ own_slice_cap v1.Volume.t c.(v1.PodSpec.Volumes') dq ∗
+  "Hdeepown_rest" ∷ deepown_rest c v dq.
+Proof.
+  iSplit.
+  - rewrite /deepown. iNamed 1.
+    iDestruct "Hdeepown_volumes" as "(%Hnil & %vs & Hsl & Hcap & Hvs)".
+    iSplitR; first done. iSplitL "Hsl Hvs".
+    { iExists vs. rewrite /deepown_list. iFrame. }
+    iSplitR; first done. iSplitR; first done. iFrame "Hcap".
+    rewrite /deepown_rest /deepown /=. iFrame "∗". iFrame "%".
+    iSplitL; [iApply deepown_slice_nil|done].
+  - iNamed 1.
+    iDestruct "Hdeepown_volumes" as (vs) "[Hsl Hvs]".
+    iEval (rewrite /deepown_rest /deepown /=) in "Hdeepown_rest".
+    iNamedPrefix "Hdeepown_rest" "Hrest_".
+    rewrite /deepown. iFrame "∗". iFrame "%".
+Qed.
+End ownership.
+End PodSpecV.
+
+Module PodConditionV := PodFields.PodConditionV.
+
+Module PodStatusV.
+Include PodFields.PodStatusV.
+(* Status validation and API preparation remain abstract. *)
+Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom created : t → t → Prop.
+Definition created (_input stored : t) : Prop :=
+  ∃ labels annotations spec, PodAPI.create_status labels annotations spec stored.
 Axiom updated : t → t → Prop.
 
-Definition deepown (c : v1.PodStatus.t) (v : t) dq : iProp Σ :=
-  ∃ cs, c.(v1.PodStatus.Conditions') ↦*{dq} cs ∗
-    ⌜ v.(Conditions') = PodConditionV.of_go <$> cs ⌝.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-Definition zero : t := mk [].
-
-Lemma deepown_zero dq : ⊢ deepown (zero_val v1.PodStatus.t) zero dq.
-Proof. rewrite /deepown /zero. iExists []. iSplit; last done. iApply own_slice_nil. Qed.
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iIntros "(%cs & Hsl & %Hconds)".
-  iMod (own_slice_persist with "Hsl") as "Hsl". iModIntro. by iFrame.
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
-
-(* Readiness as computed by pod.IsPodReady: the first condition of type
-   [Ready] must have status [True]. *)
+Definition conditions_list (s : t) : list PodConditionV.t := default [] s.(Conditions').
 Definition ready (s : t) : bool :=
-  match list_find (λ c, c.(PodConditionV.Type') = "Ready"%go) s.(Conditions') with
+  match list_find (λ c, c.(PodConditionV.Type') = "Ready"%go) (conditions_list s) with
   | Some (_, c) => bool_decide (c.(PodConditionV.Status') = "True"%go)
   | None => false
   end.
-
-End def.
 End PodStatusV.
 
 Module PodV.
@@ -395,16 +334,29 @@ Definition meta_key (meta : ObjectMetaV.t) : KKey.t :=
 Definition key (v: t) : KKey.t :=
   meta_key v.(ObjectMeta').
 
+Definition prepared_spec (input : t) : PodSpecV.t :=
+  PodAPI.create_spec input.(ObjectMeta').(ObjectMetaV.Labels')
+    input.(ObjectMeta').(ObjectMetaV.Annotations') input.(Spec').
+
+Definition prepared_status (input : t) (stored_status : PodStatusV.t) : Prop :=
+  PodAPI.create_status input.(ObjectMeta').(ObjectMetaV.Labels')
+    input.(ObjectMeta').(ObjectMetaV.Annotations') input.(Spec') stored_status.
+
+Definition valid_body (pod : t) : Prop :=
+  PodSpecV.valid pod.(Spec') ∧
+  PodAPI.validate_annotations_update pod.(ObjectMeta').(ObjectMetaV.Annotations') pod.(Spec')
+    pod.(ObjectMeta').(ObjectMetaV.Annotations') pod.(Spec') = true.
+
 Definition valid (pod: t) : Prop :=
   valid_typemeta kind pod.(TypeMeta') ∧
   valid_resource_version pod.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid kind pod.(ObjectMeta') ∧
-  PodSpecV.valid pod.(Spec') ∧
+  valid_body pod ∧
   PodStatusV.valid pod.(Status').
 
 Definition extra_valid (_pod : t) : Prop := True.
 
-Definition valid_create request_kind ns (pod : t) : Prop :=
+Definition valid_update_input request_kind ns (pod : t) : Prop :=
   request_kind = kind ∧
   ns ≠ ""%go ∧
   valid_namespace ns ∧
@@ -412,15 +364,29 @@ Definition valid_create request_kind ns (pod : t) : Prop :=
   ObjectMetaV.valid_create kind ns pod.(ObjectMeta') ∧
   PodSpecV.valid_create pod.(Spec').
 
+Definition valid_create request_kind ns (pod : t) : Prop :=
+  request_kind = kind ∧
+  ns ≠ ""%go ∧
+  valid_namespace ns ∧
+  valid_create_typemeta kind pod.(TypeMeta') ∧
+  ObjectMetaV.valid_create kind ns pod.(ObjectMeta') ∧
+  PodSpecV.valid_create pod.(Spec') ∧
+  PodAPI.validate_annotations pod.(ObjectMeta').(ObjectMetaV.Annotations')
+    (PodAPI.create_spec pod.(ObjectMeta').(ObjectMetaV.Labels')
+      pod.(ObjectMeta').(ObjectMetaV.Annotations') pod.(Spec')) = true ∧
+  PodAPI.validate_spec (prepared_spec pod) = true.
+
 Definition valid_update request_kind namespace old_meta old_spec (input : t) : Prop :=
   input.(ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ∧
   input.(ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ∧
   namespace = input.(ObjectMeta').(ObjectMetaV.Namespace') ∧
   valid_resource_version input.(ObjectMeta').(ObjectMetaV.ResourceVersion') ∧
   valid_typemeta kind input.(TypeMeta') ∧
-  valid_create request_kind namespace input ∧
+  valid_update_input request_kind namespace input ∧
   ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
-  PodSpecV.valid_update old_spec input.(Spec').
+  PodSpecV.valid_update old_spec input.(Spec') ∧
+  PodAPI.validate_annotations_update old_meta.(ObjectMetaV.Annotations') old_spec
+    input.(ObjectMeta').(ObjectMetaV.Annotations') (PodAPI.update_spec old_spec input.(Spec')) = true.
 
 Definition valid_status_update request_kind namespace old_meta old_status (input : t) : Prop :=
   request_kind = kind ∧
@@ -432,13 +398,13 @@ Definition valid_status_update request_kind namespace old_meta old_status (input
   ObjectMetaV.valid_update old_meta input.(ObjectMeta') ∧
   PodStatusV.valid_update old_status input.(Status').
 
-Lemma valid_create_of_valid request_kind ns pod :
+Lemma valid_update_input_of_valid request_kind ns pod :
   valid pod →
   request_kind = kind →
   ns = pod.(ObjectMeta').(ObjectMetaV.Namespace') →
-  valid_create request_kind ns pod.
+  valid_update_input request_kind ns pod.
 Proof.
-  unfold valid, valid_create.
+  unfold valid, valid_update_input.
   intros (Htypemeta & _ & Hmeta & Hspec & _) Hkind Hnamespace.
   split_and!.
   - exact Hkind.
@@ -454,7 +420,7 @@ Proof.
     split; [split; assumption|].
     split; [right; split; [assumption|symmetry; exact Hnamespace]|].
     repeat split; assumption.
-  - exact Hspec.
+  - exact (proj1 (proj1 Hspec)).
 Qed.
 
 Definition valid_without_meta (pod: t) : Prop :=
@@ -469,17 +435,19 @@ Definition created (namespace : go_string) (input stored : t) : Prop :=
       stored.(ObjectMeta') ∧
   stored.(ObjectMeta').(ObjectMetaV.Generation') = W64 1 ∧
   PodSpecV.created input.(Spec') stored.(Spec') ∧
-  PodStatusV.created input.(Status') stored.(Status').
+  PodStatusV.created input.(Status') stored.(Status') ∧
+  stored.(Spec') = prepared_spec input ∧
+  prepared_status input stored.(Status').
 
 Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated (pod_objectmeta_after_conversion input.(ObjectMeta')) stored.(ObjectMeta') ∧
   PodStatusV.updated input.(Status') stored.(Status').
 
-Definition updated (input stored : t) : Prop :=
+Definition updated (old_spec : PodSpecV.t) (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated (pod_objectmeta_after_conversion input.(ObjectMeta')) stored.(ObjectMeta') ∧
-  PodSpecV.updated input.(Spec') stored.(Spec').
+  PodSpecV.updated old_spec input.(Spec') stored.(Spec').
 
 Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
   "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
@@ -649,28 +617,61 @@ Record t := mk {
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L6795-L6810 *)
 (* This is the projection of Kubernetes' ValidatePodTemplateSpec onto the
-   fields represented by PodTemplateSpecV.t and PodSpecV.t.  In particular,
+   complete PodSpec and represented metadata, with the apps-controller
+   restrictions on RestartPolicy and ActiveDeadlineSeconds. In particular,
    Kubernetes does not validate ObjectMeta.Finalizers as part of validating a
-   pod template.  Checks involving unmodeled PodSpec fields and pod-specific
-   annotation/field consistency are likewise outside this projection. *)
+   pod template. The imported template validator includes nested fields and Pod-specific
+   annotation/field consistency. *)
+Definition normalized (template : t) : t :=
+  template <| ObjectMeta' := pod_objectmeta_after_conversion template.(ObjectMeta') |>
+    <| Spec' := PodAPI.template_defaults template.(ObjectMeta').(ObjectMetaV.Labels')
+      (drop_legacy_init_container_annotations template.(ObjectMeta').(ObjectMetaV.Annotations')) template.(Spec') |>.
+
 Definition valid (template : t) : Prop :=
   valid_labels template.(ObjectMeta').(ObjectMetaV.Labels') ∧
   valid_annotations template.(ObjectMeta').(ObjectMetaV.Annotations') ∧
-  PodSpecV.valid template.(Spec').
+  PodSpecV.valid_create template.(Spec') ∧
+  PodAPI.validate_template template.(ObjectMeta').(ObjectMetaV.Labels')
+    (drop_legacy_init_container_annotations template.(ObjectMeta').(ObjectMetaV.Annotations'))
+    (normalized template).(Spec') = true ∧
+  (normalized template).(Spec').(PodSpecV.RestartPolicy') = "Always"%go ∧
+  (normalized template).(Spec').(PodSpecV.ActiveDeadlineSeconds') = None.
 
 Global Instance valid_dec template : Decision (valid template).
-Proof. unfold valid, PodSpecV.valid. apply _. Defined.
+Proof. unfold valid. apply _. Defined.
 
 Lemma valid_after_conversion template :
   valid template →
-  valid
-    (template <| ObjectMeta' :=
-      pod_objectmeta_after_conversion template.(ObjectMeta') |>).
+  valid (template <| ObjectMeta' := pod_objectmeta_after_conversion template.(ObjectMeta') |>).
 Proof.
-  intros (Hlabels & Hannotations & Hspec).
-  split_and!; simpl; try done.
+  intros (Hlabels & Hannotations & Hspec & Htemplate & Hrestart & Hdeadline).
+  unfold valid, normalized, pod_objectmeta_after_conversion in *; simpl in *.
+  rewrite !drop_legacy_init_container_annotations_idempotent.
+  split_and!; try done.
   apply valid_annotations_drop_legacy_init_container_annotations. exact Hannotations.
 Qed.
+
+(** Trusted contract of imported template defaulting/validation. Template
+    schema defaults and feature-field preparation preserve successful template
+    admission; unlike Pod PrepareForCreate, they do not merge affinity labels.
+    This is the remaining library proof obligation, not an identity assumption
+    about any of the represented PodSpec fields. *)
+Axiom normalized_valid : ∀ template, valid template → valid (normalized template).
+
+(** Template preparation has no Pod affinity-label merging. Schema defaults,
+    conversion, and dropping disabled fields are idempotent in the model's
+    fixed feature configuration. This remains an imported-library contract. *)
+Axiom normalized_idempotent : ∀ template, normalized (normalized template) = normalized template.
+
+(** Full-field contract connecting imported template validation to the Pod
+    preparation path used by GetPodFromTemplate. Metadata finalizers and name
+    generation remain separate preconditions of that helper. *)
+Axiom generated_spec_valid : ∀ template,
+  valid template →
+  let labels := Some (default ∅ template.(ObjectMeta').(ObjectMetaV.Labels')) in
+  let annotations := Some (default ∅ template.(ObjectMeta').(ObjectMetaV.Annotations')) in
+  PodAPI.validate_annotations annotations (PodAPI.create_spec labels annotations template.(Spec')) = true ∧
+  PodAPI.validate_spec (PodAPI.create_spec labels annotations template.(Spec')) = true.
 
 Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
   "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
@@ -759,3 +760,8 @@ Qed.
 Proof using All. rewrite /deepown_l. apply _. Qed.
 End proof.
 End PodTemplateSpecV.
+
+(* Keep routine proof automation from recursively expanding hundreds of Pod
+   fields. Field-level proofs open these predicates explicitly, or use the
+   splitting lemmas above; all fields and their ownership remain represented. *)
+#[global] Opaque PodSpecV.deepown PodStatusV.deepown.

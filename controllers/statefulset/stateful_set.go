@@ -334,9 +334,22 @@ func podSpecMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
 		!storageMatches(set, pod) {
 		return false
 	}
-	podSpec := withoutStatefulSetFields(pod.Spec)
-	templateSpec := withoutStatefulSetFields(set.Spec.Template.Spec)
-	return reflect.DeepEqual(podSpec, templateSpec)
+	// Copy both sides before comparison: Quantity.DeepCopy can normalize an
+	// empty internal big.Int buffer without changing its words or API value.
+	podSpec := withoutStatefulSetFields(*pod.Spec.DeepCopy())
+	// Compare with the result of creating the desired Pod. Pod-only defaults
+	// and admission (for example EnableServiceLinks and tolerations) are not
+	// present in a StatefulSet template. Prepare a fresh request once: replaying
+	// PrepareForCreate on the stored Pod can duplicate affinity requirements.
+	desired, err := newStatefulSetPod(set, ordinalOf(pod.Name))
+	if err != nil {
+		return false
+	}
+	prepared, err := apimodel.PreviewPodCreate(desired)
+	if err != nil {
+		return false
+	}
+	return reflect.DeepEqual(podSpec, withoutStatefulSetFields(*prepared.Spec.DeepCopy()))
 }
 
 func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {

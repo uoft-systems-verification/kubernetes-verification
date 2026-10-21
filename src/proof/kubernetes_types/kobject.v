@@ -110,15 +110,15 @@ Definition created (input stored : t) : Prop :=
   | _, _ => False
   end.
 
-Definition updated (input stored : t) : Prop :=
-  match input, stored with
-  | PodSpec input, PodSpec stored => PodSpecV.updated input stored
-  | ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.updated input stored
-  | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
+Definition updated (old input stored : t) : Prop :=
+  match old, input, stored with
+  | PodSpec old, PodSpec input, PodSpec stored => PodSpecV.updated old input stored
+  | _, ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.updated input stored
+  | _, PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
       PersistentVolumeClaimSpecV.updated input stored
-  | StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
-  | DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.updated input stored
-  | _, _ => False
+  | _, StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
+  | _, DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.updated input stored
+  | _, _, _ => False
   end.
 
 Lemma extra_valid_created input stored :
@@ -133,7 +133,7 @@ Qed.
 Lemma extra_valid_updated old input stored :
   extra_valid old →
   valid_update old input →
-  updated input stored →
+  updated old input stored →
   extra_valid stored.
 Proof.
   destruct old, input, stored; simpl; try done.
@@ -357,15 +357,16 @@ Definition created namespace input stored : Prop :=
 
 (** End-to-end relation between the submitted object and the stored result of
     a successful update. This relation does not constrain the stored status. *)
-Definition updated input stored : Prop :=
-  match input, stored with
-  | Pod input_pod, Pod stored_pod => PodV.updated input_pod stored_pod
-  | ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.updated input_rs stored_rs
-  | PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
+Definition updated old_spec input stored : Prop :=
+  match old_spec, input, stored with
+  | ObjectSpecV.PodSpec old_spec, Pod input_pod, Pod stored_pod =>
+      PodV.updated old_spec input_pod stored_pod
+  | _, ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.updated input_rs stored_rs
+  | _, PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
       PersistentVolumeClaimV.updated input_pvc stored_pvc
-  | StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
-  | Deployment input_d, Deployment stored_d => DeploymentV.updated input_d stored_d
-  | _, _ => False
+  | _, StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
+  | _, Deployment input_d, Deployment stored_d => DeploymentV.updated input_d stored_d
+  | _, _, _ => False
   end.
 
 (** [input] is the submitted status update.
@@ -412,11 +413,22 @@ Proof. rewrite /extra_valid spec_update_objectmeta //. Qed.
 
 (* [valid] is the complete invariant guaranteed for an object stored by the
    API server. *)
+(** Validation involving both metadata and spec cannot live in a standalone
+    ObjectSpec fragment. Pod annotation validation is one such condition. *)
+Definition valid_body o : Prop :=
+  match o with
+  | Pod p => PodV.valid_body p
+  | _ => ObjectSpecV.valid (spec o)
+  end.
+
+Lemma valid_body_spec o : valid_body o → ObjectSpecV.valid (spec o).
+Proof. destruct o; simpl; first apply proj1; done. Qed.
+
 Definition valid o : Prop :=
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid (kind o) (objectmeta o) ∧
-  ObjectSpecV.valid (spec o) ∧
+  valid_body o ∧
   ObjectStatusV.valid (status o).
 
 (** [input] is the object submitted in the create request.
@@ -442,6 +454,17 @@ Definition valid_create request_kind namespace input : Prop :=
     [request_kind] and [namespace] identify the update request.
     [old_meta] and [old_spec] are the metadata and spec currently in etcd.
     [input] is the object submitted in the update request. *)
+(** Preconditions independent of the stored old spec. Ordinary updates do
+    not re-run create-only validation, such as Pod annotation preparation. *)
+Definition valid_update_input request_kind namespace input : Prop :=
+  match input with
+  | Pod input => PodV.valid_update_input request_kind namespace input
+  | ReplicaSet input => ReplicaSetV.valid_create request_kind namespace input
+  | PersistentVolumeClaim input => PersistentVolumeClaimV.valid_create request_kind namespace input
+  | StatefulSet input => StatefulSetV.valid_create request_kind namespace input
+  | Deployment input => DeploymentV.valid_create request_kind namespace input
+  end.
+
 Definition valid_update request_kind namespace old_meta old_spec input : Prop :=
   match old_spec, input with
   | ObjectSpecV.PodSpec old_spec, Pod input =>
@@ -491,7 +514,7 @@ Proof.
     [tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
     rewrite /valid /valid2 /PodV.valid /ReplicaSetV.valid
       /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
-      /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
+      /valid_body /PodV.valid_body /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
 Qed.
 
 Definition valid_without_meta o : Prop :=
@@ -727,7 +750,7 @@ Lemma valid_create_pod_set_name pod request_kind namespace name :
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
 Proof.
   rewrite /valid_create /=.
-  intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec)
+  intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec & Hann & Hprepared)
     Hname_nonempty Hname_valid.
   assert (ObjectMetaV.valid_create PodV.kind namespace
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)) as Hmeta_named.

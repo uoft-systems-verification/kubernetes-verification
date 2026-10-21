@@ -131,6 +131,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
             (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
             pod'.(PodV.ObjectMeta') ⌝ ∗
       "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
+      "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
       "%Hpod_spec_created" ∷
         ⌜ ObjectSpecV.created
             (ObjectSpecV.PodSpec pod.(PodV.Spec'))
@@ -230,7 +231,8 @@ Proof.
   iPureIntro.
   unfold PodV.created in Hcreate_Hcreated.
   destruct Hcreate_Hcreated as
-    (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
+    (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created &
+      Hpod_prepared_spec & Hpod_prepared_status).
   split_and!; done.
 Qed.
 
@@ -263,7 +265,8 @@ Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
     "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
       (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
     "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
-    "%Hpod_spec_created" ∷
+    "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
+      "%Hpod_spec_created" ∷
       ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
     "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
       (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
@@ -329,7 +332,8 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
         "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
-        "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+        "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
+      "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
           (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
         "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
           (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
@@ -385,7 +389,8 @@ Proof.
         Hpod_status & Hpod_reserved & Hown_children & Hown_grandchildren)".
     unfold PodV.created in Hpod_created.
     destruct Hpod_created as
-      (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
+      (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created &
+      Hpod_prepared_spec & Hpod_prepared_status).
     subst created err. wp_auto.
     wp_apply (wp_IsAlreadyExists interface.nil with "[]").
     replace (bool_decide (already_exists_error interface.nil)) with false by

@@ -222,7 +222,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 
