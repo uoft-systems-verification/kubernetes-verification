@@ -337,19 +337,11 @@ func podSpecMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
 	// Copy both sides before comparison: Quantity.DeepCopy can normalize an
 	// empty internal big.Int buffer without changing its words or API value.
 	podSpec := withoutStatefulSetFields(*pod.Spec.DeepCopy())
-	// Compare with the result of creating the desired Pod. Pod-only defaults
-	// and admission (for example EnableServiceLinks and tolerations) are not
-	// present in a StatefulSet template. Prepare a fresh request once: replaying
-	// PrepareForCreate on the stored Pod can duplicate affinity requirements.
-	desired, err := newStatefulSetPod(set, ordinalOf(pod.Name))
-	if err != nil {
-		return false
-	}
-	prepared, err := apimodel.PreviewPodCreate(desired)
-	if err != nil {
-		return false
-	}
-	return reflect.DeepEqual(podSpec, withoutStatefulSetFields(*prepared.Spec.DeepCopy()))
+	templateSpec := withoutStatefulSetFields(*set.Spec.Template.Spec.DeepCopy())
+	// TODO: Use ControllerRevision labels to detect outdated Pods, as upstream
+	// does. Full-spec equality can reject a freshly created Pod because of
+	// API-server defaults and admission mutations, or later scheduler changes.
+	return reflect.DeepEqual(podSpec, templateSpec)
 }
 
 func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {

@@ -68,6 +68,18 @@ Proof.
 Unshelve. exact v1.Volume.t.
 Qed.
 
+(* TODO: This contract is not justified by the current implementation. The
+   postcondition's [pod_immutable_matches] compares against [desired_prepared_spec],
+   but the Go function compares the live PodSpec with the raw template. Create-time
+   defaults/admission (e.g. EnableServiceLinks and tolerations) can make a freshly
+   created Pod fail that comparison; later scheduler changes can also differ.
+   Replace full-spec equality with upstream-style ControllerRevision tracking:
+   record the template revision, label Pods with their creation revision, and
+   compare that label with the desired revision when deciding replacements.
+   Update [pod_immutable_matches], [pod_is_outdated], and the controller invariants
+   to express revision membership, prove creation installs the revision label,
+   then prove this lemma and its callers against those revised specifications.
+   Until then, this admission is a known gap in the dependent controller proofs. *)
 Lemma wp_podSpecMatches set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) dq_set dq_pod :
   {{{ StatefulSetV.deepown_l set_l set dq_set ∗
