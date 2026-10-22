@@ -363,14 +363,13 @@ Proof.
     { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
   (* The request TypeMeta stays valid at the stored resource version. *)
-  assert (status_update_request_ok kobj_rv) as Hrequest_ok_rv.
+  assert (valid_typemeta (KObjectV.kind kobj_rv) (KObjectV.typemeta kobj_rv)) as Hvalid_typemeta_rv.
   { subst kobj_rv kmeta_rv.
-    rewrite /status_update_request_ok KObjectV.kind_update_objectmeta
-      KObjectV.typemeta_update_objectmeta.
+    rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
     exact Hvalid_typemeta. }
   wp_apply (wp_State__update_status_same_meta_general_au γ l kind namespace i_copy kobj_rv).
   iFrame "#". iFrame "Hdeepown_i_copy".
-  iSplit; first (iPureIntro; exact Hrequest_ok_rv).
+  iSplit; first (iPureIntro; exact Hvalid_typemeta_rv).
   iApply fupd_mask_intro.
   { Timeout 10 set_solver. }
   iIntros "Hmask".

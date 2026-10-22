@@ -419,24 +419,12 @@ Proof.
     try contradiction; tauto.
 Qed.
 
-(** The request-level part of [KObjectV.valid_status_update] that a status
-    write needs even when the submitted status may be invalid: a valid TypeMeta
-    keeps the stored object valid, as the write stores the request's TypeMeta
-    unchecked. An empty name, or a request kind or namespace other than the
-    object's, need not be ruled out: the write then fails, with a bad request or
-    because the requested key holds no object with the request's UID. Neither
-    does the resource version: an empty one is replaced by the stored one, and
-    any other one fails to parse, conflicts, or is the stored one. The other
-    metadata, the UID included, need not be checked: the request keeps the
-    stored metadata up to the resource version, so it is valid already. *)
-Definition status_update_request_ok (kobj : KObjectV.t) : Prop :=
-  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
-
-Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
+(** A valid status update carries a valid TypeMeta. *)
+Lemma valid_status_update_typemeta kind namespace kmeta kstatus kobj :
   KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-  status_update_request_ok kobj.
+  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
 Proof.
-  intros Hvalid_status_update. rewrite /status_update_request_ok.
+  intros Hvalid_status_update.
   destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
     rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
       ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
