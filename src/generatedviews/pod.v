@@ -2182,9 +2182,7 @@ Proof using Type. solve_decision. Defined.
 Definition deepown (c : meta_v1.LabelSelector.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_matchlabels_none" ∷ ⌜ c.(meta_v1.LabelSelector.MatchLabels') = null ↔ v.(MatchLabels') = None ⌝ ∗
   "Hdeepown_matchlabels_some" ∷ (match v.(MatchLabels') with Some value => ∃ values_c, c.(meta_v1.LabelSelector.MatchLabels') ↦${dq} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end) ∗
-  "%Hdeepown_matchexpressions_none" ∷ ⌜ c.(meta_v1.LabelSelector.MatchExpressions') = slice.nil ↔ v.(MatchExpressions') = None ⌝ ∗
-  "Hdeepown_matchexpressions_some" ∷ (match v.(MatchExpressions') with Some value => ∃ values_c, deepown_list c.(meta_v1.LabelSelector.MatchExpressions') values_c value (λ child_c child_v, LabelSelectorRequirementV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_matchexpressions_cap" ∷ own_slice_cap meta_v1.LabelSelectorRequirement.t c.(meta_v1.LabelSelector.MatchExpressions') dq.
+  "Hdeepown_matchexpressions" ∷ (deepown_slice LabelSelectorRequirementV.deepown) c.(meta_v1.LabelSelector.MatchExpressions') v.(MatchExpressions') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -2199,11 +2197,7 @@ Proof.
   { done. }
   iSplitL.
   { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iApply (deepown_slice_cap_nil (C := meta_v1.LabelSelectorRequirement.t) (V := unit)).
+  iApply deepown_slice_nil.
 Qed.
 
 Lemma deepown_persist c v dq :
@@ -2213,12 +2207,9 @@ Proof.
   iAssert (|==> (match v.(MatchLabels') with Some value => ∃ values_c, c.(meta_v1.LabelSelector.MatchLabels') ↦${DfracDiscarded} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end))%I
     with "[Hdeepown_matchlabels_some]" as ">Hdeepown_matchlabels_some".
   { destruct v.(MatchLabels') as [value|]; last done. iDestruct "Hdeepown_matchlabels_some" as (values_c) "[Hm %Heq]". iMod (own_map_persist with "Hm") as "Hm". iModIntro. iExists values_c. iFrame "# ∗ %". }
-  iAssert (|==> (match v.(MatchExpressions') with Some value => ∃ values_c, deepown_list c.(meta_v1.LabelSelector.MatchExpressions') values_c value (λ child_c child_v, LabelSelectorRequirementV.deepown child_c child_v DfracDiscarded) DfracDiscarded | None => True%I end))%I
-    with "[Hdeepown_matchexpressions_some]" as ">Hdeepown_matchexpressions_some".
-  { destruct v.(MatchExpressions') as [value|]; last done. iDestruct "Hdeepown_matchexpressions_some" as (values_c) "[Hsl Hvalues]". iMod (own_slice_persist with "Hsl") as "Hsl". iMod (big_sepL2_persist LabelSelectorRequirementV.deepown dq values_c value with "Hvalues") as "Hvalues". { intros. apply LabelSelectorRequirementV.deepown_persist. } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗". }
-  iAssert (|==> own_slice_cap meta_v1.LabelSelectorRequirement.t c.(meta_v1.LabelSelector.MatchExpressions') DfracDiscarded)%I
-    with "[Hdeepown_matchexpressions_cap]" as ">Hdeepown_matchexpressions_cap".
-  { iPersist "Hdeepown_matchexpressions_cap". by iModIntro. }
+  iAssert (|==> (deepown_slice LabelSelectorRequirementV.deepown) c.(meta_v1.LabelSelector.MatchExpressions') v.(MatchExpressions') DfracDiscarded)%I
+    with "[Hdeepown_matchexpressions]" as ">Hdeepown_matchexpressions".
+  { iApply (deepown_slice_persist with "Hdeepown_matchexpressions"). intros. apply LabelSelectorRequirementV.deepown_persist. }
   iModIntro. iFrame "# ∗ %".
 Qed.
 
@@ -2228,10 +2219,6 @@ Proof. rewrite /deepown.
   { apply _. }
   apply bi.sep_persistent.
   { destruct (v.(MatchLabels')); apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { destruct (v.(MatchExpressions')); apply _. }
   apply _.
 Qed.
 End def.

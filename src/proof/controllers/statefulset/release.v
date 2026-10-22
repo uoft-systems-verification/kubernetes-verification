@@ -351,9 +351,8 @@ Proof.
     Hvalid_owner_references Hparent)
     as (Hmatching_owner_reference & _).
   iDestruct
-    "HupdatedPod_meta_Hdeepown_ownerreferences_some"
-    as (owner_reference_values)
-      "[Howner_references Howner_reference_deepowns]".
+    "HupdatedPod_meta_Hdeepown_ownerreferences"
+    as "(_ & %owner_reference_values & Howner_references & _ & Howner_reference_deepowns)".
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l &
       Hset_spec_l & Hset_status_l)".
@@ -392,6 +391,7 @@ Proof.
     %Howner_references_cap.
   iDestruct (big_sepL2_length with
     "Howner_reference_deepowns") as %Howner_reference_values_len.
+  rewrite ?Howner_references /= in Howner_reference_values_len.
   set set_uid :=
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID').
   set P := (λ owner_reference : OwnerReferenceV.t,
@@ -539,10 +539,8 @@ Proof.
          HupdatedPod_meta_Hdeepown_labels_some
          HupdatedPod_meta_Hdeepown_annotations_some
          HupdatedPod_meta_Hdeepown_finalizers_some
-         HupdatedPod_meta_Hdeepown_managedfields_some
-         HupdatedPod_meta_Hdeepown_ownerreferences_cap
-         HupdatedPod_meta_Hdeepown_finalizers_cap
-         HupdatedPod_meta_Hdeepown_managedfields_cap".
+         HupdatedPod_meta_Hdeepown_managedfields
+         HupdatedPod_meta_Hdeepown_finalizers_cap".
       iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
@@ -641,10 +639,8 @@ Proof.
          HupdatedPod_meta_Hdeepown_labels_some
          HupdatedPod_meta_Hdeepown_annotations_some
          HupdatedPod_meta_Hdeepown_finalizers_some
-         HupdatedPod_meta_Hdeepown_managedfields_some
-         HupdatedPod_meta_Hdeepown_ownerreferences_cap
-         HupdatedPod_meta_Hdeepown_finalizers_cap
-         HupdatedPod_meta_Hdeepown_managedfields_cap".
+         HupdatedPod_meta_Hdeepown_managedfields
+         HupdatedPod_meta_Hdeepown_finalizers_cap".
       iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
@@ -740,17 +736,6 @@ Proof.
       done.
     }
     iEval (rewrite Hreleased_owner_references) in "Hlist_pre".
-    iAssert
-      (∃ owner_reference_values',
-        result ↦* owner_reference_values' ∗
-        ([∗ list] owner_reference_value;owner_reference
-          ∈ owner_reference_values';released_owner_references,
-          OwnerReferenceV.deepown
-            owner_reference_value owner_reference 1))%I
-      with "[Hresult Hlist_pre]" as "Hreleased_owner_references".
-    {
-      iExists result_values. iFrame.
-    }
     assert (Hreleased_owner_references_none :
         result = slice.nil ↔
           Some released_owner_references = None).
@@ -761,6 +746,9 @@ Proof.
         exact (Hresult_not_nil Hresult_nil).
       - done.
     }
+    iAssert (deepown_slice OwnerReferenceV.deepown result (Some released_owner_references) 1)%I
+      with "[Hresult Hlist_pre Hown_result_cap]" as "Hreleased_owner_references".
+    { rewrite /deepown_slice. iSplit; first done. iExists result_values. iFrame. }
     set released_meta_c :=
       updatedPod_meta_c
         <| v1.ObjectMeta.OwnerReferences' := result |>.
@@ -774,9 +762,8 @@ Proof.
           HupdatedPod_meta_Hdeepown_labels_some
           HupdatedPod_meta_Hdeepown_annotations_some
           HupdatedPod_meta_Hdeepown_finalizers_some
-          HupdatedPod_meta_Hdeepown_managedfields_some
-          Hown_result_cap HupdatedPod_meta_Hdeepown_finalizers_cap
-          HupdatedPod_meta_Hdeepown_managedfields_cap]"
+          HupdatedPod_meta_Hdeepown_managedfields
+          HupdatedPod_meta_Hdeepown_finalizers_cap]"
       as "Hreleased_meta".
     {
       unfold ObjectMetaV.deepown, release_pod_input.

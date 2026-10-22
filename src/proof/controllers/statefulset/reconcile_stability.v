@@ -447,7 +447,6 @@ Proof.
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
       Hdeepown_status & Hrestore_set & Hclaim_templates_map)".
-  iEval (rewrite /deepown_list) in "Hdeepown_volumeclaimtemplates".
   iDestruct "Hdeepown_volumeclaimtemplates" as
     "[Hclaim_templates_slice Hclaim_templates_deepown]".
   iAssert (statefulset_without_claim_templates_l
@@ -570,7 +569,7 @@ Proof.
   iDestruct "HP" as (last_claim_template) "HP". iNamed "HP".
   iAssert (statefulset_claim_templates set_phy set dq_set)
     with "[Hclaim_templates_slice Hclaim_templates_deepown]" as "Htemplates".
-  { iExists claim_templates_list. rewrite /deepown_list /claim_templates. iFrame. }
+  { iExists claim_templates_list. rewrite /claim_templates. iFrame. }
   iPoseProof ("Hrestore_set" with "Hset Htemplates") as "Hset".
   wp_auto. iApply "HΦ". iFrame.
 Qed.

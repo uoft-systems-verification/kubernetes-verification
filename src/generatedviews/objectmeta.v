@@ -303,15 +303,11 @@ Definition deepown (c : meta_v1.ObjectMeta.t) (v : t) dq : iProp Σ :=
   "Hdeepown_labels_some" ∷ (match v.(Labels') with Some value => ∃ values_c, c.(meta_v1.ObjectMeta.Labels') ↦${dq} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end) ∗
   "%Hdeepown_annotations_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Annotations') = null ↔ v.(Annotations') = None ⌝ ∗
   "Hdeepown_annotations_some" ∷ (match v.(Annotations') with Some value => ∃ values_c, c.(meta_v1.ObjectMeta.Annotations') ↦${dq} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end) ∗
-  "%Hdeepown_ownerreferences_none" ∷ ⌜ c.(meta_v1.ObjectMeta.OwnerReferences') = slice.nil ↔ v.(OwnerReferences') = None ⌝ ∗
-  "Hdeepown_ownerreferences_some" ∷ (match v.(OwnerReferences') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.OwnerReferences') values_c value (λ child_c child_v, OwnerReferenceV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_ownerreferences_cap" ∷ own_slice_cap meta_v1.OwnerReference.t c.(meta_v1.ObjectMeta.OwnerReferences') dq ∗
+  "Hdeepown_ownerreferences" ∷ (deepown_slice OwnerReferenceV.deepown) c.(meta_v1.ObjectMeta.OwnerReferences') v.(OwnerReferences') dq ∗
   "%Hdeepown_finalizers_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None ⌝ ∗
   "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with Some value => c.(meta_v1.ObjectMeta.Finalizers') ↦*{dq} value | None => True%I end) ∗
   "Hdeepown_finalizers_cap" ∷ own_slice_cap go_string c.(meta_v1.ObjectMeta.Finalizers') dq ∗
-  "%Hdeepown_managedfields_none" ∷ ⌜ c.(meta_v1.ObjectMeta.ManagedFields') = slice.nil ↔ v.(ManagedFields') = None ⌝ ∗
-  "Hdeepown_managedfields_some" ∷ (match v.(ManagedFields') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.ManagedFields') values_c value (λ child_c child_v, ManagedFieldsEntryV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_managedfields_cap" ∷ own_slice_cap meta_v1.ManagedFieldsEntry.t c.(meta_v1.ObjectMeta.ManagedFields') dq.
+  "Hdeepown_managedfields" ∷ (deepown_slice ManagedFieldsEntryV.deepown) c.(meta_v1.ObjectMeta.ManagedFields') v.(ManagedFields') dq.
 
 Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_name" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.Name') v.(Name') dq ∗
@@ -330,15 +326,11 @@ Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "Hdeepown_labels_some" ∷ (match v.(Labels') with Some value => ∃ values_c, c.(meta_v1.ObjectMeta.Labels') ↦${dq} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end) ∗
   "%Hdeepown_annotations_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Annotations') = null ↔ v.(Annotations') = None ⌝ ∗
   "Hdeepown_annotations_some" ∷ (match v.(Annotations') with Some value => ∃ values_c, c.(meta_v1.ObjectMeta.Annotations') ↦${dq} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end) ∗
-  "%Hdeepown_ownerreferences_none" ∷ ⌜ c.(meta_v1.ObjectMeta.OwnerReferences') = slice.nil ↔ v.(OwnerReferences') = None ⌝ ∗
-  "Hdeepown_ownerreferences_some" ∷ (match v.(OwnerReferences') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.OwnerReferences') values_c value (λ child_c child_v, OwnerReferenceV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_ownerreferences_cap" ∷ own_slice_cap meta_v1.OwnerReference.t c.(meta_v1.ObjectMeta.OwnerReferences') dq ∗
+  "Hdeepown_ownerreferences" ∷ (deepown_slice OwnerReferenceV.deepown) c.(meta_v1.ObjectMeta.OwnerReferences') v.(OwnerReferences') dq ∗
   "%Hdeepown_finalizers_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Finalizers') = slice.nil ↔ v.(Finalizers') = None ⌝ ∗
   "Hdeepown_finalizers_some" ∷ (match v.(Finalizers') with Some value => c.(meta_v1.ObjectMeta.Finalizers') ↦*{dq} value | None => True%I end) ∗
   "Hdeepown_finalizers_cap" ∷ own_slice_cap go_string c.(meta_v1.ObjectMeta.Finalizers') dq ∗
-  "%Hdeepown_managedfields_none" ∷ ⌜ c.(meta_v1.ObjectMeta.ManagedFields') = slice.nil ↔ v.(ManagedFields') = None ⌝ ∗
-  "Hdeepown_managedfields_some" ∷ (match v.(ManagedFields') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.ManagedFields') values_c value (λ child_c child_v, ManagedFieldsEntryV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_managedfields_cap" ∷ own_slice_cap meta_v1.ManagedFieldsEntry.t c.(meta_v1.ObjectMeta.ManagedFields') dq.
+  "Hdeepown_managedfields" ∷ (deepown_slice ManagedFieldsEntryV.deepown) c.(meta_v1.ObjectMeta.ManagedFields') v.(ManagedFields') dq.
 Proof. done. Qed.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
@@ -396,22 +388,14 @@ Proof.
   iSplitL.
   { done. }
   iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { iApply (deepown_slice_cap_nil (C := meta_v1.OwnerReference.t) (V := unit)). }
+  { iApply deepown_slice_nil. }
   iSplitL.
   { done. }
   iSplitL.
   { done. }
   iSplitL.
   { iApply (deepown_slice_cap_nil (C := go_string) (V := unit)). }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iApply (deepown_slice_cap_nil (C := meta_v1.ManagedFieldsEntry.t) (V := unit)).
+  iApply deepown_slice_nil.
 Qed.
 
 Lemma deepown_persist c v dq :
@@ -433,24 +417,18 @@ Proof.
   iAssert (|==> (match v.(Annotations') with Some value => ∃ values_c, c.(meta_v1.ObjectMeta.Annotations') ↦${DfracDiscarded} values_c ∗ ⌜ values_c = value ⌝ | None => True%I end))%I
     with "[Hdeepown_annotations_some]" as ">Hdeepown_annotations_some".
   { destruct v.(Annotations') as [value|]; last done. iDestruct "Hdeepown_annotations_some" as (values_c) "[Hm %Heq]". iMod (own_map_persist with "Hm") as "Hm". iModIntro. iExists values_c. iFrame "# ∗ %". }
-  iAssert (|==> (match v.(OwnerReferences') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.OwnerReferences') values_c value (λ child_c child_v, OwnerReferenceV.deepown child_c child_v DfracDiscarded) DfracDiscarded | None => True%I end))%I
-    with "[Hdeepown_ownerreferences_some]" as ">Hdeepown_ownerreferences_some".
-  { destruct v.(OwnerReferences') as [value|]; last done. iDestruct "Hdeepown_ownerreferences_some" as (values_c) "[Hsl Hvalues]". iMod (own_slice_persist with "Hsl") as "Hsl". iMod (big_sepL2_persist OwnerReferenceV.deepown dq values_c value with "Hvalues") as "Hvalues". { intros. apply OwnerReferenceV.deepown_persist. } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗". }
-  iAssert (|==> own_slice_cap meta_v1.OwnerReference.t c.(meta_v1.ObjectMeta.OwnerReferences') DfracDiscarded)%I
-    with "[Hdeepown_ownerreferences_cap]" as ">Hdeepown_ownerreferences_cap".
-  { iPersist "Hdeepown_ownerreferences_cap". by iModIntro. }
+  iAssert (|==> (deepown_slice OwnerReferenceV.deepown) c.(meta_v1.ObjectMeta.OwnerReferences') v.(OwnerReferences') DfracDiscarded)%I
+    with "[Hdeepown_ownerreferences]" as ">Hdeepown_ownerreferences".
+  { iApply (deepown_slice_persist with "Hdeepown_ownerreferences"). intros. apply OwnerReferenceV.deepown_persist. }
   iAssert (|==> (match v.(Finalizers') with Some value => c.(meta_v1.ObjectMeta.Finalizers') ↦*{DfracDiscarded} value | None => True%I end))%I
     with "[Hdeepown_finalizers_some]" as ">Hdeepown_finalizers_some".
   { destruct v.(Finalizers') as [value|]; last done. iApply (own_slice_persist with "Hdeepown_finalizers_some"). }
   iAssert (|==> own_slice_cap go_string c.(meta_v1.ObjectMeta.Finalizers') DfracDiscarded)%I
     with "[Hdeepown_finalizers_cap]" as ">Hdeepown_finalizers_cap".
   { iPersist "Hdeepown_finalizers_cap". by iModIntro. }
-  iAssert (|==> (match v.(ManagedFields') with Some value => ∃ values_c, deepown_list c.(meta_v1.ObjectMeta.ManagedFields') values_c value (λ child_c child_v, ManagedFieldsEntryV.deepown child_c child_v DfracDiscarded) DfracDiscarded | None => True%I end))%I
-    with "[Hdeepown_managedfields_some]" as ">Hdeepown_managedfields_some".
-  { destruct v.(ManagedFields') as [value|]; last done. iDestruct "Hdeepown_managedfields_some" as (values_c) "[Hsl Hvalues]". iMod (own_slice_persist with "Hsl") as "Hsl". iMod (big_sepL2_persist ManagedFieldsEntryV.deepown dq values_c value with "Hvalues") as "Hvalues". { intros. apply ManagedFieldsEntryV.deepown_persist. } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗". }
-  iAssert (|==> own_slice_cap meta_v1.ManagedFieldsEntry.t c.(meta_v1.ObjectMeta.ManagedFields') DfracDiscarded)%I
-    with "[Hdeepown_managedfields_cap]" as ">Hdeepown_managedfields_cap".
-  { iPersist "Hdeepown_managedfields_cap". by iModIntro. }
+  iAssert (|==> (deepown_slice ManagedFieldsEntryV.deepown) c.(meta_v1.ObjectMeta.ManagedFields') v.(ManagedFields') DfracDiscarded)%I
+    with "[Hdeepown_managedfields]" as ">Hdeepown_managedfields".
+  { iApply (deepown_slice_persist with "Hdeepown_managedfields"). intros. apply ManagedFieldsEntryV.deepown_persist. }
   iModIntro. iFrame "# ∗ %".
 Qed.
 
@@ -491,19 +469,11 @@ Proof. rewrite /deepown.
   apply bi.sep_persistent.
   { apply _. }
   apply bi.sep_persistent.
-  { destruct (v.(OwnerReferences')); apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
   { apply _. }
   apply bi.sep_persistent.
   { destruct (v.(Finalizers')); apply _. }
   apply bi.sep_persistent.
   { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { destruct (v.(ManagedFields')); apply _. }
   apply _.
 Qed.
 End def.

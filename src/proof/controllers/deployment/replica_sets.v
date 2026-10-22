@@ -424,9 +424,7 @@ Proof.
         Hthis_meta_Hdeepown_generation Hthis_meta_Hdeepown_deletiontimestamp_none
         Hthis_meta_Hdeepown_deletiongraceperiodseconds_none
         Hthis_meta_Hdeepown_labels_none Hthis_meta_Hdeepown_annotations_none
-        Hthis_meta_Hdeepown_ownerreferences_none
-        Hthis_meta_Hdeepown_finalizers_none Hthis_meta_Hdeepown_managedfields_none
-        this_meta_c.
+        Hthis_meta_Hdeepown_finalizers_none this_meta_c.
       (* Second operand: newRS's UID, read from its own entry of the list. The
          entry above is already restored, so newRS being the entry just
          inspected is fine. *)
@@ -454,9 +452,7 @@ Proof.
         Hnew_meta_Hdeepown_generation Hnew_meta_Hdeepown_deletiontimestamp_none
         Hnew_meta_Hdeepown_deletiongraceperiodseconds_none
         Hnew_meta_Hdeepown_labels_none Hnew_meta_Hdeepown_annotations_none
-        Hnew_meta_Hdeepown_ownerreferences_none
-        Hnew_meta_Hdeepown_finalizers_none Hnew_meta_Hdeepown_managedfields_none
-        new_meta_c.
+        Hnew_meta_Hdeepown_finalizers_none new_meta_c.
       wp_if_destruct.
       * (* Same UID as newRS: skip it, so the filter drops this entry. *)
         iApply wp_for_post_continue. wp_auto.

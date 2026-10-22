@@ -673,17 +673,20 @@ Proof.
   iIntros (Φ) "(#? & Hmeta) HΦ".
   iDestruct "Hmeta" as (c) "[Hl Hmeta]".
   wp_method_call. rewrite /v1.ObjectMeta__GetOwnerReferencesⁱᵐᵖˡ. wp_call.
-  iNamed "Hmeta". wp_auto.
+  iNamed "Hmeta".
+  iDestruct (deepown_slice_nil_iff with "Hdeepown_ownerreferences") as %Hnil.
+  iDestruct "Hdeepown_ownerreferences" as "(_ & %cs & Hsl & Hcap & Hrefs)".
+  wp_auto.
   iApply "HΦ". iSplit; first done.
-  destruct m.(ObjectMetaV.OwnerReferences') as [refs|] eqn:Hrefs.
-  - iDestruct "Hdeepown_ownerreferences_some" as (cs) "[Hsl Hrefs]".
-    iExists cs. iFrame. iIntros (cs') "[Hsl Hrefs]".
-    iExists c. iFrame. iFrame "%". iSplit.
-    + iPureIntro. rewrite Hrefs. exact Hdeepown_ownerreferences_none.
-    + rewrite Hrefs. iExists cs'. iFrame.
-  - iExists c. iFrame. iFrame "%". iSplit.
-    + iPureIntro. rewrite Hrefs. exact Hdeepown_ownerreferences_none.
-    + rewrite Hrefs. iFrame.
+  destruct m.(ObjectMetaV.OwnerReferences') as [refs|] eqn:Hrefs_opt.
+  - iExists cs. iFrame. iIntros (cs') "[Hsl Hrefs]".
+    iExists c. iFrame. iFrame "%".
+    rewrite /deepown_slice Hrefs_opt. iSplit; first done.
+    iFrame.
+  - iExists c. iFrame. iFrame "%".
+    rewrite /deepown_slice Hrefs_opt. iSplit; first done.
+    iFrame.
+
 Qed.
 
 Definition is_controller_reference_of (m : ObjectMetaV.t) (ref : OwnerReferenceV.t) : Prop :=

@@ -184,9 +184,7 @@ Definition deepown (c : api_apps_v1.ReplicaSetStatus.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_terminatingreplicas_none" ∷ ⌜ c.(api_apps_v1.ReplicaSetStatus.TerminatingReplicas') = null ↔ v.(TerminatingReplicas') = None ⌝ ∗
   "Hdeepown_terminatingreplicas_some" ∷ (match v.(TerminatingReplicas') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetStatus.TerminatingReplicas') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_observedgeneration" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetStatus.ObservedGeneration') v.(ObservedGeneration') dq ∗
-  "%Hdeepown_conditions_none" ∷ ⌜ c.(api_apps_v1.ReplicaSetStatus.Conditions') = slice.nil ↔ v.(Conditions') = None ⌝ ∗
-  "Hdeepown_conditions_some" ∷ (match v.(Conditions') with Some value => ∃ values_c, deepown_list c.(api_apps_v1.ReplicaSetStatus.Conditions') values_c value (λ child_c child_v, ReplicaSetConditionV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_conditions_cap" ∷ own_slice_cap api_apps_v1.ReplicaSetCondition.t c.(api_apps_v1.ReplicaSetStatus.Conditions') dq.
+  "Hdeepown_conditions" ∷ (deepown_slice ReplicaSetConditionV.deepown) c.(api_apps_v1.ReplicaSetStatus.Conditions') v.(Conditions') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -216,11 +214,7 @@ Proof.
   { done. }
   iSplitL.
   { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iApply (deepown_slice_cap_nil (C := api_apps_v1.ReplicaSetCondition.t) (V := unit)).
+  iApply deepown_slice_nil.
 Qed.
 
 Lemma deepown_persist c v dq :
@@ -230,12 +224,9 @@ Proof.
   iAssert (|==> (match v.(TerminatingReplicas') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetStatus.TerminatingReplicas') ↦{DfracDiscarded} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_terminatingreplicas_some]" as ">Hdeepown_terminatingreplicas_some".
   { destruct v.(TerminatingReplicas') as [value|]; last done. iDestruct "Hdeepown_terminatingreplicas_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iModIntro. iExact "Hv". } iModIntro. iExists value_c. iFrame "# ∗". }
-  iAssert (|==> (match v.(Conditions') with Some value => ∃ values_c, deepown_list c.(api_apps_v1.ReplicaSetStatus.Conditions') values_c value (λ child_c child_v, ReplicaSetConditionV.deepown child_c child_v DfracDiscarded) DfracDiscarded | None => True%I end))%I
-    with "[Hdeepown_conditions_some]" as ">Hdeepown_conditions_some".
-  { destruct v.(Conditions') as [value|]; last done. iDestruct "Hdeepown_conditions_some" as (values_c) "[Hsl Hvalues]". iMod (own_slice_persist with "Hsl") as "Hsl". iMod (big_sepL2_persist ReplicaSetConditionV.deepown dq values_c value with "Hvalues") as "Hvalues". { intros. apply ReplicaSetConditionV.deepown_persist. } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗". }
-  iAssert (|==> own_slice_cap api_apps_v1.ReplicaSetCondition.t c.(api_apps_v1.ReplicaSetStatus.Conditions') DfracDiscarded)%I
-    with "[Hdeepown_conditions_cap]" as ">Hdeepown_conditions_cap".
-  { iPersist "Hdeepown_conditions_cap". by iModIntro. }
+  iAssert (|==> (deepown_slice ReplicaSetConditionV.deepown) c.(api_apps_v1.ReplicaSetStatus.Conditions') v.(Conditions') DfracDiscarded)%I
+    with "[Hdeepown_conditions]" as ">Hdeepown_conditions".
+  { iApply (deepown_slice_persist with "Hdeepown_conditions"). intros. apply ReplicaSetConditionV.deepown_persist. }
   iModIntro. iFrame "# ∗ %".
 Qed.
 
@@ -255,10 +246,6 @@ Proof. rewrite /deepown.
   { destruct (v.(TerminatingReplicas')); apply _. }
   apply bi.sep_persistent.
   { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { destruct (v.(Conditions')); apply _. }
   apply _.
 Qed.
 End def.

@@ -776,9 +776,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -852,9 +852,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -899,9 +899,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -977,9 +977,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1085,9 +1085,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1163,9 +1163,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1210,9 +1210,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1288,9 +1288,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
-            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }

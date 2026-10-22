@@ -265,6 +265,10 @@ def main():
             ]
         elem = child["Elem"]
         ctype = physical(elem)
+        if child["Kind"] == "slice" and not raw_pure(elem):
+            proof = ('iApply (deepown_slice_persist with "' + tag + '"). intros. '
+                     + persist(elem))
+            return [(tag, expression, proof, zero_proof(child_key), False)]
         none = "slice.nil" if child["Kind"] == "slice" else "null"
         result = [(tag + "_none", "⌜ " + c + " = " + none + " ↔ " + v + " = None ⌝", "", "done.", True)]
         hypothesis = tag + "_some"
@@ -285,19 +289,10 @@ def main():
         elif nodes[elem]["Kind"] in SCALARS:
             some = c + " ↦*{dq} value"
             proof = opening + 'iApply (own_slice_persist with "' + hypothesis + '").'
-        # Preserve the named list interface for generated view records, even
-        # when exclusions make their recursive ownership predicates pure.
         elif raw_pure(elem):
             some = "∃ values_c, " + c + " ↦*{dq} values_c ∗ ⌜ value = " + module(elem) + ".of_go <$> values_c ⌝"
             proof = (opening + 'iDestruct "' + hypothesis + '" as (values_c) "[Hsl %Heq]". '
                      + 'iMod (own_slice_persist with "Hsl") as "Hsl". iModIntro. iExists values_c. iFrame "# ∗ %".')
-        else:
-            some = ("∃ values_c, deepown_list " + c + " values_c value "
-                    + "(λ child_c child_v, " + predicate(elem) + " child_c child_v dq) dq")
-            proof = (opening + 'iDestruct "' + hypothesis + '" as (values_c) "[Hsl Hvalues]". '
-                     + 'iMod (own_slice_persist with "Hsl") as "Hsl". '
-                     + 'iMod (big_sepL2_persist ' + predicate(elem) + ' dq values_c value with "Hvalues") as "Hvalues". '
-                     + '{ intros. ' + persist(elem) + ' } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗".')
         result.append((hypothesis, "(match " + v + " with Some value => " + some + " | None => True%I end)", proof, "done.", False))
         if child["Kind"] == "slice":
             result.append((tag + "_cap", "own_slice_cap " + ctype + " " + c + " dq",

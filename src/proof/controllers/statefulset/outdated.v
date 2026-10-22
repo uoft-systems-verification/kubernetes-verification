@@ -59,7 +59,7 @@ Proof.
   iEval (rewrite PodSpecV.deepown_split /without_statefulset_fields /PodAPI.without_managed /=).
   iSplitR; first done.
   iSplitR.
-  { iExists ([] : list v1.Volume.t). rewrite /deepown_list big_sepL2_nil.
+  { iExists ([] : list v1.Volume.t). rewrite big_sepL2_nil.
     iSplit; [iApply (own_slice_nil (V := v1.Volume.t))|done]. }
   iFrame "% # ∗".
   iSplitR; first done.

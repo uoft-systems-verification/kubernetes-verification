@@ -1,12 +1,5 @@
 From New.proof Require Import prelude empty_ffi util.
 
-(* The backing slice is owned at fraction [dq] so the list can be shared
-   read-only (e.g. by concurrent goroutines). *)
-Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
-    {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
-    (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) (dq : dfrac) : iProp Σ :=
-  c_slice ↦*{dq} cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
-
 (** Recursive ownership combinators for API views. Owned pointers, slices, and
     maps are represented by values, preserving nil versus allocated empty data. *)
 Section deepown.
@@ -46,6 +39,10 @@ Definition deepown_slice (P : C → V → dfrac → iProp Σ)
   ⌜ sl = slice.nil ↔ vs = None ⌝ ∗
   ∃ cs, sl ↦*{dq} cs ∗ own_slice_cap C sl dq ∗
     [∗ list] c;v ∈ cs;default [] vs, P c v dq.
+
+Lemma deepown_slice_nil_iff P sl vs dq :
+  deepown_slice P sl vs dq ⊢ ⌜ sl = slice.nil ↔ vs = None ⌝.
+Proof. rewrite /deepown_slice. iIntros "[%Hnil _]". done. Qed.
 
 (* Internal numeric buffers represent words, rather than API collections.
    big.Int.Set may copy an allocated empty buffer to nil. Own its complete

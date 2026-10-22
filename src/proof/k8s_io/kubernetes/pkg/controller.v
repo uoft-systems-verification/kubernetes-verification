@@ -860,11 +860,11 @@ Proof.
           template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') ⌝)%I
       with "[Hannotations]" as "Hannotations_some".
     { iExists _. iFrame. done. }
-    iAssert (∃ owners_c, owners_sl ↦* owners_c ∗
-        [∗ list] owner_c;owner ∈ owners_c;[ref],
-          OwnerReferenceV.deepown owner_c owner 1)%I
-      with "[Howners_result Href]" as "Howners_some".
-    { iExists [ref_c]. simpl. iFrame. }
+    iAssert (deepown_slice OwnerReferenceV.deepown owners_sl (Some [ref]) 1)%I
+      with "[Howners_result Howners_cap_result Href]" as "Howners_deepown".
+    { rewrite /deepown_slice. iSplit.
+      { iPureIntro. split; [contradiction|discriminate]. }
+      iExists [ref_c]. simpl. iFrame. }
     iRename "Hfinalizers" into "Hfinalizers_some".
     set pod_meta_c : v1.ObjectMeta.t :=
       v1.ObjectMeta.mk ""%go
@@ -880,16 +880,15 @@ Proof.
       (PodV.objectmeta_ptr pod_l) pod_meta_c (DfracOwn 1)
       Hmeta_l_not_null with "Hmeta_fields") as "Hmeta_l".
     iPoseProof (TimeV.deepown_zero (Σ:=Σ) (DfracOwn 1)) as "Htime".
-    iPoseProof (own_slice_cap_nil (V:=v1.ManagedFieldsEntry.t)) as "Hnil_managed_cap".
+    iAssert (deepown_slice ManagedFieldsEntryV.deepown slice.nil None 1)%I as "Hmanaged".
+    { iApply deepown_slice_nil. }
     iAssert (ObjectMetaV.deepown pod_meta_c
         (generated_pod_meta template
           (KObjectV.objectmeta parent).(ObjectMetaV.Name') (Some [ref])) 1)%I
-      with "[Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some
-        Howners_cap_result Hfinalizers_cap Hnil_managed_cap]"
+      with "[Htime Hlabels_some Hannotations_some Howners_deepown Hfinalizers_some Hfinalizers_cap Hmanaged]"
       as "Hmeta".
     { rewrite /ObjectMetaV.deepown /generated_pod_meta /pod_meta_c /=.
-      iFrame "Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some
-        Howners_cap_result Hfinalizers_cap Hnil_managed_cap".
+      iFrame "Htime Hlabels_some Hannotations_some Howners_deepown Hfinalizers_some Hfinalizers_cap Hmanaged".
       iPureIntro. Timeout 10 naive_solver. }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (generated_pod_meta template
@@ -969,17 +968,19 @@ Proof.
       (PodV.objectmeta_ptr pod_l) pod_meta_c (DfracOwn 1)
       Hmeta_l_not_null with "Hmeta_fields") as "Hmeta_l".
     iPoseProof (TimeV.deepown_zero (Σ:=Σ) (DfracOwn 1)) as "Htime".
-    iPoseProof (own_slice_cap_nil (V:=v1.ManagedFieldsEntry.t)) as "Hnil_managed_cap".
-    iPoseProof (own_slice_cap_nil (V:=v1.OwnerReference.t)) as "Hnil_owners_cap".
+    iAssert (deepown_slice ManagedFieldsEntryV.deepown slice.nil None 1)%I as "Hmanaged".
+    { iApply deepown_slice_nil. }
+    iAssert (deepown_slice OwnerReferenceV.deepown slice.nil None 1)%I as "Howners_deepown".
+    { iApply deepown_slice_nil. }
     iAssert (ObjectMetaV.deepown pod_meta_c
         (generated_pod_meta template
           (KObjectV.objectmeta parent).(ObjectMetaV.Name') None) 1)%I
       with "[Htime Hlabels_some Hannotations_some Hfinalizers_some Hfinalizers_cap
-        Hnil_managed_cap Hnil_owners_cap]"
+        Hmanaged Howners_deepown]"
       as "Hmeta".
     { rewrite /ObjectMetaV.deepown /generated_pod_meta /pod_meta_c /=.
       iFrame "Htime Hlabels_some Hannotations_some Hfinalizers_some Hfinalizers_cap
-        Hnil_managed_cap Hnil_owners_cap".
+        Hmanaged Howners_deepown".
       iPureIntro. Timeout 10 naive_solver. }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (generated_pod_meta template

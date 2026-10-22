@@ -224,9 +224,11 @@ Proof.
   wp_apply (wp_map_insert (K:=go_string) (V:=go_string) go.string ml_l _ key value
     with "Hml") as "Hml".
   iDestruct (own_map_not_nil with "Hml") as %Hml_l_nn.
+  iDestruct "Hsel_Hdeepown_matchexpressions" as
+    "(%Hsel_Hdeepown_matchexpressions_none & %es_c &
+      Hes_sl & Hsel_Hdeepown_matchexpressions_cap & Hes)".
   destruct selector.(LabelSelectorV.MatchExpressions') as [es|] eqn:Hes.
-  - iDestruct "Hsel_Hdeepown_matchexpressions_some" as (es_c) "[Hes_sl Hes]".
-    assert (v1.LabelSelector.MatchExpressions' sel_c ≠ slice.nil) as Hes_nn.
+  - assert (v1.LabelSelector.MatchExpressions' sel_c ≠ slice.nil) as Hes_nn.
     { intros Hn. apply Hsel_Hdeepown_matchexpressions_none in Hn. congruence. }
     iDestruct (own_slice_len with "Hes_sl") as %[Hes_len Hes_len_nn].
     iDestruct (big_sepL2_length with "Hes") as %Hes_models_len.
@@ -403,7 +405,7 @@ Proof.
           iAssert (typed_pointsto_def selector_l sel_c dq) with "[Hsel_fields]" as "Hsel_fields".
           { iNamed "Hsel_fields". destruct sel_c. simpl. iFrame. }
           iApply (struct_fields_combine _ _ _ Hsel_nn with "Hsel_fields"). }
-        rewrite /LabelSelectorV.deepown Hes. iFrame "∗%". }
+        rewrite /LabelSelectorV.deepown /deepown_slice Hes. iFrame "∗%". }
       iSplitL.
       { iExists {| v1.LabelSelector.MatchLabels' := ml_l;
                    v1.LabelSelector.MatchExpressions' := new_sl |}.
@@ -415,9 +417,15 @@ Proof.
           { iNamed "Hnew_fields". simpl. iFrame. }
           iApply (struct_fields_combine _ _ _ Hnew_nn with "Hnew_fields"). }
         rewrite /LabelSelectorV.deepown /= /new_me.
+        iSplit.
+        { iPureIntro. split; intros H; [contradiction|discriminate]. }
+        iSplitL "Hml".
+        { iExists (<[key:=value]> (default ∅ selector.(LabelSelectorV.MatchLabels'))). iFrame. done. }
         destruct (decide (new_sl = slice.nil)) as [Hnil|Hnnil].
-        - iFrame. iPureIntro. split_and!; try done.
-        - iFrame. iPureIntro. split_and!; try done. }
+        - subst new_sl. iApply deepown_slice_nil.
+        - rewrite /deepown_slice. iSplit.
+          { iPureIntro. split; intros H; [contradiction|discriminate]. }
+          iExists new_cs. iFrame. }
       iPureIntro.
       rewrite /selector_norm /selector_with_label /= Hes /new_me.
       destruct (decide (new_sl = slice.nil)) as [Hnil|Hnnil].
@@ -439,19 +447,18 @@ Proof.
     { iApply own_slice_cap_nil. }
     iApply ("HΦ" $! new_l (LabelSelectorV.mk
       (Some (<[key:=value]> (default ∅ selector.(LabelSelectorV.MatchLabels')))) None)).
-    iSplitL "Hself_MatchLabels Hself_MatchExpressions Hsel_Hdeepown_matchlabels_some Hsel_Hdeepown_matchexpressions_cap".
+    iSplitL "Hself_MatchLabels Hself_MatchExpressions Hsel_Hdeepown_matchlabels_some Hes_sl Hes Hsel_Hdeepown_matchexpressions_cap".
     { iExists sel_c.
       iSplitL "Hself_MatchLabels Hself_MatchExpressions".
       { iCombineNamed "Hself_*" as "Hsel_fields".
         iAssert (typed_pointsto_def selector_l sel_c dq) with "[Hsel_fields]" as "Hsel_fields".
         { iNamed "Hsel_fields". destruct sel_c. simpl in Hes_nil. subst. simpl. iFrame. }
         iApply (struct_fields_combine _ _ _ Hsel_nn with "Hsel_fields"). }
-      rewrite /LabelSelectorV.deepown Hes.
+      rewrite /LabelSelectorV.deepown /deepown_slice Hes.
       iSplit; first done.
       iSplitL "Hsel_Hdeepown_matchlabels_some"; first iExact "Hsel_Hdeepown_matchlabels_some".
       iSplit; first (iPureIntro; rewrite Hes_nil; done).
-      iSplit; first done. rewrite Hes_nil.
-      iApply (deepown_slice_cap_nil (V := unit)). }
+      iExists es_c. rewrite Hes_nil. iFrame. }
     iSplitL.
     { iExists {| v1.LabelSelector.MatchLabels' := ml_l;
                  v1.LabelSelector.MatchExpressions' := slice.nil |}.
@@ -467,7 +474,7 @@ Proof.
       { iPureIntro. split; intros H; [contradiction|discriminate]. }
       iSplitL "Hml".
       { iExists (<[key:=value]> (default ∅ selector.(LabelSelectorV.MatchLabels'))). iFrame. done. }
-      iSplit; first done. iSplit; first done. iApply own_slice_cap_nil. }
+      iApply deepown_slice_nil. }
     iPureIntro. rewrite /selector_norm /selector_with_label /= Hes. done.
 Qed.
 

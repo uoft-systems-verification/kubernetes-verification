@@ -182,7 +182,7 @@ Proof.
     split; [done | intros; contradiction].
   Ltac finish_identity_false_with_labels set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-      Hpod_l_not_null labels Hlabels Hlabels_none Hmanagedfields_none :=
+      Hpod_l_not_null labels Hlabels Hlabels_none :=
     iAssert (match pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') with
         | Some vl => ∃ cl,
             v1.ObjectMeta.Labels' pod_meta_c ↦${dq_pod} cl ∗ ⌜ cl = vl ⌝
@@ -216,8 +216,7 @@ Proof.
       repeat (iSplit; first (iPureIntro; done));
       iSplit;
       [ iPureIntro; rewrite Hlabels; exact Hlabels_none | ];
-      repeat (iSplit; first (iPureIntro; done));
-      iPureIntro; exact Hmanagedfields_none
+      repeat (iSplit; first (iPureIntro; done)); iFrame "%"
     | ];
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         pod.(PodV.ObjectMeta') dq_pod)
@@ -239,7 +238,7 @@ Proof.
     split; [done | intros; contradiction].
   Ltac finish_identity_false_without_labels set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-      Hpod_l_not_null Hlabels Hlabels_none Hmanagedfields_none :=
+      Hpod_l_not_null Hlabels Hlabels_none :=
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta";
     iAssert (ObjectMetaV.deepown set_meta_c
         set.(StatefulSetV.ObjectMeta') dq_set)
@@ -268,8 +267,7 @@ Proof.
       iSplit;
       [ iPureIntro; rewrite Hlabels; exact Hlabels_none | ];
       iSplit; [ rewrite Hlabels; done | ];
-      do 3 (iSplit; first (iPureIntro; assumption));
-      iPureIntro; exact Hmanagedfields_none
+      repeat (iSplit; first (iPureIntro; assumption)); iFrame "%"
     | ];
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         pod.(PodV.ObjectMeta') dq_pod)
@@ -320,8 +318,7 @@ Proof.
       2: {
         finish_identity_false_with_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none.
       }
       wp_apply (wp_map_lookup1 with "Hpod_labels") as "Hpod_labels".
       wp_apply (wp_strconv_Itoa with "[]").
@@ -331,8 +328,7 @@ Proof.
       2: {
         finish_identity_false_with_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none.
       }
       exfalso.
       apply Hnot_matches.
@@ -405,12 +401,10 @@ Proof.
           end.
         * finish_identity_false_without_labels set_meta_c set dq_set set_l
             set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-            Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none
-            Hpod_meta_Hdeepown_managedfields_none.
+            Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none.
       + finish_identity_false_without_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none.
   }
   unfold pod_identity_matches in Hmatches.
   destruct (parse_member_name
@@ -509,7 +503,7 @@ Proof.
     iSplit.
     { iPureIntro. rewrite Hlabels. exact Hpod_meta_Hdeepown_labels_none. }
     repeat (iSplit; first (iPureIntro; done)).
-    iPureIntro. exact Hpod_meta_Hdeepown_managedfields_none. }
+    all: iFrame "%". }
   iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
       pod.(PodV.ObjectMeta') dq_pod)
     with "[Hpod_objectmeta_field Hpod_objectmeta]" as "Hpod_objectmeta_l".
@@ -669,8 +663,7 @@ Proof.
       rewrite /ObjectMetaV.deepown /=.
       iFrame.
       repeat (iSplit; first (iPureIntro; simpl; try done)).
-      - apply Hpod_meta_Hdeepown_managedfields_none.
-      - iPureIntro. apply Hpod_meta_Hdeepown_managedfields_none.
+      all: try iPureIntro; tauto.
     }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' :=
@@ -781,8 +774,7 @@ Proof.
     rewrite /ObjectMetaV.deepown /=.
     iFrame.
     repeat (iSplit; first (iPureIntro; simpl; try done)).
-    - apply Hpod_meta_Hdeepown_managedfields_none.
-    - iPureIntro. apply Hpod_meta_Hdeepown_managedfields_none.
+    all: try iPureIntro; tauto.
   }
   iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' :=

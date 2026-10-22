@@ -229,9 +229,7 @@ Definition deepown (c : api_apps_v1.StatefulSetSpec.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_selector_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None ⌝ ∗
   "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodFields.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
   "Hdeepown_template" ∷ PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
-  "%Hdeepown_volumeclaimtemplates_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔ v.(VolumeClaimTemplates') = None ⌝ ∗
-  "Hdeepown_volumeclaimtemplates_some" ∷ (match v.(VolumeClaimTemplates') with Some value => ∃ values_c, deepown_list c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') values_c value (λ child_c child_v, PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_volumeclaimtemplates_cap" ∷ own_slice_cap api_core_v1.PersistentVolumeClaim.t c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') dq ∗
+  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
   "%Hdeepown_servicename" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.ServiceName') v.(ServiceName') dq ∗
   "%Hdeepown_podmanagementpolicy" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.PodManagementPolicy') v.(PodManagementPolicy') dq ∗
   "Hdeepown_updatestrategy" ∷ StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') dq ∗
@@ -249,9 +247,7 @@ Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_selector_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None ⌝ ∗
   "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodFields.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
   "Hdeepown_template" ∷ PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
-  "%Hdeepown_volumeclaimtemplates_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔ v.(VolumeClaimTemplates') = None ⌝ ∗
-  "Hdeepown_volumeclaimtemplates_some" ∷ (match v.(VolumeClaimTemplates') with Some value => ∃ values_c, deepown_list c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') values_c value (λ child_c child_v, PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown child_c child_v dq) dq | None => True%I end) ∗
-  "Hdeepown_volumeclaimtemplates_cap" ∷ own_slice_cap api_core_v1.PersistentVolumeClaim.t c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') dq ∗
+  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
   "%Hdeepown_servicename" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.ServiceName') v.(ServiceName') dq ∗
   "%Hdeepown_podmanagementpolicy" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.PodManagementPolicy') v.(PodManagementPolicy') dq ∗
   "Hdeepown_updatestrategy" ∷ StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') dq ∗
@@ -293,11 +289,7 @@ Proof.
   iSplitL.
   { iApply PodFields.PodTemplateSpecV.deepown_zero. }
   iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { iApply (deepown_slice_cap_nil (C := api_core_v1.PersistentVolumeClaim.t) (V := unit)). }
+  { iApply deepown_slice_nil. }
   iSplitL.
   { done. }
   iSplitL.
@@ -332,12 +324,9 @@ Proof.
   iAssert (|==> PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') DfracDiscarded)%I
     with "[Hdeepown_template]" as ">Hdeepown_template".
   { iApply (PodFields.PodTemplateSpecV.deepown_persist with "Hdeepown_template"). }
-  iAssert (|==> (match v.(VolumeClaimTemplates') with Some value => ∃ values_c, deepown_list c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') values_c value (λ child_c child_v, PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown child_c child_v DfracDiscarded) DfracDiscarded | None => True%I end))%I
-    with "[Hdeepown_volumeclaimtemplates_some]" as ">Hdeepown_volumeclaimtemplates_some".
-  { destruct v.(VolumeClaimTemplates') as [value|]; last done. iDestruct "Hdeepown_volumeclaimtemplates_some" as (values_c) "[Hsl Hvalues]". iMod (own_slice_persist with "Hsl") as "Hsl". iMod (big_sepL2_persist PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown dq values_c value with "Hvalues") as "Hvalues". { intros. apply PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown_persist. } iModIntro. iExists values_c. rewrite /deepown_list. iFrame "# ∗". }
-  iAssert (|==> own_slice_cap api_core_v1.PersistentVolumeClaim.t c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') DfracDiscarded)%I
-    with "[Hdeepown_volumeclaimtemplates_cap]" as ">Hdeepown_volumeclaimtemplates_cap".
-  { iPersist "Hdeepown_volumeclaimtemplates_cap". by iModIntro. }
+  iAssert (|==> (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') DfracDiscarded)%I
+    with "[Hdeepown_volumeclaimtemplates]" as ">Hdeepown_volumeclaimtemplates".
+  { iApply (deepown_slice_persist with "Hdeepown_volumeclaimtemplates"). intros. apply PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown_persist. }
   iAssert (|==> StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') DfracDiscarded)%I
     with "[Hdeepown_updatestrategy]" as ">Hdeepown_updatestrategy".
   { iApply (StatefulSetUpdateStrategyV.deepown_persist with "Hdeepown_updatestrategy"). }
@@ -365,10 +354,6 @@ Proof. rewrite /deepown.
   { destruct (v.(Selector')); apply _. }
   apply bi.sep_persistent.
   { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { destruct (v.(VolumeClaimTemplates')); apply _. }
   apply bi.sep_persistent.
   { apply _. }
   apply bi.sep_persistent.

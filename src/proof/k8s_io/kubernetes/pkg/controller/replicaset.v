@@ -167,27 +167,32 @@ Proof.
   wp_auto.
   iPoseProof "Hdeepown" as "Hdeepown'".
   rewrite {2}/ReplicaSetStatusV.deepown. iNamed "Hdeepown'".
+  iDestruct "Hdeepown_conditions" as
+    "(%Hdeepown_conditions_none & %cs & #Hsl & #Hcap & #Hvalues)".
   destruct status.(ReplicaSetStatusV.Conditions') as [conds|] eqn:Hconds.
-  - iDestruct "Hdeepown_conditions_some" as (cs) "[#Hsl #Hvalues]".
-    wp_apply (wp_filterOutCondition with "[$Hsl]").
+  - wp_apply (wp_filterOutCondition with "[$Hsl]").
     iIntros (sl') "(_ & Hsl' & Hnew_cap & %Hsl'_nil)". wp_auto.
     iMod (own_slice_persist with "Hsl'") as "#Hsl'". iPersist "Hnew_cap".
     iPoseProof (filter_condition_ownership ct with "Hvalues") as "#Hfiltered".
     iDestruct (big_sepL2_length with "Hfiltered") as %Hfiltered_len.
     iModIntro. iApply "HΦ". iFrame "Hl".
     rewrite /ReplicaSetStatusV.deepown /conditions_without /= Hconds.
-    destruct (filter (keep_condition ct) conds) as [|v kept] eqn:Hkept; simpl in Hfiltered_len |- *.
+    destruct (filter (keep_condition ct) conds) as [|v kept] eqn:Hkept; simpl in Hfiltered_len |- *;
+      rewrite Hkept /= in Hfiltered_len.
     + assert (filter (keep_condition_c ct) cs = []) as Hempty.
       { apply length_zero_iff_nil. exact Hfiltered_len. }
       assert (sl' = slice.nil) as -> by (by apply Hsl'_nil).
-      iFrame "# %". done.
+      iAssert (deepown_slice ReplicaSetConditionV.deepown slice.nil None DfracDiscarded)%I as "#Hnew_values".
+      { iApply deepown_slice_nil. }
+      iFrame "# %".
     + assert (sl' ≠ slice.nil) as Hnonnull.
       { intros Hnil. apply Hsl'_nil in Hnil. rewrite Hnil in Hfiltered_len. discriminate. }
       assert (sl' = slice.nil ↔ (Some (v :: kept) : option (list ReplicaSetConditionV.t)) = None) as Hnone.
       { split; intros H; [contradiction|discriminate]. }
-      iAssert (∃ values_c, deepown_list sl' values_c (v :: kept)
-        (λ c v, ReplicaSetConditionV.deepown c v DfracDiscarded) DfracDiscarded)%I as "#Hnew_values".
-      { iExists (filter (keep_condition_c ct) cs). rewrite /deepown_list. iFrame "#". }
+      iAssert (deepown_slice ReplicaSetConditionV.deepown sl' (Some (v :: kept)) DfracDiscarded)
+        as "#Hnew_values".
+      { rewrite /deepown_slice. iSplit; first done.
+        iExists (filter (keep_condition_c ct) cs). iFrame "#". }
       iFrame "# %".
 
   - assert (status_c.(api_apps_v1.ReplicaSetStatus.Conditions') = slice.nil) as Hnil.
@@ -199,7 +204,9 @@ Proof.
     assert (sl' = slice.nil) as -> by (by apply Hsl'_nil).
     iModIntro. iApply "HΦ". iFrame "Hl".
     rewrite /ReplicaSetStatusV.deepown /conditions_without /=.
-    iFrame "# %". done.
+    iAssert (deepown_slice ReplicaSetConditionV.deepown slice.nil None DfracDiscarded)%I as "#Hnew_values".
+    { iApply deepown_slice_nil. }
+    iFrame "# %".
 Qed.
 
 (* [GetCondition] returns nil exactly when no condition has the given type. *)
@@ -214,16 +221,8 @@ Lemma wp_GetCondition (status_c : api_apps_v1.ReplicaSetStatus.t) status (ct : g
 Proof.
   wp_start as "#Hdeepown".
   rewrite /ReplicaSetStatusV.deepown. iNamed "Hdeepown".
-  iAssert (∃ cs, status_c.(api_apps_v1.ReplicaSetStatus.Conditions') ↦*□ cs ∗
-    ⌜(api_apps_v1.ReplicaSetCondition.Type' <$> cs) =
-      (ReplicaSetConditionV.Type' <$> default [] status.(ReplicaSetStatusV.Conditions'))⌝)%I
-    as (cs) "[#Hsl %Htypes]".
-  { destruct status.(ReplicaSetStatusV.Conditions') as [conds|] eqn:Hconds.
-    - iDestruct "Hdeepown_conditions_some" as (cs) "[Hsl Hvalues]".
-      iDestruct (condition_types_agree with "Hvalues") as %Htypes.
-      iExists cs. by iFrame "# %".
-    - iExists []. rewrite (proj2 Hdeepown_conditions_none) //. iSplit; last done.
-      iApply own_slice_nil. }
+  iDestruct "Hdeepown_conditions" as "(_ & %cs & #Hsl & _ & Hvalues)".
+  iDestruct (condition_types_agree with "Hvalues") as %Htypes.
   assert (Forall (keep_condition_c ct) cs ↔
     Forall (keep_condition ct) (default [] status.(ReplicaSetStatusV.Conditions'))) as Hforall.
   { trans (Forall (λ ty, ty ≠ ct) (api_apps_v1.ReplicaSetCondition.Type' <$> cs)).

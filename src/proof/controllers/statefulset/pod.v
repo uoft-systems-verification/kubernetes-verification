@@ -250,8 +250,7 @@ Proof.
     with "[Hset_spec_deepown_Hdeepown_replicas_some
       Hset_spec_deepown_Hdeepown_selector_some
       Hset_spec_deepown_Hdeepown_template
-      Hset_spec_deepown_Hdeepown_volumeclaimtemplates_some
-      Hset_spec_deepown_Hdeepown_volumeclaimtemplates_cap
+      Hset_spec_deepown_Hdeepown_volumeclaimtemplates
       Hset_spec_deepown_Hdeepown_updatestrategy
       Hset_spec_deepown_Hdeepown_revisionhistorylimit_some
       Hset_spec_deepown_Hdeepown_persistentvolumeclaimretentionpolicy_some

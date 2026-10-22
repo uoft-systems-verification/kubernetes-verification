@@ -272,7 +272,8 @@ Definition deepown_rest (c : v1.PodSpec.t) (v : t) dq : iProp Σ :=
 Lemma deepown_split c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_volumes_none" ∷ ⌜c.(v1.PodSpec.Volumes') = slice.nil ↔ v.(Volumes') = None⌝ ∗
   "Hdeepown_volumes" ∷ (∃ volumes,
-    deepown_list c.(v1.PodSpec.Volumes') volumes (volumes_list v) (λ c v, VolumeV.deepown c v dq) dq) ∗
+    c.(v1.PodSpec.Volumes') ↦*{dq} volumes ∗
+    [∗ list] c;v ∈ volumes;volumes_list v, VolumeV.deepown c v dq) ∗
   "%Hdeepown_hostname" ∷ ⌜c.(v1.PodSpec.Hostname') = v.(Hostname')⌝ ∗
   "%Hdeepown_subdomain" ∷ ⌜c.(v1.PodSpec.Subdomain') = v.(Subdomain')⌝ ∗
   "Hdeepown_volumes_cap" ∷ own_slice_cap v1.Volume.t c.(v1.PodSpec.Volumes') dq ∗
@@ -282,7 +283,7 @@ Proof.
   - rewrite /deepown. iNamed 1.
     iDestruct "Hdeepown_volumes" as "(%Hnil & %vs & Hsl & Hcap & Hvs)".
     iSplitR; first done. iSplitL "Hsl Hvs".
-    { iExists vs. rewrite /deepown_list. iFrame. }
+    { iExists vs. iFrame. }
     iSplitR; first done. iSplitR; first done. iFrame "Hcap".
     rewrite /deepown_rest /deepown /=. iFrame "∗". iFrame "%".
     iSplitL; [iApply deepown_slice_nil|done].

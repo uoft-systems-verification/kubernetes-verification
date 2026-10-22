@@ -231,10 +231,9 @@ Proof.
     with "[Hrs_meta_Hdeepown_creationtimestamp
       Hrs_meta_Hdeepown_deletiongraceperiodseconds_some
       Hrs_meta_Hdeepown_labels_some Hrs_meta_Hdeepown_annotations_some
-      Hrs_meta_Hdeepown_ownerreferences_some Hrs_meta_Hdeepown_finalizers_some
-      Hrs_meta_Hdeepown_managedfields_some
-      Hrs_meta_Hdeepown_ownerreferences_cap Hrs_meta_Hdeepown_finalizers_cap
-      Hrs_meta_Hdeepown_managedfields_cap]" as "Hdeepown_m_rs".
+      Hrs_meta_Hdeepown_ownerreferences Hrs_meta_Hdeepown_finalizers_some
+      Hrs_meta_Hdeepown_managedfields
+      Hrs_meta_Hdeepown_finalizers_cap]" as "Hdeepown_m_rs".
   { rewrite /ObjectMetaV.deepown Hdeletion_timestamp_eq_get.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) rs_get.(ReplicaSetV.ObjectMeta') 1)

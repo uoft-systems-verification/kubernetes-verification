@@ -141,13 +141,14 @@ Proof.
   iFrame "%".
 Qed.
 
-(* Keep the full generated ownership when template elements are borrowed. *)
+(* Borrow the contents and elements; the restoration continuation retains
+   capacity ownership and the remaining generated fields. *)
 Definition statefulset_claim_templates (set_phy : v1.StatefulSet.t)
     (set : StatefulSetV.t) dq : iProp Σ :=
-  ∃ templates_c, deepown_list
-    set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') templates_c
-    (StatefulSetSpecV.volume_claim_templates_list set.(StatefulSetV.Spec'))
-    (λ c v, PersistentVolumeClaimV.deepown c v dq) dq.
+  ∃ templates_c,
+    set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') ↦*{dq} templates_c ∗
+    [∗ list] c;v ∈ templates_c;StatefulSetSpecV.volume_claim_templates_list set.(StatefulSetV.Spec'),
+      PersistentVolumeClaimV.deepown c v dq.
 
 Definition statefulset_restore_claim_templates_l set_l (set : StatefulSetV.t) dq set_phy : iProp Σ :=
   statefulset_without_claim_templates_l set_l set dq set_phy -∗
@@ -436,8 +437,7 @@ Proof.
           Some ?selector_labels |- _ =>
         iAssert (LabelSelectorV.deepown selector_c selector dq_set)
           with "[Hselector_labels
-                 Hselector_Hdeepown_matchexpressions_some
-                 Hselector_Hdeepown_matchexpressions_cap]"
+                 Hselector_Hdeepown_matchexpressions]"
           as "Hselector";
         [rewrite /LabelSelectorV.deepown Hselector_labels_opt /=;
          iSplit;
@@ -447,27 +447,18 @@ Proof.
          [iExists selector_labels;
           iFrame;
           done|];
-         iSplit;
-         [iPureIntro;
-          exact Hselector_Hdeepown_matchexpressions_none|];
-         iFrame "Hselector_Hdeepown_matchexpressions_some
-           Hselector_Hdeepown_matchexpressions_cap"|]
+         iFrame "Hselector_Hdeepown_matchexpressions"|]
     | Hselector_labels_opt :
         LabelSelectorV.MatchLabels' ?selector = None |- _ =>
         iAssert (LabelSelectorV.deepown selector_c selector dq_set)
-          with "[Hselector_Hdeepown_matchexpressions_some
-                 Hselector_Hdeepown_matchexpressions_cap]"
+          with "[Hselector_Hdeepown_matchexpressions]"
           as "Hselector";
         [rewrite /LabelSelectorV.deepown Hselector_labels_opt /=;
          iSplit;
          [iPureIntro;
           exact Hselector_Hdeepown_matchlabels_none|];
          iSplit; [done|];
-         iSplit;
-         [iPureIntro;
-          exact Hselector_Hdeepown_matchexpressions_none|];
-         iFrame "Hselector_Hdeepown_matchexpressions_some
-           Hselector_Hdeepown_matchexpressions_cap"|]
+         iFrame "Hselector_Hdeepown_matchexpressions"|]
     | _ => idtac
     end.
   all: try (
@@ -540,7 +531,6 @@ Proof.
            apply Hclaim_labels_l_not_nil;
            exact Hnil
           |discriminate]).
-  all: iPoseProof (own_slice_cap_nil (V:=v1.OwnerReference.t)) as "Hclaim_owners_nilcap".
   all:
     iAssert (ObjectMetaV.deepown claim_meta_current claim_meta_result 1)
       with "[Hclaim_labels
@@ -549,9 +539,8 @@ Proof.
              Hclaim_meta_Hdeepown_deletiongraceperiodseconds_some
              Hclaim_meta_Hdeepown_annotations_some
              Hclaim_meta_Hdeepown_finalizers_some
-             Hclaim_meta_Hdeepown_managedfields_some
-             Hclaim_owners_nilcap Hclaim_meta_Hdeepown_finalizers_cap
-             Hclaim_meta_Hdeepown_managedfields_cap]"
+             Hclaim_meta_Hdeepown_managedfields
+             Hclaim_meta_Hdeepown_finalizers_cap]"
       as "Hclaim_objectmeta";
     [subst claim_meta_result;
      rewrite Hclaim_meta_current /ObjectMetaV.deepown /=;
@@ -601,19 +590,13 @@ Proof.
      [iPureIntro;
       exact Hclaim_meta_Hdeepown_annotations_none|];
      iFrame "Hclaim_meta_Hdeepown_annotations_some";
-     iSplit;
-     [iPureIntro;
-      done|];
-     iSplit; [done|];
-     iFrame "Hclaim_owners_nilcap";
+     iSplitR;
+     [iApply deepown_slice_nil|];
      iSplit;
      [iPureIntro;
       exact Hclaim_meta_Hdeepown_finalizers_none|];
      iFrame "Hclaim_meta_Hdeepown_finalizers_some Hclaim_meta_Hdeepown_finalizers_cap";
-     iSplit;
-     [iPureIntro;
-      exact Hclaim_meta_Hdeepown_managedfields_none|];
-     iFrame "Hclaim_meta_Hdeepown_managedfields_some Hclaim_meta_Hdeepown_managedfields_cap"|].
+     iFrame "Hclaim_meta_Hdeepown_managedfields"|].
   all:
     iAssert (ObjectMetaV.deepown_l
         (PersistentVolumeClaimV.objectmeta_ptr claim_l)
@@ -756,7 +739,7 @@ Proof.
     with "[Hset_ptr Hdeepown_objectmeta
       Hset_spec_Hdeepown_replicas_some
       Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hdeepown_volumeclaimtemplates_some Hdeepown_volumeclaimtemplates_cap
+      Hset_spec_Hdeepown_template Hdeepown_volumeclaimtemplates
       Hdeepown_updatestrategy Hdeepown_revisionhistorylimit_some
       Hdeepown_persistentvolumeclaimretentionpolicy_some Hdeepown_ordinals_some
       Hdeepown_status]" as "Hset".
@@ -871,7 +854,7 @@ Proof.
   iFrame "%".
 Qed.
 
-Lemma persistent_volume_claim_deepown_list_names claim_templates_phy
+Lemma persistent_volume_claim_deepown_names claim_templates_phy
     claim_templates dq :
   ([∗ list] claim_template_phy;claim_template ∈
       claim_templates_phy;claim_templates,
@@ -950,13 +933,11 @@ Lemma wp_volumeClaimTemplatesByName set_l (set : StatefulSetV.t) dq :
               v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔
           set.(StatefulSetV.Spec').(
               StatefulSetSpecV.VolumeClaimTemplates') = None ⌝ ∗
-      "Hdeepown_volumeclaimtemplates" ∷ deepown_list
-        set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates_list
-          (StatefulSetSpecV.volume_claim_templates_list
-            set.(StatefulSetV.Spec'))
-          (λ claim_template_phy pure_claim_template,
-            PersistentVolumeClaimV.deepown claim_template_phy pure_claim_template dq)
-          dq ∗
+      "Hdeepown_volumeclaimtemplates" ∷
+        (set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') ↦*{dq} claim_templates_list ∗
+         [∗ list] c;v ∈ claim_templates_list;
+           StatefulSetSpecV.volume_claim_templates_list set.(StatefulSetV.Spec'),
+           PersistentVolumeClaimV.deepown c v dq) ∗
       "%Hclaim_templates_map_values" ∷
         ⌜ map_Forall (λ name claim_template_phy,
             claim_template_phy ∈ claim_templates_list ∧
@@ -990,34 +971,24 @@ Proof.
   iDestruct "Hset" as (set_phy) "[Hset_ptr Hset_deepown]".
   iNamed "Hset_deepown".
   iNamed "Hdeepown_spec".
-  iAssert (statefulset_claim_templates set_phy set dq)
-    with "[Hdeepown_volumeclaimtemplates_some]" as (claim_templates_list) "Htemplates".
-  { rewrite /statefulset_claim_templates.
-    destruct set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')
-      as [templates|] eqn:Htemplates_opt.
-    - iDestruct "Hdeepown_volumeclaimtemplates_some" as (templates_c) "Htemplates".
-      iExists templates_c.
-      rewrite /StatefulSetSpecV.volume_claim_templates_list Htemplates_opt /=. iExact "Htemplates".
-    - assert (set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil)
-        as Htemplates_nil by (apply Hdeepown_volumeclaimtemplates_none; done).
-      iExists [].
-      rewrite /StatefulSetSpecV.volume_claim_templates_list Htemplates_opt Htemplates_nil /deepown_list /=.
-      iSplit; last done. iApply own_slice_nil. }
+  iDestruct "Hdeepown_volumeclaimtemplates" as
+    "(%Hdeepown_volumeclaimtemplates_none & %claim_templates_list &
+      Hclaim_templates_slice & Hclaim_templates_cap & Hclaim_templates_deepown)".
   iAssert (statefulset_restore_claim_templates_l set_l set dq set_phy)
-    with "[Hdeepown_volumeclaimtemplates_cap Hdeepown_updatestrategy
+    with "[Hclaim_templates_cap Hdeepown_updatestrategy
       Hdeepown_revisionhistorylimit_some Hdeepown_persistentvolumeclaimretentionpolicy_some
       Hdeepown_ordinals_some]" as "Hrestore_set".
   { rewrite /statefulset_restore_claim_templates_l.
     iIntros "Hbase Htemplates". iNamed "Hbase".
-    iDestruct "Htemplates" as (templates_c) "Htemplates".
+    iDestruct "Htemplates" as (templates_c) "[Hsl Hvalues]".
+    iAssert (deepown_slice PersistentVolumeClaimV.deepown
+        set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates')
+        set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates') dq)%I
+      with "[Hsl Hvalues Hclaim_templates_cap]" as "Htemplates".
+    { rewrite /deepown_slice. iSplit; first done. iExists templates_c. iFrame. }
     iExists set_phy.
-    destruct set.(StatefulSetV.Spec').(StatefulSetSpecV.VolumeClaimTemplates')
-      as [templates|] eqn:Htemplates_opt;
-      rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown Htemplates_opt /=;
-      iEval (rewrite /StatefulSetSpecV.volume_claim_templates_list Htemplates_opt /=) in "Htemplates";
-      iFrame; iFrame "%"; try (iExists templates_c; iExact "Htemplates"). }
-  iEval (rewrite /deepown_list) in "Htemplates".
-  iDestruct "Htemplates" as "[Hclaim_templates_slice Hclaim_templates_deepown]".
+    rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown.
+    iFrame. iFrame "%". }
   wp_auto.
   wp_apply wp_map_make2 as "%claim_templates_map Hclaim_templates_map".
   iDestruct (own_slice_len with "Hclaim_templates_slice") as
@@ -1086,13 +1057,11 @@ Proof.
       rewrite Hi_len.
       apply take_ge. lia. }
     rewrite Htake_all.
-    iDestruct (persistent_volume_claim_deepown_list_names with
+    iDestruct (persistent_volume_claim_deepown_names with
       "Hclaim_templates_deepown") as
       "[%Hclaim_template_names Hclaim_templates_deepown]".
     iApply ("HΦ" $! set_phy claim_templates_map_l claim_templates_list
       (claim_templates_map_of_list claim_templates_list)).
-    iFrame.
-    rewrite /deepown_list.
     iFrame.
     iFrame "%".
     iSplit.

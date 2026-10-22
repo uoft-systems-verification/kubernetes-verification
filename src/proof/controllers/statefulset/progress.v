@@ -212,11 +212,10 @@ Proof.
     with "[Hset_meta_Hdeepown_creationtimestamp
       Hset_meta_Hdeepown_deletiongraceperiodseconds_some
       Hset_meta_Hdeepown_labels_some Hset_meta_Hdeepown_annotations_some
-      Hset_meta_Hdeepown_ownerreferences_some
+      Hset_meta_Hdeepown_ownerreferences
       Hset_meta_Hdeepown_finalizers_some
-      Hset_meta_Hdeepown_managedfields_some
-      Hset_meta_Hdeepown_ownerreferences_cap Hset_meta_Hdeepown_finalizers_cap
-      Hset_meta_Hdeepown_managedfields_cap]" as "Hset_meta_deepown".
+      Hset_meta_Hdeepown_managedfields
+      Hset_meta_Hdeepown_finalizers_cap]" as "Hset_meta_deepown".
   { rewrite /ObjectMetaV.deepown Hset_deletion_timestamp_none.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l)

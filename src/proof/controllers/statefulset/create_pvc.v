@@ -190,7 +190,7 @@ Lemma persistent_volume_claim_template_lookup_acc
 Proof.
   intros Hmap_eq Hclaim_lookup.
   iIntros "Hclaim_templates".
-  iDestruct (persistent_volume_claim_deepown_list_names with
+  iDestruct (persistent_volume_claim_deepown_names with
     "Hclaim_templates") as "[%Hnames Hclaim_templates]".
   assert (Forall2
       (λ physical_claim_template pure_claim_template,
@@ -542,7 +542,7 @@ Proof.
     with "[Hset_ptr Hdeepown_objectmeta
       Hset_spec_Hdeepown_replicas_some
       Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hdeepown_volumeclaimtemplates_some Hdeepown_volumeclaimtemplates_cap
+      Hset_spec_Hdeepown_template Hdeepown_volumeclaimtemplates
       Hdeepown_updatestrategy Hdeepown_revisionhistorylimit_some
       Hdeepown_persistentvolumeclaimretentionpolicy_some Hdeepown_ordinals_some
       Hdeepown_status]" as "Hset".
@@ -644,7 +644,6 @@ Proof.
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
       Hdeepown_status & Hrestore_set & Hclaim_templates_map)".
-  iEval (rewrite /deepown_list) in "Hdeepown_volumeclaimtemplates".
   iDestruct "Hdeepown_volumeclaimtemplates" as
     "[Hclaim_templates_slice Hclaim_templates_deepown]".
   iAssert (statefulset_without_claim_templates_l
@@ -885,7 +884,7 @@ Proof.
   iAssert (statefulset_claim_templates set_phy set dq_set)
     with "[Hclaim_templates_slice Hclaim_templates_deepown]" as "Htemplates".
   { iExists claim_templates_list.
-    rewrite /deepown_list /claim_templates. iFrame. }
+    rewrite /claim_templates. iFrame. }
   iPoseProof ("Hrestore_set" with "Hset Htemplates") as "Hset".
   wp_auto.
   iApply "HΦ".

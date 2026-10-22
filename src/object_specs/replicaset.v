@@ -271,9 +271,9 @@ Proof.
   rewrite /deepown /opt_ptr_rep. iIntros "H Ht". iNamed "H". simpl.
   iFrame "# %". destruct topt as [n|]; simpl.
   - iDestruct (typed_pointsto_not_null with "Ht") as %Hnn.
-    iFrame "Ht Hdeepown_conditions_some Hdeepown_conditions_cap". iPureIntro.
+    iFrame "Ht Hdeepown_conditions ". iPureIntro.
     split_and!; done.
-  - iDestruct "Ht" as %->. iFrame "Hdeepown_conditions_some Hdeepown_conditions_cap". iPureIntro.
+  - iDestruct "Ht" as %->. iFrame "Hdeepown_conditions ". iPureIntro.
     split_and!; done.
 Qed.
 
