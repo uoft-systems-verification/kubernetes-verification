@@ -56,14 +56,14 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) namespace name rs
-    dq pods terminating_bound :
-  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods
-      terminating_bound.
+    dq pods :
+  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
+  iDestruct "Hown_terminating_children_frag" as (terminating_bound) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as (Hrs_name_short & Hrs_template_finalizers_valid & Hlabels_bound & Hgeneration_nonneg).
   iAssert (is_pkg_init common) as "#Hcommon_init".
@@ -321,7 +321,7 @@ Proof.
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods_managed (mutating_fractions dq) false terminating_bound'
+      pods_managed (mutating_fractions dq) false
       Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
@@ -344,7 +344,7 @@ Proof.
   }
   (* if err != nil { return err }; return manageReplicasErr *)
   destruct err as [err_ok|]; wp_auto;
-    iApply ("HΦ" $! rs'' pods_managed terminating_bound' with "[$Hresources //]").
+    iApply ("HΦ" $! rs'' pods_managed with "[$Hresources //]").
 Qed.
 
 End proof.

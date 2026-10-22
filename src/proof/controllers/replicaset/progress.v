@@ -379,12 +379,11 @@ Proof.
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods) (mutating_fractions dq) false
-      terminating_bound'
       Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hpod_meta_frags_post Hpod_unreserved_key_frags_post
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "Hresources".
-  iApply ("HΦ" $! rs'' (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods) terminating_bound'
+  iApply ("HΦ" $! rs'' (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)
     with "[$Hresources]").
   iPureIntro.
   (* replica arithmetic of this sync: the live count moved toward the desired
