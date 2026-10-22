@@ -201,7 +201,8 @@ Proof.
       c.(v1.PodCondition.Status') = v.(PodConditionV.Status')⌝)%I as "Hfields".
   { iApply (big_sepL2_impl with "Hconds_deepown").
     iIntros "!#" (k c' v' Hc' Hv') "Hcondition".
-    rewrite /PodConditionV.deepown. iNamed "Hcondition". done. }
+    rewrite /PodConditionV.deepown. iDestruct "Hcondition" as %Hcondition.
+    iPureIntro. by rewrite -Hcondition /PodConditionV.of_go. }
   iDestruct (big_sepL2_pure with "Hfields") as %(Hlen & Hlookup).
   assert ((λ c, (c.(v1.PodCondition.Type'), c.(v1.PodCondition.Status'))) <$> cs =
     (λ v, (v.(PodConditionV.Type'), v.(PodConditionV.Status'))) <$>

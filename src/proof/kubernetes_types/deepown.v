@@ -7,8 +7,8 @@ Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
     (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) (dq : dfrac) : iProp Σ :=
   c_slice ↦*{dq} cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
 
-(** Ownership combinators for pure API views. Nil pointers, slices, and maps
-    remain distinct from allocated empty values; views contain no heap addresses. *)
+(** Recursive ownership combinators for API views. Owned pointers, slices, and
+    maps are represented by values, preserving nil versus allocated empty data. *)
 Section deepown.
 Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}.

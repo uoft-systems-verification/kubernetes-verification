@@ -174,53 +174,41 @@ Context {sem : go.Semantics}
   {time_sem : code.time.time.Assumptions}.
 Local Set Default Proof Using "All".
 
+(* time/Time.loc is intentionally excluded from the view and deepown.
+   The timezone location is shared runtime state and may be lazily initialized. *)
 Record t := mk {
   wall' : w64;
   ext' : w64;
-  loc' : option (LocationV.t);
 }.
 
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : runtime_time.Time.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_wall" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(runtime_time.Time.wall') v.(wall') dq ∗
-  "%Hdeepown_ext" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(runtime_time.Time.ext') v.(ext') dq ∗
-  "Hdeepown_loc" ∷ (deepown_ptr LocationV.deepown) c.(runtime_time.Time.loc') v.(loc') DfracDiscarded.
+Definition of_go (c : runtime_time.Time.t) : t := {|
+  wall' := c.(runtime_time.Time.wall');
+  ext' := c.(runtime_time.Time.ext');
+|}.
+Definition deepown (c : runtime_time.Time.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
   wall' := zero_val _;
   ext' := zero_val _;
-  loc' := None;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val runtime_time.Time.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iApply deepown_ptr_nil.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> (deepown_ptr LocationV.deepown) c.(runtime_time.Time.loc') v.(loc') DfracDiscarded)%I
-    with "[Hdeepown_loc]" as ">Hdeepown_loc".
-  { iModIntro. iExact "Hdeepown_loc". }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
 Proof. rewrite /deepown.
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
   apply _.
 Qed.
 End def.

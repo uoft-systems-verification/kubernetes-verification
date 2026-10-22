@@ -29,7 +29,8 @@ Proof.
   wp_apply New.proof.time.wp_Now_full.
   iIntros (t view) "Htime". wp_auto.
   iApply ("HΦ" $! (v1.Time.mk t) (TimeV.mk view)).
-  rewrite /TimeV.deepown /=. iExact "Htime".
+  rewrite /TimeV.deepown /TimeV.of_go /=.
+  iDestruct "Htime" as %Htime. iPureIntro. by rewrite Htime.
 Qed.
 
 Lemma wp_GetName l m dq :

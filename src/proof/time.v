@@ -134,16 +134,19 @@ From New.proof Require Import empty_ffi.
 Section complete_time.
 Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : time.Assumptions}.
+Local Set Default Proof Using "All".
 
-(* Imported clock operations supply a complete timestamp snapshot. The location
-   graph is shared read-only, including cache pointers into timezone slices.
-   This is the ownership-aware refinement of Perennial's trusted [wp_Now]
-   contract; it cannot be derived from that contract, which supplies no ownership
-   of referenced timezone memory. *)
-Axiom wp_Now_full :
+(* The timestamp view projects the numeric fields and omits the shared timezone
+   pointer. Constructing the view needs no heap ownership. *)
+Lemma wp_Now_full :
   {{{ True }}}
     @! time.Now #()
   {{{ (t : time.Time.t) (view : TimeFields.TimeV.t), RET #t;
       TimeFields.TimeV.deepown t view 1
   }}}.
+Proof.
+  wp_start. wp_apply wp_Now as "%t _".
+  iApply ("HΦ" $! t (TimeFields.TimeV.of_go t)).
+  rewrite /TimeFields.TimeV.deepown. done.
+Qed.
 End complete_time.

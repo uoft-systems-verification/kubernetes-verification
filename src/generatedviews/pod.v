@@ -8162,14 +8162,16 @@ Record t := mk {
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : api_core_v1.PodCondition.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_type" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodCondition.Type') v.(Type') dq ∗
-  "%Hdeepown_observedgeneration" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodCondition.ObservedGeneration') v.(ObservedGeneration') dq ∗
-  "%Hdeepown_status" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodCondition.Status') v.(Status') dq ∗
-  "Hdeepown_lastprobetime" ∷ MetaTimeFields.TimeV.deepown c.(api_core_v1.PodCondition.LastProbeTime') v.(LastProbeTime') dq ∗
-  "Hdeepown_lasttransitiontime" ∷ MetaTimeFields.TimeV.deepown c.(api_core_v1.PodCondition.LastTransitionTime') v.(LastTransitionTime') dq ∗
-  "%Hdeepown_reason" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodCondition.Reason') v.(Reason') dq ∗
-  "%Hdeepown_message" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodCondition.Message') v.(Message') dq.
+Definition of_go (c : api_core_v1.PodCondition.t) : t := {|
+  Type' := c.(api_core_v1.PodCondition.Type');
+  ObservedGeneration' := c.(api_core_v1.PodCondition.ObservedGeneration');
+  Status' := c.(api_core_v1.PodCondition.Status');
+  LastProbeTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PodCondition.LastProbeTime'));
+  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PodCondition.LastTransitionTime'));
+  Reason' := c.(api_core_v1.PodCondition.Reason');
+  Message' := c.(api_core_v1.PodCondition.Message');
+|}.
+Definition deepown (c : api_core_v1.PodCondition.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -8184,49 +8186,17 @@ Definition zero : t := {|
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.PodCondition.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
-  iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
-  iSplitL.
-  { done. }
-  done.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_core_v1.PodCondition.LastProbeTime') v.(LastProbeTime') DfracDiscarded)%I
-    with "[Hdeepown_lastprobetime]" as ">Hdeepown_lastprobetime".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_lastprobetime"). }
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_core_v1.PodCondition.LastTransitionTime') v.(LastTransitionTime') DfracDiscarded)%I
-    with "[Hdeepown_lasttransitiontime]" as ">Hdeepown_lasttransitiontime".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_lasttransitiontime"). }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
 Proof. rewrite /deepown.
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
   apply _.
 Qed.
 End def.
@@ -8352,8 +8322,10 @@ Record t := mk {
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : api_core_v1.ContainerStateRunning.t) (v : t) dq : iProp Σ :=
-  "Hdeepown_startedat" ∷ MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateRunning.StartedAt') v.(StartedAt') dq.
+Definition of_go (c : api_core_v1.ContainerStateRunning.t) : t := {|
+  StartedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateRunning.StartedAt'));
+|}.
+Definition deepown (c : api_core_v1.ContainerStateRunning.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -8362,18 +8334,13 @@ Definition zero : t := {|
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.ContainerStateRunning.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iApply MetaTimeFields.TimeV.deepown_zero.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateRunning.StartedAt') v.(StartedAt') DfracDiscarded)%I
-    with "[Hdeepown_startedat]" as ">Hdeepown_startedat".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_startedat"). }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
@@ -8404,14 +8371,16 @@ Record t := mk {
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : api_core_v1.ContainerStateTerminated.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_exitcode" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.ContainerStateTerminated.ExitCode') v.(ExitCode') dq ∗
-  "%Hdeepown_signal" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.ContainerStateTerminated.Signal') v.(Signal') dq ∗
-  "%Hdeepown_reason" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.ContainerStateTerminated.Reason') v.(Reason') dq ∗
-  "%Hdeepown_message" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.ContainerStateTerminated.Message') v.(Message') dq ∗
-  "Hdeepown_startedat" ∷ MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateTerminated.StartedAt') v.(StartedAt') dq ∗
-  "Hdeepown_finishedat" ∷ MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateTerminated.FinishedAt') v.(FinishedAt') dq ∗
-  "%Hdeepown_containerid" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.ContainerStateTerminated.ContainerID') v.(ContainerID') dq.
+Definition of_go (c : api_core_v1.ContainerStateTerminated.t) : t := {|
+  ExitCode' := c.(api_core_v1.ContainerStateTerminated.ExitCode');
+  Signal' := c.(api_core_v1.ContainerStateTerminated.Signal');
+  Reason' := c.(api_core_v1.ContainerStateTerminated.Reason');
+  Message' := c.(api_core_v1.ContainerStateTerminated.Message');
+  StartedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.StartedAt'));
+  FinishedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.FinishedAt'));
+  ContainerID' := c.(api_core_v1.ContainerStateTerminated.ContainerID');
+|}.
+Definition deepown (c : api_core_v1.ContainerStateTerminated.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -8426,49 +8395,17 @@ Definition zero : t := {|
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.ContainerStateTerminated.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
-  iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
-  done.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateTerminated.StartedAt') v.(StartedAt') DfracDiscarded)%I
-    with "[Hdeepown_startedat]" as ">Hdeepown_startedat".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_startedat"). }
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_core_v1.ContainerStateTerminated.FinishedAt') v.(FinishedAt') DfracDiscarded)%I
-    with "[Hdeepown_finishedat]" as ">Hdeepown_finishedat".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_finishedat"). }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
 Proof. rewrite /deepown.
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
   apply _.
 Qed.
 End def.

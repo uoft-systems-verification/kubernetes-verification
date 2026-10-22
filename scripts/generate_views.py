@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate complete pure object views from the checked-out Kubernetes types.
+"""Generate pure object views from the checked-out Kubernetes types.
 
 Goose remains responsible for src/code and src/generatedproof. This generator
 only writes translation configuration and pure ownership models in src/generatedviews.
@@ -8,8 +8,8 @@ scripts/goose.sh updates the configurations and regenerates these views. Use
 
 Pointers become options; slices and maps become optional lists/maps, preserving
 nil versus allocated empty values. Heap-free Go records can themselves be pure
-views. Timestamps include their runtime timezone data. Location pointers use discarded
-ownership so timestamps and timezone caches may share the same allocations.
+views. Configured exclusions omit fields from both the view and its ownership
+predicate. This includes timestamps' shared runtime-managed timezone pointer.
 Internal big.Int word buffers are lists: copying may change empty-buffer nilness
 without changing their words. Their entire backing storage is still owned.
 The generated models describe representation, not API validation or defaulting.
@@ -52,7 +52,7 @@ GROUPS = {
     "deployment": "DeploymentFields",
 }
 # Preserve useful named ownership components used by existing program proofs.
-# These are representation choices only; every field and slice capacity is owned.
+# These are representation choices only; configuration exclusions still apply.
 NAMED_COLLECTIONS = {
     META + "/Preconditions", META + "/DeleteOptions",
     META + "/ObjectMeta", META + "/OwnerReference", META + "/ManagedFieldsEntry", META + "/FieldsV1",
@@ -67,6 +67,10 @@ def main():
     parser.add_argument("--config", action="store_true", help="update Goose type translation configuration")
     parser.add_argument("--check", action="store_true", help="check views without writing files")
     parser.add_argument("--schema", type=Path, help="reuse a reflection schema for development")
+    parser.add_argument("--view-config", type=Path, default=ROOT / "scripts/generate_views.toml",
+                        help="view configuration (default: scripts/generate_views.toml)")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "src/generatedviews",
+                        help="directory for generated views (default: src/generatedviews)")
     args = parser.parse_args()
     if args.config and args.check:
         parser.error("--config and --check cannot be combined")
@@ -86,6 +90,32 @@ def main():
         ))
     nodes = schema["Nodes"]
     order = schema["Order"]
+    config = tomllib.loads(args.view_config.read_text())
+    if set(config) - {"exclude_fields"}:
+        parser.error("unknown view configuration section")
+    exclusions = config.get("exclude_fields", {})
+    if not isinstance(exclusions, dict):
+        parser.error("exclude_fields must be a table of Go types and fields")
+    for key, fields in exclusions.items():
+        if key not in nodes or nodes[key]["Kind"] != "struct":
+            parser.error(f"excluded type is not a reflected struct: {key}")
+        if not isinstance(fields, dict):
+            parser.error(f"exclusions for {key} must map field names to explanations")
+        names = {f["Name"] for f in nodes[key]["Fields"]}
+        for name, reason in fields.items():
+            if name not in names:
+                parser.error(f"unknown excluded field: {key}.{name}")
+            if not isinstance(reason, str) or not reason.strip():
+                parser.error(f"excluded field needs an explanation: {key}.{name}")
+            if "(*" in reason or "*)" in reason:
+                parser.error(f"exclusion explanation contains a Rocq comment delimiter: {key}.{name}")
+
+    # Use the same projection for records, conversions, zero values, and ownership.
+    view_fields = {
+        key: [f for f in n.get("Fields") or [] if f["Name"] not in exclusions.get(key, {})]
+        for key, n in nodes.items() if n["Kind"] == "struct"
+    }
+
     owners = {}
 
     def assign(key, group):
@@ -127,14 +157,15 @@ def main():
     @functools.cache
     def raw_pure(key):
         n = nodes[key]
+        # Aliasing a Go record would retain any omitted fields, including nested ones.
         return n["Kind"] in SCALARS or (n["Kind"] == "struct" and
-            all(raw_pure(f["Type"]) for f in n["Fields"]))
+            not exclusions.get(key) and all(raw_pure(f["Type"]) for f in view_fields[key]))
 
     @functools.cache
     def owns_heap(key):
         n = nodes[key]
         return n["Kind"] in {"ptr", "slice", "map"} or (n["Kind"] == "struct" and
-            any(owns_heap(f["Type"]) for f in n["Fields"]))
+            any(owns_heap(f["Type"]) for f in view_fields[key]))
 
     def view(key):
         n = nodes[key]
@@ -183,7 +214,7 @@ def main():
     @functools.cache
     def has_zero(key):
         n = nodes[key]
-        return n["Kind"] != "struct" or all(has_zero(f["Type"]) for f in n["Fields"])
+        return n["Kind"] != "struct" or all(has_zero(f["Type"]) for f in view_fields[key])
 
     def zero(key):
         n = nodes[key]
@@ -211,14 +242,16 @@ def main():
         tag = "Hdeepown_" + ("ignorestorereaderror" if field["Name"] == "IgnoreStoreReadErrorWithClusterBreakingPotential" else field["Name"].lower())
         c = "c.(" + physical(key)[:-2] + "." + field["Name"] + "')"
         v = "v.(" + field["Name"] + "')"
-        expression = predicate(child_key) + " " + c + " " + v + (" DfracDiscarded" if key == "time/Time" and field["Name"] == "loc" else " dq")
+        expression = predicate(child_key) + " " + c + " " + v + " dq"
         if key not in NAMED_COLLECTIONS or child["Kind"] not in {"ptr", "slice", "map"}:
             proof = ""
-            resource = owns_heap(child_key)
+            # Keep nontrivial struct predicates named even when exclusions make
+            # them heap-free, so clients can use their abstraction unchanged.
+            resource = not raw_pure(child_key)
             if resource:
                 if child["Kind"] in {"ptr", "slice", "map"}:
                     op = "slice_list" if child_key == BIG_NAT else {"ptr": "ptr", "slice": "slice", "map": "map"}[child["Kind"]]
-                    proof = ('iModIntro. iExact "' + tag + '".' if key == "time/Time" and field["Name"] == "loc" else 'iApply (deepown_' + op + '_persist with "' + tag + '"). intros. ' + persist(child["Elem"]))
+                    proof = 'iApply (deepown_' + op + '_persist with "' + tag + '"). intros. ' + persist(child["Elem"])
                 else:
                     proof = 'iApply (' + module(child_key) + '.deepown_persist with "' + tag + '").'
             return [(tag, expression, proof, zero_proof(child_key), not resource)]
@@ -252,7 +285,9 @@ def main():
         elif nodes[elem]["Kind"] in SCALARS:
             some = c + " ↦*{dq} value"
             proof = opening + 'iApply (own_slice_persist with "' + hypothesis + '").'
-        elif not owns_heap(elem):
+        # Preserve the named list interface for generated view records, even
+        # when exclusions make their recursive ownership predicates pure.
+        elif raw_pure(elem):
             some = "∃ values_c, " + c + " ↦*{dq} values_c ∗ ⌜ value = " + module(elem) + ".of_go <$> values_c ⌝"
             proof = (opening + 'iDestruct "' + hypothesis + '" as (values_c) "[Hsl %Heq]". '
                      + 'iMod (own_slice_persist with "Hsl") as "Hsl". iModIntro. iExists values_c. iFrame "# ∗ %".')
@@ -347,7 +382,8 @@ def main():
         n = nodes[key]
         mod = module(key)
         ctype = physical(key)
-        entries = [entry for field in n["Fields"] for entry in field_entries(key, field)] if owns_heap(key) else []
+        fields = view_fields[key]
+        entries = [entry for field in fields for entry in field_entries(key, field)] if owns_heap(key) else []
         lines.extend([
             "", "Module " + mod + ".", "Section def.",
             "Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.",
@@ -362,6 +398,9 @@ def main():
             ]),
             'Local Set Default Proof Using "All".', "",
         ])
+        for name, reason in exclusions.get(key, {}).items():
+            lines.extend(["(* " + key + "." + name + " is intentionally excluded from the view and deepown.",
+                          "   " + " ".join(reason.split()) + " *)"])
         if raw_pure(key):
             lines.extend(["Definition t := " + ctype + ".",
                           "#[global] Instance eq_dec : EqDecision t.",
@@ -370,20 +409,25 @@ def main():
                           "Definition deepown (c : " + ctype + ") (v : t) (_dq : dfrac) : iProp Σ := ⌜c = v⌝."])
         else:
             lines.append("Record t := mk {")
-            for f in n["Fields"]:
+            for f in fields:
                 lines.append("  " + f["Name"] + "' : " + view(f["Type"]) + ";")
             lines.extend(["}.", "", "#[global] Instance eq_dec : EqDecision t.",
                           "Proof using Type. solve_decision. Defined.", ""])
             if not owns_heap(key):
-                lines.append("Definition of_go (c : " + ctype + ") : t := {|")
-                for f in n["Fields"]:
-                    lines.append("  " + f["Name"] + "' := " + of_go(f["Type"], "c.(" + ctype[:-2] + "." + f["Name"] + "')") + ";")
-                lines.extend(["|}.", "Definition deepown (c : " + ctype + ") (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝."])
+                if fields:
+                    lines.append("Definition of_go (c : " + ctype + ") : t := {|")
+                    for f in fields:
+                        value = "c.(" + ctype[:-2] + "." + f["Name"] + "')"
+                        lines.append("  " + f["Name"] + "' := " + of_go(f["Type"], value) + ";")
+                    lines.append("|}.")
+                else:
+                    lines.append("Definition of_go (c : " + ctype + ") : t := mk.")
+                lines.append("Definition deepown (c : " + ctype + ") (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.")
             else:
                 lines.append("Definition deepown (c : " + ctype + ") (v : t) dq : iProp Σ :=")
                 for i, (tag, expr, _, _, pure) in enumerate(entries):
                     lines.append('  "' + ("%" if pure else "") + tag + '" ∷ ' + expr + ("." if i == len(entries) - 1 else " ∗"))
-        if owns_heap(key) and len(n["Fields"]) >= 10:
+        if owns_heap(key) and len(fields) >= 10:
             lines.extend(["", "Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢"])
             for i, (tag, expr, _, _, pure) in enumerate(entries):
                 lines.append('  "' + ("%" if pure else "") + tag + '" ∷ ' + expr + ("." if i == len(entries) - 1 else " ∗"))
@@ -399,9 +443,11 @@ def main():
         if has_zero(key):
             if raw_pure(key):
                 lines.append("Definition zero : t := zero_val _.")
+            elif not fields:
+                lines.append("Definition zero : t := mk.")
             else:
                 lines.append("Definition zero : t := {|")
-                for f in n["Fields"]:
+                for f in fields:
                     lines.append("  " + f["Name"] + "' := " + zero(f["Type"]) + ";")
                 lines.append("|}.")
             lines.extend(["Lemma deepown_zero dq : ⊢ deepown (zero_val " + ctype + ") zero dq.", "Proof."])
@@ -432,7 +478,7 @@ def main():
             # Split before case analysis: destructing all optional fields together
             # creates exponentially many goals for records such as ObjectMeta.
             for i, (tag, _, _, _, _) in enumerate(entries):
-                field = next((f for f in n["Fields"] if tag == "Hdeepown_" + ("ignorestorereaderror" if f["Name"] == "IgnoreStoreReadErrorWithClusterBreakingPotential" else f["Name"].lower()) + "_some"), None)
+                field = next((f for f in fields if tag == "Hdeepown_" + ("ignorestorereaderror" if f["Name"] == "IgnoreStoreReadErrorWithClusterBreakingPotential" else f["Name"].lower()) + "_some"), None)
                 proof = ("destruct (v.(" + field["Name"] + "')); apply _." if field else "apply _.")
                 if i < len(entries) - 1:
                     lines.extend(["  apply bi.sep_persistent.", "  { " + proof + " }"])
@@ -441,7 +487,7 @@ def main():
         else:
             lines.append("  apply _.")
         lines.extend(["Qed.", "End def."])
-        if owns_heap(key) and len(n["Fields"]) >= 10:
+        if owns_heap(key) and len(fields) >= 10:
             lines.extend(["", "(* Avoid unfolding unrelated large ownership predicates during proof search. *)",
                           "#[global] Opaque deepown."])
         lines.append("End " + mod + ".")
@@ -452,7 +498,7 @@ def main():
         # without duplicating the shared representation or introducing cycles.
         aliases = {}
         for root in schema["Roots"][group]:
-            for field in nodes[root].get("Fields") or []:
+            for field in view_fields[root]:
                 child = field["Type"]
                 if field["Name"] in {"Spec", "Status"} and nodes[child]["Kind"] == "struct" and owners[child] != group:
                     aliases[nodes[child]["Name"] + "V"] = module(child)
@@ -461,15 +507,15 @@ def main():
         lines.extend(["", "End " + GROUPS[group] + ".", ""])
         if group == "time":
             lines.extend(["Module TimeV := MetaTimeFields.TimeV.", ""])
-        target = ROOT / "src/generatedviews" / (group + ".v")
+        target = args.output_dir / (group + ".v")
         generated = "\n".join(lines)
         if args.check:
             if not target.exists() or target.read_text() != generated:
-                raise SystemExit(f"{target.relative_to(ROOT)} is stale; run scripts/goose.sh")
+                raise SystemExit(f"{target} is stale; run scripts/goose.sh")
         elif not target.exists() or target.read_text() != generated:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(generated)
-    print(f"{'Checked' if args.check else 'Generated'} {len(structs)} complete struct views in src/generatedviews")
+    print(f"{'Checked' if args.check else 'Generated'} {len(structs)} struct views in {args.output_dir}")
 
 
 if __name__ == "__main__":

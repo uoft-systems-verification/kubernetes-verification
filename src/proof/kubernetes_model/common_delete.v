@@ -28,23 +28,18 @@ Proof.
     iIntros (now_c now_v) "Hnow". wp_auto.
     wp_method_call. wp_auto.
     wp_apply wp_Time__Add.
-    iIntros (new_time) "%Hlocation". wp_auto.
+    iIntros (new_time) "_". wp_auto.
     wp_apply v1.wp_NewTime.
-    set (new_view := TimeV.mk (TimeFields.TimeV.mk new_time.(time.Time.wall')
-      new_time.(time.Time.ext') now_v.(TimeV.Time').(TimeFields.TimeV.loc'))).
-    iApply ("HΦ" $! _ (v1.Time.mk new_time) new_view).
-    iFrame. rewrite /TimeV.deepown /TimeFields.TimeV.deepown /new_view /=.
-    iEval (rewrite /TimeV.deepown /TimeFields.TimeV.deepown /named) in "Hnow".
-    iDestruct "Hnow" as "[_ [_ Hlocation_own]]".
-    rewrite Hlocation. iFrame "Hlocation_own". done.
+    iApply ("HΦ" $! _ (v1.Time.mk new_time) (TimeV.of_go (v1.Time.mk new_time))).
+    iFrame. rewrite /TimeV.deepown. done.
   - wp_auto.
     wp_apply v1.wp_Now.
     iIntros (now_c now_v) "Hdeepown". wp_auto.
     iApply ("HΦ" $! _ now_c now_v). iFrame.
 Qed.
 
-(* Keep the recursively owned timezone graph abstract in unrelated delete proofs. *)
-Local Opaque TimeV.deepown TimeFields.TimeV.deepown TimeFields.LocationV.deepown.
+(* Keep timestamp representation abstract in unrelated delete proofs. *)
+Local Opaque TimeV.deepown TimeFields.TimeV.deepown.
 
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with

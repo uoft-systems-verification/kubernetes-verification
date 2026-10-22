@@ -21,8 +21,10 @@ Record t := mk {
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : meta_v1.Time.t) (v : t) dq : iProp Σ :=
-  "Hdeepown_time" ∷ TimeFields.TimeV.deepown c.(meta_v1.Time.Time') v.(Time') dq.
+Definition of_go (c : meta_v1.Time.t) : t := {|
+  Time' := (TimeFields.TimeV.of_go c.(meta_v1.Time.Time'));
+|}.
+Definition deepown (c : meta_v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -31,18 +33,13 @@ Definition zero : t := {|
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val meta_v1.Time.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iApply TimeFields.TimeV.deepown_zero.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> TimeFields.TimeV.deepown c.(meta_v1.Time.Time') v.(Time') DfracDiscarded)%I
-    with "[Hdeepown_time]" as ">Hdeepown_time".
-  { iApply (TimeFields.TimeV.deepown_persist with "Hdeepown_time"). }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).

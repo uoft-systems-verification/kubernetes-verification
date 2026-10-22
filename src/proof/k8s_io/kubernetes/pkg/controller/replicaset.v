@@ -93,11 +93,9 @@ Qed.
 Definition keep_condition (ct : go_string) (v : ReplicaSetConditionV.t) : Prop :=
   v.(ReplicaSetConditionV.Type') ≠ ct.
 
-(* Timestamps now have reachable timezone memory, so conditions no longer
-   admit a pure [of_go] projection. Compare the fields read by these helpers
-   while retaining ownership of every other field. *)
+(* Extract the fields read by condition filtering from the pure condition view. *)
 Lemma condition_types_agree cs vs :
-  ([∗ list] c;v ∈ cs;vs, ReplicaSetConditionV.deepown c v DfracDiscarded) ⊢
+  ([∗ list] c;v ∈ cs;vs, ReplicaSetConditionV.deepown (Σ:=Σ) c v DfracDiscarded) ⊢
   ⌜(api_apps_v1.ReplicaSetCondition.Type' <$> cs) = (ReplicaSetConditionV.Type' <$> vs)⌝.
 Proof.
   iIntros "Hconditions".
@@ -106,7 +104,8 @@ Proof.
     with "[Hconditions]" as "Htypes".
   { iApply (big_sepL2_impl with "Hconditions").
     iIntros "!#" (k c v Hc Hv) "Hcondition".
-    rewrite /ReplicaSetConditionV.deepown. iNamed "Hcondition". done. }
+    rewrite /ReplicaSetConditionV.deepown. iDestruct "Hcondition" as %Hcondition.
+    iPureIntro. by rewrite -Hcondition /ReplicaSetConditionV.of_go. }
   iDestruct (big_sepL2_pure with "Htypes") as %(Hlen & Hlookup).
   iPureIntro. apply list_eq. intros k. rewrite !list_lookup_fmap.
   destruct (cs !! k) as [c|] eqn:Hc; destruct (vs !! k) as [v|] eqn:Hv; simpl.
@@ -117,7 +116,7 @@ Proof.
 Qed.
 
 Lemma filter_condition_ownership ct cs vs :
-  ([∗ list] c;v ∈ cs;vs, ReplicaSetConditionV.deepown c v DfracDiscarded) ⊢
+  ([∗ list] c;v ∈ cs;vs, ReplicaSetConditionV.deepown (Σ:=Σ) c v DfracDiscarded) ⊢
   [∗ list] c;v ∈ filter (keep_condition_c ct) cs;filter (keep_condition ct) vs,
     ReplicaSetConditionV.deepown c v DfracDiscarded.
 Proof.
@@ -127,8 +126,10 @@ Proof.
   - iIntros "H". iDestruct (big_sepL2_nil_inv_r with "H") as %Hnil. discriminate.
   - rewrite big_sepL2_cons. iIntros "#[Hcondition Hrest]".
     iPoseProof "Hcondition" as "Hfields".
-    iEval (rewrite /ReplicaSetConditionV.deepown) in "Hfields". iNamed "Hfields".
-    rewrite !filter_cons /keep_condition_c /keep_condition -Hdeepown_type.
+    iEval (rewrite /ReplicaSetConditionV.deepown) in "Hfields". iDestruct "Hfields" as %Hfields.
+    assert (api_apps_v1.ReplicaSetCondition.Type' c = v.(ReplicaSetConditionV.Type')) as Htype.
+    { by rewrite -Hfields /ReplicaSetConditionV.of_go. }
+    rewrite !filter_cons /keep_condition_c /keep_condition -Htype.
     case_decide; case_decide; try contradiction; simpl.
     + iSplit; first iExact "Hcondition".
       iApply IH. iExact "Hrest".

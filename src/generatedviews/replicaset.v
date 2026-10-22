@@ -118,12 +118,14 @@ Record t := mk {
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
-Definition deepown (c : api_apps_v1.ReplicaSetCondition.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_type" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetCondition.Type') v.(Type') dq ∗
-  "%Hdeepown_status" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetCondition.Status') v.(Status') dq ∗
-  "Hdeepown_lasttransitiontime" ∷ MetaTimeFields.TimeV.deepown c.(api_apps_v1.ReplicaSetCondition.LastTransitionTime') v.(LastTransitionTime') dq ∗
-  "%Hdeepown_reason" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetCondition.Reason') v.(Reason') dq ∗
-  "%Hdeepown_message" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetCondition.Message') v.(Message') dq.
+Definition of_go (c : api_apps_v1.ReplicaSetCondition.t) : t := {|
+  Type' := c.(api_apps_v1.ReplicaSetCondition.Type');
+  Status' := c.(api_apps_v1.ReplicaSetCondition.Status');
+  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_apps_v1.ReplicaSetCondition.LastTransitionTime'));
+  Reason' := c.(api_apps_v1.ReplicaSetCondition.Reason');
+  Message' := c.(api_apps_v1.ReplicaSetCondition.Message');
+|}.
+Definition deepown (c : api_apps_v1.ReplicaSetCondition.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -136,38 +138,17 @@ Definition zero : t := {|
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_apps_v1.ReplicaSetCondition.t) zero dq.
 Proof.
-  rewrite /deepown /zero /=.
-  iSplitL.
-  { done. }
-  iSplitL.
-  { done. }
-  iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
-  iSplitL.
-  { done. }
-  done.
+  rewrite /deepown /zero /of_go. iPureIntro. reflexivity.
 Qed.
 
 Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(api_apps_v1.ReplicaSetCondition.LastTransitionTime') v.(LastTransitionTime') DfracDiscarded)%I
-    with "[Hdeepown_lasttransitiontime]" as ">Hdeepown_lasttransitiontime".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_lasttransitiontime"). }
-  iModIntro. iFrame "# ∗ %".
+  rewrite /deepown. iIntros "H". by iModIntro.
 Qed.
 
 #[global] Instance deepown_persistent c v : Persistent (deepown c v DfracDiscarded).
 Proof. rewrite /deepown.
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
-  apply bi.sep_persistent.
-  { apply _. }
   apply _.
 Qed.
 End def.
