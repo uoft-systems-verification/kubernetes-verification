@@ -105,8 +105,7 @@ Proof.
   iIntros (kobj1) "(Hdeepown_l & %Hvalid_interface1 & %Hhelper_result)". wp_auto.
   destruct Hhelper_result as
     (Hcreated1 & Hvalid_without_rv1 & Hname1 & Huid1).
-  pose proof Hvalid_without_rv1 as
-    (Hvalid_typemeta & Hvalid_meta & Hvalid_spec & Hvalid_status).
+  pose proof (proj1 Hvalid_without_rv1) as Hvalid_meta.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hl1_not_null1 & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   assert (KObjectV.kind kobj1 = kind) as Hkind1.

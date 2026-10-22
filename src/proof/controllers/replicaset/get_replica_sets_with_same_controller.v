@@ -4,6 +4,8 @@ From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.kubernetes_types Require Export prelude.
 From New.proof.kubernetes_model Require Export by_index_controller_uid.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

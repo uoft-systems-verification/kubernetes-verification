@@ -190,7 +190,7 @@ Proof.
     (ObjectMetaV.ResourceVersion'
       (KObjectV.objectmeta existing_kobj)))
     as Hexisting_rv_valid.
-  { destruct Hvalid_existing as (_ & Hrv_existing & _).
+  { pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv_existing & _).
     done. }
   assert (obj_parent_ref kobj_rv = None)
     as Hnew_parent_rv.
@@ -473,7 +473,7 @@ Proof.
   { rewrite Huid_eq. simpl in Huid_updated. exact Huid_updated. }
   iEval (rewrite Hkobj_key) in "Hrelease_result".
   iApply "HΦ". iSplit.
-  { iPureIntro. rewrite KObjectV.valid_eq_valid2 /= in Hvalid'. done. }
+  { iPureIntro. simpl in Hvalid'. done. }
   iFrame. iFrame "%".
 Qed.
 
@@ -486,7 +486,7 @@ Lemma wp_State__updateTx_release_terminating γ l kind namespace i kobj :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_update_input kind namespace kobj ⌝ ∗
-      "%Hvalid_body" ∷ ⌜ KObjectV.valid_body kobj ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -572,7 +572,7 @@ Proof.
     { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
   assert (valid_resource_version (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj)))
-    as Hexisting_rv_valid by (destruct Hvalid_existing as (_ & Hrv & _); done).
+    as Hexisting_rv_valid by (pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv & _); done).
   assert (KObjectV.valid_update_input kind namespace kobj_rv) as Hvalid_create_rv.
   { subst kobj_rv kmeta_rv.
     revert Hvalid.
@@ -584,8 +584,8 @@ Proof.
         ?/DeploymentV.valid_create;
       intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
       split_and!; try done; destruct meta; done. }
-  assert (KObjectV.valid_body kobj_rv) as Hvalid_body_rv.
-  { subst kobj_rv kmeta_rv. apply valid_body_update_resource_version. exact Hvalid_body. }
+  assert (KObjectV.valid kobj_rv) as Hvalid_body_rv.
+  { subst kobj_rv kmeta_rv. eapply KObjectV.valid_update_resource_version; [exact Hvalid_body|exact Hexisting_rv_valid]. }
   assert ((KObjectV.objectmeta kobj_rv).(ObjectMetaV.Name') ≠ ""%go) as Hname_nonempty_rv.
   { subst kobj_rv kmeta_rv. rewrite objectmeta_update_objectmeta. exact Hname_nonempty. }
   assert (valid_typemeta (KObjectV.kind kobj_rv) (KObjectV.typemeta kobj_rv))
@@ -647,7 +647,7 @@ Lemma wp_State__PodUpdateTx_release_terminating γ l namespace pod_l pod :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ PodV.valid_update_input PodV.kind namespace pod ⌝ ∗
-      "%Hvalid_body" ∷ ⌜ PodV.valid_body pod ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ PodV.valid pod ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta PodV.kind pod.(PodV.TypeMeta') ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ⌝ ∗

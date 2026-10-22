@@ -8,6 +8,9 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Import meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Opaque TimeV.deepown TimeFields.TimeV.deepown TimeFields.LocationV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -416,6 +419,7 @@ Lemma wp_getPodsFinalizers template_l template dq :
       PodTemplateSpecV.deepown_l template_l template dq ∗
       finalizers_sl ↦* default []
         template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ∗
+      own_slice_cap go_string finalizers_sl (DfracOwn 1) ∗
       ⌜ finalizers_sl ≠ slice.nil ⌝
   }}}.
 Proof.
@@ -438,9 +442,7 @@ Proof.
       (finalizers) "[Hfinalizers_src %Hfinalizers]".
   { destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')
       as [finalizers|] eqn:Hfinalizers_opt; simpl.
-    - iDestruct "Hmeta_Hdeepown_finalizers_some" as (finalizers_c)
-        "[Hfinalizers_src %Hfinalizers_c]".
-      subst finalizers_c. iExists finalizers. iSplitL; first iFrame. done.
+    - iExists finalizers. iSplitL; first iFrame. done.
     - assert (template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers') =
           slice.nil) as Hfinalizers_nil.
       { apply Hmeta_Hdeepown_finalizers_none. done. }
@@ -540,14 +542,13 @@ Proof.
       template_l template_c dq Htemplate_nonnull with "Htemplate_l")
     as "Htemplate_l".
   iAssert ((match template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') with
-    | Some finalizers' => ∃ finalizers_c,
-        template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers')
-          ↦*{dq} finalizers_c ∗ ⌜finalizers_c = finalizers'⌝
+    | Some finalizers' =>
+        template_c.(v1.PodTemplateSpec.ObjectMeta').(v1.ObjectMeta.Finalizers') ↦*{dq} finalizers'
     | None => True
     end)%I) with "[Hfinalizers_src]" as "Hmeta_Hdeepown_finalizers_some".
   { destruct template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')
       as [finalizers|] eqn:Hfinalizers_opt; simpl.
-    - iExists finalizers. iSplitL; first iFrame. done.
+    - iFrame.
     - iClear "Hfinalizers_src". done. }
   iCombineNamed "Hmeta_*" as "Hobjectmeta".
   iAssert (ObjectMetaV.deepown
@@ -557,7 +558,7 @@ Proof.
   { rewrite /ObjectMetaV.deepown.
     iNamed "Hobjectmeta". iFrame. iFrame "%". }
   iApply ("HΦ" $! finalizers_sl).
-  iFrame "Hfinalizers".
+  iFrame "Hfinalizers Hfinalizers_cap".
   iSplitL "Htemplate_l Hobjectmeta Htemplate_Hdeepown_spec".
   { iExists template_c. iFrame "Htemplate_l".
     rewrite /PodTemplateSpecV.deepown. iFrame. }
@@ -697,8 +698,8 @@ Lemma wp_PodControllerIndexKey namespace ownerReference owner_reference dq:
   }}}
     @! controller.PodControllerIndexKey #namespace #ownerReference
   {{{ index_key, RET #index_key;
-      ⌜ index_key = namespace ++ "/"%go ++ 
-        owner_reference.(v1.OwnerReference.Kind') ++ "/"%go ++ 
+      ⌜ index_key = namespace ++ "/"%go ++
+        owner_reference.(v1.OwnerReference.Kind') ++ "/"%go ++
         owner_reference.(v1.OwnerReference.Name') ++ "/"%go ++
         owner_reference.(v1.OwnerReference.UID')⌝
   }}}.
@@ -770,7 +771,7 @@ Proof.
   iIntros (labels_l) "[Htemplate Hlabels]".
   wp_auto.
   wp_apply (wp_getPodsFinalizers with "[$Hinit $Htemplate]").
-  iIntros (finalizers_sl) "(Htemplate & Hfinalizers & %Hfinalizers_not_nil)".
+  iIntros (finalizers_sl) "(Htemplate & Hfinalizers & Hfinalizers_cap & %Hfinalizers_not_nil)".
   wp_auto.
   wp_apply (wp_getPodsAnnotationSet with "[$Hinit $Htemplate]").
   iIntros (annotations_l) "[Htemplate Hannotations]".
@@ -779,8 +780,13 @@ Proof.
   wp_apply (wp_GetName_deepown_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
   iIntros "Hparent_meta".
   wp_auto.
-  wp_apply (wp_getPodsPrefix with "[]").
+  (* Apply the spec directly to avoid [wp_apply] traversing the large continuation. *)
+  remember (KObjectV.objectmeta parent).(ObjectMetaV.Name') as controller_name eqn:Hcontroller_name in *.
+  wp_bind (@! controller.getPodsPrefix #controller_name)%E.
+  iApply (wp_getPodsPrefix controller_name with "[]").
   { iFrame "#". done. }
+  iNext. iIntros "_". subst controller_name.
+  wp_auto.
   wp_alloc pod_l as "Hpod_l".
   destruct controller_ref as [ref|].
   - iDestruct "Hcontroller_ref" as (ref_c) "[Href_l Href]".
@@ -859,11 +865,7 @@ Proof.
           OwnerReferenceV.deepown owner_c owner 1)%I
       with "[Howners_result Href]" as "Howners_some".
     { iExists [ref_c]. simpl. iFrame. }
-    iAssert (∃ finalizers_c, finalizers_sl ↦* finalizers_c ∗
-        ⌜ finalizers_c = default []
-          template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ⌝)%I
-      with "[Hfinalizers]" as "Hfinalizers_some".
-    { iExists _. iFrame. done. }
+    iRename "Hfinalizers" into "Hfinalizers_some".
     set pod_meta_c : v1.ObjectMeta.t :=
       v1.ObjectMeta.mk ""%go
         ((KObjectV.objectmeta parent).(ObjectMetaV.Name') ++ "-"%go)
@@ -878,13 +880,16 @@ Proof.
       (PodV.objectmeta_ptr pod_l) pod_meta_c (DfracOwn 1)
       Hmeta_l_not_null with "Hmeta_fields") as "Hmeta_l".
     iPoseProof (TimeV.deepown_zero (Σ:=Σ) (DfracOwn 1)) as "Htime".
+    iPoseProof (own_slice_cap_nil (V:=v1.ManagedFieldsEntry.t)) as "Hnil_managed_cap".
     iAssert (ObjectMetaV.deepown pod_meta_c
         (generated_pod_meta template
           (KObjectV.objectmeta parent).(ObjectMetaV.Name') (Some [ref])) 1)%I
-      with "[Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some]"
+      with "[Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some
+        Howners_cap_result Hfinalizers_cap Hnil_managed_cap]"
       as "Hmeta".
     { rewrite /ObjectMetaV.deepown /generated_pod_meta /pod_meta_c /=.
-      iFrame "Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some".
+      iFrame "Htime Hlabels_some Hannotations_some Howners_some Hfinalizers_some
+        Howners_cap_result Hfinalizers_cap Hnil_managed_cap".
       iPureIntro. Timeout 10 naive_solver. }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (generated_pod_meta template
@@ -949,11 +954,7 @@ Proof.
           template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') ⌝)%I
       with "[Hannotations]" as "Hannotations_some".
     { iExists _. iFrame. done. }
-    iAssert (∃ finalizers_c, finalizers_sl ↦* finalizers_c ∗
-        ⌜ finalizers_c = default []
-          template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ⌝)%I
-      with "[Hfinalizers]" as "Hfinalizers_some".
-    { iExists _. iFrame. done. }
+    iRename "Hfinalizers" into "Hfinalizers_some".
     set pod_meta_c : v1.ObjectMeta.t :=
       v1.ObjectMeta.mk ""%go
         ((KObjectV.objectmeta parent).(ObjectMetaV.Name') ++ "-"%go)
@@ -968,13 +969,17 @@ Proof.
       (PodV.objectmeta_ptr pod_l) pod_meta_c (DfracOwn 1)
       Hmeta_l_not_null with "Hmeta_fields") as "Hmeta_l".
     iPoseProof (TimeV.deepown_zero (Σ:=Σ) (DfracOwn 1)) as "Htime".
+    iPoseProof (own_slice_cap_nil (V:=v1.ManagedFieldsEntry.t)) as "Hnil_managed_cap".
+    iPoseProof (own_slice_cap_nil (V:=v1.OwnerReference.t)) as "Hnil_owners_cap".
     iAssert (ObjectMetaV.deepown pod_meta_c
         (generated_pod_meta template
           (KObjectV.objectmeta parent).(ObjectMetaV.Name') None) 1)%I
-      with "[Htime Hlabels_some Hannotations_some Hfinalizers_some]"
+      with "[Htime Hlabels_some Hannotations_some Hfinalizers_some Hfinalizers_cap
+        Hnil_managed_cap Hnil_owners_cap]"
       as "Hmeta".
     { rewrite /ObjectMetaV.deepown /generated_pod_meta /pod_meta_c /=.
-      iFrame "Htime Hlabels_some Hannotations_some Hfinalizers_some".
+      iFrame "Htime Hlabels_some Hannotations_some Hfinalizers_some Hfinalizers_cap
+        Hnil_managed_cap Hnil_owners_cap".
       iPureIntro. Timeout 10 naive_solver. }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (generated_pod_meta template

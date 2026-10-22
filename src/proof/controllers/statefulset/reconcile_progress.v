@@ -2364,7 +2364,7 @@ Proof.
     (_ & _ & Hset_meta & Hset_spec & _).
   destruct Hset_spec as [Hset_spec_create _].
   destruct Hset_spec_create as
-    (_ & _ & Htemplate & Hclaim_name_valid & _ & Hservice_valid).
+    (_ & _ & Htemplate & Hclaim_name_valid & _ & Hservice_valid & _).
   destruct Htemplate as
     (Htemplate_labels & Htemplate_annotations & Hpreserved_valid & _).
   destruct Hinput as

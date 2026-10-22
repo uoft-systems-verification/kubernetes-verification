@@ -1,6 +1,8 @@
 From New.proof.controllers.replicaset Require Export progress.
 From New.proof.controllers.replicaset Require Import update_replicaset_status.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -230,7 +232,9 @@ Proof.
       Hrs_meta_Hdeepown_deletiongraceperiodseconds_some
       Hrs_meta_Hdeepown_labels_some Hrs_meta_Hdeepown_annotations_some
       Hrs_meta_Hdeepown_ownerreferences_some Hrs_meta_Hdeepown_finalizers_some
-      Hrs_meta_Hdeepown_managedfields_some]" as "Hdeepown_m_rs".
+      Hrs_meta_Hdeepown_managedfields_some
+      Hrs_meta_Hdeepown_ownerreferences_cap Hrs_meta_Hdeepown_finalizers_cap
+      Hrs_meta_Hdeepown_managedfields_cap]" as "Hdeepown_m_rs".
   { rewrite /ObjectMetaV.deepown Hdeletion_timestamp_eq_get.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) rs_get.(ReplicaSetV.ObjectMeta') 1)

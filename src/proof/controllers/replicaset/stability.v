@@ -11,6 +11,8 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Module client_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 Module client_gentype := code.k8s_io.client_go.gentype.gentype.
@@ -267,7 +269,9 @@ Proof.
       Hrs_meta_Hdeepown_deletiongraceperiodseconds_some
       Hrs_meta_Hdeepown_labels_some Hrs_meta_Hdeepown_annotations_some
       Hrs_meta_Hdeepown_ownerreferences_some Hrs_meta_Hdeepown_finalizers_some
-      Hrs_meta_Hdeepown_managedfields_some]" as "Hdeepown_m_rs".
+      Hrs_meta_Hdeepown_managedfields_some
+      Hrs_meta_Hdeepown_ownerreferences_cap Hrs_meta_Hdeepown_finalizers_cap
+      Hrs_meta_Hdeepown_managedfields_cap]" as "Hdeepown_m_rs".
   { rewrite /ObjectMetaV.deepown Hdeletion_timestamp_eq_get.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) rs_get.(ReplicaSetV.ObjectMeta') 1)

@@ -1,6 +1,10 @@
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

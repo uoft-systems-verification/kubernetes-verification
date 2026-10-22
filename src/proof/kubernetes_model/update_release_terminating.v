@@ -406,17 +406,8 @@ Proof.
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated_new |- *; tauto. }
   assert (KObjectV.valid new_kobj) as Hvalid_new.
   { unfold new_kobj, new_kmeta.
-    pose proof Hvalid_updated_kobj as
-      (Hupdated_valid_typemeta & _ & Hupdated_valid_meta & Hupdated_valid_spec &
-        Hupdated_valid_status).
-    split_and!.
-    - rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-      exact Hupdated_valid_typemeta.
-    - rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
-    - rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-      destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-    - apply valid_body_update_resource_version. exact Hupdated_valid_spec.
-    - rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status. }
+    eapply KObjectV.valid_update_resource_version;
+            [exact Hvalid_updated_kobj|exact Hvalid_rv]. }
   assert (kview.valid_k_uid_obj key (ObjectMetaV.UID' (KObjectV.objectmeta old_kobj)) new_kobj)
     as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj. split.
@@ -483,7 +474,7 @@ Lemma wp_State__update_release_terminating γ l kind namespace i kobj :
   {{{ "#Hpkg" ∷ is_pkg_init apimodel ∗
       "#Hkinv" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_update_input kind namespace kobj ⌝ ∗
-      "%Hvalid_body" ∷ ⌜ KObjectV.valid_body kobj ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -523,7 +514,7 @@ Proof.
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       destruct Hvalid as (_ & _ & _ & _ & _ & Hvalid_spec).
-    - apply PodSpecV.valid_update_refl. exact (proj1 Hvalid_body).
+    - apply PodSpecV.valid_update_refl. destruct Hvalid_body as (_ & _ & _ & Hbody & _). exact (proj1 Hbody).
     - apply ReplicaSetSpecV.valid_update_refl. exact Hvalid_spec.
     - apply PersistentVolumeClaimSpecV.valid_update_refl. exact Hvalid_spec.
     - apply StatefulSetSpecV.valid_update_refl. exact Hvalid_spec.
@@ -535,7 +526,7 @@ Proof.
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update;
       split_and!; try assumption.
-    destruct Hvalid_body as [Hspec Hannotations].
+    destruct Hvalid_body as (_ & _ & _ & [Hspec Hannotations] & _).
     pose proof Hspec as (_ & _ & Hfixed & _).
     rewrite Hfixed. exact Hannotations. }
   iApply wp_State__update_release_terminating_au.

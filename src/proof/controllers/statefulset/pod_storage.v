@@ -2,6 +2,10 @@ From New.proof.map Require Import for_range.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -574,14 +578,14 @@ Proof.
       claim_templates_phy) "Hclaim_result".
     iDestruct "Hclaim_result" as "(Hset_ptr & Hclaim_result)".
     iNamed "Hclaim_result".
-    iAssert (StatefulSetV.deepown_l set_l set dq_set)
+    iAssert (statefulset_without_claim_templates_l set_l set dq_set set_phy)
       with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-        Hdeepown_selector_some Hdeepown_template
-        Hdeepown_volumeclaimtemplates Hdeepown_status]"
-      as "Hset".
-    { iExists set_phy. rewrite /StatefulSetV.deepown.
-      iFrame. rewrite /StatefulSetSpecV.deepown.
-      iFrame. iFrame "%". }
+        Hdeepown_selector_some Hdeepown_template Hdeepown_status]" as "Hset_base".
+    { rewrite /statefulset_without_claim_templates_l. iFrame. iFrame "%". }
+    iAssert (statefulset_claim_templates set_phy set dq_set)
+      with "[Hdeepown_volumeclaimtemplates]" as "Htemplates".
+    { iExists claim_templates_list. iExact "Hdeepown_volumeclaimtemplates". }
+    iPoseProof ("Hrestore_set" with "Hset_base Htemplates") as "Hset".
     iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
       "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l & Hset_spec_l & Hset_status_l)".
     iDestruct "Hset_objectmeta_l" as (set_meta_c)
@@ -1131,14 +1135,14 @@ Proof.
   { rewrite Hnew_volumes_pure Nat2Z.id.
     f_equal. apply take_ge. lia. }
   wp_auto.
-  iAssert (StatefulSetV.deepown_l set_l set dq_set)
+  iAssert (statefulset_without_claim_templates_l set_l set dq_set set_phy)
     with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-      Hdeepown_selector_some Hdeepown_template
-      Hdeepown_volumeclaimtemplates Hdeepown_status]"
-    as "Hset".
-  { iExists set_phy. rewrite /StatefulSetV.deepown.
-    iFrame. rewrite /StatefulSetSpecV.deepown.
-    iFrame. iFrame "%". }
+      Hdeepown_selector_some Hdeepown_template Hdeepown_status]" as "Hset_base".
+  { rewrite /statefulset_without_claim_templates_l. iFrame. iFrame "%". }
+  iAssert (statefulset_claim_templates set_phy set dq_set)
+    with "[Hdeepown_volumeclaimtemplates]" as "Htemplates".
+  { iExists claim_templates_list. iExact "Hdeepown_volumeclaimtemplates". }
+  iPoseProof ("Hrestore_set" with "Hset_base Htemplates") as "Hset".
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
   iAssert (ObjectMetaV.deepown pod_meta_c pod.(PodV.ObjectMeta') 1)
     with "[Hpod_objectmeta]" as "Hpod_objectmeta".

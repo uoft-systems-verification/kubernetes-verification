@@ -161,7 +161,7 @@ Proof.
   assert (valid_resource_version
     (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
     Hexisting_rv_valid.
-  { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
+  { pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv_existing & _). done. }
   wp_apply (wp_State__update_au γ l kind namespace i_copy kobj_rv).
   iFrame "#".
   iFrame "Hdeepown_i_copy".
@@ -394,7 +394,7 @@ Proof.
     as Huid_eq'.
   { rewrite Huid_eq. simpl in Huid_updated. exact Huid_updated. }
   iApply "HΦ". iSplit.
-  { iPureIntro. rewrite KObjectV.valid_eq_valid2 /= in Hvalid'. done. }
+  { iPureIntro. simpl in Hvalid'. done. }
   assert (KObjectV.key (KObjectV.Pod pod) = key) as Hkobj_key.
   { rewrite Hkey_eq. done. }
   assert ((KObjectV.objectmeta (KObjectV.Pod pod)).(ObjectMetaV.UID') = uid)
@@ -498,7 +498,7 @@ Proof.
   { simpl. symmetry. exact Huid_eq. }
   iEval (rewrite Hkobj_key Hkobj_uid) in "Hown_meta_frag Hown_spec_frag".
   iApply "HΦ". iFrame. iPureIntro.
-  rewrite KObjectV.valid_eq_valid2 /= in Hvalid'.
+  simpl in Hvalid'.
   split_and!; done.
 Qed.
 

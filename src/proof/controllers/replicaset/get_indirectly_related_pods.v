@@ -3,6 +3,8 @@ From New.proof.controllers.replicaset Require Export get_replica_sets_with_same_
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export
   v1_label_selector_as_selector.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -275,7 +277,7 @@ Proof.
       iIntros "Hseen".
       destruct (seen' !!
         this_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) as
-        [seen_rs_l|] eqn:Hseen_lookup; wp_auto.
+        [seen_rs_l|] eqn:Hseen_lookup; rewrite Hseen_lookup /=; wp_auto.
       * iCombineNamed "Hthis_pod_meta_field_*" as
           "Hthis_pod_meta_fields".
         iAssert (typed_pointsto_def (PodV.objectmeta_ptr this_pod_l)

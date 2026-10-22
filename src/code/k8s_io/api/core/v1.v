@@ -1246,21 +1246,7 @@ Axiom PersistentVolumeListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlob
 
 Axiom PersistentVolumeClaimListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom PersistentVolumeClaimConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom ClaimResourceStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom ModifyVolumeStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom PersistentVolumePhaseⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimPhaseⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom GlusterfsPersistentVolumeSourceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -4515,20 +4501,78 @@ Class PersistentVolumeClaimSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContex
   #[global] PersistentVolumeClaimSpec_set_VolumeAttributesClassName (x : PersistentVolumeClaimSpec.t) y :: ⟦StructFieldSet (PersistentVolumeClaimSpecⁱᵐᵖˡ) "VolumeAttributesClassName", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimSpec.VolumeAttributesClassName' := y|>);
 }.
 
+Module PersistentVolumeClaimPhase.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
+End def.
+End PersistentVolumeClaimPhase.
+
+Definition PersistentVolumeClaimPhaseⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class PersistentVolumeClaimPhase_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] PersistentVolumeClaimPhase_underlying :: (PersistentVolumeClaimPhase) <u (PersistentVolumeClaimPhaseⁱᵐᵖˡ);
+}.
+
 Module PersistentVolumeClaimStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Phase' : v1.PersistentVolumeClaimPhase.t;
+  AccessModes' : slice.t;
+  Capacity' : v1.ResourceList.t;
+  Conditions' : slice.t;
+  AllocatedResources' : v1.ResourceList.t;
+  AllocatedResourceStatuses' : map.t;
+  CurrentVolumeAttributesClassName' : loc;
+  ModifyVolumeStatus' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimStatus.
+
+Definition PersistentVolumeClaimStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Phase"%go PersistentVolumeClaimPhase);
+  (go.FieldDecl "AccessModes"%go (go.SliceType PersistentVolumeAccessMode));
+  (go.FieldDecl "Capacity"%go ResourceList);
+  (go.FieldDecl "Conditions"%go (go.SliceType PersistentVolumeClaimCondition));
+  (go.FieldDecl "AllocatedResources"%go ResourceList);
+  (go.FieldDecl "AllocatedResourceStatuses"%go (go.MapType ResourceName ClaimResourceStatus));
+  (go.FieldDecl "CurrentVolumeAttributesClassName"%go (go.PointerType go.string));
+  (go.FieldDecl "ModifyVolumeStatus"%go (go.PointerType ModifyVolumeStatus))
+].
+Program Definition PersistentVolumeClaimStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PersistentVolumeClaimStatus'fds_unsealed).
+Global Instance equals_unfold_PersistentVolumeClaimStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PersistentVolumeClaimStatus'fds =→ PersistentVolumeClaimStatus'fds_unsealed.
+Proof. rewrite /PersistentVolumeClaimStatus'fds seal_eq //. Qed.
+
+Definition PersistentVolumeClaimStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PersistentVolumeClaimStatus'fds).
 
 Class PersistentVolumeClaimStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PersistentVolumeClaimStatus_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimStatusⁱᵐᵖˡ PersistentVolumeClaimStatus.t;
   #[global] PersistentVolumeClaimStatus_underlying :: (PersistentVolumeClaimStatus) <u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimStatusⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimStatusⁱᵐᵖˡ) ↓u (PersistentVolumeClaimStatusⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimStatus_get_Phase (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Phase", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.Phase');
+  #[global] PersistentVolumeClaimStatus_set_Phase (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Phase", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.Phase' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_AccessModes (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AccessModes", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.AccessModes');
+  #[global] PersistentVolumeClaimStatus_set_AccessModes (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AccessModes", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.AccessModes' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_Capacity (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Capacity", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.Capacity');
+  #[global] PersistentVolumeClaimStatus_set_Capacity (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Capacity", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.Capacity' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_Conditions (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Conditions", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.Conditions');
+  #[global] PersistentVolumeClaimStatus_set_Conditions (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "Conditions", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.Conditions' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_AllocatedResources (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AllocatedResources", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.AllocatedResources');
+  #[global] PersistentVolumeClaimStatus_set_AllocatedResources (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AllocatedResources", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.AllocatedResources' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_AllocatedResourceStatuses (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AllocatedResourceStatuses", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.AllocatedResourceStatuses');
+  #[global] PersistentVolumeClaimStatus_set_AllocatedResourceStatuses (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "AllocatedResourceStatuses", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.AllocatedResourceStatuses' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_CurrentVolumeAttributesClassName (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "CurrentVolumeAttributesClassName", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName');
+  #[global] PersistentVolumeClaimStatus_set_CurrentVolumeAttributesClassName (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "CurrentVolumeAttributesClassName", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName' := y|>);
+  #[global] PersistentVolumeClaimStatus_get_ModifyVolumeStatus (x : PersistentVolumeClaimStatus.t) :: ⟦StructFieldGet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "ModifyVolumeStatus", #x⟧ ⤳[under] #x.(PersistentVolumeClaimStatus.ModifyVolumeStatus');
+  #[global] PersistentVolumeClaimStatus_set_ModifyVolumeStatus (x : PersistentVolumeClaimStatus.t) y :: ⟦StructFieldSet (PersistentVolumeClaimStatusⁱᵐᵖˡ) "ModifyVolumeStatus", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimStatus.ModifyVolumeStatus' := y|>);
 }.
 
 Module PersistentVolumeClaim.
@@ -4655,81 +4699,147 @@ Class TypedObjectReference_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{
 Module PersistentVolumeClaimConditionType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimConditionType.
 
+Definition PersistentVolumeClaimConditionTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class PersistentVolumeClaimConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PersistentVolumeClaimConditionType_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimConditionTypeⁱᵐᵖˡ PersistentVolumeClaimConditionType.t;
   #[global] PersistentVolumeClaimConditionType_underlying :: (PersistentVolumeClaimConditionType) <u (PersistentVolumeClaimConditionTypeⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimConditionTypeⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimConditionTypeⁱᵐᵖˡ) ↓u (PersistentVolumeClaimConditionTypeⁱᵐᵖˡ);
 }.
 
 Module ClaimResourceStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End ClaimResourceStatus.
 
+Definition ClaimResourceStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class ClaimResourceStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ClaimResourceStatus_type_repr  :: go.TypeReprUnderlying ClaimResourceStatusⁱᵐᵖˡ ClaimResourceStatus.t;
   #[global] ClaimResourceStatus_underlying :: (ClaimResourceStatus) <u (ClaimResourceStatusⁱᵐᵖˡ);
-  #[global] ClaimResourceStatusⁱᵐᵖˡ_underlying :: (ClaimResourceStatusⁱᵐᵖˡ) ↓u (ClaimResourceStatusⁱᵐᵖˡ);
 }.
 
 Module PersistentVolumeClaimModifyVolumeStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimModifyVolumeStatus.
 
+Definition PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class PersistentVolumeClaimModifyVolumeStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PersistentVolumeClaimModifyVolumeStatus_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ PersistentVolumeClaimModifyVolumeStatus.t;
   #[global] PersistentVolumeClaimModifyVolumeStatus_underlying :: (PersistentVolumeClaimModifyVolumeStatus) <u (PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ) ↓u (PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ);
 }.
 
 Module ModifyVolumeStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  TargetVolumeAttributesClassName' : go_string;
+  Status' : v1.PersistentVolumeClaimModifyVolumeStatus.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End ModifyVolumeStatus.
+
+Definition ModifyVolumeStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "TargetVolumeAttributesClassName"%go go.string);
+  (go.FieldDecl "Status"%go PersistentVolumeClaimModifyVolumeStatus)
+].
+Program Definition ModifyVolumeStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ModifyVolumeStatus'fds_unsealed).
+Global Instance equals_unfold_ModifyVolumeStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ModifyVolumeStatus'fds =→ ModifyVolumeStatus'fds_unsealed.
+Proof. rewrite /ModifyVolumeStatus'fds seal_eq //. Qed.
+
+Definition ModifyVolumeStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ModifyVolumeStatus'fds).
 
 Class ModifyVolumeStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ModifyVolumeStatus_type_repr  :: go.TypeReprUnderlying ModifyVolumeStatusⁱᵐᵖˡ ModifyVolumeStatus.t;
   #[global] ModifyVolumeStatus_underlying :: (ModifyVolumeStatus) <u (ModifyVolumeStatusⁱᵐᵖˡ);
-  #[global] ModifyVolumeStatusⁱᵐᵖˡ_underlying :: (ModifyVolumeStatusⁱᵐᵖˡ) ↓u (ModifyVolumeStatusⁱᵐᵖˡ);
+  #[global] ModifyVolumeStatus_get_TargetVolumeAttributesClassName (x : ModifyVolumeStatus.t) :: ⟦StructFieldGet (ModifyVolumeStatusⁱᵐᵖˡ) "TargetVolumeAttributesClassName", #x⟧ ⤳[under] #x.(ModifyVolumeStatus.TargetVolumeAttributesClassName');
+  #[global] ModifyVolumeStatus_set_TargetVolumeAttributesClassName (x : ModifyVolumeStatus.t) y :: ⟦StructFieldSet (ModifyVolumeStatusⁱᵐᵖˡ) "TargetVolumeAttributesClassName", (#x, #y)⟧ ⤳[under] #(x <|ModifyVolumeStatus.TargetVolumeAttributesClassName' := y|>);
+  #[global] ModifyVolumeStatus_get_Status (x : ModifyVolumeStatus.t) :: ⟦StructFieldGet (ModifyVolumeStatusⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(ModifyVolumeStatus.Status');
+  #[global] ModifyVolumeStatus_set_Status (x : ModifyVolumeStatus.t) y :: ⟦StructFieldSet (ModifyVolumeStatusⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|ModifyVolumeStatus.Status' := y|>);
+}.
+
+Module ConditionStatus.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
+End def.
+End ConditionStatus.
+
+Definition ConditionStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class ConditionStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] ConditionStatus_underlying :: (ConditionStatus) <u (ConditionStatusⁱᵐᵖˡ);
 }.
 
 Module PersistentVolumeClaimCondition.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.PersistentVolumeClaimConditionType.t;
+  Status' : v1.ConditionStatus.t;
+  LastProbeTime' : v1.Time.t;
+  LastTransitionTime' : v1.Time.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimCondition.
+
+Definition PersistentVolumeClaimCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go PersistentVolumeClaimConditionType);
+  (go.FieldDecl "Status"%go ConditionStatus);
+  (go.FieldDecl "LastProbeTime"%go v1.Time);
+  (go.FieldDecl "LastTransitionTime"%go v1.Time);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "Message"%go go.string)
+].
+Program Definition PersistentVolumeClaimCondition'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PersistentVolumeClaimCondition'fds_unsealed).
+Global Instance equals_unfold_PersistentVolumeClaimCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : PersistentVolumeClaimCondition'fds =→ PersistentVolumeClaimCondition'fds_unsealed.
+Proof. rewrite /PersistentVolumeClaimCondition'fds seal_eq //. Qed.
+
+Definition PersistentVolumeClaimConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (PersistentVolumeClaimCondition'fds).
 
 Class PersistentVolumeClaimCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] PersistentVolumeClaimCondition_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimConditionⁱᵐᵖˡ PersistentVolumeClaimCondition.t;
   #[global] PersistentVolumeClaimCondition_underlying :: (PersistentVolumeClaimCondition) <u (PersistentVolumeClaimConditionⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimConditionⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimConditionⁱᵐᵖˡ) ↓u (PersistentVolumeClaimConditionⁱᵐᵖˡ);
+  #[global] PersistentVolumeClaimCondition_get_Type (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.Type');
+  #[global] PersistentVolumeClaimCondition_set_Type (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.Type' := y|>);
+  #[global] PersistentVolumeClaimCondition_get_Status (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.Status');
+  #[global] PersistentVolumeClaimCondition_set_Status (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.Status' := y|>);
+  #[global] PersistentVolumeClaimCondition_get_LastProbeTime (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "LastProbeTime", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.LastProbeTime');
+  #[global] PersistentVolumeClaimCondition_set_LastProbeTime (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "LastProbeTime", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.LastProbeTime' := y|>);
+  #[global] PersistentVolumeClaimCondition_get_LastTransitionTime (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "LastTransitionTime", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.LastTransitionTime');
+  #[global] PersistentVolumeClaimCondition_set_LastTransitionTime (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "LastTransitionTime", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.LastTransitionTime' := y|>);
+  #[global] PersistentVolumeClaimCondition_get_Reason (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.Reason');
+  #[global] PersistentVolumeClaimCondition_set_Reason (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.Reason' := y|>);
+  #[global] PersistentVolumeClaimCondition_get_Message (x : PersistentVolumeClaimCondition.t) :: ⟦StructFieldGet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(PersistentVolumeClaimCondition.Message');
+  #[global] PersistentVolumeClaimCondition_set_Message (x : PersistentVolumeClaimCondition.t) y :: ⟦StructFieldSet (PersistentVolumeClaimConditionⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaimCondition.Message' := y|>);
 }.
 
 Module PersistentVolumeAccessMode.
@@ -4761,22 +4871,6 @@ Class PersistentVolumePhase_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `
   #[global] PersistentVolumePhase_type_repr  :: go.TypeReprUnderlying PersistentVolumePhaseⁱᵐᵖˡ PersistentVolumePhase.t;
   #[global] PersistentVolumePhase_underlying :: (PersistentVolumePhase) <u (PersistentVolumePhaseⁱᵐᵖˡ);
   #[global] PersistentVolumePhaseⁱᵐᵖˡ_underlying :: (PersistentVolumePhaseⁱᵐᵖˡ) ↓u (PersistentVolumePhaseⁱᵐᵖˡ);
-}.
-
-Module PersistentVolumeClaimPhase.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End PersistentVolumeClaimPhase.
-
-Class PersistentVolumeClaimPhase_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] PersistentVolumeClaimPhase_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimPhaseⁱᵐᵖˡ PersistentVolumeClaimPhase.t;
-  #[global] PersistentVolumeClaimPhase_underlying :: (PersistentVolumeClaimPhase) <u (PersistentVolumeClaimPhaseⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimPhaseⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimPhaseⁱᵐᵖˡ) ↓u (PersistentVolumeClaimPhaseⁱᵐᵖˡ);
 }.
 
 Module HostPathType.
@@ -7954,21 +8048,6 @@ Class Lifecycle_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCon
   #[global] Lifecycle_set_PreStop (x : Lifecycle.t) y :: ⟦StructFieldSet (Lifecycleⁱᵐᵖˡ) "PreStop", (#x, #y)⟧ ⤳[under] #(x <|Lifecycle.PreStop' := y|>);
   #[global] Lifecycle_get_StopSignal (x : Lifecycle.t) :: ⟦StructFieldGet (Lifecycleⁱᵐᵖˡ) "StopSignal", #x⟧ ⤳[under] #x.(Lifecycle.StopSignal');
   #[global] Lifecycle_set_StopSignal (x : Lifecycle.t) y :: ⟦StructFieldSet (Lifecycleⁱᵐᵖˡ) "StopSignal", (#x, #y)⟧ ⤳[under] #(x <|Lifecycle.StopSignal' := y|>);
-}.
-
-Module ConditionStatus.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Definition t : Type := go_string.
-#[global] Arguments t : clear implicits.
-End def.
-End ConditionStatus.
-
-Definition ConditionStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
-
-Class ConditionStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] ConditionStatus_underlying :: (ConditionStatus) <u (ConditionStatusⁱᵐᵖˡ);
 }.
 
 Module ContainerStateWaiting.

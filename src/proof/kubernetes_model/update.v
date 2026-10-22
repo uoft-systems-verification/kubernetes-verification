@@ -601,17 +601,8 @@ Proof.
   { rewrite Hnamespace_stored_new. symmetry. exact Hinput_namespace_old. }
   assert (KObjectV.valid new_kobj) as Hvalid_new.
   { unfold new_kobj, new_kmeta.
-    pose proof Hvalid_updated_kobj as
-      (Hupdated_valid_typemeta & _ & Hupdated_valid_meta & Hupdated_valid_spec &
-        Hupdated_valid_status).
-    split_and!.
-    - rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-      exact Hupdated_valid_typemeta.
-    - rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
-    - rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-      destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-    - apply valid_body_update_resource_version. exact Hupdated_valid_spec.
-    - rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status. }
+    eapply KObjectV.valid_update_resource_version;
+            [exact Hvalid_updated_kobj|exact Hvalid_rv]. }
   assert (kview.valid_k_uid_obj key uid new_kobj) as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj.
     split.

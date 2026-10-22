@@ -1,6 +1,8 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export common_delete.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
@@ -205,7 +207,13 @@ Proof.
       (mc0 <| v1.ObjectMeta.Finalizers' := new_finalizers_sl |>).
     iFrame "metadata newFinalizers Hmc_ptr".
     iSplitL "Hdeepown_m Hnew_finalizers_some".
-    - iNamed "Hdeepown_m". iFrame. iFrame "%".
+    - iNamed "Hdeepown_m".
+      iDestruct "Hnew_finalizers_some" as "[Hnew_finalizers_some Hnew_finalizers_cap]".
+      iClear "Hdeepown_finalizers_some Hdeepown_finalizers_cap".
+      destruct new_finalizers as [fs|] eqn:Hnew_finalizers; simpl.
+      + iDestruct "Hnew_finalizers_some" as (cfs) "[Hnew_finalizers ->]".
+        rewrite /ObjectMetaV.deepown /=. iFrame. iFrame "%".
+      + rewrite /ObjectMetaV.deepown /=. iFrame. iFrame "%".
     - iPureIntro. split; done.
   }
   { iSplit; first done.
@@ -537,22 +545,16 @@ Proof.
       rewrite Hcurrent_kmeta_eq. destruct kobj; done.
     - unfold new_kobj, new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
       destruct kobj; simpl in *; symmetry; exact Huid_obj.
-    - destruct Hvalid_kobj as
-        (Hvalid_tm & _ & Hvalid_m & Hvalid_spec & Hvalid_status).
-      split_and!. all: unfold new_kobj.
-      + destruct kobj; done.
-      + destruct kobj; simpl; exact Hgenerated_rv_valid.
-      + assert (ObjectMetaV.valid (KObjectV.kind kobj) new_kmeta1)
-          as Hvalid_m1.
-        { unfold ObjectMetaV.valid in Hvalid_m.
-          decompose [and] Hvalid_m.
-          unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
-          split_and!. all: try done.
-        }
-        destruct kobj; done.
+    - unfold new_kobj.
+      eapply KObjectV.valid_update_objectmeta.
+      + exact Hvalid_kobj.
+      + pose proof (KObjectV.valid_components _ Hvalid_kobj) as (_ & _ & Hvalid_m & _).
+        unfold ObjectMetaV.valid in Hvalid_m |- *.
+        unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
+        destruct kobj; simpl in *; tauto.
+      + unfold new_kmeta1. exact Hgenerated_rv_valid.
       + unfold new_kmeta1, new_kmeta. rewrite Hcurrent_kmeta_eq.
         destruct kobj; done.
-      + destruct kobj; done.
     - apply KObjectV.extra_valid_update_objectmeta.
       exact Hextra_valid_kobj.
   }

@@ -3,6 +3,8 @@ From New.proof Require Import util.
 From New.proof.k8s_io.kubernetes.pkg Require Import controller.
 From New.proof.kubernetes_model Require Export inv common list new.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.

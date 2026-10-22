@@ -109,7 +109,7 @@ Proof.
   assert (valid_resource_version
     (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj))) as
     Hexisting_rv_valid.
-  { destruct Hvalid_existing as (_ & Hrv_existing & _). done. }
+  { pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv_existing & _). done. }
   (* The request stays valid at the stored resource version. *)
   assert (KObjectV.valid_status_update kind namespace kmeta kstatus kobj_rv) as Hvalid_rv.
   { subst kobj_rv kmeta_rv.

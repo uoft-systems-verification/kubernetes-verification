@@ -218,6 +218,15 @@ translate = [
     "VsphereVirtualDiskVolumeSource",
     "WeightedPodAffinityTerm",
     "WindowsSecurityContextOptions",
+
+    # Complete recursive object representations.
+    "ClaimResourceStatus",
+    "ModifyVolumeStatus",
+    "PersistentVolumeClaimCondition",
+    "PersistentVolumeClaimConditionType",
+    "PersistentVolumeClaimModifyVolumeStatus",
+    "PersistentVolumeClaimPhase",
+    "PersistentVolumeClaimStatus",
 ]
 
 imports = [

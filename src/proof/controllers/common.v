@@ -6,6 +6,8 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : common.Assumptions}.
@@ -60,7 +62,8 @@ Proof.
   iApply "HΦ".
   rewrite /delete_options_with_uid /DeleteOptionsV.deepown /PreconditionsV.deepown /=.
   iPoseProof (own_slice_nil (V:=go_string) (DfracOwn 1)) as "Hdryrun".
-  iFrame "Hdryrun".
+  iPoseProof (own_slice_cap_nil (V:=go_string)) as "Hdryrun_cap".
+  iFrame "Hdryrun Hdryrun_cap".
   iFrame.
   iPureIntro.
   split_and!; try done.

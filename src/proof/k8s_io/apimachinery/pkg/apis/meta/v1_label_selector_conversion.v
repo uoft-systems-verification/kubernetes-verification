@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_add.
-From New.proof.kubernetes_types Require Import labelselector.
+From New.object_specs Require Import labelselector.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

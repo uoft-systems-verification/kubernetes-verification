@@ -43,10 +43,10 @@ Definition create_prepared_for_helper
                   <| ObjectMetaV.DeletionGracePeriodSeconds' := None |>).
 
 Definition valid_without_resource_version (obj : KObjectV.t) : Prop :=
-  valid_typemeta (KObjectV.kind obj) (KObjectV.typemeta obj) ∧
   ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj) ∧
-  KObjectV.valid_body obj ∧
-  ObjectStatusV.valid (KObjectV.status obj).
+  ∀ rv, valid_resource_version rv →
+    KObjectV.valid (KObjectV.update_objectmeta obj
+      (KObjectV.objectmeta obj <| ObjectMetaV.ResourceVersion' := rv |>)).
 
 (** [update_objects_equiv_except_resource_version] relates two views of the
     same object when only the server-managed resource version may differ.

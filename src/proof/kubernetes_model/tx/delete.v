@@ -81,7 +81,7 @@ Proof.
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -111,7 +111,7 @@ Proof.
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -141,7 +141,7 @@ Proof.
       { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
       iAssert (DeleteOptionsV.deepown options_c options dq)
         with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-          Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+          Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options".
       { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
       iApply "HΦ". iFrame. iPureIntro.
@@ -156,7 +156,7 @@ Proof.
     wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
     iApply "HΦ". iFrame. iPureIntro.
@@ -272,7 +272,7 @@ Proof.
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
         with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
@@ -310,7 +310,7 @@ Proof.
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
         with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
@@ -360,7 +360,7 @@ Proof.
     iAssert (DeleteOptionsV.deepown_l options_l
       (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
       with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-        Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+        Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
         Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options_l".
     { iExists (options_c <| v1.DeleteOptions.Preconditions' := preconditions_ptr |>).

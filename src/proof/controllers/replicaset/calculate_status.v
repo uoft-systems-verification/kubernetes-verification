@@ -179,7 +179,7 @@ Proof.
     iNext. iIntros (b) "(_ & Hpod_labels & _)".
     iDestruct ("Hrestore" with "Hpod_labels") as "Hp_Hdeepown_objectmeta".
     iAssert (PodV.deepown_l this_ptr this_pod dq)
-      with "[Hthis_l Hp_Hdeepown_objectmeta Hp_Hdeepown_podspec Hp_Hdeepown_podstatus]" as "Hthis".
+      with "[Hthis_l Hp_Hdeepown_objectmeta Hp_Hdeepown_spec Hp_Hdeepown_status]" as "Hthis".
     { iExists pod_c. iFrame. rewrite /PodV.deepown. iFrame "∗ %". }
     wp_pures.
     wp_bind (if: _ then _ else _)%E.

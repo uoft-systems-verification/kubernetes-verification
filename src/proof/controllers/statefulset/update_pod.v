@@ -2,6 +2,8 @@ From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

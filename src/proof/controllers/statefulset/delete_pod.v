@@ -2,6 +2,8 @@ From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.kubernetes_model Require Export delete_reserved.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

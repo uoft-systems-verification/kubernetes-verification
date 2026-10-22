@@ -8,16 +8,13 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
     views and assume that validation of omitted fields succeeds; their
     reachable-memory footprints also need the recursive treatment used by Pod. *)
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
 Local Set Default Proof Using "All".
 
-Lemma valid_body_update_resource_version obj rv :
-  KObjectV.valid_body (KObjectV.update_objectmeta obj
-    (KObjectV.objectmeta obj <| ObjectMetaV.ResourceVersion' := rv |>)) ↔
-  KObjectV.valid_body obj.
-Proof. destruct obj; done. Qed.
 
 Lemma valid_update_equiv_except_resource_version kind namespace m1 m2 kspec input :
   ObjectMetaV.equiv_except_resource_version m1 m2 →

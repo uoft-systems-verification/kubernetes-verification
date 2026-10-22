@@ -42,13 +42,20 @@ Definition conditions_ready (cs : list v1.PodCondition.t) : bool :=
   end.
 
 Lemma conditions_ready_view (s : PodStatusV.t) cs :
-  PodStatusV.conditions_list s = PodConditionV.of_go <$> cs →
+  (λ c, (c.(v1.PodCondition.Type'), c.(v1.PodCondition.Status'))) <$> cs =
+    (λ v, (v.(PodConditionV.Type'), v.(PodConditionV.Status'))) <$> PodStatusV.conditions_list s →
   PodStatusV.ready s = conditions_ready cs.
 Proof.
-  intros Hconds.
-  rewrite /PodStatusV.ready /conditions_ready Hconds list_find_fmap.
-  rewrite /condition_has_type /compose /=.
-  by destruct (list_find _ cs) as [[j c]|].
+  intros Hfields.
+  pose proof (f_equal (list_find (λ fields : go_string * go_string, fields.1 = "Ready"%go))
+    Hfields) as Hfind.
+  rewrite !list_find_fmap /compose /= in Hfind.
+  rewrite /PodStatusV.ready /conditions_ready /condition_has_type.
+  destruct (list_find _ cs) as [[i c]|];
+    destruct (list_find _ (PodStatusV.conditions_list s)) as [[j v]|];
+    simpl in Hfind |- *; try discriminate; try done.
+  injection Hfind as Hindex Htype Hstatus.
+  by rewrite Hstatus.
 Qed.
 
 Lemma wp_GetPodConditionFromList (sl : slice.t) (cs : list v1.PodCondition.t) dq (ty : go_string) :
@@ -177,7 +184,7 @@ Proof.
 Qed.
 
 (* [IsPodReady] computes [PodStatusV.ready] and leaves the pod unchanged. *)
-Local Transparent PodStatusV.deepown.
+Local Transparent PodStatusV.deepown PodFields.PodStatusV.deepown.
 Lemma wp_IsPodReady (pod_l : loc) (p : PodV.t) dq :
   {{{ is_pkg_init podutil_pkg ∗
       PodV.deepown_l pod_l p dq
@@ -186,18 +193,25 @@ Lemma wp_IsPodReady (pod_l : loc) (p : PodV.t) dq :
   {{{ RET #(PodStatusV.ready p.(PodV.Status')); PodV.deepown_l pod_l p dq }}}.
 Proof.
   wp_start as "(%c & Hl & Hc)". iNamed "Hc".
-  iEval (rewrite /PodStatusV.deepown) in "Hdeepown_podstatus".
-  iNamedPrefix "Hdeepown_podstatus" "Hstatus_".
+  iEval (rewrite /PodStatusV.deepown) in "Hdeepown_status".
+  iNamedPrefix "Hdeepown_status" "Hstatus_".
   iDestruct "Hstatus_Hdeepown_conditions" as "(%Hnil & %cs & Hsl & Hcap & #Hconds_deepown)".
-  iEval (rewrite /PodConditionV.deepown) in "Hconds_deepown".
-  iDestruct (big_sepL2_pure with "Hconds_deepown") as %(Hlen & Hlookup).
-  assert (PodStatusV.conditions_list p.(PodV.Status') = PodConditionV.of_go <$> cs) as Hconds.
-  { unfold PodStatusV.conditions_list. apply list_eq. intros k. rewrite list_lookup_fmap.
-    destruct (cs !! k) as [c'|] eqn:Hc;
-      destruct (default [] p.(PodV.Status').(PodStatusV.Conditions') !! k) as [v'|] eqn:Hv; simpl.
-    - pose proof (Hlookup k c' v' Hc Hv) as Heq. by subst v'.
-    - apply lookup_lt_Some in Hc. apply lookup_ge_None in Hv. lia.
-    - apply lookup_ge_None in Hc. apply lookup_lt_Some in Hv. lia.
+  iAssert ([∗ list] c;v ∈ cs;default [] p.(PodV.Status').(PodStatusV.Conditions'),
+    ⌜c.(v1.PodCondition.Type') = v.(PodConditionV.Type') ∧
+      c.(v1.PodCondition.Status') = v.(PodConditionV.Status')⌝)%I as "Hfields".
+  { iApply (big_sepL2_impl with "Hconds_deepown").
+    iIntros "!#" (k c' v' Hc' Hv') "Hcondition".
+    rewrite /PodConditionV.deepown. iNamed "Hcondition". done. }
+  iDestruct (big_sepL2_pure with "Hfields") as %(Hlen & Hlookup).
+  assert ((λ c, (c.(v1.PodCondition.Type'), c.(v1.PodCondition.Status'))) <$> cs =
+    (λ v, (v.(PodConditionV.Type'), v.(PodConditionV.Status'))) <$>
+      PodStatusV.conditions_list p.(PodV.Status')) as Hconds.
+  { unfold PodStatusV.conditions_list. apply list_eq. intros k. rewrite !list_lookup_fmap.
+    destruct (cs !! k) as [c'|] eqn:Hc';
+      destruct (default [] p.(PodV.Status').(PodStatusV.Conditions') !! k) as [v'|] eqn:Hv'; simpl.
+    - destruct (Hlookup k c' v' Hc' Hv') as [Htype Hstatus]. by rewrite Htype Hstatus.
+    - apply lookup_lt_Some in Hc'. apply lookup_ge_None in Hv'. lia.
+    - apply lookup_ge_None in Hc'. apply lookup_lt_Some in Hv'. lia.
     - done. }
   wp_auto.
   wp_apply (wp_IsPodReadyConditionTrue with "[$Hsl]").
@@ -207,7 +221,7 @@ Proof.
   rewrite /PodStatusV.deepown. iFrame "∗ %".
   rewrite /deepown_slice. iFrame "# ∗ %".
 Qed.
-Local Opaque PodStatusV.deepown.
+Local Opaque PodStatusV.deepown PodFields.PodStatusV.deepown.
 
 
 (* TODO: translate [IsPodPhaseTerminal] and prove this spec using the represented phase. *)

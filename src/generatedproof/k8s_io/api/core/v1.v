@@ -2686,13 +2686,132 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Phase" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Phase') ∗
+      "AccessModes" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AccessModes') ∗
+      "Capacity" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Capacity') ∗
+      "Conditions" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Conditions') ∗
+      "AllocatedResources" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AllocatedResources') ∗
+      "AllocatedResourceStatuses" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') ∗
+      "CurrentVolumeAttributesClassName" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName') ∗
+      "ModifyVolumeStatus" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimStatus.t) (v1.PersistentVolumeClaimStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Phase l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Phase l (v : (v1.PersistentVolumeClaimStatus.t)) Phase' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦ (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦ Phase')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Phase') := Phase'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AccessModes l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AccessModes l (v : (v1.PersistentVolumeClaimStatus.t)) AccessModes' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦ (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦ AccessModes')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AccessModes') := AccessModes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Capacity l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Capacity l (v : (v1.PersistentVolumeClaimStatus.t)) Capacity' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦ (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦ Capacity')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Capacity') := Capacity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Conditions l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Conditions l (v : (v1.PersistentVolumeClaimStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦ (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AllocatedResources l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AllocatedResources l (v : (v1.PersistentVolumeClaimStatus.t)) AllocatedResources' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦ (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦ AllocatedResources')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AllocatedResources') := AllocatedResources'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AllocatedResourceStatuses l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AllocatedResourceStatuses l (v : (v1.PersistentVolumeClaimStatus.t)) AllocatedResourceStatuses' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦ (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦ AllocatedResourceStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') := AllocatedResourceStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_CurrentVolumeAttributesClassName l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_CurrentVolumeAttributesClassName l (v : (v1.PersistentVolumeClaimStatus.t)) CurrentVolumeAttributesClassName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦ (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦ CurrentVolumeAttributesClassName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName') := CurrentVolumeAttributesClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_ModifyVolumeStatus l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_ModifyVolumeStatus l (v : (v1.PersistentVolumeClaimStatus.t)) ModifyVolumeStatus' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦ (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦ ModifyVolumeStatus')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus') := ModifyVolumeStatus'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimStatus.
@@ -2883,66 +3002,6 @@ Proof. solve_pointsto_access_struct. Qed.
 End def.
 End TypedObjectReference.
 
-Module PersistentVolumeClaimConditionType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimConditionType.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimConditionType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimConditionType.t) (v1.PersistentVolumeClaimConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimConditionType.
-
-Module ClaimResourceStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ClaimResourceStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ClaimResourceStatus.t). Admitted.
-
-#[global] Instance ClaimResourceStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ClaimResourceStatus.t) (v1.ClaimResourceStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ClaimResourceStatus.
-
-Module PersistentVolumeClaimModifyVolumeStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimModifyVolumeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimModifyVolumeStatus.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimModifyVolumeStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimModifyVolumeStatus.t) (v1.PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimModifyVolumeStatus.
-
 Module ModifyVolumeStatus.
 Section def.
 
@@ -2952,13 +3011,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ModifyVolumeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ModifyVolumeStatus.t). Admitted.
+#[global]Program Instance ModifyVolumeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ModifyVolumeStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TargetVolumeAttributesClassName" ∷ l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName') ∗
+      "Status" ∷ l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} v.(v1.ModifyVolumeStatus.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ModifyVolumeStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.ModifyVolumeStatus.t) (v1.ModifyVolumeStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ModifyVolumeStatus_access_load_TargetVolumeAttributesClassName l (v : (v1.ModifyVolumeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ModifyVolumeStatus_access_store_TargetVolumeAttributesClassName l (v : (v1.ModifyVolumeStatus.t)) TargetVolumeAttributesClassName' :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦ (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦ TargetVolumeAttributesClassName')
+    (l ↦ v) (l ↦ (v <|(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName') := TargetVolumeAttributesClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ModifyVolumeStatus_access_load_Status l (v : (v1.ModifyVolumeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} (v.(v1.ModifyVolumeStatus.Status')))
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} (v.(v1.ModifyVolumeStatus.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ModifyVolumeStatus_access_store_Status l (v : (v1.ModifyVolumeStatus.t)) Status' :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦ (v.(v1.ModifyVolumeStatus.Status')))
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.ModifyVolumeStatus.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ModifyVolumeStatus.
@@ -2972,13 +3066,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimCondition.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Type') ∗
+      "Status" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Status') ∗
+      "LastProbeTime" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.LastProbeTime') ∗
+      "LastTransitionTime" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Reason') ∗
+      "Message" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimCondition.t) (v1.PersistentVolumeClaimConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Type l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Type l (v : (v1.PersistentVolumeClaimCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦ (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Status l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Status l (v : (v1.PersistentVolumeClaimCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦ (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_LastProbeTime l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_LastProbeTime l (v : (v1.PersistentVolumeClaimCondition.t)) LastProbeTime' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦ (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦ LastProbeTime')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.LastProbeTime') := LastProbeTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_LastTransitionTime l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_LastTransitionTime l (v : (v1.PersistentVolumeClaimCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦ (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Reason l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Reason l (v : (v1.PersistentVolumeClaimCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦ (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Message l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Message l (v : (v1.PersistentVolumeClaimCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦ (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimCondition.
@@ -3002,26 +3187,6 @@ Proof. Admitted.
 
 End def.
 End PersistentVolumePhase.
-
-Module PersistentVolumeClaimPhase.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimPhase_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimPhase.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimPhase_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimPhase.t) (v1.PersistentVolumeClaimPhaseⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimPhase.
 
 Module HostPathVolumeSource.
 Section def.

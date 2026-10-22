@@ -82,44 +82,10 @@ Lemma create_stored_from_helper_result_valid helper_result stored :
   create_stored_from_helper_result helper_result stored →
   KObjectV.valid stored.
 Proof.
-  intros Hvalid Hstored.
-  destruct Hvalid as (Htypemeta & Hmeta & Hspec & Hstatus).
-  destruct Hstored as (Hkind & Htypemeta_eq & Hmeta_eq & Hspec_eq & Hstatus_eq & Hrv).
-  assert (KObjectV.kind helper_result = KObjectV.kind stored) as Hkind_eq.
-  { destruct helper_result, stored; simpl in Hkind |- *; try contradiction; done. }
-  rewrite /KObjectV.valid.
-  split_and!.
-  - rewrite -Hkind_eq -Htypemeta_eq. exact Htypemeta.
-  - exact Hrv.
-  - rewrite -Hkind_eq.
-    pose proof Hmeta_eq as Hmeta_fields.
-    rewrite /ObjectMetaV.equiv_except_resource_version
-      /ObjectMetaV.without_resource_version in Hmeta_fields.
-    pose proof (f_equal ObjectMetaV.GenerateName' Hmeta_fields) as Hgenerate_name.
-    pose proof (f_equal ObjectMetaV.Name' Hmeta_fields) as Hname.
-    pose proof (f_equal ObjectMetaV.Namespace' Hmeta_fields) as Hnamespace.
-    pose proof (f_equal ObjectMetaV.UID' Hmeta_fields) as Huid.
-    pose proof (f_equal ObjectMetaV.Labels' Hmeta_fields) as Hlabels.
-    pose proof (f_equal ObjectMetaV.Annotations' Hmeta_fields) as Hannotations.
-    pose proof (f_equal ObjectMetaV.OwnerReferences' Hmeta_fields) as Howners.
-    pose proof (f_equal ObjectMetaV.Finalizers' Hmeta_fields) as Hfinalizers.
-    pose proof (f_equal ObjectMetaV.ManagedFields' Hmeta_fields) as Hmanaged_fields.
-    pose proof (f_equal ObjectMetaV.SelfLink' Hmeta_fields) as Hself_link.
-    simpl in Hgenerate_name, Hname, Hnamespace, Huid, Hlabels, Hannotations,
-      Howners, Hfinalizers, Hmanaged_fields, Hself_link.
-    unfold ObjectMetaV.valid in Hmeta |- *.
-    rewrite -Hgenerate_name -Hname -Hnamespace -Huid -Hlabels -Hannotations
-      -Howners -Hfinalizers -Hmanaged_fields -Hself_link. exact Hmeta.
-  - rewrite /ObjectMetaV.equiv_except_resource_version
-      /ObjectMetaV.without_resource_version in Hmeta_eq.
-    pose proof (f_equal ObjectMetaV.Annotations' Hmeta_eq) as Hannotations_eq.
-    simpl in Hannotations_eq.
-    destruct helper_result, stored; simpl in Hkind, Hspec_eq, Hspec, Hannotations_eq |- *;
-      try contradiction; injection Hspec_eq as Hspec_eq;
-      rewrite /KObjectV.valid_body /PodV.valid_body /= in Hspec |- *;
-      rewrite -Hspec_eq; try exact Hspec.
-    rewrite -Hannotations_eq. exact Hspec.
-  - rewrite -Hstatus_eq. exact Hstatus.
+  intros Hvalid (Hkind & Htm & Hmeta & Hspec & Hstatus & Hrv).
+  rewrite (KObjectV.eq_except_resource_version helper_result stored
+    Hkind Htm Hmeta Hspec Hstatus).
+  apply (proj2 Hvalid). exact Hrv.
 Qed.
 
 End proof.

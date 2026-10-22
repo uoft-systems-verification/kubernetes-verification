@@ -1,6 +1,10 @@
 From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.controllers.statefulset Require Export pod_storage.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -246,7 +250,12 @@ Proof.
     with "[Hset_spec_deepown_Hdeepown_replicas_some
       Hset_spec_deepown_Hdeepown_selector_some
       Hset_spec_deepown_Hdeepown_template
-      Hset_spec_deepown_Hdeepown_volumeclaimtemplates]" as
+      Hset_spec_deepown_Hdeepown_volumeclaimtemplates_some
+      Hset_spec_deepown_Hdeepown_volumeclaimtemplates_cap
+      Hset_spec_deepown_Hdeepown_updatestrategy
+      Hset_spec_deepown_Hdeepown_revisionhistorylimit_some
+      Hset_spec_deepown_Hdeepown_persistentvolumeclaimretentionpolicy_some
+      Hset_spec_deepown_Hdeepown_ordinals_some]" as
       "Hset_spec_deepown".
   { rewrite /StatefulSetSpecV.deepown /set_spec_c'. simpl. iFrame.
     iPureIntro. done. }

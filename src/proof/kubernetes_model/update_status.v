@@ -515,17 +515,8 @@ Proof.
       + rewrite objectmeta_update_objectmeta Huid_eq. symmetry.
         exact Huid_updated.
       + split.
-        * pose proof Hvalid_updated_kobj as
-            (Hupdated_valid_typemeta & _ & Hupdated_valid_meta & Hupdated_valid_spec &
-              Hupdated_valid_status).
-          split_and!.
-          -- rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-             exact Hupdated_valid_typemeta.
-          -- rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
-          -- rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-             destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-          -- apply valid_body_update_resource_version. exact Hupdated_valid_spec.
-          -- rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status.
+        * eapply KObjectV.valid_update_resource_version;
+            [exact Hvalid_updated_kobj|exact Hvalid_rv].
         * apply KObjectV.extra_valid_update_objectmeta.
           rewrite /KObjectV.extra_valid Hspec_eq.
           exact Hextra_valid_old.

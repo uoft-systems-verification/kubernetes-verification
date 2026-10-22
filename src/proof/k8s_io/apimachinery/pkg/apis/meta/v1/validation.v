@@ -3,7 +3,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Export validation_in
 From New.proof.k8s_io.apimachinery.pkg.util.validation Require Import field.
 From New.proof.k8s_io.apimachinery.pkg.util Require Import sets.
 From New.proof.k8s_io.utils Require Import ptr.
-From New.proof.kubernetes_types Require Import delete_options.
+From New.object_specs Require Import delete_options.
 
 Module metav1_validation := code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation.
 
@@ -143,7 +143,7 @@ Proof.
   all: wp_apply (wp_ValidateIgnoreStoreReadError_valid path' l options dq with
     "[Hoptions Hdeepown_graceperiodseconds_some
     Hdeepown_preconditions_some Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some
-    Hdeepown_ignorestorereaderror_some Hdeepown_dryrun]").
+    Hdeepown_ignorestorereaderror_some Hdeepown_dryrun Hdeepown_dryrun_cap]").
   all: try (iFrame "#"; iSplitL; last (iPureIntro; exact Hvalid);
     iExists c; iFrame "Hoptions"; rewrite /DeleteOptionsV.deepown Horphan Hpolicy_opt; iFrame; done).
   all: iIntros (ignore_errs) "(Hignore_errs & Hignore_cap & Hoptions)"; wp_auto.

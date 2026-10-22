@@ -169,24 +169,6 @@ Definition ControllerRevisionList {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 #[global] Opaque ControllerRevisionList.
 
-Axiom PodManagementPolicyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetUpdateStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetUpdateStrategyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom RollingUpdateStatefulSetStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetOrdinalsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom StatefulSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom DeploymentListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -549,33 +531,66 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 Module PodManagementPolicyType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End PodManagementPolicyType.
 
+Definition PodManagementPolicyTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class PodManagementPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PodManagementPolicyType_type_repr  :: go.TypeReprUnderlying PodManagementPolicyTypeⁱᵐᵖˡ PodManagementPolicyType.t;
   #[global] PodManagementPolicyType_underlying :: (PodManagementPolicyType) <u (PodManagementPolicyTypeⁱᵐᵖˡ);
-  #[global] PodManagementPolicyTypeⁱᵐᵖˡ_underlying :: (PodManagementPolicyTypeⁱᵐᵖˡ) ↓u (PodManagementPolicyTypeⁱᵐᵖˡ);
+}.
+
+Module StatefulSetUpdateStrategyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
+End def.
+End StatefulSetUpdateStrategyType.
+
+Definition StatefulSetUpdateStrategyTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class StatefulSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatefulSetUpdateStrategyType_underlying :: (StatefulSetUpdateStrategyType) <u (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ);
 }.
 
 Module StatefulSetUpdateStrategy.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.StatefulSetUpdateStrategyType.t;
+  RollingUpdate' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetUpdateStrategy.
+
+Definition StatefulSetUpdateStrategy'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go StatefulSetUpdateStrategyType);
+  (go.FieldDecl "RollingUpdate"%go (go.PointerType RollingUpdateStatefulSetStrategy))
+].
+Program Definition StatefulSetUpdateStrategy'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetUpdateStrategy'fds_unsealed).
+Global Instance equals_unfold_StatefulSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetUpdateStrategy'fds =→ StatefulSetUpdateStrategy'fds_unsealed.
+Proof. rewrite /StatefulSetUpdateStrategy'fds seal_eq //. Qed.
+
+Definition StatefulSetUpdateStrategyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetUpdateStrategy'fds).
 
 Class StatefulSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyⁱᵐᵖˡ StatefulSetUpdateStrategy.t;
   #[global] StatefulSetUpdateStrategy_underlying :: (StatefulSetUpdateStrategy) <u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
-  #[global] StatefulSetUpdateStrategyⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyⁱᵐᵖˡ);
+  #[global] StatefulSetUpdateStrategy_get_Type (x : StatefulSetUpdateStrategy.t) :: ⟦StructFieldGet (StatefulSetUpdateStrategyⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(StatefulSetUpdateStrategy.Type');
+  #[global] StatefulSetUpdateStrategy_set_Type (x : StatefulSetUpdateStrategy.t) y :: ⟦StructFieldSet (StatefulSetUpdateStrategyⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetUpdateStrategy.Type' := y|>);
+  #[global] StatefulSetUpdateStrategy_get_RollingUpdate (x : StatefulSetUpdateStrategy.t) :: ⟦StructFieldGet (StatefulSetUpdateStrategyⁱᵐᵖˡ) "RollingUpdate", #x⟧ ⤳[under] #x.(StatefulSetUpdateStrategy.RollingUpdate');
+  #[global] StatefulSetUpdateStrategy_set_RollingUpdate (x : StatefulSetUpdateStrategy.t) y :: ⟦StructFieldSet (StatefulSetUpdateStrategyⁱᵐᵖˡ) "RollingUpdate", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetUpdateStrategy.RollingUpdate' := y|>);
 }.
 
 Module StatefulSetSpec.
@@ -778,116 +793,182 @@ Class StatefulSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalC
   #[global] StatefulSet'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetUID" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
 }.
 
-Module StatefulSetUpdateStrategyType.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatefulSetUpdateStrategyType.
-
-Class StatefulSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatefulSetUpdateStrategyType_type_repr  :: go.TypeReprUnderlying StatefulSetUpdateStrategyTypeⁱᵐᵖˡ StatefulSetUpdateStrategyType.t;
-  #[global] StatefulSetUpdateStrategyType_underlying :: (StatefulSetUpdateStrategyType) <u (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ);
-  #[global] StatefulSetUpdateStrategyTypeⁱᵐᵖˡ_underlying :: (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ) ↓u (StatefulSetUpdateStrategyTypeⁱᵐᵖˡ);
-}.
-
 Module RollingUpdateStatefulSetStrategy.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Partition' : loc;
+  MaxUnavailable' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End RollingUpdateStatefulSetStrategy.
+
+Definition RollingUpdateStatefulSetStrategy'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Partition"%go (go.PointerType go.int32));
+  (go.FieldDecl "MaxUnavailable"%go (go.PointerType intstr.IntOrString))
+].
+Program Definition RollingUpdateStatefulSetStrategy'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (RollingUpdateStatefulSetStrategy'fds_unsealed).
+Global Instance equals_unfold_RollingUpdateStatefulSetStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : RollingUpdateStatefulSetStrategy'fds =→ RollingUpdateStatefulSetStrategy'fds_unsealed.
+Proof. rewrite /RollingUpdateStatefulSetStrategy'fds seal_eq //. Qed.
+
+Definition RollingUpdateStatefulSetStrategyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (RollingUpdateStatefulSetStrategy'fds).
 
 Class RollingUpdateStatefulSetStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] RollingUpdateStatefulSetStrategy_type_repr  :: go.TypeReprUnderlying RollingUpdateStatefulSetStrategyⁱᵐᵖˡ RollingUpdateStatefulSetStrategy.t;
   #[global] RollingUpdateStatefulSetStrategy_underlying :: (RollingUpdateStatefulSetStrategy) <u (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ);
-  #[global] RollingUpdateStatefulSetStrategyⁱᵐᵖˡ_underlying :: (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) ↓u (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ);
+  #[global] RollingUpdateStatefulSetStrategy_get_Partition (x : RollingUpdateStatefulSetStrategy.t) :: ⟦StructFieldGet (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) "Partition", #x⟧ ⤳[under] #x.(RollingUpdateStatefulSetStrategy.Partition');
+  #[global] RollingUpdateStatefulSetStrategy_set_Partition (x : RollingUpdateStatefulSetStrategy.t) y :: ⟦StructFieldSet (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) "Partition", (#x, #y)⟧ ⤳[under] #(x <|RollingUpdateStatefulSetStrategy.Partition' := y|>);
+  #[global] RollingUpdateStatefulSetStrategy_get_MaxUnavailable (x : RollingUpdateStatefulSetStrategy.t) :: ⟦StructFieldGet (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) "MaxUnavailable", #x⟧ ⤳[under] #x.(RollingUpdateStatefulSetStrategy.MaxUnavailable');
+  #[global] RollingUpdateStatefulSetStrategy_set_MaxUnavailable (x : RollingUpdateStatefulSetStrategy.t) y :: ⟦StructFieldSet (RollingUpdateStatefulSetStrategyⁱᵐᵖˡ) "MaxUnavailable", (#x, #y)⟧ ⤳[under] #(x <|RollingUpdateStatefulSetStrategy.MaxUnavailable' := y|>);
 }.
 
 Module PersistentVolumeClaimRetentionPolicyType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimRetentionPolicyType.
 
+Definition PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class PersistentVolumeClaimRetentionPolicyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PersistentVolumeClaimRetentionPolicyType_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ PersistentVolumeClaimRetentionPolicyType.t;
   #[global] PersistentVolumeClaimRetentionPolicyType_underlying :: (PersistentVolumeClaimRetentionPolicyType) <u (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ) ↓u (PersistentVolumeClaimRetentionPolicyTypeⁱᵐᵖˡ);
 }.
 
 Module StatefulSetPersistentVolumeClaimRetentionPolicy.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  WhenDeleted' : v1.PersistentVolumeClaimRetentionPolicyType.t;
+  WhenScaled' : v1.PersistentVolumeClaimRetentionPolicyType.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetPersistentVolumeClaimRetentionPolicy.
+
+Definition StatefulSetPersistentVolumeClaimRetentionPolicy'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "WhenDeleted"%go PersistentVolumeClaimRetentionPolicyType);
+  (go.FieldDecl "WhenScaled"%go PersistentVolumeClaimRetentionPolicyType)
+].
+Program Definition StatefulSetPersistentVolumeClaimRetentionPolicy'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetPersistentVolumeClaimRetentionPolicy'fds_unsealed).
+Global Instance equals_unfold_StatefulSetPersistentVolumeClaimRetentionPolicy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetPersistentVolumeClaimRetentionPolicy'fds =→ StatefulSetPersistentVolumeClaimRetentionPolicy'fds_unsealed.
+Proof. rewrite /StatefulSetPersistentVolumeClaimRetentionPolicy'fds seal_eq //. Qed.
+
+Definition StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetPersistentVolumeClaimRetentionPolicy'fds).
 
 Class StatefulSetPersistentVolumeClaimRetentionPolicy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_type_repr  :: go.TypeReprUnderlying StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ StatefulSetPersistentVolumeClaimRetentionPolicy.t;
   #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_underlying :: (StatefulSetPersistentVolumeClaimRetentionPolicy) <u (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ);
-  #[global] StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ_underlying :: (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) ↓u (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ);
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_get_WhenDeleted (x : StatefulSetPersistentVolumeClaimRetentionPolicy.t) :: ⟦StructFieldGet (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) "WhenDeleted", #x⟧ ⤳[under] #x.(StatefulSetPersistentVolumeClaimRetentionPolicy.WhenDeleted');
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_set_WhenDeleted (x : StatefulSetPersistentVolumeClaimRetentionPolicy.t) y :: ⟦StructFieldSet (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) "WhenDeleted", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetPersistentVolumeClaimRetentionPolicy.WhenDeleted' := y|>);
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_get_WhenScaled (x : StatefulSetPersistentVolumeClaimRetentionPolicy.t) :: ⟦StructFieldGet (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) "WhenScaled", #x⟧ ⤳[under] #x.(StatefulSetPersistentVolumeClaimRetentionPolicy.WhenScaled');
+  #[global] StatefulSetPersistentVolumeClaimRetentionPolicy_set_WhenScaled (x : StatefulSetPersistentVolumeClaimRetentionPolicy.t) y :: ⟦StructFieldSet (StatefulSetPersistentVolumeClaimRetentionPolicyⁱᵐᵖˡ) "WhenScaled", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetPersistentVolumeClaimRetentionPolicy.WhenScaled' := y|>);
 }.
 
 Module StatefulSetOrdinals.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Start' : w32;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetOrdinals.
+
+Definition StatefulSetOrdinals'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Start"%go go.int32)
+].
+Program Definition StatefulSetOrdinals'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetOrdinals'fds_unsealed).
+Global Instance equals_unfold_StatefulSetOrdinals {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetOrdinals'fds =→ StatefulSetOrdinals'fds_unsealed.
+Proof. rewrite /StatefulSetOrdinals'fds seal_eq //. Qed.
+
+Definition StatefulSetOrdinalsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetOrdinals'fds).
 
 Class StatefulSetOrdinals_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetOrdinals_type_repr  :: go.TypeReprUnderlying StatefulSetOrdinalsⁱᵐᵖˡ StatefulSetOrdinals.t;
   #[global] StatefulSetOrdinals_underlying :: (StatefulSetOrdinals) <u (StatefulSetOrdinalsⁱᵐᵖˡ);
-  #[global] StatefulSetOrdinalsⁱᵐᵖˡ_underlying :: (StatefulSetOrdinalsⁱᵐᵖˡ) ↓u (StatefulSetOrdinalsⁱᵐᵖˡ);
+  #[global] StatefulSetOrdinals_get_Start (x : StatefulSetOrdinals.t) :: ⟦StructFieldGet (StatefulSetOrdinalsⁱᵐᵖˡ) "Start", #x⟧ ⤳[under] #x.(StatefulSetOrdinals.Start');
+  #[global] StatefulSetOrdinals_set_Start (x : StatefulSetOrdinals.t) y :: ⟦StructFieldSet (StatefulSetOrdinalsⁱᵐᵖˡ) "Start", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetOrdinals.Start' := y|>);
 }.
 
 Module StatefulSetConditionType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetConditionType.
 
+Definition StatefulSetConditionTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class StatefulSetConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] StatefulSetConditionType_type_repr  :: go.TypeReprUnderlying StatefulSetConditionTypeⁱᵐᵖˡ StatefulSetConditionType.t;
   #[global] StatefulSetConditionType_underlying :: (StatefulSetConditionType) <u (StatefulSetConditionTypeⁱᵐᵖˡ);
-  #[global] StatefulSetConditionTypeⁱᵐᵖˡ_underlying :: (StatefulSetConditionTypeⁱᵐᵖˡ) ↓u (StatefulSetConditionTypeⁱᵐᵖˡ);
 }.
 
 Module StatefulSetCondition.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.StatefulSetConditionType.t;
+  Status' : core_v1.ConditionStatus.t;
+  LastTransitionTime' : meta_v1.Time.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetCondition.
+
+Definition StatefulSetCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go StatefulSetConditionType);
+  (go.FieldDecl "Status"%go core_v1.ConditionStatus);
+  (go.FieldDecl "LastTransitionTime"%go meta_v1.Time);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "Message"%go go.string)
+].
+Program Definition StatefulSetCondition'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatefulSetCondition'fds_unsealed).
+Global Instance equals_unfold_StatefulSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatefulSetCondition'fds =→ StatefulSetCondition'fds_unsealed.
+Proof. rewrite /StatefulSetCondition'fds seal_eq //. Qed.
+
+Definition StatefulSetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatefulSetCondition'fds).
 
 Class StatefulSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatefulSetCondition_type_repr  :: go.TypeReprUnderlying StatefulSetConditionⁱᵐᵖˡ StatefulSetCondition.t;
   #[global] StatefulSetCondition_underlying :: (StatefulSetCondition) <u (StatefulSetConditionⁱᵐᵖˡ);
-  #[global] StatefulSetConditionⁱᵐᵖˡ_underlying :: (StatefulSetConditionⁱᵐᵖˡ) ↓u (StatefulSetConditionⁱᵐᵖˡ);
+  #[global] StatefulSetCondition_get_Type (x : StatefulSetCondition.t) :: ⟦StructFieldGet (StatefulSetConditionⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(StatefulSetCondition.Type');
+  #[global] StatefulSetCondition_set_Type (x : StatefulSetCondition.t) y :: ⟦StructFieldSet (StatefulSetConditionⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetCondition.Type' := y|>);
+  #[global] StatefulSetCondition_get_Status (x : StatefulSetCondition.t) :: ⟦StructFieldGet (StatefulSetConditionⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(StatefulSetCondition.Status');
+  #[global] StatefulSetCondition_set_Status (x : StatefulSetCondition.t) y :: ⟦StructFieldSet (StatefulSetConditionⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetCondition.Status' := y|>);
+  #[global] StatefulSetCondition_get_LastTransitionTime (x : StatefulSetCondition.t) :: ⟦StructFieldGet (StatefulSetConditionⁱᵐᵖˡ) "LastTransitionTime", #x⟧ ⤳[under] #x.(StatefulSetCondition.LastTransitionTime');
+  #[global] StatefulSetCondition_set_LastTransitionTime (x : StatefulSetCondition.t) y :: ⟦StructFieldSet (StatefulSetConditionⁱᵐᵖˡ) "LastTransitionTime", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetCondition.LastTransitionTime' := y|>);
+  #[global] StatefulSetCondition_get_Reason (x : StatefulSetCondition.t) :: ⟦StructFieldGet (StatefulSetConditionⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(StatefulSetCondition.Reason');
+  #[global] StatefulSetCondition_set_Reason (x : StatefulSetCondition.t) y :: ⟦StructFieldSet (StatefulSetConditionⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetCondition.Reason' := y|>);
+  #[global] StatefulSetCondition_get_Message (x : StatefulSetCondition.t) :: ⟦StructFieldGet (StatefulSetConditionⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(StatefulSetCondition.Message');
+  #[global] StatefulSetCondition_set_Message (x : StatefulSetCondition.t) y :: ⟦StructFieldSet (StatefulSetConditionⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|StatefulSetCondition.Message' := y|>);
 }.
 
 Module StatefulSetList.

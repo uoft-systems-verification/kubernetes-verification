@@ -1,8 +1,9 @@
+From New.generatedviews Require Export pod.
 (** Complete recursive Pod, PodSpec, and PodStatus views.
     Field representation and ownership cover every field; validation and API
     preparation below still contain the existing model abstractions. *)
 From New.proof Require Import prelude empty_ffi util.
-From New.proof.kubernetes_types Require Export objectmeta pod_fields.
+From New.object_specs Require Export objectmeta.
 From New.proof.kubernetes_types Require Import top_level.
 
 (** Conversion between versioned and internal Pods removes these obsolete
@@ -83,6 +84,11 @@ Proof.
   f_equal. apply map_eq. intros key. repeat rewrite lookup_delete. repeat case_decide; done.
 Qed.
 
+
+(* These adapter lemmas compare canonical ownership with the included views. *)
+Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent PodFields.VolumeSourceV.deepown PodFields.PodSpecV.deepown PodFields.PodStatusV.deepown.
+
 Module PodAPI.
 Definition string_map := option (gmap go_string go_string).
 Parameter schema_defaults : PodFields.PodSpecV.t → PodFields.PodSpecV.t.
@@ -130,6 +136,7 @@ End PodAPI.
 
 Module VolumeSourceV.
 Include PodFields.VolumeSourceV.
+Local Transparent deepown.
 Definition valid (source : t) : Prop :=
   match source.(PersistentVolumeClaim') with
   | Some pvc => valid_dns1123_subdomain pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName')
@@ -170,6 +177,7 @@ Proof.
 Qed.
 End ownership.
 End VolumeSourceV.
+Local Transparent VolumeSourceV.deepown.
 
 Module VolumeV.
 Include PodFields.VolumeV.
@@ -181,6 +189,7 @@ End VolumeV.
 
 Module PodSpecV.
 Include PodFields.PodSpecV.
+Local Transparent deepown.
 (* Kubernetes validation and semantic equality treat a nil volume slice and
    an allocated empty slice identically. The option-valued field above keeps
    the concrete distinction for representation-sensitive operations, while
@@ -285,11 +294,13 @@ Proof.
 Qed.
 End ownership.
 End PodSpecV.
+Local Transparent PodSpecV.deepown.
 
 Module PodConditionV := PodFields.PodConditionV.
 
 Module PodStatusV.
 Include PodFields.PodStatusV.
+Local Transparent deepown.
 (* Status validation and API preparation remain abstract. *)
 Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
@@ -306,20 +317,16 @@ Definition ready (s : t) : bool :=
   | None => false
   end.
 End PodStatusV.
+Local Transparent PodStatusV.deepown.
 
 Module PodV.
+Include PodFields.PodV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : PodSpecV.t;
-  Status' : PodStatusV.t;
-}.
 
 Definition kind : go_string :=
   "Pod"%go.
@@ -449,15 +456,6 @@ Definition updated (old_spec : PodSpecV.t) (input stored : t) : Prop :=
   ObjectMetaV.updated (pod_objectmeta_after_conversion input.(ObjectMeta')) stored.(ObjectMeta') ∧
   PodSpecV.updated old_spec input.(Spec') stored.(Spec').
 
-Definition deepown (c: v1.Pod.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Pod.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.Pod.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_podspec" ∷ PodSpecV.deepown c.(v1.Pod.Spec') v.(Spec') dq ∗
-  "Hdeepown_podstatus" ∷ PodStatusV.deepown c.(v1.Pod.Status') v.(Status') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 #[global]
 Instance top_level_instance : top_level Σ t :=
   Build_top_level Σ t ObjectMetaV.t PodSpecV.t PodStatusV.t
@@ -574,19 +572,6 @@ Qed.
 
 (* Pods are only read by the controllers, so their ownership can be made
    read-only and shared, e.g. between the active and terminating filters. *)
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iMod (ObjectMetaV.deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
-  iMod (PodSpecV.deepown_persist with "Hdeepown_podspec") as "Hdeepown_podspec".
-  iMod (PodStatusV.deepown_persist with "Hdeepown_podstatus") as "Hdeepown_podstatus".
-  iModIntro. iFrame "∗ %".
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
 
 Lemma deepown_l_persist l v dq :
   deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
@@ -604,16 +589,13 @@ End proof.
 End PodV.
 
 Module PodTemplateSpecV.
+Include PodFields.PodTemplateSpecV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : PodSpecV.t;
-}.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L6795-L6810 *)
 (* This is the projection of Kubernetes' ValidatePodTemplateSpec onto the
@@ -673,13 +655,6 @@ Axiom generated_spec_valid : ∀ template,
   PodAPI.validate_annotations annotations (PodAPI.create_spec labels annotations template.(Spec')) = true ∧
   PodAPI.validate_spec (PodAPI.create_spec labels annotations template.(Spec')) = true.
 
-Definition deepown (c : v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ PodSpecV.deepown c.(v1.PodTemplateSpec.Spec') v.(Spec') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 Definition objectmeta_ptr l : loc :=
   struct_field_ref v1.PodTemplateSpec.t "ObjectMeta" l.
 
@@ -732,20 +707,6 @@ Proof.
     as "Hl".
   iExists (v1.PodTemplateSpec.mk cmeta cspec). iFrame.
 Qed.
-
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iMod (ObjectMetaV.deepown_persist with "Hdeepown_objectmeta") as "Hdeepown_objectmeta".
-  iMod (PodSpecV.deepown_persist with "Hdeepown_spec") as "Hdeepown_spec".
-  iModIntro. by iFrame.
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
 
 Lemma deepown_l_persist l v dq :
   deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.

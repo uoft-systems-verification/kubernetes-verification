@@ -548,8 +548,7 @@ Proof.
     apply Forall_forall.
     intros pod Hpod_in.
     specialize (Hvalid pod Hpod_in).
-    change (KObjectV.valid2 (KObjectV.Pod pod)).
-    rewrite -KObjectV.valid_eq_valid2. exact Hvalid.
+    change (KObjectV.valid (KObjectV.Pod pod)). exact Hvalid.
   - assert (KObjectV.key <$> (KObjectV.Pod <$> pods) = PodV.key <$> pods) as Hkeys_eq.
     { rewrite -list_fmap_compose.
       apply list_fmap_ext. intros i pod Hlookup.

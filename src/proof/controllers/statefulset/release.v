@@ -3,6 +3,8 @@ From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update_release.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -537,7 +539,10 @@ Proof.
          HupdatedPod_meta_Hdeepown_labels_some
          HupdatedPod_meta_Hdeepown_annotations_some
          HupdatedPod_meta_Hdeepown_finalizers_some
-         HupdatedPod_meta_Hdeepown_managedfields_some".
+         HupdatedPod_meta_Hdeepown_managedfields_some
+         HupdatedPod_meta_Hdeepown_ownerreferences_cap
+         HupdatedPod_meta_Hdeepown_finalizers_cap
+         HupdatedPod_meta_Hdeepown_managedfields_cap".
       iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
@@ -585,7 +590,7 @@ Proof.
           this_owner_reference_value this_owner_reference 1)
         with
           "[Hthis_Hdeepown_controller_some
-            Hthis_Hdeepown_blockownerdeleton_some]"
+            Hthis_Hdeepown_blockownerdeletion_some]"
         as "Hthis".
       {
         unfold OwnerReferenceV.deepown.
@@ -636,7 +641,10 @@ Proof.
          HupdatedPod_meta_Hdeepown_labels_some
          HupdatedPod_meta_Hdeepown_annotations_some
          HupdatedPod_meta_Hdeepown_finalizers_some
-         HupdatedPod_meta_Hdeepown_managedfields_some".
+         HupdatedPod_meta_Hdeepown_managedfields_some
+         HupdatedPod_meta_Hdeepown_ownerreferences_cap
+         HupdatedPod_meta_Hdeepown_finalizers_cap
+         HupdatedPod_meta_Hdeepown_managedfields_cap".
       iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
@@ -766,7 +774,9 @@ Proof.
           HupdatedPod_meta_Hdeepown_labels_some
           HupdatedPod_meta_Hdeepown_annotations_some
           HupdatedPod_meta_Hdeepown_finalizers_some
-          HupdatedPod_meta_Hdeepown_managedfields_some]"
+          HupdatedPod_meta_Hdeepown_managedfields_some
+          Hown_result_cap HupdatedPod_meta_Hdeepown_finalizers_cap
+          HupdatedPod_meta_Hdeepown_managedfields_cap]"
       as "Hreleased_meta".
     {
       unfold ObjectMetaV.deepown, release_pod_input.

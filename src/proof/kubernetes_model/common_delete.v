@@ -5,6 +5,8 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Import validation.
 (* Lightweight infrastructure shared by the Delete variants and updates
    whose success path may remove an object. *)
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
@@ -23,18 +25,26 @@ Proof.
   destruct graceful.
   - wp_auto.
     wp_apply v1.wp_Now.
-    iIntros (now_c now_v) "_". wp_auto.
+    iIntros (now_c now_v) "Hnow". wp_auto.
     wp_method_call. wp_auto.
     wp_apply wp_Time__Add.
-    iIntros (new_time) "_". wp_auto.
+    iIntros (new_time) "%Hlocation". wp_auto.
     wp_apply v1.wp_NewTime.
-    iApply ("HΦ" $! _ (v1.Time.mk new_time) (TimeV.of_go (v1.Time.mk new_time))).
-    iFrame. rewrite /TimeV.deepown /TimeV.of_go /=. done.
+    set (new_view := TimeV.mk (TimeFields.TimeV.mk new_time.(time.Time.wall')
+      new_time.(time.Time.ext') now_v.(TimeV.Time').(TimeFields.TimeV.loc'))).
+    iApply ("HΦ" $! _ (v1.Time.mk new_time) new_view).
+    iFrame. rewrite /TimeV.deepown /TimeFields.TimeV.deepown /new_view /=.
+    iEval (rewrite /TimeV.deepown /TimeFields.TimeV.deepown /named) in "Hnow".
+    iDestruct "Hnow" as "[_ [_ Hlocation_own]]".
+    rewrite Hlocation. iFrame "Hlocation_own". done.
   - wp_auto.
     wp_apply v1.wp_Now.
     iIntros (now_c now_v) "Hdeepown". wp_auto.
     iApply ("HΦ" $! _ now_c now_v). iFrame.
 Qed.
+
+(* Keep the recursively owned timezone graph abstract in unrelated delete proofs. *)
+Local Opaque TimeV.deepown TimeFields.TimeV.deepown TimeFields.LocationV.deepown.
 
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with
@@ -200,7 +210,7 @@ Proof.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
                 with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                   Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -248,7 +258,7 @@ Proof.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
                 with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                   Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -283,7 +293,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -331,7 +341,7 @@ Proof.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -389,7 +399,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -437,7 +447,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -472,7 +482,7 @@ Proof.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -492,7 +502,7 @@ Proof.
     wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
       iFrame. iPureIntro. done. }
@@ -708,7 +718,7 @@ Proof.
     rewrite Horphan_nonnull_decide /=. wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! orphan). iFrame. iPureIntro.
@@ -732,7 +742,7 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_nonnull_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
@@ -765,14 +775,15 @@ Proof.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-           ++ iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+           ++ iRename "Hdeepown_finalizers_some" into "Hsl".
               iAssert ((sl ↦*{dq} finalizers -∗
                 ObjectMetaV.deepown_l metadata_l m dq)%I)
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
                   Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -847,7 +858,8 @@ Proof.
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
                   Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -866,7 +878,7 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_null_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
@@ -886,14 +898,15 @@ Proof.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-      * iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+      * iRename "Hdeepown_finalizers_some" into "Hsl".
         iAssert ((sl ↦*{dq} finalizers -∗
           ObjectMetaV.deepown_l metadata_l m dq)%I)
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
             Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -970,7 +983,8 @@ Proof.
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
             Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1013,7 +1027,7 @@ Proof.
     rewrite Horphan_nonnull_decide /=. wp_auto.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! false). iFrame. iPureIntro.
@@ -1037,7 +1051,7 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_nonnull_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
@@ -1070,14 +1084,15 @@ Proof.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-           ++ iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+           ++ iRename "Hdeepown_finalizers_some" into "Hsl".
               iAssert ((sl ↦*{dq} finalizers -∗
                 ObjectMetaV.deepown_l metadata_l m dq)%I)
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
                   Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1154,7 +1169,8 @@ Proof.
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
                   Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+                  Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1173,7 +1189,7 @@ Proof.
       rewrite Hoptions_nonnull_decide /=. wp_auto.
       rewrite Hpolicy_null_decide /=. wp_auto.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
@@ -1193,14 +1209,15 @@ Proof.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-      * iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+      * iRename "Hdeepown_finalizers_some" into "Hsl".
         iAssert ((sl ↦*{dq} finalizers -∗
           ObjectMetaV.deepown_l metadata_l m dq)%I)
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
             Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1277,7 +1294,8 @@ Proof.
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
             Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_ownerreferences_cap Hdeepown_finalizers_cap
+            Hdeepown_managedfields_cap Hdeepown_managedfields_some]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1339,10 +1357,10 @@ Lemma wp_deletionFinalizersForGarbageCollection metadata_i l o m options_l optio
       ⌜ valid_finalizers new_finalizers ⌝ ∗
       ⌜ new_finalizers_sl = slice.nil ↔ new_finalizers = None ⌝ ∗
       (if should_update_finalizers then
-        match new_finalizers with
+        (match new_finalizers with
         | Some fs => ∃ cfs, new_finalizers_sl ↦* cfs ∗ ⌜ cfs = fs ⌝
         | None => True%I
-        end
+        end ∗ own_slice_cap go_string new_finalizers_sl 1)%I
       else True%I) ∗
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
@@ -1591,7 +1609,7 @@ Proof.
       rewrite return_val_unseal /return_val_def. wp_auto.
       iApply ("HΦ" $! true final_sl (Some (delete_finalizers_for_gc m options))).
       rewrite /delete_new_finalizers Hupdate /=.
-      iFrame. iSplit; first done. iSplit; first done.
+      iFrame "Hnew_finalizers_cap". iFrame. iSplit; first done. iSplit; first done.
       iSplit; first (iPureIntro; by apply delete_finalizers_for_gc_valid).
       iSplit.
       { iPureIntro. split.
@@ -1733,7 +1751,7 @@ Proof.
               iApply ("HΦ" $! true final_sl
                 (Some (delete_finalizers_for_gc m options))).
               rewrite /delete_new_finalizers Hupdate /=.
-              iFrame. iSplit; first done. iSplit; first done.
+              iFrame "Hnew_finalizers_cap". iFrame. iSplit; first done. iSplit; first done.
               iSplit; first (iPureIntro; by apply delete_finalizers_for_gc_valid).
               iSplit.
               { iPureIntro. split.

@@ -9,7 +9,7 @@ cd "$DIR/.."
 # releases. Use the exact version from go.mod even if a newer Go is installed.
 export GOTOOLCHAIN="go$(awk '$1 == "go" { print $2; exit }' go.mod)"
 
-python3 scripts/pod_views/generate.py --config
+python3 scripts/generate_views.py --config
 
 go tool perennial-cli goose --config goose-kubernetes.toml
 go tool perennial-cli goose --config goose-kubernetes-model.toml
@@ -47,4 +47,10 @@ python3 scripts/optimize_generated_proofs.py \
   "${OPTIMIZER_ARGS[@]}" \
   $GOOSE_PROOF_OPTIMIZER_TARGETS
 
-python3 scripts/pod_views/generate.py
+# Apply the same optimization to apps records with at least ten fields.
+python3 scripts/optimize_generated_proofs.py \
+  --optimize-into-val-typed StatefulSetSpec,StatefulSetStatus \
+  --optimize-access StatefulSetSpec,StatefulSetStatus \
+  src/generatedproof/k8s_io/api/apps/v1.v
+
+python3 scripts/generate_views.py

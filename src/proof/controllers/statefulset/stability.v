@@ -1,6 +1,8 @@
 From New.proof.controllers.statefulset Require Export reconcile_stability.
 From New.proof.kubernetes_model Require Import get.
 
+Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -64,7 +66,7 @@ Proof.
     (symmetry; apply bool_decide_false; exact not_found_error_nil).
   wp_auto.
 
-  rewrite KObjectV.valid_eq_valid2 in Hget_Hvalid'.
+  simpl in Hget_Hvalid'.
   assert (StatefulSetV.valid set) as Hset_valid by exact Hget_Hvalid'.
   destruct Hset_valid as
     (Hset_typemeta_valid & Hset_resource_version_valid &
@@ -174,7 +176,9 @@ Proof.
       Hset_meta_Hdeepown_labels_some Hset_meta_Hdeepown_annotations_some
       Hset_meta_Hdeepown_ownerreferences_some
       Hset_meta_Hdeepown_finalizers_some
-      Hset_meta_Hdeepown_managedfields_some]" as "Hset_meta_deepown".
+      Hset_meta_Hdeepown_managedfields_some
+      Hset_meta_Hdeepown_ownerreferences_cap Hset_meta_Hdeepown_finalizers_cap
+      Hset_meta_Hdeepown_managedfields_cap]" as "Hset_meta_deepown".
   { rewrite /ObjectMetaV.deepown Hset_deletion_timestamp_none.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l)

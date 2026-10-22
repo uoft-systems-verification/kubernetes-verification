@@ -2,7 +2,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.map Require Import len for_range.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export
   v1 v1_label_selector_conversion.
-From New.proof.kubernetes_types Require Import labelselector.
+From New.object_specs Require Import labelselector.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -76,7 +76,7 @@ Proof.
       [apply (proj2 Hselector_Hdeepown_matchexpressions_none); done|];
       pose (expressions := ([] : list LabelSelectorRequirementV.t));
       pose (expressions_c := ([] : list v1.LabelSelectorRequirement.t));
-      iAssert (v1.LabelSelector.MatchExpressions' selector_c ↦*
+      iAssert (v1.LabelSelector.MatchExpressions' selector_c ↦*{dq}
         expressions_c)%I as "Hexpressions_sl";
       [rewrite Hexpressions_nil /expressions_c; iApply own_slice_nil|];
       iAssert (([∗ list] expression_c;expression ∈
@@ -277,7 +277,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
@@ -384,7 +384,7 @@ Proof.
          /LabelSelectorRequirementV.values_list Hvalues_opt /=.
        tauto. }
   1: iAssert (LabelSelectorRequirementV.deepown expression_c expression dq)
-    with "[Hsource_values_out]" as "Hexpression".
+    with "[Hsource_values_out Hexpression_Hdeepown_values_cap]" as "Hexpression".
   1: { rewrite /LabelSelectorRequirementV.deepown /named Hvalues_opt /=.
        iFrame. iPureIntro. split_and!; done. }
   1: iSpecialize ("Hrestore_expressions" with "Hexpression").
@@ -395,7 +395,7 @@ Proof.
   1: iEval (rewrite Hone_requirement) in "Hrequirements_out".
   1: iApply wp_for_post_do.
   1: wp_auto.
-  1: iFrame "HΦ Hselector_field_MatchLabels
+  1: iFrame "HΦ Hselector_Hdeepown_matchexpressions_cap Hselector_field_MatchLabels
     Hselector_field_MatchExpressions Hlabels_map Hv Hk".
   1: iExists (word.add loop_i (W64 1)), expression_c, current_sl',
     (expression_entries ++ [(requirement_c', new_requirement)]).
@@ -503,8 +503,10 @@ Proof.
       "(Hrequirements_out & Hrequirements_cap_out & Hone_requirement_out)";
     wp_auto;
     iAssert (LabelSelectorRequirementV.deepown expression_c expression frac)
-      with "[Hsource_values_out]" as "Hexpression";
+      with "[Hsource_values_out Hexpression_Hdeepown_values_cap]" as "Hexpression";
     [rewrite /LabelSelectorRequirementV.deepown /named Hvalues_opt /=;
+     try rewrite values_nil;
+     iFrame "Hexpression_Hdeepown_values_cap";
      iFrame; iPureIntro; split_and!; done|];
     iSpecialize ("Hrestore_expressions" with "Hexpression");
     assert (<[sint.nat (W64 0):=requirement_c]>
@@ -514,7 +516,7 @@ Proof.
     iEval (rewrite Hone_requirement) in "Hrequirements_out";
     iApply wp_for_post_do;
     wp_auto;
-    iFrame "HΦ Hselector_field_MatchLabels
+    iFrame "HΦ Hselector_Hdeepown_matchexpressions_cap Hselector_field_MatchLabels
       Hselector_field_MatchExpressions";
     try iFrame "Hv";
     try iFrame "Hk";
@@ -774,7 +776,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
@@ -958,7 +960,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
