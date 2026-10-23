@@ -4,9 +4,9 @@ From New.proof.controllers.statefulset Require Export statefulset_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 
 
-Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

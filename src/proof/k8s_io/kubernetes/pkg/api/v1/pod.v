@@ -184,7 +184,7 @@ Proof.
 Qed.
 
 (* [IsPodReady] computes [PodStatusV.ready] and leaves the pod unchanged. *)
-Local Transparent PodStatusV.deepown PodFields.PodStatusV.deepown.
+Local Transparent PodStatusV.deepown PodView.PodStatusV.deepown.
 Lemma wp_IsPodReady (pod_l : loc) (p : PodV.t) dq :
   {{{ is_pkg_init podutil_pkg ∗
       PodV.deepown_l pod_l p dq
@@ -222,7 +222,7 @@ Proof.
   rewrite /PodStatusV.deepown. iFrame "∗ %".
   rewrite /deepown_slice. iFrame "# ∗ %".
 Qed.
-Local Opaque PodStatusV.deepown PodFields.PodStatusV.deepown.
+Local Opaque PodStatusV.deepown PodView.PodStatusV.deepown.
 
 
 (* TODO: translate [IsPodPhaseTerminal] and prove this spec using the represented phase. *)

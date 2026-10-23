@@ -5,7 +5,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.generatedviews Require Export runtime_time time.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 
-Module TypeMetaFields.
+Module TypeMetaView.
 
 Module TypeMetaV.
 Section def.
@@ -41,4 +41,4 @@ Qed.
 End def.
 End TypeMetaV.
 
-End TypeMetaFields.
+End TypeMetaView.

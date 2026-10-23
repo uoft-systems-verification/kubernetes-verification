@@ -4,7 +4,7 @@ From New.proof Require Import prelude empty_ffi util.
 From New.object_specs Require Export common.
 
 Module OwnerReferenceV.
-Include ObjectMetaFields.OwnerReferenceV.
+Include ObjectMetaView.OwnerReferenceV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -40,9 +40,9 @@ Definition refers_to_controller v kind name uid : Prop :=
 
 End OwnerReferenceV.
 
-Module FieldsV1V := ObjectMetaFields.FieldsV1V.
+Module FieldsV1V := ObjectMetaView.FieldsV1V.
 
-Module ManagedFieldsEntryV := ObjectMetaFields.ManagedFieldsEntryV.
+Module ManagedFieldsEntryV := ObjectMetaView.ManagedFieldsEntryV.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L92 *)
 Definition valid_owner_references (o: option (list OwnerReferenceV.t)) : Prop :=
@@ -91,7 +91,7 @@ Axiom valid_managed_fields : option (list ManagedFieldsEntryV.t) → Prop.
 Axiom valid_managed_fields_none : valid_managed_fields None.
 
 Module ObjectMetaV.
-Include ObjectMetaFields.ObjectMetaV.
+Include ObjectMetaView.ObjectMetaV.
 Local Transparent deepown.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

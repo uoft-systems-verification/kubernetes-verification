@@ -4,7 +4,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_label_selecto
 From New.object_specs Require Import objectmeta.
 From New.object_specs Require Import labelselector.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

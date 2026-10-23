@@ -8,7 +8,7 @@ From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
     views and assume that validation of omitted fields succeeds; their
     reachable-memory footprints also need the recursive treatment used by Pod. *)
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

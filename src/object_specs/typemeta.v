@@ -42,7 +42,7 @@ Proof.
 Qed.
 
 Module TypeMetaV.
-Include TypeMetaFields.TypeMetaV.
+Include TypeMetaView.TypeMetaV.
 
 Definition valid (kind : go_string) (meta : t) : Prop := valid_typemeta kind meta.
 Definition valid_create (kind : go_string) (meta : t) : Prop := valid_create_typemeta kind meta.

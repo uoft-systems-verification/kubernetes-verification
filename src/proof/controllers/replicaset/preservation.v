@@ -1,7 +1,7 @@
 From New.proof.controllers.replicaset Require Export progress.
 From New.proof.controllers.replicaset Require Import update_replicaset_status.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

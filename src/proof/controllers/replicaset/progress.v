@@ -13,7 +13,7 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Module client_apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module client_core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.

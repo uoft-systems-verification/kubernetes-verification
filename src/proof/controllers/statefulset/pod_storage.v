@@ -2,10 +2,10 @@ From New.proof.map Require Import for_range.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
-Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

@@ -6,10 +6,10 @@ From New.object_specs Require Import top_level.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)
-Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module ReplicaSetSpecV.
-Include ReplicaSetFields.ReplicaSetSpecV.
+Include ReplicaSetView.ReplicaSetSpecV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -125,7 +125,7 @@ End def.
 End ReplicaSetSpecV.
 
 Module ReplicaSetConditionV.
-Include ReplicaSetFields.ReplicaSetConditionV.
+Include ReplicaSetView.ReplicaSetConditionV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -139,7 +139,7 @@ End def.
 End ReplicaSetConditionV.
 
 Module ReplicaSetStatusV.
-Include ReplicaSetFields.ReplicaSetStatusV.
+Include ReplicaSetView.ReplicaSetStatusV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -281,7 +281,7 @@ End def.
 End ReplicaSetStatusV.
 
 Module ReplicaSetV.
-Include ReplicaSetFields.ReplicaSetV.
+Include ReplicaSetView.ReplicaSetV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

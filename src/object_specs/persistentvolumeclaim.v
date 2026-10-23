@@ -5,10 +5,10 @@ From New.object_specs Require Import top_level.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)
-Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module PersistentVolumeClaimSpecV.
-Include PersistentVolumeClaimFields.PersistentVolumeClaimSpecV.
+Include PersistentVolumeClaimView.PersistentVolumeClaimSpecV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -63,7 +63,7 @@ End def.
 End PersistentVolumeClaimSpecV.
 
 Module PersistentVolumeClaimStatusV.
-Include PersistentVolumeClaimFields.PersistentVolumeClaimStatusV.
+Include PersistentVolumeClaimView.PersistentVolumeClaimStatusV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -81,7 +81,7 @@ End def.
 End PersistentVolumeClaimStatusV.
 
 Module PersistentVolumeClaimV.
-Include PersistentVolumeClaimFields.PersistentVolumeClaimV.
+Include PersistentVolumeClaimView.PersistentVolumeClaimV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

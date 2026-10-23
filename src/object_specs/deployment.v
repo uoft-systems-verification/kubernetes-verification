@@ -5,10 +5,10 @@ From New.object_specs Require Import top_level.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)
-Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module DeploymentSpecV.
-Include DeploymentFields.DeploymentSpecV.
+Include DeploymentView.DeploymentSpecV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -123,7 +123,7 @@ End def.
 End DeploymentSpecV.
 
 Module DeploymentStatusV.
-Include DeploymentFields.DeploymentStatusV.
+Include DeploymentView.DeploymentStatusV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -152,7 +152,7 @@ End def.
 End DeploymentStatusV.
 
 Module DeploymentV.
-Include DeploymentFields.DeploymentV.
+Include DeploymentView.DeploymentV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

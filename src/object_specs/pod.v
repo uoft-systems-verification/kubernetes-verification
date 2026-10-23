@@ -86,34 +86,34 @@ Qed.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)
-Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
-Local Transparent PodFields.VolumeSourceV.deepown PodFields.PodSpecV.deepown PodFields.PodStatusV.deepown.
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent PodView.VolumeSourceV.deepown PodView.PodSpecV.deepown PodView.PodStatusV.deepown.
 
 Module PodAPI.
 Definition string_map := option (gmap go_string go_string).
-Parameter schema_defaults : PodFields.PodSpecV.t → PodFields.PodSpecV.t.
-Parameter template_defaults : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
+Parameter schema_defaults : PodView.PodSpecV.t → PodView.PodSpecV.t.
+Parameter template_defaults : string_map → string_map → PodView.PodSpecV.t → PodView.PodSpecV.t.
 (** Preparation never changes volume names, PVC references, Hostname, or
     Subdomain. Other volume-source fields are defaulted/prepared recursively.
     The rest of the spec does not depend on these three controller-managed
     fields; making that decomposition explicit avoids assuming identity for
     containers, probes, tolerations, affinity, or any other nested fields. *)
-Definition without_managed (spec : PodFields.PodSpecV.t) : PodFields.PodSpecV.t :=
-  spec <| PodFields.PodSpecV.Volumes' := None |>
-    <| PodFields.PodSpecV.Hostname' := ""%go |> <| PodFields.PodSpecV.Subdomain' := ""%go |>.
-Parameter create_unmanaged_spec : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
-Parameter create_volume_source : PodFields.VolumeSourceV.t → PodFields.VolumeSourceV.t.
-Definition create_volume (volume : PodFields.VolumeV.t) : PodFields.VolumeV.t :=
-  let source := volume.(PodFields.VolumeV.VolumeSource') in
-  volume <| PodFields.VolumeV.VolumeSource' :=
-    (create_volume_source source) <| PodFields.VolumeSourceV.PersistentVolumeClaim' :=
-      source.(PodFields.VolumeSourceV.PersistentVolumeClaim') |> |>.
-Definition create_spec labels annotations (spec : PodFields.PodSpecV.t) : PodFields.PodSpecV.t :=
+Definition without_managed (spec : PodView.PodSpecV.t) : PodView.PodSpecV.t :=
+  spec <| PodView.PodSpecV.Volumes' := None |>
+    <| PodView.PodSpecV.Hostname' := ""%go |> <| PodView.PodSpecV.Subdomain' := ""%go |>.
+Parameter create_unmanaged_spec : string_map → string_map → PodView.PodSpecV.t → PodView.PodSpecV.t.
+Parameter create_volume_source : PodView.VolumeSourceV.t → PodView.VolumeSourceV.t.
+Definition create_volume (volume : PodView.VolumeV.t) : PodView.VolumeV.t :=
+  let source := volume.(PodView.VolumeV.VolumeSource') in
+  volume <| PodView.VolumeV.VolumeSource' :=
+    (create_volume_source source) <| PodView.VolumeSourceV.PersistentVolumeClaim' :=
+      source.(PodView.VolumeSourceV.PersistentVolumeClaim') |> |>.
+Definition create_spec labels annotations (spec : PodView.PodSpecV.t) : PodView.PodSpecV.t :=
   (create_unmanaged_spec labels annotations (without_managed spec))
-    <| PodFields.PodSpecV.Volumes' := fmap (M:=option) (fmap (M:=list) create_volume)
-      spec.(PodFields.PodSpecV.Volumes') |>
-    <| PodFields.PodSpecV.Hostname' := spec.(PodFields.PodSpecV.Hostname') |>
-    <| PodFields.PodSpecV.Subdomain' := spec.(PodFields.PodSpecV.Subdomain') |>.
+    <| PodView.PodSpecV.Volumes' := fmap (M:=option) (fmap (M:=list) create_volume)
+      spec.(PodView.PodSpecV.Volumes') |>
+    <| PodView.PodSpecV.Hostname' := spec.(PodView.PodSpecV.Hostname') |>
+    <| PodView.PodSpecV.Subdomain' := spec.(PodView.PodSpecV.Subdomain') |>.
 
 Lemma without_managed_idempotent spec :
   without_managed (without_managed spec) = without_managed spec.
@@ -124,18 +124,18 @@ Lemma create_spec_without_managed labels annotations spec :
 Proof. unfold create_spec, without_managed. destruct spec. done. Qed.
 (** Scheduling-gate conditions use metav1.Now, so status preparation is a
     relation over complete results rather than a deterministic function. *)
-Parameter create_status : string_map → string_map → PodFields.PodSpecV.t → PodFields.PodStatusV.t → Prop.
-Parameter update_spec : PodFields.PodSpecV.t → PodFields.PodSpecV.t → PodFields.PodSpecV.t.
-Parameter validate_spec : PodFields.PodSpecV.t → bool.
-Parameter validate_spec_update : PodFields.PodSpecV.t → PodFields.PodSpecV.t → bool.
-Parameter validate_annotations : string_map → PodFields.PodSpecV.t → bool.
-Parameter validate_annotations_update : string_map → PodFields.PodSpecV.t →
-  string_map → PodFields.PodSpecV.t → bool.
-Parameter validate_template : string_map → string_map → PodFields.PodSpecV.t → bool.
+Parameter create_status : string_map → string_map → PodView.PodSpecV.t → PodView.PodStatusV.t → Prop.
+Parameter update_spec : PodView.PodSpecV.t → PodView.PodSpecV.t → PodView.PodSpecV.t.
+Parameter validate_spec : PodView.PodSpecV.t → bool.
+Parameter validate_spec_update : PodView.PodSpecV.t → PodView.PodSpecV.t → bool.
+Parameter validate_annotations : string_map → PodView.PodSpecV.t → bool.
+Parameter validate_annotations_update : string_map → PodView.PodSpecV.t →
+  string_map → PodView.PodSpecV.t → bool.
+Parameter validate_template : string_map → string_map → PodView.PodSpecV.t → bool.
 End PodAPI.
 
 Module VolumeSourceV.
-Include PodFields.VolumeSourceV.
+Include PodView.VolumeSourceV.
 Local Transparent deepown.
 Definition valid (source : t) : Prop :=
   match source.(PersistentVolumeClaim') with
@@ -180,7 +180,7 @@ End VolumeSourceV.
 Local Transparent VolumeSourceV.deepown.
 
 Module VolumeV.
-Include PodFields.VolumeV.
+Include PodView.VolumeV.
 Definition valid (volume : t) : Prop :=
   valid_dns1123_label volume.(Name') ∧ VolumeSourceV.valid volume.(VolumeSource').
 Global Instance valid_dec volume : Decision (valid volume).
@@ -188,7 +188,7 @@ Proof. unfold valid. apply _. Defined.
 End VolumeV.
 
 Module PodSpecV.
-Include PodFields.PodSpecV.
+Include PodView.PodSpecV.
 Local Transparent deepown.
 (* Kubernetes validation and semantic equality treat a nil volume slice and
    an allocated empty slice identically. The option-valued field above keeps
@@ -297,10 +297,10 @@ End ownership.
 End PodSpecV.
 Local Transparent PodSpecV.deepown.
 
-Module PodConditionV := PodFields.PodConditionV.
+Module PodConditionV := PodView.PodConditionV.
 
 Module PodStatusV.
-Include PodFields.PodStatusV.
+Include PodView.PodStatusV.
 Local Transparent deepown.
 (* Status validation and API preparation remain abstract. *)
 Axiom valid : t → Prop.
@@ -321,7 +321,7 @@ End PodStatusV.
 Local Transparent PodStatusV.deepown.
 
 Module PodV.
-Include PodFields.PodV.
+Include PodView.PodV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -590,7 +590,7 @@ End proof.
 End PodV.
 
 Module PodTemplateSpecV.
-Include PodFields.PodTemplateSpecV.
+Include PodView.PodTemplateSpecV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

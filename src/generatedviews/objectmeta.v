@@ -5,7 +5,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.generatedviews Require Export runtime_time time typemeta.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 
-Module ObjectMetaFields.
+Module ObjectMetaView.
 
 Module OwnerReferenceV.
 Section def.
@@ -169,7 +169,7 @@ Record t := mk {
   Manager' : go_string;
   Operation' : go_string;
   APIVersion' : go_string;
-  Time' : option (MetaTimeFields.TimeV.t);
+  Time' : option (MetaTimeView.TimeV.t);
   FieldsType' : go_string;
   FieldsV1' : option (FieldsV1V.t);
   Subresource' : go_string;
@@ -183,7 +183,7 @@ Definition deepown (c : meta_v1.ManagedFieldsEntry.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_operation" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ManagedFieldsEntry.Operation') v.(Operation') dq ∗
   "%Hdeepown_apiversion" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ManagedFieldsEntry.APIVersion') v.(APIVersion') dq ∗
   "%Hdeepown_time_none" ∷ ⌜ c.(meta_v1.ManagedFieldsEntry.Time') = null ↔ v.(Time') = None ⌝ ∗
-  "Hdeepown_time_some" ∷ (match v.(Time') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.Time') ↦{dq} value_c ∗ MetaTimeFields.TimeV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_time_some" ∷ (match v.(Time') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.Time') ↦{dq} value_c ∗ MetaTimeView.TimeV.deepown value_c value dq | None => True%I end) ∗
   "%Hdeepown_fieldstype" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ManagedFieldsEntry.FieldsType') v.(FieldsType') dq ∗
   "%Hdeepown_fieldsv1_none" ∷ ⌜ c.(meta_v1.ManagedFieldsEntry.FieldsV1') = null ↔ v.(FieldsV1') = None ⌝ ∗
   "Hdeepown_fieldsv1_some" ∷ (match v.(FieldsV1') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.FieldsV1') ↦{dq} value_c ∗ FieldsV1V.deepown value_c value dq | None => True%I end) ∗
@@ -226,9 +226,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> (match v.(Time') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.Time') ↦{DfracDiscarded} value_c ∗ MetaTimeFields.TimeV.deepown value_c value DfracDiscarded | None => True%I end))%I
+  iAssert (|==> (match v.(Time') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.Time') ↦{DfracDiscarded} value_c ∗ MetaTimeView.TimeV.deepown value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_time_some]" as ">Hdeepown_time_some".
-  { destruct v.(Time') as [value|]; last done. iDestruct "Hdeepown_time_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> MetaTimeFields.TimeV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (MetaTimeFields.TimeV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
+  { destruct v.(Time') as [value|]; last done. iDestruct "Hdeepown_time_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> MetaTimeView.TimeV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (MetaTimeView.TimeV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
   iAssert (|==> (match v.(FieldsV1') with Some value => ∃ value_c, c.(meta_v1.ManagedFieldsEntry.FieldsV1') ↦{DfracDiscarded} value_c ∗ FieldsV1V.deepown value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_fieldsv1_some]" as ">Hdeepown_fieldsv1_some".
   { destruct v.(FieldsV1') as [value|]; last done. iDestruct "Hdeepown_fieldsv1_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> FieldsV1V.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (FieldsV1V.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
@@ -273,8 +273,8 @@ Record t := mk {
   UID' : go_string;
   ResourceVersion' : go_string;
   Generation' : w64;
-  CreationTimestamp' : MetaTimeFields.TimeV.t;
-  DeletionTimestamp' : option (MetaTimeFields.TimeV.t);
+  CreationTimestamp' : MetaTimeView.TimeV.t;
+  DeletionTimestamp' : option (MetaTimeView.TimeV.t);
   DeletionGracePeriodSeconds' : option (w64);
   Labels' : option (gmap go_string (go_string));
   Annotations' : option (gmap go_string (go_string));
@@ -294,9 +294,9 @@ Definition deepown (c : meta_v1.ObjectMeta.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_uid" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.UID') v.(UID') dq ∗
   "%Hdeepown_resourceversion" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.ResourceVersion') v.(ResourceVersion') dq ∗
   "%Hdeepown_generation" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.Generation') v.(Generation') dq ∗
-  "Hdeepown_creationtimestamp" ∷ MetaTimeFields.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') dq ∗
+  "Hdeepown_creationtimestamp" ∷ MetaTimeView.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') dq ∗
   "%Hdeepown_deletiontimestamp_none" ∷ ⌜ c.(meta_v1.ObjectMeta.DeletionTimestamp') = null ↔ v.(DeletionTimestamp') = None ⌝ ∗
-  "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{dq} value_c ∗ MetaTimeFields.TimeV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{dq} value_c ∗ MetaTimeView.TimeV.deepown value_c value dq | None => True%I end) ∗
   "%Hdeepown_deletiongraceperiodseconds_none" ∷ ⌜ c.(meta_v1.ObjectMeta.DeletionGracePeriodSeconds') = null ↔ v.(DeletionGracePeriodSeconds') = None ⌝ ∗
   "Hdeepown_deletiongraceperiodseconds_some" ∷ (match v.(DeletionGracePeriodSeconds') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionGracePeriodSeconds') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_labels_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Labels') = null ↔ v.(Labels') = None ⌝ ∗
@@ -317,9 +317,9 @@ Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_uid" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.UID') v.(UID') dq ∗
   "%Hdeepown_resourceversion" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.ResourceVersion') v.(ResourceVersion') dq ∗
   "%Hdeepown_generation" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(meta_v1.ObjectMeta.Generation') v.(Generation') dq ∗
-  "Hdeepown_creationtimestamp" ∷ MetaTimeFields.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') dq ∗
+  "Hdeepown_creationtimestamp" ∷ MetaTimeView.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') dq ∗
   "%Hdeepown_deletiontimestamp_none" ∷ ⌜ c.(meta_v1.ObjectMeta.DeletionTimestamp') = null ↔ v.(DeletionTimestamp') = None ⌝ ∗
-  "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{dq} value_c ∗ MetaTimeFields.TimeV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_deletiontimestamp_some" ∷ (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{dq} value_c ∗ MetaTimeView.TimeV.deepown value_c value dq | None => True%I end) ∗
   "%Hdeepown_deletiongraceperiodseconds_none" ∷ ⌜ c.(meta_v1.ObjectMeta.DeletionGracePeriodSeconds') = null ↔ v.(DeletionGracePeriodSeconds') = None ⌝ ∗
   "Hdeepown_deletiongraceperiodseconds_some" ∷ (match v.(DeletionGracePeriodSeconds') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionGracePeriodSeconds') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_labels_none" ∷ ⌜ c.(meta_v1.ObjectMeta.Labels') = null ↔ v.(Labels') = None ⌝ ∗
@@ -343,7 +343,7 @@ Definition zero : t := {|
   UID' := zero_val _;
   ResourceVersion' := zero_val _;
   Generation' := zero_val _;
-  CreationTimestamp' := MetaTimeFields.TimeV.zero;
+  CreationTimestamp' := MetaTimeView.TimeV.zero;
   DeletionTimestamp' := None;
   DeletionGracePeriodSeconds' := None;
   Labels' := None;
@@ -370,7 +370,7 @@ Proof.
   iSplitL.
   { done. }
   iSplitL.
-  { iApply MetaTimeFields.TimeV.deepown_zero. }
+  { iApply MetaTimeView.TimeV.deepown_zero. }
   iSplitL.
   { done. }
   iSplitL.
@@ -402,12 +402,12 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> MetaTimeFields.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') DfracDiscarded)%I
+  iAssert (|==> MetaTimeView.TimeV.deepown c.(meta_v1.ObjectMeta.CreationTimestamp') v.(CreationTimestamp') DfracDiscarded)%I
     with "[Hdeepown_creationtimestamp]" as ">Hdeepown_creationtimestamp".
-  { iApply (MetaTimeFields.TimeV.deepown_persist with "Hdeepown_creationtimestamp"). }
-  iAssert (|==> (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{DfracDiscarded} value_c ∗ MetaTimeFields.TimeV.deepown value_c value DfracDiscarded | None => True%I end))%I
+  { iApply (MetaTimeView.TimeV.deepown_persist with "Hdeepown_creationtimestamp"). }
+  iAssert (|==> (match v.(DeletionTimestamp') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionTimestamp') ↦{DfracDiscarded} value_c ∗ MetaTimeView.TimeV.deepown value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_deletiontimestamp_some]" as ">Hdeepown_deletiontimestamp_some".
-  { destruct v.(DeletionTimestamp') as [value|]; last done. iDestruct "Hdeepown_deletiontimestamp_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> MetaTimeFields.TimeV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (MetaTimeFields.TimeV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
+  { destruct v.(DeletionTimestamp') as [value|]; last done. iDestruct "Hdeepown_deletiontimestamp_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> MetaTimeView.TimeV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (MetaTimeView.TimeV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
   iAssert (|==> (match v.(DeletionGracePeriodSeconds') with Some value => ∃ value_c, c.(meta_v1.ObjectMeta.DeletionGracePeriodSeconds') ↦{DfracDiscarded} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_deletiongraceperiodseconds_some]" as ">Hdeepown_deletiongraceperiodseconds_some".
   { destruct v.(DeletionGracePeriodSeconds') as [value|]; last done. iDestruct "Hdeepown_deletiongraceperiodseconds_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iModIntro. iExact "Hv". } iModIntro. iExists value_c. iFrame "# ∗". }
@@ -482,4 +482,4 @@ End def.
 #[global] Opaque deepown.
 End ObjectMetaV.
 
-End ObjectMetaFields.
+End ObjectMetaView.

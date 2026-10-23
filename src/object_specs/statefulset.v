@@ -5,11 +5,11 @@ From New.object_specs Require Import top_level.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)
-Local Transparent ObjectMetaFields.ObjectMetaV.deepown ObjectMetaV.deepown.
-Local Transparent StatefulSetFields.StatefulSetSpecV.deepown StatefulSetFields.StatefulSetStatusV.deepown.
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent StatefulSetView.StatefulSetSpecV.deepown StatefulSetView.StatefulSetStatusV.deepown.
 
 Module StatefulSetSpecV.
-Include StatefulSetFields.StatefulSetSpecV.
+Include StatefulSetView.StatefulSetSpecV.
 Local Transparent deepown.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -183,7 +183,7 @@ End StatefulSetSpecV.
 Local Transparent StatefulSetSpecV.deepown.
 
 Module StatefulSetStatusV.
-Include StatefulSetFields.StatefulSetStatusV.
+Include StatefulSetView.StatefulSetStatusV.
 Local Transparent deepown.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -203,7 +203,7 @@ End StatefulSetStatusV.
 Local Transparent StatefulSetStatusV.deepown.
 
 Module StatefulSetV.
-Include StatefulSetFields.StatefulSetV.
+Include StatefulSetView.StatefulSetV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

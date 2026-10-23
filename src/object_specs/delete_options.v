@@ -1,10 +1,10 @@
 From New.generatedviews Require Export delete_options.
 From New.proof Require Import prelude empty_ffi.
 
-Module PreconditionsV := DeleteOptionsFields.PreconditionsV.
+Module PreconditionsV := DeleteOptionsView.PreconditionsV.
 
 Module DeleteOptionsV.
-Include DeleteOptionsFields.DeleteOptionsV.
+Include DeleteOptionsView.DeleteOptionsV.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation/validation.go#L157 *)
 Definition valid (options : t) : Prop :=

@@ -12,7 +12,7 @@ Module inf := code.gopkg_in.inf_v0.inf.
 Module big := code.math.big.big.
 Module runtime_time := code.time.time.
 
-Module ReplicaSetFields.
+Module ReplicaSetView.
 
 Module ReplicaSetSpecV.
 Section def.
@@ -26,8 +26,8 @@ Local Set Default Proof Using "All".
 Record t := mk {
   Replicas' : option (w32);
   MinReadySeconds' : w32;
-  Selector' : option (PodFields.LabelSelectorV.t);
-  Template' : PodFields.PodTemplateSpecV.t;
+  Selector' : option (PodView.LabelSelectorV.t);
+  Template' : PodView.PodTemplateSpecV.t;
 }.
 
 #[global] Instance eq_dec : EqDecision t.
@@ -38,8 +38,8 @@ Definition deepown (c : api_apps_v1.ReplicaSetSpec.t) (v : t) dq : iProp Σ :=
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Replicas') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_minreadyseconds" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.ReplicaSetSpec.MinReadySeconds') v.(MinReadySeconds') dq ∗
   "%Hdeepown_selector_none" ∷ ⌜ c.(api_apps_v1.ReplicaSetSpec.Selector') = null ↔ v.(Selector') = None ⌝ ∗
-  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Selector') ↦{dq} value_c ∗ PodFields.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
-  "Hdeepown_template" ∷ PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.ReplicaSetSpec.Template') v.(Template') dq.
+  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Selector') ↦{dq} value_c ∗ PodView.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_template" ∷ PodView.PodTemplateSpecV.deepown c.(api_apps_v1.ReplicaSetSpec.Template') v.(Template') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -47,7 +47,7 @@ Definition zero : t := {|
   Replicas' := None;
   MinReadySeconds' := zero_val _;
   Selector' := None;
-  Template' := PodFields.PodTemplateSpecV.zero;
+  Template' := PodView.PodTemplateSpecV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_apps_v1.ReplicaSetSpec.t) zero dq.
 Proof.
@@ -62,7 +62,7 @@ Proof.
   { done. }
   iSplitL.
   { done. }
-  iApply PodFields.PodTemplateSpecV.deepown_zero.
+  iApply PodView.PodTemplateSpecV.deepown_zero.
 Qed.
 
 Lemma deepown_persist c v dq :
@@ -72,12 +72,12 @@ Proof.
   iAssert (|==> (match v.(Replicas') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Replicas') ↦{DfracDiscarded} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_replicas_some]" as ">Hdeepown_replicas_some".
   { destruct v.(Replicas') as [value|]; last done. iDestruct "Hdeepown_replicas_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iModIntro. iExact "Hv". } iModIntro. iExists value_c. iFrame "# ∗". }
-  iAssert (|==> (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Selector') ↦{DfracDiscarded} value_c ∗ PodFields.LabelSelectorV.deepown value_c value DfracDiscarded | None => True%I end))%I
+  iAssert (|==> (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.ReplicaSetSpec.Selector') ↦{DfracDiscarded} value_c ∗ PodView.LabelSelectorV.deepown value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_selector_some]" as ">Hdeepown_selector_some".
-  { destruct v.(Selector') as [value|]; last done. iDestruct "Hdeepown_selector_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> PodFields.LabelSelectorV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (PodFields.LabelSelectorV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
-  iAssert (|==> PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.ReplicaSetSpec.Template') v.(Template') DfracDiscarded)%I
+  { destruct v.(Selector') as [value|]; last done. iDestruct "Hdeepown_selector_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> PodView.LabelSelectorV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (PodView.LabelSelectorV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
+  iAssert (|==> PodView.PodTemplateSpecV.deepown c.(api_apps_v1.ReplicaSetSpec.Template') v.(Template') DfracDiscarded)%I
     with "[Hdeepown_template]" as ">Hdeepown_template".
-  { iApply (PodFields.PodTemplateSpecV.deepown_persist with "Hdeepown_template"). }
+  { iApply (PodView.PodTemplateSpecV.deepown_persist with "Hdeepown_template"). }
   iModIntro. iFrame "# ∗ %".
 Qed.
 
@@ -110,7 +110,7 @@ Local Set Default Proof Using "All".
 Record t := mk {
   Type' : go_string;
   Status' : go_string;
-  LastTransitionTime' : MetaTimeFields.TimeV.t;
+  LastTransitionTime' : MetaTimeView.TimeV.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -121,7 +121,7 @@ Proof using Type. solve_decision. Defined.
 Definition of_go (c : api_apps_v1.ReplicaSetCondition.t) : t := {|
   Type' := c.(api_apps_v1.ReplicaSetCondition.Type');
   Status' := c.(api_apps_v1.ReplicaSetCondition.Status');
-  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_apps_v1.ReplicaSetCondition.LastTransitionTime'));
+  LastTransitionTime' := (MetaTimeView.TimeV.of_go c.(api_apps_v1.ReplicaSetCondition.LastTransitionTime'));
   Reason' := c.(api_apps_v1.ReplicaSetCondition.Reason');
   Message' := c.(api_apps_v1.ReplicaSetCondition.Message');
 |}.
@@ -132,7 +132,7 @@ Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 Definition zero : t := {|
   Type' := zero_val _;
   Status' := zero_val _;
-  LastTransitionTime' := MetaTimeFields.TimeV.zero;
+  LastTransitionTime' := MetaTimeView.TimeV.zero;
   Reason' := zero_val _;
   Message' := zero_val _;
 |}.
@@ -261,8 +261,8 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  TypeMeta' : TypeMetaFields.TypeMetaV.t;
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
+  TypeMeta' : TypeMetaView.TypeMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
   Spec' : ReplicaSetSpecV.t;
   Status' : ReplicaSetStatusV.t;
 }.
@@ -271,16 +271,16 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_apps_v1.ReplicaSet.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_typemeta" ∷ TypeMetaFields.TypeMetaV.deepown c.(api_apps_v1.ReplicaSet.TypeMeta') v.(TypeMeta') dq ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_apps_v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') dq ∗
+  "%Hdeepown_typemeta" ∷ TypeMetaView.TypeMetaV.deepown c.(api_apps_v1.ReplicaSet.TypeMeta') v.(TypeMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_apps_v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ ReplicaSetSpecV.deepown c.(api_apps_v1.ReplicaSet.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ ReplicaSetStatusV.deepown c.(api_apps_v1.ReplicaSet.Status') v.(Status') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  TypeMeta' := TypeMetaFields.TypeMetaV.zero;
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
+  TypeMeta' := TypeMetaView.TypeMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
   Spec' := ReplicaSetSpecV.zero;
   Status' := ReplicaSetStatusV.zero;
 |}.
@@ -288,9 +288,9 @@ Lemma deepown_zero dq : ⊢ deepown (zero_val api_apps_v1.ReplicaSet.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply TypeMetaFields.TypeMetaV.deepown_zero. }
+  { iApply TypeMetaView.TypeMetaV.deepown_zero. }
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iSplitL.
   { iApply ReplicaSetSpecV.deepown_zero. }
   iApply ReplicaSetStatusV.deepown_zero.
@@ -300,9 +300,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_apps_v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_apps_v1.ReplicaSet.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
   iAssert (|==> ReplicaSetSpecV.deepown c.(api_apps_v1.ReplicaSet.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
   { iApply (ReplicaSetSpecV.deepown_persist with "Hdeepown_spec"). }
@@ -325,4 +325,4 @@ Qed.
 End def.
 End ReplicaSetV.
 
-End ReplicaSetFields.
+End ReplicaSetView.

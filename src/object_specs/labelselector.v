@@ -3,7 +3,7 @@ From New.proof Require Import prelude empty_ffi util.
 From New.object_specs Require Export common.
 
 Module LabelSelectorRequirementV.
-Include PodFields.LabelSelectorRequirementV.
+Include PodView.LabelSelectorRequirementV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -43,7 +43,7 @@ End def.
 End LabelSelectorRequirementV.
 
 Module LabelSelectorV.
-Include PodFields.LabelSelectorV.
+Include PodView.LabelSelectorV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

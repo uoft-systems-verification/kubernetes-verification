@@ -11,7 +11,7 @@ Module inf := code.gopkg_in.inf_v0.inf.
 Module big := code.math.big.big.
 Module runtime_time := code.time.time.
 
-Module PodFields.
+Module PodView.
 
 Module HostPathVolumeSourceV.
 Section def.
@@ -3175,7 +3175,7 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
   Spec' : PersistentVolumeClaimSpecV.t;
 }.
 
@@ -3183,20 +3183,20 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_core_v1.PersistentVolumeClaimTemplate.t) (v : t) dq : iProp Σ :=
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.Spec') v.(Spec') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
   Spec' := PersistentVolumeClaimSpecV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.PersistentVolumeClaimTemplate.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iApply PersistentVolumeClaimSpecV.deepown_zero.
 Qed.
 
@@ -3204,9 +3204,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
   iAssert (|==> PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaimTemplate.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
   { iApply (PersistentVolumeClaimSpecV.deepown_persist with "Hdeepown_spec"). }
@@ -8140,8 +8140,8 @@ Record t := mk {
   Type' : go_string;
   ObservedGeneration' : w64;
   Status' : go_string;
-  LastProbeTime' : MetaTimeFields.TimeV.t;
-  LastTransitionTime' : MetaTimeFields.TimeV.t;
+  LastProbeTime' : MetaTimeView.TimeV.t;
+  LastTransitionTime' : MetaTimeView.TimeV.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -8153,8 +8153,8 @@ Definition of_go (c : api_core_v1.PodCondition.t) : t := {|
   Type' := c.(api_core_v1.PodCondition.Type');
   ObservedGeneration' := c.(api_core_v1.PodCondition.ObservedGeneration');
   Status' := c.(api_core_v1.PodCondition.Status');
-  LastProbeTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PodCondition.LastProbeTime'));
-  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PodCondition.LastTransitionTime'));
+  LastProbeTime' := (MetaTimeView.TimeV.of_go c.(api_core_v1.PodCondition.LastProbeTime'));
+  LastTransitionTime' := (MetaTimeView.TimeV.of_go c.(api_core_v1.PodCondition.LastTransitionTime'));
   Reason' := c.(api_core_v1.PodCondition.Reason');
   Message' := c.(api_core_v1.PodCondition.Message');
 |}.
@@ -8166,8 +8166,8 @@ Definition zero : t := {|
   Type' := zero_val _;
   ObservedGeneration' := zero_val _;
   Status' := zero_val _;
-  LastProbeTime' := MetaTimeFields.TimeV.zero;
-  LastTransitionTime' := MetaTimeFields.TimeV.zero;
+  LastProbeTime' := MetaTimeView.TimeV.zero;
+  LastTransitionTime' := MetaTimeView.TimeV.zero;
   Reason' := zero_val _;
   Message' := zero_val _;
 |}.
@@ -8303,21 +8303,21 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  StartedAt' : MetaTimeFields.TimeV.t;
+  StartedAt' : MetaTimeView.TimeV.t;
 }.
 
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
 Definition of_go (c : api_core_v1.ContainerStateRunning.t) : t := {|
-  StartedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateRunning.StartedAt'));
+  StartedAt' := (MetaTimeView.TimeV.of_go c.(api_core_v1.ContainerStateRunning.StartedAt'));
 |}.
 Definition deepown (c : api_core_v1.ContainerStateRunning.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  StartedAt' := MetaTimeFields.TimeV.zero;
+  StartedAt' := MetaTimeView.TimeV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.ContainerStateRunning.t) zero dq.
 Proof.
@@ -8350,8 +8350,8 @@ Record t := mk {
   Signal' : w32;
   Reason' : go_string;
   Message' : go_string;
-  StartedAt' : MetaTimeFields.TimeV.t;
-  FinishedAt' : MetaTimeFields.TimeV.t;
+  StartedAt' : MetaTimeView.TimeV.t;
+  FinishedAt' : MetaTimeView.TimeV.t;
   ContainerID' : go_string;
 }.
 
@@ -8363,8 +8363,8 @@ Definition of_go (c : api_core_v1.ContainerStateTerminated.t) : t := {|
   Signal' := c.(api_core_v1.ContainerStateTerminated.Signal');
   Reason' := c.(api_core_v1.ContainerStateTerminated.Reason');
   Message' := c.(api_core_v1.ContainerStateTerminated.Message');
-  StartedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.StartedAt'));
-  FinishedAt' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.FinishedAt'));
+  StartedAt' := (MetaTimeView.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.StartedAt'));
+  FinishedAt' := (MetaTimeView.TimeV.of_go c.(api_core_v1.ContainerStateTerminated.FinishedAt'));
   ContainerID' := c.(api_core_v1.ContainerStateTerminated.ContainerID');
 |}.
 Definition deepown (c : api_core_v1.ContainerStateTerminated.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
@@ -8376,8 +8376,8 @@ Definition zero : t := {|
   Signal' := zero_val _;
   Reason' := zero_val _;
   Message' := zero_val _;
-  StartedAt' := MetaTimeFields.TimeV.zero;
-  FinishedAt' := MetaTimeFields.TimeV.zero;
+  StartedAt' := MetaTimeView.TimeV.zero;
+  FinishedAt' := MetaTimeView.TimeV.zero;
   ContainerID' := zero_val _;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.ContainerStateTerminated.t) zero dq.
@@ -9074,7 +9074,7 @@ Record t := mk {
   HostIPs' : option (list (HostIPV.t));
   PodIP' : go_string;
   PodIPs' : option (list (PodIPV.t));
-  StartTime' : option (MetaTimeFields.TimeV.t);
+  StartTime' : option (MetaTimeView.TimeV.t);
   InitContainerStatuses' : option (list (ContainerStatusV.t));
   ContainerStatuses' : option (list (ContainerStatusV.t));
   QOSClass' : go_string;
@@ -9098,7 +9098,7 @@ Definition deepown (c : api_core_v1.PodStatus.t) (v : t) dq : iProp Σ :=
   "Hdeepown_hostips" ∷ (deepown_slice HostIPV.deepown) c.(api_core_v1.PodStatus.HostIPs') v.(HostIPs') dq ∗
   "%Hdeepown_podip" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodStatus.PodIP') v.(PodIP') dq ∗
   "Hdeepown_podips" ∷ (deepown_slice PodIPV.deepown) c.(api_core_v1.PodStatus.PodIPs') v.(PodIPs') dq ∗
-  "Hdeepown_starttime" ∷ (deepown_ptr MetaTimeFields.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') dq ∗
+  "Hdeepown_starttime" ∷ (deepown_ptr MetaTimeView.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') dq ∗
   "Hdeepown_initcontainerstatuses" ∷ (deepown_slice ContainerStatusV.deepown) c.(api_core_v1.PodStatus.InitContainerStatuses') v.(InitContainerStatuses') dq ∗
   "Hdeepown_containerstatuses" ∷ (deepown_slice ContainerStatusV.deepown) c.(api_core_v1.PodStatus.ContainerStatuses') v.(ContainerStatuses') dq ∗
   "%Hdeepown_qosclass" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodStatus.QOSClass') v.(QOSClass') dq ∗
@@ -9118,7 +9118,7 @@ Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "Hdeepown_hostips" ∷ (deepown_slice HostIPV.deepown) c.(api_core_v1.PodStatus.HostIPs') v.(HostIPs') dq ∗
   "%Hdeepown_podip" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodStatus.PodIP') v.(PodIP') dq ∗
   "Hdeepown_podips" ∷ (deepown_slice PodIPV.deepown) c.(api_core_v1.PodStatus.PodIPs') v.(PodIPs') dq ∗
-  "Hdeepown_starttime" ∷ (deepown_ptr MetaTimeFields.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') dq ∗
+  "Hdeepown_starttime" ∷ (deepown_ptr MetaTimeView.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') dq ∗
   "Hdeepown_initcontainerstatuses" ∷ (deepown_slice ContainerStatusV.deepown) c.(api_core_v1.PodStatus.InitContainerStatuses') v.(InitContainerStatuses') dq ∗
   "Hdeepown_containerstatuses" ∷ (deepown_slice ContainerStatusV.deepown) c.(api_core_v1.PodStatus.ContainerStatuses') v.(ContainerStatuses') dq ∗
   "%Hdeepown_qosclass" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PodStatus.QOSClass') v.(QOSClass') dq ∗
@@ -9203,9 +9203,9 @@ Proof.
   iAssert (|==> (deepown_slice PodIPV.deepown) c.(api_core_v1.PodStatus.PodIPs') v.(PodIPs') DfracDiscarded)%I
     with "[Hdeepown_podips]" as ">Hdeepown_podips".
   { iApply (deepown_slice_persist with "Hdeepown_podips"). intros. apply PodIPV.deepown_persist. }
-  iAssert (|==> (deepown_ptr MetaTimeFields.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') DfracDiscarded)%I
+  iAssert (|==> (deepown_ptr MetaTimeView.TimeV.deepown) c.(api_core_v1.PodStatus.StartTime') v.(StartTime') DfracDiscarded)%I
     with "[Hdeepown_starttime]" as ">Hdeepown_starttime".
-  { iApply (deepown_ptr_persist with "Hdeepown_starttime"). intros. apply MetaTimeFields.TimeV.deepown_persist. }
+  { iApply (deepown_ptr_persist with "Hdeepown_starttime"). intros. apply MetaTimeView.TimeV.deepown_persist. }
   iAssert (|==> (deepown_slice ContainerStatusV.deepown) c.(api_core_v1.PodStatus.InitContainerStatuses') v.(InitContainerStatuses') DfracDiscarded)%I
     with "[Hdeepown_initcontainerstatuses]" as ">Hdeepown_initcontainerstatuses".
   { iApply (deepown_slice_persist with "Hdeepown_initcontainerstatuses"). intros. apply ContainerStatusV.deepown_persist. }
@@ -9277,8 +9277,8 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  TypeMeta' : TypeMetaFields.TypeMetaV.t;
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
+  TypeMeta' : TypeMetaView.TypeMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
   Spec' : PodSpecV.t;
   Status' : PodStatusV.t;
 }.
@@ -9287,16 +9287,16 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_core_v1.Pod.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_typemeta" ∷ TypeMetaFields.TypeMetaV.deepown c.(api_core_v1.Pod.TypeMeta') v.(TypeMeta') dq ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.Pod.ObjectMeta') v.(ObjectMeta') dq ∗
+  "%Hdeepown_typemeta" ∷ TypeMetaView.TypeMetaV.deepown c.(api_core_v1.Pod.TypeMeta') v.(TypeMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.Pod.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ PodSpecV.deepown c.(api_core_v1.Pod.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ PodStatusV.deepown c.(api_core_v1.Pod.Status') v.(Status') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  TypeMeta' := TypeMetaFields.TypeMetaV.zero;
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
+  TypeMeta' := TypeMetaView.TypeMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
   Spec' := PodSpecV.zero;
   Status' := PodStatusV.zero;
 |}.
@@ -9304,9 +9304,9 @@ Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.Pod.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply TypeMetaFields.TypeMetaV.deepown_zero. }
+  { iApply TypeMetaView.TypeMetaV.deepown_zero. }
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iSplitL.
   { iApply PodSpecV.deepown_zero. }
   iApply PodStatusV.deepown_zero.
@@ -9316,9 +9316,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.Pod.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.Pod.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
   iAssert (|==> PodSpecV.deepown c.(api_core_v1.Pod.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
   { iApply (PodSpecV.deepown_persist with "Hdeepown_spec"). }
@@ -9350,7 +9350,7 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
   Spec' : PodSpecV.t;
 }.
 
@@ -9358,20 +9358,20 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_core_v1.PodTemplateSpec.t) (v : t) dq : iProp Σ :=
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ PodSpecV.deepown c.(api_core_v1.PodTemplateSpec.Spec') v.(Spec') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
   Spec' := PodSpecV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.PodTemplateSpec.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iApply PodSpecV.deepown_zero.
 Qed.
 
@@ -9379,9 +9379,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PodTemplateSpec.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
   iAssert (|==> PodSpecV.deepown c.(api_core_v1.PodTemplateSpec.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
   { iApply (PodSpecV.deepown_persist with "Hdeepown_spec"). }
@@ -9397,4 +9397,4 @@ Qed.
 End def.
 End PodTemplateSpecV.
 
-End PodFields.
+End PodView.

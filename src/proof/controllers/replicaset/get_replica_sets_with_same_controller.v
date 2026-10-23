@@ -5,7 +5,7 @@ From New.object_specs Require Export prelude.
 From New.proof.kubernetes_model Require Export by_index_controller_uid.
 
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

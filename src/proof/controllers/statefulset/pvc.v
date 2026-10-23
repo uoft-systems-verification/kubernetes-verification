@@ -4,10 +4,10 @@ From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.controllers.statefulset Require Export pvc_predicates.
 From New.proof.k8s_io.api.core Require Export v1.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
-Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

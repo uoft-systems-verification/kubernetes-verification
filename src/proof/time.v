@@ -141,12 +141,12 @@ Local Set Default Proof Using "All".
 Lemma wp_Now_full :
   {{{ True }}}
     @! time.Now #()
-  {{{ (t : time.Time.t) (view : TimeFields.TimeV.t), RET #t;
-      TimeFields.TimeV.deepown t view 1
+  {{{ (t : time.Time.t) (view : TimeView.TimeV.t), RET #t;
+      TimeView.TimeV.deepown t view 1
   }}}.
 Proof.
   wp_start. wp_apply wp_Now as "%t _".
-  iApply ("HΦ" $! t (TimeFields.TimeV.of_go t)).
-  rewrite /TimeFields.TimeV.deepown. done.
+  iApply ("HΦ" $! t (TimeView.TimeV.of_go t)).
+  rewrite /TimeView.TimeV.deepown. done.
 Qed.
 End complete_time.

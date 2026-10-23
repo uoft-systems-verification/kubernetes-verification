@@ -4,7 +4,7 @@ From New.proof Require Export deepown.
 From New.generatedproof Require Export time.
 Module runtime_time := code.time.time.
 
-Module TimeFields.
+Module TimeView.
 
 Module ZoneV.
 Section def.
@@ -214,4 +214,4 @@ Qed.
 End def.
 End TimeV.
 
-End TimeFields.
+End TimeView.

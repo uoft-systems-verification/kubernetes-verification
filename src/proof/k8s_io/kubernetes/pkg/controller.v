@@ -8,8 +8,8 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Import meta.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
-Local Opaque TimeV.deepown TimeFields.TimeV.deepown TimeFields.LocationV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+Local Opaque TimeV.deepown TimeView.TimeV.deepown TimeView.LocationV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

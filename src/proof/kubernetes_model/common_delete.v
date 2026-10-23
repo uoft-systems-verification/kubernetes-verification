@@ -5,7 +5,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Import validation.
 (* Lightweight infrastructure shared by the Delete variants and updates
    whose success path may remove an object. *)
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -39,7 +39,7 @@ Proof.
 Qed.
 
 (* Keep timestamp representation abstract in unrelated delete proofs. *)
-Local Opaque TimeV.deepown TimeFields.TimeV.deepown.
+Local Opaque TimeV.deepown TimeView.TimeV.deepown.
 
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with

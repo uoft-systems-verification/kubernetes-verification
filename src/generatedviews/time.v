@@ -5,7 +5,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.generatedviews Require Export runtime_time.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 
-Module MetaTimeFields.
+Module MetaTimeView.
 
 Module TimeV.
 Section def.
@@ -15,21 +15,21 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  Time' : TimeFields.TimeV.t;
+  Time' : TimeView.TimeV.t;
 }.
 
 #[global] Instance eq_dec : EqDecision t.
 Proof using Type. solve_decision. Defined.
 
 Definition of_go (c : meta_v1.Time.t) : t := {|
-  Time' := (TimeFields.TimeV.of_go c.(meta_v1.Time.Time'));
+  Time' := (TimeView.TimeV.of_go c.(meta_v1.Time.Time'));
 |}.
 Definition deepown (c : meta_v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ := ⌜of_go c = v⌝.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  Time' := TimeFields.TimeV.zero;
+  Time' := TimeView.TimeV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val meta_v1.Time.t) zero dq.
 Proof.
@@ -49,6 +49,6 @@ Qed.
 End def.
 End TimeV.
 
-End MetaTimeFields.
+End MetaTimeView.
 
-Module TimeV := MetaTimeFields.TimeV.
+Module TimeV := MetaTimeView.TimeV.

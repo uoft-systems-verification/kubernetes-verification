@@ -1,9 +1,9 @@
 From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common_delete.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 (* Timestamp ownership is framed intact while updating metadata. *)
-Local Opaque TimeV.deepown TimeFields.TimeV.deepown.
+Local Opaque TimeV.deepown TimeView.TimeV.deepown.
 
 (* Collect transient import allocations before checking the large API proof. *)
 Optimize Heap.

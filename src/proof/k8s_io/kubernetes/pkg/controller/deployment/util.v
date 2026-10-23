@@ -37,7 +37,7 @@ Proof. unfold template_matches. apply _. Defined.
 Lemma template_matches_sym t1 t2 : template_matches t1 t2 → template_matches t2 t1.
 Proof. apply template_semantic_eq_sym. Qed.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

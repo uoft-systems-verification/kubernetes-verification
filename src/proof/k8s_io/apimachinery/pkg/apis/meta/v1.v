@@ -4,7 +4,7 @@ From New.object_specs Require Import prelude.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Import schema.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

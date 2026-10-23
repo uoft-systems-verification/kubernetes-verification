@@ -7,7 +7,7 @@ From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : common.Assumptions}.

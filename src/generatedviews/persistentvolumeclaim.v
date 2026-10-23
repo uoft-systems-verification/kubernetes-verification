@@ -11,7 +11,7 @@ Module inf := code.gopkg_in.inf_v0.inf.
 Module big := code.math.big.big.
 Module runtime_time := code.time.time.
 
-Module PersistentVolumeClaimFields.
+Module PersistentVolumeClaimView.
 
 Module PersistentVolumeClaimConditionV.
 Section def.
@@ -24,8 +24,8 @@ Local Set Default Proof Using "All".
 Record t := mk {
   Type' : go_string;
   Status' : go_string;
-  LastProbeTime' : MetaTimeFields.TimeV.t;
-  LastTransitionTime' : MetaTimeFields.TimeV.t;
+  LastProbeTime' : MetaTimeView.TimeV.t;
+  LastTransitionTime' : MetaTimeView.TimeV.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -36,8 +36,8 @@ Proof using Type. solve_decision. Defined.
 Definition of_go (c : api_core_v1.PersistentVolumeClaimCondition.t) : t := {|
   Type' := c.(api_core_v1.PersistentVolumeClaimCondition.Type');
   Status' := c.(api_core_v1.PersistentVolumeClaimCondition.Status');
-  LastProbeTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PersistentVolumeClaimCondition.LastProbeTime'));
-  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_core_v1.PersistentVolumeClaimCondition.LastTransitionTime'));
+  LastProbeTime' := (MetaTimeView.TimeV.of_go c.(api_core_v1.PersistentVolumeClaimCondition.LastProbeTime'));
+  LastTransitionTime' := (MetaTimeView.TimeV.of_go c.(api_core_v1.PersistentVolumeClaimCondition.LastTransitionTime'));
   Reason' := c.(api_core_v1.PersistentVolumeClaimCondition.Reason');
   Message' := c.(api_core_v1.PersistentVolumeClaimCondition.Message');
 |}.
@@ -48,8 +48,8 @@ Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 Definition zero : t := {|
   Type' := zero_val _;
   Status' := zero_val _;
-  LastProbeTime' := MetaTimeFields.TimeV.zero;
-  LastTransitionTime' := MetaTimeFields.TimeV.zero;
+  LastProbeTime' := MetaTimeView.TimeV.zero;
+  LastTransitionTime' := MetaTimeView.TimeV.zero;
   Reason' := zero_val _;
   Message' := zero_val _;
 |}.
@@ -117,9 +117,9 @@ Local Set Default Proof Using "All".
 Record t := mk {
   Phase' : go_string;
   AccessModes' : option (list (go_string));
-  Capacity' : option (gmap go_string (PodFields.QuantityV.t));
+  Capacity' : option (gmap go_string (PodView.QuantityV.t));
   Conditions' : option (list (PersistentVolumeClaimConditionV.t));
-  AllocatedResources' : option (gmap go_string (PodFields.QuantityV.t));
+  AllocatedResources' : option (gmap go_string (PodView.QuantityV.t));
   AllocatedResourceStatuses' : option (gmap go_string (go_string));
   CurrentVolumeAttributesClassName' : option (go_string);
   ModifyVolumeStatus' : option (ModifyVolumeStatusV.t);
@@ -131,9 +131,9 @@ Proof using Type. solve_decision. Defined.
 Definition deepown (c : api_core_v1.PersistentVolumeClaimStatus.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_phase" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_core_v1.PersistentVolumeClaimStatus.Phase') v.(Phase') dq ∗
   "Hdeepown_accessmodes" ∷ (deepown_slice (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_core_v1.PersistentVolumeClaimStatus.AccessModes') v.(AccessModes') dq ∗
-  "Hdeepown_capacity" ∷ (deepown_map PodFields.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Capacity') v.(Capacity') dq ∗
+  "Hdeepown_capacity" ∷ (deepown_map PodView.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Capacity') v.(Capacity') dq ∗
   "Hdeepown_conditions" ∷ (deepown_slice PersistentVolumeClaimConditionV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Conditions') v.(Conditions') dq ∗
-  "Hdeepown_allocatedresources" ∷ (deepown_map PodFields.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResources') v.(AllocatedResources') dq ∗
+  "Hdeepown_allocatedresources" ∷ (deepown_map PodView.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResources') v.(AllocatedResources') dq ∗
   "Hdeepown_allocatedresourcestatuses" ∷ (deepown_map (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') v.(AllocatedResourceStatuses') dq ∗
   "Hdeepown_currentvolumeattributesclassname" ∷ (deepown_ptr (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_core_v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName') v.(CurrentVolumeAttributesClassName') dq ∗
   "Hdeepown_modifyvolumestatus" ∷ (deepown_ptr ModifyVolumeStatusV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.ModifyVolumeStatus') v.(ModifyVolumeStatus') dq.
@@ -177,15 +177,15 @@ Proof.
   iAssert (|==> (deepown_slice (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_core_v1.PersistentVolumeClaimStatus.AccessModes') v.(AccessModes') DfracDiscarded)%I
     with "[Hdeepown_accessmodes]" as ">Hdeepown_accessmodes".
   { iApply (deepown_slice_persist with "Hdeepown_accessmodes"). intros. iIntros "H". by iModIntro. }
-  iAssert (|==> (deepown_map PodFields.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Capacity') v.(Capacity') DfracDiscarded)%I
+  iAssert (|==> (deepown_map PodView.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Capacity') v.(Capacity') DfracDiscarded)%I
     with "[Hdeepown_capacity]" as ">Hdeepown_capacity".
-  { iApply (deepown_map_persist with "Hdeepown_capacity"). intros. apply PodFields.QuantityV.deepown_persist. }
+  { iApply (deepown_map_persist with "Hdeepown_capacity"). intros. apply PodView.QuantityV.deepown_persist. }
   iAssert (|==> (deepown_slice PersistentVolumeClaimConditionV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.Conditions') v.(Conditions') DfracDiscarded)%I
     with "[Hdeepown_conditions]" as ">Hdeepown_conditions".
   { iApply (deepown_slice_persist with "Hdeepown_conditions"). intros. apply PersistentVolumeClaimConditionV.deepown_persist. }
-  iAssert (|==> (deepown_map PodFields.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResources') v.(AllocatedResources') DfracDiscarded)%I
+  iAssert (|==> (deepown_map PodView.QuantityV.deepown) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResources') v.(AllocatedResources') DfracDiscarded)%I
     with "[Hdeepown_allocatedresources]" as ">Hdeepown_allocatedresources".
-  { iApply (deepown_map_persist with "Hdeepown_allocatedresources"). intros. apply PodFields.QuantityV.deepown_persist. }
+  { iApply (deepown_map_persist with "Hdeepown_allocatedresources"). intros. apply PodView.QuantityV.deepown_persist. }
   iAssert (|==> (deepown_map (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_core_v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') v.(AllocatedResourceStatuses') DfracDiscarded)%I
     with "[Hdeepown_allocatedresourcestatuses]" as ">Hdeepown_allocatedresourcestatuses".
   { iApply (deepown_map_persist with "Hdeepown_allocatedresourcestatuses"). intros. iIntros "H". by iModIntro. }
@@ -228,9 +228,9 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  TypeMeta' : TypeMetaFields.TypeMetaV.t;
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
-  Spec' : PodFields.PersistentVolumeClaimSpecV.t;
+  TypeMeta' : TypeMetaView.TypeMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
+  Spec' : PodView.PersistentVolumeClaimSpecV.t;
   Status' : PersistentVolumeClaimStatusV.t;
 }.
 
@@ -238,28 +238,28 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_core_v1.PersistentVolumeClaim.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_typemeta" ∷ TypeMetaFields.TypeMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.TypeMeta') v.(TypeMeta') dq ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ PodFields.PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaim.Spec') v.(Spec') dq ∗
+  "%Hdeepown_typemeta" ∷ TypeMetaView.TypeMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.TypeMeta') v.(TypeMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') dq ∗
+  "Hdeepown_spec" ∷ PodView.PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaim.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(api_core_v1.PersistentVolumeClaim.Status') v.(Status') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  TypeMeta' := TypeMetaFields.TypeMetaV.zero;
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
-  Spec' := PodFields.PersistentVolumeClaimSpecV.zero;
+  TypeMeta' := TypeMetaView.TypeMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
+  Spec' := PodView.PersistentVolumeClaimSpecV.zero;
   Status' := PersistentVolumeClaimStatusV.zero;
 |}.
 Lemma deepown_zero dq : ⊢ deepown (zero_val api_core_v1.PersistentVolumeClaim.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply TypeMetaFields.TypeMetaV.deepown_zero. }
+  { iApply TypeMetaView.TypeMetaV.deepown_zero. }
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iSplitL.
-  { iApply PodFields.PersistentVolumeClaimSpecV.deepown_zero. }
+  { iApply PodView.PersistentVolumeClaimSpecV.deepown_zero. }
   iApply PersistentVolumeClaimStatusV.deepown_zero.
 Qed.
 
@@ -267,12 +267,12 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_core_v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
-  iAssert (|==> PodFields.PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaim.Spec') v.(Spec') DfracDiscarded)%I
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  iAssert (|==> PodView.PersistentVolumeClaimSpecV.deepown c.(api_core_v1.PersistentVolumeClaim.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
-  { iApply (PodFields.PersistentVolumeClaimSpecV.deepown_persist with "Hdeepown_spec"). }
+  { iApply (PodView.PersistentVolumeClaimSpecV.deepown_persist with "Hdeepown_spec"). }
   iAssert (|==> PersistentVolumeClaimStatusV.deepown c.(api_core_v1.PersistentVolumeClaim.Status') v.(Status') DfracDiscarded)%I
     with "[Hdeepown_status]" as ">Hdeepown_status".
   { iApply (PersistentVolumeClaimStatusV.deepown_persist with "Hdeepown_status"). }
@@ -292,6 +292,6 @@ Qed.
 End def.
 End PersistentVolumeClaimV.
 
-Module PersistentVolumeClaimSpecV := PodFields.PersistentVolumeClaimSpecV.
+Module PersistentVolumeClaimSpecV := PodView.PersistentVolumeClaimSpecV.
 
-End PersistentVolumeClaimFields.
+End PersistentVolumeClaimView.

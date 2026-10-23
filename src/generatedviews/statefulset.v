@@ -12,7 +12,7 @@ Module inf := code.gopkg_in.inf_v0.inf.
 Module big := code.math.big.big.
 Module runtime_time := code.time.time.
 
-Module StatefulSetFields.
+Module StatefulSetView.
 
 Module RollingUpdateStatefulSetStrategyV.
 Section def.
@@ -25,7 +25,7 @@ Local Set Default Proof Using "All".
 
 Record t := mk {
   Partition' : option (w32);
-  MaxUnavailable' : option (PodFields.IntOrStringV.t);
+  MaxUnavailable' : option (PodView.IntOrStringV.t);
 }.
 
 #[global] Instance eq_dec : EqDecision t.
@@ -33,7 +33,7 @@ Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_apps_v1.RollingUpdateStatefulSetStrategy.t) (v : t) dq : iProp Σ :=
   "Hdeepown_partition" ∷ (deepown_ptr (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.Partition') v.(Partition') dq ∗
-  "Hdeepown_maxunavailable" ∷ (deepown_ptr PodFields.IntOrStringV.deepown) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.MaxUnavailable') v.(MaxUnavailable') dq.
+  "Hdeepown_maxunavailable" ∷ (deepown_ptr PodView.IntOrStringV.deepown) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.MaxUnavailable') v.(MaxUnavailable') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
@@ -56,9 +56,9 @@ Proof.
   iAssert (|==> (deepown_ptr (λ c v (_ : dfrac), ⌜ c = v ⌝)%I) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.Partition') v.(Partition') DfracDiscarded)%I
     with "[Hdeepown_partition]" as ">Hdeepown_partition".
   { iApply (deepown_ptr_persist with "Hdeepown_partition"). intros. iIntros "H". by iModIntro. }
-  iAssert (|==> (deepown_ptr PodFields.IntOrStringV.deepown) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.MaxUnavailable') v.(MaxUnavailable') DfracDiscarded)%I
+  iAssert (|==> (deepown_ptr PodView.IntOrStringV.deepown) c.(api_apps_v1.RollingUpdateStatefulSetStrategy.MaxUnavailable') v.(MaxUnavailable') DfracDiscarded)%I
     with "[Hdeepown_maxunavailable]" as ">Hdeepown_maxunavailable".
-  { iApply (deepown_ptr_persist with "Hdeepown_maxunavailable"). intros. apply PodFields.IntOrStringV.deepown_persist. }
+  { iApply (deepown_ptr_persist with "Hdeepown_maxunavailable"). intros. apply PodView.IntOrStringV.deepown_persist. }
   iModIntro. iFrame "# ∗ %".
 Qed.
 
@@ -208,9 +208,9 @@ Local Set Default Proof Using "All".
 
 Record t := mk {
   Replicas' : option (w32);
-  Selector' : option (PodFields.LabelSelectorV.t);
-  Template' : PodFields.PodTemplateSpecV.t;
-  VolumeClaimTemplates' : option (list (PersistentVolumeClaimFields.PersistentVolumeClaimV.t));
+  Selector' : option (PodView.LabelSelectorV.t);
+  Template' : PodView.PodTemplateSpecV.t;
+  VolumeClaimTemplates' : option (list (PersistentVolumeClaimView.PersistentVolumeClaimV.t));
   ServiceName' : go_string;
   PodManagementPolicy' : go_string;
   UpdateStrategy' : StatefulSetUpdateStrategyV.t;
@@ -227,9 +227,9 @@ Definition deepown (c : api_apps_v1.StatefulSetSpec.t) (v : t) dq : iProp Σ :=
   "%Hdeepown_replicas_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None ⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Replicas') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_selector_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None ⌝ ∗
-  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodFields.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
-  "Hdeepown_template" ∷ PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
-  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
+  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodView.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_template" ∷ PodView.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
+  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimView.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
   "%Hdeepown_servicename" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.ServiceName') v.(ServiceName') dq ∗
   "%Hdeepown_podmanagementpolicy" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.PodManagementPolicy') v.(PodManagementPolicy') dq ∗
   "Hdeepown_updatestrategy" ∷ StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') dq ∗
@@ -245,9 +245,9 @@ Lemma deepown_unfold c v dq : deepown c v dq ⊣⊢
   "%Hdeepown_replicas_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None ⌝ ∗
   "Hdeepown_replicas_some" ∷ (match v.(Replicas') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Replicas') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_selector_none" ∷ ⌜ c.(api_apps_v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None ⌝ ∗
-  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodFields.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
-  "Hdeepown_template" ∷ PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
-  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
+  "Hdeepown_selector_some" ∷ (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{dq} value_c ∗ PodView.LabelSelectorV.deepown value_c value dq | None => True%I end) ∗
+  "Hdeepown_template" ∷ PodView.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') dq ∗
+  "Hdeepown_volumeclaimtemplates" ∷ (deepown_slice PersistentVolumeClaimView.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') dq ∗
   "%Hdeepown_servicename" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.ServiceName') v.(ServiceName') dq ∗
   "%Hdeepown_podmanagementpolicy" ∷ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I c.(api_apps_v1.StatefulSetSpec.PodManagementPolicy') v.(PodManagementPolicy') dq ∗
   "Hdeepown_updatestrategy" ∷ StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') dq ∗
@@ -265,7 +265,7 @@ Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 Definition zero : t := {|
   Replicas' := None;
   Selector' := None;
-  Template' := PodFields.PodTemplateSpecV.zero;
+  Template' := PodView.PodTemplateSpecV.zero;
   VolumeClaimTemplates' := None;
   ServiceName' := zero_val _;
   PodManagementPolicy' := zero_val _;
@@ -287,7 +287,7 @@ Proof.
   iSplitL.
   { done. }
   iSplitL.
-  { iApply PodFields.PodTemplateSpecV.deepown_zero. }
+  { iApply PodView.PodTemplateSpecV.deepown_zero. }
   iSplitL.
   { iApply deepown_slice_nil. }
   iSplitL.
@@ -318,15 +318,15 @@ Proof.
   iAssert (|==> (match v.(Replicas') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Replicas') ↦{DfracDiscarded} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_replicas_some]" as ">Hdeepown_replicas_some".
   { destruct v.(Replicas') as [value|]; last done. iDestruct "Hdeepown_replicas_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iModIntro. iExact "Hv". } iModIntro. iExists value_c. iFrame "# ∗". }
-  iAssert (|==> (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{DfracDiscarded} value_c ∗ PodFields.LabelSelectorV.deepown value_c value DfracDiscarded | None => True%I end))%I
+  iAssert (|==> (match v.(Selector') with Some value => ∃ value_c, c.(api_apps_v1.StatefulSetSpec.Selector') ↦{DfracDiscarded} value_c ∗ PodView.LabelSelectorV.deepown value_c value DfracDiscarded | None => True%I end))%I
     with "[Hdeepown_selector_some]" as ">Hdeepown_selector_some".
-  { destruct v.(Selector') as [value|]; last done. iDestruct "Hdeepown_selector_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> PodFields.LabelSelectorV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (PodFields.LabelSelectorV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
-  iAssert (|==> PodFields.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') DfracDiscarded)%I
+  { destruct v.(Selector') as [value|]; last done. iDestruct "Hdeepown_selector_some" as (value_c) "[Hp Hv]". iPersist "Hp". iAssert (|==> PodView.LabelSelectorV.deepown value_c value DfracDiscarded)%I with "[Hv]" as ">Hv". { iApply (PodView.LabelSelectorV.deepown_persist with "Hv"). } iModIntro. iExists value_c. iFrame "# ∗". }
+  iAssert (|==> PodView.PodTemplateSpecV.deepown c.(api_apps_v1.StatefulSetSpec.Template') v.(Template') DfracDiscarded)%I
     with "[Hdeepown_template]" as ">Hdeepown_template".
-  { iApply (PodFields.PodTemplateSpecV.deepown_persist with "Hdeepown_template"). }
-  iAssert (|==> (deepown_slice PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') DfracDiscarded)%I
+  { iApply (PodView.PodTemplateSpecV.deepown_persist with "Hdeepown_template"). }
+  iAssert (|==> (deepown_slice PersistentVolumeClaimView.PersistentVolumeClaimV.deepown) c.(api_apps_v1.StatefulSetSpec.VolumeClaimTemplates') v.(VolumeClaimTemplates') DfracDiscarded)%I
     with "[Hdeepown_volumeclaimtemplates]" as ">Hdeepown_volumeclaimtemplates".
-  { iApply (deepown_slice_persist with "Hdeepown_volumeclaimtemplates"). intros. apply PersistentVolumeClaimFields.PersistentVolumeClaimV.deepown_persist. }
+  { iApply (deepown_slice_persist with "Hdeepown_volumeclaimtemplates"). intros. apply PersistentVolumeClaimView.PersistentVolumeClaimV.deepown_persist. }
   iAssert (|==> StatefulSetUpdateStrategyV.deepown c.(api_apps_v1.StatefulSetSpec.UpdateStrategy') v.(UpdateStrategy') DfracDiscarded)%I
     with "[Hdeepown_updatestrategy]" as ">Hdeepown_updatestrategy".
   { iApply (StatefulSetUpdateStrategyV.deepown_persist with "Hdeepown_updatestrategy"). }
@@ -394,7 +394,7 @@ Local Set Default Proof Using "All".
 Record t := mk {
   Type' : go_string;
   Status' : go_string;
-  LastTransitionTime' : MetaTimeFields.TimeV.t;
+  LastTransitionTime' : MetaTimeView.TimeV.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -405,7 +405,7 @@ Proof using Type. solve_decision. Defined.
 Definition of_go (c : api_apps_v1.StatefulSetCondition.t) : t := {|
   Type' := c.(api_apps_v1.StatefulSetCondition.Type');
   Status' := c.(api_apps_v1.StatefulSetCondition.Status');
-  LastTransitionTime' := (MetaTimeFields.TimeV.of_go c.(api_apps_v1.StatefulSetCondition.LastTransitionTime'));
+  LastTransitionTime' := (MetaTimeView.TimeV.of_go c.(api_apps_v1.StatefulSetCondition.LastTransitionTime'));
   Reason' := c.(api_apps_v1.StatefulSetCondition.Reason');
   Message' := c.(api_apps_v1.StatefulSetCondition.Message');
 |}.
@@ -416,7 +416,7 @@ Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 Definition zero : t := {|
   Type' := zero_val _;
   Status' := zero_val _;
-  LastTransitionTime' := MetaTimeFields.TimeV.zero;
+  LastTransitionTime' := MetaTimeView.TimeV.zero;
   Reason' := zero_val _;
   Message' := zero_val _;
 |}.
@@ -577,8 +577,8 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  TypeMeta' : TypeMetaFields.TypeMetaV.t;
-  ObjectMeta' : ObjectMetaFields.ObjectMetaV.t;
+  TypeMeta' : TypeMetaView.TypeMetaV.t;
+  ObjectMeta' : ObjectMetaView.ObjectMetaV.t;
   Spec' : StatefulSetSpecV.t;
   Status' : StatefulSetStatusV.t;
 }.
@@ -587,16 +587,16 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : api_apps_v1.StatefulSet.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_typemeta" ∷ TypeMetaFields.TypeMetaV.deepown c.(api_apps_v1.StatefulSet.TypeMeta') v.(TypeMeta') dq ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaFields.ObjectMetaV.deepown c.(api_apps_v1.StatefulSet.ObjectMeta') v.(ObjectMeta') dq ∗
+  "%Hdeepown_typemeta" ∷ TypeMetaView.TypeMetaV.deepown c.(api_apps_v1.StatefulSet.TypeMeta') v.(TypeMeta') dq ∗
+  "Hdeepown_objectmeta" ∷ ObjectMetaView.ObjectMetaV.deepown c.(api_apps_v1.StatefulSet.ObjectMeta') v.(ObjectMeta') dq ∗
   "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(api_apps_v1.StatefulSet.Spec') v.(Spec') dq ∗
   "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(api_apps_v1.StatefulSet.Status') v.(Status') dq.
 
 Definition deepown_l l v dq : iProp Σ := ∃ c, l ↦{dq} c ∗ deepown c v dq.
 
 Definition zero : t := {|
-  TypeMeta' := TypeMetaFields.TypeMetaV.zero;
-  ObjectMeta' := ObjectMetaFields.ObjectMetaV.zero;
+  TypeMeta' := TypeMetaView.TypeMetaV.zero;
+  ObjectMeta' := ObjectMetaView.ObjectMetaV.zero;
   Spec' := StatefulSetSpecV.zero;
   Status' := StatefulSetStatusV.zero;
 |}.
@@ -604,9 +604,9 @@ Lemma deepown_zero dq : ⊢ deepown (zero_val api_apps_v1.StatefulSet.t) zero dq
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply TypeMetaFields.TypeMetaV.deepown_zero. }
+  { iApply TypeMetaView.TypeMetaV.deepown_zero. }
   iSplitL.
-  { iApply ObjectMetaFields.ObjectMetaV.deepown_zero. }
+  { iApply ObjectMetaView.ObjectMetaV.deepown_zero. }
   iSplitL.
   { iApply StatefulSetSpecV.deepown_zero. }
   iApply StatefulSetStatusV.deepown_zero.
@@ -616,9 +616,9 @@ Lemma deepown_persist c v dq :
   deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
 Proof.
   rewrite /deepown. iNamed 1.
-  iAssert (|==> ObjectMetaFields.ObjectMetaV.deepown c.(api_apps_v1.StatefulSet.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
+  iAssert (|==> ObjectMetaView.ObjectMetaV.deepown c.(api_apps_v1.StatefulSet.ObjectMeta') v.(ObjectMeta') DfracDiscarded)%I
     with "[Hdeepown_objectmeta]" as ">Hdeepown_objectmeta".
-  { iApply (ObjectMetaFields.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
+  { iApply (ObjectMetaView.ObjectMetaV.deepown_persist with "Hdeepown_objectmeta"). }
   iAssert (|==> StatefulSetSpecV.deepown c.(api_apps_v1.StatefulSet.Spec') v.(Spec') DfracDiscarded)%I
     with "[Hdeepown_spec]" as ">Hdeepown_spec".
   { iApply (StatefulSetSpecV.deepown_persist with "Hdeepown_spec"). }
@@ -641,4 +641,4 @@ Qed.
 End def.
 End StatefulSetV.
 
-End StatefulSetFields.
+End StatefulSetView.

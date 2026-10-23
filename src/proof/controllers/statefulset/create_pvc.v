@@ -4,10 +4,10 @@ From New.proof.kubernetes_model Require Export create_named_orphan get_reserved.
 From New.proof.kubernetes_model Require Import get.
 From New.proof.map Require Import for_range.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
-Local Transparent StatefulSetSpecV.deepown StatefulSetFields.StatefulSetSpecV.deepown.
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}

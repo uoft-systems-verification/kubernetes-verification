@@ -5,7 +5,7 @@ From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.generatedviews Require Export runtime_time time typemeta objectmeta.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 
-Module DeleteOptionsFields.
+Module DeleteOptionsView.
 
 Module PreconditionsV.
 Section def.
@@ -86,7 +86,7 @@ Context {sem : go.Semantics}
 Local Set Default Proof Using "All".
 
 Record t := mk {
-  TypeMeta' : TypeMetaFields.TypeMetaV.t;
+  TypeMeta' : TypeMetaView.TypeMetaV.t;
   GracePeriodSeconds' : option (w64);
   Preconditions' : option (PreconditionsV.t);
   OrphanDependents' : option (bool);
@@ -99,7 +99,7 @@ Record t := mk {
 Proof using Type. solve_decision. Defined.
 
 Definition deepown (c : meta_v1.DeleteOptions.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_typemeta" ∷ TypeMetaFields.TypeMetaV.deepown c.(meta_v1.DeleteOptions.TypeMeta') v.(TypeMeta') dq ∗
+  "%Hdeepown_typemeta" ∷ TypeMetaView.TypeMetaV.deepown c.(meta_v1.DeleteOptions.TypeMeta') v.(TypeMeta') dq ∗
   "%Hdeepown_graceperiodseconds_none" ∷ ⌜ c.(meta_v1.DeleteOptions.GracePeriodSeconds') = null ↔ v.(GracePeriodSeconds') = None ⌝ ∗
   "Hdeepown_graceperiodseconds_some" ∷ (match v.(GracePeriodSeconds') with Some value => ∃ value_c, c.(meta_v1.DeleteOptions.GracePeriodSeconds') ↦{dq} value_c ∗ (λ c v (_ : dfrac), ⌜ c = v ⌝)%I value_c value dq | None => True%I end) ∗
   "%Hdeepown_preconditions_none" ∷ ⌜ c.(meta_v1.DeleteOptions.Preconditions') = null ↔ v.(Preconditions') = None ⌝ ∗
@@ -123,7 +123,7 @@ Definition deepown_i i v dq : iProp Σ :=
   ∃ l, ⌜ valid_interface i l ⌝ ∗ deepown_l l v dq.
 
 Definition zero : t := {|
-  TypeMeta' := TypeMetaFields.TypeMetaV.zero;
+  TypeMeta' := TypeMetaView.TypeMetaV.zero;
   GracePeriodSeconds' := None;
   Preconditions' := None;
   OrphanDependents' := None;
@@ -135,7 +135,7 @@ Lemma deepown_zero dq : ⊢ deepown (zero_val meta_v1.DeleteOptions.t) zero dq.
 Proof.
   rewrite /deepown /zero /=.
   iSplitL.
-  { iApply TypeMetaFields.TypeMetaV.deepown_zero. }
+  { iApply TypeMetaView.TypeMetaV.deepown_zero. }
   iSplitL.
   { done. }
   iSplitL.
@@ -224,4 +224,4 @@ Qed.
 End def.
 End DeleteOptionsV.
 
-End DeleteOptionsFields.
+End DeleteOptionsView.

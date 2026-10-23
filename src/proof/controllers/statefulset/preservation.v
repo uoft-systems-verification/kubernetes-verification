@@ -4,7 +4,7 @@ From New.proof.controllers.statefulset Require Import common.
 From New.proof.controllers.statefulset Require Import release.
 From New.proof.kubernetes_model Require Import get.
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

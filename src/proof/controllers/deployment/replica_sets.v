@@ -9,7 +9,7 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.controllers.deployment Require Export common.
 
 
-Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}

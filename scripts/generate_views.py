@@ -44,12 +44,12 @@ SCALARS = {
     "int16": "w16", "uint16": "w16", "int8": "w8", "uint8": "w8",
 }
 GROUPS = {
-    "runtime_time": "TimeFields", "time": "MetaTimeFields",
-    "typemeta": "TypeMetaFields", "objectmeta": "ObjectMetaFields",
-    "delete_options": "DeleteOptionsFields",
-    "pod": "PodFields", "persistentvolumeclaim": "PersistentVolumeClaimFields",
-    "replicaset": "ReplicaSetFields", "statefulset": "StatefulSetFields",
-    "deployment": "DeploymentFields",
+    "runtime_time": "TimeView", "time": "MetaTimeView",
+    "typemeta": "TypeMetaView", "objectmeta": "ObjectMetaView",
+    "delete_options": "DeleteOptionsView",
+    "pod": "PodView", "persistentvolumeclaim": "PersistentVolumeClaimView",
+    "replicaset": "ReplicaSetView", "statefulset": "StatefulSetView",
+    "deployment": "DeploymentView",
 }
 # Preserve useful named ownership components used by existing program proofs.
 # These are representation choices only; configuration exclusions still apply.
@@ -501,7 +501,7 @@ def main():
             lines.extend(["", "Module " + name + " := " + canonical + "."])
         lines.extend(["", "End " + GROUPS[group] + ".", ""])
         if group == "time":
-            lines.extend(["Module TimeV := MetaTimeFields.TimeV.", ""])
+            lines.extend(["Module TimeV := MetaTimeView.TimeV.", ""])
         target = args.output_dir / (group + ".v")
         generated = "\n".join(lines)
         if args.check:
