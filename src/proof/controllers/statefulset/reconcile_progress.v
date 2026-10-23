@@ -1,6 +1,10 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export distance.
 From New.proof.controllers.statefulset Require Import pod create_pod create_pvc
   update_pod condemned outdated delete_pod common.
+
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -2936,7 +2940,7 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
           ⌜ progress_or_complete set pods pvcs pods' pvcs' ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   pose proof Hset_valid as
     (Hset_typemeta_valid & Hset_rv_valid & Hset_meta_valid &
       Hset_spec_valid & Hset_status_valid).
@@ -2987,7 +2991,7 @@ Proof.
       by rewrite elem_of_list_to_set in Hrequired. }
   wp_apply (wp_endOrdinalOf set_l set dq_set with "[$Hset //]").
   iIntros (end_ordinal) "[%Hend_ordinal Hset]".
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (ordinal : w64) (current_pods : list PodV.t)
       (pvc_map : gmap KKey.t PersistentVolumeClaimV.t)
       (reserved_pvcs : list KKey.t),
@@ -3154,13 +3158,13 @@ Proof.
       iPoseProof (PodV.deepown_l_restore _ _ _ Hpod_l_not_null
         with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
         as "Hlocal_pod".
-      wp_auto. wp_if_destruct; first contradiction.
+      wp_auto_keep. wp_if_destruct; first contradiction.
       wp_apply (wp_isTerminating pod_l local_pod dq_pods
         with "Hlocal_pod").
       iIntros (terminating) "[%Hterminating Hlocal_pod]".
       destruct terminating.
       { exfalso. apply (proj1 Hterminating eq_refl). exact Hlocal_alive. }
-      wp_auto.
+      wp_auto_keep.
       destruct Hinput_requirement as
         (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (∀ name claim_template,
@@ -3226,7 +3230,7 @@ Proof.
         big_sepL_app big_sepL_cons) in "Hoccupied_pods".
       iDestruct "Hoccupied_pods" as
         "[Hoccupied_before [Hlocal_occupied Hoccupied_after]]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_updateStatefulPod γ model_l set_l pod_l set local_pod
         (sint.nat ordinal) dq_set dq_pods
         with "[$Hset $Hlocal_pod $Hlocal_meta $Hlocal_spec]").
@@ -3369,8 +3373,8 @@ Proof.
            exact Hupdate_Hpod_key|exact Hstored_deletion|
            exact Hupdate_Hpod_spec|exact Hstored_identity|exact Hpvc_wf|
            exact Hpvc_wf'|exact Hpvc_dom_mono]. }
-      wp_auto.
-      iApply wp_for_post_do. wp_auto.
+      wp_auto_keep.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ".
       iExists (word.add ordinal (W64 1)), current_pods', pvc_map',
         reserved_pvcs'.
@@ -3397,7 +3401,7 @@ Proof.
       { split_and!; done. }
       pose proof (Hgenerated_names (sint.nat ordinal) Hordinal_lt)
         as Hgenerated_name_valid.
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_newStatefulSetPod set_l set ordinal dq_set
         with "[$Hset]").
       { iFrame "#". iPureIntro. split_and!.
@@ -3472,7 +3476,7 @@ Proof.
         ltac:(intros; by eapply desired_pvc_key_name_inj)
         Hclaim_valid_lookup with "Hown_pvcs Hreserved_pvcs")
         as "[Hpvc_states Hpvc_finish]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_createStatefulPod γ model_l set_l new_pod_l
         set new_pod (sint.nat ordinal)
         (list_to_set (PodV.key <$> current_pods)) dq_set
@@ -3575,8 +3579,8 @@ Proof.
         iIntros (key Hkey) "Hkey". by iLeft. }
       iPoseProof (own_reserved_pvcs_finish γ set pvc_map' reserved_pvcs'
         Hpvc_wf' Hreserved_pvcs_nodup' Hpvc_coverage' with "Hreserved_pvcs") as "Hreserved_pvcs".
-      wp_auto.
-      iApply wp_for_post_return. wp_auto.
+      wp_auto_keep.
+      iApply wp_for_post_return. wp_auto_keep.
       iApply ("HΦ" $! false current_pods' (pvc_list_of_map pvc_map')).
       iFrame. iPureIntro. split; first exact Hdistance'.
       split; first exact Hcurrent_members'.
@@ -3712,7 +3716,7 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
           ⌜ progress_or_complete set local_pods initial_pvcs pods' pvcs ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
@@ -3739,7 +3743,7 @@ Proof.
   destruct Hcondemned as
     [[-> Hnone_local]|(idx & local_pod & Hptr_lookup & Hlocal_lookup &
       Hlocal_condemned)].
-  - wp_auto.
+  - wp_auto_keep.
     assert (Forall (λ pod, ¬ pod_is_condemned set pod) pods)
       as Hnone_stored.
     { eapply local_pods_match_stored_no_condemned; done. }
@@ -3805,14 +3809,14 @@ Proof.
     iPoseProof (PodV.deepown_l_restore _ _ _ Hcondemned_not_null
       with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
       as "Hlocal_pod".
-    wp_auto. wp_if_destruct; first contradiction.
+    wp_auto_keep. wp_if_destruct; first contradiction.
     wp_apply (wp_isTerminating condemned_l local_pod dq_pods
       with "Hlocal_pod").
     iIntros (terminating) "[%Hterminating Hlocal_pod]".
     destruct terminating.
     { exfalso. apply (proj1 Hterminating eq_refl).
       exact Hlocal_pod_alive. }
-    wp_auto.
+    wp_auto_keep.
 
     set before := take idx pods.
     set after := drop (S idx) pods.
@@ -3907,7 +3911,7 @@ Proof.
       rewrite -Hpods_decomp. exact Hstored_members. }
     assert (NoDup (PodV.key <$> (before ++ after))) as Hnodup'.
     { apply (pod_keys_nodup_remove before stored_pod after Hdecomp_nodup). }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! false (before ++ after)
       (Some (PodV.key stored_pod,
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
@@ -4024,7 +4028,7 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
             match_distance set local_pods initial_pvcs) ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
@@ -4077,7 +4081,7 @@ Proof.
       rewrite Forall_forall in Hstored_alive.
       intros pod Hpod. apply Hstored_alive.
       by rewrite -list_elem_of_In. }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! pods None).
     rewrite /own_started_deletion /terminating_bound_after_deletion /=.
     iFrame. iPureIntro. split; first done.
@@ -4121,14 +4125,14 @@ Proof.
     iPoseProof (PodV.deepown_l_restore _ _ _ Houtdated_not_null
       with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
       as "Hlocal_pod".
-    wp_auto. wp_if_destruct; first contradiction.
+    wp_auto_keep. wp_if_destruct; first contradiction.
     wp_apply (wp_isTerminating outdated_l local_pod dq_pods
       with "Hlocal_pod").
     iIntros (terminating) "[%Hterminating Hlocal_pod]".
     destruct terminating.
     { exfalso. apply (proj1 Hterminating eq_refl).
       exact Hlocal_pod_alive. }
-    wp_auto.
+    wp_auto_keep.
 
     set before := take idx pods.
     set after := drop (S idx) pods.
@@ -4232,7 +4236,7 @@ Proof.
         - rewrite -Hpods_decomp. exact Hdesired_reconciled.
         - exact Hdecomp_nodup.
         - exact Hdesired. }
-      wp_auto.
+      wp_auto_keep.
       iApply ("HΦ" $! (before ++ after)
         (Some (PodV.key stored_pod,
           stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
@@ -4346,7 +4350,7 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
       "%Hprogress" ∷ ⌜ progress_or_complete set pods pvcs pods' pvcs' ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply (wp_reconcileDesiredPods γ model_l set_l pods_sl set ptrs pods
     pvcs dq_set dq_pods terminating_bound with
     "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
@@ -4360,7 +4364,7 @@ Proof.
   iDestruct "Hdesired_result" as "[Hdesired_continue|Hdesired_stop]".
   - iDestruct "Hdesired_continue" as
       "(%Hcontinue_desired & %Hlocal_stored & %Hdesired_reconciled)".
-    subst continue_desired. wp_auto.
+    subst continue_desired. wp_auto_keep.
     wp_apply (wp_reconcileCondemnedPod γ model_l set_l pods_sl set ptrs
       pods pods1 pvcs1 pvcs dq_set dq_pods terminating_bound with
       "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
@@ -4383,7 +4387,7 @@ Proof.
       "[Hcondemned_continue|Hcondemned_stop]".
     + iDestruct "Hcondemned_continue" as
         "(%Hcontinue_condemned & %Hdeletion2 & %Hpods2 & %Hno_condemned)".
-      subst continue_condemned. subst deletion2. subst pods2. wp_auto.
+      subst continue_condemned. subst deletion2. subst pods2. wp_auto_keep.
       iClear "Hstarted_deletion".
       wp_apply (wp_reconcileOutdatedPod γ model_l set_l pods_sl set ptrs
         pods pods1 pvcs1 pvcs dq_set dq_pods terminating_bound with
@@ -4406,7 +4410,7 @@ Proof.
         - rewrite big_sepS_singleton /own_started_deletion /=.
           iRight. by iExists uid.
         - rewrite big_sepS_empty /own_started_deletion. done. }
-      wp_auto. iApply ("HΦ" $! pods3 pvcs1 deletion3). iFrame.
+      wp_auto_keep. iApply ("HΦ" $! pods3 pvcs1 deletion3). iFrame.
       iPureIntro. split.
       { destruct deletion3 as [[key uid]|]; simpl in *; [by left|done]. }
       split; first exact Hdistance3.
@@ -4416,7 +4420,7 @@ Proof.
         [by left|by right].
     + iDestruct "Hcondemned_stop" as
         "(%Hcontinue_condemned & %Hdeletion2_some & %Hprogress2)".
-      subst continue_condemned. wp_auto.
+      subst continue_condemned. wp_auto_keep.
       iClear "Hstarted_deletion".
       iAssert (([∗ list] key ∈ missing_pod_keys set pods2,
           own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
@@ -4431,7 +4435,7 @@ Proof.
       split; first exact Hmembers2. exact Hprogress2.
   - iDestruct "Hdesired_stop" as
       "(%Hcontinue_desired & %Hprogress1)".
-    subst continue_desired. wp_auto.
+    subst continue_desired. wp_auto_keep.
     iApply ("HΦ" $! pods1 pvcs1 None).
     rewrite /own_started_deletion /terminating_bound_after_deletion /=.
     iFrame. iPureIntro. split; first done.

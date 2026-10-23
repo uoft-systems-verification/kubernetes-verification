@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 
@@ -54,7 +55,7 @@ Proof.
   iPoseProof "Hspec" as "Hfields".
   iEval (rewrite PodSpecV.deepown_split) in "Hfields".
   iNamed "Hfields".
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame "Hspec".
   iEval (rewrite PodSpecV.deepown_split /without_statefulset_fields /PodAPI.without_managed /=).
   iSplitR; first done.
@@ -137,10 +138,10 @@ Proof.
   { rewrite Forall_forall in Hpod_name_len.
     intros pod' Hpod'. apply Hpod_name_len.
     by rewrite -list_elem_of_In. }
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_endOrdinalOf with "[$Hset //]").
   iIntros (end_ordinal) "[%Hend_ordinal Hset]".
-  wp_auto.
+  wp_auto_keep.
   pose proof (StatefulSetSpecV.valid_replicas _ Hspec_valid) as
     (replicas32 & Hreplicas & Hreplicas_nonnegative).
   assert ((statefulset_replicas set ≤ go_int32_max_nat)%nat) as
@@ -197,7 +198,7 @@ Proof.
         + exact Hi_int32_bound.
       - split; [exact Hpod_name_len_lookup|exact Hpods_members]. }
     iIntros (found_l) "(Hset & Hpods_sl & Hpods & %Hfound)".
-    wp_auto.
+    wp_auto_keep.
     destruct (find_pod_by_ordinal
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
       (sint.nat i) pods) as [[found_idx found_pod]|] eqn:Hfind.
@@ -213,7 +214,7 @@ Proof.
         as "Hfound_pod".
       replace (bool_decide (found_l = null)) with false by
         (symmetry; apply bool_decide_eq_false_2; done).
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_podSpecMatches with "[$Hset $Hfound_pod]").
       { iPureIntro. split; first done.
         split.
@@ -223,9 +224,9 @@ Proof.
       iSpecialize ("Hpods_restore" with "Hfound_pod").
       iRename "Hpods_restore" into "Hpods".
       destruct matches.
-      * wp_auto.
+      * wp_auto_keep.
         replace (bool_decide true) with true by done.
-        iApply wp_for_post_do. wp_auto.
+        iApply wp_for_post_do. wp_auto_keep.
         iFrame "pods Hpods_sl HΦ".
         iExists (word.sub i (W64 1)).
         iFrame.
@@ -256,9 +257,9 @@ Proof.
 	           rewrite Hfound_pod_lookup in Hpod_lookup. simplify_eq/=.
 	           exfalso. apply Hnot_matches. apply Hmatches. done.
 	        -- word.
-      * wp_auto.
+      * wp_auto_keep.
         replace (bool_decide false) with false by done.
-        iApply wp_for_post_return. wp_auto.
+        iApply wp_for_post_return. wp_auto_keep.
         iApply ("HΦ" $! found_l). iFrame.
         iPureIntro. right.
         exists found_idx, found_pod. repeat split; try done.
@@ -272,10 +273,10 @@ Proof.
               pose proof (proj2 Hmatches Himmutable).
               done.
     + subst found_l.
-      wp_auto.
+      wp_auto_keep.
       replace (bool_decide (null = null)) with true by
         (symmetry; apply bool_decide_eq_true_2; done).
-      iApply wp_for_post_do. wp_auto.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "pods Hpods_sl HΦ".
       iExists (word.sub i (W64 1)).
       iFrame.

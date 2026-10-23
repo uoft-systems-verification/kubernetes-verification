@@ -1,9 +1,13 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update_release.
 
 Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -233,18 +237,18 @@ Lemma wp_slice_literal_non_nil
 Proof.
   iIntros "* HΦ".
   pose proof go.composite_literal_slice.
-  wp_pures.
+  wp_pures_keep.
   destruct decide; last by iApply wp_AngelicExit.
-  wp_pures. wp_alloc_auto.
+  wp_pures_keep. wp_alloc_auto.
   iDestruct (typed_pointsto_not_null with "tmp") as %Hsl_ptr_not_null.
   wp_pure. wp_pure.
   wp_apply (wp_wand with "HΦ").
   iIntros "% [-> HΦ]".
-  wp_auto.
+  wp_auto_keep.
   rewrite -> decide_True by
     (enough (0 ≤ go.array_literal_size kvs) by word;
      unfold go.array_literal_size; destruct foldl; lia).
-  wp_auto.
+  wp_auto_keep.
   iDestruct (array_len with "tmp") as %Hlen.
   rewrite !go.array_index_ref_0 /=.
   wp_end.
@@ -305,7 +309,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
           (children ∖ {[PodV.key pod]}))%I
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   iAssert (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
     as "#Hcorev1".
   { iPkgInit. }
@@ -374,7 +378,7 @@ Proof.
     Hset_l_not_null
     with "[$Hset_typemeta $Hset_objectmeta_l
       $Hset_spec_l $Hset_status_l]") as "Hset".
-  wp_auto.
+  wp_auto_keep.
   wp_apply wp_slice_literal_non_nil.
   iSplitR; first done.
   iIntros (result_sl0)
@@ -384,7 +388,7 @@ Proof.
     slice.len := W64 (go.array_literal_size []);
     slice.cap := W64 (go.array_literal_size []);
   |}.
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Howner_references") as
     %(Howner_references_len1 & Howner_references_len2).
   iDestruct (own_slice_wf with "Howner_references") as
@@ -471,7 +475,7 @@ Proof.
       exact Hthis_owner_reference_value_lookup.
     }
     iIntros "Howner_references".
-    wp_auto.
+    wp_auto_keep.
     assert (∃ this_owner_reference,
         owner_references !! sint.nat i =
           Some this_owner_reference)
@@ -504,7 +508,7 @@ Proof.
       (set_meta_c0)
       "[Hset_objectmeta_field Hset_objectmeta]".
     iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hthis_Hdeepown_uid.
     match goal with
     | Huid : v1.ObjectMeta.UID' set_meta_c0 = _ |- _ =>
@@ -514,7 +518,7 @@ Proof.
       (this_owner_reference.(OwnerReferenceV.UID') = set_uid))
       as [Huid_eq|Huid_ne].
     + rewrite -> bool_decide_true by exact Huid_eq.
-      wp_auto.
+      wp_auto_keep.
       iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
       iAssert (ObjectMetaV.deepown set_meta_c0
           set.(StatefulSetV.ObjectMeta') dq_set)
@@ -531,7 +535,7 @@ Proof.
         with "[$Hset_typemeta $Hset_objectmeta_l
           $Hset_spec_l $Hset_status_l]") as "Hset".
       iApply wp_for_post_continue.
-      wp_auto.
+      wp_auto_keep.
       iFrame
         "HupdatedPod_meta_Hdeepown_creationtimestamp
          HupdatedPod_meta_Hdeepown_deletiontimestamp_some
@@ -583,7 +587,7 @@ Proof.
       }
       iPureIntro. word.
     + rewrite -> bool_decide_false by exact Huid_ne.
-      wp_auto.
+      wp_auto_keep.
       iAssert (OwnerReferenceV.deepown
           this_owner_reference_value this_owner_reference 1)
         with
@@ -598,7 +602,7 @@ Proof.
       iSplitR; first done.
       iIntros (one_owner_reference_slice)
         "[Hone_owner_reference_slice _]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_slice_append with
         "[$Hresult $Hown_result_cap
           $Hone_owner_reference_slice]").
@@ -614,7 +618,7 @@ Proof.
         change (length result_values + 1 = 0)%nat in Hresult_len.
         lia.
       }
-      wp_auto.
+      wp_auto_keep.
       iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
       iAssert (ObjectMetaV.deepown set_meta_c0
           set.(StatefulSetV.ObjectMeta') dq_set)
@@ -631,7 +635,7 @@ Proof.
         with "[$Hset_typemeta $Hset_objectmeta_l
           $Hset_spec_l $Hset_status_l]") as "Hset".
       iApply wp_for_post_do.
-      wp_auto.
+      wp_auto_keep.
       iFrame
         "HupdatedPod_meta_Hdeepown_creationtimestamp
          HupdatedPod_meta_Hdeepown_deletiontimestamp_some
@@ -725,7 +729,7 @@ Proof.
     }
     iEval (rewrite Htake_all) in "Hlist_pre".
     subst released_value.
-    wp_auto.
+    wp_auto_keep.
     set released_owner_references :=
       owner_references_without_uid set_uid owner_references.
     assert (Hreleased_owner_references :
@@ -894,15 +898,15 @@ Proof.
         updatedPod_l (release_pod_input set pod)
         with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag]").
       { iFrame "%". }
-      iIntros (returned_pod_l err) "_". wp_auto.
+      iIntros (returned_pod_l err) "_". wp_auto_keep.
       wp_apply (wp_IsNotFound err with "[]").
       destruct (decide (not_found_error err)) as [Hnot_found|Hnot_found].
       * replace (bool_decide (not_found_error err)) with true by
           (symmetry; apply bool_decide_true; exact Hnot_found).
-        wp_auto. iApply ("HΦ" $! interface.nil). iFrame. done.
+        wp_auto_keep. iApply ("HΦ" $! interface.nil). iFrame. done.
       * replace (bool_decide (not_found_error err)) with false by
           (symmetry; apply bool_decide_false; exact Hnot_found).
-        wp_auto. iApply ("HΦ" $! err). iFrame. done.
+        wp_auto_keep. iApply ("HΦ" $! err). iFrame. done.
     + iSimpl in "Hrelease_ownership".
       iDestruct "Hrelease_ownership" as
         "(%Hkey_in & Hown_meta & Hown_spec & Hown_children)".
@@ -917,11 +921,11 @@ Proof.
       iIntros (returned_pod_l returned_pod) "Hupdate".
       iDestruct "Hupdate" as
         "(_ & _ & _ & _ & _ & _ & Hreturned_pod & Hown_children)".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_IsNotFound interface.nil with "[]").
       replace (bool_decide (not_found_error interface.nil)) with false by
         (symmetry; apply bool_decide_false; exact not_found_error_nil).
-      wp_auto.
+      wp_auto_keep.
       iApply ("HΦ" $! interface.nil). iFrame. done.
 Qed.
 
@@ -1034,7 +1038,7 @@ Proof.
   iPoseProof (kview.own_meta_list_no_dup
     PodV.key PodV.ObjectMeta' (filter Bad pods)
     with "Hown_meta") as "%Hbad_name_pods_nodup".
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as
     %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as
@@ -1092,7 +1096,7 @@ Proof.
       exact Hthis_ptr_lookup.
     }
     iIntros "Hpods_sl".
-    wp_auto.
+    wp_auto_keep.
     assert (∃ this_pod,
         pods !! sint.nat i = Some this_pod)
       as [this_pod Hthis_pod_lookup].
@@ -1119,7 +1123,7 @@ Proof.
       (set_meta_c)
       "[Hset_objectmeta_field Hset_objectmeta]".
     iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hset_meta_Hdeepown_name Hthis_meta_Hdeepown_name.
     wp_apply (wp_isMemberOf with "[]").
     {
@@ -1208,7 +1212,7 @@ Proof.
       }
       iPoseProof ("Hpods_restore" with "Hthis") as "Hpods".
       iApply wp_for_post_continue.
-      wp_auto.
+      wp_auto_keep.
       iFrame "HΦ".
       iExists (word.add i (W64 1)), this_ptr.
       rewrite Hfilter_take -Hfilter_drop.
@@ -1293,7 +1297,7 @@ Proof.
       }
       iIntros (err) "(%Herr & Hrelease_Hset & Hrelease_Hpod & Hrelease_Hown_children)".
       specialize (Herr eq_refl). subst err.
-      wp_auto.
+      wp_auto_keep.
       assert (Hnext :
           sint.nat (word.add i (W64 1)) =
             S (sint.nat i)) by word.
@@ -1333,7 +1337,7 @@ Proof.
       iPoseProof ("Hpods_restore" with
         "Hrelease_Hpod") as "Hpods".
       iApply wp_for_post_do.
-      wp_auto.
+      wp_auto_keep.
       iFrame "HΦ".
       iExists (word.add i (W64 1)), this_ptr.
       rewrite Hfilter_drop.
@@ -1432,7 +1436,7 @@ Proof.
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
       pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
   set BadLiving := (λ pod : PodV.t, Bad pod ∧ is_pod_alive pod).
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
   iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.
@@ -1467,7 +1471,7 @@ Proof.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len pods_sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hpods_sl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hpods_sl". wp_auto.
+    iIntros "Hpods_sl". wp_auto_keep.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hpods_len Hpods_sl_len1. word. }
     iDestruct (big_sepL2_lookup_acc with "Hpods") as "[Hthis Hpods_restore]";
@@ -1480,7 +1484,7 @@ Proof.
       "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l & Hset_spec_l & Hset_status_l)".
     iDestruct "Hset_objectmeta_l" as (set_meta_c) "[Hset_objectmeta_field Hset_objectmeta]".
     iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-    wp_auto. rewrite Hset_meta_Hdeepown_name Hthis_meta_Hdeepown_name.
+    wp_auto_keep. rewrite Hset_meta_Hdeepown_name Hthis_meta_Hdeepown_name.
     wp_apply (wp_isMemberOf with "[]").
     { iPureIntro. rewrite Forall_forall in Hname_lengths. apply Hname_lengths.
       rewrite -list_elem_of_In. by apply list_elem_of_lookup_2 in Hthis_pod_lookup. }
@@ -1526,7 +1530,7 @@ Proof.
       { rewrite Hnext Hdrop_current.
         by rewrite (filter_cons_False BadLiving this_pod _ Hthis_not_bad_living). }
       iPoseProof ("Hpods_restore" with "Hthis") as "Hpods".
-      iApply wp_for_post_continue. wp_auto. iFrame "HΦ".
+      iApply wp_for_post_continue. wp_auto_keep. iFrame "HΦ".
       iExists (word.add i (W64 1)), this_ptr. rewrite Hfilter_take -Hfilter_drop. iFrame.
       iPureIntro. word.
     + assert (Hthis_bad : Bad this_pod).
@@ -1565,7 +1569,7 @@ Proof.
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hown_meta_this $Hown_spec_this $Hown_children]").
         { iFrame "%". }
         iIntros (err) "(%Herr & Hset & Hthis & Hown_children)".
-        specialize (Herr eq_refl). subst err. wp_auto.
+        specialize (Herr eq_refl). subst err. wp_auto_keep.
         assert (Hfilter_take : filter BadLiving (take (sint.nat (word.add i (W64 1))) pods) =
             filter BadLiving (take (sint.nat i) pods) ++ [this_pod]).
         { rewrite Hnext Htake_next list.filter_app.
@@ -1583,7 +1587,7 @@ Proof.
             list_to_set_singleton_L difference_difference_l_L. done. }
         iEval (rewrite Hchildren_next) in "Hown_children".
         iPoseProof ("Hpods_restore" with "Hthis") as "Hpods".
-        iApply wp_for_post_do. wp_auto. iFrame "HΦ".
+        iApply wp_for_post_do. wp_auto_keep. iFrame "HΦ".
         iExists (word.add i (W64 1)), this_ptr. rewrite Hnext. iFrame. iPureIntro. word.
       * assert (Hthis_not_bad_living : ¬ BadLiving this_pod) by (unfold BadLiving; tauto).
         assert (Hthis_observed : this_pod ∈ terminating_pods pods).
@@ -1609,10 +1613,10 @@ Proof.
           by rewrite (filter_cons_False BadLiving this_pod _ Hthis_not_bad_living). }
         iPoseProof ("Hpods_restore" with "Hthis") as "Hpods".
         destruct err as [err_ok|].
-        { wp_auto. iApply wp_for_post_return. wp_auto.
+        { wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
           iApply ("HΦ" $! (sint.nat i) (interface.ok err_ok)).
           iFrame. iPureIntro. split; first word. intros Hnil. inversion Hnil. }
-        wp_auto. iApply wp_for_post_do. wp_auto. iFrame "HΦ".
+        wp_auto_keep. iApply wp_for_post_do. wp_auto_keep. iFrame "HΦ".
         iExists (word.add i (W64 1)), this_ptr.
         rewrite Hfilter_take -Hfilter_drop. iFrame. iPureIntro. word.
   - assert (Hindex_end : sint.nat i = length pods).

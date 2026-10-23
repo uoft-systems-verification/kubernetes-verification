@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof.map Require Import for_range.
 From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
@@ -8,6 +9,9 @@ Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
 Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -194,7 +198,7 @@ Lemma wp_newPersistentVolumeClaim_without_claim_templates
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   iAssert (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
     as "#Hcore_v1".
   { iPkgInit. }
@@ -202,7 +206,7 @@ Proof.
     with "[$Hcore_v1 $Hclaim_template_ptr $Hclaim_template]").
   iIntros (claim_l)
     "(Hclaim & Hclaim_template_ptr & Hclaim_template)".
-  wp_auto.
+  wp_auto_keep.
   iNamed "Hset".
   set (set_meta_c := set_phy.(v1.StatefulSet.ObjectMeta')).
   set (set_spec_c := set_phy.(v1.StatefulSet.Spec')).
@@ -217,7 +221,7 @@ Proof.
   iDestruct "Hclaim_objectmeta_l" as (claim_meta_c)
     "[Hclaim_objectmeta_field Hclaim_objectmeta]".
   iNamedPrefix "Hclaim_objectmeta" "Hclaim_meta_".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ordinalOf
     (v1.ObjectMeta.Name' pod_meta_c) ordinal
     (v1.ObjectMeta.Name' set_meta_c) with "[]").
@@ -227,7 +231,7 @@ Proof.
       rewrite Hpod_meta_Hdeepown_name Hset_meta_Hdeepown_name.
       exact Hpod_name. }
   iIntros (ordinal_ret) "%Hordinal_ret".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_claimName
     (v1.ObjectMeta.Name' set_meta_c)
     (v1.ObjectMeta.Name' claim_meta_c) ordinal_ret with "[]").
@@ -260,7 +264,7 @@ Proof.
           "%Hclaim_labels_not_nil";
         wp_if_destruct;
         [exfalso; done|];
-        wp_pures;
+        wp_pures_keep;
         set (claim_labels_l := v1.ObjectMeta.Labels' claim_meta_c);
         set (claim_labels_base := claim_labels)
     | _ =>
@@ -268,9 +272,9 @@ Proof.
           v1.ObjectMeta.Labels' claim_meta_c = map.nil);
         [apply Hclaim_meta_Hdeepown_labels_none; done|];
         rewrite Hclaim_labels_nil;
-        wp_pures;
+        wp_pures_keep;
         wp_apply wp_map_make1 as "%claim_labels_l Hclaim_labels";
-        wp_pures;
+        wp_pures_keep;
         set (claim_labels_base := (∅ : gmap go_string go_string))
     end.
   all:
@@ -292,9 +296,9 @@ Proof.
             (v1.StatefulSetSpec.Selector' set_spec_c = null) = false)
           by (apply bool_decide_eq_false_2; exact Hselector_not_nil);
         rewrite Hselector_bool;
-        wp_pures;
+        wp_pures_keep;
         iNamedPrefix "Hselector" "Hselector_";
-        wp_auto;
+        wp_auto_keep;
         destruct selector.(LabelSelectorV.MatchLabels')
           as [selector_labels|] eqn:Hselector_labels_opt
     | _ = None =>
@@ -303,7 +307,7 @@ Proof.
           by (apply (proj2 Hset_spec_Hdeepown_selector_none);
               reflexivity);
         rewrite Hselector_nil;
-        wp_pures;
+        wp_pures_keep;
         iAssert True%I with "[]" as "Hset_selector_some";
         [done|];
         set (selector_labels_base := (∅ : gmap go_string go_string))
@@ -364,9 +368,9 @@ Proof.
      assert (Hclaim_meta_labels :
        v1.ObjectMeta.Labels' claim_meta_current = claim_labels_l)
        by (rewrite Hclaim_meta_current; reflexivity);
-     wp_pures;
+     wp_pures_keep;
      simpl subst';
-     wp_auto;
+     wp_auto_keep;
      rewrite Hclaim_meta_labels;
      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
        go.string with "Hclaim_labels") as "Hclaim_labels";
@@ -386,7 +390,7 @@ Proof.
      rewrite
        (map_prefix_all keys selector_labels
          Hkeys_dom Hkeys_len);
-     wp_pures;
+     wp_pures_keep;
      set (selector_labels_base := selector_labels)]).
   all: try (
     assert (Hselector_labels_nil :
@@ -396,7 +400,7 @@ Proof.
           reflexivity);
     rewrite Hselector_labels_nil;
     wp_apply (wp_map_for_range_nil go.string go.string);
-    wp_pures;
+    wp_pures_keep;
     set (selector_labels_base :=
       (∅ : gmap go_string go_string))).
   all: try (
@@ -662,7 +666,7 @@ Proof.
           Hset_spec_Hdeepown_template Hdeepown_status")
       as "Hset".
   all:
-    wp_pures.
+    wp_pures_keep.
   all:
     lazymatch goal with
     | Hordinal_ret_nat :
@@ -671,7 +675,7 @@ Proof.
     | _ => idtac
     end.
   all: try wp_load.
-  all: try wp_pures.
+  all: try wp_pures_keep.
   all:
     iApply ("HΦ" $! claim_l);
     iFrame.
@@ -989,7 +993,7 @@ Proof.
     iExists set_phy.
     rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown.
     iFrame. iFrame "%". }
-  wp_auto.
+  wp_auto_keep.
   wp_apply wp_map_make2 as "%claim_templates_map Hclaim_templates_map".
   iDestruct (own_slice_len with "Hclaim_templates_slice") as
     %(Hclaim_templates_len1 & Hclaim_templates_len2).
@@ -1028,12 +1032,12 @@ Proof.
     wp_apply (wp_load_slice_index with "[$Hclaim_templates_slice]"); [word| |].
     { iPureIntro. exact Hthis_claim_template_lookup. }
     iIntros "Hclaim_templates_slice".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_map_insert go.string with "[$Hclaim_templates_map]").
     iIntros "Hclaim_templates_map".
-    wp_auto.
+    wp_auto_keep.
     iApply wp_for_post_do.
-    wp_auto.
+    wp_auto_keep.
     iFrame "HΦ".
     iFrame "Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
       Hdeepown_selector_some Hdeepown_template Hclaim_templates_deepown

@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.kubernetes_model.tx Require Export update.
@@ -254,7 +255,7 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
                 (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   pose proof (pod_name_length_le_go_int_max_of_valid pod Hpod_valid)
     as Hpod_name_len.
   pose proof (f_equal KKey.Name' Hpod_desired_key) as Hpod_name.
@@ -267,7 +268,7 @@ Proof.
   destruct identity_ret.
   - assert (Hidentity : pod_identity_matches set pod).
     { apply Hidentity_spec. done. }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! pod).
     iFrame "Hset Hpod Hown_meta Hown_spec".
     do 4 (iSplit; first done).
@@ -323,7 +324,7 @@ Proof.
       - unfold ObjectMetaV.valid_update.
         split_and!; try done. left. exact Hvalid_meta_update.
       - rewrite /update_identity /= Hinput_spec_fixed. exact Hinput_annotations_valid. }
-    wp_auto.
+    wp_auto_keep.
     iAssert
       (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
       as "#Hcorev1".
@@ -339,7 +340,7 @@ Proof.
     iAssert (PodV.deepown_l pod_l pod dq_pod)
       with "[Hpod_ptr Hpod]" as "Hpod".
     { iExists pod_phy. iFrame. }
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_updateIdentity
       set_l updatedPod_l set pod ordinal dq_set
       with "[$Hset $HupdatedPod]").
@@ -354,7 +355,7 @@ Proof.
       (updatedPod_meta_c)
       "[HupdatedPod_objectmeta_field HupdatedPod_objectmeta]".
     iNamedPrefix "HupdatedPod_objectmeta" "HupdatedPod_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite HupdatedPod_meta_Hdeepown_namespace.
     iCombineNamed "HupdatedPod_meta_*" as
       "HupdatedPod_objectmeta".
@@ -402,7 +403,7 @@ Proof.
       simpl in Hupdate_Hspec_updated.
       pose proof Hpod_valid as (_ & _ & _ & Hbody & _).
       eapply PodSpecV.updated_same_spec; [exact (proj1 Hbody)|done|exact Hupdate_Hspec_updated]. }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! returned_pod).
     iFrame "Hset Hpod Hupdate_Hown_meta_frag
       Hupdate_Hown_spec_frag".

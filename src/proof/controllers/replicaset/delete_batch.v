@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 (* Ghost state and lemmas for the concurrent delete loop of manageReplicas
    (copied from upstream pkg/controller/replicaset): one goroutine per pod to
    delete, joined with a sync.WaitGroup, errors collected on a buffered
@@ -100,7 +101,7 @@ Proof.
   destruct Hmeta_valid as (_ & _ & Huid_eq & _ & _).
   pose proof (delete_preconditions_match_uid_of_match options uid kmeta Huid_eq
     Hdelete_preconditions) as Hdelete_preconditions_uid.
-  wp_method_call. rewrite /apimodel.State__PodDeleteⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodDeleteⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_State__delete_au γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     options_c options).
@@ -112,7 +113,7 @@ Proof.
   iFrame "#".
   rewrite (decide_True _ _ Hdelete_preconditions_rv_none).
   iIntros "Hpost". iMod ("Hclose" with "Hpost") as "HΦ".
-  iModIntro. iNext. wp_auto. iApply "HΦ".
+  iModIntro. iNext. wp_auto_keep. iApply "HΦ".
 Qed.
 
 (** Invariant shared by the goroutines deleting one batch of [bs] pods.

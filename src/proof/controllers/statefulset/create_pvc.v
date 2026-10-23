@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
 From New.proof.kubernetes_model Require Export create_named_orphan get_reserved.
@@ -8,6 +9,9 @@ Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
 Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -305,7 +309,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_newPersistentVolumeClaim_without_claim_templates
     set_l pod_l claim_template_l set pod claim_template ordinal
     dq_set dq_pod dq_claim_template_ptr dq_claim_template
@@ -319,7 +323,7 @@ Proof.
   iDestruct "Hclaim_objectmeta_l" as (claim_meta_c)
     "[Hclaim_objectmeta_field Hclaim_objectmeta]".
   iNamedPrefix "Hclaim_objectmeta" "Hclaim_meta_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hclaim_meta_Hdeepown_namespace Hclaim_meta_Hdeepown_name.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
@@ -343,11 +347,11 @@ Proof.
       done. }
     iIntros (existing_claim_l existing_claim') "Hget".
     iNamedPrefix "Hget" "Hget_".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsNotFound interface.nil with "[]").
     replace (bool_decide (not_found_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact not_found_error_nil).
-    wp_auto.
+    wp_auto_keep.
     iApply "HΦ".
     iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
     iExists existing_claim.
@@ -369,11 +373,11 @@ Proof.
         new_persistent_volume_claim.
       done. }
     iIntros (err) "Hget". iNamed "Hget".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsNotFound err with "[]").
     replace (bool_decide (not_found_error err)) with true by
       (symmetry; apply bool_decide_true; exact Hnot_found).
-    wp_auto.
+    wp_auto_keep.
     rewrite Hclaim_meta_Hdeepown_namespace.
     iCombineNamed "Hclaim_meta_*" as "Hclaim_objectmeta".
     iAssert (ObjectMetaV.deepown claim_meta_c
@@ -422,7 +426,7 @@ Proof.
     iIntros (created_claim_l created_claim uid) "Hcreated".
     iNamed "Hcreated".
     subst uid.
-    wp_auto.
+    wp_auto_keep.
     iApply "HΦ".
     iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
     iExists created_claim.
@@ -629,7 +633,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_volumeClaimTemplatesByName set_l set dq_set with "Hset").
   iIntros (set_phy claim_templates_map claim_templates_list
     claim_templates_phy) "H".
@@ -706,7 +710,7 @@ Proof.
     with "[Hpvc_states]" as "Hpvc_todo".
   { rewrite /claim_templates_pure.
     iExact "Hpvc_states". }
-  wp_auto.
+  wp_auto_keep.
   set P := (λ (keys : list go_string) (z : Z),
     ∃ (last_claim_template : v1.PersistentVolumeClaim.t),
       "set" ∷ set_ptr ↦ set_l ∗
@@ -791,7 +795,7 @@ Proof.
       split; done. }
     iDestruct (big_sepM_delete _ _ _ _ Htodo_lookup with
       "Hpvc_todo") as "[Hpvc_state Hpvc_todo]".
-    wp_auto.
+    wp_auto_keep.
     iAssert
       ((∃ claim,
           "%Hkey" ∷
@@ -840,7 +844,7 @@ Proof.
     iSpecialize ("Hclaim_templates_restore" with "Hclaim_template").
     iRename "Hclaim_templates_restore" into
       "Hclaim_templates_deepown".
-    wp_auto.
+    wp_auto_keep.
     assert (Hprefix_next :
         map_prefix keys (z + 1) claim_templates_pure =
           <[claim_template_name:=claim_template]>
@@ -886,7 +890,7 @@ Proof.
   { iExists claim_templates_list.
     rewrite /claim_templates. iFrame. }
   iPoseProof ("Hrestore_set" with "Hset Htemplates") as "Hset".
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ".
   rewrite /pvc_done /claim_templates_pure
     persistent_volume_claim_templates_by_name_dom
