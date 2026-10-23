@@ -172,12 +172,13 @@ Proof.
   { symmetry. exact Hget_Huid_eq. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_terminating_children_frag".
-  wp_apply (common.wp_FilterPodsByOwner_uniform with
+  wp_apply (common.wp_FilterPodsByOwner_uniform_alive with
     "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!; done. }
-  iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_valid & %Hall_nodup &
+  iIntros (all_sl all_ptrs all_pods dq') "(Hall_sl & Hall_deepown_pods & %Hall_meta_perm & %Hall_alive &
+    %Hall_valid & %Hall_nodup &
     Hdeepown_m_l_rs & Hall_meta_frags & Hown_children_frag & Hown_terminating_children_frag)".
   wp_auto.
   (* The pods are only read: share them between the two filters, management
@@ -377,9 +378,22 @@ Proof.
   wp_auto.
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
+  (* The listed pods are all alive, so the returned pods are the managed ones,
+     at most as many as the larger of [pods] and the int32 desired count. *)
+  assert (Z.of_nat (length (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods)) < 2 ^ 31)
+    as Hpods'_bound.
+  { assert (filter (λ pod, not (is_pod_alive pod)) all_pods = []) as Hinactive_nil.
+    { apply filter_none. intros pod Hpod Hdead. exact (Hdead (Hall_alive pod Hpod)). }
+    rewrite Hinactive_nil app_nil_r Hmanaged_len.
+    pose proof (capped_replica_count_le_max (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
+      as Hle.
+    pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
+    pose proof (Permutation_length Hall_meta_perm) as Hall_pods_len.
+    rewrite !length_fmap in Hall_pods_len.
+    word. }
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       (pods_managed ++ filter (λ pod, not (is_pod_alive pod)) all_pods) (mutating_fractions dq) false
-      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup Hpods'_bound
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hpod_meta_frags_post Hpod_unreserved_key_frags_post
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "Hresources".

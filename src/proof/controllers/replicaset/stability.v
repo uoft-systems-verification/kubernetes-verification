@@ -367,7 +367,7 @@ Proof.
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       pods (stability_fractions dq) true
-      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods_nodup
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods_nodup Hpods_bound
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags Hown_pod_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "Hresources".

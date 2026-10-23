@@ -149,7 +149,11 @@ Definition owned_resources γ rs pods fractions (ready : bool) : iProp Σ :=
     else
       ∃ terminating_bound, own_terminating_children_frag γ (ReplicaSetV.key rs)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I ∗
-  "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
+  "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+  (* calculateStatus converts the counts of the listed pods to int32. With a
+     terminating bound of 0 the listing returns exactly [pods]. A sync keeps the
+     bound: it moves the count of [pods] toward the int32 [spec.replicas]. *)
+  "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝.
 
 (* [burst] is the burst cap (upstream's [burstReplicas]): one sync creates or deletes
   at most [burst] pods. *)
@@ -175,9 +179,6 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
            [0 ≤ oldc + delta < 2^31]. Past 2^31 the truncation turns the delta
            negative and that obligation is unprovable. *)
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
-      (* calculateStatus converts the counts of the listed pods to int32. With a
-         terminating bound of 0 the listing returns exactly [pods]. *)
-      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
@@ -235,8 +236,6 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
-      (* As in [progress_spec]. *)
-      "%Hpods_bound" ∷ ⌜ Z.of_nat (length pods) < 2 ^ 31 ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝

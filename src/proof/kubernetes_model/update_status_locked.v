@@ -90,7 +90,14 @@ Definition update_status_rejected (kind namespace : go_string) (kobj : KObjectV.
 (** What holds once [updateStatusLocked] has validated a request: [old] is
     stored at the request's key with the request's UID and kind, and validation
     turned the prepared request into [updated]. Each conjunct records a check
-    that passed. *)
+    that passed.
+
+    Compare [KObjectV.valid_status_update], which a caller proves about its
+    request before the call. This instead records what one call did, and
+    neither implies the other: a valid request can still conflict, and Go may
+    accept a request that the model does not call valid. A request that is also
+    valid gets [KObjectV.status_updated] from the first conjunct of
+    [applyValidationAndDefaultingOnStatusUpdate_updated]. *)
 Definition update_status_validated (kind namespace : go_string) (kobj : KObjectV.t)
     (abs_state : gmap KKey.t KObjectV.t) (old updated : KObjectV.t) : Prop :=
   (* existingObj, exists := s.m[key]   // exists *)

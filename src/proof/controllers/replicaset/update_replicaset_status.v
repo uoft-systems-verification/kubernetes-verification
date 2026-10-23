@@ -365,6 +365,7 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') →
   ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs_get.(ReplicaSetV.ObjectMeta') →
   NoDup (PodV.key <$> pods) →
+  Z.of_nat (length pods) < 2 ^ 31 →
   own_meta_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
     fractions.(rs_dq) rs'.(ReplicaSetV.ObjectMeta') -∗
   own_spec_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
@@ -384,7 +385,7 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound) -∗
   owned_resources γ (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pods fractions ready.
 Proof.
-  intros Hrs_key_eq Hrs_uid_eq Hmeta_changed Hnodup.
+  intros Hrs_key_eq Hrs_uid_eq Hmeta_changed Hnodup Hbound.
   iIntros "Hmeta Hspec Hstatus Hpods #Hunreserved Hchildren Hterminating".
   destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hmeta_changed) as (Hkey' & Huid' & _ & _).
   assert (ReplicaSetV.key (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) =
@@ -392,7 +393,7 @@ Proof.
   { rewrite /ReplicaSetV.key /=. exact Hkey'. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hchildren Hterminating".
   rewrite /owned_resources /= Hkey'' Huid'.
-  iFrame "∗ #". iPureIntro. exact Hnodup.
+  iFrame "∗ #". iPureIntro. split; [exact Hnodup|exact Hbound].
 Qed.
 
 End proof.

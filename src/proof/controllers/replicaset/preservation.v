@@ -320,21 +320,29 @@ Proof.
   destruct Hchanged as (Hmeta_changed & _).
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
+  assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
+    as Hliving_active_len.
+  { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
+  assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
+  { rewrite -Hliving_active_len. f_equal. apply filter_all.
+    intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
+  (* The managed pods are at most as many as the larger of the live pods and
+     the int32 desired count. *)
+  assert (Z.of_nat (length pods_managed) < 2 ^ 31) as Hpods'_bound.
+  { rewrite Hmanaged_len -Hpods_active_len.
+    pose proof (capped_replica_count_le_max (length (filter is_pod_alive pods)) (sint.nat n) (sint.nat burst))
+      as Hle.
+    pose proof (length_filter is_pod_alive pods) as Hfilter_len.
+    word. }
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
       pods_managed (mutating_fractions dq) false
-      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup Hpods'_bound
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "Hresources".
   assert (match_distance rs pods_managed ≤ match_distance rs pods) as Hdistance.
   {
   (* one sync moves the live count toward the desired count by at most [burst] *)
-    assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
-      as Hliving_active_len.
-    { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
-    assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
-    { rewrite -Hliving_active_len. f_equal. apply filter_all.
-      intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
     pose proof (capped_replica_count_distance (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
       as Hcap.
     rewrite -Hmanaged_len in Hcap.

@@ -19,6 +19,11 @@ Lemma capped_replica_count_distance actual desired burst :
     Nat.min (replica_distance actual desired) burst = replica_distance actual desired)%nat.
 Proof. unfold capped_replica_count, replica_distance. destruct (decide _); lia. Qed.
 
+(* The live count stays between the current and the desired count. *)
+Lemma capped_replica_count_le_max actual desired burst :
+  (capped_replica_count actual desired burst ≤ Nat.max actual desired)%nat.
+Proof. unfold capped_replica_count. destruct (decide _); lia. Qed.
+
 Lemma match_distance_replica_distance rs pods n :
   rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n →
   match_distance rs pods = replica_distance (length (filter is_pod_alive pods)) (sint.nat n).
