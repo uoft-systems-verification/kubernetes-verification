@@ -3,7 +3,7 @@ From New.proof Require Export prelude.
 From New.proof Require Export sort_init.
 From New.proof Require Export reflect_init time.
 From New.proof Require Export wp_helpers.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.controllers Require Export common.
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.

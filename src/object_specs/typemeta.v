@@ -1,6 +1,6 @@
 From New.generatedviews Require Export typemeta.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export common.
+From New.object_specs Require Export common.
 
 (* TypeMeta is optional on typed Kubernetes objects returned by the API server.
    When kind or apiVersion is present, it must agree with the concrete type;

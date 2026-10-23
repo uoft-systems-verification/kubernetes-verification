@@ -7,7 +7,7 @@ From New.proof.k8s_io.apiserver.pkg.util Require Export feature.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels_validated_set.
 From New.proof.k8s_io.utils Require Import ptr.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Import pod.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

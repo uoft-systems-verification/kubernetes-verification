@@ -107,7 +107,7 @@ Proof.
   all: destruct labels_set as [label_map|]; simpl.
   all: try destruct (label_map !! api.(LabelSelectorRequirementV.Key'));
     simpl.
-  Timeout 10 all: set_solver.
+  all: intuition (simplify_eq/=; word).
 Qed.
 
 Lemma map_label_requirement_matches key value labels_set :

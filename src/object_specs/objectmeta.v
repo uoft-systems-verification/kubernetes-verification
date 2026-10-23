@@ -1,7 +1,7 @@
 From New.generatedviews Require Export objectmeta.
 From New.object_specs Require Export typemeta.
 From New.proof Require Import prelude empty_ffi util.
-From New.proof.kubernetes_types Require Export common.
+From New.object_specs Require Export common.
 
 Module OwnerReferenceV.
 Include ObjectMetaFields.OwnerReferenceV.

@@ -1,6 +1,6 @@
 From New.generatedviews Require Export pod.
 From New.proof Require Import prelude empty_ffi util.
-From New.proof.kubernetes_types Require Export common.
+From New.object_specs Require Export common.
 
 Module LabelSelectorRequirementV.
 Include PodFields.LabelSelectorRequirementV.

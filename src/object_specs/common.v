@@ -1,5 +1,5 @@
 From New.generatedviews Require Export time.
-From New.proof.kubernetes_types Require Export deepown.
+From New.proof Require Export deepown.
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.

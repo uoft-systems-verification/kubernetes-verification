@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.

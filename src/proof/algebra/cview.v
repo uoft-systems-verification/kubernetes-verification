@@ -1,4 +1,4 @@
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.algebra Require Export reversed_reference.
 
 Section cview.

@@ -1,8 +1,8 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.k8s_io.kubernetes.pkg.api.v1 Require Export pod_init.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 
-(* [pod] alone is ambiguous once kubernetes_types is imported. *)
+(* [pod] alone is ambiguous once object_specs.prelude is imported. *)
 Module podutil := code.k8s_io.kubernetes.pkg.api.v1.pod.pod.
 Notation podutil_pkg := code.k8s_io.kubernetes.pkg.api.v1.pod.pkg_id.pod.
 

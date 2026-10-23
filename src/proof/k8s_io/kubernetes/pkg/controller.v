@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export sort.
 From New.proof.map Require Import for_range.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.k8s_io.api.core Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import meta.

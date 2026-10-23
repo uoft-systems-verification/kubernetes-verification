@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.k8s_io.api.core Require Import v1.
 From New.proof.k8s_io.kubernetes.pkg.controller.deployment Require Export util_init.
 

@@ -1,5 +1,5 @@
 From New.proof Require Import prelude.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From iris.algebra Require Import cmra gmap.
 From iris.base_logic.lib Require Import own.
 

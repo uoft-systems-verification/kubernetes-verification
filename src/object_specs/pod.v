@@ -4,7 +4,7 @@ From New.generatedviews Require Export pod.
     preparation below still contain the existing model abstractions. *)
 From New.proof Require Import prelude empty_ffi util.
 From New.object_specs Require Export objectmeta.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Import top_level.
 
 (** Conversion between versioned and internal Pods removes these obsolete
     annotations from Pods and Pod templates. This function is the exact effect

@@ -1,7 +1,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

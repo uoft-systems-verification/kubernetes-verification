@@ -1,7 +1,7 @@
 From New.generatedviews Require Export deployment.
 From New.proof Require Import prelude empty_ffi.
 From New.object_specs Require Export replicaset.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Import top_level.
 
 
 (* These adapter lemmas compare canonical ownership with the included views. *)

@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.object_specs Require Export pod persistentvolumeclaim replicaset statefulset deployment.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Import top_level.
 
 Module KObject.
 Section def.

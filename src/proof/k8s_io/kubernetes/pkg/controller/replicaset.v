@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi util.
 From New.proof.k8s_io.kubernetes.pkg.controller Require Export replicaset_init.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 
 (* Specs for the upstream ReplicaSet condition helpers, which
    controllers/replicaset imports instead of copying. *)
