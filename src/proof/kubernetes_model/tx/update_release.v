@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export update_release update_release_terminating.
 From New.proof.kubernetes_model Require Import common_update get get_observed.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
@@ -72,7 +72,7 @@ Proof.
         ?/DeploymentV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   set I := (∃ i_orig,
     "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
     "Hdeepown_i_orig" ∷ KObjectV.deepown_i i_orig kobj 1 ∗
@@ -104,21 +104,22 @@ Proof.
   wp_apply (wp_deepCopy i_orig kobj (DfracOwn 1) with "[Hdeepown_i_orig]").
   { iFrame "#". iExact "Hdeepown_i_orig". }
   iIntros (i_copy)
-    "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
+    "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto_keep.
   iDestruct "Hdeepown_i_copy" as
     (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata &
       Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with
     "[$Hdeepown_metadata]").
   { iPureIntro. split; [done|]. right. done. }
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
-  rewrite bool_decide_false //. wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
+  rewrite bool_decide_false //. wp_auto_keep.
   set key := {|
     KKey.Kind' := kind;
     KKey.Name' :=
@@ -148,12 +149,13 @@ Proof.
     "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
     as "Hau".
   { iFrame. iFrame "%". }
-  iModIntro. iNext. wp_auto.
+  iModIntro. iNext. wp_auto_keep.
   clear old_meta old_spec children Hvalid_update Hchild Hspec_eq Hmeta_eq.
   iDestruct "Hdeepown_existing_i" as
     (existing_l)
     "[%Hvalid_interface_existing Hdeepown_existing_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof
     (KObjectV.deepown_l_split with "Hdeepown_existing_l")
     as "(%Hexisting_l_not_null & Htypemeta_existing &
@@ -161,10 +163,10 @@ Proof.
       Hdeepown_existing_status)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto.
+  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj <|
       ObjectMetaV.Namespace' := namespace |>) =
     KObjectV.objectmeta kobj) as Hnamespace_noop.
@@ -292,13 +294,13 @@ Proof.
       iSplit; first done.
       iFrame. }
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict interface.nil with "[]").
     replace (bool_decide (conflict_error interface.nil))
       with false by
       (symmetry; apply bool_decide_false;
        exact conflict_error_nil).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iApply "HΦ".
   - iIntros (err) "Hconflict".
@@ -312,11 +314,11 @@ Proof.
       as "Hau".
     { iFrame. iFrame "%". }
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict err with "[]").
     replace (bool_decide (conflict_error err)) with true by
       (symmetry; apply bool_decide_true; done).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iFrame "s kind namespace".
     iExists i_orig. iFrame.
@@ -403,7 +405,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call.
   rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i
       (interface.mk (go.PointerType v1.Pod) #pod_l)
       (KObjectV.Pod pod) 1)
@@ -443,7 +445,7 @@ Proof.
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; simpl in Hupdated; try done.
   iDestruct "Hdeepown_i" as
     (pod_l') "[%Hi' Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod)
     with (go.PointerType v1.Pod).
@@ -458,7 +460,7 @@ Proof.
       (go.PointerType v1.Pod = go.PointerType v1.Pod))
     with true by
       (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   assert (pod'.(PodV.Spec') = old_spec)
     as Hpod_spec_unchanged.
   { injection Hspec_unchanged. done. }
@@ -506,7 +508,7 @@ Lemma wp_State__updateTx_release_terminating γ l kind namespace i kobj :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iApply (wp_fupd _).
   set I := (∃ i_orig,
     "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
@@ -516,20 +518,21 @@ Proof.
   wp_for "Hloop_inv".
   wp_apply (wp_deepCopy i_orig kobj (DfracOwn 1) with "[Hdeepown_i_orig]").
   { iFrame "#". iExact "Hdeepown_i_orig". }
-  iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
+  iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto_keep.
   iDestruct "Hdeepown_i_copy" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
   { iPureIntro. split; [done|]. right. done. }
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go) as Hname_not_empty.
   { exact Hname_nonempty. }
-  rewrite bool_decide_false //. wp_auto.
+  rewrite bool_decide_false //. wp_auto_keep.
   set key := {| KKey.Kind' := kind; KKey.Name' := (KObjectV.objectmeta kobj).(ObjectMetaV.Name');
     KKey.Namespace' := namespace |}.
   assert (key = KObjectV.key kobj) as Hkey.
@@ -540,25 +543,26 @@ Proof.
   iDestruct "Hget" as "[%Hnot_found | Hget]".
   { destruct Hnot_found as [-> Hnot_found].
     pose proof (not_found_error_not_nil _ Hnot_found) as Hget_err_ne.
-    wp_auto.
+    wp_auto_keep.
     destruct get_err as [get_err_ok|]; [|done].
-    wp_auto. wp_for_post.
+    wp_auto_keep. wp_for_post.
     iApply ("HΦ" $! interface.nil (interface.ok get_err_ok)). iRight. done. }
   iDestruct "Hget" as (existing_i existing_kobj)
     "[(%Hret & %Hget_err & %Hvalid_existing & %Hextra_valid_existing &
       %Hkey_existing & %Hexisting_terminating) Hdeepown_existing_i]".
-  subst existing_ret get_err. wp_auto.
+  subst existing_ret get_err. wp_auto_keep.
   iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
     "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
       Hdeepown_existing_status)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto.
+  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := namespace |>) = KObjectV.objectmeta kobj)
     as Hnamespace_noop by (rewrite Hns_matches; destruct (KObjectV.objectmeta kobj); done).
   iEval (rewrite Hnamespace_noop) in "Hdeepown_metadata".
@@ -622,25 +626,25 @@ Proof.
   iDestruct "Hupdate" as "[Hsuccess | %Herror]".
   - iDestruct "Hsuccess" as (updated_i updated_kobj)
       "[(%Hupdated_ret & %Hupdate_nil & %Hsame_kind) Hdeepown_updated_i]".
-    subst updated_ret update_err. wp_auto.
+    subst updated_ret update_err. wp_auto_keep.
     wp_apply (wp_IsConflict interface.nil with "[]").
     replace (bool_decide (conflict_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact conflict_error_nil).
-    wp_auto. wp_for_post. iApply ("HΦ" $! (interface.ok updated_i) interface.nil).
+    wp_auto_keep. wp_for_post. iApply ("HΦ" $! (interface.ok updated_i) interface.nil).
     iLeft. iExists updated_i, updated_kobj. iFrame. iPureIntro. split_and!; try done.
     subst kobj_rv. destruct kobj, updated_kobj; simpl in *; done.
   - destruct (Classical_Prop.classic (conflict_error update_err)) as
       [Hconflict|Hnot_conflict].
     + pose proof (conflict_error_not_nil _ Hconflict) as Hupdate_err_ne.
-      wp_auto. wp_apply (wp_IsConflict update_err with "[]").
+      wp_auto_keep. wp_apply (wp_IsConflict update_err with "[]").
       replace (bool_decide (conflict_error update_err)) with true by
         (symmetry; apply bool_decide_true; done).
-      wp_auto. wp_for_post. iFrame "HΦ s kind namespace". iExists i_orig. iFrame.
+      wp_auto_keep. wp_for_post. iFrame "HΦ s kind namespace". iExists i_orig. iFrame.
     + pose proof Herror as Hupdate_err_ne.
-      wp_auto. wp_apply (wp_IsConflict update_err with "[]").
+      wp_auto_keep. wp_apply (wp_IsConflict update_err with "[]").
       replace (bool_decide (conflict_error update_err)) with false by
         (symmetry; apply bool_decide_false; done).
-      wp_auto. wp_for_post. iApply ("HΦ" $! updated_ret update_err). iRight. done.
+      wp_auto_keep. wp_for_post. iApply ("HΦ" $! updated_ret update_err). iRight. done.
 Qed.
 
 Lemma wp_State__PodUpdateTx_release_terminating γ l namespace pod_l pod :
@@ -664,7 +668,7 @@ Lemma wp_State__PodUpdateTx_release_terminating γ l namespace pod_l pod :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i (interface.mk (go.PointerType v1.Pod) #pod_l) (KObjectV.Pod pod) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
   { iExists pod_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_Pod|]. iFrame. }
@@ -673,11 +677,11 @@ Proof.
     "[$Hinit $Hisk $Hdeepown_i $Hown_deletion_observed_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (ret err) "[Hsuccess | %Herr]".
-  2: { wp_auto. destruct err as [err_ok|]; [|done]. wp_auto.
+  2: { wp_auto_keep. destruct err as [err_ok|]; [|done]. wp_auto_keep.
     iApply ("HΦ" $! null (interface.ok err_ok)). iRight. done. }
   iDestruct "Hsuccess" as (updated_i updated_kobj)
     "[(%Hret & %Herr_nil & %Hsame_kind) Hdeepown_updated_i]".
-  subst ret err. wp_auto.
+  subst ret err. wp_auto_keep.
   iDestruct "Hdeepown_updated_i" as (updated_l) "[%Hvalid_updated Hdeepown_updated_l]".
   destruct updated_kobj as [updated_pod| | | |]; try done.
   unfold KObjectV.valid_interface in Hvalid_updated.
@@ -687,7 +691,7 @@ Proof.
     with (#updated_l)%V by (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto. iApply ("HΦ" $! updated_l interface.nil). iLeft.
+  wp_auto_keep. iApply ("HΦ" $! updated_l interface.nil). iLeft.
   iExists updated_pod. iSplit; first done. iFrame.
 Qed.
 

@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export update_status.
 From New.proof.kubernetes_model.tx Require Import update_status_same_meta.
 
@@ -37,7 +37,7 @@ Lemma wp_State__ReplicaSetUpdateStatusTx_same_meta γ l namespace rs_l rs dq_in 
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i (interface.mk (go.PointerType v1.ReplicaSet) #rs_l)
     (KObjectV.ReplicaSet rs) dq_in) with "[Hdeepown_l]" as "Hdeepown_i".
   { iExists rs_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_ReplicaSet|]. iFrame. }
@@ -56,7 +56,7 @@ Proof.
   unfold KObjectV.valid_interface in Hi', Hi0.
   destruct Hi' as [Hi' _]. destruct Hi0 as [Hi0 _].
   inversion Hi0 as [Hl]. apply (inj _) in Hl. subst rs_l0.
-  wp_auto.
+  wp_auto_keep.
   rewrite Hi'.
   cbn [interface.ty interface.v].
   replace (if decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)
@@ -64,7 +64,7 @@ Proof.
     (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" $! rs_l' rs').
   iFrame. iPureIntro. split_and!; done.
 Qed.

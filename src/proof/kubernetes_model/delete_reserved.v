@@ -5,6 +5,9 @@ Local Transparent ObjectMetaV.deepown ObjectMetaFields.ObjectMetaV.deepown.
 (* Timestamp ownership is framed intact while updating metadata. *)
 Local Opaque TimeV.deepown TimeFields.TimeV.deepown.
 
+(* Collect transient import allocations before checking the large API proof. *)
+Optimize Heap.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.

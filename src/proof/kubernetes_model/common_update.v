@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
@@ -44,12 +44,12 @@ Lemma wp_allowUnconditionalUpdate (kind : go_string) :
   }}}.
 Proof.
   wp_start as "#Hinit".
-  wp_auto.
+  wp_auto_keep.
   do 7 (wp_if_destruct; first (iApply "HΦ"; done)).
   wp_apply wp_slice_literal. iSplitR; first done.
-  iIntros (args_sl) "[Hargs _]". wp_auto.
+  iIntros (args_sl) "[Hargs _]". wp_auto_keep.
   wp_apply (wp_Errorf with "[$Hargs]").
-  iIntros (err) "_". wp_auto.
+  iIntros (err) "_". wp_auto_keep.
   iApply "HΦ". done.
 Qed.
 
@@ -97,27 +97,27 @@ Proof.
     { iApply (KObjectV.deepown_l_restore old_l old_obj dq Hold_not_null).
       iFrame "Hold_type Hold_spec Hold_status". iExists old_c. iFrame. }
     done. }
-  wp_auto.
-  wp_func_call. wp_call. wp_auto.
-  rewrite Hnew_runtime. wp_auto.
-  rewrite Hold_runtime. wp_auto.
-  wp_func_call. wp_call. wp_auto.
+  wp_auto_keep.
+  wp_func_call. wp_call. wp_auto_keep.
+  rewrite Hnew_runtime. wp_auto_keep.
+  rewrite Hold_runtime. wp_auto_keep.
+  wp_func_call. wp_call. wp_auto_keep.
   wp_apply (wp_Accessor new_i new_l new_obj). { done. }
   wp_apply (wp_Accessor old_i old_l old_obj). { done. }
   wp_apply (wp_GetFinalizers_kobject new_i new_l new_obj new_c dq with "[$Hnew_meta]").
   { done. }
-  iIntros "Hnew_meta". wp_auto. wp_if_destruct.
+  iIntros "Hnew_meta". wp_auto_keep. wp_if_destruct.
   { iApply ("Hdone" $! false with "Hnew_meta Hold_meta Hold_deepown"). done. }
   wp_apply (wp_GetDeletionTimestamp_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
   { done. }
-  iIntros "Hold_meta". wp_auto. wp_if_destruct.
+  iIntros "Hold_meta". wp_auto_keep. wp_if_destruct.
   { iApply ("Hdone" $! false with "Hnew_meta Hold_meta Hold_deepown"). done. }
   iNamed "Hold_deepown".
   assert (Hold_timestamp : (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') ≠ None).
   { intros Hnone. pose proof (proj2 Hdeepown_deletiontimestamp_none Hnone). congruence. }
   wp_apply (wp_GetDeletionGracePeriodSeconds_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
   { done. }
-  iIntros "Hold_meta". wp_auto. wp_if_destruct.
+  iIntros "Hold_meta". wp_auto_keep. wp_if_destruct.
   { iApply ("Hdone" $! true with "Hnew_meta Hold_meta [-]").
     { rewrite /ObjectMetaV.deepown. iFrame. done. }
     done. }
@@ -126,7 +126,7 @@ Proof.
   iDestruct "Hdeepown_deletiongraceperiodseconds_some" as (cd) "[Hgrace %Hcd]". subst cd.
   wp_apply (wp_GetDeletionGracePeriodSeconds_kobject old_i old_l old_obj old_c dq with "[$Hold_meta]").
   { done. }
-  iIntros "Hold_meta". wp_auto.
+  iIntros "Hold_meta". wp_auto_keep.
   iApply ("Hdone" $! (bool_decide (seconds = W64 0)) with "Hnew_meta Hold_meta [-]").
   { rewrite /ObjectMetaV.deepown Hgrace /=. iFrame. done. }
   done.

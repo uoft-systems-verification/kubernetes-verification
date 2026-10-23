@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common_get.
 
 Section proof.
@@ -27,12 +27,12 @@ Proof.
   iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer".
-  simpl subst. wp_auto.
+  simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|].
-  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_map_lookup2_KKey (go.InterfaceType [])
     with "[$Hinv_Hown_phys]").
-  iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
   { apply bool_decide_eq_true in Hdecide.
@@ -51,12 +51,12 @@ Proof.
   assert (phys_state !! key = None) as Hlookup_phys.
   { destruct (phys_state !! key) as [i|] eqn:Hlookup_phys; [|done].
     exfalso. apply Hdecide. done. }
-  rewrite /is_Some Hlookup_phys. wp_auto.
+  rewrite /is_Some Hlookup_phys. wp_auto_keep.
   wp_apply (wp_NewNotFound
     {| schema.GroupResource.Group' := ""%go;
        schema.GroupResource.Resource' := key.(KKey.Kind') |}
     key.(KKey.Name')).
-  iIntros (err_l) "%Hnot_found". wp_auto.
+  iIntros (err_l) "%Hnot_found". wp_auto_keep.
   set err := interface.mk_ok
     (go.PointerType api_errors.StatusError) #err_l.
   iApply fupd_wp.
@@ -122,12 +122,12 @@ Proof.
   iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer".
-  simpl subst. wp_auto.
+  simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|].
-  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_map_lookup2_KKey (go.InterfaceType [])
     with "[$Hinv_Hown_phys]").
-  iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
   - apply bool_decide_eq_true in Hdecide.
@@ -141,9 +141,9 @@ Proof.
       as "(Hdeepown_i & Hother_rep)".
     destruct i as [i|].
     2: { simpl. iDestruct "Hdeepown_i" as %[]. }
-    rewrite Hlookup_phys. wp_auto.
+    rewrite Hlookup_phys. wp_auto_keep.
     wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
-    iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto.
+    iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as "H". iNamed "H".
     iPoseProof (kview.own_reservation_valid with
@@ -183,12 +183,12 @@ Proof.
     assert (abs_state !! key = None) as Hlookup_abs.
     { apply not_elem_of_dom. rewrite <-Hdom_eq.
       apply not_elem_of_dom. done. }
-    rewrite /is_Some Hlookup_phys. wp_auto.
+    rewrite /is_Some Hlookup_phys. wp_auto_keep.
     wp_apply (wp_NewNotFound
       {| schema.GroupResource.Group' := ""%go;
          schema.GroupResource.Resource' := key.(KKey.Kind') |}
       key.(KKey.Name')).
-    iIntros (err_l) "%Hnot_found". wp_auto.
+    iIntros (err_l) "%Hnot_found". wp_auto_keep.
     set err := interface.mk_ok
       (go.PointerType api_errors.StatusError) #err_l.
     iApply fupd_wp.
@@ -269,7 +269,7 @@ Proof.
   subst key.
   wp_method_call.
   rewrite /apimodel.State__PersistentVolumeClaimMutGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__get_reserved γ l
     {| KKey.Kind' := "PersistentVolumeClaim"%go;
        KKey.Namespace' := namespace;
@@ -278,7 +278,7 @@ Proof.
   iIntros (err) "Hpost". iNamed "Hpost".
   destruct err as [err_v|].
   2: { exfalso. exact (not_found_error_nil Hnot_found). }
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" $! (interface.ok err_v) with "[$Hown_reserved_frag]").
   done.
 Qed.
@@ -305,13 +305,13 @@ Proof.
   iIntros (Φ) "(#Hinit & #Hisk & %Hkey_def & Hown_reserved_frag) HΦ".
   wp_method_call.
   rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__PersistentVolumeClaimMutGet_reserved
     γ l key namespace name dq
     with "[$Hinit $Hisk $Hown_reserved_frag]").
   { iPureIntro. exact Hkey_def. }
   iIntros (err) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 

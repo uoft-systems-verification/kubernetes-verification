@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common_get.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 
@@ -31,11 +31,11 @@ Proof.
   iIntros (Φ) "H HΦ". iNamed "H". iNamed "Hisk".
   wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer".
-  simpl subst. wp_auto.
+  simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|].
-  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_map_lookup2_KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
-  iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
   - apply bool_decide_eq_true in Hdecide.
@@ -47,9 +47,9 @@ Proof.
       with "Hinv_Hphys_abs_rep") as "(Hdeepown_i & Hother_rep)".
     destruct i as [i|].
     2: { simpl. iDestruct "Hdeepown_i" as %[]. }
-    rewrite Hlookup_phys. wp_auto.
+    rewrite Hlookup_phys. wp_auto_keep.
     wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
-    iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto.
+    iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto_keep.
     iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hvalid_obj".
     specialize (Hvalid_obj Hlookup_abs).
     destruct Hvalid_obj as [Hkey [Hvalid _]].
@@ -77,12 +77,12 @@ Proof.
     assert (phys_state !! key = None) as Hlookup_phys.
     { destruct (phys_state !! key) as [i|] eqn:Hlookup_phys; [|done].
       exfalso. apply Hdecide. done. }
-    rewrite /is_Some Hlookup_phys. wp_auto.
+    rewrite /is_Some Hlookup_phys. wp_auto_keep.
     wp_apply (wp_NewNotFound
       {| schema.GroupResource.Group' := ""%go;
          schema.GroupResource.Resource' := key.(KKey.Kind') |}
       key.(KKey.Name')).
-    iIntros (err_l) "%Hnot_found". wp_auto.
+    iIntros (err_l) "%Hnot_found". wp_auto_keep.
     set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     iCombineNamed "Hinv_*" as "H".
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").

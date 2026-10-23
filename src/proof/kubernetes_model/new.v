@@ -1,5 +1,5 @@
 From New.proof.kubernetes_model Require Export common admitted.
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -32,9 +32,9 @@ Proof.
     go.string (go.StructType [])) as
     (phys_used_rv_l) "Hown_used_rv"; try tc_solve.
   wp_alloc mu_l as "Hmu".
-  wp_auto.
+  wp_auto_keep.
   wp_alloc l as "Hl".
-  iApply wp_fupd. wp_auto.
+  iApply wp_fupd. wp_auto_keep.
   iStructNamed "Hl". simpl.
   iMod kview.init as (γ_state) "Hown_abs".
   iMod cview.init as (γ_children) "Hown_children".

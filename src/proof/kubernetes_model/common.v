@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
@@ -200,13 +200,13 @@ Qed.
 #[global] Instance KKey_safe_map_key key :
   SafeMapKey (K:=KKey.t) apimodel.KKey key.
 Proof.
-  constructor. iIntros (stk E Ψ) "HΨ". wp_auto.
+  constructor. iIntros (stk E Ψ) "HΨ". wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Kind' key = apimodel.KKey.Kind' key)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Name' key = apimodel.KKey.Name' key)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto. done.
+  wp_auto_keep. done.
 Qed.
 
 Lemma objectmeta_update_objectmeta obj m :
