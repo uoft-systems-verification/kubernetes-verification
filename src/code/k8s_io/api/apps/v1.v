@@ -173,22 +173,6 @@ Axiom StatefulSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 
 Axiom DeploymentListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom DaemonSetUpdateStrategyⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetUpdateStrategyTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom RollingUpdateDaemonSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetSpecⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetStatusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetConditionTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetConditionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DaemonSetⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom DaemonSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ReplicaSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -235,9 +219,9 @@ Axiom DeploymentProgressing : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 Axiom DeploymentReplicaFailure : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom RollingUpdateDaemonSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition RollingUpdateDaemonSetStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"RollingUpdate"%go.
 
-Axiom OnDeleteDaemonSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition OnDeleteDaemonSetStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"OnDelete"%go.
 
 Axiom DefaultDaemonSetUniqueLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -1338,132 +1322,308 @@ Class DeploymentList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLoc
   #[global] DeploymentListⁱᵐᵖˡ_underlying :: (DeploymentListⁱᵐᵖˡ) ↓u (DeploymentListⁱᵐᵖˡ);
 }.
 
+Module DaemonSetUpdateStrategyType.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
+End def.
+End DaemonSetUpdateStrategyType.
+
+Definition DaemonSetUpdateStrategyTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class DaemonSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] DaemonSetUpdateStrategyType_underlying :: (DaemonSetUpdateStrategyType) <u (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ);
+}.
+
 Module DaemonSetUpdateStrategy.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.DaemonSetUpdateStrategyType.t;
+  RollingUpdate' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSetUpdateStrategy.
+
+Definition DaemonSetUpdateStrategy'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go DaemonSetUpdateStrategyType);
+  (go.FieldDecl "RollingUpdate"%go (go.PointerType RollingUpdateDaemonSet))
+].
+Program Definition DaemonSetUpdateStrategy'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (DaemonSetUpdateStrategy'fds_unsealed).
+Global Instance equals_unfold_DaemonSetUpdateStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : DaemonSetUpdateStrategy'fds =→ DaemonSetUpdateStrategy'fds_unsealed.
+Proof. rewrite /DaemonSetUpdateStrategy'fds seal_eq //. Qed.
+
+Definition DaemonSetUpdateStrategyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (DaemonSetUpdateStrategy'fds).
 
 Class DaemonSetUpdateStrategy_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] DaemonSetUpdateStrategy_type_repr  :: go.TypeReprUnderlying DaemonSetUpdateStrategyⁱᵐᵖˡ DaemonSetUpdateStrategy.t;
   #[global] DaemonSetUpdateStrategy_underlying :: (DaemonSetUpdateStrategy) <u (DaemonSetUpdateStrategyⁱᵐᵖˡ);
-  #[global] DaemonSetUpdateStrategyⁱᵐᵖˡ_underlying :: (DaemonSetUpdateStrategyⁱᵐᵖˡ) ↓u (DaemonSetUpdateStrategyⁱᵐᵖˡ);
-}.
-
-Module DaemonSetUpdateStrategyType.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End DaemonSetUpdateStrategyType.
-
-Class DaemonSetUpdateStrategyType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] DaemonSetUpdateStrategyType_type_repr  :: go.TypeReprUnderlying DaemonSetUpdateStrategyTypeⁱᵐᵖˡ DaemonSetUpdateStrategyType.t;
-  #[global] DaemonSetUpdateStrategyType_underlying :: (DaemonSetUpdateStrategyType) <u (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ);
-  #[global] DaemonSetUpdateStrategyTypeⁱᵐᵖˡ_underlying :: (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ) ↓u (DaemonSetUpdateStrategyTypeⁱᵐᵖˡ);
+  #[global] DaemonSetUpdateStrategy_get_Type (x : DaemonSetUpdateStrategy.t) :: ⟦StructFieldGet (DaemonSetUpdateStrategyⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(DaemonSetUpdateStrategy.Type');
+  #[global] DaemonSetUpdateStrategy_set_Type (x : DaemonSetUpdateStrategy.t) y :: ⟦StructFieldSet (DaemonSetUpdateStrategyⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetUpdateStrategy.Type' := y|>);
+  #[global] DaemonSetUpdateStrategy_get_RollingUpdate (x : DaemonSetUpdateStrategy.t) :: ⟦StructFieldGet (DaemonSetUpdateStrategyⁱᵐᵖˡ) "RollingUpdate", #x⟧ ⤳[under] #x.(DaemonSetUpdateStrategy.RollingUpdate');
+  #[global] DaemonSetUpdateStrategy_set_RollingUpdate (x : DaemonSetUpdateStrategy.t) y :: ⟦StructFieldSet (DaemonSetUpdateStrategyⁱᵐᵖˡ) "RollingUpdate", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetUpdateStrategy.RollingUpdate' := y|>);
 }.
 
 Module RollingUpdateDaemonSet.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  MaxUnavailable' : loc;
+  MaxSurge' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End RollingUpdateDaemonSet.
+
+Definition RollingUpdateDaemonSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "MaxUnavailable"%go (go.PointerType code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString));
+  (go.FieldDecl "MaxSurge"%go (go.PointerType code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString))
+].
+Program Definition RollingUpdateDaemonSet'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (RollingUpdateDaemonSet'fds_unsealed).
+Global Instance equals_unfold_RollingUpdateDaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : RollingUpdateDaemonSet'fds =→ RollingUpdateDaemonSet'fds_unsealed.
+Proof. rewrite /RollingUpdateDaemonSet'fds seal_eq //. Qed.
+
+Definition RollingUpdateDaemonSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (RollingUpdateDaemonSet'fds).
 
 Class RollingUpdateDaemonSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] RollingUpdateDaemonSet_type_repr  :: go.TypeReprUnderlying RollingUpdateDaemonSetⁱᵐᵖˡ RollingUpdateDaemonSet.t;
   #[global] RollingUpdateDaemonSet_underlying :: (RollingUpdateDaemonSet) <u (RollingUpdateDaemonSetⁱᵐᵖˡ);
-  #[global] RollingUpdateDaemonSetⁱᵐᵖˡ_underlying :: (RollingUpdateDaemonSetⁱᵐᵖˡ) ↓u (RollingUpdateDaemonSetⁱᵐᵖˡ);
+  #[global] RollingUpdateDaemonSet_get_MaxUnavailable (x : RollingUpdateDaemonSet.t) :: ⟦StructFieldGet (RollingUpdateDaemonSetⁱᵐᵖˡ) "MaxUnavailable", #x⟧ ⤳[under] #x.(RollingUpdateDaemonSet.MaxUnavailable');
+  #[global] RollingUpdateDaemonSet_set_MaxUnavailable (x : RollingUpdateDaemonSet.t) y :: ⟦StructFieldSet (RollingUpdateDaemonSetⁱᵐᵖˡ) "MaxUnavailable", (#x, #y)⟧ ⤳[under] #(x <|RollingUpdateDaemonSet.MaxUnavailable' := y|>);
+  #[global] RollingUpdateDaemonSet_get_MaxSurge (x : RollingUpdateDaemonSet.t) :: ⟦StructFieldGet (RollingUpdateDaemonSetⁱᵐᵖˡ) "MaxSurge", #x⟧ ⤳[under] #x.(RollingUpdateDaemonSet.MaxSurge');
+  #[global] RollingUpdateDaemonSet_set_MaxSurge (x : RollingUpdateDaemonSet.t) y :: ⟦StructFieldSet (RollingUpdateDaemonSetⁱᵐᵖˡ) "MaxSurge", (#x, #y)⟧ ⤳[under] #(x <|RollingUpdateDaemonSet.MaxSurge' := y|>);
 }.
 
 Module DaemonSetSpec.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Selector' : loc;
+  Template' : code.k8s_io.api.core.v1.v1.PodTemplateSpec.t;
+  UpdateStrategy' : v1.DaemonSetUpdateStrategy.t;
+  MinReadySeconds' : w32;
+  RevisionHistoryLimit' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSetSpec.
+
+Definition DaemonSetSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Selector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
+  (go.FieldDecl "Template"%go code.k8s_io.api.core.v1.v1.PodTemplateSpec);
+  (go.FieldDecl "UpdateStrategy"%go DaemonSetUpdateStrategy);
+  (go.FieldDecl "MinReadySeconds"%go go.int32);
+  (go.FieldDecl "RevisionHistoryLimit"%go (go.PointerType go.int32))
+].
+Program Definition DaemonSetSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (DaemonSetSpec'fds_unsealed).
+Global Instance equals_unfold_DaemonSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : DaemonSetSpec'fds =→ DaemonSetSpec'fds_unsealed.
+Proof. rewrite /DaemonSetSpec'fds seal_eq //. Qed.
+
+Definition DaemonSetSpecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (DaemonSetSpec'fds).
 
 Class DaemonSetSpec_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] DaemonSetSpec_type_repr  :: go.TypeReprUnderlying DaemonSetSpecⁱᵐᵖˡ DaemonSetSpec.t;
   #[global] DaemonSetSpec_underlying :: (DaemonSetSpec) <u (DaemonSetSpecⁱᵐᵖˡ);
-  #[global] DaemonSetSpecⁱᵐᵖˡ_underlying :: (DaemonSetSpecⁱᵐᵖˡ) ↓u (DaemonSetSpecⁱᵐᵖˡ);
+  #[global] DaemonSetSpec_get_Selector (x : DaemonSetSpec.t) :: ⟦StructFieldGet (DaemonSetSpecⁱᵐᵖˡ) "Selector", #x⟧ ⤳[under] #x.(DaemonSetSpec.Selector');
+  #[global] DaemonSetSpec_set_Selector (x : DaemonSetSpec.t) y :: ⟦StructFieldSet (DaemonSetSpecⁱᵐᵖˡ) "Selector", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetSpec.Selector' := y|>);
+  #[global] DaemonSetSpec_get_Template (x : DaemonSetSpec.t) :: ⟦StructFieldGet (DaemonSetSpecⁱᵐᵖˡ) "Template", #x⟧ ⤳[under] #x.(DaemonSetSpec.Template');
+  #[global] DaemonSetSpec_set_Template (x : DaemonSetSpec.t) y :: ⟦StructFieldSet (DaemonSetSpecⁱᵐᵖˡ) "Template", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetSpec.Template' := y|>);
+  #[global] DaemonSetSpec_get_UpdateStrategy (x : DaemonSetSpec.t) :: ⟦StructFieldGet (DaemonSetSpecⁱᵐᵖˡ) "UpdateStrategy", #x⟧ ⤳[under] #x.(DaemonSetSpec.UpdateStrategy');
+  #[global] DaemonSetSpec_set_UpdateStrategy (x : DaemonSetSpec.t) y :: ⟦StructFieldSet (DaemonSetSpecⁱᵐᵖˡ) "UpdateStrategy", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetSpec.UpdateStrategy' := y|>);
+  #[global] DaemonSetSpec_get_MinReadySeconds (x : DaemonSetSpec.t) :: ⟦StructFieldGet (DaemonSetSpecⁱᵐᵖˡ) "MinReadySeconds", #x⟧ ⤳[under] #x.(DaemonSetSpec.MinReadySeconds');
+  #[global] DaemonSetSpec_set_MinReadySeconds (x : DaemonSetSpec.t) y :: ⟦StructFieldSet (DaemonSetSpecⁱᵐᵖˡ) "MinReadySeconds", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetSpec.MinReadySeconds' := y|>);
+  #[global] DaemonSetSpec_get_RevisionHistoryLimit (x : DaemonSetSpec.t) :: ⟦StructFieldGet (DaemonSetSpecⁱᵐᵖˡ) "RevisionHistoryLimit", #x⟧ ⤳[under] #x.(DaemonSetSpec.RevisionHistoryLimit');
+  #[global] DaemonSetSpec_set_RevisionHistoryLimit (x : DaemonSetSpec.t) y :: ⟦StructFieldSet (DaemonSetSpecⁱᵐᵖˡ) "RevisionHistoryLimit", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetSpec.RevisionHistoryLimit' := y|>);
 }.
 
 Module DaemonSetStatus.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  CurrentNumberScheduled' : w32;
+  NumberMisscheduled' : w32;
+  DesiredNumberScheduled' : w32;
+  NumberReady' : w32;
+  ObservedGeneration' : w64;
+  UpdatedNumberScheduled' : w32;
+  NumberAvailable' : w32;
+  NumberUnavailable' : w32;
+  CollisionCount' : loc;
+  Conditions' : slice.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSetStatus.
+
+Definition DaemonSetStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "CurrentNumberScheduled"%go go.int32);
+  (go.FieldDecl "NumberMisscheduled"%go go.int32);
+  (go.FieldDecl "DesiredNumberScheduled"%go go.int32);
+  (go.FieldDecl "NumberReady"%go go.int32);
+  (go.FieldDecl "ObservedGeneration"%go go.int64);
+  (go.FieldDecl "UpdatedNumberScheduled"%go go.int32);
+  (go.FieldDecl "NumberAvailable"%go go.int32);
+  (go.FieldDecl "NumberUnavailable"%go go.int32);
+  (go.FieldDecl "CollisionCount"%go (go.PointerType go.int32));
+  (go.FieldDecl "Conditions"%go (go.SliceType DaemonSetCondition))
+].
+Program Definition DaemonSetStatus'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (DaemonSetStatus'fds_unsealed).
+Global Instance equals_unfold_DaemonSetStatus {ext : ffi_syntax} {go_gctx : GoGlobalContext} : DaemonSetStatus'fds =→ DaemonSetStatus'fds_unsealed.
+Proof. rewrite /DaemonSetStatus'fds seal_eq //. Qed.
+
+Definition DaemonSetStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (DaemonSetStatus'fds).
 
 Class DaemonSetStatus_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] DaemonSetStatus_type_repr  :: go.TypeReprUnderlying DaemonSetStatusⁱᵐᵖˡ DaemonSetStatus.t;
   #[global] DaemonSetStatus_underlying :: (DaemonSetStatus) <u (DaemonSetStatusⁱᵐᵖˡ);
-  #[global] DaemonSetStatusⁱᵐᵖˡ_underlying :: (DaemonSetStatusⁱᵐᵖˡ) ↓u (DaemonSetStatusⁱᵐᵖˡ);
+  #[global] DaemonSetStatus_get_CurrentNumberScheduled (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "CurrentNumberScheduled", #x⟧ ⤳[under] #x.(DaemonSetStatus.CurrentNumberScheduled');
+  #[global] DaemonSetStatus_set_CurrentNumberScheduled (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "CurrentNumberScheduled", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.CurrentNumberScheduled' := y|>);
+  #[global] DaemonSetStatus_get_NumberMisscheduled (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "NumberMisscheduled", #x⟧ ⤳[under] #x.(DaemonSetStatus.NumberMisscheduled');
+  #[global] DaemonSetStatus_set_NumberMisscheduled (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "NumberMisscheduled", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.NumberMisscheduled' := y|>);
+  #[global] DaemonSetStatus_get_DesiredNumberScheduled (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "DesiredNumberScheduled", #x⟧ ⤳[under] #x.(DaemonSetStatus.DesiredNumberScheduled');
+  #[global] DaemonSetStatus_set_DesiredNumberScheduled (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "DesiredNumberScheduled", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.DesiredNumberScheduled' := y|>);
+  #[global] DaemonSetStatus_get_NumberReady (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "NumberReady", #x⟧ ⤳[under] #x.(DaemonSetStatus.NumberReady');
+  #[global] DaemonSetStatus_set_NumberReady (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "NumberReady", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.NumberReady' := y|>);
+  #[global] DaemonSetStatus_get_ObservedGeneration (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "ObservedGeneration", #x⟧ ⤳[under] #x.(DaemonSetStatus.ObservedGeneration');
+  #[global] DaemonSetStatus_set_ObservedGeneration (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "ObservedGeneration", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.ObservedGeneration' := y|>);
+  #[global] DaemonSetStatus_get_UpdatedNumberScheduled (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "UpdatedNumberScheduled", #x⟧ ⤳[under] #x.(DaemonSetStatus.UpdatedNumberScheduled');
+  #[global] DaemonSetStatus_set_UpdatedNumberScheduled (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "UpdatedNumberScheduled", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.UpdatedNumberScheduled' := y|>);
+  #[global] DaemonSetStatus_get_NumberAvailable (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "NumberAvailable", #x⟧ ⤳[under] #x.(DaemonSetStatus.NumberAvailable');
+  #[global] DaemonSetStatus_set_NumberAvailable (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "NumberAvailable", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.NumberAvailable' := y|>);
+  #[global] DaemonSetStatus_get_NumberUnavailable (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "NumberUnavailable", #x⟧ ⤳[under] #x.(DaemonSetStatus.NumberUnavailable');
+  #[global] DaemonSetStatus_set_NumberUnavailable (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "NumberUnavailable", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.NumberUnavailable' := y|>);
+  #[global] DaemonSetStatus_get_CollisionCount (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "CollisionCount", #x⟧ ⤳[under] #x.(DaemonSetStatus.CollisionCount');
+  #[global] DaemonSetStatus_set_CollisionCount (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "CollisionCount", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.CollisionCount' := y|>);
+  #[global] DaemonSetStatus_get_Conditions (x : DaemonSetStatus.t) :: ⟦StructFieldGet (DaemonSetStatusⁱᵐᵖˡ) "Conditions", #x⟧ ⤳[under] #x.(DaemonSetStatus.Conditions');
+  #[global] DaemonSetStatus_set_Conditions (x : DaemonSetStatus.t) y :: ⟦StructFieldSet (DaemonSetStatusⁱᵐᵖˡ) "Conditions", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetStatus.Conditions' := y|>);
 }.
 
 Module DaemonSetConditionType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSetConditionType.
 
+Definition DaemonSetConditionTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class DaemonSetConditionType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] DaemonSetConditionType_type_repr  :: go.TypeReprUnderlying DaemonSetConditionTypeⁱᵐᵖˡ DaemonSetConditionType.t;
   #[global] DaemonSetConditionType_underlying :: (DaemonSetConditionType) <u (DaemonSetConditionTypeⁱᵐᵖˡ);
-  #[global] DaemonSetConditionTypeⁱᵐᵖˡ_underlying :: (DaemonSetConditionTypeⁱᵐᵖˡ) ↓u (DaemonSetConditionTypeⁱᵐᵖˡ);
 }.
 
 Module DaemonSetCondition.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Type' : v1.DaemonSetConditionType.t;
+  Status' : code.k8s_io.api.core.v1.v1.ConditionStatus.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
+  Reason' : go_string;
+  Message' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSetCondition.
+
+Definition DaemonSetCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go DaemonSetConditionType);
+  (go.FieldDecl "Status"%go code.k8s_io.api.core.v1.v1.ConditionStatus);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
+  (go.FieldDecl "Reason"%go go.string);
+  (go.FieldDecl "Message"%go go.string)
+].
+Program Definition DaemonSetCondition'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (DaemonSetCondition'fds_unsealed).
+Global Instance equals_unfold_DaemonSetCondition {ext : ffi_syntax} {go_gctx : GoGlobalContext} : DaemonSetCondition'fds =→ DaemonSetCondition'fds_unsealed.
+Proof. rewrite /DaemonSetCondition'fds seal_eq //. Qed.
+
+Definition DaemonSetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (DaemonSetCondition'fds).
 
 Class DaemonSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] DaemonSetCondition_type_repr  :: go.TypeReprUnderlying DaemonSetConditionⁱᵐᵖˡ DaemonSetCondition.t;
   #[global] DaemonSetCondition_underlying :: (DaemonSetCondition) <u (DaemonSetConditionⁱᵐᵖˡ);
-  #[global] DaemonSetConditionⁱᵐᵖˡ_underlying :: (DaemonSetConditionⁱᵐᵖˡ) ↓u (DaemonSetConditionⁱᵐᵖˡ);
+  #[global] DaemonSetCondition_get_Type (x : DaemonSetCondition.t) :: ⟦StructFieldGet (DaemonSetConditionⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(DaemonSetCondition.Type');
+  #[global] DaemonSetCondition_set_Type (x : DaemonSetCondition.t) y :: ⟦StructFieldSet (DaemonSetConditionⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetCondition.Type' := y|>);
+  #[global] DaemonSetCondition_get_Status (x : DaemonSetCondition.t) :: ⟦StructFieldGet (DaemonSetConditionⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(DaemonSetCondition.Status');
+  #[global] DaemonSetCondition_set_Status (x : DaemonSetCondition.t) y :: ⟦StructFieldSet (DaemonSetConditionⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetCondition.Status' := y|>);
+  #[global] DaemonSetCondition_get_LastTransitionTime (x : DaemonSetCondition.t) :: ⟦StructFieldGet (DaemonSetConditionⁱᵐᵖˡ) "LastTransitionTime", #x⟧ ⤳[under] #x.(DaemonSetCondition.LastTransitionTime');
+  #[global] DaemonSetCondition_set_LastTransitionTime (x : DaemonSetCondition.t) y :: ⟦StructFieldSet (DaemonSetConditionⁱᵐᵖˡ) "LastTransitionTime", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetCondition.LastTransitionTime' := y|>);
+  #[global] DaemonSetCondition_get_Reason (x : DaemonSetCondition.t) :: ⟦StructFieldGet (DaemonSetConditionⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(DaemonSetCondition.Reason');
+  #[global] DaemonSetCondition_set_Reason (x : DaemonSetCondition.t) y :: ⟦StructFieldSet (DaemonSetConditionⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetCondition.Reason' := y|>);
+  #[global] DaemonSetCondition_get_Message (x : DaemonSetCondition.t) :: ⟦StructFieldGet (DaemonSetConditionⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(DaemonSetCondition.Message');
+  #[global] DaemonSetCondition_set_Message (x : DaemonSetCondition.t) y :: ⟦StructFieldSet (DaemonSetConditionⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|DaemonSetCondition.Message' := y|>);
 }.
 
 Module DaemonSet.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
+  Spec' : v1.DaemonSetSpec.t;
+  Status' : v1.DaemonSetStatus.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End DaemonSet.
+
+Definition DaemonSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
+  (go.FieldDecl "Spec"%go DaemonSetSpec);
+  (go.FieldDecl "Status"%go DaemonSetStatus)
+].
+Program Definition DaemonSet'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (DaemonSet'fds_unsealed).
+Global Instance equals_unfold_DaemonSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : DaemonSet'fds =→ DaemonSet'fds_unsealed.
+Proof. rewrite /DaemonSet'fds seal_eq //. Qed.
+
+Definition DaemonSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (DaemonSet'fds).
 
 Class DaemonSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] DaemonSet_type_repr  :: go.TypeReprUnderlying DaemonSetⁱᵐᵖˡ DaemonSet.t;
   #[global] DaemonSet_underlying :: (DaemonSet) <u (DaemonSetⁱᵐᵖˡ);
-  #[global] DaemonSetⁱᵐᵖˡ_underlying :: (DaemonSetⁱᵐᵖˡ) ↓u (DaemonSetⁱᵐᵖˡ);
+  #[global] DaemonSet_get_TypeMeta (x : DaemonSet.t) :: ⟦StructFieldGet (DaemonSetⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(DaemonSet.TypeMeta');
+  #[global] DaemonSet_set_TypeMeta (x : DaemonSet.t) y :: ⟦StructFieldSet (DaemonSetⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|DaemonSet.TypeMeta' := y|>);
+  #[global] DaemonSet_get_ObjectMeta (x : DaemonSet.t) :: ⟦StructFieldGet (DaemonSetⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(DaemonSet.ObjectMeta');
+  #[global] DaemonSet_set_ObjectMeta (x : DaemonSet.t) y :: ⟦StructFieldSet (DaemonSetⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|DaemonSet.ObjectMeta' := y|>);
+  #[global] DaemonSet_get_Spec (x : DaemonSet.t) :: ⟦StructFieldGet (DaemonSetⁱᵐᵖˡ) "Spec", #x⟧ ⤳[under] #x.(DaemonSet.Spec');
+  #[global] DaemonSet_set_Spec (x : DaemonSet.t) y :: ⟦StructFieldSet (DaemonSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|DaemonSet.Spec' := y|>);
+  #[global] DaemonSet_get_Status (x : DaemonSet.t) :: ⟦StructFieldGet (DaemonSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(DaemonSet.Status');
+  #[global] DaemonSet_set_Status (x : DaemonSet.t) y :: ⟦StructFieldSet (DaemonSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|DaemonSet.Status' := y|>);
 }.
 
 Module DaemonSetList.

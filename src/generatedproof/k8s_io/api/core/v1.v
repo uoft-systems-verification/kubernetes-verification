@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 From New.proof Require Import generated_struct.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.resource.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.intstr.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.api.core.v1.
@@ -13369,13 +13370,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Taint_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Taint.t). Admitted.
+#[global]Program Instance Taint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Taint.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Key" ∷ l.[(v1.Taint.t), "Key"] ↦{dq} v.(v1.Taint.Key') ∗
+      "Value" ∷ l.[(v1.Taint.t), "Value"] ↦{dq} v.(v1.Taint.Value') ∗
+      "Effect" ∷ l.[(v1.Taint.t), "Effect"] ↦{dq} v.(v1.Taint.Effect') ∗
+      "TimeAdded" ∷ l.[(v1.Taint.t), "TimeAdded"] ↦{dq} v.(v1.Taint.TimeAdded') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Taint_into_val_typed
    :
   IntoValTypedUnderlying (v1.Taint.t) (v1.Taintⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Taint_access_load_Key l (v : (v1.Taint.t)) dq :
+  AccessStrict
+    (l.[(v1.Taint.t), "Key"] ↦{dq} (v.(v1.Taint.Key')))
+    (l.[(v1.Taint.t), "Key"] ↦{dq} (v.(v1.Taint.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Taint_access_store_Key l (v : (v1.Taint.t)) Key' :
+  AccessStrict
+    (l.[(v1.Taint.t), "Key"] ↦ (v.(v1.Taint.Key')))
+    (l.[(v1.Taint.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.Taint.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Taint_access_load_Value l (v : (v1.Taint.t)) dq :
+  AccessStrict
+    (l.[(v1.Taint.t), "Value"] ↦{dq} (v.(v1.Taint.Value')))
+    (l.[(v1.Taint.t), "Value"] ↦{dq} (v.(v1.Taint.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Taint_access_store_Value l (v : (v1.Taint.t)) Value' :
+  AccessStrict
+    (l.[(v1.Taint.t), "Value"] ↦ (v.(v1.Taint.Value')))
+    (l.[(v1.Taint.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.Taint.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Taint_access_load_Effect l (v : (v1.Taint.t)) dq :
+  AccessStrict
+    (l.[(v1.Taint.t), "Effect"] ↦{dq} (v.(v1.Taint.Effect')))
+    (l.[(v1.Taint.t), "Effect"] ↦{dq} (v.(v1.Taint.Effect')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Taint_access_store_Effect l (v : (v1.Taint.t)) Effect' :
+  AccessStrict
+    (l.[(v1.Taint.t), "Effect"] ↦ (v.(v1.Taint.Effect')))
+    (l.[(v1.Taint.t), "Effect"] ↦ Effect')
+    (l ↦ v) (l ↦ (v <|(v1.Taint.Effect') := Effect'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Taint_access_load_TimeAdded l (v : (v1.Taint.t)) dq :
+  AccessStrict
+    (l.[(v1.Taint.t), "TimeAdded"] ↦{dq} (v.(v1.Taint.TimeAdded')))
+    (l.[(v1.Taint.t), "TimeAdded"] ↦{dq} (v.(v1.Taint.TimeAdded')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Taint_access_store_TimeAdded l (v : (v1.Taint.t)) TimeAdded' :
+  AccessStrict
+    (l.[(v1.Taint.t), "TimeAdded"] ↦ (v.(v1.Taint.TimeAdded')))
+    (l.[(v1.Taint.t), "TimeAdded"] ↦ TimeAdded')
+    (l ↦ v) (l ↦ (v <|(v1.Taint.TimeAdded') := TimeAdded'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Taint.
@@ -22346,13 +22410,118 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSpec.t). Admitted.
+#[global]Program Instance NodeSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "PodCIDR" ∷ l.[(v1.NodeSpec.t), "PodCIDR"] ↦{dq} v.(v1.NodeSpec.PodCIDR') ∗
+      "PodCIDRs" ∷ l.[(v1.NodeSpec.t), "PodCIDRs"] ↦{dq} v.(v1.NodeSpec.PodCIDRs') ∗
+      "ProviderID" ∷ l.[(v1.NodeSpec.t), "ProviderID"] ↦{dq} v.(v1.NodeSpec.ProviderID') ∗
+      "Unschedulable" ∷ l.[(v1.NodeSpec.t), "Unschedulable"] ↦{dq} v.(v1.NodeSpec.Unschedulable') ∗
+      "Taints" ∷ l.[(v1.NodeSpec.t), "Taints"] ↦{dq} v.(v1.NodeSpec.Taints') ∗
+      "ConfigSource" ∷ l.[(v1.NodeSpec.t), "ConfigSource"] ↦{dq} v.(v1.NodeSpec.ConfigSource') ∗
+      "DoNotUseExternalID" ∷ l.[(v1.NodeSpec.t), "DoNotUseExternalID"] ↦{dq} v.(v1.NodeSpec.DoNotUseExternalID') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSpec.t) (v1.NodeSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSpec_access_load_PodCIDR l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "PodCIDR"] ↦{dq} (v.(v1.NodeSpec.PodCIDR')))
+    (l.[(v1.NodeSpec.t), "PodCIDR"] ↦{dq} (v.(v1.NodeSpec.PodCIDR')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_PodCIDR l (v : (v1.NodeSpec.t)) PodCIDR' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "PodCIDR"] ↦ (v.(v1.NodeSpec.PodCIDR')))
+    (l.[(v1.NodeSpec.t), "PodCIDR"] ↦ PodCIDR')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.PodCIDR') := PodCIDR'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_PodCIDRs l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "PodCIDRs"] ↦{dq} (v.(v1.NodeSpec.PodCIDRs')))
+    (l.[(v1.NodeSpec.t), "PodCIDRs"] ↦{dq} (v.(v1.NodeSpec.PodCIDRs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_PodCIDRs l (v : (v1.NodeSpec.t)) PodCIDRs' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "PodCIDRs"] ↦ (v.(v1.NodeSpec.PodCIDRs')))
+    (l.[(v1.NodeSpec.t), "PodCIDRs"] ↦ PodCIDRs')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.PodCIDRs') := PodCIDRs'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_ProviderID l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "ProviderID"] ↦{dq} (v.(v1.NodeSpec.ProviderID')))
+    (l.[(v1.NodeSpec.t), "ProviderID"] ↦{dq} (v.(v1.NodeSpec.ProviderID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_ProviderID l (v : (v1.NodeSpec.t)) ProviderID' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "ProviderID"] ↦ (v.(v1.NodeSpec.ProviderID')))
+    (l.[(v1.NodeSpec.t), "ProviderID"] ↦ ProviderID')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.ProviderID') := ProviderID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_Unschedulable l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "Unschedulable"] ↦{dq} (v.(v1.NodeSpec.Unschedulable')))
+    (l.[(v1.NodeSpec.t), "Unschedulable"] ↦{dq} (v.(v1.NodeSpec.Unschedulable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_Unschedulable l (v : (v1.NodeSpec.t)) Unschedulable' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "Unschedulable"] ↦ (v.(v1.NodeSpec.Unschedulable')))
+    (l.[(v1.NodeSpec.t), "Unschedulable"] ↦ Unschedulable')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.Unschedulable') := Unschedulable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_Taints l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "Taints"] ↦{dq} (v.(v1.NodeSpec.Taints')))
+    (l.[(v1.NodeSpec.t), "Taints"] ↦{dq} (v.(v1.NodeSpec.Taints')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_Taints l (v : (v1.NodeSpec.t)) Taints' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "Taints"] ↦ (v.(v1.NodeSpec.Taints')))
+    (l.[(v1.NodeSpec.t), "Taints"] ↦ Taints')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.Taints') := Taints'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_ConfigSource l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "ConfigSource"] ↦{dq} (v.(v1.NodeSpec.ConfigSource')))
+    (l.[(v1.NodeSpec.t), "ConfigSource"] ↦{dq} (v.(v1.NodeSpec.ConfigSource')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_ConfigSource l (v : (v1.NodeSpec.t)) ConfigSource' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "ConfigSource"] ↦ (v.(v1.NodeSpec.ConfigSource')))
+    (l.[(v1.NodeSpec.t), "ConfigSource"] ↦ ConfigSource')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.ConfigSource') := ConfigSource'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSpec_access_load_DoNotUseExternalID l (v : (v1.NodeSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "DoNotUseExternalID"] ↦{dq} (v.(v1.NodeSpec.DoNotUseExternalID')))
+    (l.[(v1.NodeSpec.t), "DoNotUseExternalID"] ↦{dq} (v.(v1.NodeSpec.DoNotUseExternalID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSpec_access_store_DoNotUseExternalID l (v : (v1.NodeSpec.t)) DoNotUseExternalID' :
+  AccessStrict
+    (l.[(v1.NodeSpec.t), "DoNotUseExternalID"] ↦ (v.(v1.NodeSpec.DoNotUseExternalID')))
+    (l.[(v1.NodeSpec.t), "DoNotUseExternalID"] ↦ DoNotUseExternalID')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSpec.DoNotUseExternalID') := DoNotUseExternalID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSpec.
@@ -22366,13 +22535,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeConfigSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeConfigSource.t). Admitted.
+#[global]Program Instance NodeConfigSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeConfigSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ConfigMap" ∷ l.[(v1.NodeConfigSource.t), "ConfigMap"] ↦{dq} v.(v1.NodeConfigSource.ConfigMap') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeConfigSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeConfigSource.t) (v1.NodeConfigSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeConfigSource_access_load_ConfigMap l (v : (v1.NodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeConfigSource.t), "ConfigMap"] ↦{dq} (v.(v1.NodeConfigSource.ConfigMap')))
+    (l.[(v1.NodeConfigSource.t), "ConfigMap"] ↦{dq} (v.(v1.NodeConfigSource.ConfigMap')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeConfigSource_access_store_ConfigMap l (v : (v1.NodeConfigSource.t)) ConfigMap' :
+  AccessStrict
+    (l.[(v1.NodeConfigSource.t), "ConfigMap"] ↦ (v.(v1.NodeConfigSource.ConfigMap')))
+    (l.[(v1.NodeConfigSource.t), "ConfigMap"] ↦ ConfigMap')
+    (l ↦ v) (l ↦ (v <|(v1.NodeConfigSource.ConfigMap') := ConfigMap'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeConfigSource.
@@ -22386,13 +22576,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ConfigMapNodeConfigSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConfigMapNodeConfigSource.t). Admitted.
+#[global]Program Instance ConfigMapNodeConfigSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapNodeConfigSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Namespace" ∷ l.[(v1.ConfigMapNodeConfigSource.t), "Namespace"] ↦{dq} v.(v1.ConfigMapNodeConfigSource.Namespace') ∗
+      "Name" ∷ l.[(v1.ConfigMapNodeConfigSource.t), "Name"] ↦{dq} v.(v1.ConfigMapNodeConfigSource.Name') ∗
+      "UID" ∷ l.[(v1.ConfigMapNodeConfigSource.t), "UID"] ↦{dq} v.(v1.ConfigMapNodeConfigSource.UID') ∗
+      "ResourceVersion" ∷ l.[(v1.ConfigMapNodeConfigSource.t), "ResourceVersion"] ↦{dq} v.(v1.ConfigMapNodeConfigSource.ResourceVersion') ∗
+      "KubeletConfigKey" ∷ l.[(v1.ConfigMapNodeConfigSource.t), "KubeletConfigKey"] ↦{dq} v.(v1.ConfigMapNodeConfigSource.KubeletConfigKey') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ConfigMapNodeConfigSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ConfigMapNodeConfigSource.t) (v1.ConfigMapNodeConfigSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ConfigMapNodeConfigSource_access_load_Namespace l (v : (v1.ConfigMapNodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Namespace"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.Namespace')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Namespace"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.Namespace')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapNodeConfigSource_access_store_Namespace l (v : (v1.ConfigMapNodeConfigSource.t)) Namespace' :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Namespace"] ↦ (v.(v1.ConfigMapNodeConfigSource.Namespace')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Namespace"] ↦ Namespace')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapNodeConfigSource.Namespace') := Namespace'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapNodeConfigSource_access_load_Name l (v : (v1.ConfigMapNodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Name"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.Name')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Name"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapNodeConfigSource_access_store_Name l (v : (v1.ConfigMapNodeConfigSource.t)) Name' :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Name"] ↦ (v.(v1.ConfigMapNodeConfigSource.Name')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapNodeConfigSource.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapNodeConfigSource_access_load_UID l (v : (v1.ConfigMapNodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "UID"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.UID')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "UID"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.UID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapNodeConfigSource_access_store_UID l (v : (v1.ConfigMapNodeConfigSource.t)) UID' :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "UID"] ↦ (v.(v1.ConfigMapNodeConfigSource.UID')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "UID"] ↦ UID')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapNodeConfigSource.UID') := UID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapNodeConfigSource_access_load_ResourceVersion l (v : (v1.ConfigMapNodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "ResourceVersion"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.ResourceVersion')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "ResourceVersion"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.ResourceVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapNodeConfigSource_access_store_ResourceVersion l (v : (v1.ConfigMapNodeConfigSource.t)) ResourceVersion' :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "ResourceVersion"] ↦ (v.(v1.ConfigMapNodeConfigSource.ResourceVersion')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "ResourceVersion"] ↦ ResourceVersion')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapNodeConfigSource.ResourceVersion') := ResourceVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapNodeConfigSource_access_load_KubeletConfigKey l (v : (v1.ConfigMapNodeConfigSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "KubeletConfigKey"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.KubeletConfigKey')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "KubeletConfigKey"] ↦{dq} (v.(v1.ConfigMapNodeConfigSource.KubeletConfigKey')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapNodeConfigSource_access_store_KubeletConfigKey l (v : (v1.ConfigMapNodeConfigSource.t)) KubeletConfigKey' :
+  AccessStrict
+    (l.[(v1.ConfigMapNodeConfigSource.t), "KubeletConfigKey"] ↦ (v.(v1.ConfigMapNodeConfigSource.KubeletConfigKey')))
+    (l.[(v1.ConfigMapNodeConfigSource.t), "KubeletConfigKey"] ↦ KubeletConfigKey')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapNodeConfigSource.KubeletConfigKey') := KubeletConfigKey'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ConfigMapNodeConfigSource.
@@ -22406,13 +22673,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonEndpoint_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonEndpoint.t). Admitted.
+#[global]Program Instance DaemonEndpoint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonEndpoint.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Port" ∷ l.[(v1.DaemonEndpoint.t), "Port"] ↦{dq} v.(v1.DaemonEndpoint.Port') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonEndpoint_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonEndpoint.t) (v1.DaemonEndpointⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonEndpoint_access_load_Port l (v : (v1.DaemonEndpoint.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonEndpoint.t), "Port"] ↦{dq} (v.(v1.DaemonEndpoint.Port')))
+    (l.[(v1.DaemonEndpoint.t), "Port"] ↦{dq} (v.(v1.DaemonEndpoint.Port')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonEndpoint_access_store_Port l (v : (v1.DaemonEndpoint.t)) Port' :
+  AccessStrict
+    (l.[(v1.DaemonEndpoint.t), "Port"] ↦ (v.(v1.DaemonEndpoint.Port')))
+    (l.[(v1.DaemonEndpoint.t), "Port"] ↦ Port')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonEndpoint.Port') := Port'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonEndpoint.
@@ -22426,13 +22714,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeDaemonEndpoints_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeDaemonEndpoints.t). Admitted.
+#[global]Program Instance NodeDaemonEndpoints_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeDaemonEndpoints.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "KubeletEndpoint" ∷ l.[(v1.NodeDaemonEndpoints.t), "KubeletEndpoint"] ↦{dq} v.(v1.NodeDaemonEndpoints.KubeletEndpoint') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeDaemonEndpoints_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeDaemonEndpoints.t) (v1.NodeDaemonEndpointsⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeDaemonEndpoints_access_load_KubeletEndpoint l (v : (v1.NodeDaemonEndpoints.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeDaemonEndpoints.t), "KubeletEndpoint"] ↦{dq} (v.(v1.NodeDaemonEndpoints.KubeletEndpoint')))
+    (l.[(v1.NodeDaemonEndpoints.t), "KubeletEndpoint"] ↦{dq} (v.(v1.NodeDaemonEndpoints.KubeletEndpoint')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeDaemonEndpoints_access_store_KubeletEndpoint l (v : (v1.NodeDaemonEndpoints.t)) KubeletEndpoint' :
+  AccessStrict
+    (l.[(v1.NodeDaemonEndpoints.t), "KubeletEndpoint"] ↦ (v.(v1.NodeDaemonEndpoints.KubeletEndpoint')))
+    (l.[(v1.NodeDaemonEndpoints.t), "KubeletEndpoint"] ↦ KubeletEndpoint')
+    (l ↦ v) (l ↦ (v <|(v1.NodeDaemonEndpoints.KubeletEndpoint') := KubeletEndpoint'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeDaemonEndpoints.
@@ -22446,13 +22755,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeRuntimeHandlerFeatures_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandlerFeatures.t). Admitted.
+#[global]Program Instance NodeRuntimeHandlerFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandlerFeatures.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "RecursiveReadOnlyMounts" ∷ l.[(v1.NodeRuntimeHandlerFeatures.t), "RecursiveReadOnlyMounts"] ↦{dq} v.(v1.NodeRuntimeHandlerFeatures.RecursiveReadOnlyMounts') ∗
+      "UserNamespaces" ∷ l.[(v1.NodeRuntimeHandlerFeatures.t), "UserNamespaces"] ↦{dq} v.(v1.NodeRuntimeHandlerFeatures.UserNamespaces') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeRuntimeHandlerFeatures_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeRuntimeHandlerFeatures.t) (v1.NodeRuntimeHandlerFeaturesⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeRuntimeHandlerFeatures_access_load_RecursiveReadOnlyMounts l (v : (v1.NodeRuntimeHandlerFeatures.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "RecursiveReadOnlyMounts"] ↦{dq} (v.(v1.NodeRuntimeHandlerFeatures.RecursiveReadOnlyMounts')))
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "RecursiveReadOnlyMounts"] ↦{dq} (v.(v1.NodeRuntimeHandlerFeatures.RecursiveReadOnlyMounts')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeRuntimeHandlerFeatures_access_store_RecursiveReadOnlyMounts l (v : (v1.NodeRuntimeHandlerFeatures.t)) RecursiveReadOnlyMounts' :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "RecursiveReadOnlyMounts"] ↦ (v.(v1.NodeRuntimeHandlerFeatures.RecursiveReadOnlyMounts')))
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "RecursiveReadOnlyMounts"] ↦ RecursiveReadOnlyMounts')
+    (l ↦ v) (l ↦ (v <|(v1.NodeRuntimeHandlerFeatures.RecursiveReadOnlyMounts') := RecursiveReadOnlyMounts'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeRuntimeHandlerFeatures_access_load_UserNamespaces l (v : (v1.NodeRuntimeHandlerFeatures.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "UserNamespaces"] ↦{dq} (v.(v1.NodeRuntimeHandlerFeatures.UserNamespaces')))
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "UserNamespaces"] ↦{dq} (v.(v1.NodeRuntimeHandlerFeatures.UserNamespaces')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeRuntimeHandlerFeatures_access_store_UserNamespaces l (v : (v1.NodeRuntimeHandlerFeatures.t)) UserNamespaces' :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "UserNamespaces"] ↦ (v.(v1.NodeRuntimeHandlerFeatures.UserNamespaces')))
+    (l.[(v1.NodeRuntimeHandlerFeatures.t), "UserNamespaces"] ↦ UserNamespaces')
+    (l ↦ v) (l ↦ (v <|(v1.NodeRuntimeHandlerFeatures.UserNamespaces') := UserNamespaces'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeRuntimeHandlerFeatures.
@@ -22466,13 +22810,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeRuntimeHandler_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandler.t). Admitted.
+#[global]Program Instance NodeRuntimeHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeRuntimeHandler.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.NodeRuntimeHandler.t), "Name"] ↦{dq} v.(v1.NodeRuntimeHandler.Name') ∗
+      "Features" ∷ l.[(v1.NodeRuntimeHandler.t), "Features"] ↦{dq} v.(v1.NodeRuntimeHandler.Features') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeRuntimeHandler_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeRuntimeHandler.t) (v1.NodeRuntimeHandlerⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeRuntimeHandler_access_load_Name l (v : (v1.NodeRuntimeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandler.t), "Name"] ↦{dq} (v.(v1.NodeRuntimeHandler.Name')))
+    (l.[(v1.NodeRuntimeHandler.t), "Name"] ↦{dq} (v.(v1.NodeRuntimeHandler.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeRuntimeHandler_access_store_Name l (v : (v1.NodeRuntimeHandler.t)) Name' :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandler.t), "Name"] ↦ (v.(v1.NodeRuntimeHandler.Name')))
+    (l.[(v1.NodeRuntimeHandler.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.NodeRuntimeHandler.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeRuntimeHandler_access_load_Features l (v : (v1.NodeRuntimeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandler.t), "Features"] ↦{dq} (v.(v1.NodeRuntimeHandler.Features')))
+    (l.[(v1.NodeRuntimeHandler.t), "Features"] ↦{dq} (v.(v1.NodeRuntimeHandler.Features')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeRuntimeHandler_access_store_Features l (v : (v1.NodeRuntimeHandler.t)) Features' :
+  AccessStrict
+    (l.[(v1.NodeRuntimeHandler.t), "Features"] ↦ (v.(v1.NodeRuntimeHandler.Features')))
+    (l.[(v1.NodeRuntimeHandler.t), "Features"] ↦ Features')
+    (l ↦ v) (l ↦ (v <|(v1.NodeRuntimeHandler.Features') := Features'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeRuntimeHandler.
@@ -22486,13 +22865,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeFeatures_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeFeatures.t). Admitted.
+#[global]Program Instance NodeFeatures_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeFeatures.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SupplementalGroupsPolicy" ∷ l.[(v1.NodeFeatures.t), "SupplementalGroupsPolicy"] ↦{dq} v.(v1.NodeFeatures.SupplementalGroupsPolicy') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeFeatures_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeFeatures.t) (v1.NodeFeaturesⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeFeatures_access_load_SupplementalGroupsPolicy l (v : (v1.NodeFeatures.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeFeatures.t), "SupplementalGroupsPolicy"] ↦{dq} (v.(v1.NodeFeatures.SupplementalGroupsPolicy')))
+    (l.[(v1.NodeFeatures.t), "SupplementalGroupsPolicy"] ↦{dq} (v.(v1.NodeFeatures.SupplementalGroupsPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeFeatures_access_store_SupplementalGroupsPolicy l (v : (v1.NodeFeatures.t)) SupplementalGroupsPolicy' :
+  AccessStrict
+    (l.[(v1.NodeFeatures.t), "SupplementalGroupsPolicy"] ↦ (v.(v1.NodeFeatures.SupplementalGroupsPolicy')))
+    (l.[(v1.NodeFeatures.t), "SupplementalGroupsPolicy"] ↦ SupplementalGroupsPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.NodeFeatures.SupplementalGroupsPolicy') := SupplementalGroupsPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeFeatures.
@@ -22506,13 +22906,174 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSystemInfo_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSystemInfo.t). Admitted.
+#[global]Program Instance NodeSystemInfo_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSystemInfo.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "MachineID" ∷ l.[(v1.NodeSystemInfo.t), "MachineID"] ↦{dq} v.(v1.NodeSystemInfo.MachineID') ∗
+      "SystemUUID" ∷ l.[(v1.NodeSystemInfo.t), "SystemUUID"] ↦{dq} v.(v1.NodeSystemInfo.SystemUUID') ∗
+      "BootID" ∷ l.[(v1.NodeSystemInfo.t), "BootID"] ↦{dq} v.(v1.NodeSystemInfo.BootID') ∗
+      "KernelVersion" ∷ l.[(v1.NodeSystemInfo.t), "KernelVersion"] ↦{dq} v.(v1.NodeSystemInfo.KernelVersion') ∗
+      "OSImage" ∷ l.[(v1.NodeSystemInfo.t), "OSImage"] ↦{dq} v.(v1.NodeSystemInfo.OSImage') ∗
+      "ContainerRuntimeVersion" ∷ l.[(v1.NodeSystemInfo.t), "ContainerRuntimeVersion"] ↦{dq} v.(v1.NodeSystemInfo.ContainerRuntimeVersion') ∗
+      "KubeletVersion" ∷ l.[(v1.NodeSystemInfo.t), "KubeletVersion"] ↦{dq} v.(v1.NodeSystemInfo.KubeletVersion') ∗
+      "KubeProxyVersion" ∷ l.[(v1.NodeSystemInfo.t), "KubeProxyVersion"] ↦{dq} v.(v1.NodeSystemInfo.KubeProxyVersion') ∗
+      "OperatingSystem" ∷ l.[(v1.NodeSystemInfo.t), "OperatingSystem"] ↦{dq} v.(v1.NodeSystemInfo.OperatingSystem') ∗
+      "Architecture" ∷ l.[(v1.NodeSystemInfo.t), "Architecture"] ↦{dq} v.(v1.NodeSystemInfo.Architecture') ∗
+      "Swap" ∷ l.[(v1.NodeSystemInfo.t), "Swap"] ↦{dq} v.(v1.NodeSystemInfo.Swap') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSystemInfo_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSystemInfo.t) (v1.NodeSystemInfoⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_MachineID l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "MachineID"] ↦{dq} (v.(v1.NodeSystemInfo.MachineID')))
+    (l.[(v1.NodeSystemInfo.t), "MachineID"] ↦{dq} (v.(v1.NodeSystemInfo.MachineID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_MachineID l (v : (v1.NodeSystemInfo.t)) MachineID' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "MachineID"] ↦ (v.(v1.NodeSystemInfo.MachineID')))
+    (l.[(v1.NodeSystemInfo.t), "MachineID"] ↦ MachineID')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.MachineID') := MachineID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_SystemUUID l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "SystemUUID"] ↦{dq} (v.(v1.NodeSystemInfo.SystemUUID')))
+    (l.[(v1.NodeSystemInfo.t), "SystemUUID"] ↦{dq} (v.(v1.NodeSystemInfo.SystemUUID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_SystemUUID l (v : (v1.NodeSystemInfo.t)) SystemUUID' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "SystemUUID"] ↦ (v.(v1.NodeSystemInfo.SystemUUID')))
+    (l.[(v1.NodeSystemInfo.t), "SystemUUID"] ↦ SystemUUID')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.SystemUUID') := SystemUUID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_BootID l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "BootID"] ↦{dq} (v.(v1.NodeSystemInfo.BootID')))
+    (l.[(v1.NodeSystemInfo.t), "BootID"] ↦{dq} (v.(v1.NodeSystemInfo.BootID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_BootID l (v : (v1.NodeSystemInfo.t)) BootID' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "BootID"] ↦ (v.(v1.NodeSystemInfo.BootID')))
+    (l.[(v1.NodeSystemInfo.t), "BootID"] ↦ BootID')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.BootID') := BootID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_KernelVersion l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KernelVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KernelVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KernelVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KernelVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_KernelVersion l (v : (v1.NodeSystemInfo.t)) KernelVersion' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KernelVersion"] ↦ (v.(v1.NodeSystemInfo.KernelVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KernelVersion"] ↦ KernelVersion')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.KernelVersion') := KernelVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_OSImage l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "OSImage"] ↦{dq} (v.(v1.NodeSystemInfo.OSImage')))
+    (l.[(v1.NodeSystemInfo.t), "OSImage"] ↦{dq} (v.(v1.NodeSystemInfo.OSImage')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_OSImage l (v : (v1.NodeSystemInfo.t)) OSImage' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "OSImage"] ↦ (v.(v1.NodeSystemInfo.OSImage')))
+    (l.[(v1.NodeSystemInfo.t), "OSImage"] ↦ OSImage')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.OSImage') := OSImage'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_ContainerRuntimeVersion l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "ContainerRuntimeVersion"] ↦{dq} (v.(v1.NodeSystemInfo.ContainerRuntimeVersion')))
+    (l.[(v1.NodeSystemInfo.t), "ContainerRuntimeVersion"] ↦{dq} (v.(v1.NodeSystemInfo.ContainerRuntimeVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_ContainerRuntimeVersion l (v : (v1.NodeSystemInfo.t)) ContainerRuntimeVersion' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "ContainerRuntimeVersion"] ↦ (v.(v1.NodeSystemInfo.ContainerRuntimeVersion')))
+    (l.[(v1.NodeSystemInfo.t), "ContainerRuntimeVersion"] ↦ ContainerRuntimeVersion')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.ContainerRuntimeVersion') := ContainerRuntimeVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_KubeletVersion l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KubeletVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KubeletVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KubeletVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KubeletVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_KubeletVersion l (v : (v1.NodeSystemInfo.t)) KubeletVersion' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KubeletVersion"] ↦ (v.(v1.NodeSystemInfo.KubeletVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KubeletVersion"] ↦ KubeletVersion')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.KubeletVersion') := KubeletVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_KubeProxyVersion l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KubeProxyVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KubeProxyVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KubeProxyVersion"] ↦{dq} (v.(v1.NodeSystemInfo.KubeProxyVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_KubeProxyVersion l (v : (v1.NodeSystemInfo.t)) KubeProxyVersion' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "KubeProxyVersion"] ↦ (v.(v1.NodeSystemInfo.KubeProxyVersion')))
+    (l.[(v1.NodeSystemInfo.t), "KubeProxyVersion"] ↦ KubeProxyVersion')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.KubeProxyVersion') := KubeProxyVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_OperatingSystem l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "OperatingSystem"] ↦{dq} (v.(v1.NodeSystemInfo.OperatingSystem')))
+    (l.[(v1.NodeSystemInfo.t), "OperatingSystem"] ↦{dq} (v.(v1.NodeSystemInfo.OperatingSystem')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_OperatingSystem l (v : (v1.NodeSystemInfo.t)) OperatingSystem' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "OperatingSystem"] ↦ (v.(v1.NodeSystemInfo.OperatingSystem')))
+    (l.[(v1.NodeSystemInfo.t), "OperatingSystem"] ↦ OperatingSystem')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.OperatingSystem') := OperatingSystem'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_Architecture l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "Architecture"] ↦{dq} (v.(v1.NodeSystemInfo.Architecture')))
+    (l.[(v1.NodeSystemInfo.t), "Architecture"] ↦{dq} (v.(v1.NodeSystemInfo.Architecture')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_Architecture l (v : (v1.NodeSystemInfo.t)) Architecture' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "Architecture"] ↦ (v.(v1.NodeSystemInfo.Architecture')))
+    (l.[(v1.NodeSystemInfo.t), "Architecture"] ↦ Architecture')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.Architecture') := Architecture'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSystemInfo_access_load_Swap l (v : (v1.NodeSystemInfo.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "Swap"] ↦{dq} (v.(v1.NodeSystemInfo.Swap')))
+    (l.[(v1.NodeSystemInfo.t), "Swap"] ↦{dq} (v.(v1.NodeSystemInfo.Swap')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSystemInfo_access_store_Swap l (v : (v1.NodeSystemInfo.t)) Swap' :
+  AccessStrict
+    (l.[(v1.NodeSystemInfo.t), "Swap"] ↦ (v.(v1.NodeSystemInfo.Swap')))
+    (l.[(v1.NodeSystemInfo.t), "Swap"] ↦ Swap')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSystemInfo.Swap') := Swap'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSystemInfo.
@@ -22526,13 +23087,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSwapStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSwapStatus.t). Admitted.
+#[global]Program Instance NodeSwapStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSwapStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Capacity" ∷ l.[(v1.NodeSwapStatus.t), "Capacity"] ↦{dq} v.(v1.NodeSwapStatus.Capacity') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSwapStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSwapStatus.t) (v1.NodeSwapStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSwapStatus_access_load_Capacity l (v : (v1.NodeSwapStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSwapStatus.t), "Capacity"] ↦{dq} (v.(v1.NodeSwapStatus.Capacity')))
+    (l.[(v1.NodeSwapStatus.t), "Capacity"] ↦{dq} (v.(v1.NodeSwapStatus.Capacity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSwapStatus_access_store_Capacity l (v : (v1.NodeSwapStatus.t)) Capacity' :
+  AccessStrict
+    (l.[(v1.NodeSwapStatus.t), "Capacity"] ↦ (v.(v1.NodeSwapStatus.Capacity')))
+    (l.[(v1.NodeSwapStatus.t), "Capacity"] ↦ Capacity')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSwapStatus.Capacity') := Capacity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSwapStatus.
@@ -22546,13 +23128,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeConfigStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeConfigStatus.t). Admitted.
+#[global]Program Instance NodeConfigStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeConfigStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Assigned" ∷ l.[(v1.NodeConfigStatus.t), "Assigned"] ↦{dq} v.(v1.NodeConfigStatus.Assigned') ∗
+      "Active" ∷ l.[(v1.NodeConfigStatus.t), "Active"] ↦{dq} v.(v1.NodeConfigStatus.Active') ∗
+      "LastKnownGood" ∷ l.[(v1.NodeConfigStatus.t), "LastKnownGood"] ↦{dq} v.(v1.NodeConfigStatus.LastKnownGood') ∗
+      "Error" ∷ l.[(v1.NodeConfigStatus.t), "Error"] ↦{dq} v.(v1.NodeConfigStatus.Error') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeConfigStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeConfigStatus.t) (v1.NodeConfigStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeConfigStatus_access_load_Assigned l (v : (v1.NodeConfigStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Assigned"] ↦{dq} (v.(v1.NodeConfigStatus.Assigned')))
+    (l.[(v1.NodeConfigStatus.t), "Assigned"] ↦{dq} (v.(v1.NodeConfigStatus.Assigned')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeConfigStatus_access_store_Assigned l (v : (v1.NodeConfigStatus.t)) Assigned' :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Assigned"] ↦ (v.(v1.NodeConfigStatus.Assigned')))
+    (l.[(v1.NodeConfigStatus.t), "Assigned"] ↦ Assigned')
+    (l ↦ v) (l ↦ (v <|(v1.NodeConfigStatus.Assigned') := Assigned'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeConfigStatus_access_load_Active l (v : (v1.NodeConfigStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Active"] ↦{dq} (v.(v1.NodeConfigStatus.Active')))
+    (l.[(v1.NodeConfigStatus.t), "Active"] ↦{dq} (v.(v1.NodeConfigStatus.Active')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeConfigStatus_access_store_Active l (v : (v1.NodeConfigStatus.t)) Active' :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Active"] ↦ (v.(v1.NodeConfigStatus.Active')))
+    (l.[(v1.NodeConfigStatus.t), "Active"] ↦ Active')
+    (l ↦ v) (l ↦ (v <|(v1.NodeConfigStatus.Active') := Active'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeConfigStatus_access_load_LastKnownGood l (v : (v1.NodeConfigStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "LastKnownGood"] ↦{dq} (v.(v1.NodeConfigStatus.LastKnownGood')))
+    (l.[(v1.NodeConfigStatus.t), "LastKnownGood"] ↦{dq} (v.(v1.NodeConfigStatus.LastKnownGood')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeConfigStatus_access_store_LastKnownGood l (v : (v1.NodeConfigStatus.t)) LastKnownGood' :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "LastKnownGood"] ↦ (v.(v1.NodeConfigStatus.LastKnownGood')))
+    (l.[(v1.NodeConfigStatus.t), "LastKnownGood"] ↦ LastKnownGood')
+    (l ↦ v) (l ↦ (v <|(v1.NodeConfigStatus.LastKnownGood') := LastKnownGood'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeConfigStatus_access_load_Error l (v : (v1.NodeConfigStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Error"] ↦{dq} (v.(v1.NodeConfigStatus.Error')))
+    (l.[(v1.NodeConfigStatus.t), "Error"] ↦{dq} (v.(v1.NodeConfigStatus.Error')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeConfigStatus_access_store_Error l (v : (v1.NodeConfigStatus.t)) Error' :
+  AccessStrict
+    (l.[(v1.NodeConfigStatus.t), "Error"] ↦ (v.(v1.NodeConfigStatus.Error')))
+    (l.[(v1.NodeConfigStatus.t), "Error"] ↦ Error')
+    (l ↦ v) (l ↦ (v <|(v1.NodeConfigStatus.Error') := Error'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeConfigStatus.
@@ -22566,36 +23211,205 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeStatus.t). Admitted.
+#[global]Program Instance NodeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Capacity" ∷ l.[(v1.NodeStatus.t), "Capacity"] ↦{dq} v.(v1.NodeStatus.Capacity') ∗
+      "Allocatable" ∷ l.[(v1.NodeStatus.t), "Allocatable"] ↦{dq} v.(v1.NodeStatus.Allocatable') ∗
+      "Phase" ∷ l.[(v1.NodeStatus.t), "Phase"] ↦{dq} v.(v1.NodeStatus.Phase') ∗
+      "Conditions" ∷ l.[(v1.NodeStatus.t), "Conditions"] ↦{dq} v.(v1.NodeStatus.Conditions') ∗
+      "Addresses" ∷ l.[(v1.NodeStatus.t), "Addresses"] ↦{dq} v.(v1.NodeStatus.Addresses') ∗
+      "DaemonEndpoints" ∷ l.[(v1.NodeStatus.t), "DaemonEndpoints"] ↦{dq} v.(v1.NodeStatus.DaemonEndpoints') ∗
+      "NodeInfo" ∷ l.[(v1.NodeStatus.t), "NodeInfo"] ↦{dq} v.(v1.NodeStatus.NodeInfo') ∗
+      "Images" ∷ l.[(v1.NodeStatus.t), "Images"] ↦{dq} v.(v1.NodeStatus.Images') ∗
+      "VolumesInUse" ∷ l.[(v1.NodeStatus.t), "VolumesInUse"] ↦{dq} v.(v1.NodeStatus.VolumesInUse') ∗
+      "VolumesAttached" ∷ l.[(v1.NodeStatus.t), "VolumesAttached"] ↦{dq} v.(v1.NodeStatus.VolumesAttached') ∗
+      "Config" ∷ l.[(v1.NodeStatus.t), "Config"] ↦{dq} v.(v1.NodeStatus.Config') ∗
+      "RuntimeHandlers" ∷ l.[(v1.NodeStatus.t), "RuntimeHandlers"] ↦{dq} v.(v1.NodeStatus.RuntimeHandlers') ∗
+      "Features" ∷ l.[(v1.NodeStatus.t), "Features"] ↦{dq} v.(v1.NodeStatus.Features') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeStatus.t) (v1.NodeStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeStatus_access_load_Capacity l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Capacity"] ↦{dq} (v.(v1.NodeStatus.Capacity')))
+    (l.[(v1.NodeStatus.t), "Capacity"] ↦{dq} (v.(v1.NodeStatus.Capacity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Capacity l (v : (v1.NodeStatus.t)) Capacity' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Capacity"] ↦ (v.(v1.NodeStatus.Capacity')))
+    (l.[(v1.NodeStatus.t), "Capacity"] ↦ Capacity')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Capacity') := Capacity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Allocatable l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Allocatable"] ↦{dq} (v.(v1.NodeStatus.Allocatable')))
+    (l.[(v1.NodeStatus.t), "Allocatable"] ↦{dq} (v.(v1.NodeStatus.Allocatable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Allocatable l (v : (v1.NodeStatus.t)) Allocatable' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Allocatable"] ↦ (v.(v1.NodeStatus.Allocatable')))
+    (l.[(v1.NodeStatus.t), "Allocatable"] ↦ Allocatable')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Allocatable') := Allocatable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Phase l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Phase"] ↦{dq} (v.(v1.NodeStatus.Phase')))
+    (l.[(v1.NodeStatus.t), "Phase"] ↦{dq} (v.(v1.NodeStatus.Phase')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Phase l (v : (v1.NodeStatus.t)) Phase' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Phase"] ↦ (v.(v1.NodeStatus.Phase')))
+    (l.[(v1.NodeStatus.t), "Phase"] ↦ Phase')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Phase') := Phase'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Conditions l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Conditions"] ↦{dq} (v.(v1.NodeStatus.Conditions')))
+    (l.[(v1.NodeStatus.t), "Conditions"] ↦{dq} (v.(v1.NodeStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Conditions l (v : (v1.NodeStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Conditions"] ↦ (v.(v1.NodeStatus.Conditions')))
+    (l.[(v1.NodeStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Addresses l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Addresses"] ↦{dq} (v.(v1.NodeStatus.Addresses')))
+    (l.[(v1.NodeStatus.t), "Addresses"] ↦{dq} (v.(v1.NodeStatus.Addresses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Addresses l (v : (v1.NodeStatus.t)) Addresses' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Addresses"] ↦ (v.(v1.NodeStatus.Addresses')))
+    (l.[(v1.NodeStatus.t), "Addresses"] ↦ Addresses')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Addresses') := Addresses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_DaemonEndpoints l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "DaemonEndpoints"] ↦{dq} (v.(v1.NodeStatus.DaemonEndpoints')))
+    (l.[(v1.NodeStatus.t), "DaemonEndpoints"] ↦{dq} (v.(v1.NodeStatus.DaemonEndpoints')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_DaemonEndpoints l (v : (v1.NodeStatus.t)) DaemonEndpoints' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "DaemonEndpoints"] ↦ (v.(v1.NodeStatus.DaemonEndpoints')))
+    (l.[(v1.NodeStatus.t), "DaemonEndpoints"] ↦ DaemonEndpoints')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.DaemonEndpoints') := DaemonEndpoints'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_NodeInfo l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "NodeInfo"] ↦{dq} (v.(v1.NodeStatus.NodeInfo')))
+    (l.[(v1.NodeStatus.t), "NodeInfo"] ↦{dq} (v.(v1.NodeStatus.NodeInfo')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_NodeInfo l (v : (v1.NodeStatus.t)) NodeInfo' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "NodeInfo"] ↦ (v.(v1.NodeStatus.NodeInfo')))
+    (l.[(v1.NodeStatus.t), "NodeInfo"] ↦ NodeInfo')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.NodeInfo') := NodeInfo'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Images l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Images"] ↦{dq} (v.(v1.NodeStatus.Images')))
+    (l.[(v1.NodeStatus.t), "Images"] ↦{dq} (v.(v1.NodeStatus.Images')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Images l (v : (v1.NodeStatus.t)) Images' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Images"] ↦ (v.(v1.NodeStatus.Images')))
+    (l.[(v1.NodeStatus.t), "Images"] ↦ Images')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Images') := Images'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_VolumesInUse l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "VolumesInUse"] ↦{dq} (v.(v1.NodeStatus.VolumesInUse')))
+    (l.[(v1.NodeStatus.t), "VolumesInUse"] ↦{dq} (v.(v1.NodeStatus.VolumesInUse')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_VolumesInUse l (v : (v1.NodeStatus.t)) VolumesInUse' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "VolumesInUse"] ↦ (v.(v1.NodeStatus.VolumesInUse')))
+    (l.[(v1.NodeStatus.t), "VolumesInUse"] ↦ VolumesInUse')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.VolumesInUse') := VolumesInUse'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_VolumesAttached l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "VolumesAttached"] ↦{dq} (v.(v1.NodeStatus.VolumesAttached')))
+    (l.[(v1.NodeStatus.t), "VolumesAttached"] ↦{dq} (v.(v1.NodeStatus.VolumesAttached')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_VolumesAttached l (v : (v1.NodeStatus.t)) VolumesAttached' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "VolumesAttached"] ↦ (v.(v1.NodeStatus.VolumesAttached')))
+    (l.[(v1.NodeStatus.t), "VolumesAttached"] ↦ VolumesAttached')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.VolumesAttached') := VolumesAttached'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Config l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Config"] ↦{dq} (v.(v1.NodeStatus.Config')))
+    (l.[(v1.NodeStatus.t), "Config"] ↦{dq} (v.(v1.NodeStatus.Config')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Config l (v : (v1.NodeStatus.t)) Config' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Config"] ↦ (v.(v1.NodeStatus.Config')))
+    (l.[(v1.NodeStatus.t), "Config"] ↦ Config')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Config') := Config'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_RuntimeHandlers l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "RuntimeHandlers"] ↦{dq} (v.(v1.NodeStatus.RuntimeHandlers')))
+    (l.[(v1.NodeStatus.t), "RuntimeHandlers"] ↦{dq} (v.(v1.NodeStatus.RuntimeHandlers')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_RuntimeHandlers l (v : (v1.NodeStatus.t)) RuntimeHandlers' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "RuntimeHandlers"] ↦ (v.(v1.NodeStatus.RuntimeHandlers')))
+    (l.[(v1.NodeStatus.t), "RuntimeHandlers"] ↦ RuntimeHandlers')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.RuntimeHandlers') := RuntimeHandlers'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeStatus_access_load_Features l (v : (v1.NodeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Features"] ↦{dq} (v.(v1.NodeStatus.Features')))
+    (l.[(v1.NodeStatus.t), "Features"] ↦{dq} (v.(v1.NodeStatus.Features')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeStatus_access_store_Features l (v : (v1.NodeStatus.t)) Features' :
+  AccessStrict
+    (l.[(v1.NodeStatus.t), "Features"] ↦ (v.(v1.NodeStatus.Features')))
+    (l.[(v1.NodeStatus.t), "Features"] ↦ Features')
+    (l ↦ v) (l ↦ (v <|(v1.NodeStatus.Features') := Features'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeStatus.
-
-Module UniqueVolumeName.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance UniqueVolumeName_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.UniqueVolumeName.t). Admitted.
-
-#[global] Instance UniqueVolumeName_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.UniqueVolumeName.t) (v1.UniqueVolumeNameⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End UniqueVolumeName.
 
 Module AttachedVolume.
 Section def.
@@ -22606,13 +23420,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance AttachedVolume_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AttachedVolume.t). Admitted.
+#[global]Program Instance AttachedVolume_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AttachedVolume.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.AttachedVolume.t), "Name"] ↦{dq} v.(v1.AttachedVolume.Name') ∗
+      "DevicePath" ∷ l.[(v1.AttachedVolume.t), "DevicePath"] ↦{dq} v.(v1.AttachedVolume.DevicePath') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance AttachedVolume_into_val_typed
    :
   IntoValTypedUnderlying (v1.AttachedVolume.t) (v1.AttachedVolumeⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance AttachedVolume_access_load_Name l (v : (v1.AttachedVolume.t)) dq :
+  AccessStrict
+    (l.[(v1.AttachedVolume.t), "Name"] ↦{dq} (v.(v1.AttachedVolume.Name')))
+    (l.[(v1.AttachedVolume.t), "Name"] ↦{dq} (v.(v1.AttachedVolume.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AttachedVolume_access_store_Name l (v : (v1.AttachedVolume.t)) Name' :
+  AccessStrict
+    (l.[(v1.AttachedVolume.t), "Name"] ↦ (v.(v1.AttachedVolume.Name')))
+    (l.[(v1.AttachedVolume.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.AttachedVolume.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AttachedVolume_access_load_DevicePath l (v : (v1.AttachedVolume.t)) dq :
+  AccessStrict
+    (l.[(v1.AttachedVolume.t), "DevicePath"] ↦{dq} (v.(v1.AttachedVolume.DevicePath')))
+    (l.[(v1.AttachedVolume.t), "DevicePath"] ↦{dq} (v.(v1.AttachedVolume.DevicePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AttachedVolume_access_store_DevicePath l (v : (v1.AttachedVolume.t)) DevicePath' :
+  AccessStrict
+    (l.[(v1.AttachedVolume.t), "DevicePath"] ↦ (v.(v1.AttachedVolume.DevicePath')))
+    (l.[(v1.AttachedVolume.t), "DevicePath"] ↦ DevicePath')
+    (l ↦ v) (l ↦ (v <|(v1.AttachedVolume.DevicePath') := DevicePath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End AttachedVolume.
@@ -22686,56 +23535,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerImage_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerImage.t). Admitted.
+#[global]Program Instance ContainerImage_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerImage.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Names" ∷ l.[(v1.ContainerImage.t), "Names"] ↦{dq} v.(v1.ContainerImage.Names') ∗
+      "SizeBytes" ∷ l.[(v1.ContainerImage.t), "SizeBytes"] ↦{dq} v.(v1.ContainerImage.SizeBytes') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerImage_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerImage.t) (v1.ContainerImageⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerImage_access_load_Names l (v : (v1.ContainerImage.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerImage.t), "Names"] ↦{dq} (v.(v1.ContainerImage.Names')))
+    (l.[(v1.ContainerImage.t), "Names"] ↦{dq} (v.(v1.ContainerImage.Names')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerImage_access_store_Names l (v : (v1.ContainerImage.t)) Names' :
+  AccessStrict
+    (l.[(v1.ContainerImage.t), "Names"] ↦ (v.(v1.ContainerImage.Names')))
+    (l.[(v1.ContainerImage.t), "Names"] ↦ Names')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerImage.Names') := Names'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerImage_access_load_SizeBytes l (v : (v1.ContainerImage.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerImage.t), "SizeBytes"] ↦{dq} (v.(v1.ContainerImage.SizeBytes')))
+    (l.[(v1.ContainerImage.t), "SizeBytes"] ↦{dq} (v.(v1.ContainerImage.SizeBytes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerImage_access_store_SizeBytes l (v : (v1.ContainerImage.t)) SizeBytes' :
+  AccessStrict
+    (l.[(v1.ContainerImage.t), "SizeBytes"] ↦ (v.(v1.ContainerImage.SizeBytes')))
+    (l.[(v1.ContainerImage.t), "SizeBytes"] ↦ SizeBytes')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerImage.SizeBytes') := SizeBytes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerImage.
-
-Module NodePhase.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance NodePhase_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodePhase.t). Admitted.
-
-#[global] Instance NodePhase_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.NodePhase.t) (v1.NodePhaseⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End NodePhase.
-
-Module NodeConditionType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance NodeConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeConditionType.t). Admitted.
-
-#[global] Instance NodeConditionType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.NodeConditionType.t) (v1.NodeConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End NodeConditionType.
 
 Module NodeCondition.
 Section def.
@@ -22746,36 +23590,107 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeCondition.t). Admitted.
+#[global]Program Instance NodeCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.NodeCondition.t), "Type"] ↦{dq} v.(v1.NodeCondition.Type') ∗
+      "Status" ∷ l.[(v1.NodeCondition.t), "Status"] ↦{dq} v.(v1.NodeCondition.Status') ∗
+      "LastHeartbeatTime" ∷ l.[(v1.NodeCondition.t), "LastHeartbeatTime"] ↦{dq} v.(v1.NodeCondition.LastHeartbeatTime') ∗
+      "LastTransitionTime" ∷ l.[(v1.NodeCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.NodeCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.NodeCondition.t), "Reason"] ↦{dq} v.(v1.NodeCondition.Reason') ∗
+      "Message" ∷ l.[(v1.NodeCondition.t), "Message"] ↦{dq} v.(v1.NodeCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeCondition.t) (v1.NodeConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeCondition_access_load_Type l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Type"] ↦{dq} (v.(v1.NodeCondition.Type')))
+    (l.[(v1.NodeCondition.t), "Type"] ↦{dq} (v.(v1.NodeCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_Type l (v : (v1.NodeCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Type"] ↦ (v.(v1.NodeCondition.Type')))
+    (l.[(v1.NodeCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeCondition_access_load_Status l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Status"] ↦{dq} (v.(v1.NodeCondition.Status')))
+    (l.[(v1.NodeCondition.t), "Status"] ↦{dq} (v.(v1.NodeCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_Status l (v : (v1.NodeCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Status"] ↦ (v.(v1.NodeCondition.Status')))
+    (l.[(v1.NodeCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeCondition_access_load_LastHeartbeatTime l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "LastHeartbeatTime"] ↦{dq} (v.(v1.NodeCondition.LastHeartbeatTime')))
+    (l.[(v1.NodeCondition.t), "LastHeartbeatTime"] ↦{dq} (v.(v1.NodeCondition.LastHeartbeatTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_LastHeartbeatTime l (v : (v1.NodeCondition.t)) LastHeartbeatTime' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "LastHeartbeatTime"] ↦ (v.(v1.NodeCondition.LastHeartbeatTime')))
+    (l.[(v1.NodeCondition.t), "LastHeartbeatTime"] ↦ LastHeartbeatTime')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.LastHeartbeatTime') := LastHeartbeatTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeCondition_access_load_LastTransitionTime l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.NodeCondition.LastTransitionTime')))
+    (l.[(v1.NodeCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.NodeCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_LastTransitionTime l (v : (v1.NodeCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "LastTransitionTime"] ↦ (v.(v1.NodeCondition.LastTransitionTime')))
+    (l.[(v1.NodeCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeCondition_access_load_Reason l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Reason"] ↦{dq} (v.(v1.NodeCondition.Reason')))
+    (l.[(v1.NodeCondition.t), "Reason"] ↦{dq} (v.(v1.NodeCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_Reason l (v : (v1.NodeCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Reason"] ↦ (v.(v1.NodeCondition.Reason')))
+    (l.[(v1.NodeCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeCondition_access_load_Message l (v : (v1.NodeCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Message"] ↦{dq} (v.(v1.NodeCondition.Message')))
+    (l.[(v1.NodeCondition.t), "Message"] ↦{dq} (v.(v1.NodeCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeCondition_access_store_Message l (v : (v1.NodeCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.NodeCondition.t), "Message"] ↦ (v.(v1.NodeCondition.Message')))
+    (l.[(v1.NodeCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.NodeCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeCondition.
-
-Module NodeAddressType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance NodeAddressType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeAddressType.t). Admitted.
-
-#[global] Instance NodeAddressType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.NodeAddressType.t) (v1.NodeAddressTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End NodeAddressType.
 
 Module NodeAddress.
 Section def.
@@ -22786,13 +23701,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeAddress_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeAddress.t). Admitted.
+#[global]Program Instance NodeAddress_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeAddress.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.NodeAddress.t), "Type"] ↦{dq} v.(v1.NodeAddress.Type') ∗
+      "Address" ∷ l.[(v1.NodeAddress.t), "Address"] ↦{dq} v.(v1.NodeAddress.Address') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeAddress_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeAddress.t) (v1.NodeAddressⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeAddress_access_load_Type l (v : (v1.NodeAddress.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeAddress.t), "Type"] ↦{dq} (v.(v1.NodeAddress.Type')))
+    (l.[(v1.NodeAddress.t), "Type"] ↦{dq} (v.(v1.NodeAddress.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeAddress_access_store_Type l (v : (v1.NodeAddress.t)) Type' :
+  AccessStrict
+    (l.[(v1.NodeAddress.t), "Type"] ↦ (v.(v1.NodeAddress.Type')))
+    (l.[(v1.NodeAddress.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.NodeAddress.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeAddress_access_load_Address l (v : (v1.NodeAddress.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeAddress.t), "Address"] ↦{dq} (v.(v1.NodeAddress.Address')))
+    (l.[(v1.NodeAddress.t), "Address"] ↦{dq} (v.(v1.NodeAddress.Address')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeAddress_access_store_Address l (v : (v1.NodeAddress.t)) Address' :
+  AccessStrict
+    (l.[(v1.NodeAddress.t), "Address"] ↦ (v.(v1.NodeAddress.Address')))
+    (l.[(v1.NodeAddress.t), "Address"] ↦ Address')
+    (l ↦ v) (l ↦ (v <|(v1.NodeAddress.Address') := Address'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeAddress.
@@ -22806,13 +23756,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Node_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Node.t). Admitted.
+#[global]Program Instance Node_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Node.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.Node.t), "TypeMeta"] ↦{dq} v.(v1.Node.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.Node.t), "ObjectMeta"] ↦{dq} v.(v1.Node.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.Node.t), "Spec"] ↦{dq} v.(v1.Node.Spec') ∗
+      "Status" ∷ l.[(v1.Node.t), "Status"] ↦{dq} v.(v1.Node.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Node_into_val_typed
    :
   IntoValTypedUnderlying (v1.Node.t) (v1.Nodeⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Node_access_load_TypeMeta l (v : (v1.Node.t)) dq :
+  AccessStrict
+    (l.[(v1.Node.t), "TypeMeta"] ↦{dq} (v.(v1.Node.TypeMeta')))
+    (l.[(v1.Node.t), "TypeMeta"] ↦{dq} (v.(v1.Node.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Node_access_store_TypeMeta l (v : (v1.Node.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.Node.t), "TypeMeta"] ↦ (v.(v1.Node.TypeMeta')))
+    (l.[(v1.Node.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Node.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Node_access_load_ObjectMeta l (v : (v1.Node.t)) dq :
+  AccessStrict
+    (l.[(v1.Node.t), "ObjectMeta"] ↦{dq} (v.(v1.Node.ObjectMeta')))
+    (l.[(v1.Node.t), "ObjectMeta"] ↦{dq} (v.(v1.Node.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Node_access_store_ObjectMeta l (v : (v1.Node.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.Node.t), "ObjectMeta"] ↦ (v.(v1.Node.ObjectMeta')))
+    (l.[(v1.Node.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Node.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Node_access_load_Spec l (v : (v1.Node.t)) dq :
+  AccessStrict
+    (l.[(v1.Node.t), "Spec"] ↦{dq} (v.(v1.Node.Spec')))
+    (l.[(v1.Node.t), "Spec"] ↦{dq} (v.(v1.Node.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Node_access_store_Spec l (v : (v1.Node.t)) Spec' :
+  AccessStrict
+    (l.[(v1.Node.t), "Spec"] ↦ (v.(v1.Node.Spec')))
+    (l.[(v1.Node.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.Node.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Node_access_load_Status l (v : (v1.Node.t)) dq :
+  AccessStrict
+    (l.[(v1.Node.t), "Status"] ↦{dq} (v.(v1.Node.Status')))
+    (l.[(v1.Node.t), "Status"] ↦{dq} (v.(v1.Node.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Node_access_store_Status l (v : (v1.Node.t)) Status' :
+  AccessStrict
+    (l.[(v1.Node.t), "Status"] ↦ (v.(v1.Node.Status')))
+    (l.[(v1.Node.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.Node.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Node.

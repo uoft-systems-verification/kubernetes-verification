@@ -1,4 +1,15 @@
 translate = [
+    # DaemonSet object fields and their update-strategy/condition dependencies.
+    "DaemonSet",
+    "DaemonSetSpec",
+    "DaemonSetStatus",
+    "DaemonSetUpdateStrategy",
+    "DaemonSetUpdateStrategyType",
+    "RollingUpdateDaemonSet",
+    "DaemonSetCondition",
+    "DaemonSetConditionType",
+    "RollingUpdateDaemonSetStrategyType",
+    "OnDeleteDaemonSetStrategyType",
     "ReplicaSet",
     # Promoted ObjectMeta methods used after meta.Accessor returns *ReplicaSet.
     "ReplicaSet.GetDeletionGracePeriodSeconds",

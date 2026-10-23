@@ -2243,36 +2243,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonSetUpdateStrategy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetUpdateStrategy.t). Admitted.
+#[global]Program Instance DaemonSetUpdateStrategy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetUpdateStrategy.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.DaemonSetUpdateStrategy.t), "Type"] ↦{dq} v.(v1.DaemonSetUpdateStrategy.Type') ∗
+      "RollingUpdate" ∷ l.[(v1.DaemonSetUpdateStrategy.t), "RollingUpdate"] ↦{dq} v.(v1.DaemonSetUpdateStrategy.RollingUpdate') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonSetUpdateStrategy_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonSetUpdateStrategy.t) (v1.DaemonSetUpdateStrategyⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonSetUpdateStrategy_access_load_Type l (v : (v1.DaemonSetUpdateStrategy.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetUpdateStrategy.t), "Type"] ↦{dq} (v.(v1.DaemonSetUpdateStrategy.Type')))
+    (l.[(v1.DaemonSetUpdateStrategy.t), "Type"] ↦{dq} (v.(v1.DaemonSetUpdateStrategy.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetUpdateStrategy_access_store_Type l (v : (v1.DaemonSetUpdateStrategy.t)) Type' :
+  AccessStrict
+    (l.[(v1.DaemonSetUpdateStrategy.t), "Type"] ↦ (v.(v1.DaemonSetUpdateStrategy.Type')))
+    (l.[(v1.DaemonSetUpdateStrategy.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetUpdateStrategy.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetUpdateStrategy_access_load_RollingUpdate l (v : (v1.DaemonSetUpdateStrategy.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetUpdateStrategy.t), "RollingUpdate"] ↦{dq} (v.(v1.DaemonSetUpdateStrategy.RollingUpdate')))
+    (l.[(v1.DaemonSetUpdateStrategy.t), "RollingUpdate"] ↦{dq} (v.(v1.DaemonSetUpdateStrategy.RollingUpdate')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetUpdateStrategy_access_store_RollingUpdate l (v : (v1.DaemonSetUpdateStrategy.t)) RollingUpdate' :
+  AccessStrict
+    (l.[(v1.DaemonSetUpdateStrategy.t), "RollingUpdate"] ↦ (v.(v1.DaemonSetUpdateStrategy.RollingUpdate')))
+    (l.[(v1.DaemonSetUpdateStrategy.t), "RollingUpdate"] ↦ RollingUpdate')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetUpdateStrategy.RollingUpdate') := RollingUpdate'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonSetUpdateStrategy.
-
-Module DaemonSetUpdateStrategyType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DaemonSetUpdateStrategyType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetUpdateStrategyType.t). Admitted.
-
-#[global] Instance DaemonSetUpdateStrategyType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DaemonSetUpdateStrategyType.t) (v1.DaemonSetUpdateStrategyTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DaemonSetUpdateStrategyType.
 
 Module RollingUpdateDaemonSet.
 Section def.
@@ -2283,13 +2298,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance RollingUpdateDaemonSet_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDaemonSet.t). Admitted.
+#[global]Program Instance RollingUpdateDaemonSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RollingUpdateDaemonSet.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "MaxUnavailable" ∷ l.[(v1.RollingUpdateDaemonSet.t), "MaxUnavailable"] ↦{dq} v.(v1.RollingUpdateDaemonSet.MaxUnavailable') ∗
+      "MaxSurge" ∷ l.[(v1.RollingUpdateDaemonSet.t), "MaxSurge"] ↦{dq} v.(v1.RollingUpdateDaemonSet.MaxSurge') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance RollingUpdateDaemonSet_into_val_typed
    :
   IntoValTypedUnderlying (v1.RollingUpdateDaemonSet.t) (v1.RollingUpdateDaemonSetⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance RollingUpdateDaemonSet_access_load_MaxUnavailable l (v : (v1.RollingUpdateDaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxUnavailable"] ↦{dq} (v.(v1.RollingUpdateDaemonSet.MaxUnavailable')))
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxUnavailable"] ↦{dq} (v.(v1.RollingUpdateDaemonSet.MaxUnavailable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RollingUpdateDaemonSet_access_store_MaxUnavailable l (v : (v1.RollingUpdateDaemonSet.t)) MaxUnavailable' :
+  AccessStrict
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxUnavailable"] ↦ (v.(v1.RollingUpdateDaemonSet.MaxUnavailable')))
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxUnavailable"] ↦ MaxUnavailable')
+    (l ↦ v) (l ↦ (v <|(v1.RollingUpdateDaemonSet.MaxUnavailable') := MaxUnavailable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RollingUpdateDaemonSet_access_load_MaxSurge l (v : (v1.RollingUpdateDaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxSurge"] ↦{dq} (v.(v1.RollingUpdateDaemonSet.MaxSurge')))
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxSurge"] ↦{dq} (v.(v1.RollingUpdateDaemonSet.MaxSurge')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RollingUpdateDaemonSet_access_store_MaxSurge l (v : (v1.RollingUpdateDaemonSet.t)) MaxSurge' :
+  AccessStrict
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxSurge"] ↦ (v.(v1.RollingUpdateDaemonSet.MaxSurge')))
+    (l.[(v1.RollingUpdateDaemonSet.t), "MaxSurge"] ↦ MaxSurge')
+    (l ↦ v) (l ↦ (v <|(v1.RollingUpdateDaemonSet.MaxSurge') := MaxSurge'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End RollingUpdateDaemonSet.
@@ -2303,13 +2353,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonSetSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetSpec.t). Admitted.
+#[global]Program Instance DaemonSetSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Selector" ∷ l.[(v1.DaemonSetSpec.t), "Selector"] ↦{dq} v.(v1.DaemonSetSpec.Selector') ∗
+      "Template" ∷ l.[(v1.DaemonSetSpec.t), "Template"] ↦{dq} v.(v1.DaemonSetSpec.Template') ∗
+      "UpdateStrategy" ∷ l.[(v1.DaemonSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.DaemonSetSpec.UpdateStrategy') ∗
+      "MinReadySeconds" ∷ l.[(v1.DaemonSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.DaemonSetSpec.MinReadySeconds') ∗
+      "RevisionHistoryLimit" ∷ l.[(v1.DaemonSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.DaemonSetSpec.RevisionHistoryLimit') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonSetSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonSetSpec.t) (v1.DaemonSetSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonSetSpec_access_load_Selector l (v : (v1.DaemonSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "Selector"] ↦{dq} (v.(v1.DaemonSetSpec.Selector')))
+    (l.[(v1.DaemonSetSpec.t), "Selector"] ↦{dq} (v.(v1.DaemonSetSpec.Selector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetSpec_access_store_Selector l (v : (v1.DaemonSetSpec.t)) Selector' :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "Selector"] ↦ (v.(v1.DaemonSetSpec.Selector')))
+    (l.[(v1.DaemonSetSpec.t), "Selector"] ↦ Selector')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetSpec.Selector') := Selector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetSpec_access_load_Template l (v : (v1.DaemonSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "Template"] ↦{dq} (v.(v1.DaemonSetSpec.Template')))
+    (l.[(v1.DaemonSetSpec.t), "Template"] ↦{dq} (v.(v1.DaemonSetSpec.Template')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetSpec_access_store_Template l (v : (v1.DaemonSetSpec.t)) Template' :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "Template"] ↦ (v.(v1.DaemonSetSpec.Template')))
+    (l.[(v1.DaemonSetSpec.t), "Template"] ↦ Template')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetSpec.Template') := Template'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetSpec_access_load_UpdateStrategy l (v : (v1.DaemonSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "UpdateStrategy"] ↦{dq} (v.(v1.DaemonSetSpec.UpdateStrategy')))
+    (l.[(v1.DaemonSetSpec.t), "UpdateStrategy"] ↦{dq} (v.(v1.DaemonSetSpec.UpdateStrategy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetSpec_access_store_UpdateStrategy l (v : (v1.DaemonSetSpec.t)) UpdateStrategy' :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "UpdateStrategy"] ↦ (v.(v1.DaemonSetSpec.UpdateStrategy')))
+    (l.[(v1.DaemonSetSpec.t), "UpdateStrategy"] ↦ UpdateStrategy')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetSpec.UpdateStrategy') := UpdateStrategy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetSpec_access_load_MinReadySeconds l (v : (v1.DaemonSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.DaemonSetSpec.MinReadySeconds')))
+    (l.[(v1.DaemonSetSpec.t), "MinReadySeconds"] ↦{dq} (v.(v1.DaemonSetSpec.MinReadySeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetSpec_access_store_MinReadySeconds l (v : (v1.DaemonSetSpec.t)) MinReadySeconds' :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "MinReadySeconds"] ↦ (v.(v1.DaemonSetSpec.MinReadySeconds')))
+    (l.[(v1.DaemonSetSpec.t), "MinReadySeconds"] ↦ MinReadySeconds')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetSpec.MinReadySeconds') := MinReadySeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetSpec_access_load_RevisionHistoryLimit l (v : (v1.DaemonSetSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.DaemonSetSpec.RevisionHistoryLimit')))
+    (l.[(v1.DaemonSetSpec.t), "RevisionHistoryLimit"] ↦{dq} (v.(v1.DaemonSetSpec.RevisionHistoryLimit')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetSpec_access_store_RevisionHistoryLimit l (v : (v1.DaemonSetSpec.t)) RevisionHistoryLimit' :
+  AccessStrict
+    (l.[(v1.DaemonSetSpec.t), "RevisionHistoryLimit"] ↦ (v.(v1.DaemonSetSpec.RevisionHistoryLimit')))
+    (l.[(v1.DaemonSetSpec.t), "RevisionHistoryLimit"] ↦ RevisionHistoryLimit')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetSpec.RevisionHistoryLimit') := RevisionHistoryLimit'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonSetSpec.
@@ -2323,36 +2450,163 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonSetStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetStatus.t). Admitted.
+#[global]Program Instance DaemonSetStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "CurrentNumberScheduled" ∷ l.[(v1.DaemonSetStatus.t), "CurrentNumberScheduled"] ↦{dq} v.(v1.DaemonSetStatus.CurrentNumberScheduled') ∗
+      "NumberMisscheduled" ∷ l.[(v1.DaemonSetStatus.t), "NumberMisscheduled"] ↦{dq} v.(v1.DaemonSetStatus.NumberMisscheduled') ∗
+      "DesiredNumberScheduled" ∷ l.[(v1.DaemonSetStatus.t), "DesiredNumberScheduled"] ↦{dq} v.(v1.DaemonSetStatus.DesiredNumberScheduled') ∗
+      "NumberReady" ∷ l.[(v1.DaemonSetStatus.t), "NumberReady"] ↦{dq} v.(v1.DaemonSetStatus.NumberReady') ∗
+      "ObservedGeneration" ∷ l.[(v1.DaemonSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.DaemonSetStatus.ObservedGeneration') ∗
+      "UpdatedNumberScheduled" ∷ l.[(v1.DaemonSetStatus.t), "UpdatedNumberScheduled"] ↦{dq} v.(v1.DaemonSetStatus.UpdatedNumberScheduled') ∗
+      "NumberAvailable" ∷ l.[(v1.DaemonSetStatus.t), "NumberAvailable"] ↦{dq} v.(v1.DaemonSetStatus.NumberAvailable') ∗
+      "NumberUnavailable" ∷ l.[(v1.DaemonSetStatus.t), "NumberUnavailable"] ↦{dq} v.(v1.DaemonSetStatus.NumberUnavailable') ∗
+      "CollisionCount" ∷ l.[(v1.DaemonSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.DaemonSetStatus.CollisionCount') ∗
+      "Conditions" ∷ l.[(v1.DaemonSetStatus.t), "Conditions"] ↦{dq} v.(v1.DaemonSetStatus.Conditions') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonSetStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonSetStatus.t) (v1.DaemonSetStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_CurrentNumberScheduled l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "CurrentNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.CurrentNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "CurrentNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.CurrentNumberScheduled')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_CurrentNumberScheduled l (v : (v1.DaemonSetStatus.t)) CurrentNumberScheduled' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "CurrentNumberScheduled"] ↦ (v.(v1.DaemonSetStatus.CurrentNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "CurrentNumberScheduled"] ↦ CurrentNumberScheduled')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.CurrentNumberScheduled') := CurrentNumberScheduled'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_NumberMisscheduled l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberMisscheduled"] ↦{dq} (v.(v1.DaemonSetStatus.NumberMisscheduled')))
+    (l.[(v1.DaemonSetStatus.t), "NumberMisscheduled"] ↦{dq} (v.(v1.DaemonSetStatus.NumberMisscheduled')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_NumberMisscheduled l (v : (v1.DaemonSetStatus.t)) NumberMisscheduled' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberMisscheduled"] ↦ (v.(v1.DaemonSetStatus.NumberMisscheduled')))
+    (l.[(v1.DaemonSetStatus.t), "NumberMisscheduled"] ↦ NumberMisscheduled')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.NumberMisscheduled') := NumberMisscheduled'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_DesiredNumberScheduled l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "DesiredNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.DesiredNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "DesiredNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.DesiredNumberScheduled')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_DesiredNumberScheduled l (v : (v1.DaemonSetStatus.t)) DesiredNumberScheduled' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "DesiredNumberScheduled"] ↦ (v.(v1.DaemonSetStatus.DesiredNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "DesiredNumberScheduled"] ↦ DesiredNumberScheduled')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.DesiredNumberScheduled') := DesiredNumberScheduled'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_NumberReady l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberReady"] ↦{dq} (v.(v1.DaemonSetStatus.NumberReady')))
+    (l.[(v1.DaemonSetStatus.t), "NumberReady"] ↦{dq} (v.(v1.DaemonSetStatus.NumberReady')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_NumberReady l (v : (v1.DaemonSetStatus.t)) NumberReady' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberReady"] ↦ (v.(v1.DaemonSetStatus.NumberReady')))
+    (l.[(v1.DaemonSetStatus.t), "NumberReady"] ↦ NumberReady')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.NumberReady') := NumberReady'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_ObservedGeneration l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.DaemonSetStatus.ObservedGeneration')))
+    (l.[(v1.DaemonSetStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.DaemonSetStatus.ObservedGeneration')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_ObservedGeneration l (v : (v1.DaemonSetStatus.t)) ObservedGeneration' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "ObservedGeneration"] ↦ (v.(v1.DaemonSetStatus.ObservedGeneration')))
+    (l.[(v1.DaemonSetStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_UpdatedNumberScheduled l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "UpdatedNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.UpdatedNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "UpdatedNumberScheduled"] ↦{dq} (v.(v1.DaemonSetStatus.UpdatedNumberScheduled')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_UpdatedNumberScheduled l (v : (v1.DaemonSetStatus.t)) UpdatedNumberScheduled' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "UpdatedNumberScheduled"] ↦ (v.(v1.DaemonSetStatus.UpdatedNumberScheduled')))
+    (l.[(v1.DaemonSetStatus.t), "UpdatedNumberScheduled"] ↦ UpdatedNumberScheduled')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.UpdatedNumberScheduled') := UpdatedNumberScheduled'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_NumberAvailable l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberAvailable"] ↦{dq} (v.(v1.DaemonSetStatus.NumberAvailable')))
+    (l.[(v1.DaemonSetStatus.t), "NumberAvailable"] ↦{dq} (v.(v1.DaemonSetStatus.NumberAvailable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_NumberAvailable l (v : (v1.DaemonSetStatus.t)) NumberAvailable' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberAvailable"] ↦ (v.(v1.DaemonSetStatus.NumberAvailable')))
+    (l.[(v1.DaemonSetStatus.t), "NumberAvailable"] ↦ NumberAvailable')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.NumberAvailable') := NumberAvailable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_NumberUnavailable l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberUnavailable"] ↦{dq} (v.(v1.DaemonSetStatus.NumberUnavailable')))
+    (l.[(v1.DaemonSetStatus.t), "NumberUnavailable"] ↦{dq} (v.(v1.DaemonSetStatus.NumberUnavailable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_NumberUnavailable l (v : (v1.DaemonSetStatus.t)) NumberUnavailable' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "NumberUnavailable"] ↦ (v.(v1.DaemonSetStatus.NumberUnavailable')))
+    (l.[(v1.DaemonSetStatus.t), "NumberUnavailable"] ↦ NumberUnavailable')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.NumberUnavailable') := NumberUnavailable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_CollisionCount l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "CollisionCount"] ↦{dq} (v.(v1.DaemonSetStatus.CollisionCount')))
+    (l.[(v1.DaemonSetStatus.t), "CollisionCount"] ↦{dq} (v.(v1.DaemonSetStatus.CollisionCount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_CollisionCount l (v : (v1.DaemonSetStatus.t)) CollisionCount' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "CollisionCount"] ↦ (v.(v1.DaemonSetStatus.CollisionCount')))
+    (l.[(v1.DaemonSetStatus.t), "CollisionCount"] ↦ CollisionCount')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.CollisionCount') := CollisionCount'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetStatus_access_load_Conditions l (v : (v1.DaemonSetStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "Conditions"] ↦{dq} (v.(v1.DaemonSetStatus.Conditions')))
+    (l.[(v1.DaemonSetStatus.t), "Conditions"] ↦{dq} (v.(v1.DaemonSetStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetStatus_access_store_Conditions l (v : (v1.DaemonSetStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.DaemonSetStatus.t), "Conditions"] ↦ (v.(v1.DaemonSetStatus.Conditions')))
+    (l.[(v1.DaemonSetStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonSetStatus.
-
-Module DaemonSetConditionType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DaemonSetConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetConditionType.t). Admitted.
-
-#[global] Instance DaemonSetConditionType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DaemonSetConditionType.t) (v1.DaemonSetConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DaemonSetConditionType.
 
 Module DaemonSetCondition.
 Section def.
@@ -2363,13 +2617,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonSetCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSetCondition.t). Admitted.
+#[global]Program Instance DaemonSetCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSetCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.DaemonSetCondition.t), "Type"] ↦{dq} v.(v1.DaemonSetCondition.Type') ∗
+      "Status" ∷ l.[(v1.DaemonSetCondition.t), "Status"] ↦{dq} v.(v1.DaemonSetCondition.Status') ∗
+      "LastTransitionTime" ∷ l.[(v1.DaemonSetCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.DaemonSetCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.DaemonSetCondition.t), "Reason"] ↦{dq} v.(v1.DaemonSetCondition.Reason') ∗
+      "Message" ∷ l.[(v1.DaemonSetCondition.t), "Message"] ↦{dq} v.(v1.DaemonSetCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonSetCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonSetCondition.t) (v1.DaemonSetConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonSetCondition_access_load_Type l (v : (v1.DaemonSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Type"] ↦{dq} (v.(v1.DaemonSetCondition.Type')))
+    (l.[(v1.DaemonSetCondition.t), "Type"] ↦{dq} (v.(v1.DaemonSetCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetCondition_access_store_Type l (v : (v1.DaemonSetCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Type"] ↦ (v.(v1.DaemonSetCondition.Type')))
+    (l.[(v1.DaemonSetCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetCondition_access_load_Status l (v : (v1.DaemonSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Status"] ↦{dq} (v.(v1.DaemonSetCondition.Status')))
+    (l.[(v1.DaemonSetCondition.t), "Status"] ↦{dq} (v.(v1.DaemonSetCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetCondition_access_store_Status l (v : (v1.DaemonSetCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Status"] ↦ (v.(v1.DaemonSetCondition.Status')))
+    (l.[(v1.DaemonSetCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetCondition_access_load_LastTransitionTime l (v : (v1.DaemonSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.DaemonSetCondition.LastTransitionTime')))
+    (l.[(v1.DaemonSetCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.DaemonSetCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetCondition_access_store_LastTransitionTime l (v : (v1.DaemonSetCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "LastTransitionTime"] ↦ (v.(v1.DaemonSetCondition.LastTransitionTime')))
+    (l.[(v1.DaemonSetCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetCondition_access_load_Reason l (v : (v1.DaemonSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Reason"] ↦{dq} (v.(v1.DaemonSetCondition.Reason')))
+    (l.[(v1.DaemonSetCondition.t), "Reason"] ↦{dq} (v.(v1.DaemonSetCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetCondition_access_store_Reason l (v : (v1.DaemonSetCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Reason"] ↦ (v.(v1.DaemonSetCondition.Reason')))
+    (l.[(v1.DaemonSetCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSetCondition_access_load_Message l (v : (v1.DaemonSetCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Message"] ↦{dq} (v.(v1.DaemonSetCondition.Message')))
+    (l.[(v1.DaemonSetCondition.t), "Message"] ↦{dq} (v.(v1.DaemonSetCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSetCondition_access_store_Message l (v : (v1.DaemonSetCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.DaemonSetCondition.t), "Message"] ↦ (v.(v1.DaemonSetCondition.Message')))
+    (l.[(v1.DaemonSetCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSetCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonSetCondition.
@@ -2383,13 +2714,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DaemonSet_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DaemonSet.t). Admitted.
+#[global]Program Instance DaemonSet_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DaemonSet.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.DaemonSet.t), "TypeMeta"] ↦{dq} v.(v1.DaemonSet.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.DaemonSet.t), "ObjectMeta"] ↦{dq} v.(v1.DaemonSet.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.DaemonSet.t), "Spec"] ↦{dq} v.(v1.DaemonSet.Spec') ∗
+      "Status" ∷ l.[(v1.DaemonSet.t), "Status"] ↦{dq} v.(v1.DaemonSet.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DaemonSet_into_val_typed
    :
   IntoValTypedUnderlying (v1.DaemonSet.t) (v1.DaemonSetⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DaemonSet_access_load_TypeMeta l (v : (v1.DaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "TypeMeta"] ↦{dq} (v.(v1.DaemonSet.TypeMeta')))
+    (l.[(v1.DaemonSet.t), "TypeMeta"] ↦{dq} (v.(v1.DaemonSet.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSet_access_store_TypeMeta l (v : (v1.DaemonSet.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "TypeMeta"] ↦ (v.(v1.DaemonSet.TypeMeta')))
+    (l.[(v1.DaemonSet.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSet.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSet_access_load_ObjectMeta l (v : (v1.DaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "ObjectMeta"] ↦{dq} (v.(v1.DaemonSet.ObjectMeta')))
+    (l.[(v1.DaemonSet.t), "ObjectMeta"] ↦{dq} (v.(v1.DaemonSet.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSet_access_store_ObjectMeta l (v : (v1.DaemonSet.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "ObjectMeta"] ↦ (v.(v1.DaemonSet.ObjectMeta')))
+    (l.[(v1.DaemonSet.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSet.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSet_access_load_Spec l (v : (v1.DaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "Spec"] ↦{dq} (v.(v1.DaemonSet.Spec')))
+    (l.[(v1.DaemonSet.t), "Spec"] ↦{dq} (v.(v1.DaemonSet.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSet_access_store_Spec l (v : (v1.DaemonSet.t)) Spec' :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "Spec"] ↦ (v.(v1.DaemonSet.Spec')))
+    (l.[(v1.DaemonSet.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSet.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DaemonSet_access_load_Status l (v : (v1.DaemonSet.t)) dq :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "Status"] ↦{dq} (v.(v1.DaemonSet.Status')))
+    (l.[(v1.DaemonSet.t), "Status"] ↦{dq} (v.(v1.DaemonSet.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DaemonSet_access_store_Status l (v : (v1.DaemonSet.t)) Status' :
+  AccessStrict
+    (l.[(v1.DaemonSet.t), "Status"] ↦ (v.(v1.DaemonSet.Status')))
+    (l.[(v1.DaemonSet.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.DaemonSet.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DaemonSet.
