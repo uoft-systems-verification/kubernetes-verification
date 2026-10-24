@@ -122,4 +122,13 @@ Lemma wp_NewConflict (resource : schema.GroupResource.t) (name : go_string)
 Proof.
 Admitted.
 
+(* Trusted boundary for the untranslated Kubernetes StatusError
+   representation and constructor. *)
+Lemma wp_NewBadRequest (reason : go_string) :
+  {{{ is_pkg_init api_errors_pkg.errors }}}
+    @! api_errors.NewBadRequest #reason
+  {{{ (err_l : loc), RET #err_l; True }}}.
+Proof.
+Admitted.
+
 End proof.

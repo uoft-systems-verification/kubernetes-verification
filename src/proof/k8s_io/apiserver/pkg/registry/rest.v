@@ -39,6 +39,24 @@ Lemma wp_FillObjectMetaSystemFields i l o m :
   }}}.
 Proof. Admitted.
 
+(* The call either leaves the object in the request namespace or returns an
+   error, which happens only when the object's namespace is set and differs from
+   the request namespace. *)
+Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace_general ns i l o m :
+  {{{ is_pkg_init rest ∗
+      ⌜ KObjectV.valid_interface i l o ⌝ ∗
+      ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m 1
+  }}}
+    @! rest.EnsureObjectNamespaceMatchesRequestNamespace #ns #(interface.ok i)
+  {{{ (err : interface.t), RET #err;
+      (⌜ err = interface.nil ⌝ ∗
+        ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) (m <| ObjectMetaV.Namespace' := ns |>) 1) ∨
+      ⌜ err ≠ interface.nil ∧ m.(ObjectMetaV.Namespace') ≠ ""%go ∧ m.(ObjectMetaV.Namespace') ≠ ns ⌝
+  }}}.
+Proof. Admitted.
+
+(* When the object's namespace is unset or already the request namespace, the
+   call succeeds. *)
 Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns i l o m :
   {{{ is_pkg_init rest ∗
       ⌜ KObjectV.valid_interface i l o ⌝ ∗
@@ -50,6 +68,13 @@ Lemma wp_EnsureObjectNamespaceMatchesRequestNamespace ns i l o m :
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o)
         (m <| ObjectMetaV.Namespace' := ns |>) 1
   }}}.
-Proof. Admitted.
+Proof.
+  iIntros (Φ) "(#Hpkg & %Hvalid & Hdeepown & %Hns) HΦ".
+  wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace_general with "[$Hpkg $Hdeepown]").
+  { done. }
+  iIntros (err) "[[-> Hdeepown] | (_ & %Hns_set & %Hns_ne)]".
+  - iApply "HΦ". iFrame.
+  - exfalso. destruct Hns; done.
+Qed.
 
 End proof.

@@ -62,14 +62,14 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) namespace name rs
-    dq pods terminating_bound :
-  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods
-      terminating_bound.
+    dq pods :
+  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags
     Hown_children_frag Hown_terminating_children_frag".
+  iDestruct "Hown_terminating_children_frag" as (terminating_bound) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as (Hrs_name_short & Hrs_template_finalizers_valid & Hlabels_bound & Hgeneration_nonneg).
   iAssert (is_pkg_init common) as "#Hcommon_init".
@@ -318,41 +318,38 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
   iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
   iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
-  iDestruct (big_sepL2_length with "Hall_deepown_pods") as %Hall_ptrs_len.
-  (* The written status is valid: the listed pods number at most
-     [length pods + terminating_bound] < 2^31, so both counts fit in int32, and
-     the observed generation is the non-negative generation of [rs]. *)
-  assert (ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
-      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') |>)) as Hstatus_valid_gen.
-  { pose proof (length_filter is_pod_alive all_pods) as Hfilter_len.
-    pose proof (Permutation_length Hactive_perm) as Hactive_len'.
-    apply Hstatus_valid.
-    - lia.
-    - lia.
-    - pose proof (f_equal ObjectMetaV.Generation' Hget_Hmeta_fields) as Hgen.
-      simpl in Hgen. rewrite Hgen. exact Hgeneration_nonneg. }
-  wp_apply (wp_updateReplicaSetStatus γ l c copy_l copy_phy rs_get status_c status dq
+  (* The computed status may be invalid (a pod count may overflow int32), so the
+     write may be rejected; the ReplicaSet's fragments come back either way. *)
+  wp_apply (wp_updateReplicaSetStatus_general γ l c copy_l copy_phy rs_get status_c status dq
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
-  { iFrame "#". iPureIntro. split; [done|exact Hstatus_valid_gen]. }
-  iIntros (result_l rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
+  { iFrame "#". iPureIntro. done. }
+  iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
   destruct Hchanged as (Hmeta_changed & _).
-  wp_auto_keep.  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
+  (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
+  assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
+    as Hliving_active_len.
+  { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
+  assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
+  { rewrite -Hliving_active_len. f_equal. apply filter_all.
+    intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
+  (* The managed pods are at most as many as the larger of the live pods and
+     the int32 desired count. *)
+  assert (Z.of_nat (length pods_managed) < 2 ^ 31) as Hpods'_bound.
+  { rewrite Hmanaged_len -Hpods_active_len.
+    pose proof (capped_replica_count_le_max (length (filter is_pod_alive pods)) (sint.nat n) (sint.nat burst))
+      as Hle.
+    pose proof (length_filter is_pod_alive pods) as Hfilter_len.
+    word. }
   iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods_managed (mutating_fractions dq) false terminating_bound'
-      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup
+      pods_managed (mutating_fractions dq) false
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup Hpods'_bound
     with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
       Hown_children_frag [$Hown_terminating_children_frag]")
     as "Hresources".
   assert (match_distance rs pods_managed ≤ match_distance rs pods) as Hdistance.
   {
   (* one sync moves the live count toward the desired count by at most [burst] *)
-    assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
-      as Hliving_active_len.
-    { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
-    assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
-    { rewrite -Hliving_active_len. f_equal. apply filter_all.
-      intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
     pose proof (capped_replica_count_distance (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
       as Hcap.
     rewrite -Hmanaged_len in Hcap.
@@ -360,7 +357,9 @@ Proof.
     rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hpods_active_len.
     lia.
   }
-  iApply ("HΦ" $! rs'' pods_managed terminating_bound' with "[$Hresources //]").
+  (* if err != nil { return err }; return manageReplicasErr *)
+  destruct err as [err_ok|]; wp_auto;
+    iApply ("HΦ" $! rs'' pods_managed with "[$Hresources //]").
 Qed.
 
 End proof.

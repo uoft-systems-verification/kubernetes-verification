@@ -179,4 +179,118 @@ Proof.
   destruct Hupdated as (_ & _ & Hstatus_updated). exact Hstatus_updated.
 Qed.
 
+(* A variant of [wp_ReplicaSetInterface__UpdateStatus] that does not require the
+   requested status to pass the guard, so the API server may reject it. Either
+   way the fragments describe some [rs'] that keeps [rs]'s metadata (up to
+   resource version) and spec; on an error [rs'] is [rs]. *)
+Lemma wp_ReplicaSetInterface__UpdateStatus_general γ l c namespace (ctx opts : val)
+    rs_l rs requested dq dq_in :
+  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hclient" ∷ is_rs_client c namespace ∗
+      "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
+      "Hinput" ∷ ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
+      "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') ∗
+      "Hstatus" ∷ own_status_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
+  }}}
+    (MethodResolve client_apps_v1.ReplicaSetInterface "UpdateStatus"%go #c) ctx #rs_l opts
+  {{{ (result_l : loc) (err : interface.t) rs', RET (#result_l, #err);
+      ⌜ ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ∧
+        rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
+      ReplicaSetV.deepown_l rs_l (rs <| ReplicaSetV.Status' := requested |>) dq_in ∗
+      own_meta_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
+      own_status_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) ∗
+      ⌜ ReplicaSetV.valid rs' ⌝
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
+  iDestruct "Hclient" as (cl v) "(-> & %Hns & #Hcl)".
+  wp_bind (MethodResolve client_apps_v1.ReplicaSetInterface _ _). wp_pure. wp_pures.
+  wp_method_call. rewrite /trusted_client_gentype.Client__UpdateStatusⁱᵐᵖˡ decide_True; try reflexivity.
+  rewrite /trusted_client_gentype.clientCreate. wp_call.
+  rewrite /trusted_client_gentype.clientType. wp_auto.
+  change (go.PointerType trusted_code.k8s_io.client_go.gentype.api_apps_v1.ReplicaSet)
+    with (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet).
+  try (rewrite !decide_True; try reflexivity).
+  try wp_auto.
+  rewrite Hns.
+  set input := rs <| ReplicaSetV.Status' := requested |>.
+  pose proof Hvalid as (Hvalid_typemeta & Hvalid_rv & Hvalid_meta & Hvalid_spec & _).
+  wp_apply (wp_State__ReplicaSetUpdateStatusTx_same_meta_general γ l namespace rs_l input dq_in
+    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.Status')
+    with "[$Hisk $Hinput $Hmeta $Hstatus]").
+  { iFrame "#". iPureIntro. split; done. }
+  iIntros (result_l err) "(Hinput & Hmeta & Hpost)".
+  iDestruct "Hpost" as "[(-> & %rs_c & %Hvalid' & %Hmeta_eq & _ & Hstatus) | (%Herr_ne & Hstatus)]".
+  2: {
+    wp_auto. rewrite decide_True; try reflexivity. wp_auto.
+    iApply ("HΦ" $! result_l err rs). iFrame. iPureIntro. split_and!; done. }
+  wp_auto. rewrite decide_True; try reflexivity. wp_auto.
+  (* [rs'] is [rs] with the stored metadata and status. *)
+  iApply ("HΦ" $! result_l interface.nil
+    (rs <| ReplicaSetV.ObjectMeta' := rs_c.(ReplicaSetV.ObjectMeta') |>
+        <| ReplicaSetV.Status' := rs_c.(ReplicaSetV.Status') |>)).
+  iFrame "Hinput Hstatus". iSplit.
+  { iPureIntro. simpl. split; done. }
+  iSplitL "Hmeta".
+  { iApply (kview.own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hmeta"). }
+  iPureIntro. destruct Hvalid' as (_ & Hrv' & Hmeta' & _ & Hstatus').
+  rewrite /ReplicaSetV.valid /=. split_and!; done.
+Qed.
+
+(* [c.Get(ctx, name, opts)] forwards to [State.ReplicaSetGet], which returns a
+   copy of the stored ReplicaSet described by the fragments. *)
+Lemma wp_ReplicaSetInterface__Get γ l c key namespace name (ctx opts : val)
+    uid dq dq_status kmeta kspec kstatus :
+  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hclient" ∷ is_rs_client c namespace ∗
+      "%Hkey_def" ∷ ⌜ key = {|
+        KKey.Kind' := "ReplicaSet"%go;
+        KKey.Namespace' := namespace;
+        KKey.Name' := name
+      |} ⌝ ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
+  }}}
+    (MethodResolve client_apps_v1.ReplicaSetInterface "Get"%go #c) ctx #name opts
+  {{{ rs_l rs, RET (#rs_l, #interface.nil);
+      "%Hvalid'" ∷ ⌜ KObjectV.valid (KObjectV.ReplicaSet rs) ⌝ ∗
+      "%Hextra_valid" ∷ ⌜ ReplicaSetV.extra_valid rs ⌝ ∗
+      "%Hkey_eq" ∷ ⌜ key = ReplicaSetV.key rs ⌝ ∗
+      "%Hmeta_eq" ∷ ⌜ ObjectMetaV.equiv_except_resource_version rs.(ReplicaSetV.ObjectMeta') kmeta ⌝ ∗
+      "%Hspec_eq" ∷ ⌜ kspec = rs.(ReplicaSetV.Spec') ⌝ ∗
+      "%Hstatus_eq" ∷ ⌜ kstatus = rs.(ReplicaSetV.Status') ⌝ ∗
+      "Hdeepown_l" ∷ ReplicaSetV.deepown_l rs_l rs 1 ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid dq kmeta ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.ReplicaSetSpec kspec) ∗
+      "Hown_status_frag" ∷ own_status_frag γ key uid dq_status (ObjectStatusV.ReplicaSetStatus kstatus)
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
+  iDestruct "Hclient" as (cl v) "(-> & %Hns & #Hcl)".
+  wp_bind (MethodResolve client_apps_v1.ReplicaSetInterface _ _). wp_pure. wp_pures.
+  wp_method_call. rewrite /trusted_client_gentype.Client__Getⁱᵐᵖˡ decide_True; try reflexivity.
+  rewrite /trusted_client_gentype.clientGet. wp_call.
+  rewrite /trusted_client_gentype.clientType. wp_auto.
+  rewrite Hns.
+  wp_apply (wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
+    with "[$Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
+  { iFrame "#". done. }
+  iIntros (rs_l rs) "Hpost".
+  wp_auto.
+  change (go.PointerType trusted_code.k8s_io.client_go.gentype.api_apps_v1.ReplicaSet)
+    with (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet).
+  try (rewrite !decide_True; try reflexivity).
+  try wp_auto.
+  iApply ("HΦ" with "Hpost").
+Qed.
+
 End proof.

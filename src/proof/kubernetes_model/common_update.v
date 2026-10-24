@@ -436,32 +436,85 @@ Proof.
     try contradiction; tauto.
 Qed.
 
-(** The request-level part of [KObjectV.valid_status_update]: everything except
-    the validity of the submitted status. *)
-Definition status_update_request_ok (kind namespace : go_string) (kobj : KObjectV.t) : Prop :=
-  kind = KObjectV.kind kobj ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
-  (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
-  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') ∧
-  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion') ∧
-  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
-  valid_labels (KObjectV.objectmeta kobj).(ObjectMetaV.Labels') ∧
-  valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
-  valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
-  valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
-  valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields').
-
-Lemma valid_status_update_request_ok kind namespace kmeta kstatus kobj :
+(** A valid status update carries a valid TypeMeta. *)
+Lemma valid_status_update_typemeta kind namespace kmeta kstatus kobj :
   KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
-  status_update_request_ok kind namespace kobj.
+  valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj).
 Proof.
-  intros Hvalid_status_update. rewrite /status_update_request_ok.
+  intros Hvalid_status_update.
   destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
     rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
       ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
       ?/DeploymentV.valid_status_update
       /ObjectMetaV.valid_update in Hvalid_status_update;
     try contradiction; tauto.
+Qed.
+
+(** A valid status update carries a valid resource version. *)
+Lemma valid_status_update_resource_version kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  valid_resource_version (KObjectV.objectmeta kobj).(ObjectMetaV.ResourceVersion').
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
+Qed.
+
+(** A valid status update names the object. *)
+Lemma valid_status_update_name_nonempty kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go.
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
+Qed.
+
+(** A valid status update names the object's kind. *)
+Lemma valid_status_update_kind kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  kind = KObjectV.kind kobj.
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
+Qed.
+
+(** A valid status update is sent to the object's namespace. *)
+Lemma valid_status_update_namespace kind namespace kmeta kstatus kobj :
+  KObjectV.valid_status_update kind namespace kmeta kstatus kobj →
+  namespace = (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace').
+Proof.
+  intros Hvalid_status_update.
+  destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
+    rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
+      ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
+      ?/DeploymentV.valid_status_update
+      /ObjectMetaV.valid_update in Hvalid_status_update;
+    try contradiction; simpl; tauto.
+Qed.
+
+(** Every object kind allows an update without a resource version. *)
+Lemma wp_allowUnconditionalUpdate_kind (kobj : KObjectV.t) :
+  {{{ is_pkg_init apimodel }}}
+    @! apimodel.allowUnconditionalUpdate #(KObjectV.kind kobj)
+  {{{ RET (#true, #interface.nil); True }}}.
+Proof.
+  wp_start. wp_auto.
+  destruct kobj; simpl; rewrite ?/PodV.kind ?/ReplicaSetV.kind ?/PersistentVolumeClaimV.kind
+    ?/StatefulSetV.kind ?/DeploymentV.kind; wp_auto; by iApply "HΦ".
 Qed.
 
 (** The status-update guard depends on the stored metadata only up to its
