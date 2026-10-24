@@ -2,16 +2,9 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
-(** Important modeling assumption: we currently ignore fields that are not
-    represented by the Kubernetes view types. In particular, we assume that
-    validation of those Go fields always succeeds. We will gradually add those
-    fields to the view types and verify their validation. Proofs using the
-    specification of [applyValidationAndDefaulting] do not need to own or
-    reason about the unmodeled fields.
-
-    TODO: [KObjectV.deepown_l] must existentially own all reachable Go fields,
-    including unmodeled fields, so helper calls cannot mutate memory outside
-    their separation-logic footprint. *)
+(** Pod create contracts use the complete recursive view and the full-input
+    defaulting/validation contracts in [PodAPI]. The imported implementations
+    remain trusted. Other resource views are still partial. *)
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -67,6 +60,9 @@ Proof.
       rewrite -Hspec_field_eq; exact Hspec
     | first
         [ exact Hstatus
+        | injection Hspec_eq as Hspec_field_eq;
+          injection Hstatus_eq as Hstatus_field_eq;
+          rewrite -Hspec_field_eq -Hstatus_field_eq; exact Hstatus
         | injection Hstatus_eq as Hstatus_field_eq;
           rewrite -Hstatus_field_eq; exact Hstatus
         | match goal with
@@ -86,36 +82,10 @@ Lemma create_stored_from_helper_result_valid helper_result stored :
   create_stored_from_helper_result helper_result stored →
   KObjectV.valid stored.
 Proof.
-  intros Hvalid Hstored.
-  destruct Hvalid as (Htypemeta & Hmeta & Hspec & Hstatus).
-  destruct Hstored as (Hkind & Htypemeta_eq & Hmeta_eq & Hspec_eq & Hstatus_eq & Hrv).
-  assert (KObjectV.kind helper_result = KObjectV.kind stored) as Hkind_eq.
-  { destruct helper_result, stored; simpl in Hkind |- *; try contradiction; done. }
-  rewrite /KObjectV.valid.
-  split_and!.
-  - rewrite -Hkind_eq -Htypemeta_eq. exact Htypemeta.
-  - exact Hrv.
-  - rewrite -Hkind_eq.
-    pose proof Hmeta_eq as Hmeta_fields.
-    rewrite /ObjectMetaV.equiv_except_resource_version
-      /ObjectMetaV.without_resource_version in Hmeta_fields.
-    pose proof (f_equal ObjectMetaV.GenerateName' Hmeta_fields) as Hgenerate_name.
-    pose proof (f_equal ObjectMetaV.Name' Hmeta_fields) as Hname.
-    pose proof (f_equal ObjectMetaV.Namespace' Hmeta_fields) as Hnamespace.
-    pose proof (f_equal ObjectMetaV.UID' Hmeta_fields) as Huid.
-    pose proof (f_equal ObjectMetaV.Labels' Hmeta_fields) as Hlabels.
-    pose proof (f_equal ObjectMetaV.Annotations' Hmeta_fields) as Hannotations.
-    pose proof (f_equal ObjectMetaV.OwnerReferences' Hmeta_fields) as Howners.
-    pose proof (f_equal ObjectMetaV.Finalizers' Hmeta_fields) as Hfinalizers.
-    pose proof (f_equal ObjectMetaV.ManagedFields' Hmeta_fields) as Hmanaged_fields.
-    pose proof (f_equal ObjectMetaV.SelfLink' Hmeta_fields) as Hself_link.
-    simpl in Hgenerate_name, Hname, Hnamespace, Huid, Hlabels, Hannotations,
-      Howners, Hfinalizers, Hmanaged_fields, Hself_link.
-    unfold ObjectMetaV.valid in Hmeta |- *.
-    rewrite -Hgenerate_name -Hname -Hnamespace -Huid -Hlabels -Hannotations
-      -Howners -Hfinalizers -Hmanaged_fields -Hself_link. exact Hmeta.
-  - rewrite -Hspec_eq. exact Hspec.
-  - rewrite -Hstatus_eq. exact Hstatus.
+  intros Hvalid (Hkind & Htm & Hmeta & Hspec & Hstatus & Hrv).
+  rewrite (KObjectV.eq_except_resource_version helper_result stored
+    Hkind Htm Hmeta Hspec Hstatus).
+  apply (proj2 Hvalid). exact Hrv.
 Qed.
 
 End proof.

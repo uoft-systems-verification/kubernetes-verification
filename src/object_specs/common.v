@@ -1,3 +1,5 @@
+From New.generatedviews Require Export time.
+From New.proof Require Export deepown.
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
@@ -8,54 +10,6 @@ From New.proof Require Export struct.
 From New.proof Require Import prelude empty_ffi.
 Export apimodel.apimodel.
 Module KKey := code.kubernetes_model.apimodel.apimodel.KKey.
-
-(* The backing slice is owned at fraction [dq] so the list can be shared
-   read-only (e.g. by concurrent goroutines). *)
-Definition deepown_list `{hG: heapGS Σ} `{!ffi_semantics _ _}
-    {sem : go.Semantics} {C V} `{!ZeroVal C} `{!TypedPointsto (Σ:=Σ) C}
-    (c_slice : slice.t) (cs : list C) (vs : list V) (deepown : C → V → iProp Σ) (dq : dfrac) : iProp Σ :=
-  c_slice ↦*{dq} cs ∗ ([∗ list] c;v ∈ cs;vs, deepown c v).
-
-Module TimeV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics} {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-(* The view is the instant only. Go's [loc *time.Location] is dropped rather than
-   modelled as a pointer field, because
-   - [time.Location] is opaque in Perennial ([Axiom t], no field getters, no
-     [EqDecision]), so [eq_dec] below could not be derived through it; and
-   - every timestamp aliases one process-wide singleton, which [deepown] cannot own
-     the way it owns the allocations the API server makes.
-   No proof reads a zone. *)
-Record t := mk {
-  wall' : w64;
-  ext' : w64;
-}.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Qed.
-
-Definition of_go (c : v1.Time.t) : t :=
-  mk c.(v1.Time.Time').(time.Time.wall') c.(v1.Time.Time').(time.Time.ext').
-
-Definition deepown (c : v1.Time.t) (v : t) (_dq : dfrac) : iProp Σ :=
-  ⌜ c.(v1.Time.Time').(time.Time.wall') = v.(wall') ∧
-    c.(v1.Time.Time').(time.Time.ext') = v.(ext') ⌝.
-
-Definition zero : t := mk (zero_val _) (zero_val _).
-Lemma deepown_zero dq : ⊢ deepown (zero_val v1.Time.t) zero dq.
-Proof. rewrite /deepown /zero. iPureIntro. split; done. Qed.
-
-(* [deepown] is a pure equality, so it ignores its fraction. *)
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All. rewrite /deepown. iIntros "H". by iModIntro. Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. apply _. Qed.
-End def.
-End TimeV.
 
 Definition byte_dot : w8 := W8 46.  (* ASCII '.' *)
 Definition byte_a : w8 := W8 97.  (* ASCII 'a' *)
@@ -743,42 +697,3 @@ Definition valid_api_version kind api_version : Prop :=
   ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go ∨
     kind = "Deployment"%go) ∧
     api_version = "apps/v1"%go).
-
-(* TypeMeta is optional on typed Kubernetes objects returned by the API server.
-   When kind or apiVersion is present, it must agree with the concrete type;
-   omitted fields remain valid. The concrete [kind] argument still has to be a
-   kind supported by this model. *)
-Definition valid_typemeta kind tm : Prop :=
-  (tm.(v1.TypeMeta.Kind') = ""%go ∨ kind = tm.(v1.TypeMeta.Kind')) ∧
-  valid_kind kind ∧
-  (tm.(v1.TypeMeta.APIVersion') = ""%go ∨
-    valid_api_version kind tm.(v1.TypeMeta.APIVersion')).
-
-(* TypeMeta on a create request may omit [kind] and/or [apiVersion]: the JSON
-   decoder fills each missing GVK field from the REST endpoint's default GVK.
-   An explicitly incompatible kind does not match that typed object and fails
-   during decoding/conversion, while an incompatible group/version is rejected
-   by the create handler before resource validation:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/runtime/serializer/json/json.go#L115-L127
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/runtime/serializer/json/json.go#L164-L205
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L116-L147
-
-   The same omission rule applies to typed objects returned by Kubernetes;
-   [valid_typemeta] additionally records that [kind] is supported by the model. *)
-Definition valid_create_typemeta kind tm : Prop :=
-  (tm.(v1.TypeMeta.Kind') = ""%go ∨ kind = tm.(v1.TypeMeta.Kind')) ∧
-  (tm.(v1.TypeMeta.APIVersion') = ""%go ∨
-    valid_api_version kind tm.(v1.TypeMeta.APIVersion')).
-
-Lemma zero_typemeta_valid_create kind :
-  valid_create_typemeta kind (zero_val v1.TypeMeta.t).
-Proof. split; left; done. Qed.
-
-Lemma valid_typemeta_valid_create_typemeta kind tm :
-  valid_typemeta kind tm →
-  valid_create_typemeta kind tm.
-Proof.
-  unfold valid_typemeta, valid_create_typemeta.
-  intros (Hkind & _ & Hapi_version).
-  split; done.
-Qed.

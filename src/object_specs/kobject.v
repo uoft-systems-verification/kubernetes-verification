@@ -1,9 +1,8 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export pod persistentvolumeclaim replicaset statefulset deployment.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Export pod persistentvolumeclaim replicaset statefulset deployment.
+From New.object_specs Require Import top_level.
 
 Module KObject.
-Section def.
 Inductive t :=
 | Pod (p : v1.Pod.t)
 | ReplicaSet (rs : v1.ReplicaSet.t)
@@ -38,7 +37,6 @@ Definition update_objectmeta o m: t :=
   | Deployment d => Deployment (d <| v1.Deployment.ObjectMeta' := m |>)
   end.
 
-End def.
 End KObject.
 
 Module ObjectSpecV.
@@ -110,15 +108,15 @@ Definition created (input stored : t) : Prop :=
   | _, _ => False
   end.
 
-Definition updated (input stored : t) : Prop :=
-  match input, stored with
-  | PodSpec input, PodSpec stored => PodSpecV.updated input stored
-  | ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.updated input stored
-  | PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
+Definition updated (old input stored : t) : Prop :=
+  match old, input, stored with
+  | PodSpec old, PodSpec input, PodSpec stored => PodSpecV.updated old input stored
+  | _, ReplicaSetSpec input, ReplicaSetSpec stored => ReplicaSetSpecV.updated input stored
+  | _, PersistentVolumeClaimSpec input, PersistentVolumeClaimSpec stored =>
       PersistentVolumeClaimSpecV.updated input stored
-  | StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
-  | DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.updated input stored
-  | _, _ => False
+  | _, StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
+  | _, DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.updated input stored
+  | _, _, _ => False
   end.
 
 Lemma extra_valid_created input stored :
@@ -133,7 +131,7 @@ Qed.
 Lemma extra_valid_updated old input stored :
   extra_valid old →
   valid_update old input →
-  updated input stored →
+  updated old input stored →
   extra_valid stored.
 Proof.
   destruct old, input, stored; simpl; try done.
@@ -357,15 +355,16 @@ Definition created namespace input stored : Prop :=
 
 (** End-to-end relation between the submitted object and the stored result of
     a successful update. This relation does not constrain the stored status. *)
-Definition updated input stored : Prop :=
-  match input, stored with
-  | Pod input_pod, Pod stored_pod => PodV.updated input_pod stored_pod
-  | ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.updated input_rs stored_rs
-  | PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
+Definition updated old_spec input stored : Prop :=
+  match old_spec, input, stored with
+  | ObjectSpecV.PodSpec old_spec, Pod input_pod, Pod stored_pod =>
+      PodV.updated old_spec input_pod stored_pod
+  | _, ReplicaSet input_rs, ReplicaSet stored_rs => ReplicaSetV.updated input_rs stored_rs
+  | _, PersistentVolumeClaim input_pvc, PersistentVolumeClaim stored_pvc =>
       PersistentVolumeClaimV.updated input_pvc stored_pvc
-  | StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
-  | Deployment input_d, Deployment stored_d => DeploymentV.updated input_d stored_d
-  | _, _ => False
+  | _, StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
+  | _, Deployment input_d, Deployment stored_d => DeploymentV.updated input_d stored_d
+  | _, _, _ => False
   end.
 
 (** [input] is the submitted status update.
@@ -410,25 +409,75 @@ Lemma extra_valid_update_objectmeta o m :
   extra_valid (update_objectmeta o m).
 Proof. rewrite /extra_valid spec_update_objectmeta //. Qed.
 
-(* [valid] is the complete invariant guaranteed for an object stored by the
-   API server. *)
 Definition valid o : Prop :=
+  match o with
+  | Pod p => PodV.valid p
+  | ReplicaSet rs => ReplicaSetV.valid rs
+  | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid pvc
+  | StatefulSet sts => StatefulSetV.valid sts
+  | Deployment d => DeploymentV.valid d
+  end.
+
+(** Projections used by the metadata, spec, and status ghost fragments. The
+    converse is deliberately not stated: per-object validity can relate fields
+    from different fragments. *)
+Lemma valid_components o :
+  valid o →
   valid_typemeta (kind o) (typemeta o) ∧
   valid_resource_version (objectmeta o).(ObjectMetaV.ResourceVersion') ∧
   ObjectMetaV.valid (kind o) (objectmeta o) ∧
-  ObjectSpecV.valid (spec o) ∧
-  ObjectStatusV.valid (status o).
+  ObjectSpecV.valid (spec o) ∧ ObjectStatusV.valid (status o).
+Proof.
+  destruct o; rewrite /valid /PodV.valid /ReplicaSetV.valid
+    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
+    /PodV.valid_body /ObjectSpecV.valid /ObjectStatusV.valid /=; tauto.
+Qed.
 
-(** [input] is the object submitted in the create request.
+Lemma valid_update_objectmeta o meta :
+  valid o →
+  ObjectMetaV.valid (kind o) meta →
+  valid_resource_version meta.(ObjectMetaV.ResourceVersion') →
+  meta.(ObjectMetaV.Annotations') = (objectmeta o).(ObjectMetaV.Annotations') →
+  valid (update_objectmeta o meta).
+Proof.
+  destruct o; rewrite /valid /PodV.valid /ReplicaSetV.valid
+    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
+    /PodV.valid_body /=; intros Hvalid Hmeta Hrv Hann;
+    rewrite ?Hann; tauto.
+Qed.
 
-    The create strategies for every resource currently represented by [t]
-    (Pod, PersistentVolumeClaim, ReplicaSet, StatefulSet, and Deployment) reset the
-    submitted status before validation, so their create predicates impose no
-    condition on the input status. Kubernetes permits and validates a Node's
-    status on create, which can be expressed in [NodeV.valid_create] if Node is
-    added here. Empty TypeMeta kind/apiVersion fields are valid: the create
-    request decoder defaults them from the REST endpoint before validation.
-    See https://github.com/kubernetes/kubernetes/blob/master/pkg/registry/core/node/strategy.go. *)
+Lemma valid_update_resource_version o rv :
+  valid o → valid_resource_version rv →
+  valid (update_objectmeta o (objectmeta o <| ObjectMetaV.ResourceVersion' := rv |>)).
+Proof.
+  destruct o as [[tm meta spec status]|[tm meta spec status]|
+    [tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
+    destruct meta;
+    rewrite /valid /PodV.valid /ReplicaSetV.valid /PersistentVolumeClaimV.valid
+      /StatefulSetV.valid /DeploymentV.valid /PodV.valid_body /ObjectMetaV.valid /=;
+    tauto.
+Qed.
+
+(** Updating only the resource version is an equality of complete views,
+    including all nested fields; no resource-specific validity predicate is
+    reconstructed by the storage proofs. *)
+Lemma eq_except_resource_version o1 o2 :
+  same_kind o1 o2 → typemeta o1 = typemeta o2 →
+  ObjectMetaV.equiv_except_resource_version (objectmeta o1) (objectmeta o2) →
+  spec o1 = spec o2 → status o1 = status o2 →
+  o2 = update_objectmeta o1
+    (objectmeta o1 <| ObjectMetaV.ResourceVersion' := (objectmeta o2).(ObjectMetaV.ResourceVersion') |>).
+Proof.
+  destruct o1 as [[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
+    [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]],
+    o2 as [[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
+    [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]];
+    simpl; intros Hkind Htm Hmeta Hspec Hstatus; try contradiction;
+    injection Hspec as Hspec; injection Hstatus as Hstatus;
+    pose proof (ObjectMetaV.equiv_except_resource_version_eq _ _ Hmeta) as Hmeta';
+    subst tm2 spec2 status2; rewrite Hmeta'; done.
+Qed.
+
 Definition valid_create request_kind namespace input : Prop :=
   match input with
   | Pod input => PodV.valid_create request_kind namespace input
@@ -442,6 +491,17 @@ Definition valid_create request_kind namespace input : Prop :=
     [request_kind] and [namespace] identify the update request.
     [old_meta] and [old_spec] are the metadata and spec currently in etcd.
     [input] is the object submitted in the update request. *)
+(** Preconditions independent of the stored old spec. Ordinary updates do
+    not re-run create-only validation, such as Pod annotation preparation. *)
+Definition valid_update_input request_kind namespace input : Prop :=
+  match input with
+  | Pod input => PodV.valid_update_input request_kind namespace input
+  | ReplicaSet input => ReplicaSetV.valid_create request_kind namespace input
+  | PersistentVolumeClaim input => PersistentVolumeClaimV.valid_create request_kind namespace input
+  | StatefulSet input => StatefulSetV.valid_create request_kind namespace input
+  | Deployment input => DeploymentV.valid_create request_kind namespace input
+  end.
+
 Definition valid_update request_kind namespace old_meta old_spec input : Prop :=
   match old_spec, input with
   | ObjectSpecV.PodSpec old_spec, Pod input =>
@@ -475,24 +535,6 @@ Definition valid_status_update request_kind namespace old_meta old_status input 
   | _, _ => False
   end.
 
-Definition valid2 o : Prop :=
-  match o with
-  | Pod p => PodV.valid p
-  | ReplicaSet rs => ReplicaSetV.valid rs
-  | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid pvc
-  | StatefulSet sts => StatefulSetV.valid sts
-  | Deployment d => DeploymentV.valid d
-  end.
-
-Lemma valid_eq_valid2 o :
-  valid o = valid2 o.
-Proof.
-  destruct o as [[tm meta spec status]|[tm meta spec status]|
-    [tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
-    rewrite /valid /valid2 /PodV.valid /ReplicaSetV.valid
-      /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
-      /ObjectSpecV.valid /ObjectStatusV.valid /=; done.
-Qed.
 
 Definition valid_without_meta o : Prop :=
   match o with
@@ -727,7 +769,7 @@ Lemma valid_create_pod_set_name pod request_kind namespace name :
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>))).
 Proof.
   rewrite /valid_create /=.
-  intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec)
+  intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta & Hmeta & Hspec & Hann & Hprepared)
     Hname_nonempty Hname_valid.
   assert (ObjectMetaV.valid_create PodV.kind namespace
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' := name |>)) as Hmeta_named.
@@ -850,16 +892,16 @@ Proof.
 Qed.
 
 Lemma valid_object_has_valid_objectmeta obj:
-  KObjectV.valid2 obj →
+  KObjectV.valid obj →
     ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj).
 Proof.
-  rewrite -KObjectV.valid_eq_valid2.
-  intros (_ & _ & Hmeta & _ & _). exact Hmeta.
+  intros Hvalid. apply KObjectV.valid_components in Hvalid.
+  destruct Hvalid as (_ & _ & Hmeta & _). exact Hmeta.
 Qed.
 
 Lemma valid_object_has_valid_key key obj:
   key = KObjectV.key obj →
-  KObjectV.valid2 obj →
+  KObjectV.valid obj →
     key.(KKey.Name') ≠ ""%go ∧
     valid_name key.(KKey.Kind') key.(KKey.Name') ∧
     key.(KKey.Namespace') ≠ ""%go ∧
@@ -904,7 +946,7 @@ Proof.
 Qed.
 
 Lemma valid_obj_has_at_most_one_controller_parent obj:
-  KObjectV.valid2 obj →
+  KObjectV.valid obj →
     ∀ kind1 name1 uid1 kind2 name2 uid2,
       obj_has_controller_parent_of obj kind1 name1 uid1 →
         obj_has_controller_parent_of obj kind2 name2 uid2 →

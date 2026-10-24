@@ -1,8 +1,16 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
 From New.proof.kubernetes_model Require Export create_named_orphan get_reserved.
 From New.proof.kubernetes_model Require Import get.
 From New.proof.map Require Import for_range.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -186,7 +194,7 @@ Lemma persistent_volume_claim_template_lookup_acc
 Proof.
   intros Hmap_eq Hclaim_lookup.
   iIntros "Hclaim_templates".
-  iDestruct (persistent_volume_claim_deepown_list_names with
+  iDestruct (persistent_volume_claim_deepown_names with
     "Hclaim_templates") as "[%Hnames Hclaim_templates]".
   assert (Forall2
       (λ physical_claim_template pure_claim_template,
@@ -301,7 +309,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_newPersistentVolumeClaim_without_claim_templates
     set_l pod_l claim_template_l set pod claim_template ordinal
     dq_set dq_pod dq_claim_template_ptr dq_claim_template
@@ -315,7 +323,7 @@ Proof.
   iDestruct "Hclaim_objectmeta_l" as (claim_meta_c)
     "[Hclaim_objectmeta_field Hclaim_objectmeta]".
   iNamedPrefix "Hclaim_objectmeta" "Hclaim_meta_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hclaim_meta_Hdeepown_namespace Hclaim_meta_Hdeepown_name.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
@@ -339,11 +347,11 @@ Proof.
       done. }
     iIntros (existing_claim_l existing_claim') "Hget".
     iNamedPrefix "Hget" "Hget_".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsNotFound interface.nil with "[]").
     replace (bool_decide (not_found_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact not_found_error_nil).
-    wp_auto.
+    wp_auto_keep.
     iApply "HΦ".
     iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
     iExists existing_claim.
@@ -365,11 +373,11 @@ Proof.
         new_persistent_volume_claim.
       done. }
     iIntros (err) "Hget". iNamed "Hget".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsNotFound err with "[]").
     replace (bool_decide (not_found_error err)) with true by
       (symmetry; apply bool_decide_true; exact Hnot_found).
-    wp_auto.
+    wp_auto_keep.
     rewrite Hclaim_meta_Hdeepown_namespace.
     iCombineNamed "Hclaim_meta_*" as "Hclaim_objectmeta".
     iAssert (ObjectMetaV.deepown claim_meta_c
@@ -418,7 +426,7 @@ Proof.
     iIntros (created_claim_l created_claim uid) "Hcreated".
     iNamed "Hcreated".
     subst uid.
-    wp_auto.
+    wp_auto_keep.
     iApply "HΦ".
     iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
     iExists created_claim.
@@ -511,8 +519,6 @@ Proof.
   iDestruct "Hset" as (set_phy) "[Hset_ptr Hset]".
   iNamed "Hset".
   iNamed "Hdeepown_spec".
-  iDestruct "Hdeepown_volumeclaimtemplates" as
-    (claim_templates_list) "Hdeepown_volumeclaimtemplates".
   iDestruct "Hclaim_template" as (claim_template_phy)
     "[Hclaim_template_ptr Hclaim_template]".
   iAssert (statefulset_without_claim_templates_l
@@ -541,6 +547,8 @@ Proof.
       Hset_spec_Hdeepown_replicas_some
       Hset_spec_Hdeepown_selector_some
       Hset_spec_Hdeepown_template Hdeepown_volumeclaimtemplates
+      Hdeepown_updatestrategy Hdeepown_revisionhistorylimit_some
+      Hdeepown_persistentvolumeclaimretentionpolicy_some Hdeepown_ordinals_some
       Hdeepown_status]" as "Hset".
   { iExists set_phy.
     rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown.
@@ -625,7 +633,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_volumeClaimTemplatesByName set_l set dq_set with "Hset").
   iIntros (set_phy claim_templates_map claim_templates_list
     claim_templates_phy) "H".
@@ -639,8 +647,7 @@ Proof.
       %Hclaim_templates_map_values & %Hclaim_templates_list_names &
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
-      Hdeepown_status & Hclaim_templates_map)".
-  iEval (rewrite /deepown_list) in "Hdeepown_volumeclaimtemplates".
+      Hdeepown_status & Hrestore_set & Hclaim_templates_map)".
   iDestruct "Hdeepown_volumeclaimtemplates" as
     "[Hclaim_templates_slice Hclaim_templates_deepown]".
   iAssert (statefulset_without_claim_templates_l
@@ -703,7 +710,7 @@ Proof.
     with "[Hpvc_states]" as "Hpvc_todo".
   { rewrite /claim_templates_pure.
     iExact "Hpvc_states". }
-  wp_auto.
+  wp_auto_keep.
   set P := (λ (keys : list go_string) (z : Z),
     ∃ (last_claim_template : v1.PersistentVolumeClaim.t),
       "set" ∷ set_ptr ↦ set_l ∗
@@ -714,7 +721,7 @@ Proof.
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "Hclaim_templates_slice" ∷
         set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates')
-          ↦* claim_templates_list ∗
+          ↦*{dq_set} claim_templates_list ∗
       "Hclaim_templates_deepown" ∷
         ([∗ list] claim_template_phy;claim_template ∈
           claim_templates_list;claim_templates,
@@ -788,7 +795,7 @@ Proof.
       split; done. }
     iDestruct (big_sepM_delete _ _ _ _ Htodo_lookup with
       "Hpvc_todo") as "[Hpvc_state Hpvc_todo]".
-    wp_auto.
+    wp_auto_keep.
     iAssert
       ((∃ claim,
           "%Hkey" ∷
@@ -837,7 +844,7 @@ Proof.
     iSpecialize ("Hclaim_templates_restore" with "Hclaim_template").
     iRename "Hclaim_templates_restore" into
       "Hclaim_templates_deepown".
-    wp_auto.
+    wp_auto_keep.
     assert (Hprefix_next :
         map_prefix keys (z + 1) claim_templates_pure =
           <[claim_template_name:=claim_template]>
@@ -878,24 +885,12 @@ Proof.
     with "[Hpvc_done]" as "Hpvc_states".
   { rewrite -big_sepM_dom.
     iExact "Hpvc_done". }
-  iNamed "Hset".
-  iAssert (StatefulSetV.deepown_l set_l set dq_set)
-    with "[Hset_ptr Hdeepown_objectmeta
-      Hset_spec_Hdeepown_replicas_some
-      Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hclaim_templates_slice
-      Hclaim_templates_deepown Hdeepown_status]" as "Hset".
-  { iExists set_phy.
-    rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown.
-    iFrame "Hset_ptr Hdeepown_objectmeta
-      Hset_spec_Hdeepown_replicas_some
-      Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hdeepown_status".
-    iFrame "%".
-    iExists claim_templates_list.
-    rewrite /deepown_list.
-    iFrame. }
-  wp_auto.
+  iAssert (statefulset_claim_templates set_phy set dq_set)
+    with "[Hclaim_templates_slice Hclaim_templates_deepown]" as "Htemplates".
+  { iExists claim_templates_list.
+    rewrite /claim_templates. iFrame. }
+  iPoseProof ("Hrestore_set" with "Hset Htemplates") as "Hset".
+  wp_auto_keep.
   iApply "HΦ".
   rewrite /pvc_done /claim_templates_pure
     persistent_volume_claim_templates_by_name_dom

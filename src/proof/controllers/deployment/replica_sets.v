@@ -1,12 +1,18 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.controllers.deployment Require Export common.
+
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ}.
@@ -53,9 +59,9 @@ Proof.
   - iDestruct "Hdeepown_replicas_some" as (replicas_c) "[Hreplicas ->]".
     assert (spec_c.(v1.DeploymentSpec.Replicas') ≠ null) as Hptr_not_null.
     { intros Hnull. apply Hdeepown_replicas_none in Hnull. congruence. }
-    wp_auto.
+    wp_auto_keep.
     wp_if_destruct; [exfalso; done|].
-    wp_pures.
+    wp_pures_keep.
     iApply "HΦ".
     iApply (DeploymentV.deepown_l_restore _ _ _ Hnot_null).
     iFrame "Htypemeta Hobjectmeta Hstatus_l".
@@ -66,10 +72,10 @@ Proof.
     iFrame "%". iFrame.
   - assert (spec_c.(v1.DeploymentSpec.Replicas') = null) as Hptr_null.
     { apply Hdeepown_replicas_none. done. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hptr_null.
     wp_if_destruct; [|exfalso; congruence].
-    wp_pures.
+    wp_pures_keep.
     iApply "HΦ".
     iApply (DeploymentV.deepown_l_restore _ _ _ Hnot_null).
     iFrame "Htypemeta Hobjectmeta Hstatus_l".
@@ -101,10 +107,10 @@ Proof.
     + iDestruct "Hdeepown_replicas_some" as (rc) "[Hr ->]".
       assert (spec_c.(v1.ReplicaSetSpec.Replicas') ≠ null) as Hpnn.
       { intros Hnull. apply Hdeepown_replicas_none in Hnull. congruence. }
-      wp_auto.
+      wp_auto_keep.
       wp_if_destruct; [exfalso; done|].
       wp_if_destruct; [exfalso; done|].
-      wp_pures.
+      wp_pures_keep.
       iApply "HΦ".
       iApply (ReplicaSetV.deepown_l_restore _ _ _ Hnn).
       iFrame "Htm Hom Hstatus_l".
@@ -115,11 +121,11 @@ Proof.
       iFrame "%". iFrame.
     + assert (spec_c.(v1.ReplicaSetSpec.Replicas') = null) as Hpn.
       { apply Hdeepown_replicas_none. done. }
-      wp_auto.
+      wp_auto_keep.
       wp_if_destruct; [exfalso; done|].
       rewrite Hpn.
       wp_if_destruct; [|exfalso; congruence].
-      wp_pures.
+      wp_pures_keep.
       iApply "HΦ".
       iApply (ReplicaSetV.deepown_l_restore _ _ _ Hnn).
       iFrame "Htm Hom Hstatus_l".
@@ -129,9 +135,9 @@ Proof.
       iSplitR; [done|].
       iFrame "%". iFrame.
   - iDestruct "Hrs" as %Hrs_null.
-    wp_auto. rewrite Hrs_null.
+    wp_auto_keep. rewrite Hrs_null.
     wp_if_destruct; [|exfalso; congruence].
-    wp_pures.
+    wp_pures_keep.
     iApply "HΦ". done.
 Qed.
 
@@ -155,14 +161,14 @@ Lemma wp_findNewReplicaSet d_l (d : DeploymentV.t) sl ptrs (rss : list ReplicaSe
       ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
   iDestruct (own_slice_wf with "Hsl") as %Hsl_cap.
   iDestruct (big_sepL2_length with "Hrss") as %Hptrs_rss_len.
   set P := (λ rs, template_matches (rs_template rs) (deployment_template d)).
   (* The range loop's own index shares the name "i" with the Go loop variable,
-     so wp_auto does not allocate it. *)
-  wp_alloc i_ptr0 as "i0". wp_auto.
+     so wp_auto_keep does not allocate it. *)
+  wp_alloc i_ptr0 as "i0". wp_auto_keep.
   (* The loop has scanned rss[0..i) without finding a matching template. *)
   set I := (∃ (i : w64) (i_value : w64),
     "Hi_ptr" ∷ i_ptr0 ↦ i ∗
@@ -181,12 +187,12 @@ Proof.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hsl". wp_auto.
+    iIntros "Hsl". wp_auto_keep.
     (* The body reads rsList[i] itself rather than the range value. *)
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hsl". wp_auto.
+    iIntros "Hsl". wp_auto_keep.
     assert (∃ this_rs, rss !! sint.nat i = Some this_rs) as [this_rs Hthis_rs_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hptrs_rss_len Hsl_len1. word. }
     iDestruct (big_sepL2_lookup_acc with "Hrss") as "[Hthis Hrss_restore]";
@@ -250,7 +256,7 @@ Proof.
       wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
       { iPureIntro. exact Hthis_ptr_lookup. }
       iIntros "Hsl".
-      wp_auto. iApply wp_for_post_return. wp_auto.
+      wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
       assert (find_new_replica_set d rss = Some (sint.nat i, this_rs)) as Hfind.
       { apply list_find_Some. split_and!.
         - exact Hthis_rs_lookup.
@@ -258,7 +264,7 @@ Proof.
         - intros j r Hlookup Hj HP.
           eapply (Hnot_found j r); [lia|exact Hlookup|exact HP]. }
       iApply ("HΦ" $! this_ptr). rewrite Hfind. iFrame. done.
-    + iApply wp_for_post_do. wp_auto.
+    + iApply wp_for_post_do. wp_auto_keep.
       iFrame "Hsl HΦ rsList".
       iExists (word.add i (W64 1)), _.
       iFrame.
@@ -305,12 +311,12 @@ Lemma wp_findOldReplicaSets d_l (d : DeploymentV.t) sl ptrs
       ([∗ list] ptr;rs ∈ ptrs;rss, ReplicaSetV.deepown_l ptr rs dq3)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   (* allRSs starts as a nil slice. *)
   iPoseProof (own_slice_nil (V:=loc) (DfracOwn 1)) as "Hnil_sl".
   iPoseProof (own_slice_cap_nil (V:=loc)) as "Hnil_cap".
   wp_apply (wp_findNewReplicaSet with "[$Hd $Hsl $Hrss]"); first done.
-  iIntros (new_rs_l) "(Hfind & Hd & Hsl & Hrss)". wp_auto.
+  iIntros (new_rs_l) "(Hfind & Hd & Hsl & Hrss)". wp_auto_keep.
   remember (snd <$> find_new_replica_set d rss) as new_rs_o eqn:Hnew_rs_o.
   (* [newRS] is nil exactly when no template matches; otherwise it is the
      matching entry of the list. *)
@@ -364,7 +370,7 @@ Proof.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hsl". wp_auto.
+    iIntros "Hsl". wp_auto_keep.
     assert (∃ this_rs, rss !! sint.nat i = Some this_rs) as [this_rs Hthis_rs_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hptrs_rss_len Hsl_len1. word. }
     assert (zip ptrs rss !! sint.nat i = Some (this_ptr, this_rs)) as Hzip_lookup.
@@ -375,12 +381,12 @@ Proof.
          entry is old. *)
       rewrite (bool_decide_eq_true_2 _ Hnull). simpl.
       assert (snd <$> find_new_replica_set d rss = None) as Hnone by (apply Hnew_null; exact Hnull).
-      wp_auto.
+      wp_auto_keep.
       wp_apply wp_slice_literal. iSplitR; first done.
-      iIntros (one_sl) "[Hone_sl _]". wp_auto.
+      iIntros (one_sl) "[Hone_sl _]". wp_auto_keep.
       wp_apply (wp_slice_append with "[$Hold_sl $Hold_cap $Hone_sl]").
-      iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto.
-      iApply wp_for_post_do. wp_auto.
+      iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto_keep.
+      iApply wp_for_post_do. wp_auto_keep.
       assert (Q (this_ptr, this_rs)) as HQ.
       { unfold Q. rewrite Hnone. exact Logic.I. }
       assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =
@@ -402,7 +408,7 @@ Proof.
         "(%Hthis_not_null & Hthis_typemeta & Hthis_objectmeta_l & Hthis_spec_l & Hthis_status_l)".
       iDestruct "Hthis_objectmeta_l" as (this_meta_c) "[Hthis_meta_field Hthis_meta]".
       iNamedPrefix "Hthis_meta" "Hthis_meta_".
-      wp_auto.
+      wp_auto_keep.
       rewrite Hthis_meta_Hdeepown_uid.
       iCombineNamed "Hthis_meta_Hdeepown_*" as "Hthis_meta_parts".
       iAssert (ObjectMetaV.deepown this_meta_c (ReplicaSetV.ObjectMeta' this_rs) dq3)
@@ -422,9 +428,7 @@ Proof.
         Hthis_meta_Hdeepown_generation Hthis_meta_Hdeepown_deletiontimestamp_none
         Hthis_meta_Hdeepown_deletiongraceperiodseconds_none
         Hthis_meta_Hdeepown_labels_none Hthis_meta_Hdeepown_annotations_none
-        Hthis_meta_Hdeepown_ownerreferences_none
-        Hthis_meta_Hdeepown_finalizers_none Hthis_meta_Hdeepown_managedfields_none
-        this_meta_c.
+        Hthis_meta_Hdeepown_finalizers_none this_meta_c.
       (* Second operand: newRS's UID, read from its own entry of the list. The
          entry above is already restored, so newRS being the entry just
          inspected is fine. *)
@@ -434,7 +438,7 @@ Proof.
         "(%Hnew_nn & Hnew_typemeta & Hnew_objectmeta_l & Hnew_spec_l & Hnew_status_l)".
       iDestruct "Hnew_objectmeta_l" as (new_meta_c) "[Hnew_meta_field Hnew_meta]".
       iNamedPrefix "Hnew_meta" "Hnew_meta_".
-      wp_auto.
+      wp_auto_keep.
       rewrite Hnew_meta_Hdeepown_uid.
       iCombineNamed "Hnew_meta_Hdeepown_*" as "Hnew_meta_parts".
       iAssert (ObjectMetaV.deepown new_meta_c (ReplicaSetV.ObjectMeta' new_rs) dq3)
@@ -452,12 +456,10 @@ Proof.
         Hnew_meta_Hdeepown_generation Hnew_meta_Hdeepown_deletiontimestamp_none
         Hnew_meta_Hdeepown_deletiongraceperiodseconds_none
         Hnew_meta_Hdeepown_labels_none Hnew_meta_Hdeepown_annotations_none
-        Hnew_meta_Hdeepown_ownerreferences_none
-        Hnew_meta_Hdeepown_finalizers_none Hnew_meta_Hdeepown_managedfields_none
-        new_meta_c.
+        Hnew_meta_Hdeepown_finalizers_none new_meta_c.
       wp_if_destruct.
       * (* Same UID as newRS: skip it, so the filter drops this entry. *)
-        iApply wp_for_post_continue. wp_auto.
+        iApply wp_for_post_continue. wp_auto_keep.
         assert (¬ Q (this_ptr, this_rs)) as HnotQ.
         { unfold Q. rewrite Hsome. unfold rs_is_old, rs_uid. simpl.
           intros Hne. apply Hne. congruence. }
@@ -469,10 +471,10 @@ Proof.
         iExists (word.add i (W64 1)), this_ptr, old_sl.
         rewrite Hfilter_eq. iFrame. iPureIntro. word.
       * wp_apply wp_slice_literal. iSplitR; first done.
-        iIntros (one_sl) "[Hone_sl _]". wp_auto.
+        iIntros (one_sl) "[Hone_sl _]". wp_auto_keep.
         wp_apply (wp_slice_append with "[$Hold_sl $Hold_cap $Hone_sl]").
-        iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto.
-        iApply wp_for_post_do. wp_auto.
+        iIntros (old_sl') "(Hold_sl & Hold_cap & _)". wp_auto_keep.
+        iApply wp_for_post_do. wp_auto_keep.
         assert (Q (this_ptr, this_rs)) as HQ.
         { unfold Q. rewrite Hsome. unfold rs_is_old, rs_uid. simpl. congruence. }
         assert (filter Q (take (sint.nat (word.add i (W64 1))) (zip ptrs rss)) =

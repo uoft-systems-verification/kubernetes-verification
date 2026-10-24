@@ -1,8 +1,13 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers Require Export common.
 From New.proof.controllers.statefulset Require Import pod_predicates.
 From New.proof.controllers.statefulset Require Export statefulset_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -116,10 +121,10 @@ Proof.
   { intros Hreplicas_ptr_null.
     apply Hdeepown_replicas_none in Hreplicas_ptr_null.
     congruence. }
-  wp_auto.
+  wp_auto_keep.
   wp_if_destruct.
   { exfalso. done. }
-  wp_pures.
+  wp_pures_keep.
   iApply ("HΦ" $! (W64 (sint.Z replicas32))).
   iSplitR.
   { iPureIntro.
@@ -156,10 +161,10 @@ Lemma wp_endOrdinalOf set_l (set : StatefulSetV.t) dq :
   }}}.
 Proof.
   wp_start as "(Hset & %Hvalid)".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_replicasOf with "[$Hset //]").
   iIntros (replicas) "[%Hreplicas Hset]".
-  wp_pures.
+  wp_pures_keep.
   iApply "HΦ".
   iFrame.
   iPureIntro.
@@ -174,11 +179,11 @@ Lemma wp_podName (set_name : go_string) (ordinal : w64) :
   {{{ RET #(set_name ++ "-"%go ++ decimal_string (sint.nat ordinal)); True }}}.
 Proof.
   wp_start as "%Hordinal_nonnegative".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_strconv_Itoa with "[]").
   { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
     iPureIntro. exact Hordinal_nonnegative. }
-  wp_pures.
+  wp_pures_keep.
   iEval (rewrite List.app_assoc) in "HΦ".
   iApply "HΦ".
   done.
@@ -192,11 +197,11 @@ Lemma wp_claimName
         decimal_string (sint.nat ordinal)); True }}}.
 Proof.
   wp_start as "%Hordinal_nonnegative".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_strconv_Itoa with "[]").
   { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
     iPureIntro. exact Hordinal_nonnegative. }
-  wp_pures.
+  wp_pures_keep.
   iEval (rewrite !List.app_assoc) in "HΦ".
   iApply "HΦ".
   done.
@@ -214,12 +219,12 @@ Lemma wp_parentNameAndOrdinal (pod_name : go_string) :
   }}}.
 Proof.
   wp_start as "%Hpod_name_len".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_strings_LastIndex_singleton pod_name byte_dash with "[]").
   { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
     iPureIntro. exact Hpod_name_len. }
   iIntros (idx) "%Hidx".
-  wp_auto.
+  wp_auto_keep.
   destruct Hidx as [(parent & suffix & Hname_decomp & Hsuffix_no_dash & Hidx_Z)|
                     (Hno_dash & Hidx_Z)].
   - assert (Hprefix_next_bound : Z.of_nat (S (length parent)) <= go_int_max).
@@ -233,8 +238,8 @@ Proof.
     assert (Hidx_next : sint.nat (word.add idx (W64 1)) = S (length parent)) by word.
     wp_if_destruct.
     { exfalso. rewrite Hidx_Z in l. change (sint.Z (W64 0)) with 0 in l. lia. }
-    wp_pures.
-    wp_pures.
+    wp_pures_keep.
+    wp_pures_keep.
     wp_bind (Slice go.string
       ((#(parent ++ [byte_dash] ++ suffix), #(word.add idx (W64 1)))%V,
        #(functions go.len [go.string]) (#(parent ++ [byte_dash] ++ suffix))))%E.
@@ -258,17 +263,17 @@ Proof.
         Hidx_next_Z Hidx_nat Hidx_next_nonneg Hidx_next.
       induction parent as [|b parent IH]; simpl; [done|exact IH]. }
     rewrite Hdrop_suffix.
-    wp_pures.
+    wp_pures_keep.
     wp_apply (wp_strconv_ParseInt_decimal_int32 with "[]").
     { by iEval (rewrite is_pkg_init_unfold /=). }
     iIntros (ordinal err) "%Hparse".
-    wp_auto.
+    wp_auto_keep.
     destruct (parse_decimal_string suffix) as [expected_ordinal|] eqn:Hparse_suffix.
     + destruct (decide (expected_ordinal <= go_int32_max_nat)%nat) as
         [Hexpected_ordinal_bound|Hexpected_ordinal_overflow].
       * destruct Hparse as (Herr_nil & Hordinal_nat & Hordinal_Z & Hordinal_bounds).
         rewrite Herr_nil.
-        wp_auto.
+        wp_auto_keep.
         wp_bind (Slice go.string
           (#(parent ++ [byte_dash] ++ suffix), #(W64 0), #idx)%V)%E.
         iApply (wp_wand _ _ _
@@ -287,7 +292,7 @@ Proof.
             iPureIntro.
             done. }
         iIntros (parent_val) "->".
-        wp_auto.
+        wp_auto_keep.
         rewrite /subslice /= Hidx_nat.
         rewrite drop_0.
         rewrite take_app_length.
@@ -317,7 +322,7 @@ Proof.
         exact Hpost.
       * destruct err as [err_i|].
         2: { exfalso. apply Hparse. reflexivity. }
-        wp_pures.
+        wp_pures_keep.
         iApply ("HΦ" $! ""%go (W64 (-1))).
         iPureIntro.
         intros set_name. split.
@@ -330,7 +335,7 @@ Proof.
            simplify_eq/=.
     + destruct err as [err_i|].
       2: { exfalso. apply Hparse. reflexivity. }
-      wp_pures.
+      wp_pures_keep.
       iApply ("HΦ" $! ""%go (W64 (-1))).
       iPureIntro.
       intros set_name. split.
@@ -344,7 +349,7 @@ Proof.
   - 
     wp_if_destruct.
     2: { exfalso. word. }
-    wp_pures.
+    wp_pures_keep.
     iApply ("HΦ" $! ""%go (W64 (-1))).
     iPureIntro.
     intros set_name. split.
@@ -388,7 +393,7 @@ Lemma wp_findPodByOrdinal set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
   iDestruct (big_sepL2_length with "Hpods") as %Hptrs_pods_len.
@@ -416,7 +421,7 @@ Proof.
       as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hpods_sl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hpods_sl". wp_auto.
+    iIntros "Hpods_sl". wp_auto_keep.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as
       [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2.
@@ -434,7 +439,7 @@ Proof.
     iDestruct "Hset_objectmeta_l" as
       (set_meta_c) "[Hset_objectmeta_field Hset_objectmeta]".
     iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hthis_meta_Hdeepown_name.
     wp_apply (wp_parentNameAndOrdinal with "[]").
     { iPureIntro. apply Hpod_name_len.
@@ -450,7 +455,7 @@ Proof.
       (Hparent_eq & Hpod_ordinal_nonnegative & Hthis_name).
     subst parent.
     unfold set_name in *.
-    wp_auto.
+    wp_auto_keep.
     rewrite Hset_meta_Hdeepown_name.
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
     iAssert (ObjectMetaV.deepown set_meta_c
@@ -481,12 +486,12 @@ Proof.
        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name'))) with true by
       (symmetry; apply bool_decide_eq_true_2; done).
     destruct (decide (pod_ordinal = ordinal)) as [->|Hordinal_ne].
-    + wp_auto.
+    + wp_auto_keep.
       replace (bool_decide (ordinal = ordinal)) with true by
         (symmetry; apply bool_decide_eq_true_2; done).
-      wp_auto.
+      wp_auto_keep.
       iApply wp_for_post_return.
-      wp_pures.
+      wp_pures_keep.
       iApply ("HΦ" $! this_ptr). iFrame.
       iPureIntro.
       unfold find_pod_by_ordinal.
@@ -497,11 +502,11 @@ Proof.
         * intros j pod Hlookup Hj HP.
           eapply (Hnot_found j pod); [lia|exact Hlookup|exact HP]. }
       rewrite Hfind. exact Hthis_ptr_lookup.
-    + wp_auto.
+    + wp_auto_keep.
       replace (bool_decide (pod_ordinal = ordinal)) with false by
         (symmetry; apply bool_decide_eq_false_2; done).
-      wp_auto.
-      iApply wp_for_post_do. wp_auto.
+      wp_auto_keep.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "ordinal Hpods_sl HΦ".
       iExists (word.add i (W64 1)), this_ptr.
       iFrame.
@@ -552,12 +557,12 @@ Lemma wp_parentNameAndOrdinal_parse (pod_name : go_string) :
   }}}.
 Proof.
   wp_start as "%Hpod_name_len".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_strings_LastIndex_singleton pod_name byte_dash with "[]").
   { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
     iPureIntro. exact Hpod_name_len. }
   iIntros (idx) "%Hidx".
-  wp_auto.
+  wp_auto_keep.
   destruct Hidx as
     [(parent & suffix & Hname_decomp & Hsuffix_no_dash & Hidx_Z)|
      (Hno_dash & Hidx_Z)].
@@ -577,8 +582,8 @@ Proof.
     wp_if_destruct.
     { exfalso. rewrite Hidx_Z in l.
       change (sint.Z (W64 0)) with 0 in l. lia. }
-    wp_pures.
-    wp_pures.
+    wp_pures_keep.
+    wp_pures_keep.
     wp_bind (Slice go.string
       ((#(parent ++ [byte_dash] ++ suffix), #(word.add idx (W64 1)))%V,
        #(functions go.len [go.string])
@@ -600,11 +605,11 @@ Proof.
         Hpod_ordinal_suffix.
       induction parent as [|b parent IH]; simpl; [done|exact IH]. }
     rewrite Hdrop_suffix.
-    wp_pures.
+    wp_pures_keep.
     wp_apply (wp_strconv_ParseInt_decimal_int32 with "[]").
     { by iEval (rewrite is_pkg_init_unfold /=). }
     iIntros (ordinal err) "%Hparse".
-    wp_auto.
+    wp_auto_keep.
     destruct (parse_decimal_string suffix) as [expected_ordinal|]
       eqn:Hparse_suffix.
     + destruct (decide (expected_ordinal <= go_int32_max_nat)%nat) as
@@ -612,7 +617,7 @@ Proof.
       * destruct Hparse as
           (Herr_nil & Hordinal_nat & Hordinal_Z & Hordinal_bounds).
         rewrite Herr_nil.
-        wp_auto.
+        wp_auto_keep.
         wp_bind (Slice go.string
           (#(parent ++ [byte_dash] ++ suffix), #(W64 0), #idx)%V)%E.
         iApply (wp_wand _ _ _
@@ -625,7 +630,7 @@ Proof.
             + rewrite Hidx_nat app_length /=. lia.
           - iIntros "_". iPureIntro. done. }
         iIntros (parent_val) "->".
-        wp_auto.
+        wp_auto_keep.
         rewrite /subslice /= Hidx_nat drop_0 take_app_length.
         iApply "HΦ". iPureIntro.
         unfold parse_pod_ordinal.
@@ -634,19 +639,19 @@ Proof.
         case_decide; [exact Hordinal_Z|done].
       * destruct err as [err_i|].
         2: { exfalso. apply Hparse. reflexivity. }
-        wp_pures. iApply "HΦ". iPureIntro.
+        wp_pures_keep. iApply "HΦ". iPureIntro.
         unfold parse_pod_ordinal.
         rewrite Hpod_ordinal_suffix /=.
         rewrite Hparse_suffix.
         case_decide; [done|word].
     + destruct err as [err_i|].
       2: { exfalso. apply Hparse. reflexivity. }
-      wp_pures. iApply "HΦ". iPureIntro.
+      wp_pures_keep. iApply "HΦ". iPureIntro.
       unfold parse_pod_ordinal.
       rewrite Hpod_ordinal_suffix /= Hparse_suffix. word.
   - wp_if_destruct.
     2: { exfalso. word. }
-    wp_pures. iApply "HΦ". iPureIntro.
+    wp_pures_keep. iApply "HΦ". iPureIntro.
     unfold parse_pod_ordinal.
     rewrite (pod_ordinal_suffix_no_dash pod_name Hno_dash). simpl. word.
 Qed.
@@ -664,10 +669,10 @@ Lemma wp_ordinalOf_parse (pod_name : go_string) :
         end ⌝
   }}}.
 Proof.
-  wp_start as "%Hpod_name_len". wp_auto.
+  wp_start as "%Hpod_name_len". wp_auto_keep.
   wp_apply (wp_parentNameAndOrdinal_parse pod_name with "[]").
   { iPureIntro. exact Hpod_name_len. }
-  iIntros (parent ordinal) "%Hordinal". wp_auto.
+  iIntros (parent ordinal) "%Hordinal". wp_auto_keep.
   iApply "HΦ". done.
 Qed.
 
@@ -683,11 +688,11 @@ Lemma wp_ordinalOf pod_name ordinal set_name :
 Proof.
   wp_start as "(%Hname_len & %Hpre)".
   destruct Hpre as (Hordinal_bound & Hname).
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_parentNameAndOrdinal with "[]").
   { iPureIntro. exact Hname_len. }
   iIntros (parent ordinal_ret) "%Hparent".
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ".
   iPureIntro.
   unfold pod_has_int32_member_name.
@@ -709,28 +714,28 @@ Lemma wp_isMemberOf (set_name name : go_string) :
   }}}.
 Proof.
   wp_start as "%Hname_len".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_parentNameAndOrdinal with "[]").
   { iPureIntro. exact Hname_len. }
   iIntros (parent ordinal) "%Hparent".
-  wp_auto.
+  wp_auto_keep.
   destruct (decide (parent = set_name)) as [Hparent_eq|Hparent_ne].
   - subst parent.
     replace (bool_decide (set_name = set_name)) with true by
       (symmetry; apply bool_decide_true; done).
-    wp_pures.
+    wp_pures_keep.
     wp_load.
     destruct (decide (0 <= sint.Z ordinal)) as
       [Hordinal_nonnegative|Hordinal_negative].
-    + wp_auto.
+    + wp_auto_keep.
       replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal)) with true by
         (symmetry; apply bool_decide_true; word).
-      wp_pures.
+      wp_pures_keep.
       wp_load.
       wp_load.
-      wp_pures.
+      wp_pures_keep.
       wp_load.
-      wp_pures.
+      wp_pures_keep.
       wp_bind (@! statefulset.podName #set_name #ordinal)%E.
       wp_apply (wp_podName set_name ordinal with "[]").
       { iPureIntro. exact Hordinal_nonnegative. }
@@ -747,10 +752,10 @@ Proof.
         destruct (proj2 (Hparent set_name) Hex) as (_ & _ & Hname_eq).
         apply bool_decide_eq_true_2.
         done.
-    + wp_auto.
+    + wp_auto_keep.
       replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal)) with false by
         (symmetry; apply bool_decide_false; word).
-      wp_pures.
+      wp_pures_keep.
       iApply "HΦ".
       iPureIntro.
       unfold pod_has_int32_member_name.
@@ -760,7 +765,7 @@ Proof.
       lia.
   - replace (bool_decide (parent = set_name)) with false by
       (symmetry; apply bool_decide_false; done).
-    wp_auto.
+    wp_auto_keep.
     iApply "HΦ".
     iPureIntro.
     unfold pod_has_int32_member_name.
@@ -784,22 +789,22 @@ Lemma wp_podInOrdinalRange set_l (set : StatefulSetV.t) pod_name ordinal set_nam
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ordinalOf pod_name ordinal set_name with "[]").
   { iPureIntro. split; done. }
   iIntros (ordinal_ret) "%Hordinal_ret".
-  wp_auto.
+  wp_auto_keep.
   replace (bool_decide (sint.Z (W64 0) ≤ sint.Z ordinal_ret)) with true.
   2:{ symmetry. apply bool_decide_true.
       rewrite Hordinal_ret. change (sint.Z (W64 0)) with 0. lia. }
-  wp_pures.
+  wp_pures_keep.
   wp_load.
-  wp_pures.
+  wp_pures_keep.
   wp_load.
-  wp_pures.
+  wp_pures_keep.
   wp_apply (wp_endOrdinalOf with "[$Hset //]").
   iIntros (end_ordinal) "[%Hend_ordinal Hset]".
-  wp_pures.
+  wp_pures_keep.
   iApply "HΦ".
   iFrame.
   iPureIntro.

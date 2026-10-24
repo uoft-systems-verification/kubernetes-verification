@@ -1,8 +1,8 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.kubernetes_model Require Export inv.
 
 Section proof.
@@ -43,10 +43,10 @@ Definition create_prepared_for_helper
                   <| ObjectMetaV.DeletionGracePeriodSeconds' := None |>).
 
 Definition valid_without_resource_version (obj : KObjectV.t) : Prop :=
-  valid_typemeta (KObjectV.kind obj) (KObjectV.typemeta obj) ∧
   ObjectMetaV.valid (KObjectV.kind obj) (KObjectV.objectmeta obj) ∧
-  ObjectSpecV.valid (KObjectV.spec obj) ∧
-  ObjectStatusV.valid (KObjectV.status obj).
+  ∀ rv, valid_resource_version rv →
+    KObjectV.valid (KObjectV.update_objectmeta obj
+      (KObjectV.objectmeta obj <| ObjectMetaV.ResourceVersion' := rv |>)).
 
 (** [update_objects_equiv_except_resource_version] relates two views of the
     same object when only the server-managed resource version may differ.
@@ -95,7 +95,7 @@ Definition applyValidationAndDefaultingOnUpdate_updated
   (∀ input stored,
     update_prepared_for_helper namespace old input helper_input →
     update_objects_equiv_except_resource_version helper_result stored →
-    KObjectV.updated input stored) ∧
+    KObjectV.updated (KObjectV.spec old) input stored) ∧
   (KObjectV.valid old →
     valid_typemeta (KObjectV.kind helper_input) (KObjectV.typemeta helper_input) →
     KObjectV.valid helper_result) ∧
@@ -200,13 +200,13 @@ Qed.
 #[global] Instance KKey_safe_map_key key :
   SafeMapKey (K:=KKey.t) apimodel.KKey key.
 Proof.
-  constructor. iIntros (stk E Ψ) "HΨ". wp_auto.
+  constructor. iIntros (stk E Ψ) "HΨ". wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Kind' key = apimodel.KKey.Kind' key)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Name' key = apimodel.KKey.Name' key)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto. done.
+  wp_auto_keep. done.
 Qed.
 
 Lemma objectmeta_update_objectmeta obj m :

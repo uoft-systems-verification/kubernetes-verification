@@ -1,7 +1,10 @@
 From New.proof Require Import prelude empty_ffi sort.
 From New.proof.map Require Import len for_range.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_label_selector_conversion.
-From New.proof.kubernetes_types Require Import labelselector objectmeta.
+From New.object_specs Require Import objectmeta.
+From New.object_specs Require Import labelselector.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

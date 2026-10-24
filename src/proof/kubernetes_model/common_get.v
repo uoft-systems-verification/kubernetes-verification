@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common admitted.
 
 (* Lightweight infrastructure shared by the ordinary and reserved Get
@@ -20,18 +20,18 @@ Proof.
   iDestruct (heap_pointsto_non_null with "Hown") as "%Hnotnil".
   replace (bool_decide (apimodel.KKey.Kind' k = apimodel.KKey.Kind' k)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Name' k = apimodel.KKey.Name' k)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   replace (bool_decide (apimodel.KKey.Namespace' k = apimodel.KKey.Namespace' k)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
   replace (bool_decide (mref = map.nil)) with false by
     (symmetry; apply bool_decide_eq_false_2; intros ->; apply Hnotnil; done).
-  wp_auto.
+  wp_auto_keep.
   wp_apply (_internal_wp_untyped_read with "Hown") as "Hown".
   erewrite go.map_lookup_pure; last done.
-  pose proof (Hagree k) as Heq. rewrite Heq. destruct (m !! k); wp_auto.
+  pose proof (Hagree k) as Heq. rewrite Heq. destruct (m !! k); wp_auto_keep.
   - iApply "HΦ". iFrame "∗#%".
   - iApply "HΦ". iFrame "∗#%".
 Qed.

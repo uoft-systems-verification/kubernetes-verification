@@ -1,0 +1,13 @@
+# Fields below are omitted from both the view and deepown. Keys are fully
+# qualified Go type IDs and exact Go field names. Every exclusion needs an
+# explanation, also emitted as a comment in the generated view.
+
+[exclude_fields."time/Time"]
+# time.Now and timestamp copies share time.Local. Go can lazily initialize that
+# location after returning a timestamp, so neither exclusive ownership nor
+# permanent read-only ownership of its contents is appropriate. Omit this field
+# because the controller properties use timestamps as instants, not timezones.
+# Instant comparisons such as Before, After, and Equal use wall/ext rather than
+# dereferencing this pointer, so controller timestamp ordering needs no ownership
+# of the timezone contents.
+loc = "The timezone location is shared runtime state and may be lazily initialized."

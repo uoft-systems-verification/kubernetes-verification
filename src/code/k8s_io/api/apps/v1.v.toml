@@ -83,6 +83,17 @@ translate = [
     "DeploymentConditionType",
     "RecreateDeploymentStrategyType",
     "RollingUpdateDeploymentStrategyType",
+
+    # Complete recursive object representations.
+    "PersistentVolumeClaimRetentionPolicyType",
+    "PodManagementPolicyType",
+    "RollingUpdateStatefulSetStrategy",
+    "StatefulSetCondition",
+    "StatefulSetConditionType",
+    "StatefulSetOrdinals",
+    "StatefulSetPersistentVolumeClaimRetentionPolicy",
+    "StatefulSetUpdateStrategy",
+    "StatefulSetUpdateStrategyType",
 ]
 
 imports = [

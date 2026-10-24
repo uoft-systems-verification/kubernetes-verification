@@ -2,7 +2,7 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.map Require Import len for_range.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export
   v1 v1_label_selector_conversion.
-From New.proof.kubernetes_types Require Import labelselector.
+From New.object_specs Require Import labelselector.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -47,6 +47,9 @@ Proof.
     with "Hselector_l") as "[Hselector_fields %Hselector_nonnull]".
   iNamedPrefix "Hselector_fields" "Hselector_field_".
   iNamedPrefix "Hselector" "Hselector_".
+  iDestruct "Hselector_Hdeepown_matchexpressions" as
+    "(%Hselector_Hdeepown_matchexpressions_none & %expressions_c &
+      Hexpressions_sl & Hselector_Hdeepown_matchexpressions_cap & Hexpressions)".
   wp_auto.
   rewrite -> bool_decide_false by exact Hselector_nonnull.
   wp_pures.
@@ -65,26 +68,10 @@ Proof.
   all: destruct selector.(LabelSelectorV.MatchExpressions') as [expressions|]
     eqn:Hexpressions_opt.
   all: lazymatch goal with
-  | expressions : list LabelSelectorRequirementV.t |- _ =>
-      iDestruct "Hselector_Hdeepown_matchexpressions_some" as
-        (expressions_c) "Hexpressions";
-      iEval (rewrite /deepown_list) in "Hexpressions";
-      iDestruct "Hexpressions" as "[Hexpressions_sl Hexpressions]"
-  | _ =>
-      assert (v1.LabelSelector.MatchExpressions' selector_c = slice.nil)
-        as Hexpressions_nil;
-      [apply (proj2 Hselector_Hdeepown_matchexpressions_none); done|];
-      pose (expressions := ([] : list LabelSelectorRequirementV.t));
-      pose (expressions_c := ([] : list v1.LabelSelectorRequirement.t));
-      iAssert (v1.LabelSelector.MatchExpressions' selector_c ↦*
-        expressions_c)%I as "Hexpressions_sl";
-      [rewrite Hexpressions_nil /expressions_c; iApply own_slice_nil|];
-      iAssert (([∗ list] expression_c;expression ∈
-        expressions_c;expressions,
-        LabelSelectorRequirementV.deepown expression_c expression dq))%I
-        as "Hexpressions";
-      [rewrite /expressions_c /expressions big_sepL2_nil; done|]
+  | expressions : list LabelSelectorRequirementV.t |- _ => idtac
+  | _ => pose (expressions := ([] : list LabelSelectorRequirementV.t))
   end.
+  all: iEval (rewrite ?Hexpressions_opt /=) in "Hexpressions".
   all: unfold LabelSelectorV.extra_valid in Hsize.
   all: rewrite Hlabels_opt /LabelSelectorV.match_expressions_list
     Hexpressions_opt /= in Hsize.
@@ -95,9 +82,10 @@ Proof.
     %[Hexpressions_len Hexpressions_nonnegative].
   all: iDestruct (big_sepL2_length with "Hexpressions") as
     %Hexpressions_models_len.
+  all: rewrite ?Hexpressions_opt /= in Hexpressions_models_len.
   all: assert (sint.nat
       (slice.len (v1.LabelSelector.MatchExpressions' selector_c)) =
-      length expressions) as Hexpressions_word_len by lia.
+      length expressions) as Hexpressions_word_len by (simpl; lia).
   all: wp_auto.
   all: lazymatch goal with
   | Hlabels_map_nil : _ = map.nil |- _ =>
@@ -156,7 +144,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".
@@ -277,7 +265,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
@@ -384,7 +372,7 @@ Proof.
          /LabelSelectorRequirementV.values_list Hvalues_opt /=.
        tauto. }
   1: iAssert (LabelSelectorRequirementV.deepown expression_c expression dq)
-    with "[Hsource_values_out]" as "Hexpression".
+    with "[Hsource_values_out Hexpression_Hdeepown_values_cap]" as "Hexpression".
   1: { rewrite /LabelSelectorRequirementV.deepown /named Hvalues_opt /=.
        iFrame. iPureIntro. split_and!; done. }
   1: iSpecialize ("Hrestore_expressions" with "Hexpression").
@@ -395,7 +383,7 @@ Proof.
   1: iEval (rewrite Hone_requirement) in "Hrequirements_out".
   1: iApply wp_for_post_do.
   1: wp_auto.
-  1: iFrame "HΦ Hselector_field_MatchLabels
+  1: iFrame "HΦ Hselector_Hdeepown_matchexpressions_cap Hselector_field_MatchLabels
     Hselector_field_MatchExpressions Hlabels_map Hv Hk".
   1: iExists (word.add loop_i (W64 1)), expression_c, current_sl',
     (expression_entries ++ [(requirement_c', new_requirement)]).
@@ -503,8 +491,10 @@ Proof.
       "(Hrequirements_out & Hrequirements_cap_out & Hone_requirement_out)";
     wp_auto;
     iAssert (LabelSelectorRequirementV.deepown expression_c expression frac)
-      with "[Hsource_values_out]" as "Hexpression";
+      with "[Hsource_values_out Hexpression_Hdeepown_values_cap]" as "Hexpression";
     [rewrite /LabelSelectorRequirementV.deepown /named Hvalues_opt /=;
+     try rewrite values_nil;
+     iFrame "Hexpression_Hdeepown_values_cap";
      iFrame; iPureIntro; split_and!; done|];
     iSpecialize ("Hrestore_expressions" with "Hexpression");
     assert (<[sint.nat (W64 0):=requirement_c]>
@@ -514,7 +504,7 @@ Proof.
     iEval (rewrite Hone_requirement) in "Hrequirements_out";
     iApply wp_for_post_do;
     wp_auto;
-    iFrame "HΦ Hselector_field_MatchLabels
+    iFrame "HΦ Hselector_Hdeepown_matchexpressions_cap Hselector_field_MatchLabels
       Hselector_field_MatchExpressions";
     try iFrame "Hv";
     try iFrame "Hk";
@@ -610,7 +600,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".
@@ -654,7 +644,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".
@@ -774,7 +764,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
@@ -787,9 +777,9 @@ Proof.
   1: { iExists (W64 0), (zero_val v1.LabelSelectorRequirement.t),
          map_requirements_sl, [].
        rewrite fmap_app /= app_nil_r take_0.
-       unfold expressions, expressions_c. simpl.
+       unfold expressions. simpl.
        iFrame "i expr Hrequirements_ptr Hrequirements Hrequirements_cap
-         Hexpressions_sl".
+         Hexpressions_sl Hexpressions".
        all: done. }
   1: try iClear "Hexpressions_sl Hexpressions".
   1: wp_for "Hloop".
@@ -848,7 +838,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".
@@ -889,7 +879,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".
@@ -923,7 +913,7 @@ Proof.
     "Hselector_l".
   2: iExists selector_c.
   2: iFrame "Hselector_l".
-  2: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  2: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   2: iFrame.
   2: iFrame "%".
@@ -958,7 +948,7 @@ Proof.
       own_slice_cap labels.Requirement.t current_sl (DfracOwn 1) ∗
       ([∗ list] entry ∈ expression_entries,
         label_requirement_rep entry.1 entry.2) ∗
-      v1.LabelSelector.MatchExpressions' selector_c ↦* expressions_c ∗
+      v1.LabelSelector.MatchExpressions' selector_c ↦*{dq} expressions_c ∗
       ([∗ list] c;expression ∈ expressions_c;expressions,
         LabelSelectorRequirementV.deepown c expression dq) ∗
       ⌜ Forall2 expression_converts
@@ -1081,7 +1071,7 @@ Proof.
     "Hselector_l".
   1: iExists selector_c.
   1: iFrame "Hselector_l".
-  1: rewrite /LabelSelectorV.deepown /named Hlabels_opt
+  1: rewrite /LabelSelectorV.deepown /deepown_slice /named Hlabels_opt
     Hexpressions_opt /=.
   1: iFrame.
   1: iFrame "%".

@@ -2,7 +2,7 @@ From New.proof Require Import prelude empty_ffi sort.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels.
 From New.proof.k8s_io.apimachinery.pkg.util Require Import validation.
 From New.proof.k8s_io.apimachinery.pkg.util.validation Require Import field.
-From New.proof.kubernetes_types Require Import common.
+From New.object_specs Require Import common.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

@@ -1,7 +1,8 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -53,7 +54,7 @@ Lemma wp_getPodsRankedByRelatedPodsOnSameNode pods_sl pods_ptrs pods
       ([∗ list] ptr;pod ∈ related_ptrs;related_pods, PodV.deepown_l ptr pod dq2)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply wp_map_make1 as (pods_on_node_l) "Hpods_on_node".
   iDestruct (own_slice_len with "Hrelated_sl") as %(Hrelated_len1 & Hrelated_len2).
   iDestruct (big_sepL2_length with "Hrelated") as %Hrelated_len.
@@ -70,7 +71,7 @@ Proof.
   - list_elem related_ptrs (sint.Z i) as this_ptr.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len related_sl))) as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hrelated_sl]"); [word|iPureIntro; exact Hthis_ptr_lookup|].
-    iIntros "Hrelated_sl". wp_auto.
+    iIntros "Hrelated_sl". wp_auto_keep.
     assert (∃ this_pod, related_pods !! sint.nat i = Some this_pod) as
       [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2. rewrite -Hrelated_len Hrelated_len1. word. }
@@ -82,7 +83,7 @@ Proof.
         "(%Hthis_not_null & Htype & Hmeta & Hspec & Hstatus)".
       iDestruct "Hspec" as (spec_c) "[Hspec_l Hspec]".
       iDestruct (struct_fields_split with "Hspec_l") as "[Hspec_fields %Hspec_not_null]".
-      iNamedPrefix "Hspec_fields" "Hspec_". wp_auto.
+      iNamedPrefix "Hspec_fields" "Hspec_". wp_auto_keep.
       wp_apply (wp_map_lookup1 with "Hpods_on_node") as "Hpods_on_node".
       wp_apply (wp_map_insert go.string with "Hpods_on_node") as "Hpods_on_node".
       iDestruct (struct_fields_combine (V:=v1.PodSpec.t) _ spec_c dq2 Hspec_not_null
@@ -104,10 +105,10 @@ Proof.
         "[Htype Hmeta Hspec Hstatus]" as "Hthis".
       { iApply (PodV.deepown_l_restore _ _ _ Hthis_not_null). iFrame. }
       iPoseProof ("Hrestore" with "Hthis") as "Hrelated".
-      iApply wp_for_post_do. wp_auto. iFrame "Hrelated_sl HΦ Hpods_sl Hpods podsToRank".
+      iApply wp_for_post_do. wp_auto_keep. iFrame "Hrelated_sl HΦ Hpods_sl Hpods podsToRank".
       iExists (word.add i (W64 1)), this_ptr, _. iFrame. iPureIntro. word.
     + iPoseProof ("Hrestore" with "Hthis") as "Hrelated".
-      iApply wp_for_post_do. wp_auto. iFrame "Hrelated_sl HΦ Hpods_sl Hpods podsToRank".
+      iApply wp_for_post_do. wp_auto_keep. iFrame "Hrelated_sl HΦ Hpods_sl Hpods podsToRank".
       iExists (word.add i (W64 1)), this_ptr, _. iFrame. iPureIntro. word.
   - clear I.
     iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_len1 & Hpods_len2).
@@ -117,7 +118,7 @@ Proof.
     iDestruct (own_slice_len with "Hranks") as %(Hranks_len1 & Hranks_len2).
     assert (Hranks_sl_len : sint.Z (slice.len ranks_sl) = sint.Z (slice.len pods_sl)).
     { rewrite length_replicate in Hranks_len1. word. }
-    wp_auto.
+    wp_auto_keep.
     wp_alloc loop_i_ptr as "loop_i".
     set J := (∃ (j rank_i : w64) (pod_l : loc) (ranks : list w64),
       "loop_i" ∷ loop_i_ptr ↦ j ∗ "i" ∷ i_ptr ↦ rank_i ∗ "pod" ∷ pod_ptr ↦ pod_l ∗
@@ -129,13 +130,13 @@ Proof.
     { iExists (W64 0), (W64 0), null,
         (replicate (sint.nat (slice.len pods_sl)) (W64 0)).
       iFrame. iPureIntro. split; [exact Hranks_len1|word]. }
-    wp_auto.
+    wp_auto_keep.
     wp_for "Hloop". wp_if_destruct.
     + list_elem pods_ptrs (sint.Z j) as this_ptr.
       destruct (decide (0 ≤ sint.Z j < sint.Z (slice.len pods_sl))) as [_|Hbounds]; last word.
       wp_apply (wp_load_slice_index with "[$Hpods_sl]");
         [word|iPureIntro; exact Hthis_ptr_lookup|].
-      iIntros "Hpods_sl". wp_auto.
+      iIntros "Hpods_sl". wp_auto_keep.
       assert (∃ this_pod, pods !! sint.nat j = Some this_pod) as
         [this_pod Hthis_pod_lookup].
       { apply lookup_lt_is_Some_2. rewrite -Hpods_len Hpods_len1. word. }
@@ -145,12 +146,12 @@ Proof.
         "(%Hthis_not_null & Htype & Hmeta & Hspec & Hstatus)".
       iDestruct "Hspec" as (spec_c) "[Hspec_l Hspec]".
       iDestruct (struct_fields_split with "Hspec_l") as "[Hspec_fields %Hspec_not_null]".
-      iNamedPrefix "Hspec_fields" "Hspec_". wp_auto.
+      iNamedPrefix "Hspec_fields" "Hspec_". wp_auto_keep.
       wp_apply (wp_map_lookup1 with "Hpods_on_node") as "Hpods_on_node".
       assert (Hj_rank : 0 ≤ sint.Z j < sint.Z (slice.len ranks_sl)) by
         (rewrite Hranks_sl_len; word).
       rewrite decide_True; [exact Hj_rank|].
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_store_slice_index with "[$Hranks]") as "Hranks"; first word.
       iDestruct (struct_fields_combine (V:=v1.PodSpec.t) _ spec_c dq1 Hspec_not_null
         with "[Hspec_Volumes Hspec_InitContainers Hspec_Containers Hspec_EphemeralContainers
@@ -171,12 +172,12 @@ Proof.
         "[Htype Hmeta Hspec Hstatus]" as "Hthis".
       { iApply (PodV.deepown_l_restore _ _ _ Hthis_not_null). iFrame. }
       iPoseProof ("Hrestore" with "Hthis") as "Hpods".
-      iApply wp_for_post_do. wp_auto.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "Hpods_sl Hrelated_sl Hrelated HΦ podsToRank podsOnNode Hpods_on_node ranks Hranks_cap".
       iExists (word.add j (W64 1)), j, this_ptr, _. iFrame.
       iPureIntro. split; [rewrite length_insert; exact Hranks_len|word].
-    + clear J. wp_auto.
-      wp_apply v1.wp_Now. iIntros (now_c now) "Hnow". wp_auto.
+    + clear J. wp_auto_keep.
+      wp_apply v1.wp_Now. iIntros (now_c now) "Hnow". wp_auto_keep.
       iApply "HΦ". iFrame.
       iSplit; first done. iPureIntro. exact Hranks_sl_len.
 Unshelve. all: try tc_solve.

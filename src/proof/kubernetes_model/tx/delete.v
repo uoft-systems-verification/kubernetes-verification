@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export delete.
 From New.proof.kubernetes_model Require Import get.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
@@ -46,9 +46,9 @@ Proof.
     assert (bool_decide (v1.DeleteOptions.Preconditions' options_c = null) = false)
       as Hpreconditions_nonnull_decide.
     { apply bool_decide_false. done. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hpreconditions_nonnull_decide /=.
-    wp_auto.
+    wp_auto_keep.
     destruct preconditions.(PreconditionsV.UID') as [uid|] eqn:Huid.
     + iDestruct "Hdeepown_uid_some" as (uid_c) "[Huid_l ->]".
       assert (v1.Preconditions.UID' preconditions_c ≠ null) as Huid_not_null.
@@ -57,12 +57,12 @@ Proof.
         as Huid_nonnull_decide.
       { apply bool_decide_false. done. }
       rewrite Huid_nonnull_decide /=.
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_GetUID_deepown_kobject metadata_i l o with "[$Hdeepown_metadata]"). 1: done.
       iIntros "Hdeepown_metadata".
       destruct (decide (uid = metadata.(ObjectMetaV.UID'))) as [Huid_eq|Huid_neq].
       * rewrite Huid_eq.
-        wp_auto.
+        wp_auto_keep.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some vu => ∃ cu, v1.Preconditions.UID' preconditions_c ↦{dq} cu ∗ ⌜ cu = vu ⌝
           | None => True
@@ -81,7 +81,7 @@ Proof.
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -92,7 +92,7 @@ Proof.
         replace (bool_decide (ObjectMetaV.UID' metadata ≠ ObjectMetaV.UID' metadata)) with false
           by (symmetry; apply bool_decide_false; intros Hneq; apply Hneq; done).
         done.
-      * wp_auto.
+      * wp_auto_keep.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some vu => ∃ cu, v1.Preconditions.UID' preconditions_c ↦{dq} cu ∗ ⌜ cu = vu ⌝
           | None => True
@@ -111,7 +111,7 @@ Proof.
         { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
         iApply "HΦ". iFrame. iPureIntro.
@@ -127,7 +127,7 @@ Proof.
         as Huid_null_decide.
       { apply bool_decide_true. done. }
       rewrite Huid_null_decide /=.
-      wp_auto.
+      wp_auto_keep.
       iAssert (PreconditionsV.deepown preconditions_c preconditions dq)
         with "[Hdeepown_resourceversion_some]" as "Hdeepown_preconditions".
       { rewrite /PreconditionsV.deepown Huid /=. iFrame. iPureIntro. done. }
@@ -141,7 +141,7 @@ Proof.
       { rewrite Hpreconditions /=. iExists preconditions_c. iFrame. }
       iAssert (DeleteOptionsV.deepown options_c options dq)
         with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-          Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+          Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options".
       { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
       iApply "HΦ". iFrame. iPureIntro.
@@ -151,12 +151,12 @@ Proof.
     assert (bool_decide (v1.DeleteOptions.Preconditions' options_c = null) = true)
       as Hpreconditions_null_decide.
     { apply bool_decide_true. done. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hpreconditions_null_decide /=.
-    wp_auto.
+    wp_auto_keep.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=. iFrame. iPureIntro. done. }
     iApply "HΦ". iFrame. iPureIntro.
@@ -224,10 +224,10 @@ Proof.
   iNamed "H".
   iDestruct "Hdeepown_options_l" as (options_c) "[Hoptions_l Hdeepown_options]".
   iNamed "Hdeepown_options".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_GetResourceVersion_deepown_kobject metadata_i l o with "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata".
-  wp_auto.
+  wp_auto_keep.
   iAssert (⌜ rv_ptr ≠ null ⌝%I) as "%Hrv_ptr_not_null".
   { iDestruct (typed_pointsto_not_null with "rv") as %Hrv_ptr_not_null'. done. }
   destruct options.(DeleteOptionsV.Preconditions') as [preconditions|] eqn:Hpreconditions.
@@ -244,7 +244,7 @@ Proof.
     destruct preconditions.(PreconditionsV.UID') as [uid|] eqn:Huid.
     + iDestruct "Hdeepown_uid_some" as (uid_c) "[Huid_l ->]".
       rewrite Hpreconditions_nonnull_decide.
-      wp_auto.
+      wp_auto_keep.
       iAssert (PreconditionsV.deepown
         (preconditions_c <| v1.Preconditions.ResourceVersion' := rv_ptr |>)
         (preconditions <| PreconditionsV.ResourceVersion' :=
@@ -272,7 +272,7 @@ Proof.
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
         with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
@@ -283,7 +283,7 @@ Proof.
         split; [intros Hnull; exfalso; apply Hpreconditions_not_null; done|intros Hnone; congruence]. }
       iApply "HΦ". iFrame.
     + rewrite Hpreconditions_nonnull_decide.
-      wp_auto.
+      wp_auto_keep.
       iAssert (PreconditionsV.deepown
         (preconditions_c <| v1.Preconditions.ResourceVersion' := rv_ptr |>)
         (preconditions <| PreconditionsV.ResourceVersion' :=
@@ -310,7 +310,7 @@ Proof.
       iAssert (DeleteOptionsV.deepown_l options_l
         (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
         with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+          Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hdeepown_options_l".
       { iExists options_c. iFrame "Hoptions_l".
@@ -327,9 +327,9 @@ Proof.
       as Hpreconditions_null_decide.
     { apply bool_decide_true. done. }
     rewrite Hpreconditions_null_decide.
-    wp_auto.
+    wp_auto_keep.
     wp_alloc preconditions_ptr as "Hpreconditions_l".
-    wp_auto.
+    wp_auto_keep.
     iClear "Hdeepown_preconditions_some".
     iAssert (⌜ preconditions_ptr ≠ null ⌝%I) as "%Hpreconditions_ptr_not_null".
     { iDestruct (typed_pointsto_not_null with "Hpreconditions_l") as %Hpreconditions_ptr_not_null'. done. }
@@ -360,7 +360,7 @@ Proof.
     iAssert (DeleteOptionsV.deepown_l options_l
       (delete_tx_options_with_rv options metadata.(ObjectMetaV.ResourceVersion')) 1)%I
       with "[Hoptions_l Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-        Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+        Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
         Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options_l".
     { iExists (options_c <| v1.DeleteOptions.Preconditions' := preconditions_ptr |>).
@@ -399,7 +399,7 @@ Lemma wp_State__deleteTx_au γ l key options_c options:
 Proof.
   iIntros (Φ) "(#Hinit & #Hkinv & H)".
   iNamed "H".
-  wp_method_call. rewrite /apimodel.State__deleteTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__deleteTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   set I := (∃ options_c_orig,
     "Hoptions_ptr" ∷ options_ptr ↦ options_c_orig ∗
     "Hdeepown_options_orig" ∷ DeleteOptionsV.deepown options_c_orig options 1 ∗
@@ -425,7 +425,7 @@ Proof.
   { iFrame. }
   iIntros (options_copy_ptr) "[(%options_c_copy & Hoptions_copy_ptr & Hdeepown_options_copy)
     (%options_c' & Hoptions_ptr & Hdeepown_options_orig)]".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__get_some_au γ l key).
   iFrame "#".
   iMod "Hau" as (uid kmeta parent_key parent_uid children terminating_bound) "[Hau_pre Hclose]".
@@ -442,9 +442,10 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_meta_frag") as "%Hmeta_valid".
   iMod ("Habort" with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]") as "Hau".
   { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
-  iModIntro. iNext. wp_auto.
+  iModIntro. iNext. wp_auto_keep.
   iDestruct "Hdeepown_i" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   destruct Hmeta_valid as (_ & _ & Huid_kmeta & _ & _).
@@ -463,7 +464,7 @@ Proof.
   { done. }
   iIntros (mismatch) "(%Hmismatch & Hdeepown_options_copy & Hdeepown_metadata)".
   rewrite Hmismatch Hprecondition_uid_mismatch_false.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_setPreconditionResourceVersion _ options i kobj_l kobj with
     "[optionsCopy Hdeepown_options_copy Hdeepown_metadata]").
   { iFrame "#".
@@ -493,7 +494,7 @@ Proof.
   { intros uid'.
     subst options_rv.
     apply delete_tx_options_with_rv_preconditions_match_uid_iff. }
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__delete_au γ l key options_c_rv options_rv).
   iFrame "#".
   iFrame "Hdeepown_options_rv".
@@ -521,11 +522,11 @@ Proof.
     iDestruct "Hclose" as "[_ Hcommit]".
     iMod ("Hcommit" $! tt with "Hpost") as "HΦ".
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict interface.nil with "[]").
     replace (bool_decide (conflict_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact conflict_error_nil).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iApply "HΦ".
   - iDestruct "Hconflict" as
@@ -534,11 +535,11 @@ Proof.
     iMod ("Habort" with "[Hown_meta_frag Hown_children_frag Hown_terminating_children_frag]") as "Hau".
     { iFrame "Hown_unreserved_key_frag". iFrame. iFrame "%". }
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict err' with "[]").
     replace (bool_decide (conflict_error err')) with true by
       (symmetry; apply bool_decide_true; done).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iFrame "s key".
     iExists options_c'. iFrame.

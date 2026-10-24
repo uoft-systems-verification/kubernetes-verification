@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export get_pods_ranked_by_related_pods_on_same_node.
 
@@ -50,7 +51,7 @@ Lemma wp_getPodsToDelete pods_sl pods_ptrs pods related_sl related_ptrs
       "%Hpods_perm" ∷ ⌜ pods ≡ₚ sorted_pods ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_len1 & Hpods_len2).
   wp_if_destruct.
   - wp_apply (wp_getPodsRankedByRelatedPodsOnSameNode with
@@ -59,7 +60,7 @@ Proof.
       "(%Hranked_pods & %Hranked_len & Hranks & Hpods_sl & Hpods & Hrelated_sl & Hrelated)".
     (* Stop before the intentionally opaque [sort.Sort]; [wp_Sort] below is
        its trusted semantic boundary. *)
-    wp_pures. wp_store. wp_pures. wp_load.
+    wp_pures_keep. wp_store. wp_pures_keep. wp_load.
     iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.
     iDestruct (own_slice_len with "Hranks") as %(Hranks_len1 & Hranks_len2).
     assert (Hptrs_ranks_len : length pods_ptrs = length ranks).
@@ -93,7 +94,7 @@ Proof.
     rewrite (active_pods_with_ranks_entries_pods _ _ _ Hpods_len Hptrs_ranks_len) in Hpods_perm.
     set (sorted_ptrs := active_pod_ptr <$> sorted_entries) in *.
     set (sorted_pods := active_pod_value <$> sorted_entries) in *.
-    wp_auto.
+    wp_auto_keep.
     iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_cap.
     iDestruct (own_slice_split_all diff with "Hpods_sl") as "[Hdelete Hafter]".
     { word. }
@@ -103,7 +104,7 @@ Proof.
     { word. }
     replace (sint.nat (W64 0) - sint.nat (W64 0))%nat with 0%nat by word.
     iEval (simpl) in "Hbefore Hdelete".
-    rewrite decide_True; [word|]. wp_auto.
+    rewrite decide_True; [word|]. wp_auto_keep.
     iApply "HΦ". iFrame. done.
   -
     iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_cap.
@@ -115,7 +116,7 @@ Proof.
     { word. }
     replace (sint.nat (W64 0) - sint.nat (W64 0))%nat with 0%nat by word.
     iEval (simpl) in "Hbefore Hdelete".
-    rewrite decide_True; [word|]. wp_auto.
+    rewrite decide_True; [word|]. wp_auto_keep.
     iApply "HΦ". iFrame. done.
 Qed.
 

@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.map Require Import for_range.
 From New.proof Require Import util.
 From New.proof.kubernetes_model Require Export inv common admitted.
@@ -285,7 +285,7 @@ Proof.
     as "%Habs_valid".
   iPoseProof (kview.own_auth_extra_valid_forall with "Hown_abs")
     as "%Habs_extra_valid".
-  wp_auto.
+  wp_auto_keep.
   iPoseProof (own_slice_nil (V:=interface.t)) as "Hslice_nil".
   iPoseProof (own_slice_cap_nil (V:=interface.t)) as "Hcap_nil".
   wp_apply (wp_map_for_range_return_func (key_type:=apimodel.KKey)
@@ -333,21 +333,21 @@ Proof.
     2:{ simpl. iDestruct "Hdeepown_i" as %[]. }
     wp_pures.
     simpl subst'.
-    wp_auto.
-    destruct (bool_decide (kind = key.(KKey.Kind'))) eqn:Hkind_dec; wp_auto.
-    - destruct (bool_decide (namespace = ""%go)) eqn:Hnamespace_all; wp_auto.
+    wp_auto_keep.
+    destruct (bool_decide (kind = key.(KKey.Kind'))) eqn:Hkind_dec; wp_auto_keep.
+    - destruct (bool_decide (namespace = ""%go)) eqn:Hnamespace_all; wp_auto_keep.
       + assert (obj_list_match kind namespace (key, obj)) as Hmatch.
         { split.
           - apply bool_decide_eq_true in Hkind_dec. done.
           - unfold v1.namespace_matches.
             apply bool_decide_eq_true in Hnamespace_all. left. subst. done. }
         wp_apply (wp_deepCopy with "[$Hdeepown_i]").
-        iIntros (i_copy) "[Hdeepown_copy Hdeepown_i]". wp_auto.
+        iIntros (i_copy) "[Hdeepown_copy Hdeepown_i]". wp_auto_keep.
         wp_apply (wp_slice_literal (V:=interface.t) (t:=go.InterfaceType [])).
         iSplitR; first done.
-        iIntros (sl_one) "[Hsl_one _]". wp_auto.
+        iIntros (sl_one) "[Hsl_one _]". wp_auto_keep.
         wp_apply (wp_slice_append with "[$Hitems $Hitems_cap $Hsl_one]").
-        iIntros (items_sl') "(Hitems & Hitems_cap & Hsl_one)". wp_auto.
+        iIntros (items_sl') "(Hitems & Hitems_cap & Hsl_one)". wp_auto_keep.
         assert (Hsingle :
           <[sint.nat (W64 0):=interface.ok i_copy]> [interface.nil] =
           [interface.ok i_copy]).
@@ -384,19 +384,19 @@ Proof.
                 (<[key:=obj]> (filter (obj_list_match kind namespace)
                   (processed_map keys i abs_state)))).*2).
              symmetry. apply Permutation_map. exact Hinsert_perm.
-      + destruct (bool_decide (namespace = key.(KKey.Namespace'))) eqn:Hnamespace_eq; wp_auto.
+      + destruct (bool_decide (namespace = key.(KKey.Namespace'))) eqn:Hnamespace_eq; wp_auto_keep.
         * assert (obj_list_match kind namespace (key, obj)) as Hmatch.
           { split.
             - apply bool_decide_eq_true in Hkind_dec. done.
             - unfold v1.namespace_matches.
               apply bool_decide_eq_true in Hnamespace_eq. right. subst. done. }
           wp_apply (wp_deepCopy with "[$Hdeepown_i]").
-          iIntros (i_copy) "[Hdeepown_copy Hdeepown_i]". wp_auto.
+          iIntros (i_copy) "[Hdeepown_copy Hdeepown_i]". wp_auto_keep.
           wp_apply (wp_slice_literal (V:=interface.t) (t:=go.InterfaceType [])).
           iSplitR; first done.
-          iIntros (sl_one) "[Hsl_one _]". wp_auto.
+          iIntros (sl_one) "[Hsl_one _]". wp_auto_keep.
           wp_apply (wp_slice_append with "[$Hitems $Hitems_cap $Hsl_one]").
-          iIntros (items_sl') "(Hitems & Hitems_cap & Hsl_one)". wp_auto.
+          iIntros (items_sl') "(Hitems & Hitems_cap & Hsl_one)". wp_auto_keep.
           assert (Hsingle :
             <[sint.nat (W64 0):=interface.ok i_copy]> [interface.nil] =
             [interface.ok i_copy]).
@@ -469,7 +469,7 @@ Proof.
   { rewrite -(size_dom phys_state) Hdom_eq size_dom. done. }
   rewrite Hsize_eq in Hperm.
   rewrite (processed_map_all keys abs_state Hkeys_dom_abs Hkeys_len_abs) in Hperm.
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" $! items_sl interfaces objs). iFrame.
   iPureIntro. split_and!.
   - exact Hperm.
@@ -548,8 +548,7 @@ Proof.
     apply Forall_forall.
     intros pod Hpod_in.
     specialize (Hvalid pod Hpod_in).
-    change (KObjectV.valid2 (KObjectV.Pod pod)).
-    rewrite -KObjectV.valid_eq_valid2. exact Hvalid.
+    change (KObjectV.valid (KObjectV.Pod pod)). exact Hvalid.
   - assert (KObjectV.key <$> (KObjectV.Pod <$> pods) = PodV.key <$> pods) as Hkeys_eq.
     { rewrite -list_fmap_compose.
       apply list_fmap_ext. intros i pod Hlookup.
@@ -1086,7 +1085,7 @@ Proof.
   { iPkgInit. }
   iAssert (is_pkg_init v1) as "#Hv1_init".
   { iPkgInit. }
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hitems") as %[Hitems_len Hitems_nonneg].
   rewrite map_length in Hitems_len.
   iDestruct (big_sepL2_length with "Hobjects") as %Hobjects_len.
@@ -1133,7 +1132,7 @@ Proof.
       (interface.ok <$> interfaces) (DfracOwn 1)
       (interface.ok this_interface) with "[$Hitems]");
       [word|iPureIntro; exact Hthis_value_lookup|].
-    iIntros "Hitems". wp_auto.
+    iIntros "Hitems". wp_auto_keep.
     assert (drop (sint.nat i) interfaces =
       this_interface :: drop (S (sint.nat i)) interfaces) as Hdrop_interfaces.
     { apply drop_S. exact Hthis_interface_lookup. }
@@ -1148,7 +1147,7 @@ Proof.
       "(%Hthis_l_nonnull & Hthis_type & Hthis_meta & Hthis_spec & Hthis_status)".
     wp_apply (wp_GetLabels_deepown_kobject this_interface this_l this_obj
       with "[$Hv1_init $Hthis_meta]"). 1: done.
-    iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto.
+    iIntros (labels_l) "[Hlabels Hrestore_meta]". wp_auto_keep.
     wp_bind ((match selector with
       | interface.ok selector_i =>
           Val (#(methods selector_i.(interface.ty) "Matches"
@@ -1167,13 +1166,13 @@ Proof.
       with "[Hthis]" as "Hthis".
     { iExists this_l. iFrame "Hthis". iPureIntro. exact Hthis_interface. }
     destruct matches.
-    + wp_auto.
+    + wp_auto_keep.
       wp_apply wp_slice_literal. iSplitR; first done.
-      iIntros (one_sl) "[Hone _]". wp_auto.
+      iIntros (one_sl) "[Hone _]". wp_auto_keep.
       wp_apply (wp_slice_append with
         "[$Hfiltered $Hfiltered_cap $Hone]").
       iIntros (filtered_sl') "(Hfiltered & Hfiltered_cap & Hone)".
-      wp_auto. iApply wp_for_post_do. wp_auto.
+      wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ Hitems selector".
       iExists (word.add i (W64 1)), (interface.ok this_interface),
         filtered_sl', (filtered_interfaces ++ [this_interface]).
@@ -1188,7 +1187,7 @@ Proof.
       iDestruct (big_sepL2_app with "Hfiltered_objects Hthis")
         as "Hfiltered_objects".
       iFrame. iPureIntro. word.
-    + wp_auto. iApply wp_for_post_do. wp_auto.
+    + wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ Hitems selector".
       iExists (word.add i (W64 1)), (interface.ok this_interface),
         filtered_sl, filtered_interfaces.
@@ -1279,13 +1278,13 @@ Proof.
   iAssert (is_pkg_init sync) as "#Hsync".
   { iPkgInit. }
   wp_method_call. rewrite /apimodel.State__objListⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock.
   { iFrame "#". }
   iIntros "[Hown_Mutex H]".
   iDestruct "H" as (phys_state_l phys_used_uid_l phys_used_rv_l phys_state
     phys_used_uid phys_used_rv abs_state used_uid used_reference) "H".
-  iNamedPrefix "H" "Hinv_". wp_auto.
+  iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_State__objListLocked γ l ReplicaSetV.kind namespace
     phys_state_l phys_state abs_state used_uid with
     "[$Hpkg $Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
@@ -1435,7 +1434,7 @@ Proof.
   { iFrame "Hown_meta_frags Hown_spec_frags Hown_children_frag
       Hown_terminating_children_frag Hsl Hobjs".
     iPureIntro. split_and!; done. }
-  iModIntro. wp_auto.
+  iModIntro. wp_auto_keep.
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
     with "[$Hown_Mutex H]").
@@ -1570,13 +1569,13 @@ Local Lemma wp_State__objListBySelector_ReplicaSet γ l namespace selector rss
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__objListBySelectorⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__objList_ReplicaSet with
     "[$Hpkg $Hisk $Hown_meta_frags $Hown_spec_frags $Hown_children_frag
       $Hown_terminating_children_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (sl interfaces all_rss) "Hpost". iNamed "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iEval (rewrite -(big_sepL2_fmap_r KObjectV.ReplicaSet
     (λ _ i obj, KObjectV.deepown_i i obj 1))) in "Hrss".
   wp_bind (@! apimodel.filterByLabelSelector #sl #selector)%E.
@@ -1593,7 +1592,7 @@ Proof.
     f_equal. exact IH. }
   rewrite Hall.
   iEval (rewrite big_sepL2_fmap_r) in "Hrss'".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" $! sl' interfaces' all_rss).
   iFrame. iFrame "%".
 Qed.
@@ -1649,7 +1648,7 @@ Local Lemma wp_State__ReplicaSetMutList_children γ l namespace selector rss
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__ReplicaSetMutListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__objListBySelector_ReplicaSet with
     "[$Hpkg $Hisk $Hselector $Hown_meta_frags $Hown_spec_frags
       $Hown_children_frag $Hown_terminating_children_frag]").
@@ -1658,14 +1657,14 @@ Proof.
   iDestruct (replica_set_interfaces_to_ptrs with "Hrss") as
     (ptrs) "[%Hinterfaces Hrss]".
   subst interfaces.
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hsl") as %(Hobjs_len1 & Hobjs_len2).
   rewrite !map_length in Hobjs_len1.
   iDestruct (own_slice_wf with "Hsl") as %Hobjs_cap.
   iDestruct (big_sepL2_length with "Hrss") as %Hptrs_len.
   wp_apply (wp_slice_make3 (V:=loc) (t:=go.PointerType v1.ReplicaSet)); first word.
   iIntros (rss_sl) "(Hrss_sl & Hrss_cap & %Hrss_cap_eq)".
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (i : w64) (obj : interface.t) (rss_sl' : slice.t)
       (ptrs' : list loc),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
@@ -1697,20 +1696,20 @@ Proof.
       (interface.ok (interface.mk
         (go.PointerType v1.ReplicaSet) #this_ptr)) with "[$Hsl]");
       [word|iPureIntro; exact Hinterface_lookup|].
-    iIntros "Hsl". wp_auto.
+    iIntros "Hsl". wp_auto_keep.
     rewrite decide_True;
       [change (go.PointerType api_apps_v1.ReplicaSet)
         with (go.PointerType v1.ReplicaSet); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     rewrite bool_decide_true;
       [change (go.PointerType api_apps_v1.ReplicaSet)
         with (go.PointerType v1.ReplicaSet); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (sl_one) "[Hsl_one _]". wp_auto.
+    iIntros (sl_one) "[Hsl_one _]". wp_auto_keep.
     wp_apply (wp_slice_append with "[$Hrss_sl $Hrss_cap $Hsl_one]").
-    iIntros (rss_sl'') "(Hrss_sl & Hrss_cap & Hsl_one)". wp_auto.
-    iApply wp_for_post_do. wp_auto.
+    iIntros (rss_sl'') "(Hrss_sl & Hrss_cap & Hsl_one)". wp_auto_keep.
+    iApply wp_for_post_do. wp_auto_keep.
     iFrame "Hsl HΦ Hrss Hown_meta_frags Hown_spec_frags Hown_children_frag
       Hown_terminating_children_frag".
     iExists (word.add i (W64 1)),
@@ -1792,13 +1791,13 @@ Lemma wp_State__ReplicaSetList_children γ l namespace selector rss rs_dqs
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__ReplicaSetListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__ReplicaSetMutList_children with
     "[$Hpkg $Hisk $Hselector $Hown_meta_frags $Hown_spec_frags
       $Hown_children_frag $Hown_terminating_children_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (sl ptrs all_rss) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 

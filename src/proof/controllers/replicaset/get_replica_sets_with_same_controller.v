@@ -1,9 +1,12 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof.k8s_io.api.apps Require Export v1.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.kubernetes_model Require Export by_index_controller_uid.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -55,7 +58,7 @@ Proof.
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
-  wp_auto.
+  wp_auto_keep.
   wp_bind (@! v1.GetControllerOf
     #(interface.mk_ok (go.PointerType api_apps_v1.ReplicaSet) #rs_l))%E.
   wp_apply (wp_GetControllerOf_ReplicaSet with
@@ -63,7 +66,7 @@ Proof.
   iIntros (controller_ref_l) "(Hrs & Hcontroller_ref)".
   iDestruct "Hcontroller_ref" as
     "[%Hcontroller_ref_null|Hcontroller_ref]".
-  - subst controller_ref_l. wp_auto.
+  - subst controller_ref_l. wp_auto_keep.
     iApply ("HΦ" $! slice.nil [] [] (DfracOwn 1)).
     iPoseProof (own_slice_nil (V:=loc) (DfracOwn 1)) as "Hnil".
     simpl. iFrame "Hnil Hrs". done.
@@ -71,9 +74,9 @@ Proof.
       "(%Hcontroller_ref & Hcontroller_ref)".
     destruct Hcontroller_ref as
       [Hcontroller_ref_nonnull Hcontroller_ref_of].
-    wp_auto.
+    wp_auto_keep.
     rewrite -> bool_decide_false by exact Hcontroller_ref_nonnull.
-    wp_auto.
+    wp_auto_keep.
     iDestruct "Hcontroller_ref" as (controller_ref_c)
       "[Hcontroller_ref_l Hcontroller_ref]".
     iDestruct (struct_fields_split (V:=v1.OwnerReference.t) with
@@ -81,7 +84,7 @@ Proof.
       "[Hcontroller_ref_fields %Hcontroller_ref_l_nonnull]".
     iNamedPrefix "Hcontroller_ref_fields" "Hcontroller_ref_field_".
     iNamedPrefix "Hcontroller_ref" "Hcontroller_ref_deepown_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hcontroller_ref_deepown_Hdeepown_uid.
     wp_apply (wp_State__ByIndex_controllerUID γ model_l
       controller_ref.(OwnerReferenceV.UID') with
@@ -89,7 +92,7 @@ Proof.
     iIntros (objects_sl interfaces replica_sets)
       "(Hobjects_sl & Hreplica_sets & %Hreplica_sets_valid &
         %Hreplica_sets_extra_valid & %Hcontroller_uid & %Hnodup)".
-    wp_auto.
+    wp_auto_keep.
     iDestruct (replica_set_interfaces_to_ptrs with "Hreplica_sets") as
       (replica_set_ptrs) "[%Hinterfaces Hreplica_sets]".
     subst interfaces.
@@ -102,7 +105,7 @@ Proof.
       (t:=go.PointerType api_apps_v1.ReplicaSet)); first word.
     iIntros (related_sl)
       "(Hrelated_sl & Hrelated_cap & %Hrelated_cap_eq)".
-    wp_auto.
+    wp_auto_keep.
     set I := (∃ (i : w64) (obj : interface.t) (result_sl : slice.t)
         (result_ptrs : list loc),
       "Hi_ptr" ∷ i_ptr ↦ i ∗
@@ -138,18 +141,18 @@ Proof.
         (interface.ok (interface.mk
           (go.PointerType v1.ReplicaSet) #this_ptr)) with
         "[$Hobjects_sl]"); [word|iPureIntro; exact Hinterface_lookup|].
-      iIntros "Hobjects_sl". wp_auto.
+      iIntros "Hobjects_sl". wp_auto_keep.
       rewrite decide_True;
         [change (go.PointerType api_apps_v1.ReplicaSet) with
           (go.PointerType v1.ReplicaSet); reflexivity|].
-      wp_auto.
+      wp_auto_keep.
       wp_apply wp_slice_literal. iSplitR; first done.
-      iIntros "%one_ptr [Hone _]". wp_auto.
+      iIntros "%one_ptr [Hone _]". wp_auto_keep.
       wp_apply (wp_slice_append with
         "[$Hresult_sl $Hrelated_cap $Hone]").
       iIntros (result_sl')
-        "(Hresult_sl & Hrelated_cap & Hone)". wp_auto.
-      iApply wp_for_post_do. wp_auto.
+        "(Hresult_sl & Hrelated_cap & Hone)". wp_auto_keep.
+      iApply wp_for_post_do. wp_auto_keep.
       iAssert I with
         "[Hi_ptr Hobj_ptr Hresult_ptr Hresult_sl Hrelated_cap]" as
         "Hloop".

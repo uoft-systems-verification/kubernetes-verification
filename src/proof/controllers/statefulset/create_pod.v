@@ -1,6 +1,9 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export create_pvc.
 From New.proof.kubernetes_model Require Import create_named.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -131,6 +134,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
             (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
             pod'.(PodV.ObjectMeta') ⌝ ∗
       "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
+      "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
       "%Hpod_spec_created" ∷
         ⌜ ObjectSpecV.created
             (ObjectSpecV.PodSpec pod.(PodV.Spec'))
@@ -160,7 +164,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
           (children ∪ {[desired_pod_key set ordinal]})
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go) as Hpod_name_nonempty.
   { intros Hempty.
     rewrite Hpod_name in Hempty.
@@ -175,14 +179,14 @@ Proof.
     with "[$Hset $Hpod $Hpvc_states]").
   { iFrame "# %". }
   iIntros "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l &
       Hset_spec_l & Hset_status_l)".
   iDestruct "Hset_objectmeta_l" as
     (set_meta_c) "[Hset_objectmeta_field Hset_objectmeta]".
   iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hset_meta_Hdeepown_namespace.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
@@ -206,11 +210,11 @@ Proof.
     - exact Hpod_parent. }
   iIntros (pod_l' pod' uid) "Hcreate".
   iNamedPrefix "Hcreate" "Hcreate_".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_IsAlreadyExists interface.nil with "[]").
   replace (bool_decide (already_exists_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact already_exists_error_nil).
-  wp_auto.
+  wp_auto_keep.
   iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
   iAssert (ObjectMetaV.deepown set_meta_c
       set.(StatefulSetV.ObjectMeta') dq_set)
@@ -230,7 +234,8 @@ Proof.
   iPureIntro.
   unfold PodV.created in Hcreate_Hcreated.
   destruct Hcreate_Hcreated as
-    (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
+    (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created &
+      Hpod_prepared_spec & Hpod_prepared_status).
   split_and!; done.
 Qed.
 
@@ -263,6 +268,7 @@ Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
     "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
       (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
     "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
+    "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
     "%Hpod_spec_created" ∷
       ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
     "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
@@ -329,6 +335,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
         "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
+        "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
         "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
           (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
         "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
@@ -347,7 +354,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go) as Hpod_name_nonempty.
   { intros Hempty.
     rewrite Hpod_name in Hempty.
@@ -360,12 +367,12 @@ Proof.
   wp_apply (wp_createPersistentVolumeClaims γ model_l set_l pod_l set pod ordinal dq_set 1
     with "[$Hset $Hpod $Hpvc_states]").
   { iFrame "# %". }
-  iIntros "H". iNamed "H". wp_auto.
+  iIntros "H". iNamed "H". wp_auto_keep.
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
     "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l & Hset_spec_l & Hset_status_l)".
   iDestruct "Hset_objectmeta_l" as (set_meta_c) "[Hset_objectmeta_field Hset_objectmeta]".
   iNamedPrefix "Hset_objectmeta" "Hset_meta_".
-  wp_auto. rewrite Hset_meta_Hdeepown_namespace.
+  wp_auto_keep. rewrite Hset_meta_Hdeepown_namespace.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
   wp_apply (wp_State__PodCreate_named γ model_l
@@ -385,12 +392,13 @@ Proof.
         Hpod_status & Hpod_reserved & Hown_children & Hown_grandchildren)".
     unfold PodV.created in Hpod_created.
     destruct Hpod_created as
-      (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created).
-    subst created err. wp_auto.
+      (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created &
+      Hpod_prepared_spec & Hpod_prepared_status).
+    subst created err. wp_auto_keep.
     wp_apply (wp_IsAlreadyExists interface.nil with "[]").
     replace (bool_decide (already_exists_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact already_exists_error_nil).
-    wp_auto.
+    wp_auto_keep.
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
     iAssert (ObjectMetaV.deepown set_meta_c set.(StatefulSetV.ObjectMeta') dq_set)
       with "[Hset_objectmeta]" as "Hset_objectmeta".
@@ -405,11 +413,11 @@ Proof.
     subst created.
     pose proof (already_exists_error_not_nil err Halready_exists) as Herr.
     destruct err as [err_v|]; last contradiction.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsAlreadyExists (interface.ok err_v) with "[]").
     replace (bool_decide (already_exists_error (interface.ok err_v))) with true by
       (symmetry; apply bool_decide_eq_true_2; exact Halready_exists).
-    wp_auto.
+    wp_auto_keep.
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
     iAssert (ObjectMetaV.deepown set_meta_c set.(StatefulSetV.ObjectMeta') dq_set)
       with "[Hset_objectmeta]" as "Hset_objectmeta".

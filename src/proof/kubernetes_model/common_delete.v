@@ -1,9 +1,11 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common admitted.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta.v1 Require Import validation.
 
 (* Lightweight infrastructure shared by the Delete variants and updates
    whose success path may remove an object. *)
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -19,22 +21,25 @@ Lemma wp_deletionTimestampForDelete (graceful : bool) (gracePeriod : w64) :
   }}}.
 Proof.
   wp_start as "#Hinit".
-  wp_auto.
+  wp_auto_keep.
   destruct graceful.
-  - wp_auto.
+  - wp_auto_keep.
     wp_apply v1.wp_Now.
-    iIntros (now_c now_v) "_". wp_auto.
-    wp_method_call. wp_auto.
+    iIntros (now_c now_v) "Hnow". wp_auto_keep.
+    wp_method_call. wp_auto_keep.
     wp_apply wp_Time__Add.
-    iIntros (new_time) "_". wp_auto.
+    iIntros (new_time) "_". wp_auto_keep.
     wp_apply v1.wp_NewTime.
     iApply ("HΦ" $! _ (v1.Time.mk new_time) (TimeV.of_go (v1.Time.mk new_time))).
-    iFrame. rewrite /TimeV.deepown /TimeV.of_go /=. done.
-  - wp_auto.
+    iFrame. rewrite /TimeV.deepown. done.
+  - wp_auto_keep.
     wp_apply v1.wp_Now.
-    iIntros (now_c now_v) "Hdeepown". wp_auto.
+    iIntros (now_c now_v) "Hdeepown". wp_auto_keep.
     iApply ("HΦ" $! _ now_c now_v). iFrame.
 Qed.
+
+(* Keep timestamp representation abstract in unrelated delete proofs. *)
+Local Opaque TimeV.deepown TimeView.TimeV.deepown.
 
 Definition delete_preconditions_match (options : DeleteOptionsV.t) (m : ObjectMetaV.t) : Prop :=
   match options.(DeleteOptionsV.Preconditions') with
@@ -86,13 +91,13 @@ Lemma wp_validateDeleteOptions l options dq :
 Proof.
   wp_start as "H".
   iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ValidateDeleteOptions_valid with "[$Hdeepown_l]").
   { iFrame "#". done. }
   iIntros (errs) "(%Herrs_len & Hdeepown_l)".
-  wp_auto.
+  wp_auto_keep.
   rewrite Herrs_len.
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ".
   iFrame.
 Qed.
@@ -132,9 +137,9 @@ Proof.
       (v1.DeleteOptions.Preconditions' options_c = null) = false)
       as Hpreconditions_nonnull_decide.
     { apply bool_decide_false. done. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hpreconditions_nonnull_decide /=.
-    wp_auto.
+    wp_auto_keep.
     destruct preconditions.(PreconditionsV.UID') as [uid|] eqn:Huid.
     + iDestruct "Hdeepown_uid_some" as (uid_c) "[Huid_l ->]".
       assert (v1.Preconditions.UID' preconditions_c ≠ null)
@@ -146,10 +151,10 @@ Proof.
         as Huid_nonnull_decide.
       { apply bool_decide_false. done. }
       rewrite Huid_nonnull_decide /=.
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_GetUID_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
       iIntros "Hdeepown_m_l".
-      wp_auto.
+      wp_auto_keep.
       wp_if_destruct.
       * iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some uid' => ∃ uid_c',
@@ -171,10 +176,10 @@ Proof.
              as Hrv_nonnull_decide.
            { apply bool_decide_false. done. }
            rewrite Hrv_nonnull_decide /=.
-           wp_auto.
+           wp_auto_keep.
            wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
-           wp_auto.
+           wp_auto_keep.
            wp_if_destruct.
            ++ iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
                 | Some rv' => ∃ rv_c',
@@ -200,7 +205,7 @@ Proof.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
                 with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                   Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -211,19 +216,19 @@ Proof.
               done.
            ++ wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
               iIntros "Hdeepown_m_l".
-              wp_auto.
+              wp_auto_keep.
               wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
               iIntros "Hdeepown_m_l".
-              wp_auto.
+              wp_auto_keep.
               wp_apply wp_slice_literal. iSplitR; first done.
-              iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+              iIntros (error_args_sl) "[Herror_args _]". wp_auto_keep.
               wp_apply (wp_Errorf with "[$Herror_args]").
-              iIntros (error_cause) "_". wp_auto.
+              iIntros (error_cause) "_". wp_auto_keep.
               wp_apply (wp_NewConflict
                 {| schema.GroupResource.Group' := ""%go;
                    schema.GroupResource.Resource' := kind |}
                 m.(ObjectMetaV.Name') (interface.ok error_cause)).
-              iIntros (err_l) "%Hconflict". wp_auto.
+              iIntros (err_l) "%Hconflict". wp_auto_keep.
               set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
               iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
                 | Some rv' => ∃ rv_c',
@@ -248,7 +253,7 @@ Proof.
                 iExists preconditions_c. iFrame. }
               iAssert (DeleteOptionsV.deepown options_c options dq)
                 with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+                  Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                   Hdeepown_ignorestorereaderror_some]"
                 as "Hdeepown_options".
               { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -266,7 +271,7 @@ Proof.
              as Hrv_null_decide.
            { apply bool_decide_true. done. }
            rewrite Hrv_null_decide /=.
-           wp_auto.
+           wp_auto_keep.
            iAssert (PreconditionsV.deepown preconditions_c preconditions dq)
              with "[Hdeepown_uid_some Hdeepown_resourceversion_some]"
              as "Hdeepown_preconditions".
@@ -283,7 +288,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -294,19 +299,19 @@ Proof.
            done.
       * wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
-        wp_auto.
+        wp_auto_keep.
         wp_apply (wp_GetUID_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
-        wp_auto.
+        wp_auto_keep.
         wp_apply wp_slice_literal. iSplitR; first done.
-        iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+        iIntros (error_args_sl) "[Herror_args _]". wp_auto_keep.
         wp_apply (wp_Errorf with "[$Herror_args]").
-        iIntros (error_cause) "_". wp_auto.
+        iIntros (error_cause) "_". wp_auto_keep.
         wp_apply (wp_NewConflict
           {| schema.GroupResource.Group' := ""%go;
              schema.GroupResource.Resource' := kind |}
           m.(ObjectMetaV.Name') (interface.ok error_cause)).
-        iIntros (err_l) "%Hconflict". wp_auto.
+        iIntros (err_l) "%Hconflict". wp_auto_keep.
         set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
         iAssert ((match preconditions.(PreconditionsV.UID') with
           | Some uid' => ∃ uid_c',
@@ -331,7 +336,7 @@ Proof.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -346,7 +351,7 @@ Proof.
         as Huid_null_decide.
       { apply bool_decide_true. done. }
       rewrite Huid_null_decide /=.
-      wp_auto.
+      wp_auto_keep.
       destruct preconditions.(PreconditionsV.ResourceVersion') as [rv|]
         eqn:Hrv.
       * iDestruct "Hdeepown_resourceversion_some" as (rv_c) "[Hrv_l ->]".
@@ -360,10 +365,10 @@ Proof.
           as Hrv_nonnull_decide.
         { apply bool_decide_false. done. }
         rewrite Hrv_nonnull_decide /=.
-        wp_auto.
+        wp_auto_keep.
         wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
         iIntros "Hdeepown_m_l".
-        wp_auto.
+        wp_auto_keep.
         wp_if_destruct.
         -- iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
              | Some rv' => ∃ rv_c',
@@ -389,7 +394,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -400,19 +405,19 @@ Proof.
            done.
         -- wp_apply (wp_GetName_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
-           wp_auto.
+           wp_auto_keep.
            wp_apply (wp_GetResourceVersion_deepown_kobject i l o with "[$Hdeepown_m_l]"). 1: done.
            iIntros "Hdeepown_m_l".
-           wp_auto.
+           wp_auto_keep.
            wp_apply wp_slice_literal. iSplitR; first done.
-           iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+           iIntros (error_args_sl) "[Herror_args _]". wp_auto_keep.
            wp_apply (wp_Errorf with "[$Herror_args]").
-           iIntros (error_cause) "_". wp_auto.
+           iIntros (error_cause) "_". wp_auto_keep.
            wp_apply (wp_NewConflict
              {| schema.GroupResource.Group' := ""%go;
                 schema.GroupResource.Resource' := kind |}
              m.(ObjectMetaV.Name') (interface.ok error_cause)).
-           iIntros (err_l) "%Hconflict". wp_auto.
+           iIntros (err_l) "%Hconflict". wp_auto_keep.
            set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
            iAssert ((match preconditions.(PreconditionsV.ResourceVersion') with
              | Some rv' => ∃ rv_c',
@@ -437,7 +442,7 @@ Proof.
              iExists preconditions_c. iFrame. }
            iAssert (DeleteOptionsV.deepown options_c options dq)
              with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some
-               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun
+               Hdeepown_orphandependents_some Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap
                Hdeepown_ignorestorereaderror_some]"
              as "Hdeepown_options".
            { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
@@ -455,7 +460,7 @@ Proof.
           as Hrv_null_decide.
         { apply bool_decide_true. done. }
         rewrite Hrv_null_decide /=.
-        wp_auto.
+        wp_auto_keep.
         iAssert (PreconditionsV.deepown preconditions_c preconditions dq)
           with "[Hdeepown_uid_some Hdeepown_resourceversion_some]"
           as "Hdeepown_preconditions".
@@ -472,7 +477,7 @@ Proof.
           iExists preconditions_c. iFrame. }
         iAssert (DeleteOptionsV.deepown options_c options dq)
           with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+            Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
           as "Hdeepown_options".
         { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
           iFrame. iPureIntro. done. }
@@ -487,12 +492,12 @@ Proof.
       (v1.DeleteOptions.Preconditions' options_c = null) = true)
       as Hpreconditions_null_decide.
     { apply bool_decide_true. done. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hpreconditions_null_decide /=.
-    wp_auto.
+    wp_auto_keep.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_orphandependents_some
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]"
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]"
       as "Hdeepown_options".
     { rewrite /DeleteOptionsV.deepown Hpreconditions /=.
       iFrame. iPureIntro. done. }
@@ -704,11 +709,11 @@ Proof.
       (v1.DeleteOptions.OrphanDependents' options_c = null) = false)
       as Horphan_nonnull_decide.
     { apply bool_decide_false. done. }
-    wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
-    rewrite Horphan_nonnull_decide /=. wp_auto.
+    wp_auto_keep. rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+    rewrite Horphan_nonnull_decide /=. wp_auto_keep.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! orphan). iFrame. iPureIntro.
@@ -720,8 +725,8 @@ Proof.
       (v1.DeleteOptions.OrphanDependents' options_c = null) = true)
       as Horphan_null_decide.
     { apply bool_decide_true. done. }
-    wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
-    rewrite Horphan_null_decide /=. wp_auto.
+    wp_auto_keep. rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+    rewrite Horphan_null_decide /=. wp_auto_keep.
     destruct options.(DeleteOptionsV.PropagationPolicy') as [policy|] eqn:Hpolicy.
     + iDestruct "Hdeepown_propagationpolicy_some" as (policy_c) "[Hpolicy_l ->]".
       iDestruct (typed_pointsto_not_null with "Hpolicy_l") as %Hpolicy_l_not_null.
@@ -729,10 +734,10 @@ Proof.
         (v1.DeleteOptions.PropagationPolicy' options_c = null) = false)
         as Hpolicy_nonnull_decide.
       { apply bool_decide_false. done. }
-      rewrite Hoptions_nonnull_decide /=. wp_auto.
-      rewrite Hpolicy_nonnull_decide /=. wp_auto.
+      rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+      rewrite Hpolicy_nonnull_decide /=. wp_auto_keep.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
@@ -765,14 +770,15 @@ Proof.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-           ++ iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+           ++ iRename "Hdeepown_finalizers_some" into "Hsl".
               iAssert ((sl ↦*{dq} finalizers -∗
                 ObjectMetaV.deepown_l metadata_l m dq)%I)
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -796,15 +802,15 @@ Proof.
                    as [current Hcurrent_lookup].
                  { rewrite Hsl_len. word. }
                  wp_apply (wp_load_slice_index with "[$Hsl]"); [word|done|].
-                 iIntros "Hsl". wp_auto.
+                 iIntros "Hsl". wp_auto_keep.
                  assert (drop (sint.nat i) finalizers =
                    current :: drop (S (sint.nat i)) finalizers) as Hdrop.
                  { apply drop_S. exact Hcurrent_lookup. }
                  wp_if_destruct.
                  --- iApply wp_for_post_return.
                      rewrite return_val_unseal /return_val_def.
-                     rewrite exception_do_unseal /exception_do_def. wp_auto.
-                     rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                     rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                     rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                      iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                      iApply ("HΦ" $! true). iFrame. iPureIntro.
                      rewrite Hdrop /= in Hscan.
@@ -812,15 +818,15 @@ Proof.
                  --- wp_if_destruct.
                      +++ iApply wp_for_post_return.
                          rewrite return_val_unseal /return_val_def.
-                         rewrite exception_do_unseal /exception_do_def. wp_auto.
-                         rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                         rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                         rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                          iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                          iApply ("HΦ" $! false). iFrame. iPureIntro.
                          rewrite Hshould_fallback /=.
                          rewrite Hdrop /= in Hscan.
                          rewrite -Hscan.
                          done.
-                     +++ iApply wp_for_post_do. wp_auto.
+                     +++ iApply wp_for_post_do. wp_auto_keep.
                          iAssert I with "[Hi Hf Hsl]" as "Hloop".
                          { iExists (word.add i (W64 1)), current. iFrame.
                            iPureIntro. split; [word|].
@@ -846,8 +852,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -863,10 +870,10 @@ Proof.
         (v1.DeleteOptions.PropagationPolicy' options_c = null) = true)
         as Hpolicy_null_decide.
       { apply bool_decide_true. done. }
-      rewrite Hoptions_nonnull_decide /=. wp_auto.
-      rewrite Hpolicy_null_decide /=. wp_auto.
+      rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+      rewrite Hpolicy_null_decide /=. wp_auto_keep.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
@@ -886,14 +893,15 @@ Proof.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-      * iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+      * iRename "Hdeepown_finalizers_some" into "Hsl".
         iAssert ((sl ↦*{dq} finalizers -∗
           ObjectMetaV.deepown_l metadata_l m dq)%I)
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -917,15 +925,15 @@ Proof.
              as [current Hcurrent_lookup].
            { rewrite Hsl_len. word. }
            wp_apply (wp_load_slice_index with "[$Hsl]"); [word|done|].
-           iIntros "Hsl". wp_auto.
+           iIntros "Hsl". wp_auto_keep.
            assert (drop (sint.nat i) finalizers =
              current :: drop (S (sint.nat i)) finalizers) as Hdrop.
            { apply drop_S. exact Hcurrent_lookup. }
            wp_if_destruct.
            ++ iApply wp_for_post_return.
               rewrite return_val_unseal /return_val_def.
-              rewrite exception_do_unseal /exception_do_def. wp_auto.
-              rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+              rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+              rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
               iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
               iApply ("HΦ" $! true). iFrame. iPureIntro.
               rewrite Hshould_fallback /=.
@@ -935,15 +943,15 @@ Proof.
            ++ wp_if_destruct.
               ** iApply wp_for_post_return.
                  rewrite return_val_unseal /return_val_def.
-                 rewrite exception_do_unseal /exception_do_def. wp_auto.
-                 rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                 rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                 rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                  iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                  iApply ("HΦ" $! false). iFrame. iPureIntro.
                  rewrite Hshould_fallback /=.
                  rewrite Hdrop /= in Hscan.
                  rewrite -Hscan.
                  done.
-              ** iApply wp_for_post_do. wp_auto.
+              ** iApply wp_for_post_do. wp_auto_keep.
                  iAssert I with "[Hi Hf Hsl]" as "Hloop".
                  { iExists (word.add i (W64 1)), current. iFrame.
                    iPureIntro. split; [word|].
@@ -969,8 +977,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1009,11 +1018,11 @@ Proof.
       (v1.DeleteOptions.OrphanDependents' options_c = null) = false)
       as Horphan_nonnull_decide.
     { apply bool_decide_false. done. }
-    wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
-    rewrite Horphan_nonnull_decide /=. wp_auto.
+    wp_auto_keep. rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+    rewrite Horphan_nonnull_decide /=. wp_auto_keep.
     iAssert (DeleteOptionsV.deepown options_c options dq)
       with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Horphan_l
-        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_ignorestorereaderror_some]" as "Hoptions".
+        Hdeepown_propagationpolicy_some Hdeepown_dryrun Hdeepown_dryrun_cap Hdeepown_ignorestorereaderror_some]" as "Hoptions".
     { rewrite /DeleteOptionsV.deepown Horphan /=. iFrame.
       iFrame "%"; try (iPureIntro; done). }
     iApply ("HΦ" $! false). iFrame. iPureIntro.
@@ -1025,8 +1034,8 @@ Proof.
       (v1.DeleteOptions.OrphanDependents' options_c = null) = true)
       as Horphan_null_decide.
     { apply bool_decide_true. done. }
-    wp_auto. rewrite Hoptions_nonnull_decide /=. wp_auto.
-    rewrite Horphan_null_decide /=. wp_auto.
+    wp_auto_keep. rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+    rewrite Horphan_null_decide /=. wp_auto_keep.
     destruct options.(DeleteOptionsV.PropagationPolicy') as [policy|] eqn:Hpolicy.
     + iDestruct "Hdeepown_propagationpolicy_some" as (policy_c) "[Hpolicy_l ->]".
       iDestruct (typed_pointsto_not_null with "Hpolicy_l") as %Hpolicy_l_not_null.
@@ -1034,10 +1043,10 @@ Proof.
         (v1.DeleteOptions.PropagationPolicy' options_c = null) = false)
         as Hpolicy_nonnull_decide.
       { apply bool_decide_false. done. }
-      rewrite Hoptions_nonnull_decide /=. wp_auto.
-      rewrite Hpolicy_nonnull_decide /=. wp_auto.
+      rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+      rewrite Hpolicy_nonnull_decide /=. wp_auto_keep.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hpolicy_l Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]" as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
         iFrame "%"; try (iPureIntro; done). }
@@ -1070,14 +1079,15 @@ Proof.
            set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
            iNamed "Hmetadata".
            destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-           ++ iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+           ++ iRename "Hdeepown_finalizers_some" into "Hsl".
               iAssert ((sl ↦*{dq} finalizers -∗
                 ObjectMetaV.deepown_l metadata_l m dq)%I)
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hrestore_m".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hrestore_m".
               { iIntros "Hsl". iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1101,15 +1111,15 @@ Proof.
                    as [current Hcurrent_lookup].
                  { rewrite Hsl_len. word. }
                  wp_apply (wp_load_slice_index with "[$Hsl]"); [word|done|].
-                 iIntros "Hsl". wp_auto.
+                 iIntros "Hsl". wp_auto_keep.
                  assert (drop (sint.nat i) finalizers =
                    current :: drop (S (sint.nat i)) finalizers) as Hdrop.
                  { apply drop_S. exact Hcurrent_lookup. }
                  wp_if_destruct.
                  --- iApply wp_for_post_return.
                      rewrite return_val_unseal /return_val_def.
-                     rewrite exception_do_unseal /exception_do_def. wp_auto.
-                     rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                     rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                     rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                      iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                      iApply ("HΦ" $! true). iFrame. iPureIntro.
                      rewrite Hshould_fallback /=.
@@ -1119,15 +1129,15 @@ Proof.
                  --- wp_if_destruct.
                      +++ iApply wp_for_post_return.
                          rewrite return_val_unseal /return_val_def.
-                         rewrite exception_do_unseal /exception_do_def. wp_auto.
-                         rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                         rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                         rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                          iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                          iApply ("HΦ" $! false). iFrame. iPureIntro.
                          rewrite Hshould_fallback /=.
                          rewrite Hdrop /= in Hscan.
                          rewrite -Hscan.
                          done.
-                     +++ iApply wp_for_post_do. wp_auto.
+                     +++ iApply wp_for_post_do. wp_auto_keep.
                          iAssert I with "[Hi Hf Hsl]" as "Hloop".
                          { iExists (word.add i (W64 1)), current. iFrame.
                            iPureIntro. split; [word|].
@@ -1153,8 +1163,9 @@ Proof.
                 with "[Hmetadata_l Hdeepown_creationtimestamp
                   Hdeepown_deletiontimestamp_some
                   Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-                  Hdeepown_annotations_some Hdeepown_ownerreferences_some
-                  Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+                  Hdeepown_annotations_some Hdeepown_ownerreferences
+                  Hdeepown_finalizers_cap
+                  Hdeepown_managedfields]" as "Hdeepown_m_l".
               { iExists metadata_c. iFrame.
                 rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
                 iFrame "%"; try (iPureIntro; done). }
@@ -1170,10 +1181,10 @@ Proof.
         (v1.DeleteOptions.PropagationPolicy' options_c = null) = true)
         as Hpolicy_null_decide.
       { apply bool_decide_true. done. }
-      rewrite Hoptions_nonnull_decide /=. wp_auto.
-      rewrite Hpolicy_null_decide /=. wp_auto.
+      rewrite Hoptions_nonnull_decide /=. wp_auto_keep.
+      rewrite Hpolicy_null_decide /=. wp_auto_keep.
       iAssert (DeleteOptionsV.deepown options_c options dq)
-        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun
+        with "[Hdeepown_graceperiodseconds_some Hdeepown_preconditions_some Hdeepown_dryrun Hdeepown_dryrun_cap
           Hdeepown_ignorestorereaderror_some]"
         as "Hoptions".
       { rewrite /DeleteOptionsV.deepown Horphan Hpolicy /=. iFrame.
@@ -1193,14 +1204,15 @@ Proof.
       set (sl := metadata_c.(v1.ObjectMeta.Finalizers')).
       iNamed "Hmetadata".
       destruct m.(ObjectMetaV.Finalizers') as [finalizers|] eqn:Hfinalizers.
-      * iDestruct "Hdeepown_finalizers_some" as (cfinalizers) "[Hsl ->]".
+      * iRename "Hdeepown_finalizers_some" into "Hsl".
         iAssert ((sl ↦*{dq} finalizers -∗
           ObjectMetaV.deepown_l metadata_l m dq)%I)
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hrestore_m".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hrestore_m".
         { iIntros "Hsl". iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1224,15 +1236,15 @@ Proof.
              as [current Hcurrent_lookup].
            { rewrite Hsl_len. word. }
            wp_apply (wp_load_slice_index with "[$Hsl]"); [word|done|].
-           iIntros "Hsl". wp_auto.
+           iIntros "Hsl". wp_auto_keep.
            assert (drop (sint.nat i) finalizers =
              current :: drop (S (sint.nat i)) finalizers) as Hdrop.
            { apply drop_S. exact Hcurrent_lookup. }
            wp_if_destruct.
            ++ iApply wp_for_post_return.
               rewrite return_val_unseal /return_val_def.
-              rewrite exception_do_unseal /exception_do_def. wp_auto.
-              rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+              rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+              rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
               iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
               iApply ("HΦ" $! true). iFrame. iPureIntro.
               rewrite Hshould_fallback /=.
@@ -1242,15 +1254,15 @@ Proof.
            ++ wp_if_destruct.
               ** iApply wp_for_post_return.
                  rewrite return_val_unseal /return_val_def.
-                 rewrite exception_do_unseal /exception_do_def. wp_auto.
-                 rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto.
+                 rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+                 rewrite exception_seq_unseal /exception.exception_seq_def. wp_auto_keep.
                  iPoseProof ("Hrestore_m" with "Hsl") as "Hdeepown_m_l".
                  iApply ("HΦ" $! false). iFrame. iPureIntro.
                  rewrite Hshould_fallback /=.
                  rewrite Hdrop /= in Hscan.
                  rewrite -Hscan.
                  done.
-              ** iApply wp_for_post_do. wp_auto.
+              ** iApply wp_for_post_do. wp_auto_keep.
                  iAssert I with "[Hi Hf Hsl]" as "Hloop".
                  { iExists (word.add i (W64 1)), current. iFrame.
                    iPureIntro. split; [word|].
@@ -1276,8 +1288,9 @@ Proof.
           with "[Hmetadata_l Hdeepown_creationtimestamp
             Hdeepown_deletiontimestamp_some
             Hdeepown_deletiongraceperiodseconds_some Hdeepown_labels_some
-            Hdeepown_annotations_some Hdeepown_ownerreferences_some
-            Hdeepown_managedfields_some]" as "Hdeepown_m_l".
+            Hdeepown_annotations_some Hdeepown_ownerreferences
+            Hdeepown_finalizers_cap
+            Hdeepown_managedfields]" as "Hdeepown_m_l".
         { iExists metadata_c. iFrame.
           rewrite /ObjectMetaV.deepown Hfinalizers /=. iFrame.
           iFrame "%"; try (iPureIntro; done). }
@@ -1309,11 +1322,11 @@ Proof.
   wp_pures. wp_alloc_auto.
   iDestruct (typed_pointsto_not_null with "tmp") as %Hnotnull.
   wp_pure. wp_pure.
-  wp_apply (wp_wand with "HΦ"). iIntros "% [-> HΦ]". wp_auto.
+  wp_apply (wp_wand with "HΦ"). iIntros "% [-> HΦ]". wp_auto_keep.
   rewrite decide_True.
   1: { enough (0 ≤ go.array_literal_size kvs) by word.
     unfold go.array_literal_size. destruct foldl. lia. }
-  wp_auto. iDestruct (array_len with "tmp") as %Hlen.
+  wp_auto_keep. iDestruct (array_len with "tmp") as %Hlen.
   rewrite !go.array_index_ref_0 /=.
   wp_end.
   - iDestruct (slice_array with "tmp") as "$".
@@ -1339,10 +1352,10 @@ Lemma wp_deletionFinalizersForGarbageCollection metadata_i l o m options_l optio
       ⌜ valid_finalizers new_finalizers ⌝ ∗
       ⌜ new_finalizers_sl = slice.nil ↔ new_finalizers = None ⌝ ∗
       (if should_update_finalizers then
-        match new_finalizers with
+        (match new_finalizers with
         | Some fs => ∃ cfs, new_finalizers_sl ↦* cfs ∗ ⌜ cfs = fs ⌝
         | None => True%I
-        end
+        end ∗ own_slice_cap go_string new_finalizers_sl 1)%I
       else True%I) ∗
       ObjectMetaV.deepown_l (KObjectV.objectmeta_ptr l o) m dq ∗
       DeleteOptionsV.deepown_l options_l options dq
@@ -1350,20 +1363,20 @@ Lemma wp_deletionFinalizersForGarbageCollection metadata_i l o m options_l optio
 Proof.
   wp_start as "H". iNamed "H".
   set (metadata_l := KObjectV.objectmeta_ptr l o).
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_shouldOrphanDependents metadata_i l o with
     "[$Hdeepown_m_l $Hdeepown_options_l]").
   { iFrame "#". iPureIntro. done. }
   iIntros (should_orphan) "(-> & Hdeepown_m_l & Hdeepown_options_l)".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_shouldDeleteDependents metadata_i l o with
     "[$Hdeepown_m_l $Hdeepown_options_l]").
   { iFrame "#". iPureIntro. done. }
   iIntros (should_delete) "(-> & Hdeepown_m_l & Hdeepown_options_l)".
-  wp_auto.
+  wp_auto_keep.
   wp_apply wp_slice_literal_non_nil. iSplitR; first done.
   iIntros (new_sl_ptr) "(Hnew_sl & Hnew_cap & %Hnew_sl_non_nil)".
-  set (new_sl := slice.mk new_sl_ptr (W64 0) (W64 0)). wp_auto.
+  set (new_sl := slice.mk new_sl_ptr (W64 0) (W64 0)). wp_auto_keep.
   wp_apply (wp_GetFinalizers_deepown_kobject metadata_i l o with "[$Hdeepown_m_l]"). 1: done.
   iIntros (old_sl) "(%Hold_sl_nil & Hold_finalizers)".
   iAssert ("Hold_sl" ∷ old_sl ↦*{dq} default [] m.(ObjectMetaV.Finalizers') ∗
@@ -1384,7 +1397,7 @@ Proof.
     finalizer ≠ delete_foreground_finalizer).
   set (old_finalizers := default [] m.(ObjectMetaV.Finalizers')).
   iDestruct (own_slice_len with "Hold_sl") as %[Hold_sl_len Hold_sl_nonneg].
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (i : w64) (f : go_string) (result_sl : slice.t),
     "Hi" ∷ i_ptr ↦ i ∗
     "Hf" ∷ f_ptr ↦ f ∗
@@ -1404,9 +1417,9 @@ Proof.
       as [current Hcurrent_lookup].
     { rewrite Hold_sl_len. word. }
     wp_apply (wp_load_slice_index with "[$Hold_sl]"); [word|done|].
-    iIntros "Hold_sl". wp_auto.
+    iIntros "Hold_sl". wp_auto_keep.
     wp_if_destruct.
-    + iApply wp_for_post_continue. wp_auto.
+    + iApply wp_for_post_continue. wp_auto_keep.
       iAssert I with
         "[Hi Hf HnewFinalizers Hresult Hresult_cap Hold_sl]" as "Hloop".
       { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext by word.
@@ -1425,7 +1438,7 @@ Proof.
         split; [exact Hresult_non_nil|word]. }
       iFrame.
     + wp_if_destruct.
-      * iApply wp_for_post_continue. wp_auto.
+      * iApply wp_for_post_continue. wp_auto_keep.
         iAssert I with
           "[Hi Hf HnewFinalizers Hresult Hresult_cap Hold_sl]" as "Hloop".
         { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext
@@ -1446,7 +1459,7 @@ Proof.
         iFrame.
       * wp_apply wp_slice_literal. iSplitR; first done.
         iIntros (one_sl_ptr) "[Hone_sl _]".
-        set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto.
+        set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto_keep.
         wp_apply (wp_slice_append with "[$Hresult $Hresult_cap $Hone_sl]").
         iIntros (result_sl') "(Hresult & Hresult_cap & _)".
         iDestruct (own_slice_len with "Hresult") as %[Hresult_sl_len _].
@@ -1454,7 +1467,7 @@ Proof.
         { intros ->. simpl in Hresult_sl_len.
           assert (sint.nat (W64 0) = 0%nat) as Hzero by word.
           rewrite Hzero app_length /= in Hresult_sl_len. lia. }
-        wp_auto. iApply wp_for_post_do. wp_auto.
+        wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
         iAssert I with
           "[Hi Hf HnewFinalizers Hresult Hresult_cap Hold_sl]" as "Hloop".
         { assert (sint.nat (word.add i (W64 1)) = S (sint.nat i)) as Hnext
@@ -1495,12 +1508,12 @@ Proof.
     iApply (wp_wand _ _ _ Jorphan
       with "[HnewFinalizers Hresult Hresult_cap]")%I;
       [destruct (delete_should_orphan_dependents m options)
-        eqn:Hshould_orphan; wp_auto|].
+        eqn:Hshould_orphan; wp_auto_keep|].
     { wp_apply wp_slice_literal. iSplitR; first done.
       iIntros (one_sl_ptr) "[Hone_sl _]".
-      set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto.
+      set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto_keep.
       wp_apply (wp_slice_append with "[$Hresult $Hresult_cap $Hone_sl]").
-      iIntros (result_sl') "(Hresult & Hresult_cap & _)". wp_auto.
+      iIntros (result_sl') "(Hresult & Hresult_cap & _)". wp_auto_keep.
       iDestruct (own_slice_len with "Hresult") as %[Hresult_sl_len _].
       assert (result_sl' ≠ slice.nil) as Hresult_sl_non_nil.
       { intros ->. simpl in Hresult_sl_len.
@@ -1510,7 +1523,7 @@ Proof.
       simpl. unfold delete_orphan_finalizer. iFrame "%". iFrame. }
     { iSplit; first done. iExists result_sl.
       simpl. rewrite !app_nil_r. iFrame "%". iFrame. }
-    iIntros (?) "(-> & Happend_orphan)". iNamed "Happend_orphan". wp_auto.
+    iIntros (?) "(-> & Happend_orphan)". iNamed "Happend_orphan". wp_auto_keep.
     set Jforeground := (fun v => ⌜ v = execute_val ⌝ ∗ ∃ final_sl,
       "HnewFinalizers" ∷ newFinalizers_ptr ↦ final_sl ∗
       "Hnew_finalizers" ∷ final_sl ↦*
@@ -1522,16 +1535,16 @@ Proof.
       "Hnew_finalizers_cap" ∷
         own_slice_cap go_string final_sl (DfracOwn 1) ∗
       "%Hnew_finalizers_non_nil" ∷ ⌜ final_sl ≠ slice.nil ⌝)%I.
-    rewrite execute_val_unseal /execute_val_def. wp_auto.
+    rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
     wp_bind (if: #(delete_should_delete_dependents m options)
       then _ else _)%E.
     iApply (wp_wand _ _ _ Jforeground
       with "[HnewFinalizers Hresult Hresult_cap]")%I;
       [destruct (delete_should_delete_dependents m options)
-        eqn:Hshould_foreground; wp_auto|].
+        eqn:Hshould_foreground; wp_auto_keep|].
     { wp_apply wp_slice_literal. iSplitR; first done.
       iIntros (one_sl_ptr) "[Hone_sl _]".
-      set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto.
+      set (one_sl := slice.mk one_sl_ptr (W64 1) (W64 1)). wp_auto_keep.
       wp_apply (wp_slice_append with "[$Hresult $Hresult_cap $Hone_sl]").
       iIntros (final_sl) "(Hnew_finalizers & Hnew_finalizers_cap & _)".
       iDestruct (own_slice_len with "Hnew_finalizers") as %[Hfinal_sl_len _].
@@ -1542,7 +1555,7 @@ Proof.
       assert (sint.nat (W64 0) = 0%nat) as Hzero by word.
       iEval (rewrite Hzero /=) in "Hnew_finalizers".
       iEval (rewrite -app_assoc) in "Hnew_finalizers".
-      wp_auto. iSplit; first done. iExists final_sl.
+      wp_auto_keep. iSplit; first done. iExists final_sl.
       simpl. unfold delete_foreground_finalizer. iFrame "%". iFrame. }
     { iSplit; first done. iExists result_sl0.
       simpl. rewrite !app_nil_r. iFrame "%". iFrame. }
@@ -1555,8 +1568,8 @@ Proof.
       delete_finalizers_for_gc m options) as Hnew_finalizers_eq.
     { rewrite /delete_finalizers_for_gc /keep /old_finalizers. done. }
     iEval (rewrite Hnew_finalizers_eq) in "Hnew_finalizers".
-    wp_auto.
-    rewrite execute_val_unseal /execute_val_def. wp_auto.
+    wp_auto_keep.
+    rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
     wp_bind.
     wp_apply (wp_GetFinalizers_deepown_kobject metadata_i l o with "[$Hdeepown_m_l]"). 1: done.
     iIntros (old_sl') "(%Hold_sl_nil' & Hold_finalizers)".
@@ -1573,12 +1586,12 @@ Proof.
           (apply (proj2 Hold_sl_nil'); done).
         simpl. iSplitL ""; first iApply (own_slice_nil (V := go_string) dq).
         iIntros "_". iFrame. }
-    wp_auto.
+    wp_auto_keep.
     iDestruct (own_slice_len with "Hold_sl") as
       %[Hold_sl_len' Hold_sl_nonneg'].
     iDestruct (own_slice_len with "Hnew_finalizers") as
       %[Hnew_sl_len Hnew_sl_nonneg].
-    rewrite execute_val_unseal /execute_val_def. wp_auto.
+    rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
     wp_if_destruct.
     2: { assert (delete_finalizers_changed old_finalizers
         (delete_finalizers_for_gc m options)) as Hchanged.
@@ -1588,21 +1601,21 @@ Proof.
       { rewrite /delete_should_update_finalizers /old_finalizers.
         apply bool_decide_eq_true_2. exact Hchanged. }
       iPoseProof ("Hrestore_m" with "Hold_sl") as "Hdeepown_m_l".
-      rewrite return_val_unseal /return_val_def. wp_auto.
+      rewrite return_val_unseal /return_val_def. wp_auto_keep.
       iApply ("HΦ" $! true final_sl (Some (delete_finalizers_for_gc m options))).
       rewrite /delete_new_finalizers Hupdate /=.
-      iFrame. iSplit; first done. iSplit; first done.
+      iFrame "Hnew_finalizers_cap". iFrame. iSplit; first done. iSplit; first done.
       iSplit; first (iPureIntro; by apply delete_finalizers_for_gc_valid).
       iSplit.
       { iPureIntro. split.
         - intros Hnil. exfalso. exact (Hnew_finalizers_non_nil Hnil).
         - discriminate. }
       done. }
-    + rewrite execute_val_unseal /execute_val_def. wp_auto.
+    + rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
       wp_apply wp_map_make1 as (old_set_l) "Hold_set".
-      rewrite execute_val_unseal /execute_val_def. wp_auto.
-      wp_alloc old_f_ptr as "Hold_f". wp_auto.
-      wp_alloc old_i_ptr as "Hold_i". wp_auto.
+      rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
+      wp_alloc old_f_ptr as "Hold_f". wp_auto_keep.
+      wp_alloc old_i_ptr as "Hold_i". wp_auto_keep.
       iClear "Hi Hf".
       set Iold := (∃ (oi : w64) (oval : go_string),
         "Hi" ∷ old_i_ptr ↦ oi ∗
@@ -1624,12 +1637,12 @@ Proof.
           as [current Hcurrent_lookup].
         { rewrite Hold_sl_len'. word. }
         wp_apply (wp_load_slice_index with "[$Hold_sl]"); [word|done|].
-        iIntros "Hold_sl". wp_auto.
-        rewrite execute_val_unseal /execute_val_def. wp_auto.
-        rewrite execute_val_unseal /execute_val_def. wp_auto.
+        iIntros "Hold_sl". wp_auto_keep.
+        rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
+        rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
         wp_apply (wp_map_insert go.string old_set_l _ current true
           with "Hold_set").
-        iIntros "Hold_set". wp_auto. iApply wp_for_post_do. wp_auto.
+        iIntros "Hold_set". wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
         iAssert Iold with "[Hi Hf HoldSet Hold_set Hold_sl]" as "Hloop".
         { iExists (word.add oi (W64 1)), current.
           assert (sint.nat (word.add oi (W64 1)) = S (sint.nat oi))
@@ -1663,9 +1676,9 @@ Proof.
           as Htake_old_all.
         { apply take_ge. rewrite Hoi_end. lia. }
         iEval (rewrite Htake_old_all) in "Hold_set".
-        rewrite execute_val_unseal /execute_val_def. wp_auto.
-        wp_alloc new_f_ptr as "Hnew_f". wp_auto.
-        wp_alloc new_i_ptr as "Hnew_i". wp_auto.
+        rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
+        wp_alloc new_f_ptr as "Hnew_f". wp_auto_keep.
+        wp_alloc new_i_ptr as "Hnew_i". wp_auto_keep.
         iClear "Hi Hf".
         set Inew := (∃ (ni : w64) (nval : go_string),
           "Hi" ∷ new_i_ptr ↦ ni ∗
@@ -1695,15 +1708,15 @@ Proof.
              (sint.nat ni)) as [current Hcurrent_lookup].
            { rewrite Hnew_sl_len. word. }
            wp_apply (wp_load_slice_index with "[$Hnew_finalizers]"); [word|done|].
-           iIntros "Hnew_finalizers". wp_auto.
-           rewrite execute_val_unseal /execute_val_def. wp_auto.
-           rewrite execute_val_unseal /execute_val_def. wp_auto.
+           iIntros "Hnew_finalizers". wp_auto_keep.
+           rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
+           rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
            wp_apply (wp_map_lookup1 go.string go.bool old_set_l _ current
              with "Hold_set") as "Hold_set".
            rewrite delete_finalizer_set_lookup.
            destruct (decide (current ∈ old_finalizers)) as [Hcurrent_old|Hcurrent_old].
-           ++ rewrite (bool_decide_eq_true_2 _ Hcurrent_old). wp_auto.
-              iApply wp_for_post_do. wp_auto.
+           ++ rewrite (bool_decide_eq_true_2 _ Hcurrent_old). wp_auto_keep.
+              iApply wp_for_post_do. wp_auto_keep.
               iAssert Inew with
                 "[Hi Hf HnewFinalizers Hnew_finalizers Hnew_finalizers_cap
                   HoldSet Hold_set Hold_sl]" as "Hloop".
@@ -1716,10 +1729,10 @@ Proof.
                 apply elem_of_app in Hin as [Hin|Hin]; first by apply Hseen.
                 apply list_elem_of_singleton in Hin. subst. exact Hcurrent_old. }
               iFrame.
-           ++ rewrite (bool_decide_eq_false_2 _ Hcurrent_old). wp_auto.
+           ++ rewrite (bool_decide_eq_false_2 _ Hcurrent_old). wp_auto_keep.
               iApply wp_for_post_return.
               rewrite return_val_unseal /return_val_def.
-              wp_auto.
+              wp_auto_keep.
               assert (delete_finalizers_changed old_finalizers
                 (delete_finalizers_for_gc m options)) as Hchanged.
               { right. apply Exists_exists. exists current. split.
@@ -1733,7 +1746,7 @@ Proof.
               iApply ("HΦ" $! true final_sl
                 (Some (delete_finalizers_for_gc m options))).
               rewrite /delete_new_finalizers Hupdate /=.
-              iFrame. iSplit; first done. iSplit; first done.
+              iFrame "Hnew_finalizers_cap". iFrame. iSplit; first done. iSplit; first done.
               iSplit; first (iPureIntro; by apply delete_finalizers_for_gc_valid).
               iSplit.
               { iPureIntro. split.
@@ -1758,8 +1771,8 @@ Proof.
            assert (delete_should_update_finalizers m options = false) as Hupdate.
            { rewrite /delete_should_update_finalizers /old_finalizers.
              apply bool_decide_eq_false_2. exact Hnot_changed. }
-           rewrite execute_val_unseal /execute_val_def. wp_auto.
-           rewrite return_val_unseal /return_val_def. wp_auto.
+           rewrite execute_val_unseal /execute_val_def. wp_auto_keep.
+           rewrite return_val_unseal /return_val_def. wp_auto_keep.
            iPoseProof ("Hrestore_m" with "Hold_sl") as "Hdeepown_m_l".
            iApply ("HΦ" $! false old_sl' m.(ObjectMetaV.Finalizers')).
            rewrite /delete_new_finalizers Hupdate /=.

@@ -1,5 +1,8 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export reconcile_stability.
 From New.proof.kubernetes_model Require Import get.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -44,7 +47,7 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag")
     as "%Hsts_meta_valid".
   destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
-  wp_auto.
+  wp_auto_keep.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
@@ -58,13 +61,13 @@ Proof.
   iRename "Hget_Hdeepown_l" into "Hset".
   iRename "Hget_Hown_meta_frag" into "Hown_sts_meta_frag".
   iRename "Hget_Hown_spec_frag" into "Hown_sts_spec_frag".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact not_found_error_nil).
-  wp_auto.
+  wp_auto_keep.
 
-  rewrite KObjectV.valid_eq_valid2 in Hget_Hvalid'.
+  simpl in Hget_Hvalid'.
   assert (StatefulSetV.valid set) as Hset_valid by exact Hget_Hvalid'.
   destruct Hset_valid as
     (Hset_typemeta_valid & Hset_resource_version_valid &
@@ -164,7 +167,7 @@ Proof.
       None) as Hset_deletion_timestamp_none.
   { rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
-  wp_auto. rewrite Hset_deletion_timestamp_null. wp_auto.
+  wp_auto_keep. rewrite Hset_deletion_timestamp_null. wp_auto_keep.
   iEval (rewrite Hset_deletion_timestamp_none) in
     "Hset_meta_Hdeepown_deletiontimestamp_some".
   iAssert (ObjectMetaV.deepown set_meta_c
@@ -172,9 +175,10 @@ Proof.
     with "[Hset_meta_Hdeepown_creationtimestamp
       Hset_meta_Hdeepown_deletiongraceperiodseconds_some
       Hset_meta_Hdeepown_labels_some Hset_meta_Hdeepown_annotations_some
-      Hset_meta_Hdeepown_ownerreferences_some
+      Hset_meta_Hdeepown_ownerreferences
       Hset_meta_Hdeepown_finalizers_some
-      Hset_meta_Hdeepown_managedfields_some]" as "Hset_meta_deepown".
+      Hset_meta_Hdeepown_managedfields
+      Hset_meta_Hdeepown_finalizers_cap]" as "Hset_meta_deepown".
   { rewrite /ObjectMetaV.deepown Hset_deletion_timestamp_none.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l)
@@ -207,7 +211,7 @@ Proof.
     set_l all_sl set all_ptrs all_pods 1 pod_dq
     with "[$Hset $Hall_sl $Hall_pods]").
   { iFrame "#". iPureIntro. split; done. }
-  iIntros "(Hset & Hall_sl & Hall_pods)". wp_auto.
+  iIntros "(Hset & Hall_sl & Hall_pods)". wp_auto_keep.
   wp_apply (wp_filterPodsForStatefulSet set_l all_sl set all_ptrs
     all_pods 1 pod_dq with "[$Hset $Hall_sl $Hall_pods]").
   { iPureIntro. intros pod Hpod.
@@ -224,7 +228,7 @@ Proof.
     by rewrite -list_elem_of_In. }
   iEval (rewrite Hgood_eq) in "Hgood_pods".
 
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_reconcileReplicas_stability γ l set_l good_sl set
     good_ptrs all_pods pvcs 1 pod_dq dq dq dq
     with "[$Hset $Hgood_sl $Hgood_pods $Hall_frags
@@ -233,7 +237,7 @@ Proof.
   iIntros
     "(Hset & Hgood_sl & Hgood_pods & Hall_frags &
       Hown_pvc_frags & Hown_children_frag)".
-  wp_auto.
+  wp_auto_keep.
 
   iAssert (([∗ list] pod ∈ pods,
       own_meta_frag γ (PodV.key pod)

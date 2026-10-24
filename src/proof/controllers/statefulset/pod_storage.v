@@ -1,6 +1,14 @@
+From New.proof Require Import wp_keep.
 From New.proof.map Require Import for_range.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -41,6 +49,18 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+Lemma volume_source_rest_zero c_pvc v_pvc dq :
+  ⊢ VolumeSourceV.deepown_rest
+    ((zero_val v1.VolumeSource.t) <| v1.VolumeSource.PersistentVolumeClaim' := c_pvc |>)
+    (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' := v_pvc |>) dq.
+Proof.
+  change (⊢ VolumeSourceV.deepown (zero_val v1.VolumeSource.t) VolumeSourceV.zero dq).
+  apply VolumeSourceV.deepown_zero.
+Qed.
+
+(* Storage operations inspect the PVC field through the splitting lemma. *)
+Local Opaque VolumeSourceV.deepown.
+
 (* [wp_slice_literal] hides the distinction between nil and an allocated empty
    slice. [initStorage] starts from an empty slice literal, so retain the
    non-nil fact needed by the option-valued pure volume representation. *)
@@ -60,15 +80,15 @@ Lemma wp_volume_slice_literal_non_nil `[!ZeroVal V] `[!TypedPointsto V]
 Proof.
   iIntros "* HΦ".
   pose proof go.composite_literal_slice.
-  wp_pures. destruct decide; last by iApply wp_AngelicExit.
-  wp_pures. wp_alloc_auto.
+  wp_pures_keep. destruct decide; last by iApply wp_AngelicExit.
+  wp_pures_keep. wp_alloc_auto.
   iDestruct (typed_pointsto_not_null with "tmp") as %Hnotnull.
   wp_pure. wp_pure.
-  wp_apply (wp_wand with "HΦ"). iIntros "% [-> HΦ]". wp_auto.
+  wp_apply (wp_wand with "HΦ"). iIntros "% [-> HΦ]". wp_auto_keep.
   rewrite decide_True.
   1: { enough (0 ≤ go.array_literal_size kvs) by word.
     unfold go.array_literal_size. destruct foldl. lia. }
-  wp_auto. iDestruct (array_len with "tmp") as %Hlen.
+  wp_auto_keep. iDestruct (array_len with "tmp") as %Hlen.
   rewrite !go.array_index_ref_0 /=.
   wp_end.
   - iDestruct (slice_array with "tmp") as "$".
@@ -275,7 +295,7 @@ Proof.
   iSplit; first done. iFrame. iFrame "%".
 Qed.
 
-Lemma volume_deepown_list_names physical_volumes pure_volumes dq :
+Lemma volume_deepown_names physical_volumes pure_volumes dq :
   ([∗ list] physical_volume;pure_volume ∈ physical_volumes;pure_volumes,
       VolumeV.deepown physical_volume pure_volume dq) ⊢
     ⌜ Forall2
@@ -300,38 +320,6 @@ Proof.
       iFrame.
 Qed.
 
-
-Definition storage_claim_volume (set : StatefulSetV.t) (ordinal : nat)
-    (claim_template_name : go_string) : VolumeV.t :=
-  {| VolumeV.Name' := claim_template_name;
-     VolumeV.VolumeSource' :=
-       {| VolumeSourceV.PersistentVolumeClaim' :=
-            Some
-              {| v1.PersistentVolumeClaimVolumeSource.ClaimName' :=
-                   desired_pvc_name
-                     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-                     claim_template_name ordinal;
-                 v1.PersistentVolumeClaimVolumeSource.ReadOnly' := false |}
-       |}
-  |}.
-
-Definition init_storage_volumes (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (claim_template_names : list go_string) :
-    list VolumeV.t :=
-  (storage_claim_volume set ordinal <$> claim_template_names) ++
-  filter
-    (λ volume, volume.(VolumeV.Name') ∉ claim_template_names)
-    (PodSpecV.volumes_list pod.(PodV.Spec')).
-
-(* The map iteration order is exposed as [claim_template_names].  Its set is
-   fixed by the StatefulSet, while its order is intentionally unspecified by
-   Go.  Existing Pod volumes controlled by a claim template are replaced;
-   all other volumes retain their original order. *)
-Definition init_storage (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (claim_template_names : list go_string) : PodV.t :=
-  pod <| PodV.Spec' :=
-    pod.(PodV.Spec') <| PodSpecV.Volumes' :=
-      Some (init_storage_volumes set pod ordinal claim_template_names) |> |>.
 
 Lemma fold_left_pod_volumes_map_insert_lookup_ne volumes m name :
   Forall (λ volume, volume.(VolumeV.Name') ≠ name) volumes →
@@ -449,10 +437,10 @@ Proof.
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c)
     "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   iDestruct "Hpod_spec_Hdeepown_volumes" as (physical_volumes)
     "Hpod_volumes".
-  rewrite /deepown_list.
   iDestruct "Hpod_volumes" as
     "[Hpod_volumes_slice Hpod_volumes_deepown]".
   iDestruct (own_slice_len with "Hpod_volumes_slice") as
@@ -464,14 +452,12 @@ Proof.
   Ltac restore_storage_pod pod_spec_c physical_volumes pod_meta_c pod
       dq_pod pod_l Hpod_l_not_null :=
     iAssert (∃ volumes,
-        deepown_list pod_spec_c.(v1.PodSpec.Volumes') volumes
-          (PodSpecV.volumes_list pod.(PodV.Spec'))
-          (λ physical_volume pure_volume,
-            VolumeV.deepown physical_volume pure_volume dq_pod)
-          dq_pod)%I
+        pod_spec_c.(v1.PodSpec.Volumes') ↦*{dq_pod} volumes ∗
+        [∗ list] c;v ∈ volumes;PodSpecV.volumes_list pod.(PodV.Spec'),
+          VolumeV.deepown c v dq_pod)%I
       with "[Hpod_volumes_slice Hpod_volumes_deepown]" as
         "Hpod_spec_Hdeepown_volumes";
-    [ iExists physical_volumes; rewrite /deepown_list; iFrame | ];
+    [ iExists physical_volumes; iFrame | ];
     iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta";
     iAssert (ObjectMetaV.deepown pod_meta_c
         pod.(PodV.ObjectMeta') dq_pod)
@@ -485,7 +471,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
         pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
@@ -493,12 +479,12 @@ Proof.
     iPoseProof (PodV.deepown_l_restore _ _ _ Hpod_l_not_null
       with "[$Hpod_typemeta $Hpod_objectmeta_l $Hpod_spec_l $Hpod_status_l]")
       as "Hpod".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ordinalOf_parse (v1.ObjectMeta.Name' pod_meta_c) with "[]").
   { iPureIntro. rewrite Hpod_meta_Hdeepown_name. exact Hpod_name_len. }
   iIntros (ordinal) "%Hordinal".
   rewrite Hpod_meta_Hdeepown_name in Hordinal.
-  wp_auto.
+  wp_auto_keep.
   destruct (parse_pod_ordinal
       pod.(PodV.ObjectMeta').(ObjectMetaV.Name')) as [expected_ordinal|]
     eqn:Hparse_ordinal.
@@ -558,10 +544,10 @@ Proof.
     wp_apply (wp_load_slice_index with "[$Hpod_volumes_slice]");
       [word| |].
     { iPureIntro. exact Hthis_volume_lookup. }
-    iIntros "Hpod_volumes_slice". wp_auto.
+    iIntros "Hpod_volumes_slice". wp_auto_keep.
     wp_apply (wp_map_insert go.string with "[$Hvolumes_map]").
-    iIntros "Hvolumes_map". wp_auto.
-    iApply wp_for_post_do. wp_auto. iFrame "HΦ".
+    iIntros "Hvolumes_map". wp_auto_keep.
+    iApply wp_for_post_do. wp_auto_keep. iFrame "HΦ".
     iFrame "Hset Hpod_typemeta Hpod_objectmeta_field Hpod_spec_field
       Hpod_status_l Hpod_volumes_deepown".
     iFrame.
@@ -581,7 +567,7 @@ Proof.
       { rewrite Hpod_volumes_len1. word. }
       rewrite Hi_len. apply take_ge. lia. }
     rewrite Htake_all.
-    iDestruct (volume_deepown_list_names with
+    iDestruct (volume_deepown_names with
       "Hpod_volumes_deepown") as
       "[%Hvolume_names Hpod_volumes_deepown]".
     pose proof (pod_volumes_maps_related _ _ Hvolume_names) as
@@ -593,14 +579,14 @@ Proof.
       claim_templates_phy) "Hclaim_result".
     iDestruct "Hclaim_result" as "(Hset_ptr & Hclaim_result)".
     iNamed "Hclaim_result".
-    iAssert (StatefulSetV.deepown_l set_l set dq_set)
+    iAssert (statefulset_without_claim_templates_l set_l set dq_set set_phy)
       with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-        Hdeepown_selector_some Hdeepown_template
-        Hdeepown_volumeclaimtemplates Hdeepown_status]"
-      as "Hset".
-    { iExists set_phy. rewrite /StatefulSetV.deepown.
-      iFrame. rewrite /StatefulSetSpecV.deepown.
-      iFrame. iFrame "%". }
+        Hdeepown_selector_some Hdeepown_template Hdeepown_status]" as "Hset_base".
+    { rewrite /statefulset_without_claim_templates_l. iFrame. iFrame "%". }
+    iAssert (statefulset_claim_templates set_phy set dq_set)
+      with "[Hdeepown_volumeclaimtemplates]" as "Htemplates".
+    { iExists claim_templates_list. iExact "Hdeepown_volumeclaimtemplates". }
+    iPoseProof ("Hrestore_set" with "Hset_base Htemplates") as "Hset".
     iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
       "(%Hset_l_not_null & Hset_typemeta & Hset_objectmeta_l & Hset_spec_l & Hset_status_l)".
     iDestruct "Hset_objectmeta_l" as (set_meta_c)
@@ -614,7 +600,7 @@ Proof.
       with "[Hpod_objectmeta_field Hpod_objectmeta]" as
         "Hpod_objectmeta_l".
     { iExists pod_meta_c. iFrame. }
-    wp_auto.
+    wp_auto_keep.
     set Q := (λ (last_claim : v1.PersistentVolumeClaim.t)
         (last_name : go_string),
       "Hset_typemeta" ∷
@@ -638,11 +624,13 @@ Proof.
         ([∗ list] physical_volume;pure_volume ∈
           physical_volumes;PodSpecV.volumes_list pod.(PodV.Spec'),
           VolumeV.deepown physical_volume pure_volume dq_pod) ∗
+      "Hpod_volumes_cap" ∷ own_slice_cap v1.Volume.t pod_spec_c.(v1.PodSpec.Volumes') dq_pod ∗
       "Hpod_spec_rest" ∷
         (⌜ pod_spec_c.(v1.PodSpec.Hostname') =
           pod.(PodV.Spec').(PodSpecV.Hostname') ⌝ ∗
          ⌜ pod_spec_c.(v1.PodSpec.Subdomain') =
-          pod.(PodV.Spec').(PodSpecV.Subdomain') ⌝) ∗
+          pod.(PodV.Spec').(PodSpecV.Subdomain') ⌝ ∗
+         PodSpecV.deepown_rest pod_spec_c pod.(PodV.Spec') dq_pod) ∗
       "Hpod_status_l" ∷ PodStatusV.deepown_l
         (PodV.status_ptr pod_l) pod.(PodV.Status') dq_pod ∗
       "Hvolumes_map" ∷ volumes_l ↦$
@@ -676,7 +664,7 @@ Proof.
     iSplitL "Hset_typemeta Hset_objectmeta_field Hset_objectmeta
       Hset_spec_l Hset_status_l Hpod_typemeta Hpod_objectmeta_l
       Hpod_spec_field Hpod_volumes_slice Hpod_volumes_deepown
-      Hpod_status_l Hvolumes_map set ordinal Hvolumes_ptr claim name".
+      Hpod_status_l Hpod_spec_Hdeepown_rest Hpod_spec_Hdeepown_volumes_cap Hvolumes_map set ordinal Hvolumes_ptr claim name".
     { iExists (zero_val v1.PersistentVolumeClaim.t), ""%go.
       iFrame. iFrame "%".
       iPureIntro. intros claim_template_name Hin.
@@ -693,8 +681,8 @@ Proof.
         { apply elem_of_dom. eexists. exact Hclaim_lookup. }
         rewrite Hclaim_templates_map_dom elem_of_list_to_set in Hin_dom.
         exact Hin_dom. }
-      wp_auto. wp_alloc this_volume_ptr as "Hthis_volume_ptr".
-      wp_pures. wp_auto.
+      wp_auto_keep. wp_alloc this_volume_ptr as "Hthis_volume_ptr".
+      wp_pures_keep. wp_auto_keep.
       wp_apply (wp_map_lookup2 go.string v1.Volume volumes_l
         (pod_physical_volumes_map_of_list physical_volumes)
         claim_template_name (DfracOwn 1) with "[$Hvolumes_map]").
@@ -702,7 +690,7 @@ Proof.
       destruct (pod_physical_volumes_map_of_list physical_volumes !!
         claim_template_name) as [physical_volume|] eqn:Hphysical_lookup.
       2: {
-        wp_auto.
+        wp_auto_keep.
         iRight. iRight. iExists #false. iSplit; first done.
         iExists claim_template_phy, claim_template_name. iFrame.
         iPureIntro. split; first done.
@@ -729,8 +717,9 @@ Proof.
         [exact Hphysical_volume_index|exact Hpure_volume_index|].
       iDestruct "Hcurrent_volume" as
         "(%Hcurrent_volume_name & Hcurrent_source)".
+      iEval (rewrite VolumeSourceV.deepown_split) in "Hcurrent_source".
       iDestruct "Hcurrent_source" as
-        "(%Hcurrent_pvc_none & Hcurrent_pvc_some)".
+        "(%Hcurrent_pvc_none & Hcurrent_pvc_some & Hcurrent_source_rest)".
       destruct pure_volume.(VolumeV.VolumeSource').(VolumeSourceV.PersistentVolumeClaim')
         as [pure_pvc|] eqn:Hpure_pvc.
       2: {
@@ -741,12 +730,12 @@ Proof.
             (physical_volume.(v1.Volume.VolumeSource').(v1.VolumeSource.PersistentVolumeClaim') =
               null) = true) as Hphysical_pvc_null_bool.
         { by apply bool_decide_eq_true_2. }
-        wp_auto.
+        wp_auto_keep.
         rewrite Hphysical_pvc_null_bool.
-        wp_auto.
+        wp_auto_keep.
         iAssert (VolumeV.deepown physical_volume pure_volume dq_pod)
-          with "[Hcurrent_pvc_some]" as "Hcurrent_volume".
-        { rewrite /VolumeV.deepown /VolumeSourceV.deepown Hpure_pvc.
+          with "[Hcurrent_pvc_some Hcurrent_source_rest]" as "Hcurrent_volume".
+        { rewrite /VolumeV.deepown VolumeSourceV.deepown_split Hpure_pvc.
           iFrame. iFrame "%". }
         iSpecialize ("Hvolumes_restore" with "Hcurrent_volume").
         iRename "Hvolumes_restore" into "Hpod_volumes_deepown".
@@ -777,9 +766,9 @@ Proof.
       iNamedPrefix "Hset_objectmeta" "Hset_meta_".
       pose proof (Hclaim_templates_map_values _ _ Hclaim_lookup) as
         [_ Hclaim_name].
-      wp_auto.
+      wp_auto_keep.
       rewrite Hphysical_pvc_not_null_bool.
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_claimName
         (v1.ObjectMeta.Name' set_meta_c)
         (v1.ObjectMeta.Name'
@@ -823,8 +812,8 @@ Proof.
           with "[Hphysical_pvc]" as "Hcurrent_pvc_some".
         { iExists pure_pvc. iFrame. done. }
         iAssert (VolumeV.deepown physical_volume pure_volume dq_pod)
-          with "[Hcurrent_pvc_some]" as "Hcurrent_volume".
-        { rewrite /VolumeV.deepown /VolumeSourceV.deepown Hpure_pvc.
+          with "[Hcurrent_pvc_some Hcurrent_source_rest]" as "Hcurrent_volume".
+        { rewrite /VolumeV.deepown VolumeSourceV.deepown_split Hpure_pvc.
           iFrame. iFrame "%". }
         iSpecialize ("Hvolumes_restore" with "Hcurrent_volume").
         iRename "Hvolumes_restore" into "Hpod_volumes_deepown".
@@ -846,8 +835,8 @@ Proof.
           with "[Hphysical_pvc]" as "Hcurrent_pvc_some".
         { iExists pure_pvc. iFrame. done. }
         iAssert (VolumeV.deepown physical_volume pure_volume dq_pod)
-          with "[Hcurrent_pvc_some]" as "Hcurrent_volume".
-        { rewrite /VolumeV.deepown /VolumeSourceV.deepown Hpure_pvc.
+          with "[Hcurrent_pvc_some Hcurrent_source_rest]" as "Hcurrent_volume".
+        { rewrite /VolumeV.deepown VolumeSourceV.deepown_split Hpure_pvc.
           iFrame. iFrame "%". }
         iSpecialize ("Hvolumes_restore" with "Hcurrent_volume").
         iRename "Hvolumes_restore" into "Hpod_volumes_deepown".
@@ -893,7 +882,7 @@ Proof.
         replace (take (Z.to_nat (size claim_templates_phy)) keys) with keys.
         - exact Hclaim_key.
         - symmetry. apply take_ge. rewrite Nat2Z.id. lia. }
-      wp_auto.
+      wp_auto_keep.
       iAssert (ObjectMetaV.deepown_l
           (StatefulSetV.objectmeta_ptr set_l)
           set.(StatefulSetV.ObjectMeta') dq_set)
@@ -903,14 +892,14 @@ Proof.
       iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
         with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l $Hset_status_l]")
         as "Hset".
-      iDestruct "Hpod_spec_rest" as "(%Hpod_hostname & %Hpod_subdomain)".
+      iDestruct "Hpod_spec_rest" as "(%Hpod_hostname & %Hpod_subdomain & Hpod_spec_rest)".
       iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
-        with "[Hpod_volumes_slice Hpod_volumes_deepown]" as "Hpod_spec".
-      { rewrite /PodSpecV.deepown.
+        with "[Hpod_volumes_slice Hpod_volumes_deepown Hpod_volumes_cap Hpod_spec_rest]" as "Hpod_spec".
+      { rewrite PodSpecV.deepown_split.
         iSplit; first done.
         iSplitL "Hpod_volumes_slice Hpod_volumes_deepown".
-        { iExists physical_volumes. rewrite /deepown_list. iFrame. }
-        iFrame "%". }
+        { iExists physical_volumes. iFrame. }
+        iFrame "% ∗". }
       iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
           pod.(PodV.Spec') dq_pod)
         with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
@@ -924,7 +913,7 @@ Proof.
         "[HQ %Hreturn]".
       destruct Hreturn as (Hbv & Hnot_storage). subst bv.
       iNamed "HQ".
-      wp_auto.
+      wp_auto_keep.
       iAssert (ObjectMetaV.deepown_l
           (StatefulSetV.objectmeta_ptr set_l)
           set.(StatefulSetV.ObjectMeta') dq_set)
@@ -934,14 +923,14 @@ Proof.
       iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
         with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l $Hset_status_l]")
         as "Hset".
-      iDestruct "Hpod_spec_rest" as "(%Hpod_hostname & %Hpod_subdomain)".
+      iDestruct "Hpod_spec_rest" as "(%Hpod_hostname & %Hpod_subdomain & Hpod_spec_rest)".
       iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
-        with "[Hpod_volumes_slice Hpod_volumes_deepown]" as "Hpod_spec".
-      { rewrite /PodSpecV.deepown.
+        with "[Hpod_volumes_slice Hpod_volumes_deepown Hpod_volumes_cap Hpod_spec_rest]" as "Hpod_spec".
+      { rewrite PodSpecV.deepown_split.
         iSplit; first done.
         iSplitL "Hpod_volumes_slice Hpod_volumes_deepown".
-        { iExists physical_volumes. rewrite /deepown_list. iFrame. }
-        iFrame "%". }
+        { iExists physical_volumes. iFrame. }
+        iFrame "% ∗". }
       iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
           pod.(PodV.Spec') dq_pod)
         with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
@@ -988,13 +977,13 @@ Proof.
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c)
     "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   iDestruct "Hpod_spec_Hdeepown_volumes" as (current_volumes_phy)
     "Hcurrent_volumes".
-  rewrite /deepown_list.
   iDestruct "Hcurrent_volumes" as
     "[Hcurrent_volumes_slice Hcurrent_volumes_deepown]".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ordinalOf
     (v1.ObjectMeta.Name' pod_meta_c) ordinal
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') with "[]").
@@ -1005,11 +994,11 @@ Proof.
   iIntros (ordinal_ret) "%Hordinal_ret".
   assert (Hordinal_ret_nat : sint.nat ordinal_ret = ordinal) by word.
   subst ordinal.
-  wp_auto.
+  wp_auto_keep.
   wp_apply wp_volume_slice_literal_non_nil. iSplitR; first done.
   iIntros (new_volumes_slice)
     "(Hnew_volumes_slice & Hnew_volumes_cap & %Hnew_volumes_non_nil)".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_volumeClaimTemplatesByName set_l set dq_set with "Hset").
   iIntros (set_phy claim_templates_map claim_templates_list
     claim_templates_phy) "Hclaim_result".
@@ -1017,7 +1006,7 @@ Proof.
   iNamed "Hclaim_result".
   iDestruct (objectmeta_deepown_name with "Hdeepown_objectmeta") as
     "[%Hset_name Hdeepown_objectmeta]".
-  wp_auto.
+  wp_auto_keep.
   set P := (λ (_keys : list go_string) (_z : Z),
     ∃ (last_claim : v1.PersistentVolumeClaim.t)
       (last_name : go_string) (new_volumes : slice.t)
@@ -1056,24 +1045,24 @@ Proof.
     iDestruct "HP" as (last_claim last_name new_volumes
       new_volumes_phy new_volumes_pure) "HP".
     iNamed "HP".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_claimName
       (v1.ObjectMeta.Name' set_phy.(v1.StatefulSet.ObjectMeta'))
       (v1.ObjectMeta.Name'
         claim_phy.(v1.PersistentVolumeClaim.ObjectMeta'))
       ordinal_ret with "[]").
     { iPureIntro. rewrite Hordinal_ret. lia. }
-    wp_pures.
+    wp_pures_keep.
     wp_alloc pvc_source_l as "Hpvc_source".
-    wp_pures.
+    wp_pures_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
     iIntros (one_volume_slice) "[Hone_volume_slice Hone_volume_cap]".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_slice_append with
       "[$Hnew_volumes_slice $Hnew_volumes_cap $Hone_volume_slice]").
     iIntros (new_volumes')
       "(Hnew_volumes_slice & Hnew_volumes_cap & Hone_volume_slice)".
-    wp_auto.
+    wp_auto_keep.
     set claim_name_full :=
       v1.ObjectMeta.Name'
           claim_phy.(v1.PersistentVolumeClaim.ObjectMeta') ++ "-"%go ++
@@ -1085,11 +1074,12 @@ Proof.
     set new_volume_phy : v1.Volume.t :=
       {| v1.Volume.Name' := claim_name;
          v1.Volume.VolumeSource' :=
-           {| v1.VolumeSource.PersistentVolumeClaim' := pvc_source_l |} |}.
+           (zero_val v1.VolumeSource.t)
+             <| v1.VolumeSource.PersistentVolumeClaim' := pvc_source_l |> |}.
     set new_volume_pure : VolumeV.t :=
       {| VolumeV.Name' := claim_name;
          VolumeV.VolumeSource' :=
-           {| VolumeSourceV.PersistentVolumeClaim' := Some pvc_source |} |}.
+           (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' := Some pvc_source |>) |}.
     pose proof (Hclaim_templates_map_values _ _ (proj2 (proj2 Hiter))) as
       [_ Hclaim_name].
     assert (Hnew_volume_pure : new_volume_pure =
@@ -1101,13 +1091,15 @@ Proof.
       "%Hpvc_source_not_null".
     iAssert (VolumeV.deepown new_volume_phy new_volume_pure 1)
       with "[Hpvc_source]" as "Hnew_volume".
-    { rewrite /VolumeV.deepown /VolumeSourceV.deepown /=.
+    { rewrite /VolumeV.deepown VolumeSourceV.deepown_split /=.
       iSplit; first done.
       iSplit.
       { iPureIntro. split.
         - intros Hnull. exfalso. exact (Hpvc_source_not_null Hnull).
         - discriminate. }
-      iExists pvc_source. iFrame. done. }
+      iSplitL "Hpvc_source".
+      { iExists pvc_source. iFrame. done. }
+      iApply volume_source_rest_zero. }
     iAssert (([∗ list] volume_phy;volume_pure ∈
         new_volumes_phy ++ [new_volume_phy];
         new_volumes_pure ++ [new_volume_pure],
@@ -1142,15 +1134,15 @@ Proof.
       storage_claim_volume set (sint.nat ordinal_ret) <$> keys).
   { rewrite Hnew_volumes_pure Nat2Z.id.
     f_equal. apply take_ge. lia. }
-  wp_auto.
-  iAssert (StatefulSetV.deepown_l set_l set dq_set)
+  wp_auto_keep.
+  iAssert (statefulset_without_claim_templates_l set_l set dq_set set_phy)
     with "[Hset_ptr Hdeepown_objectmeta Hdeepown_replicas_some
-      Hdeepown_selector_some Hdeepown_template
-      Hdeepown_volumeclaimtemplates Hdeepown_status]"
-    as "Hset".
-  { iExists set_phy. rewrite /StatefulSetV.deepown.
-    iFrame. rewrite /StatefulSetSpecV.deepown.
-    iFrame. iFrame "%". }
+      Hdeepown_selector_some Hdeepown_template Hdeepown_status]" as "Hset_base".
+  { rewrite /statefulset_without_claim_templates_l. iFrame. iFrame "%". }
+  iAssert (statefulset_claim_templates set_phy set dq_set)
+    with "[Hdeepown_volumeclaimtemplates]" as "Htemplates".
+  { iExists claim_templates_list. iExact "Hdeepown_volumeclaimtemplates". }
+  iPoseProof ("Hrestore_set" with "Hset_base Htemplates") as "Hset".
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
   iAssert (ObjectMetaV.deepown pod_meta_c pod.(PodV.ObjectMeta') 1)
     with "[Hpod_objectmeta]" as "Hpod_objectmeta".
@@ -1165,6 +1157,8 @@ Proof.
   iDestruct (big_sepL2_length with "Hcurrent_volumes_deepown") as
     %Hcurrent_volumes_pure_len.
   iEval (rewrite Hnew_volumes_pure_full) in "Hnew_volumes_deepown".
+  (* The old slice is only read before replacement; its spare capacity is unused. *)
+  iClear "Hpod_spec_Hdeepown_volumes_cap".
   set I2 := (∃ (i : w64) (current_volume : v1.Volume.t)
       (out : slice.t) (out_phy : list v1.Volume.t),
     "i" ∷ i_ptr ↦ i ∗
@@ -1196,6 +1190,7 @@ Proof.
     "Hpod_spec_field" ∷ PodV.spec_ptr pod_l ↦ pod_spec_c ∗
     "Hcurrent_volumes_slice" ∷
       pod_spec_c.(v1.PodSpec.Volumes') ↦* current_volumes_phy ∗
+    "Hpod_spec_rest" ∷ PodSpecV.deepown_rest pod_spec_c pod.(PodV.Spec') 1 ∗
     "Hpod_status_l" ∷ PodStatusV.deepown_l
       (PodV.status_ptr pod_l) pod.(PodV.Status') 1 ∗
     "pod" ∷ pod_ptr ↦ pod_l ∗
@@ -1207,7 +1202,7 @@ Proof.
       Hnew_volumes_cap Hnew_volumes_deepown Hcurrent_volumes_deepown
       Hclaim_templates_map claimTemplates Hset Hpod_typemeta
       Hpod_objectmeta_l Hpod_spec_field Hcurrent_volumes_slice
-      Hpod_status_l pod]" as "Hloop_inv".
+      Hpod_status_l Hpod_spec_Hdeepown_rest pod]" as "Hloop_inv".
   { iExists (W64 0), (zero_val v1.Volume.t), new_volumes,
       new_volumes_phy.
     rewrite !drop_0 take_0 filter_nil app_nil_r.
@@ -1238,7 +1233,7 @@ Proof.
       with "[$Hcurrent_volumes_slice]").
     { word. }
     { iPureIntro. exact Hthis_volume_phy_lookup. }
-    iIntros "Hcurrent_volumes_slice". wp_auto.
+    iIntros "Hcurrent_volumes_slice". wp_auto_keep.
     assert (∃ this_volume_pure,
       PodSpecV.volumes_list pod.(PodV.Spec') !! sint.nat i =
         Some this_volume_pure) as
@@ -1258,7 +1253,7 @@ Proof.
     iIntros "Hclaim_templates_map".
     destruct (claim_templates_phy !! this_volume_phy.(v1.Volume.Name'))
       as [claim_template_phy|] eqn:Hclaim_template_lookup.
-    + wp_auto.
+    + wp_auto_keep.
       assert (Hthis_volume_name_in_keys :
         this_volume_pure.(VolumeV.Name') ∈ keys).
       { assert (this_volume_phy.(v1.Volume.Name') ∈
@@ -1281,7 +1276,7 @@ Proof.
           rewrite list_elem_of_singleton in Hin. subst volume.
           exact (Hnotin Hthis_volume_name_in_keys). }
         by rewrite Hfilter_single app_nil_r. }
-      iApply wp_for_post_do. wp_auto.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ set ordinal claim name".
       iExists (word.add i (W64 1)), this_volume_phy, out,
         out_phy.
@@ -1290,7 +1285,7 @@ Proof.
       iFrame. iSplit.
       { iPureIntro. exact Hout_non_nil. }
       { iPureIntro. clear -Hi Hi_lt. word. }
-    + wp_auto.
+    + wp_auto_keep.
       assert (Hthis_volume_name_not_in_keys :
         this_volume_pure.(VolumeV.Name') ∉ keys).
       { intros Hin.
@@ -1318,12 +1313,12 @@ Proof.
         rewrite Hfilter_single. apply List.app_assoc. }
       wp_apply wp_slice_literal. iSplitR; first done.
       iIntros (one_volume_slice) "[Hone_volume_slice _]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_slice_append with
         "[$Hnew_volumes_slice $Hnew_volumes_cap $Hone_volume_slice]").
       iIntros (out')
         "(Hnew_volumes_slice & Hnew_volumes_cap & Hone_volume_slice)".
-      wp_auto.
+      wp_auto_keep.
       iAssert (([∗ list] volume_phy;volume_pure ∈
           out_phy ++ [this_volume_phy];out_pure' ++ [this_volume_pure],
           VolumeV.deepown volume_phy volume_pure 1))%I
@@ -1338,7 +1333,7 @@ Proof.
         assert (sint.nat (W64 0) = 0%nat) as Hzero by done.
         rewrite Hzero app_length /= in Hout_len.
         clear -Hout_len. lia. }
-      iApply wp_for_post_do. wp_auto.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ set ordinal claim name".
       iExists (word.add i (W64 1)), this_volume_phy, out',
         (out_phy ++ [this_volume_phy]).
@@ -1366,16 +1361,16 @@ Proof.
     iAssert (PodSpecV.deepown pod_spec_updated
         (pod.(PodV.Spec') <| PodSpecV.Volumes' :=
           Some (init_storage_volumes set pod (sint.nat ordinal_ret) keys) |>) 1)
-      with "[Hnew_volumes_slice Hnew_volumes_deepown]" as
+      with "[Hnew_volumes_slice Hnew_volumes_cap Hnew_volumes_deepown Hpod_spec_rest]" as
         "Hpod_spec".
-    { rewrite /PodSpecV.deepown /pod_spec_updated
-        /init_storage_volumes /=.
+    { iEval (rewrite PodSpecV.deepown_split /pod_spec_updated
+        /init_storage_volumes /=).
       iSplit.
       { iPureIntro. split; last discriminate.
         intros Hnil. exfalso. exact (Hout_non_nil Hnil). }
       iSplitL "Hnew_volumes_slice Hnew_volumes_deepown".
-      { iExists out_phy. rewrite /deepown_list. iFrame. }
-      iFrame "%". }
+      { iExists out_phy. iFrame. }
+      iFrame "% ∗". }
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
         (pod.(PodV.Spec') <| PodSpecV.Volumes' :=
           Some (init_storage_volumes set pod (sint.nat ordinal_ret) keys) |>) 1)

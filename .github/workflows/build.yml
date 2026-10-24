@@ -32,7 +32,8 @@ jobs:
           opam pin add --no-action -k path .
           opam install --deps-only .
       - name: Check ${{ matrix.proof-group }} proofs using vos dependencies
-        run: /usr/bin/time -p make -j2 vok-${{ matrix.proof-group }}
+        # Include maximum RSS so future memory regressions are visible in logs.
+        run: /usr/bin/time -v make -j2 vok-${{ matrix.proof-group }}
 
   check-goose:
     runs-on: ubuntu-latest
@@ -47,11 +48,11 @@ jobs:
         run: |
           ./scripts/goose.sh
 
-          changes="$(git status --short --untracked-files=all -- src/code src/generatedproof)"
+          changes="$(git status --short --untracked-files=all -- src/code src/generatedproof src/generatedviews)"
           if [[ -n "$changes" ]]; then
             echo "Goose generated changes; run ./scripts/goose.sh and commit the results:"
             printf '%s\n' "$changes"
-            git diff -- src/code src/generatedproof
+            git diff -- src/code src/generatedproof src/generatedviews
             exit 1
           fi
 

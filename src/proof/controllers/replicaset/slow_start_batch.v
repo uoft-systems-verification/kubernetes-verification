@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 (* Specification and proof of [slowStartBatch], the concurrent pod-creation
    loop of the ReplicaSet controller (copied verbatim from upstream
    pkg/controller/replicaset).
@@ -19,7 +20,7 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export create.
 From New.proof.controllers.replicaset Require Export top_level.
-From New.proof.kubernetes_types Require Export pod replicaset.
+From New.object_specs Require Export pod replicaset.
 From New.proof Require Import sync.
 From New.golang.theory Require Import chan.
 From New.golang.theory.chan.au_spec Require Import chan_au_send.
@@ -101,7 +102,7 @@ Lemma wp_State__PodCreate_nameless_au γ l namespace pod_l pod parent_key parent
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "PodCreate" #namespace #pod_l {{ Φ }}.
 Proof.
   iIntros (Φ) "(#Hinit & H)". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__PodCreateⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodCreateⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i (interface.mk (go.PointerType v1.Pod) #pod_l) (KObjectV.Pod pod) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
   { iExists pod_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_Pod|]. iFrame. }
@@ -125,7 +126,7 @@ Proof.
   { iPureIntro. split_and!; done. }
   iModIntro. iNext.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
-  wp_auto.
+  wp_auto_keep.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
   cbn [interface.ty interface.v].
   replace (if decide (go.PointerType v1.Pod = go.PointerType v1.Pod)
@@ -133,7 +134,7 @@ Proof.
     (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ".
 Qed.
 
@@ -260,9 +261,9 @@ Lemma wp_min_int (x y : w64) :
   {{{ RET #(if decide (sint.Z x < sint.Z y) then x else y); True }}}.
 Proof.
   wp_start as "_".
-  try wp_pures.
+  try wp_pures_keep.
   pose proof (go.min_unfold 2 go.int) as [Heq]. simpl in Heq.
-  iEval (rewrite Heq). wp_auto.
+  iEval (rewrite Heq). wp_auto_keep.
   wp_if_destruct.
   - iEval (rewrite (decide_True x y l)) in "HΦ". iApply "HΦ". done.
   - assert (¬ (sint.Z x < sint.Z y)) as Hnlt by word.
@@ -283,9 +284,9 @@ Lemma wp_slowStartBatch γ pk puid keys0 (count initial : w64) (fn : func.t) :
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   iPersist "fn".
-  wp_apply wp_min_int. try wp_auto.
+  wp_apply wp_min_int. try wp_auto_keep.
   set I := (∃ (remaining successes batchSize : w64) (created : list PodV.t),
     "remaining" ∷ remaining_ptr ↦ remaining ∗
     "successes" ∷ successes_ptr ↦ successes ∗
@@ -312,14 +313,14 @@ Proof.
     iIntros (ch γch) "(#His_chan & _ & Hoc)".
     assert (batchSize ≠ W64 0) as Hbs_nz by (intros ->; word).
     iEval (rewrite (decide_False _ _ Hbs_nz)) in "Hoc".
-    try wp_auto.
+    try wp_auto_keep.
     iMod (init_WaitGroup wgN with "wg") as (γwg) "(#His_wg & Hwg_ctr & Hwg_waiters)".
     wp_apply (wp_WaitGroup__Add with "[$His_wg]"). try iPkgInit.
     iApply fupd_mask_intro; [solve_ndisj|]. iIntros "Hmask". iNext.
     iExists (W32 0). iFrame "Hwg_ctr". iSplit; [word|].
     iRight. iFrame "Hwg_waiters". iIntros "Hwg_waiters Hwg_ctr".
     iMod "Hmask" as "_". iModIntro.
-    try wp_auto.
+    try wp_auto_keep.
     (* ghost state for the batch *)
     iMod own_tok_auth_alloc as (γc) "Hauth_c".
     iMod (own_tok_auth_add (sint.nat batchSize) with "Hauth_c") as "[Hauth_c Hcreate_toks]".
@@ -359,9 +360,9 @@ Proof.
       iDestruct (own_toks_add with "Hcreate_toks") as "[Hcreate_toks Htok_c]".
       wp_apply (wp_fork with "[Htok_c]").
       { (* the goroutine *)
-        wp_pures.
+        wp_pures_keep.
         wp_apply wp_with_defer as "%defer defer". simpl subst.
-        wp_auto.
+        wp_auto_keep.
         wp_bind (#fn #())%E.
         iApply "Hfn".
         rewrite /create_pod_au.
@@ -396,7 +397,7 @@ Proof.
           iSplitR; [iPureIntro; discriminate|].
           iRight. iSplit; [done|]. iFrame "Hres_inv". }
         iModIntro. iNext.
-        wp_auto.
+        wp_auto_keep.
         (* the deferred wg.Done() *)
         wp_apply (wp_WaitGroup__Done with "[$His_wg]"). try iPkgInit.
         iInv "Hbinv" as ">Hi" "Hclose_inv".
@@ -418,10 +419,10 @@ Proof.
           all: try word.
           all: try lia.
           all: intros Hdr; exfalso; specialize (Hdrained_wg Hdr); lia. }
-        iModIntro. wp_auto. done. }
+        iModIntro. wp_auto_keep. done. }
       wp_for_post. iFrame. iPureIntro. word.
     + (* all goroutines forked: wait for them *)
-      try wp_auto.
+      try wp_auto_keep.
       iApply fupd_wp.
       iMod fupd_mask_subseteq as "Hmask";
         last iMod (alloc_wait_token _ _ _ 0 with "His_wg Hwg_waiters") as "[Hwg_waiters Hwait_tok]".
@@ -452,13 +453,13 @@ Proof.
       iModIntro. iIntros "Hwait_tok".
       assert (length created0 = sint.nat batchSize) as Hcreated0_len by lia.
       (* the error channel is untouched: no goroutine failed *)
-      wp_auto.
+      wp_auto_keep.
       wp_func_call. wp_call.
       wp_apply (wp_Len with "[$His_chan]"). iIntros (len1) "%Hlen1".
-      wp_auto.
+      wp_auto_keep.
       wp_func_call. wp_call.
       wp_apply (wp_Len with "[$His_chan]"). iIntros (len2) "%Hlen2".
-      wp_auto.
+      wp_auto_keep.
       wp_if_destruct.
       { (* receiving from the empty buffered channel blocks forever *)
         wp_bind (chan.receive _ _)%E.
@@ -466,9 +467,9 @@ Proof.
         iIntros "_". rewrite /recv_au.
         iApply fupd_mask_intro; [set_solver|]. iIntros "_". iNext.
         iExists (chanstate.Buffered []). by iFrame "Hoc". }
-      try wp_auto.
+      try wp_auto_keep.
       wp_for_post.
-      wp_apply wp_min_int. try wp_auto.
+      wp_apply wp_min_int. try wp_auto_keep.
       iDestruct (created_pods_res_app with
         "Hcreated_meta_frags_old Hcreated_unreserved_key_frags_old Hres_inv") as "Hres";
         [done|done|done|].
@@ -484,7 +485,7 @@ Proof.
   - (* batchSize = 0: nothing left to create *)
     assert (sint.Z remaining = 0) as Hrem0 by (apply HbatchSize_zero; word).
     assert (Z.of_nat (sint.nat count) = sint.Z count) as Hcount_nat by word.
-    try wp_auto.
+    try wp_auto_keep.
     iApply ("HΦ" $! successes created).
     iFrame. iPureIntro. lia.
 Qed.

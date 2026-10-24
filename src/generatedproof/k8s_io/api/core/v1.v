@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 From New.proof Require Import generated_struct.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.resource.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.intstr.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.api.core.v1.
 
@@ -2428,26 +2429,6 @@ Proof. Admitted.
 End def.
 End PersistentVolumeReclaimPolicy.
 
-Module PersistentVolumeMode.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeMode_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeMode.t). Admitted.
-
-#[global] Instance PersistentVolumeMode_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeMode.t) (v1.PersistentVolumeModeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeMode.
-
 Module PersistentVolumeStatus.
 Section def.
 
@@ -2488,6 +2469,61 @@ Proof. Admitted.
 End def.
 End PersistentVolumeList.
 
+Module VolumeResourceRequirements.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance VolumeResourceRequirements_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeResourceRequirements.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Limits" ∷ l.[(v1.VolumeResourceRequirements.t), "Limits"] ↦{dq} v.(v1.VolumeResourceRequirements.Limits') ∗
+      "Requests" ∷ l.[(v1.VolumeResourceRequirements.t), "Requests"] ↦{dq} v.(v1.VolumeResourceRequirements.Requests') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance VolumeResourceRequirements_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.VolumeResourceRequirements.t) (v1.VolumeResourceRequirementsⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VolumeResourceRequirements_access_load_Limits l (v : (v1.VolumeResourceRequirements.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeResourceRequirements.t), "Limits"] ↦{dq} (v.(v1.VolumeResourceRequirements.Limits')))
+    (l.[(v1.VolumeResourceRequirements.t), "Limits"] ↦{dq} (v.(v1.VolumeResourceRequirements.Limits')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeResourceRequirements_access_store_Limits l (v : (v1.VolumeResourceRequirements.t)) Limits' :
+  AccessStrict
+    (l.[(v1.VolumeResourceRequirements.t), "Limits"] ↦ (v.(v1.VolumeResourceRequirements.Limits')))
+    (l.[(v1.VolumeResourceRequirements.t), "Limits"] ↦ Limits')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeResourceRequirements.Limits') := Limits'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeResourceRequirements_access_load_Requests l (v : (v1.VolumeResourceRequirements.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeResourceRequirements.t), "Requests"] ↦{dq} (v.(v1.VolumeResourceRequirements.Requests')))
+    (l.[(v1.VolumeResourceRequirements.t), "Requests"] ↦{dq} (v.(v1.VolumeResourceRequirements.Requests')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeResourceRequirements_access_store_Requests l (v : (v1.VolumeResourceRequirements.t)) Requests' :
+  AccessStrict
+    (l.[(v1.VolumeResourceRequirements.t), "Requests"] ↦ (v.(v1.VolumeResourceRequirements.Requests')))
+    (l.[(v1.VolumeResourceRequirements.t), "Requests"] ↦ Requests')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeResourceRequirements.Requests') := Requests'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End VolumeResourceRequirements.
+
 Module PersistentVolumeClaimSpec.
 Section def.
 
@@ -2497,13 +2533,146 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimSpec_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimSpec.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimSpec_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimSpec.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "AccessModes" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "AccessModes"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.AccessModes') ∗
+      "Selector" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "Selector"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.Selector') ∗
+      "Resources" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "Resources"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.Resources') ∗
+      "VolumeName" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "VolumeName"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.VolumeName') ∗
+      "StorageClassName" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "StorageClassName"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.StorageClassName') ∗
+      "VolumeMode" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "VolumeMode"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.VolumeMode') ∗
+      "DataSource" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "DataSource"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.DataSource') ∗
+      "DataSourceRef" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "DataSourceRef"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.DataSourceRef') ∗
+      "VolumeAttributesClassName" ∷ l.[(v1.PersistentVolumeClaimSpec.t), "VolumeAttributesClassName"] ↦{dq} v.(v1.PersistentVolumeClaimSpec.VolumeAttributesClassName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimSpec_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimSpec.t) (v1.PersistentVolumeClaimSpecⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_AccessModes l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.AccessModes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_AccessModes l (v : (v1.PersistentVolumeClaimSpec.t)) AccessModes' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "AccessModes"] ↦ (v.(v1.PersistentVolumeClaimSpec.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "AccessModes"] ↦ AccessModes')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.AccessModes') := AccessModes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_Selector l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Selector"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.Selector')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Selector"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.Selector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_Selector l (v : (v1.PersistentVolumeClaimSpec.t)) Selector' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Selector"] ↦ (v.(v1.PersistentVolumeClaimSpec.Selector')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Selector"] ↦ Selector')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.Selector') := Selector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_Resources l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Resources"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.Resources')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Resources"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.Resources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_Resources l (v : (v1.PersistentVolumeClaimSpec.t)) Resources' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Resources"] ↦ (v.(v1.PersistentVolumeClaimSpec.Resources')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "Resources"] ↦ Resources')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.Resources') := Resources'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_VolumeName l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_VolumeName l (v : (v1.PersistentVolumeClaimSpec.t)) VolumeName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeName"] ↦ (v.(v1.PersistentVolumeClaimSpec.VolumeName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeName"] ↦ VolumeName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.VolumeName') := VolumeName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_StorageClassName l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "StorageClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.StorageClassName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "StorageClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.StorageClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_StorageClassName l (v : (v1.PersistentVolumeClaimSpec.t)) StorageClassName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "StorageClassName"] ↦ (v.(v1.PersistentVolumeClaimSpec.StorageClassName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "StorageClassName"] ↦ StorageClassName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.StorageClassName') := StorageClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_VolumeMode l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeMode"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeMode')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeMode"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_VolumeMode l (v : (v1.PersistentVolumeClaimSpec.t)) VolumeMode' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeMode"] ↦ (v.(v1.PersistentVolumeClaimSpec.VolumeMode')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeMode"] ↦ VolumeMode')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.VolumeMode') := VolumeMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_DataSource l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSource"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.DataSource')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSource"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.DataSource')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_DataSource l (v : (v1.PersistentVolumeClaimSpec.t)) DataSource' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSource"] ↦ (v.(v1.PersistentVolumeClaimSpec.DataSource')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSource"] ↦ DataSource')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.DataSource') := DataSource'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_DataSourceRef l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSourceRef"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.DataSourceRef')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSourceRef"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.DataSourceRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_DataSourceRef l (v : (v1.PersistentVolumeClaimSpec.t)) DataSourceRef' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSourceRef"] ↦ (v.(v1.PersistentVolumeClaimSpec.DataSourceRef')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "DataSourceRef"] ↦ DataSourceRef')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.DataSourceRef') := DataSourceRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimSpec_access_load_VolumeAttributesClassName l (v : (v1.PersistentVolumeClaimSpec.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimSpec.VolumeAttributesClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimSpec_access_store_VolumeAttributesClassName l (v : (v1.PersistentVolumeClaimSpec.t)) VolumeAttributesClassName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeAttributesClassName"] ↦ (v.(v1.PersistentVolumeClaimSpec.VolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimSpec.t), "VolumeAttributesClassName"] ↦ VolumeAttributesClassName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimSpec.VolumeAttributesClassName') := VolumeAttributesClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimSpec.
@@ -2517,13 +2686,132 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Phase" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Phase') ∗
+      "AccessModes" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AccessModes') ∗
+      "Capacity" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Capacity') ∗
+      "Conditions" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.Conditions') ∗
+      "AllocatedResources" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AllocatedResources') ∗
+      "AllocatedResourceStatuses" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') ∗
+      "CurrentVolumeAttributesClassName" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName') ∗
+      "ModifyVolumeStatus" ∷ l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimStatus.t) (v1.PersistentVolumeClaimStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Phase l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Phase l (v : (v1.PersistentVolumeClaimStatus.t)) Phase' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦ (v.(v1.PersistentVolumeClaimStatus.Phase')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Phase"] ↦ Phase')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Phase') := Phase'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AccessModes l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AccessModes l (v : (v1.PersistentVolumeClaimStatus.t)) AccessModes' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦ (v.(v1.PersistentVolumeClaimStatus.AccessModes')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AccessModes"] ↦ AccessModes')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AccessModes') := AccessModes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Capacity l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Capacity l (v : (v1.PersistentVolumeClaimStatus.t)) Capacity' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦ (v.(v1.PersistentVolumeClaimStatus.Capacity')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Capacity"] ↦ Capacity')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Capacity') := Capacity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_Conditions l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_Conditions l (v : (v1.PersistentVolumeClaimStatus.t)) Conditions' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦ (v.(v1.PersistentVolumeClaimStatus.Conditions')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "Conditions"] ↦ Conditions')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.Conditions') := Conditions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AllocatedResources l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AllocatedResources l (v : (v1.PersistentVolumeClaimStatus.t)) AllocatedResources' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦ (v.(v1.PersistentVolumeClaimStatus.AllocatedResources')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResources"] ↦ AllocatedResources')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AllocatedResources') := AllocatedResources'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_AllocatedResourceStatuses l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_AllocatedResourceStatuses l (v : (v1.PersistentVolumeClaimStatus.t)) AllocatedResourceStatuses' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦ (v.(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "AllocatedResourceStatuses"] ↦ AllocatedResourceStatuses')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.AllocatedResourceStatuses') := AllocatedResourceStatuses'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_CurrentVolumeAttributesClassName l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_CurrentVolumeAttributesClassName l (v : (v1.PersistentVolumeClaimStatus.t)) CurrentVolumeAttributesClassName' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦ (v.(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "CurrentVolumeAttributesClassName"] ↦ CurrentVolumeAttributesClassName')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.CurrentVolumeAttributesClassName') := CurrentVolumeAttributesClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimStatus_access_load_ModifyVolumeStatus l (v : (v1.PersistentVolumeClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦{dq} (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimStatus_access_store_ModifyVolumeStatus l (v : (v1.PersistentVolumeClaimStatus.t)) ModifyVolumeStatus' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦ (v.(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus')))
+    (l.[(v1.PersistentVolumeClaimStatus.t), "ModifyVolumeStatus"] ↦ ModifyVolumeStatus')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimStatus.ModifyVolumeStatus') := ModifyVolumeStatus'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimStatus.
@@ -2640,76 +2928,79 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance TypedObjectReference_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TypedObjectReference.t). Admitted.
+#[global]Program Instance TypedObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TypedObjectReference.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "APIGroup" ∷ l.[(v1.TypedObjectReference.t), "APIGroup"] ↦{dq} v.(v1.TypedObjectReference.APIGroup') ∗
+      "Kind" ∷ l.[(v1.TypedObjectReference.t), "Kind"] ↦{dq} v.(v1.TypedObjectReference.Kind') ∗
+      "Name" ∷ l.[(v1.TypedObjectReference.t), "Name"] ↦{dq} v.(v1.TypedObjectReference.Name') ∗
+      "Namespace" ∷ l.[(v1.TypedObjectReference.t), "Namespace"] ↦{dq} v.(v1.TypedObjectReference.Namespace') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance TypedObjectReference_into_val_typed
    :
   IntoValTypedUnderlying (v1.TypedObjectReference.t) (v1.TypedObjectReferenceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance TypedObjectReference_access_load_APIGroup l (v : (v1.TypedObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "APIGroup"] ↦{dq} (v.(v1.TypedObjectReference.APIGroup')))
+    (l.[(v1.TypedObjectReference.t), "APIGroup"] ↦{dq} (v.(v1.TypedObjectReference.APIGroup')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedObjectReference_access_store_APIGroup l (v : (v1.TypedObjectReference.t)) APIGroup' :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "APIGroup"] ↦ (v.(v1.TypedObjectReference.APIGroup')))
+    (l.[(v1.TypedObjectReference.t), "APIGroup"] ↦ APIGroup')
+    (l ↦ v) (l ↦ (v <|(v1.TypedObjectReference.APIGroup') := APIGroup'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TypedObjectReference_access_load_Kind l (v : (v1.TypedObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Kind"] ↦{dq} (v.(v1.TypedObjectReference.Kind')))
+    (l.[(v1.TypedObjectReference.t), "Kind"] ↦{dq} (v.(v1.TypedObjectReference.Kind')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedObjectReference_access_store_Kind l (v : (v1.TypedObjectReference.t)) Kind' :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Kind"] ↦ (v.(v1.TypedObjectReference.Kind')))
+    (l.[(v1.TypedObjectReference.t), "Kind"] ↦ Kind')
+    (l ↦ v) (l ↦ (v <|(v1.TypedObjectReference.Kind') := Kind'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TypedObjectReference_access_load_Name l (v : (v1.TypedObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Name"] ↦{dq} (v.(v1.TypedObjectReference.Name')))
+    (l.[(v1.TypedObjectReference.t), "Name"] ↦{dq} (v.(v1.TypedObjectReference.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedObjectReference_access_store_Name l (v : (v1.TypedObjectReference.t)) Name' :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Name"] ↦ (v.(v1.TypedObjectReference.Name')))
+    (l.[(v1.TypedObjectReference.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.TypedObjectReference.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TypedObjectReference_access_load_Namespace l (v : (v1.TypedObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Namespace"] ↦{dq} (v.(v1.TypedObjectReference.Namespace')))
+    (l.[(v1.TypedObjectReference.t), "Namespace"] ↦{dq} (v.(v1.TypedObjectReference.Namespace')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedObjectReference_access_store_Namespace l (v : (v1.TypedObjectReference.t)) Namespace' :
+  AccessStrict
+    (l.[(v1.TypedObjectReference.t), "Namespace"] ↦ (v.(v1.TypedObjectReference.Namespace')))
+    (l.[(v1.TypedObjectReference.t), "Namespace"] ↦ Namespace')
+    (l ↦ v) (l ↦ (v <|(v1.TypedObjectReference.Namespace') := Namespace'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End TypedObjectReference.
-
-Module PersistentVolumeClaimConditionType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimConditionType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimConditionType.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimConditionType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimConditionType.t) (v1.PersistentVolumeClaimConditionTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimConditionType.
-
-Module ClaimResourceStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ClaimResourceStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ClaimResourceStatus.t). Admitted.
-
-#[global] Instance ClaimResourceStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ClaimResourceStatus.t) (v1.ClaimResourceStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ClaimResourceStatus.
-
-Module PersistentVolumeClaimModifyVolumeStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimModifyVolumeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimModifyVolumeStatus.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimModifyVolumeStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimModifyVolumeStatus.t) (v1.PersistentVolumeClaimModifyVolumeStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimModifyVolumeStatus.
 
 Module ModifyVolumeStatus.
 Section def.
@@ -2720,13 +3011,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ModifyVolumeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ModifyVolumeStatus.t). Admitted.
+#[global]Program Instance ModifyVolumeStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ModifyVolumeStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TargetVolumeAttributesClassName" ∷ l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName') ∗
+      "Status" ∷ l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} v.(v1.ModifyVolumeStatus.Status') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ModifyVolumeStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.ModifyVolumeStatus.t) (v1.ModifyVolumeStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ModifyVolumeStatus_access_load_TargetVolumeAttributesClassName l (v : (v1.ModifyVolumeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦{dq} (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ModifyVolumeStatus_access_store_TargetVolumeAttributesClassName l (v : (v1.ModifyVolumeStatus.t)) TargetVolumeAttributesClassName' :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦ (v.(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName')))
+    (l.[(v1.ModifyVolumeStatus.t), "TargetVolumeAttributesClassName"] ↦ TargetVolumeAttributesClassName')
+    (l ↦ v) (l ↦ (v <|(v1.ModifyVolumeStatus.TargetVolumeAttributesClassName') := TargetVolumeAttributesClassName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ModifyVolumeStatus_access_load_Status l (v : (v1.ModifyVolumeStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} (v.(v1.ModifyVolumeStatus.Status')))
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦{dq} (v.(v1.ModifyVolumeStatus.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ModifyVolumeStatus_access_store_Status l (v : (v1.ModifyVolumeStatus.t)) Status' :
+  AccessStrict
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦ (v.(v1.ModifyVolumeStatus.Status')))
+    (l.[(v1.ModifyVolumeStatus.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.ModifyVolumeStatus.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ModifyVolumeStatus.
@@ -2740,36 +3066,107 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimCondition_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimCondition.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimCondition_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimCondition.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Type') ∗
+      "Status" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Status') ∗
+      "LastProbeTime" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.LastProbeTime') ∗
+      "LastTransitionTime" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.LastTransitionTime') ∗
+      "Reason" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Reason') ∗
+      "Message" ∷ l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} v.(v1.PersistentVolumeClaimCondition.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimCondition_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimCondition.t) (v1.PersistentVolumeClaimConditionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Type l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Type l (v : (v1.PersistentVolumeClaimCondition.t)) Type' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦ (v.(v1.PersistentVolumeClaimCondition.Type')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Status l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Status l (v : (v1.PersistentVolumeClaimCondition.t)) Status' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦ (v.(v1.PersistentVolumeClaimCondition.Status')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_LastProbeTime l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_LastProbeTime l (v : (v1.PersistentVolumeClaimCondition.t)) LastProbeTime' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦ (v.(v1.PersistentVolumeClaimCondition.LastProbeTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastProbeTime"] ↦ LastProbeTime')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.LastProbeTime') := LastProbeTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_LastTransitionTime l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_LastTransitionTime l (v : (v1.PersistentVolumeClaimCondition.t)) LastTransitionTime' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦ (v.(v1.PersistentVolumeClaimCondition.LastTransitionTime')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "LastTransitionTime"] ↦ LastTransitionTime')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.LastTransitionTime') := LastTransitionTime'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Reason l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Reason l (v : (v1.PersistentVolumeClaimCondition.t)) Reason' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦ (v.(v1.PersistentVolumeClaimCondition.Reason')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimCondition_access_load_Message l (v : (v1.PersistentVolumeClaimCondition.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦{dq} (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimCondition_access_store_Message l (v : (v1.PersistentVolumeClaimCondition.t)) Message' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦ (v.(v1.PersistentVolumeClaimCondition.Message')))
+    (l.[(v1.PersistentVolumeClaimCondition.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimCondition.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimCondition.
-
-Module PersistentVolumeAccessMode.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeAccessMode_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeAccessMode.t). Admitted.
-
-#[global] Instance PersistentVolumeAccessMode_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeAccessMode.t) (v1.PersistentVolumeAccessModeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeAccessMode.
 
 Module PersistentVolumePhase.
 Section def.
@@ -2791,46 +3188,6 @@ Proof. Admitted.
 End def.
 End PersistentVolumePhase.
 
-Module PersistentVolumeClaimPhase.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimPhase_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimPhase.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimPhase_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimPhase.t) (v1.PersistentVolumeClaimPhaseⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimPhase.
-
-Module HostPathType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance HostPathType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HostPathType.t). Admitted.
-
-#[global] Instance HostPathType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.HostPathType.t) (v1.HostPathTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End HostPathType.
-
 Module HostPathVolumeSource.
 Section def.
 
@@ -2840,13 +3197,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance HostPathVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HostPathVolumeSource.t). Admitted.
+#[global]Program Instance HostPathVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostPathVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Path" ∷ l.[(v1.HostPathVolumeSource.t), "Path"] ↦{dq} v.(v1.HostPathVolumeSource.Path') ∗
+      "Type" ∷ l.[(v1.HostPathVolumeSource.t), "Type"] ↦{dq} v.(v1.HostPathVolumeSource.Type') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance HostPathVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.HostPathVolumeSource.t) (v1.HostPathVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance HostPathVolumeSource_access_load_Path l (v : (v1.HostPathVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.HostPathVolumeSource.t), "Path"] ↦{dq} (v.(v1.HostPathVolumeSource.Path')))
+    (l.[(v1.HostPathVolumeSource.t), "Path"] ↦{dq} (v.(v1.HostPathVolumeSource.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HostPathVolumeSource_access_store_Path l (v : (v1.HostPathVolumeSource.t)) Path' :
+  AccessStrict
+    (l.[(v1.HostPathVolumeSource.t), "Path"] ↦ (v.(v1.HostPathVolumeSource.Path')))
+    (l.[(v1.HostPathVolumeSource.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.HostPathVolumeSource.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HostPathVolumeSource_access_load_Type l (v : (v1.HostPathVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.HostPathVolumeSource.t), "Type"] ↦{dq} (v.(v1.HostPathVolumeSource.Type')))
+    (l.[(v1.HostPathVolumeSource.t), "Type"] ↦{dq} (v.(v1.HostPathVolumeSource.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HostPathVolumeSource_access_store_Type l (v : (v1.HostPathVolumeSource.t)) Type' :
+  AccessStrict
+    (l.[(v1.HostPathVolumeSource.t), "Type"] ↦ (v.(v1.HostPathVolumeSource.Type')))
+    (l.[(v1.HostPathVolumeSource.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.HostPathVolumeSource.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End HostPathVolumeSource.
@@ -2860,13 +3252,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EmptyDirVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EmptyDirVolumeSource.t). Admitted.
+#[global]Program Instance EmptyDirVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EmptyDirVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Medium" ∷ l.[(v1.EmptyDirVolumeSource.t), "Medium"] ↦{dq} v.(v1.EmptyDirVolumeSource.Medium') ∗
+      "SizeLimit" ∷ l.[(v1.EmptyDirVolumeSource.t), "SizeLimit"] ↦{dq} v.(v1.EmptyDirVolumeSource.SizeLimit') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EmptyDirVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.EmptyDirVolumeSource.t) (v1.EmptyDirVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EmptyDirVolumeSource_access_load_Medium l (v : (v1.EmptyDirVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EmptyDirVolumeSource.t), "Medium"] ↦{dq} (v.(v1.EmptyDirVolumeSource.Medium')))
+    (l.[(v1.EmptyDirVolumeSource.t), "Medium"] ↦{dq} (v.(v1.EmptyDirVolumeSource.Medium')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EmptyDirVolumeSource_access_store_Medium l (v : (v1.EmptyDirVolumeSource.t)) Medium' :
+  AccessStrict
+    (l.[(v1.EmptyDirVolumeSource.t), "Medium"] ↦ (v.(v1.EmptyDirVolumeSource.Medium')))
+    (l.[(v1.EmptyDirVolumeSource.t), "Medium"] ↦ Medium')
+    (l ↦ v) (l ↦ (v <|(v1.EmptyDirVolumeSource.Medium') := Medium'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EmptyDirVolumeSource_access_load_SizeLimit l (v : (v1.EmptyDirVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EmptyDirVolumeSource.t), "SizeLimit"] ↦{dq} (v.(v1.EmptyDirVolumeSource.SizeLimit')))
+    (l.[(v1.EmptyDirVolumeSource.t), "SizeLimit"] ↦{dq} (v.(v1.EmptyDirVolumeSource.SizeLimit')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EmptyDirVolumeSource_access_store_SizeLimit l (v : (v1.EmptyDirVolumeSource.t)) SizeLimit' :
+  AccessStrict
+    (l.[(v1.EmptyDirVolumeSource.t), "SizeLimit"] ↦ (v.(v1.EmptyDirVolumeSource.SizeLimit')))
+    (l.[(v1.EmptyDirVolumeSource.t), "SizeLimit"] ↦ SizeLimit')
+    (l ↦ v) (l ↦ (v <|(v1.EmptyDirVolumeSource.SizeLimit') := SizeLimit'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EmptyDirVolumeSource.
@@ -2880,13 +3307,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance GlusterfsVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.GlusterfsVolumeSource.t). Admitted.
+#[global]Program Instance GlusterfsVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GlusterfsVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "EndpointsName" ∷ l.[(v1.GlusterfsVolumeSource.t), "EndpointsName"] ↦{dq} v.(v1.GlusterfsVolumeSource.EndpointsName') ∗
+      "Path" ∷ l.[(v1.GlusterfsVolumeSource.t), "Path"] ↦{dq} v.(v1.GlusterfsVolumeSource.Path') ∗
+      "ReadOnly" ∷ l.[(v1.GlusterfsVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.GlusterfsVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance GlusterfsVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.GlusterfsVolumeSource.t) (v1.GlusterfsVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance GlusterfsVolumeSource_access_load_EndpointsName l (v : (v1.GlusterfsVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "EndpointsName"] ↦{dq} (v.(v1.GlusterfsVolumeSource.EndpointsName')))
+    (l.[(v1.GlusterfsVolumeSource.t), "EndpointsName"] ↦{dq} (v.(v1.GlusterfsVolumeSource.EndpointsName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GlusterfsVolumeSource_access_store_EndpointsName l (v : (v1.GlusterfsVolumeSource.t)) EndpointsName' :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "EndpointsName"] ↦ (v.(v1.GlusterfsVolumeSource.EndpointsName')))
+    (l.[(v1.GlusterfsVolumeSource.t), "EndpointsName"] ↦ EndpointsName')
+    (l ↦ v) (l ↦ (v <|(v1.GlusterfsVolumeSource.EndpointsName') := EndpointsName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GlusterfsVolumeSource_access_load_Path l (v : (v1.GlusterfsVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "Path"] ↦{dq} (v.(v1.GlusterfsVolumeSource.Path')))
+    (l.[(v1.GlusterfsVolumeSource.t), "Path"] ↦{dq} (v.(v1.GlusterfsVolumeSource.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GlusterfsVolumeSource_access_store_Path l (v : (v1.GlusterfsVolumeSource.t)) Path' :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "Path"] ↦ (v.(v1.GlusterfsVolumeSource.Path')))
+    (l.[(v1.GlusterfsVolumeSource.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.GlusterfsVolumeSource.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GlusterfsVolumeSource_access_load_ReadOnly l (v : (v1.GlusterfsVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.GlusterfsVolumeSource.ReadOnly')))
+    (l.[(v1.GlusterfsVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.GlusterfsVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GlusterfsVolumeSource_access_store_ReadOnly l (v : (v1.GlusterfsVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.GlusterfsVolumeSource.t), "ReadOnly"] ↦ (v.(v1.GlusterfsVolumeSource.ReadOnly')))
+    (l.[(v1.GlusterfsVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.GlusterfsVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End GlusterfsVolumeSource.
@@ -2920,13 +3396,132 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance RBDVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.RBDVolumeSource.t). Admitted.
+#[global]Program Instance RBDVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.RBDVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "CephMonitors" ∷ l.[(v1.RBDVolumeSource.t), "CephMonitors"] ↦{dq} v.(v1.RBDVolumeSource.CephMonitors') ∗
+      "RBDImage" ∷ l.[(v1.RBDVolumeSource.t), "RBDImage"] ↦{dq} v.(v1.RBDVolumeSource.RBDImage') ∗
+      "FSType" ∷ l.[(v1.RBDVolumeSource.t), "FSType"] ↦{dq} v.(v1.RBDVolumeSource.FSType') ∗
+      "RBDPool" ∷ l.[(v1.RBDVolumeSource.t), "RBDPool"] ↦{dq} v.(v1.RBDVolumeSource.RBDPool') ∗
+      "RadosUser" ∷ l.[(v1.RBDVolumeSource.t), "RadosUser"] ↦{dq} v.(v1.RBDVolumeSource.RadosUser') ∗
+      "Keyring" ∷ l.[(v1.RBDVolumeSource.t), "Keyring"] ↦{dq} v.(v1.RBDVolumeSource.Keyring') ∗
+      "SecretRef" ∷ l.[(v1.RBDVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.RBDVolumeSource.SecretRef') ∗
+      "ReadOnly" ∷ l.[(v1.RBDVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.RBDVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance RBDVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.RBDVolumeSource.t) (v1.RBDVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_CephMonitors l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "CephMonitors"] ↦{dq} (v.(v1.RBDVolumeSource.CephMonitors')))
+    (l.[(v1.RBDVolumeSource.t), "CephMonitors"] ↦{dq} (v.(v1.RBDVolumeSource.CephMonitors')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_CephMonitors l (v : (v1.RBDVolumeSource.t)) CephMonitors' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "CephMonitors"] ↦ (v.(v1.RBDVolumeSource.CephMonitors')))
+    (l.[(v1.RBDVolumeSource.t), "CephMonitors"] ↦ CephMonitors')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.CephMonitors') := CephMonitors'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_RBDImage l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RBDImage"] ↦{dq} (v.(v1.RBDVolumeSource.RBDImage')))
+    (l.[(v1.RBDVolumeSource.t), "RBDImage"] ↦{dq} (v.(v1.RBDVolumeSource.RBDImage')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_RBDImage l (v : (v1.RBDVolumeSource.t)) RBDImage' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RBDImage"] ↦ (v.(v1.RBDVolumeSource.RBDImage')))
+    (l.[(v1.RBDVolumeSource.t), "RBDImage"] ↦ RBDImage')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.RBDImage') := RBDImage'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_FSType l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "FSType"] ↦{dq} (v.(v1.RBDVolumeSource.FSType')))
+    (l.[(v1.RBDVolumeSource.t), "FSType"] ↦{dq} (v.(v1.RBDVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_FSType l (v : (v1.RBDVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "FSType"] ↦ (v.(v1.RBDVolumeSource.FSType')))
+    (l.[(v1.RBDVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_RBDPool l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RBDPool"] ↦{dq} (v.(v1.RBDVolumeSource.RBDPool')))
+    (l.[(v1.RBDVolumeSource.t), "RBDPool"] ↦{dq} (v.(v1.RBDVolumeSource.RBDPool')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_RBDPool l (v : (v1.RBDVolumeSource.t)) RBDPool' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RBDPool"] ↦ (v.(v1.RBDVolumeSource.RBDPool')))
+    (l.[(v1.RBDVolumeSource.t), "RBDPool"] ↦ RBDPool')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.RBDPool') := RBDPool'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_RadosUser l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RadosUser"] ↦{dq} (v.(v1.RBDVolumeSource.RadosUser')))
+    (l.[(v1.RBDVolumeSource.t), "RadosUser"] ↦{dq} (v.(v1.RBDVolumeSource.RadosUser')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_RadosUser l (v : (v1.RBDVolumeSource.t)) RadosUser' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "RadosUser"] ↦ (v.(v1.RBDVolumeSource.RadosUser')))
+    (l.[(v1.RBDVolumeSource.t), "RadosUser"] ↦ RadosUser')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.RadosUser') := RadosUser'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_Keyring l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "Keyring"] ↦{dq} (v.(v1.RBDVolumeSource.Keyring')))
+    (l.[(v1.RBDVolumeSource.t), "Keyring"] ↦{dq} (v.(v1.RBDVolumeSource.Keyring')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_Keyring l (v : (v1.RBDVolumeSource.t)) Keyring' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "Keyring"] ↦ (v.(v1.RBDVolumeSource.Keyring')))
+    (l.[(v1.RBDVolumeSource.t), "Keyring"] ↦ Keyring')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.Keyring') := Keyring'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_SecretRef l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.RBDVolumeSource.SecretRef')))
+    (l.[(v1.RBDVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.RBDVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_SecretRef l (v : (v1.RBDVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "SecretRef"] ↦ (v.(v1.RBDVolumeSource.SecretRef')))
+    (l.[(v1.RBDVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RBDVolumeSource_access_load_ReadOnly l (v : (v1.RBDVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.RBDVolumeSource.ReadOnly')))
+    (l.[(v1.RBDVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.RBDVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RBDVolumeSource_access_store_ReadOnly l (v : (v1.RBDVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.RBDVolumeSource.t), "ReadOnly"] ↦ (v.(v1.RBDVolumeSource.ReadOnly')))
+    (l.[(v1.RBDVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.RBDVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End RBDVolumeSource.
@@ -2960,13 +3555,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance CinderVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.CinderVolumeSource.t). Admitted.
+#[global]Program Instance CinderVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CinderVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeID" ∷ l.[(v1.CinderVolumeSource.t), "VolumeID"] ↦{dq} v.(v1.CinderVolumeSource.VolumeID') ∗
+      "FSType" ∷ l.[(v1.CinderVolumeSource.t), "FSType"] ↦{dq} v.(v1.CinderVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.CinderVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.CinderVolumeSource.ReadOnly') ∗
+      "SecretRef" ∷ l.[(v1.CinderVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.CinderVolumeSource.SecretRef') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance CinderVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.CinderVolumeSource.t) (v1.CinderVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance CinderVolumeSource_access_load_VolumeID l (v : (v1.CinderVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.CinderVolumeSource.VolumeID')))
+    (l.[(v1.CinderVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.CinderVolumeSource.VolumeID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CinderVolumeSource_access_store_VolumeID l (v : (v1.CinderVolumeSource.t)) VolumeID' :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "VolumeID"] ↦ (v.(v1.CinderVolumeSource.VolumeID')))
+    (l.[(v1.CinderVolumeSource.t), "VolumeID"] ↦ VolumeID')
+    (l ↦ v) (l ↦ (v <|(v1.CinderVolumeSource.VolumeID') := VolumeID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CinderVolumeSource_access_load_FSType l (v : (v1.CinderVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "FSType"] ↦{dq} (v.(v1.CinderVolumeSource.FSType')))
+    (l.[(v1.CinderVolumeSource.t), "FSType"] ↦{dq} (v.(v1.CinderVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CinderVolumeSource_access_store_FSType l (v : (v1.CinderVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "FSType"] ↦ (v.(v1.CinderVolumeSource.FSType')))
+    (l.[(v1.CinderVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.CinderVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CinderVolumeSource_access_load_ReadOnly l (v : (v1.CinderVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CinderVolumeSource.ReadOnly')))
+    (l.[(v1.CinderVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CinderVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CinderVolumeSource_access_store_ReadOnly l (v : (v1.CinderVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "ReadOnly"] ↦ (v.(v1.CinderVolumeSource.ReadOnly')))
+    (l.[(v1.CinderVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.CinderVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CinderVolumeSource_access_load_SecretRef l (v : (v1.CinderVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.CinderVolumeSource.SecretRef')))
+    (l.[(v1.CinderVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.CinderVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CinderVolumeSource_access_store_SecretRef l (v : (v1.CinderVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.CinderVolumeSource.t), "SecretRef"] ↦ (v.(v1.CinderVolumeSource.SecretRef')))
+    (l.[(v1.CinderVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.CinderVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End CinderVolumeSource.
@@ -3000,13 +3658,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance CephFSVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.CephFSVolumeSource.t). Admitted.
+#[global]Program Instance CephFSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CephFSVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Monitors" ∷ l.[(v1.CephFSVolumeSource.t), "Monitors"] ↦{dq} v.(v1.CephFSVolumeSource.Monitors') ∗
+      "Path" ∷ l.[(v1.CephFSVolumeSource.t), "Path"] ↦{dq} v.(v1.CephFSVolumeSource.Path') ∗
+      "User" ∷ l.[(v1.CephFSVolumeSource.t), "User"] ↦{dq} v.(v1.CephFSVolumeSource.User') ∗
+      "SecretFile" ∷ l.[(v1.CephFSVolumeSource.t), "SecretFile"] ↦{dq} v.(v1.CephFSVolumeSource.SecretFile') ∗
+      "SecretRef" ∷ l.[(v1.CephFSVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.CephFSVolumeSource.SecretRef') ∗
+      "ReadOnly" ∷ l.[(v1.CephFSVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.CephFSVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance CephFSVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.CephFSVolumeSource.t) (v1.CephFSVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_Monitors l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "Monitors"] ↦{dq} (v.(v1.CephFSVolumeSource.Monitors')))
+    (l.[(v1.CephFSVolumeSource.t), "Monitors"] ↦{dq} (v.(v1.CephFSVolumeSource.Monitors')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_Monitors l (v : (v1.CephFSVolumeSource.t)) Monitors' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "Monitors"] ↦ (v.(v1.CephFSVolumeSource.Monitors')))
+    (l.[(v1.CephFSVolumeSource.t), "Monitors"] ↦ Monitors')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.Monitors') := Monitors'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_Path l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "Path"] ↦{dq} (v.(v1.CephFSVolumeSource.Path')))
+    (l.[(v1.CephFSVolumeSource.t), "Path"] ↦{dq} (v.(v1.CephFSVolumeSource.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_Path l (v : (v1.CephFSVolumeSource.t)) Path' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "Path"] ↦ (v.(v1.CephFSVolumeSource.Path')))
+    (l.[(v1.CephFSVolumeSource.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_User l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "User"] ↦{dq} (v.(v1.CephFSVolumeSource.User')))
+    (l.[(v1.CephFSVolumeSource.t), "User"] ↦{dq} (v.(v1.CephFSVolumeSource.User')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_User l (v : (v1.CephFSVolumeSource.t)) User' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "User"] ↦ (v.(v1.CephFSVolumeSource.User')))
+    (l.[(v1.CephFSVolumeSource.t), "User"] ↦ User')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.User') := User'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_SecretFile l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "SecretFile"] ↦{dq} (v.(v1.CephFSVolumeSource.SecretFile')))
+    (l.[(v1.CephFSVolumeSource.t), "SecretFile"] ↦{dq} (v.(v1.CephFSVolumeSource.SecretFile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_SecretFile l (v : (v1.CephFSVolumeSource.t)) SecretFile' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "SecretFile"] ↦ (v.(v1.CephFSVolumeSource.SecretFile')))
+    (l.[(v1.CephFSVolumeSource.t), "SecretFile"] ↦ SecretFile')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.SecretFile') := SecretFile'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_SecretRef l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.CephFSVolumeSource.SecretRef')))
+    (l.[(v1.CephFSVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.CephFSVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_SecretRef l (v : (v1.CephFSVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "SecretRef"] ↦ (v.(v1.CephFSVolumeSource.SecretRef')))
+    (l.[(v1.CephFSVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CephFSVolumeSource_access_load_ReadOnly l (v : (v1.CephFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CephFSVolumeSource.ReadOnly')))
+    (l.[(v1.CephFSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CephFSVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CephFSVolumeSource_access_store_ReadOnly l (v : (v1.CephFSVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.CephFSVolumeSource.t), "ReadOnly"] ↦ (v.(v1.CephFSVolumeSource.ReadOnly')))
+    (l.[(v1.CephFSVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.CephFSVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End CephFSVolumeSource.
@@ -3060,56 +3809,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance FlockerVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.FlockerVolumeSource.t). Admitted.
+#[global]Program Instance FlockerVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FlockerVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "DatasetName" ∷ l.[(v1.FlockerVolumeSource.t), "DatasetName"] ↦{dq} v.(v1.FlockerVolumeSource.DatasetName') ∗
+      "DatasetUUID" ∷ l.[(v1.FlockerVolumeSource.t), "DatasetUUID"] ↦{dq} v.(v1.FlockerVolumeSource.DatasetUUID') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance FlockerVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.FlockerVolumeSource.t) (v1.FlockerVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance FlockerVolumeSource_access_load_DatasetName l (v : (v1.FlockerVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlockerVolumeSource.t), "DatasetName"] ↦{dq} (v.(v1.FlockerVolumeSource.DatasetName')))
+    (l.[(v1.FlockerVolumeSource.t), "DatasetName"] ↦{dq} (v.(v1.FlockerVolumeSource.DatasetName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlockerVolumeSource_access_store_DatasetName l (v : (v1.FlockerVolumeSource.t)) DatasetName' :
+  AccessStrict
+    (l.[(v1.FlockerVolumeSource.t), "DatasetName"] ↦ (v.(v1.FlockerVolumeSource.DatasetName')))
+    (l.[(v1.FlockerVolumeSource.t), "DatasetName"] ↦ DatasetName')
+    (l ↦ v) (l ↦ (v <|(v1.FlockerVolumeSource.DatasetName') := DatasetName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FlockerVolumeSource_access_load_DatasetUUID l (v : (v1.FlockerVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlockerVolumeSource.t), "DatasetUUID"] ↦{dq} (v.(v1.FlockerVolumeSource.DatasetUUID')))
+    (l.[(v1.FlockerVolumeSource.t), "DatasetUUID"] ↦{dq} (v.(v1.FlockerVolumeSource.DatasetUUID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlockerVolumeSource_access_store_DatasetUUID l (v : (v1.FlockerVolumeSource.t)) DatasetUUID' :
+  AccessStrict
+    (l.[(v1.FlockerVolumeSource.t), "DatasetUUID"] ↦ (v.(v1.FlockerVolumeSource.DatasetUUID')))
+    (l.[(v1.FlockerVolumeSource.t), "DatasetUUID"] ↦ DatasetUUID')
+    (l ↦ v) (l ↦ (v <|(v1.FlockerVolumeSource.DatasetUUID') := DatasetUUID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End FlockerVolumeSource.
-
-Module StorageMedium.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StorageMedium_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StorageMedium.t). Admitted.
-
-#[global] Instance StorageMedium_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StorageMedium.t) (v1.StorageMediumⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StorageMedium.
-
-Module Protocol.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance Protocol_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Protocol.t). Admitted.
-
-#[global] Instance Protocol_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.Protocol.t) (v1.Protocolⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End Protocol.
 
 Module GCEPersistentDiskVolumeSource.
 Section def.
@@ -3120,13 +3864,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance GCEPersistentDiskVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.GCEPersistentDiskVolumeSource.t). Admitted.
+#[global]Program Instance GCEPersistentDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GCEPersistentDiskVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "PDName" ∷ l.[(v1.GCEPersistentDiskVolumeSource.t), "PDName"] ↦{dq} v.(v1.GCEPersistentDiskVolumeSource.PDName') ∗
+      "FSType" ∷ l.[(v1.GCEPersistentDiskVolumeSource.t), "FSType"] ↦{dq} v.(v1.GCEPersistentDiskVolumeSource.FSType') ∗
+      "Partition" ∷ l.[(v1.GCEPersistentDiskVolumeSource.t), "Partition"] ↦{dq} v.(v1.GCEPersistentDiskVolumeSource.Partition') ∗
+      "ReadOnly" ∷ l.[(v1.GCEPersistentDiskVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.GCEPersistentDiskVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance GCEPersistentDiskVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.GCEPersistentDiskVolumeSource.t) (v1.GCEPersistentDiskVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance GCEPersistentDiskVolumeSource_access_load_PDName l (v : (v1.GCEPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "PDName"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.PDName')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "PDName"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.PDName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GCEPersistentDiskVolumeSource_access_store_PDName l (v : (v1.GCEPersistentDiskVolumeSource.t)) PDName' :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "PDName"] ↦ (v.(v1.GCEPersistentDiskVolumeSource.PDName')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "PDName"] ↦ PDName')
+    (l ↦ v) (l ↦ (v <|(v1.GCEPersistentDiskVolumeSource.PDName') := PDName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GCEPersistentDiskVolumeSource_access_load_FSType l (v : (v1.GCEPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.FSType')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GCEPersistentDiskVolumeSource_access_store_FSType l (v : (v1.GCEPersistentDiskVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "FSType"] ↦ (v.(v1.GCEPersistentDiskVolumeSource.FSType')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.GCEPersistentDiskVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GCEPersistentDiskVolumeSource_access_load_Partition l (v : (v1.GCEPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "Partition"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.Partition')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "Partition"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.Partition')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GCEPersistentDiskVolumeSource_access_store_Partition l (v : (v1.GCEPersistentDiskVolumeSource.t)) Partition' :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "Partition"] ↦ (v.(v1.GCEPersistentDiskVolumeSource.Partition')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "Partition"] ↦ Partition')
+    (l ↦ v) (l ↦ (v <|(v1.GCEPersistentDiskVolumeSource.Partition') := Partition'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GCEPersistentDiskVolumeSource_access_load_ReadOnly l (v : (v1.GCEPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.ReadOnly')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.GCEPersistentDiskVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GCEPersistentDiskVolumeSource_access_store_ReadOnly l (v : (v1.GCEPersistentDiskVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "ReadOnly"] ↦ (v.(v1.GCEPersistentDiskVolumeSource.ReadOnly')))
+    (l.[(v1.GCEPersistentDiskVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.GCEPersistentDiskVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End GCEPersistentDiskVolumeSource.
@@ -3140,13 +3947,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance QuobyteVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.QuobyteVolumeSource.t). Admitted.
+#[global]Program Instance QuobyteVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.QuobyteVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Registry" ∷ l.[(v1.QuobyteVolumeSource.t), "Registry"] ↦{dq} v.(v1.QuobyteVolumeSource.Registry') ∗
+      "Volume" ∷ l.[(v1.QuobyteVolumeSource.t), "Volume"] ↦{dq} v.(v1.QuobyteVolumeSource.Volume') ∗
+      "ReadOnly" ∷ l.[(v1.QuobyteVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.QuobyteVolumeSource.ReadOnly') ∗
+      "User" ∷ l.[(v1.QuobyteVolumeSource.t), "User"] ↦{dq} v.(v1.QuobyteVolumeSource.User') ∗
+      "Group" ∷ l.[(v1.QuobyteVolumeSource.t), "Group"] ↦{dq} v.(v1.QuobyteVolumeSource.Group') ∗
+      "Tenant" ∷ l.[(v1.QuobyteVolumeSource.t), "Tenant"] ↦{dq} v.(v1.QuobyteVolumeSource.Tenant') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance QuobyteVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.QuobyteVolumeSource.t) (v1.QuobyteVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_Registry l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Registry"] ↦{dq} (v.(v1.QuobyteVolumeSource.Registry')))
+    (l.[(v1.QuobyteVolumeSource.t), "Registry"] ↦{dq} (v.(v1.QuobyteVolumeSource.Registry')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_Registry l (v : (v1.QuobyteVolumeSource.t)) Registry' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Registry"] ↦ (v.(v1.QuobyteVolumeSource.Registry')))
+    (l.[(v1.QuobyteVolumeSource.t), "Registry"] ↦ Registry')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.Registry') := Registry'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_Volume l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Volume"] ↦{dq} (v.(v1.QuobyteVolumeSource.Volume')))
+    (l.[(v1.QuobyteVolumeSource.t), "Volume"] ↦{dq} (v.(v1.QuobyteVolumeSource.Volume')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_Volume l (v : (v1.QuobyteVolumeSource.t)) Volume' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Volume"] ↦ (v.(v1.QuobyteVolumeSource.Volume')))
+    (l.[(v1.QuobyteVolumeSource.t), "Volume"] ↦ Volume')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.Volume') := Volume'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_ReadOnly l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.QuobyteVolumeSource.ReadOnly')))
+    (l.[(v1.QuobyteVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.QuobyteVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_ReadOnly l (v : (v1.QuobyteVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "ReadOnly"] ↦ (v.(v1.QuobyteVolumeSource.ReadOnly')))
+    (l.[(v1.QuobyteVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_User l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "User"] ↦{dq} (v.(v1.QuobyteVolumeSource.User')))
+    (l.[(v1.QuobyteVolumeSource.t), "User"] ↦{dq} (v.(v1.QuobyteVolumeSource.User')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_User l (v : (v1.QuobyteVolumeSource.t)) User' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "User"] ↦ (v.(v1.QuobyteVolumeSource.User')))
+    (l.[(v1.QuobyteVolumeSource.t), "User"] ↦ User')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.User') := User'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_Group l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Group"] ↦{dq} (v.(v1.QuobyteVolumeSource.Group')))
+    (l.[(v1.QuobyteVolumeSource.t), "Group"] ↦{dq} (v.(v1.QuobyteVolumeSource.Group')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_Group l (v : (v1.QuobyteVolumeSource.t)) Group' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Group"] ↦ (v.(v1.QuobyteVolumeSource.Group')))
+    (l.[(v1.QuobyteVolumeSource.t), "Group"] ↦ Group')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.Group') := Group'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance QuobyteVolumeSource_access_load_Tenant l (v : (v1.QuobyteVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Tenant"] ↦{dq} (v.(v1.QuobyteVolumeSource.Tenant')))
+    (l.[(v1.QuobyteVolumeSource.t), "Tenant"] ↦{dq} (v.(v1.QuobyteVolumeSource.Tenant')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance QuobyteVolumeSource_access_store_Tenant l (v : (v1.QuobyteVolumeSource.t)) Tenant' :
+  AccessStrict
+    (l.[(v1.QuobyteVolumeSource.t), "Tenant"] ↦ (v.(v1.QuobyteVolumeSource.Tenant')))
+    (l.[(v1.QuobyteVolumeSource.t), "Tenant"] ↦ Tenant')
+    (l ↦ v) (l ↦ (v <|(v1.QuobyteVolumeSource.Tenant') := Tenant'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End QuobyteVolumeSource.
@@ -3180,13 +4078,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance FlexVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.FlexVolumeSource.t). Admitted.
+#[global]Program Instance FlexVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FlexVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Driver" ∷ l.[(v1.FlexVolumeSource.t), "Driver"] ↦{dq} v.(v1.FlexVolumeSource.Driver') ∗
+      "FSType" ∷ l.[(v1.FlexVolumeSource.t), "FSType"] ↦{dq} v.(v1.FlexVolumeSource.FSType') ∗
+      "SecretRef" ∷ l.[(v1.FlexVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.FlexVolumeSource.SecretRef') ∗
+      "ReadOnly" ∷ l.[(v1.FlexVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.FlexVolumeSource.ReadOnly') ∗
+      "Options" ∷ l.[(v1.FlexVolumeSource.t), "Options"] ↦{dq} v.(v1.FlexVolumeSource.Options') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance FlexVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.FlexVolumeSource.t) (v1.FlexVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance FlexVolumeSource_access_load_Driver l (v : (v1.FlexVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "Driver"] ↦{dq} (v.(v1.FlexVolumeSource.Driver')))
+    (l.[(v1.FlexVolumeSource.t), "Driver"] ↦{dq} (v.(v1.FlexVolumeSource.Driver')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlexVolumeSource_access_store_Driver l (v : (v1.FlexVolumeSource.t)) Driver' :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "Driver"] ↦ (v.(v1.FlexVolumeSource.Driver')))
+    (l.[(v1.FlexVolumeSource.t), "Driver"] ↦ Driver')
+    (l ↦ v) (l ↦ (v <|(v1.FlexVolumeSource.Driver') := Driver'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FlexVolumeSource_access_load_FSType l (v : (v1.FlexVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "FSType"] ↦{dq} (v.(v1.FlexVolumeSource.FSType')))
+    (l.[(v1.FlexVolumeSource.t), "FSType"] ↦{dq} (v.(v1.FlexVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlexVolumeSource_access_store_FSType l (v : (v1.FlexVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "FSType"] ↦ (v.(v1.FlexVolumeSource.FSType')))
+    (l.[(v1.FlexVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.FlexVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FlexVolumeSource_access_load_SecretRef l (v : (v1.FlexVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.FlexVolumeSource.SecretRef')))
+    (l.[(v1.FlexVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.FlexVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlexVolumeSource_access_store_SecretRef l (v : (v1.FlexVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "SecretRef"] ↦ (v.(v1.FlexVolumeSource.SecretRef')))
+    (l.[(v1.FlexVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.FlexVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FlexVolumeSource_access_load_ReadOnly l (v : (v1.FlexVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.FlexVolumeSource.ReadOnly')))
+    (l.[(v1.FlexVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.FlexVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlexVolumeSource_access_store_ReadOnly l (v : (v1.FlexVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "ReadOnly"] ↦ (v.(v1.FlexVolumeSource.ReadOnly')))
+    (l.[(v1.FlexVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.FlexVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FlexVolumeSource_access_load_Options l (v : (v1.FlexVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "Options"] ↦{dq} (v.(v1.FlexVolumeSource.Options')))
+    (l.[(v1.FlexVolumeSource.t), "Options"] ↦{dq} (v.(v1.FlexVolumeSource.Options')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FlexVolumeSource_access_store_Options l (v : (v1.FlexVolumeSource.t)) Options' :
+  AccessStrict
+    (l.[(v1.FlexVolumeSource.t), "Options"] ↦ (v.(v1.FlexVolumeSource.Options')))
+    (l.[(v1.FlexVolumeSource.t), "Options"] ↦ Options')
+    (l ↦ v) (l ↦ (v <|(v1.FlexVolumeSource.Options') := Options'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End FlexVolumeSource.
@@ -3200,13 +4175,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance AWSElasticBlockStoreVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AWSElasticBlockStoreVolumeSource.t). Admitted.
+#[global]Program Instance AWSElasticBlockStoreVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AWSElasticBlockStoreVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeID" ∷ l.[(v1.AWSElasticBlockStoreVolumeSource.t), "VolumeID"] ↦{dq} v.(v1.AWSElasticBlockStoreVolumeSource.VolumeID') ∗
+      "FSType" ∷ l.[(v1.AWSElasticBlockStoreVolumeSource.t), "FSType"] ↦{dq} v.(v1.AWSElasticBlockStoreVolumeSource.FSType') ∗
+      "Partition" ∷ l.[(v1.AWSElasticBlockStoreVolumeSource.t), "Partition"] ↦{dq} v.(v1.AWSElasticBlockStoreVolumeSource.Partition') ∗
+      "ReadOnly" ∷ l.[(v1.AWSElasticBlockStoreVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.AWSElasticBlockStoreVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance AWSElasticBlockStoreVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.AWSElasticBlockStoreVolumeSource.t) (v1.AWSElasticBlockStoreVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_load_VolumeID l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.VolumeID')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.VolumeID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_store_VolumeID l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) VolumeID' :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "VolumeID"] ↦ (v.(v1.AWSElasticBlockStoreVolumeSource.VolumeID')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "VolumeID"] ↦ VolumeID')
+    (l ↦ v) (l ↦ (v <|(v1.AWSElasticBlockStoreVolumeSource.VolumeID') := VolumeID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_load_FSType l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "FSType"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.FSType')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "FSType"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_store_FSType l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "FSType"] ↦ (v.(v1.AWSElasticBlockStoreVolumeSource.FSType')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.AWSElasticBlockStoreVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_load_Partition l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "Partition"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.Partition')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "Partition"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.Partition')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_store_Partition l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) Partition' :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "Partition"] ↦ (v.(v1.AWSElasticBlockStoreVolumeSource.Partition')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "Partition"] ↦ Partition')
+    (l ↦ v) (l ↦ (v <|(v1.AWSElasticBlockStoreVolumeSource.Partition') := Partition'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_load_ReadOnly l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.ReadOnly')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AWSElasticBlockStoreVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AWSElasticBlockStoreVolumeSource_access_store_ReadOnly l (v : (v1.AWSElasticBlockStoreVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "ReadOnly"] ↦ (v.(v1.AWSElasticBlockStoreVolumeSource.ReadOnly')))
+    (l.[(v1.AWSElasticBlockStoreVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.AWSElasticBlockStoreVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End AWSElasticBlockStoreVolumeSource.
@@ -3220,13 +4258,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance GitRepoVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.GitRepoVolumeSource.t). Admitted.
+#[global]Program Instance GitRepoVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GitRepoVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Repository" ∷ l.[(v1.GitRepoVolumeSource.t), "Repository"] ↦{dq} v.(v1.GitRepoVolumeSource.Repository') ∗
+      "Revision" ∷ l.[(v1.GitRepoVolumeSource.t), "Revision"] ↦{dq} v.(v1.GitRepoVolumeSource.Revision') ∗
+      "Directory" ∷ l.[(v1.GitRepoVolumeSource.t), "Directory"] ↦{dq} v.(v1.GitRepoVolumeSource.Directory') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance GitRepoVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.GitRepoVolumeSource.t) (v1.GitRepoVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance GitRepoVolumeSource_access_load_Repository l (v : (v1.GitRepoVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Repository"] ↦{dq} (v.(v1.GitRepoVolumeSource.Repository')))
+    (l.[(v1.GitRepoVolumeSource.t), "Repository"] ↦{dq} (v.(v1.GitRepoVolumeSource.Repository')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GitRepoVolumeSource_access_store_Repository l (v : (v1.GitRepoVolumeSource.t)) Repository' :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Repository"] ↦ (v.(v1.GitRepoVolumeSource.Repository')))
+    (l.[(v1.GitRepoVolumeSource.t), "Repository"] ↦ Repository')
+    (l ↦ v) (l ↦ (v <|(v1.GitRepoVolumeSource.Repository') := Repository'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GitRepoVolumeSource_access_load_Revision l (v : (v1.GitRepoVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Revision"] ↦{dq} (v.(v1.GitRepoVolumeSource.Revision')))
+    (l.[(v1.GitRepoVolumeSource.t), "Revision"] ↦{dq} (v.(v1.GitRepoVolumeSource.Revision')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GitRepoVolumeSource_access_store_Revision l (v : (v1.GitRepoVolumeSource.t)) Revision' :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Revision"] ↦ (v.(v1.GitRepoVolumeSource.Revision')))
+    (l.[(v1.GitRepoVolumeSource.t), "Revision"] ↦ Revision')
+    (l ↦ v) (l ↦ (v <|(v1.GitRepoVolumeSource.Revision') := Revision'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GitRepoVolumeSource_access_load_Directory l (v : (v1.GitRepoVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Directory"] ↦{dq} (v.(v1.GitRepoVolumeSource.Directory')))
+    (l.[(v1.GitRepoVolumeSource.t), "Directory"] ↦{dq} (v.(v1.GitRepoVolumeSource.Directory')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GitRepoVolumeSource_access_store_Directory l (v : (v1.GitRepoVolumeSource.t)) Directory' :
+  AccessStrict
+    (l.[(v1.GitRepoVolumeSource.t), "Directory"] ↦ (v.(v1.GitRepoVolumeSource.Directory')))
+    (l.[(v1.GitRepoVolumeSource.t), "Directory"] ↦ Directory')
+    (l ↦ v) (l ↦ (v <|(v1.GitRepoVolumeSource.Directory') := Directory'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End GitRepoVolumeSource.
@@ -3240,16 +4327,120 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SecretVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SecretVolumeSource.t). Admitted.
+#[global]Program Instance SecretVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SecretName" ∷ l.[(v1.SecretVolumeSource.t), "SecretName"] ↦{dq} v.(v1.SecretVolumeSource.SecretName') ∗
+      "Items" ∷ l.[(v1.SecretVolumeSource.t), "Items"] ↦{dq} v.(v1.SecretVolumeSource.Items') ∗
+      "DefaultMode" ∷ l.[(v1.SecretVolumeSource.t), "DefaultMode"] ↦{dq} v.(v1.SecretVolumeSource.DefaultMode') ∗
+      "Optional" ∷ l.[(v1.SecretVolumeSource.t), "Optional"] ↦{dq} v.(v1.SecretVolumeSource.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SecretVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.SecretVolumeSource.t) (v1.SecretVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SecretVolumeSource_access_load_SecretName l (v : (v1.SecretVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "SecretName"] ↦{dq} (v.(v1.SecretVolumeSource.SecretName')))
+    (l.[(v1.SecretVolumeSource.t), "SecretName"] ↦{dq} (v.(v1.SecretVolumeSource.SecretName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretVolumeSource_access_store_SecretName l (v : (v1.SecretVolumeSource.t)) SecretName' :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "SecretName"] ↦ (v.(v1.SecretVolumeSource.SecretName')))
+    (l.[(v1.SecretVolumeSource.t), "SecretName"] ↦ SecretName')
+    (l ↦ v) (l ↦ (v <|(v1.SecretVolumeSource.SecretName') := SecretName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretVolumeSource_access_load_Items l (v : (v1.SecretVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "Items"] ↦{dq} (v.(v1.SecretVolumeSource.Items')))
+    (l.[(v1.SecretVolumeSource.t), "Items"] ↦{dq} (v.(v1.SecretVolumeSource.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretVolumeSource_access_store_Items l (v : (v1.SecretVolumeSource.t)) Items' :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "Items"] ↦ (v.(v1.SecretVolumeSource.Items')))
+    (l.[(v1.SecretVolumeSource.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.SecretVolumeSource.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretVolumeSource_access_load_DefaultMode l (v : (v1.SecretVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.SecretVolumeSource.DefaultMode')))
+    (l.[(v1.SecretVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.SecretVolumeSource.DefaultMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretVolumeSource_access_store_DefaultMode l (v : (v1.SecretVolumeSource.t)) DefaultMode' :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "DefaultMode"] ↦ (v.(v1.SecretVolumeSource.DefaultMode')))
+    (l.[(v1.SecretVolumeSource.t), "DefaultMode"] ↦ DefaultMode')
+    (l ↦ v) (l ↦ (v <|(v1.SecretVolumeSource.DefaultMode') := DefaultMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretVolumeSource_access_load_Optional l (v : (v1.SecretVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "Optional"] ↦{dq} (v.(v1.SecretVolumeSource.Optional')))
+    (l.[(v1.SecretVolumeSource.t), "Optional"] ↦{dq} (v.(v1.SecretVolumeSource.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretVolumeSource_access_store_Optional l (v : (v1.SecretVolumeSource.t)) Optional' :
+  AccessStrict
+    (l.[(v1.SecretVolumeSource.t), "Optional"] ↦ (v.(v1.SecretVolumeSource.Optional')))
+    (l.[(v1.SecretVolumeSource.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.SecretVolumeSource.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SecretVolumeSource.
+
+Module LocalObjectReference.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance LocalObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LocalObjectReference.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.LocalObjectReference.t), "Name"] ↦{dq} v.(v1.LocalObjectReference.Name') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance LocalObjectReference_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.LocalObjectReference.t) (v1.LocalObjectReferenceⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance LocalObjectReference_access_load_Name l (v : (v1.LocalObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.LocalObjectReference.t), "Name"] ↦{dq} (v.(v1.LocalObjectReference.Name')))
+    (l.[(v1.LocalObjectReference.t), "Name"] ↦{dq} (v.(v1.LocalObjectReference.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LocalObjectReference_access_store_Name l (v : (v1.LocalObjectReference.t)) Name' :
+  AccessStrict
+    (l.[(v1.LocalObjectReference.t), "Name"] ↦ (v.(v1.LocalObjectReference.Name')))
+    (l.[(v1.LocalObjectReference.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.LocalObjectReference.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End LocalObjectReference.
 
 Module SecretProjection.
 Section def.
@@ -3260,13 +4451,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SecretProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SecretProjection.t). Admitted.
+#[global]Program Instance SecretProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.SecretProjection.t), "LocalObjectReference"] ↦{dq} v.(v1.SecretProjection.LocalObjectReference') ∗
+      "Items" ∷ l.[(v1.SecretProjection.t), "Items"] ↦{dq} v.(v1.SecretProjection.Items') ∗
+      "Optional" ∷ l.[(v1.SecretProjection.t), "Optional"] ↦{dq} v.(v1.SecretProjection.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SecretProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.SecretProjection.t) (v1.SecretProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SecretProjection_access_load_LocalObjectReference l (v : (v1.SecretProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretProjection.LocalObjectReference')))
+    (l.[(v1.SecretProjection.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretProjection.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretProjection_access_store_LocalObjectReference l (v : (v1.SecretProjection.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "LocalObjectReference"] ↦ (v.(v1.SecretProjection.LocalObjectReference')))
+    (l.[(v1.SecretProjection.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.SecretProjection.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretProjection_access_load_Items l (v : (v1.SecretProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "Items"] ↦{dq} (v.(v1.SecretProjection.Items')))
+    (l.[(v1.SecretProjection.t), "Items"] ↦{dq} (v.(v1.SecretProjection.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretProjection_access_store_Items l (v : (v1.SecretProjection.t)) Items' :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "Items"] ↦ (v.(v1.SecretProjection.Items')))
+    (l.[(v1.SecretProjection.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.SecretProjection.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretProjection_access_load_Optional l (v : (v1.SecretProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "Optional"] ↦{dq} (v.(v1.SecretProjection.Optional')))
+    (l.[(v1.SecretProjection.t), "Optional"] ↦{dq} (v.(v1.SecretProjection.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretProjection_access_store_Optional l (v : (v1.SecretProjection.t)) Optional' :
+  AccessStrict
+    (l.[(v1.SecretProjection.t), "Optional"] ↦ (v.(v1.SecretProjection.Optional')))
+    (l.[(v1.SecretProjection.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.SecretProjection.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SecretProjection.
@@ -3280,13 +4520,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NFSVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NFSVolumeSource.t). Admitted.
+#[global]Program Instance NFSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NFSVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Server" ∷ l.[(v1.NFSVolumeSource.t), "Server"] ↦{dq} v.(v1.NFSVolumeSource.Server') ∗
+      "Path" ∷ l.[(v1.NFSVolumeSource.t), "Path"] ↦{dq} v.(v1.NFSVolumeSource.Path') ∗
+      "ReadOnly" ∷ l.[(v1.NFSVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.NFSVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NFSVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.NFSVolumeSource.t) (v1.NFSVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NFSVolumeSource_access_load_Server l (v : (v1.NFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "Server"] ↦{dq} (v.(v1.NFSVolumeSource.Server')))
+    (l.[(v1.NFSVolumeSource.t), "Server"] ↦{dq} (v.(v1.NFSVolumeSource.Server')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NFSVolumeSource_access_store_Server l (v : (v1.NFSVolumeSource.t)) Server' :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "Server"] ↦ (v.(v1.NFSVolumeSource.Server')))
+    (l.[(v1.NFSVolumeSource.t), "Server"] ↦ Server')
+    (l ↦ v) (l ↦ (v <|(v1.NFSVolumeSource.Server') := Server'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NFSVolumeSource_access_load_Path l (v : (v1.NFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "Path"] ↦{dq} (v.(v1.NFSVolumeSource.Path')))
+    (l.[(v1.NFSVolumeSource.t), "Path"] ↦{dq} (v.(v1.NFSVolumeSource.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NFSVolumeSource_access_store_Path l (v : (v1.NFSVolumeSource.t)) Path' :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "Path"] ↦ (v.(v1.NFSVolumeSource.Path')))
+    (l.[(v1.NFSVolumeSource.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.NFSVolumeSource.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NFSVolumeSource_access_load_ReadOnly l (v : (v1.NFSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.NFSVolumeSource.ReadOnly')))
+    (l.[(v1.NFSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.NFSVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NFSVolumeSource_access_store_ReadOnly l (v : (v1.NFSVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.NFSVolumeSource.t), "ReadOnly"] ↦ (v.(v1.NFSVolumeSource.ReadOnly')))
+    (l.[(v1.NFSVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.NFSVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NFSVolumeSource.
@@ -3300,13 +4589,625 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ISCSIVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ISCSIVolumeSource.t). Admitted.
+#[global]Program Instance ISCSIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ISCSIVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TargetPortal" ∷ l.[(v1.ISCSIVolumeSource.t), "TargetPortal"] ↦{dq} v.(v1.ISCSIVolumeSource.TargetPortal') ∗
+      "IQN" ∷ l.[(v1.ISCSIVolumeSource.t), "IQN"] ↦{dq} v.(v1.ISCSIVolumeSource.IQN') ∗
+      "Lun" ∷ l.[(v1.ISCSIVolumeSource.t), "Lun"] ↦{dq} v.(v1.ISCSIVolumeSource.Lun') ∗
+      "ISCSIInterface" ∷ l.[(v1.ISCSIVolumeSource.t), "ISCSIInterface"] ↦{dq} v.(v1.ISCSIVolumeSource.ISCSIInterface') ∗
+      "FSType" ∷ l.[(v1.ISCSIVolumeSource.t), "FSType"] ↦{dq} v.(v1.ISCSIVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.ISCSIVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.ISCSIVolumeSource.ReadOnly') ∗
+      "Portals" ∷ l.[(v1.ISCSIVolumeSource.t), "Portals"] ↦{dq} v.(v1.ISCSIVolumeSource.Portals') ∗
+      "DiscoveryCHAPAuth" ∷ l.[(v1.ISCSIVolumeSource.t), "DiscoveryCHAPAuth"] ↦{dq} v.(v1.ISCSIVolumeSource.DiscoveryCHAPAuth') ∗
+      "SessionCHAPAuth" ∷ l.[(v1.ISCSIVolumeSource.t), "SessionCHAPAuth"] ↦{dq} v.(v1.ISCSIVolumeSource.SessionCHAPAuth') ∗
+      "SecretRef" ∷ l.[(v1.ISCSIVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.ISCSIVolumeSource.SecretRef') ∗
+      "InitiatorName" ∷ l.[(v1.ISCSIVolumeSource.t), "InitiatorName"] ↦{dq} v.(v1.ISCSIVolumeSource.InitiatorName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ISCSIVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ISCSIVolumeSource.t) (v1.ISCSIVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "TargetPortal" go.string
+      (fun v => v.(v1.ISCSIVolumeSource.TargetPortal'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.TargetPortal') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "IQN" go.string
+      (fun v => v.(v1.ISCSIVolumeSource.IQN'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.IQN') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Lun" go.int32
+      (fun v => v.(v1.ISCSIVolumeSource.Lun'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.Lun') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ISCSIInterface" go.string
+      (fun v => v.(v1.ISCSIVolumeSource.ISCSIInterface'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.ISCSIInterface') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FSType" go.string
+      (fun v => v.(v1.ISCSIVolumeSource.FSType'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.FSType') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ReadOnly" go.bool
+      (fun v => v.(v1.ISCSIVolumeSource.ReadOnly'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.ReadOnly') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Portals" (go.SliceType go.string)
+      (fun v => v.(v1.ISCSIVolumeSource.Portals'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.Portals') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "DiscoveryCHAPAuth" go.bool
+      (fun v => v.(v1.ISCSIVolumeSource.DiscoveryCHAPAuth'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.DiscoveryCHAPAuth') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SessionCHAPAuth" go.bool
+      (fun v => v.(v1.ISCSIVolumeSource.SessionCHAPAuth'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.SessionCHAPAuth') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SecretRef" (go.PointerType v1.LocalObjectReference)
+      (fun v => v.(v1.ISCSIVolumeSource.SecretRef'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.SecretRef') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "InitiatorName" (go.PointerType go.string)
+      (fun v => v.(v1.ISCSIVolumeSource.InitiatorName'))
+      (fun v x => v <|(v1.ISCSIVolumeSource.InitiatorName') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.ISCSIVolumeSource.t v1.ISCSIVolumeSourceⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.ISCSIVolumeSource'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.ISCSIVolumeSource'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_TargetPortal l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "TargetPortal"] ↦{dq} (v.(v1.ISCSIVolumeSource.TargetPortal')))
+    (l.[(v1.ISCSIVolumeSource.t), "TargetPortal"] ↦{dq} (v.(v1.ISCSIVolumeSource.TargetPortal')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_TargetPortal l (v : (v1.ISCSIVolumeSource.t)) TargetPortal' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "TargetPortal"] ↦ (v.(v1.ISCSIVolumeSource.TargetPortal')))
+    (l.[(v1.ISCSIVolumeSource.t), "TargetPortal"] ↦ TargetPortal')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.TargetPortal') := TargetPortal'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_IQN l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "IQN"] ↦{dq} (v.(v1.ISCSIVolumeSource.IQN')))
+    (l.[(v1.ISCSIVolumeSource.t), "IQN"] ↦{dq} (v.(v1.ISCSIVolumeSource.IQN')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_IQN l (v : (v1.ISCSIVolumeSource.t)) IQN' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "IQN"] ↦ (v.(v1.ISCSIVolumeSource.IQN')))
+    (l.[(v1.ISCSIVolumeSource.t), "IQN"] ↦ IQN')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.IQN') := IQN'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_Lun l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "Lun"] ↦{dq} (v.(v1.ISCSIVolumeSource.Lun')))
+    (l.[(v1.ISCSIVolumeSource.t), "Lun"] ↦{dq} (v.(v1.ISCSIVolumeSource.Lun')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_Lun l (v : (v1.ISCSIVolumeSource.t)) Lun' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "Lun"] ↦ (v.(v1.ISCSIVolumeSource.Lun')))
+    (l.[(v1.ISCSIVolumeSource.t), "Lun"] ↦ Lun')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.Lun') := Lun'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_ISCSIInterface l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "ISCSIInterface"] ↦{dq} (v.(v1.ISCSIVolumeSource.ISCSIInterface')))
+    (l.[(v1.ISCSIVolumeSource.t), "ISCSIInterface"] ↦{dq} (v.(v1.ISCSIVolumeSource.ISCSIInterface')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_ISCSIInterface l (v : (v1.ISCSIVolumeSource.t)) ISCSIInterface' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "ISCSIInterface"] ↦ (v.(v1.ISCSIVolumeSource.ISCSIInterface')))
+    (l.[(v1.ISCSIVolumeSource.t), "ISCSIInterface"] ↦ ISCSIInterface')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.ISCSIInterface') := ISCSIInterface'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_FSType l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "FSType"] ↦{dq} (v.(v1.ISCSIVolumeSource.FSType')))
+    (l.[(v1.ISCSIVolumeSource.t), "FSType"] ↦{dq} (v.(v1.ISCSIVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_FSType l (v : (v1.ISCSIVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "FSType"] ↦ (v.(v1.ISCSIVolumeSource.FSType')))
+    (l.[(v1.ISCSIVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.FSType') := FSType'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_ReadOnly l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.ISCSIVolumeSource.ReadOnly')))
+    (l.[(v1.ISCSIVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.ISCSIVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_ReadOnly l (v : (v1.ISCSIVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "ReadOnly"] ↦ (v.(v1.ISCSIVolumeSource.ReadOnly')))
+    (l.[(v1.ISCSIVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_Portals l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "Portals"] ↦{dq} (v.(v1.ISCSIVolumeSource.Portals')))
+    (l.[(v1.ISCSIVolumeSource.t), "Portals"] ↦{dq} (v.(v1.ISCSIVolumeSource.Portals')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_Portals l (v : (v1.ISCSIVolumeSource.t)) Portals' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "Portals"] ↦ (v.(v1.ISCSIVolumeSource.Portals')))
+    (l.[(v1.ISCSIVolumeSource.t), "Portals"] ↦ Portals')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.Portals') := Portals'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_DiscoveryCHAPAuth l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "DiscoveryCHAPAuth"] ↦{dq} (v.(v1.ISCSIVolumeSource.DiscoveryCHAPAuth')))
+    (l.[(v1.ISCSIVolumeSource.t), "DiscoveryCHAPAuth"] ↦{dq} (v.(v1.ISCSIVolumeSource.DiscoveryCHAPAuth')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_DiscoveryCHAPAuth l (v : (v1.ISCSIVolumeSource.t)) DiscoveryCHAPAuth' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "DiscoveryCHAPAuth"] ↦ (v.(v1.ISCSIVolumeSource.DiscoveryCHAPAuth')))
+    (l.[(v1.ISCSIVolumeSource.t), "DiscoveryCHAPAuth"] ↦ DiscoveryCHAPAuth')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.DiscoveryCHAPAuth') := DiscoveryCHAPAuth'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_SessionCHAPAuth l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "SessionCHAPAuth"] ↦{dq} (v.(v1.ISCSIVolumeSource.SessionCHAPAuth')))
+    (l.[(v1.ISCSIVolumeSource.t), "SessionCHAPAuth"] ↦{dq} (v.(v1.ISCSIVolumeSource.SessionCHAPAuth')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_SessionCHAPAuth l (v : (v1.ISCSIVolumeSource.t)) SessionCHAPAuth' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "SessionCHAPAuth"] ↦ (v.(v1.ISCSIVolumeSource.SessionCHAPAuth')))
+    (l.[(v1.ISCSIVolumeSource.t), "SessionCHAPAuth"] ↦ SessionCHAPAuth')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.SessionCHAPAuth') := SessionCHAPAuth'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_SecretRef l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.ISCSIVolumeSource.SecretRef')))
+    (l.[(v1.ISCSIVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.ISCSIVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_SecretRef l (v : (v1.ISCSIVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "SecretRef"] ↦ (v.(v1.ISCSIVolumeSource.SecretRef')))
+    (l.[(v1.ISCSIVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance ISCSIVolumeSource_access_load_InitiatorName l (v : (v1.ISCSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "InitiatorName"] ↦{dq} (v.(v1.ISCSIVolumeSource.InitiatorName')))
+    (l.[(v1.ISCSIVolumeSource.t), "InitiatorName"] ↦{dq} (v.(v1.ISCSIVolumeSource.InitiatorName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance ISCSIVolumeSource_access_store_InitiatorName l (v : (v1.ISCSIVolumeSource.t)) InitiatorName' :
+  AccessStrict
+    (l.[(v1.ISCSIVolumeSource.t), "InitiatorName"] ↦ (v.(v1.ISCSIVolumeSource.InitiatorName')))
+    (l.[(v1.ISCSIVolumeSource.t), "InitiatorName"] ↦ InitiatorName')
+    (l ↦ v) (l ↦ (v <|(v1.ISCSIVolumeSource.InitiatorName') := InitiatorName'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
 
 End def.
 End ISCSIVolumeSource.
@@ -3340,13 +5241,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance FCVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.FCVolumeSource.t). Admitted.
+#[global]Program Instance FCVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FCVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TargetWWNs" ∷ l.[(v1.FCVolumeSource.t), "TargetWWNs"] ↦{dq} v.(v1.FCVolumeSource.TargetWWNs') ∗
+      "Lun" ∷ l.[(v1.FCVolumeSource.t), "Lun"] ↦{dq} v.(v1.FCVolumeSource.Lun') ∗
+      "FSType" ∷ l.[(v1.FCVolumeSource.t), "FSType"] ↦{dq} v.(v1.FCVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.FCVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.FCVolumeSource.ReadOnly') ∗
+      "WWIDs" ∷ l.[(v1.FCVolumeSource.t), "WWIDs"] ↦{dq} v.(v1.FCVolumeSource.WWIDs') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance FCVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.FCVolumeSource.t) (v1.FCVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance FCVolumeSource_access_load_TargetWWNs l (v : (v1.FCVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "TargetWWNs"] ↦{dq} (v.(v1.FCVolumeSource.TargetWWNs')))
+    (l.[(v1.FCVolumeSource.t), "TargetWWNs"] ↦{dq} (v.(v1.FCVolumeSource.TargetWWNs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FCVolumeSource_access_store_TargetWWNs l (v : (v1.FCVolumeSource.t)) TargetWWNs' :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "TargetWWNs"] ↦ (v.(v1.FCVolumeSource.TargetWWNs')))
+    (l.[(v1.FCVolumeSource.t), "TargetWWNs"] ↦ TargetWWNs')
+    (l ↦ v) (l ↦ (v <|(v1.FCVolumeSource.TargetWWNs') := TargetWWNs'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FCVolumeSource_access_load_Lun l (v : (v1.FCVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "Lun"] ↦{dq} (v.(v1.FCVolumeSource.Lun')))
+    (l.[(v1.FCVolumeSource.t), "Lun"] ↦{dq} (v.(v1.FCVolumeSource.Lun')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FCVolumeSource_access_store_Lun l (v : (v1.FCVolumeSource.t)) Lun' :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "Lun"] ↦ (v.(v1.FCVolumeSource.Lun')))
+    (l.[(v1.FCVolumeSource.t), "Lun"] ↦ Lun')
+    (l ↦ v) (l ↦ (v <|(v1.FCVolumeSource.Lun') := Lun'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FCVolumeSource_access_load_FSType l (v : (v1.FCVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "FSType"] ↦{dq} (v.(v1.FCVolumeSource.FSType')))
+    (l.[(v1.FCVolumeSource.t), "FSType"] ↦{dq} (v.(v1.FCVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FCVolumeSource_access_store_FSType l (v : (v1.FCVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "FSType"] ↦ (v.(v1.FCVolumeSource.FSType')))
+    (l.[(v1.FCVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.FCVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FCVolumeSource_access_load_ReadOnly l (v : (v1.FCVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.FCVolumeSource.ReadOnly')))
+    (l.[(v1.FCVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.FCVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FCVolumeSource_access_store_ReadOnly l (v : (v1.FCVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "ReadOnly"] ↦ (v.(v1.FCVolumeSource.ReadOnly')))
+    (l.[(v1.FCVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.FCVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FCVolumeSource_access_load_WWIDs l (v : (v1.FCVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "WWIDs"] ↦{dq} (v.(v1.FCVolumeSource.WWIDs')))
+    (l.[(v1.FCVolumeSource.t), "WWIDs"] ↦{dq} (v.(v1.FCVolumeSource.WWIDs')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FCVolumeSource_access_store_WWIDs l (v : (v1.FCVolumeSource.t)) WWIDs' :
+  AccessStrict
+    (l.[(v1.FCVolumeSource.t), "WWIDs"] ↦ (v.(v1.FCVolumeSource.WWIDs')))
+    (l.[(v1.FCVolumeSource.t), "WWIDs"] ↦ WWIDs')
+    (l ↦ v) (l ↦ (v <|(v1.FCVolumeSource.WWIDs') := WWIDs'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End FCVolumeSource.
@@ -3360,13 +5338,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance AzureFileVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AzureFileVolumeSource.t). Admitted.
+#[global]Program Instance AzureFileVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureFileVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SecretName" ∷ l.[(v1.AzureFileVolumeSource.t), "SecretName"] ↦{dq} v.(v1.AzureFileVolumeSource.SecretName') ∗
+      "ShareName" ∷ l.[(v1.AzureFileVolumeSource.t), "ShareName"] ↦{dq} v.(v1.AzureFileVolumeSource.ShareName') ∗
+      "ReadOnly" ∷ l.[(v1.AzureFileVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.AzureFileVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance AzureFileVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.AzureFileVolumeSource.t) (v1.AzureFileVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance AzureFileVolumeSource_access_load_SecretName l (v : (v1.AzureFileVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "SecretName"] ↦{dq} (v.(v1.AzureFileVolumeSource.SecretName')))
+    (l.[(v1.AzureFileVolumeSource.t), "SecretName"] ↦{dq} (v.(v1.AzureFileVolumeSource.SecretName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureFileVolumeSource_access_store_SecretName l (v : (v1.AzureFileVolumeSource.t)) SecretName' :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "SecretName"] ↦ (v.(v1.AzureFileVolumeSource.SecretName')))
+    (l.[(v1.AzureFileVolumeSource.t), "SecretName"] ↦ SecretName')
+    (l ↦ v) (l ↦ (v <|(v1.AzureFileVolumeSource.SecretName') := SecretName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureFileVolumeSource_access_load_ShareName l (v : (v1.AzureFileVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "ShareName"] ↦{dq} (v.(v1.AzureFileVolumeSource.ShareName')))
+    (l.[(v1.AzureFileVolumeSource.t), "ShareName"] ↦{dq} (v.(v1.AzureFileVolumeSource.ShareName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureFileVolumeSource_access_store_ShareName l (v : (v1.AzureFileVolumeSource.t)) ShareName' :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "ShareName"] ↦ (v.(v1.AzureFileVolumeSource.ShareName')))
+    (l.[(v1.AzureFileVolumeSource.t), "ShareName"] ↦ ShareName')
+    (l ↦ v) (l ↦ (v <|(v1.AzureFileVolumeSource.ShareName') := ShareName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureFileVolumeSource_access_load_ReadOnly l (v : (v1.AzureFileVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AzureFileVolumeSource.ReadOnly')))
+    (l.[(v1.AzureFileVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AzureFileVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureFileVolumeSource_access_store_ReadOnly l (v : (v1.AzureFileVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.AzureFileVolumeSource.t), "ReadOnly"] ↦ (v.(v1.AzureFileVolumeSource.ReadOnly')))
+    (l.[(v1.AzureFileVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.AzureFileVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End AzureFileVolumeSource.
@@ -3400,13 +5427,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VsphereVirtualDiskVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VsphereVirtualDiskVolumeSource.t). Admitted.
+#[global]Program Instance VsphereVirtualDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VsphereVirtualDiskVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumePath" ∷ l.[(v1.VsphereVirtualDiskVolumeSource.t), "VolumePath"] ↦{dq} v.(v1.VsphereVirtualDiskVolumeSource.VolumePath') ∗
+      "FSType" ∷ l.[(v1.VsphereVirtualDiskVolumeSource.t), "FSType"] ↦{dq} v.(v1.VsphereVirtualDiskVolumeSource.FSType') ∗
+      "StoragePolicyName" ∷ l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyName"] ↦{dq} v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyName') ∗
+      "StoragePolicyID" ∷ l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyID"] ↦{dq} v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyID') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VsphereVirtualDiskVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.VsphereVirtualDiskVolumeSource.t) (v1.VsphereVirtualDiskVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VsphereVirtualDiskVolumeSource_access_load_VolumePath l (v : (v1.VsphereVirtualDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "VolumePath"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.VolumePath')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "VolumePath"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.VolumePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VsphereVirtualDiskVolumeSource_access_store_VolumePath l (v : (v1.VsphereVirtualDiskVolumeSource.t)) VolumePath' :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "VolumePath"] ↦ (v.(v1.VsphereVirtualDiskVolumeSource.VolumePath')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "VolumePath"] ↦ VolumePath')
+    (l ↦ v) (l ↦ (v <|(v1.VsphereVirtualDiskVolumeSource.VolumePath') := VolumePath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VsphereVirtualDiskVolumeSource_access_load_FSType l (v : (v1.VsphereVirtualDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.FSType')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VsphereVirtualDiskVolumeSource_access_store_FSType l (v : (v1.VsphereVirtualDiskVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "FSType"] ↦ (v.(v1.VsphereVirtualDiskVolumeSource.FSType')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.VsphereVirtualDiskVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VsphereVirtualDiskVolumeSource_access_load_StoragePolicyName l (v : (v1.VsphereVirtualDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyName"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyName')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyName"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VsphereVirtualDiskVolumeSource_access_store_StoragePolicyName l (v : (v1.VsphereVirtualDiskVolumeSource.t)) StoragePolicyName' :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyName"] ↦ (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyName')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyName"] ↦ StoragePolicyName')
+    (l ↦ v) (l ↦ (v <|(v1.VsphereVirtualDiskVolumeSource.StoragePolicyName') := StoragePolicyName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VsphereVirtualDiskVolumeSource_access_load_StoragePolicyID l (v : (v1.VsphereVirtualDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyID"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyID')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyID"] ↦{dq} (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VsphereVirtualDiskVolumeSource_access_store_StoragePolicyID l (v : (v1.VsphereVirtualDiskVolumeSource.t)) StoragePolicyID' :
+  AccessStrict
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyID"] ↦ (v.(v1.VsphereVirtualDiskVolumeSource.StoragePolicyID')))
+    (l.[(v1.VsphereVirtualDiskVolumeSource.t), "StoragePolicyID"] ↦ StoragePolicyID')
+    (l ↦ v) (l ↦ (v <|(v1.VsphereVirtualDiskVolumeSource.StoragePolicyID') := StoragePolicyID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End VsphereVirtualDiskVolumeSource.
@@ -3420,56 +5510,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PhotonPersistentDiskVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PhotonPersistentDiskVolumeSource.t). Admitted.
+#[global]Program Instance PhotonPersistentDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PhotonPersistentDiskVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "PdID" ∷ l.[(v1.PhotonPersistentDiskVolumeSource.t), "PdID"] ↦{dq} v.(v1.PhotonPersistentDiskVolumeSource.PdID') ∗
+      "FSType" ∷ l.[(v1.PhotonPersistentDiskVolumeSource.t), "FSType"] ↦{dq} v.(v1.PhotonPersistentDiskVolumeSource.FSType') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PhotonPersistentDiskVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.PhotonPersistentDiskVolumeSource.t) (v1.PhotonPersistentDiskVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PhotonPersistentDiskVolumeSource_access_load_PdID l (v : (v1.PhotonPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "PdID"] ↦{dq} (v.(v1.PhotonPersistentDiskVolumeSource.PdID')))
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "PdID"] ↦{dq} (v.(v1.PhotonPersistentDiskVolumeSource.PdID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PhotonPersistentDiskVolumeSource_access_store_PdID l (v : (v1.PhotonPersistentDiskVolumeSource.t)) PdID' :
+  AccessStrict
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "PdID"] ↦ (v.(v1.PhotonPersistentDiskVolumeSource.PdID')))
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "PdID"] ↦ PdID')
+    (l ↦ v) (l ↦ (v <|(v1.PhotonPersistentDiskVolumeSource.PdID') := PdID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PhotonPersistentDiskVolumeSource_access_load_FSType l (v : (v1.PhotonPersistentDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.PhotonPersistentDiskVolumeSource.FSType')))
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.PhotonPersistentDiskVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PhotonPersistentDiskVolumeSource_access_store_FSType l (v : (v1.PhotonPersistentDiskVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "FSType"] ↦ (v.(v1.PhotonPersistentDiskVolumeSource.FSType')))
+    (l.[(v1.PhotonPersistentDiskVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.PhotonPersistentDiskVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PhotonPersistentDiskVolumeSource.
-
-Module AzureDataDiskCachingMode.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance AzureDataDiskCachingMode_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AzureDataDiskCachingMode.t). Admitted.
-
-#[global] Instance AzureDataDiskCachingMode_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.AzureDataDiskCachingMode.t) (v1.AzureDataDiskCachingModeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End AzureDataDiskCachingMode.
-
-Module AzureDataDiskKind.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance AzureDataDiskKind_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AzureDataDiskKind.t). Admitted.
-
-#[global] Instance AzureDataDiskKind_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.AzureDataDiskKind.t) (v1.AzureDataDiskKindⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End AzureDataDiskKind.
 
 Module AzureDiskVolumeSource.
 Section def.
@@ -3480,13 +5565,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance AzureDiskVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AzureDiskVolumeSource.t). Admitted.
+#[global]Program Instance AzureDiskVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AzureDiskVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "DiskName" ∷ l.[(v1.AzureDiskVolumeSource.t), "DiskName"] ↦{dq} v.(v1.AzureDiskVolumeSource.DiskName') ∗
+      "DataDiskURI" ∷ l.[(v1.AzureDiskVolumeSource.t), "DataDiskURI"] ↦{dq} v.(v1.AzureDiskVolumeSource.DataDiskURI') ∗
+      "CachingMode" ∷ l.[(v1.AzureDiskVolumeSource.t), "CachingMode"] ↦{dq} v.(v1.AzureDiskVolumeSource.CachingMode') ∗
+      "FSType" ∷ l.[(v1.AzureDiskVolumeSource.t), "FSType"] ↦{dq} v.(v1.AzureDiskVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.AzureDiskVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.AzureDiskVolumeSource.ReadOnly') ∗
+      "Kind" ∷ l.[(v1.AzureDiskVolumeSource.t), "Kind"] ↦{dq} v.(v1.AzureDiskVolumeSource.Kind') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance AzureDiskVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.AzureDiskVolumeSource.t) (v1.AzureDiskVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_DiskName l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "DiskName"] ↦{dq} (v.(v1.AzureDiskVolumeSource.DiskName')))
+    (l.[(v1.AzureDiskVolumeSource.t), "DiskName"] ↦{dq} (v.(v1.AzureDiskVolumeSource.DiskName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_DiskName l (v : (v1.AzureDiskVolumeSource.t)) DiskName' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "DiskName"] ↦ (v.(v1.AzureDiskVolumeSource.DiskName')))
+    (l.[(v1.AzureDiskVolumeSource.t), "DiskName"] ↦ DiskName')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.DiskName') := DiskName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_DataDiskURI l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "DataDiskURI"] ↦{dq} (v.(v1.AzureDiskVolumeSource.DataDiskURI')))
+    (l.[(v1.AzureDiskVolumeSource.t), "DataDiskURI"] ↦{dq} (v.(v1.AzureDiskVolumeSource.DataDiskURI')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_DataDiskURI l (v : (v1.AzureDiskVolumeSource.t)) DataDiskURI' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "DataDiskURI"] ↦ (v.(v1.AzureDiskVolumeSource.DataDiskURI')))
+    (l.[(v1.AzureDiskVolumeSource.t), "DataDiskURI"] ↦ DataDiskURI')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.DataDiskURI') := DataDiskURI'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_CachingMode l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "CachingMode"] ↦{dq} (v.(v1.AzureDiskVolumeSource.CachingMode')))
+    (l.[(v1.AzureDiskVolumeSource.t), "CachingMode"] ↦{dq} (v.(v1.AzureDiskVolumeSource.CachingMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_CachingMode l (v : (v1.AzureDiskVolumeSource.t)) CachingMode' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "CachingMode"] ↦ (v.(v1.AzureDiskVolumeSource.CachingMode')))
+    (l.[(v1.AzureDiskVolumeSource.t), "CachingMode"] ↦ CachingMode')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.CachingMode') := CachingMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_FSType l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.AzureDiskVolumeSource.FSType')))
+    (l.[(v1.AzureDiskVolumeSource.t), "FSType"] ↦{dq} (v.(v1.AzureDiskVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_FSType l (v : (v1.AzureDiskVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "FSType"] ↦ (v.(v1.AzureDiskVolumeSource.FSType')))
+    (l.[(v1.AzureDiskVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_ReadOnly l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AzureDiskVolumeSource.ReadOnly')))
+    (l.[(v1.AzureDiskVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.AzureDiskVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_ReadOnly l (v : (v1.AzureDiskVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "ReadOnly"] ↦ (v.(v1.AzureDiskVolumeSource.ReadOnly')))
+    (l.[(v1.AzureDiskVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AzureDiskVolumeSource_access_load_Kind l (v : (v1.AzureDiskVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "Kind"] ↦{dq} (v.(v1.AzureDiskVolumeSource.Kind')))
+    (l.[(v1.AzureDiskVolumeSource.t), "Kind"] ↦{dq} (v.(v1.AzureDiskVolumeSource.Kind')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AzureDiskVolumeSource_access_store_Kind l (v : (v1.AzureDiskVolumeSource.t)) Kind' :
+  AccessStrict
+    (l.[(v1.AzureDiskVolumeSource.t), "Kind"] ↦ (v.(v1.AzureDiskVolumeSource.Kind')))
+    (l.[(v1.AzureDiskVolumeSource.t), "Kind"] ↦ Kind')
+    (l ↦ v) (l ↦ (v <|(v1.AzureDiskVolumeSource.Kind') := Kind'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End AzureDiskVolumeSource.
@@ -3500,13 +5676,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PortworxVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PortworxVolumeSource.t). Admitted.
+#[global]Program Instance PortworxVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PortworxVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeID" ∷ l.[(v1.PortworxVolumeSource.t), "VolumeID"] ↦{dq} v.(v1.PortworxVolumeSource.VolumeID') ∗
+      "FSType" ∷ l.[(v1.PortworxVolumeSource.t), "FSType"] ↦{dq} v.(v1.PortworxVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.PortworxVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.PortworxVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PortworxVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.PortworxVolumeSource.t) (v1.PortworxVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PortworxVolumeSource_access_load_VolumeID l (v : (v1.PortworxVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.PortworxVolumeSource.VolumeID')))
+    (l.[(v1.PortworxVolumeSource.t), "VolumeID"] ↦{dq} (v.(v1.PortworxVolumeSource.VolumeID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PortworxVolumeSource_access_store_VolumeID l (v : (v1.PortworxVolumeSource.t)) VolumeID' :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "VolumeID"] ↦ (v.(v1.PortworxVolumeSource.VolumeID')))
+    (l.[(v1.PortworxVolumeSource.t), "VolumeID"] ↦ VolumeID')
+    (l ↦ v) (l ↦ (v <|(v1.PortworxVolumeSource.VolumeID') := VolumeID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PortworxVolumeSource_access_load_FSType l (v : (v1.PortworxVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "FSType"] ↦{dq} (v.(v1.PortworxVolumeSource.FSType')))
+    (l.[(v1.PortworxVolumeSource.t), "FSType"] ↦{dq} (v.(v1.PortworxVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PortworxVolumeSource_access_store_FSType l (v : (v1.PortworxVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "FSType"] ↦ (v.(v1.PortworxVolumeSource.FSType')))
+    (l.[(v1.PortworxVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.PortworxVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PortworxVolumeSource_access_load_ReadOnly l (v : (v1.PortworxVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.PortworxVolumeSource.ReadOnly')))
+    (l.[(v1.PortworxVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.PortworxVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PortworxVolumeSource_access_store_ReadOnly l (v : (v1.PortworxVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.PortworxVolumeSource.t), "ReadOnly"] ↦ (v.(v1.PortworxVolumeSource.ReadOnly')))
+    (l.[(v1.PortworxVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.PortworxVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PortworxVolumeSource.
@@ -3520,13 +5745,562 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ScaleIOVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ScaleIOVolumeSource.t). Admitted.
+#[global]Program Instance ScaleIOVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ScaleIOVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Gateway" ∷ l.[(v1.ScaleIOVolumeSource.t), "Gateway"] ↦{dq} v.(v1.ScaleIOVolumeSource.Gateway') ∗
+      "System" ∷ l.[(v1.ScaleIOVolumeSource.t), "System"] ↦{dq} v.(v1.ScaleIOVolumeSource.System') ∗
+      "SecretRef" ∷ l.[(v1.ScaleIOVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.ScaleIOVolumeSource.SecretRef') ∗
+      "SSLEnabled" ∷ l.[(v1.ScaleIOVolumeSource.t), "SSLEnabled"] ↦{dq} v.(v1.ScaleIOVolumeSource.SSLEnabled') ∗
+      "ProtectionDomain" ∷ l.[(v1.ScaleIOVolumeSource.t), "ProtectionDomain"] ↦{dq} v.(v1.ScaleIOVolumeSource.ProtectionDomain') ∗
+      "StoragePool" ∷ l.[(v1.ScaleIOVolumeSource.t), "StoragePool"] ↦{dq} v.(v1.ScaleIOVolumeSource.StoragePool') ∗
+      "StorageMode" ∷ l.[(v1.ScaleIOVolumeSource.t), "StorageMode"] ↦{dq} v.(v1.ScaleIOVolumeSource.StorageMode') ∗
+      "VolumeName" ∷ l.[(v1.ScaleIOVolumeSource.t), "VolumeName"] ↦{dq} v.(v1.ScaleIOVolumeSource.VolumeName') ∗
+      "FSType" ∷ l.[(v1.ScaleIOVolumeSource.t), "FSType"] ↦{dq} v.(v1.ScaleIOVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.ScaleIOVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.ScaleIOVolumeSource.ReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ScaleIOVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ScaleIOVolumeSource.t) (v1.ScaleIOVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "Gateway" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.Gateway'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.Gateway') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "System" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.System'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.System') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SecretRef" (go.PointerType v1.LocalObjectReference)
+      (fun v => v.(v1.ScaleIOVolumeSource.SecretRef'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.SecretRef') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SSLEnabled" go.bool
+      (fun v => v.(v1.ScaleIOVolumeSource.SSLEnabled'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.SSLEnabled') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ProtectionDomain" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.ProtectionDomain'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.ProtectionDomain') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StoragePool" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.StoragePool'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.StoragePool') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StorageMode" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.StorageMode'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.StorageMode') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeName" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.VolumeName'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.VolumeName') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FSType" go.string
+      (fun v => v.(v1.ScaleIOVolumeSource.FSType'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.FSType') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ReadOnly" go.bool
+      (fun v => v.(v1.ScaleIOVolumeSource.ReadOnly'))
+      (fun v x => v <|(v1.ScaleIOVolumeSource.ReadOnly') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.ScaleIOVolumeSource.t v1.ScaleIOVolumeSourceⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.ScaleIOVolumeSource'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.ScaleIOVolumeSource'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_Gateway l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "Gateway"] ↦{dq} (v.(v1.ScaleIOVolumeSource.Gateway')))
+    (l.[(v1.ScaleIOVolumeSource.t), "Gateway"] ↦{dq} (v.(v1.ScaleIOVolumeSource.Gateway')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_Gateway l (v : (v1.ScaleIOVolumeSource.t)) Gateway' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "Gateway"] ↦ (v.(v1.ScaleIOVolumeSource.Gateway')))
+    (l.[(v1.ScaleIOVolumeSource.t), "Gateway"] ↦ Gateway')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.Gateway') := Gateway'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_System l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "System"] ↦{dq} (v.(v1.ScaleIOVolumeSource.System')))
+    (l.[(v1.ScaleIOVolumeSource.t), "System"] ↦{dq} (v.(v1.ScaleIOVolumeSource.System')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_System l (v : (v1.ScaleIOVolumeSource.t)) System' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "System"] ↦ (v.(v1.ScaleIOVolumeSource.System')))
+    (l.[(v1.ScaleIOVolumeSource.t), "System"] ↦ System')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.System') := System'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_SecretRef l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.ScaleIOVolumeSource.SecretRef')))
+    (l.[(v1.ScaleIOVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.ScaleIOVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_SecretRef l (v : (v1.ScaleIOVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "SecretRef"] ↦ (v.(v1.ScaleIOVolumeSource.SecretRef')))
+    (l.[(v1.ScaleIOVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_SSLEnabled l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "SSLEnabled"] ↦{dq} (v.(v1.ScaleIOVolumeSource.SSLEnabled')))
+    (l.[(v1.ScaleIOVolumeSource.t), "SSLEnabled"] ↦{dq} (v.(v1.ScaleIOVolumeSource.SSLEnabled')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_SSLEnabled l (v : (v1.ScaleIOVolumeSource.t)) SSLEnabled' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "SSLEnabled"] ↦ (v.(v1.ScaleIOVolumeSource.SSLEnabled')))
+    (l.[(v1.ScaleIOVolumeSource.t), "SSLEnabled"] ↦ SSLEnabled')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.SSLEnabled') := SSLEnabled'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_ProtectionDomain l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "ProtectionDomain"] ↦{dq} (v.(v1.ScaleIOVolumeSource.ProtectionDomain')))
+    (l.[(v1.ScaleIOVolumeSource.t), "ProtectionDomain"] ↦{dq} (v.(v1.ScaleIOVolumeSource.ProtectionDomain')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_ProtectionDomain l (v : (v1.ScaleIOVolumeSource.t)) ProtectionDomain' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "ProtectionDomain"] ↦ (v.(v1.ScaleIOVolumeSource.ProtectionDomain')))
+    (l.[(v1.ScaleIOVolumeSource.t), "ProtectionDomain"] ↦ ProtectionDomain')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.ProtectionDomain') := ProtectionDomain'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_StoragePool l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "StoragePool"] ↦{dq} (v.(v1.ScaleIOVolumeSource.StoragePool')))
+    (l.[(v1.ScaleIOVolumeSource.t), "StoragePool"] ↦{dq} (v.(v1.ScaleIOVolumeSource.StoragePool')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_StoragePool l (v : (v1.ScaleIOVolumeSource.t)) StoragePool' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "StoragePool"] ↦ (v.(v1.ScaleIOVolumeSource.StoragePool')))
+    (l.[(v1.ScaleIOVolumeSource.t), "StoragePool"] ↦ StoragePool')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.StoragePool') := StoragePool'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_StorageMode l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "StorageMode"] ↦{dq} (v.(v1.ScaleIOVolumeSource.StorageMode')))
+    (l.[(v1.ScaleIOVolumeSource.t), "StorageMode"] ↦{dq} (v.(v1.ScaleIOVolumeSource.StorageMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_StorageMode l (v : (v1.ScaleIOVolumeSource.t)) StorageMode' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "StorageMode"] ↦ (v.(v1.ScaleIOVolumeSource.StorageMode')))
+    (l.[(v1.ScaleIOVolumeSource.t), "StorageMode"] ↦ StorageMode')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.StorageMode') := StorageMode'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_VolumeName l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "VolumeName"] ↦{dq} (v.(v1.ScaleIOVolumeSource.VolumeName')))
+    (l.[(v1.ScaleIOVolumeSource.t), "VolumeName"] ↦{dq} (v.(v1.ScaleIOVolumeSource.VolumeName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_VolumeName l (v : (v1.ScaleIOVolumeSource.t)) VolumeName' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "VolumeName"] ↦ (v.(v1.ScaleIOVolumeSource.VolumeName')))
+    (l.[(v1.ScaleIOVolumeSource.t), "VolumeName"] ↦ VolumeName')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.VolumeName') := VolumeName'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_FSType l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "FSType"] ↦{dq} (v.(v1.ScaleIOVolumeSource.FSType')))
+    (l.[(v1.ScaleIOVolumeSource.t), "FSType"] ↦{dq} (v.(v1.ScaleIOVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_FSType l (v : (v1.ScaleIOVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "FSType"] ↦ (v.(v1.ScaleIOVolumeSource.FSType')))
+    (l.[(v1.ScaleIOVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.FSType') := FSType'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance ScaleIOVolumeSource_access_load_ReadOnly l (v : (v1.ScaleIOVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.ScaleIOVolumeSource.ReadOnly')))
+    (l.[(v1.ScaleIOVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.ScaleIOVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance ScaleIOVolumeSource_access_store_ReadOnly l (v : (v1.ScaleIOVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.ScaleIOVolumeSource.t), "ReadOnly"] ↦ (v.(v1.ScaleIOVolumeSource.ReadOnly')))
+    (l.[(v1.ScaleIOVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.ScaleIOVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
 
 End def.
 End ScaleIOVolumeSource.
@@ -3560,13 +6334,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StorageOSVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StorageOSVolumeSource.t). Admitted.
+#[global]Program Instance StorageOSVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StorageOSVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeName" ∷ l.[(v1.StorageOSVolumeSource.t), "VolumeName"] ↦{dq} v.(v1.StorageOSVolumeSource.VolumeName') ∗
+      "VolumeNamespace" ∷ l.[(v1.StorageOSVolumeSource.t), "VolumeNamespace"] ↦{dq} v.(v1.StorageOSVolumeSource.VolumeNamespace') ∗
+      "FSType" ∷ l.[(v1.StorageOSVolumeSource.t), "FSType"] ↦{dq} v.(v1.StorageOSVolumeSource.FSType') ∗
+      "ReadOnly" ∷ l.[(v1.StorageOSVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.StorageOSVolumeSource.ReadOnly') ∗
+      "SecretRef" ∷ l.[(v1.StorageOSVolumeSource.t), "SecretRef"] ↦{dq} v.(v1.StorageOSVolumeSource.SecretRef') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StorageOSVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.StorageOSVolumeSource.t) (v1.StorageOSVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StorageOSVolumeSource_access_load_VolumeName l (v : (v1.StorageOSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeName"] ↦{dq} (v.(v1.StorageOSVolumeSource.VolumeName')))
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeName"] ↦{dq} (v.(v1.StorageOSVolumeSource.VolumeName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StorageOSVolumeSource_access_store_VolumeName l (v : (v1.StorageOSVolumeSource.t)) VolumeName' :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeName"] ↦ (v.(v1.StorageOSVolumeSource.VolumeName')))
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeName"] ↦ VolumeName')
+    (l ↦ v) (l ↦ (v <|(v1.StorageOSVolumeSource.VolumeName') := VolumeName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StorageOSVolumeSource_access_load_VolumeNamespace l (v : (v1.StorageOSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeNamespace"] ↦{dq} (v.(v1.StorageOSVolumeSource.VolumeNamespace')))
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeNamespace"] ↦{dq} (v.(v1.StorageOSVolumeSource.VolumeNamespace')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StorageOSVolumeSource_access_store_VolumeNamespace l (v : (v1.StorageOSVolumeSource.t)) VolumeNamespace' :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeNamespace"] ↦ (v.(v1.StorageOSVolumeSource.VolumeNamespace')))
+    (l.[(v1.StorageOSVolumeSource.t), "VolumeNamespace"] ↦ VolumeNamespace')
+    (l ↦ v) (l ↦ (v <|(v1.StorageOSVolumeSource.VolumeNamespace') := VolumeNamespace'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StorageOSVolumeSource_access_load_FSType l (v : (v1.StorageOSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "FSType"] ↦{dq} (v.(v1.StorageOSVolumeSource.FSType')))
+    (l.[(v1.StorageOSVolumeSource.t), "FSType"] ↦{dq} (v.(v1.StorageOSVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StorageOSVolumeSource_access_store_FSType l (v : (v1.StorageOSVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "FSType"] ↦ (v.(v1.StorageOSVolumeSource.FSType')))
+    (l.[(v1.StorageOSVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.StorageOSVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StorageOSVolumeSource_access_load_ReadOnly l (v : (v1.StorageOSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.StorageOSVolumeSource.ReadOnly')))
+    (l.[(v1.StorageOSVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.StorageOSVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StorageOSVolumeSource_access_store_ReadOnly l (v : (v1.StorageOSVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "ReadOnly"] ↦ (v.(v1.StorageOSVolumeSource.ReadOnly')))
+    (l.[(v1.StorageOSVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.StorageOSVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StorageOSVolumeSource_access_load_SecretRef l (v : (v1.StorageOSVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.StorageOSVolumeSource.SecretRef')))
+    (l.[(v1.StorageOSVolumeSource.t), "SecretRef"] ↦{dq} (v.(v1.StorageOSVolumeSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StorageOSVolumeSource_access_store_SecretRef l (v : (v1.StorageOSVolumeSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.StorageOSVolumeSource.t), "SecretRef"] ↦ (v.(v1.StorageOSVolumeSource.SecretRef')))
+    (l.[(v1.StorageOSVolumeSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.StorageOSVolumeSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StorageOSVolumeSource.
@@ -3600,13 +6451,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ConfigMapVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConfigMapVolumeSource.t). Admitted.
+#[global]Program Instance ConfigMapVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.ConfigMapVolumeSource.t), "LocalObjectReference"] ↦{dq} v.(v1.ConfigMapVolumeSource.LocalObjectReference') ∗
+      "Items" ∷ l.[(v1.ConfigMapVolumeSource.t), "Items"] ↦{dq} v.(v1.ConfigMapVolumeSource.Items') ∗
+      "DefaultMode" ∷ l.[(v1.ConfigMapVolumeSource.t), "DefaultMode"] ↦{dq} v.(v1.ConfigMapVolumeSource.DefaultMode') ∗
+      "Optional" ∷ l.[(v1.ConfigMapVolumeSource.t), "Optional"] ↦{dq} v.(v1.ConfigMapVolumeSource.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ConfigMapVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ConfigMapVolumeSource.t) (v1.ConfigMapVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ConfigMapVolumeSource_access_load_LocalObjectReference l (v : (v1.ConfigMapVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapVolumeSource.LocalObjectReference')))
+    (l.[(v1.ConfigMapVolumeSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapVolumeSource.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapVolumeSource_access_store_LocalObjectReference l (v : (v1.ConfigMapVolumeSource.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "LocalObjectReference"] ↦ (v.(v1.ConfigMapVolumeSource.LocalObjectReference')))
+    (l.[(v1.ConfigMapVolumeSource.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapVolumeSource.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapVolumeSource_access_load_Items l (v : (v1.ConfigMapVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "Items"] ↦{dq} (v.(v1.ConfigMapVolumeSource.Items')))
+    (l.[(v1.ConfigMapVolumeSource.t), "Items"] ↦{dq} (v.(v1.ConfigMapVolumeSource.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapVolumeSource_access_store_Items l (v : (v1.ConfigMapVolumeSource.t)) Items' :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "Items"] ↦ (v.(v1.ConfigMapVolumeSource.Items')))
+    (l.[(v1.ConfigMapVolumeSource.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapVolumeSource.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapVolumeSource_access_load_DefaultMode l (v : (v1.ConfigMapVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.ConfigMapVolumeSource.DefaultMode')))
+    (l.[(v1.ConfigMapVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.ConfigMapVolumeSource.DefaultMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapVolumeSource_access_store_DefaultMode l (v : (v1.ConfigMapVolumeSource.t)) DefaultMode' :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "DefaultMode"] ↦ (v.(v1.ConfigMapVolumeSource.DefaultMode')))
+    (l.[(v1.ConfigMapVolumeSource.t), "DefaultMode"] ↦ DefaultMode')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapVolumeSource.DefaultMode') := DefaultMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapVolumeSource_access_load_Optional l (v : (v1.ConfigMapVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "Optional"] ↦{dq} (v.(v1.ConfigMapVolumeSource.Optional')))
+    (l.[(v1.ConfigMapVolumeSource.t), "Optional"] ↦{dq} (v.(v1.ConfigMapVolumeSource.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapVolumeSource_access_store_Optional l (v : (v1.ConfigMapVolumeSource.t)) Optional' :
+  AccessStrict
+    (l.[(v1.ConfigMapVolumeSource.t), "Optional"] ↦ (v.(v1.ConfigMapVolumeSource.Optional')))
+    (l.[(v1.ConfigMapVolumeSource.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapVolumeSource.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ConfigMapVolumeSource.
@@ -3620,13 +6534,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ConfigMapProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConfigMapProjection.t). Admitted.
+#[global]Program Instance ConfigMapProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.ConfigMapProjection.t), "LocalObjectReference"] ↦{dq} v.(v1.ConfigMapProjection.LocalObjectReference') ∗
+      "Items" ∷ l.[(v1.ConfigMapProjection.t), "Items"] ↦{dq} v.(v1.ConfigMapProjection.Items') ∗
+      "Optional" ∷ l.[(v1.ConfigMapProjection.t), "Optional"] ↦{dq} v.(v1.ConfigMapProjection.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ConfigMapProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.ConfigMapProjection.t) (v1.ConfigMapProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ConfigMapProjection_access_load_LocalObjectReference l (v : (v1.ConfigMapProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapProjection.LocalObjectReference')))
+    (l.[(v1.ConfigMapProjection.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapProjection.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapProjection_access_store_LocalObjectReference l (v : (v1.ConfigMapProjection.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "LocalObjectReference"] ↦ (v.(v1.ConfigMapProjection.LocalObjectReference')))
+    (l.[(v1.ConfigMapProjection.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapProjection.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapProjection_access_load_Items l (v : (v1.ConfigMapProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "Items"] ↦{dq} (v.(v1.ConfigMapProjection.Items')))
+    (l.[(v1.ConfigMapProjection.t), "Items"] ↦{dq} (v.(v1.ConfigMapProjection.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapProjection_access_store_Items l (v : (v1.ConfigMapProjection.t)) Items' :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "Items"] ↦ (v.(v1.ConfigMapProjection.Items')))
+    (l.[(v1.ConfigMapProjection.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapProjection.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapProjection_access_load_Optional l (v : (v1.ConfigMapProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "Optional"] ↦{dq} (v.(v1.ConfigMapProjection.Optional')))
+    (l.[(v1.ConfigMapProjection.t), "Optional"] ↦{dq} (v.(v1.ConfigMapProjection.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapProjection_access_store_Optional l (v : (v1.ConfigMapProjection.t)) Optional' :
+  AccessStrict
+    (l.[(v1.ConfigMapProjection.t), "Optional"] ↦ (v.(v1.ConfigMapProjection.Optional')))
+    (l.[(v1.ConfigMapProjection.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapProjection.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ConfigMapProjection.
@@ -3640,13 +6603,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ServiceAccountTokenProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ServiceAccountTokenProjection.t). Admitted.
+#[global]Program Instance ServiceAccountTokenProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ServiceAccountTokenProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Audience" ∷ l.[(v1.ServiceAccountTokenProjection.t), "Audience"] ↦{dq} v.(v1.ServiceAccountTokenProjection.Audience') ∗
+      "ExpirationSeconds" ∷ l.[(v1.ServiceAccountTokenProjection.t), "ExpirationSeconds"] ↦{dq} v.(v1.ServiceAccountTokenProjection.ExpirationSeconds') ∗
+      "Path" ∷ l.[(v1.ServiceAccountTokenProjection.t), "Path"] ↦{dq} v.(v1.ServiceAccountTokenProjection.Path') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ServiceAccountTokenProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.ServiceAccountTokenProjection.t) (v1.ServiceAccountTokenProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ServiceAccountTokenProjection_access_load_Audience l (v : (v1.ServiceAccountTokenProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "Audience"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.Audience')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "Audience"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.Audience')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccountTokenProjection_access_store_Audience l (v : (v1.ServiceAccountTokenProjection.t)) Audience' :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "Audience"] ↦ (v.(v1.ServiceAccountTokenProjection.Audience')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "Audience"] ↦ Audience')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccountTokenProjection.Audience') := Audience'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccountTokenProjection_access_load_ExpirationSeconds l (v : (v1.ServiceAccountTokenProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "ExpirationSeconds"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.ExpirationSeconds')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "ExpirationSeconds"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.ExpirationSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccountTokenProjection_access_store_ExpirationSeconds l (v : (v1.ServiceAccountTokenProjection.t)) ExpirationSeconds' :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "ExpirationSeconds"] ↦ (v.(v1.ServiceAccountTokenProjection.ExpirationSeconds')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "ExpirationSeconds"] ↦ ExpirationSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccountTokenProjection.ExpirationSeconds') := ExpirationSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ServiceAccountTokenProjection_access_load_Path l (v : (v1.ServiceAccountTokenProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "Path"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.Path')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "Path"] ↦{dq} (v.(v1.ServiceAccountTokenProjection.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ServiceAccountTokenProjection_access_store_Path l (v : (v1.ServiceAccountTokenProjection.t)) Path' :
+  AccessStrict
+    (l.[(v1.ServiceAccountTokenProjection.t), "Path"] ↦ (v.(v1.ServiceAccountTokenProjection.Path')))
+    (l.[(v1.ServiceAccountTokenProjection.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.ServiceAccountTokenProjection.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ServiceAccountTokenProjection.
@@ -3660,13 +6672,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ClusterTrustBundleProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ClusterTrustBundleProjection.t). Admitted.
+#[global]Program Instance ClusterTrustBundleProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ClusterTrustBundleProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.ClusterTrustBundleProjection.t), "Name"] ↦{dq} v.(v1.ClusterTrustBundleProjection.Name') ∗
+      "SignerName" ∷ l.[(v1.ClusterTrustBundleProjection.t), "SignerName"] ↦{dq} v.(v1.ClusterTrustBundleProjection.SignerName') ∗
+      "LabelSelector" ∷ l.[(v1.ClusterTrustBundleProjection.t), "LabelSelector"] ↦{dq} v.(v1.ClusterTrustBundleProjection.LabelSelector') ∗
+      "Optional" ∷ l.[(v1.ClusterTrustBundleProjection.t), "Optional"] ↦{dq} v.(v1.ClusterTrustBundleProjection.Optional') ∗
+      "Path" ∷ l.[(v1.ClusterTrustBundleProjection.t), "Path"] ↦{dq} v.(v1.ClusterTrustBundleProjection.Path') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ClusterTrustBundleProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.ClusterTrustBundleProjection.t) (v1.ClusterTrustBundleProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ClusterTrustBundleProjection_access_load_Name l (v : (v1.ClusterTrustBundleProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Name"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Name')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Name"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ClusterTrustBundleProjection_access_store_Name l (v : (v1.ClusterTrustBundleProjection.t)) Name' :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Name"] ↦ (v.(v1.ClusterTrustBundleProjection.Name')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ClusterTrustBundleProjection.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ClusterTrustBundleProjection_access_load_SignerName l (v : (v1.ClusterTrustBundleProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "SignerName"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.SignerName')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "SignerName"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.SignerName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ClusterTrustBundleProjection_access_store_SignerName l (v : (v1.ClusterTrustBundleProjection.t)) SignerName' :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "SignerName"] ↦ (v.(v1.ClusterTrustBundleProjection.SignerName')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "SignerName"] ↦ SignerName')
+    (l ↦ v) (l ↦ (v <|(v1.ClusterTrustBundleProjection.SignerName') := SignerName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ClusterTrustBundleProjection_access_load_LabelSelector l (v : (v1.ClusterTrustBundleProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "LabelSelector"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.LabelSelector')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "LabelSelector"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.LabelSelector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ClusterTrustBundleProjection_access_store_LabelSelector l (v : (v1.ClusterTrustBundleProjection.t)) LabelSelector' :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "LabelSelector"] ↦ (v.(v1.ClusterTrustBundleProjection.LabelSelector')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "LabelSelector"] ↦ LabelSelector')
+    (l ↦ v) (l ↦ (v <|(v1.ClusterTrustBundleProjection.LabelSelector') := LabelSelector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ClusterTrustBundleProjection_access_load_Optional l (v : (v1.ClusterTrustBundleProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Optional"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Optional')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Optional"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ClusterTrustBundleProjection_access_store_Optional l (v : (v1.ClusterTrustBundleProjection.t)) Optional' :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Optional"] ↦ (v.(v1.ClusterTrustBundleProjection.Optional')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.ClusterTrustBundleProjection.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ClusterTrustBundleProjection_access_load_Path l (v : (v1.ClusterTrustBundleProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Path"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Path')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Path"] ↦{dq} (v.(v1.ClusterTrustBundleProjection.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ClusterTrustBundleProjection_access_store_Path l (v : (v1.ClusterTrustBundleProjection.t)) Path' :
+  AccessStrict
+    (l.[(v1.ClusterTrustBundleProjection.t), "Path"] ↦ (v.(v1.ClusterTrustBundleProjection.Path')))
+    (l.[(v1.ClusterTrustBundleProjection.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.ClusterTrustBundleProjection.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ClusterTrustBundleProjection.
@@ -3680,13 +6769,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodCertificateProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodCertificateProjection.t). Admitted.
+#[global]Program Instance PodCertificateProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodCertificateProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SignerName" ∷ l.[(v1.PodCertificateProjection.t), "SignerName"] ↦{dq} v.(v1.PodCertificateProjection.SignerName') ∗
+      "KeyType" ∷ l.[(v1.PodCertificateProjection.t), "KeyType"] ↦{dq} v.(v1.PodCertificateProjection.KeyType') ∗
+      "MaxExpirationSeconds" ∷ l.[(v1.PodCertificateProjection.t), "MaxExpirationSeconds"] ↦{dq} v.(v1.PodCertificateProjection.MaxExpirationSeconds') ∗
+      "CredentialBundlePath" ∷ l.[(v1.PodCertificateProjection.t), "CredentialBundlePath"] ↦{dq} v.(v1.PodCertificateProjection.CredentialBundlePath') ∗
+      "KeyPath" ∷ l.[(v1.PodCertificateProjection.t), "KeyPath"] ↦{dq} v.(v1.PodCertificateProjection.KeyPath') ∗
+      "CertificateChainPath" ∷ l.[(v1.PodCertificateProjection.t), "CertificateChainPath"] ↦{dq} v.(v1.PodCertificateProjection.CertificateChainPath') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodCertificateProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodCertificateProjection.t) (v1.PodCertificateProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_SignerName l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "SignerName"] ↦{dq} (v.(v1.PodCertificateProjection.SignerName')))
+    (l.[(v1.PodCertificateProjection.t), "SignerName"] ↦{dq} (v.(v1.PodCertificateProjection.SignerName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_SignerName l (v : (v1.PodCertificateProjection.t)) SignerName' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "SignerName"] ↦ (v.(v1.PodCertificateProjection.SignerName')))
+    (l.[(v1.PodCertificateProjection.t), "SignerName"] ↦ SignerName')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.SignerName') := SignerName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_KeyType l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "KeyType"] ↦{dq} (v.(v1.PodCertificateProjection.KeyType')))
+    (l.[(v1.PodCertificateProjection.t), "KeyType"] ↦{dq} (v.(v1.PodCertificateProjection.KeyType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_KeyType l (v : (v1.PodCertificateProjection.t)) KeyType' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "KeyType"] ↦ (v.(v1.PodCertificateProjection.KeyType')))
+    (l.[(v1.PodCertificateProjection.t), "KeyType"] ↦ KeyType')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.KeyType') := KeyType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_MaxExpirationSeconds l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "MaxExpirationSeconds"] ↦{dq} (v.(v1.PodCertificateProjection.MaxExpirationSeconds')))
+    (l.[(v1.PodCertificateProjection.t), "MaxExpirationSeconds"] ↦{dq} (v.(v1.PodCertificateProjection.MaxExpirationSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_MaxExpirationSeconds l (v : (v1.PodCertificateProjection.t)) MaxExpirationSeconds' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "MaxExpirationSeconds"] ↦ (v.(v1.PodCertificateProjection.MaxExpirationSeconds')))
+    (l.[(v1.PodCertificateProjection.t), "MaxExpirationSeconds"] ↦ MaxExpirationSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.MaxExpirationSeconds') := MaxExpirationSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_CredentialBundlePath l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "CredentialBundlePath"] ↦{dq} (v.(v1.PodCertificateProjection.CredentialBundlePath')))
+    (l.[(v1.PodCertificateProjection.t), "CredentialBundlePath"] ↦{dq} (v.(v1.PodCertificateProjection.CredentialBundlePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_CredentialBundlePath l (v : (v1.PodCertificateProjection.t)) CredentialBundlePath' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "CredentialBundlePath"] ↦ (v.(v1.PodCertificateProjection.CredentialBundlePath')))
+    (l.[(v1.PodCertificateProjection.t), "CredentialBundlePath"] ↦ CredentialBundlePath')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.CredentialBundlePath') := CredentialBundlePath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_KeyPath l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "KeyPath"] ↦{dq} (v.(v1.PodCertificateProjection.KeyPath')))
+    (l.[(v1.PodCertificateProjection.t), "KeyPath"] ↦{dq} (v.(v1.PodCertificateProjection.KeyPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_KeyPath l (v : (v1.PodCertificateProjection.t)) KeyPath' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "KeyPath"] ↦ (v.(v1.PodCertificateProjection.KeyPath')))
+    (l.[(v1.PodCertificateProjection.t), "KeyPath"] ↦ KeyPath')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.KeyPath') := KeyPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodCertificateProjection_access_load_CertificateChainPath l (v : (v1.PodCertificateProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "CertificateChainPath"] ↦{dq} (v.(v1.PodCertificateProjection.CertificateChainPath')))
+    (l.[(v1.PodCertificateProjection.t), "CertificateChainPath"] ↦{dq} (v.(v1.PodCertificateProjection.CertificateChainPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodCertificateProjection_access_store_CertificateChainPath l (v : (v1.PodCertificateProjection.t)) CertificateChainPath' :
+  AccessStrict
+    (l.[(v1.PodCertificateProjection.t), "CertificateChainPath"] ↦ (v.(v1.PodCertificateProjection.CertificateChainPath')))
+    (l.[(v1.PodCertificateProjection.t), "CertificateChainPath"] ↦ CertificateChainPath')
+    (l ↦ v) (l ↦ (v <|(v1.PodCertificateProjection.CertificateChainPath') := CertificateChainPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodCertificateProjection.
@@ -3700,13 +6880,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ProjectedVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ProjectedVolumeSource.t). Admitted.
+#[global]Program Instance ProjectedVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ProjectedVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Sources" ∷ l.[(v1.ProjectedVolumeSource.t), "Sources"] ↦{dq} v.(v1.ProjectedVolumeSource.Sources') ∗
+      "DefaultMode" ∷ l.[(v1.ProjectedVolumeSource.t), "DefaultMode"] ↦{dq} v.(v1.ProjectedVolumeSource.DefaultMode') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ProjectedVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ProjectedVolumeSource.t) (v1.ProjectedVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ProjectedVolumeSource_access_load_Sources l (v : (v1.ProjectedVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ProjectedVolumeSource.t), "Sources"] ↦{dq} (v.(v1.ProjectedVolumeSource.Sources')))
+    (l.[(v1.ProjectedVolumeSource.t), "Sources"] ↦{dq} (v.(v1.ProjectedVolumeSource.Sources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProjectedVolumeSource_access_store_Sources l (v : (v1.ProjectedVolumeSource.t)) Sources' :
+  AccessStrict
+    (l.[(v1.ProjectedVolumeSource.t), "Sources"] ↦ (v.(v1.ProjectedVolumeSource.Sources')))
+    (l.[(v1.ProjectedVolumeSource.t), "Sources"] ↦ Sources')
+    (l ↦ v) (l ↦ (v <|(v1.ProjectedVolumeSource.Sources') := Sources'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ProjectedVolumeSource_access_load_DefaultMode l (v : (v1.ProjectedVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ProjectedVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.ProjectedVolumeSource.DefaultMode')))
+    (l.[(v1.ProjectedVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.ProjectedVolumeSource.DefaultMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProjectedVolumeSource_access_store_DefaultMode l (v : (v1.ProjectedVolumeSource.t)) DefaultMode' :
+  AccessStrict
+    (l.[(v1.ProjectedVolumeSource.t), "DefaultMode"] ↦ (v.(v1.ProjectedVolumeSource.DefaultMode')))
+    (l.[(v1.ProjectedVolumeSource.t), "DefaultMode"] ↦ DefaultMode')
+    (l ↦ v) (l ↦ (v <|(v1.ProjectedVolumeSource.DefaultMode') := DefaultMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ProjectedVolumeSource.
@@ -3720,13 +6935,104 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VolumeProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeProjection.t). Admitted.
+#[global]Program Instance VolumeProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Secret" ∷ l.[(v1.VolumeProjection.t), "Secret"] ↦{dq} v.(v1.VolumeProjection.Secret') ∗
+      "DownwardAPI" ∷ l.[(v1.VolumeProjection.t), "DownwardAPI"] ↦{dq} v.(v1.VolumeProjection.DownwardAPI') ∗
+      "ConfigMap" ∷ l.[(v1.VolumeProjection.t), "ConfigMap"] ↦{dq} v.(v1.VolumeProjection.ConfigMap') ∗
+      "ServiceAccountToken" ∷ l.[(v1.VolumeProjection.t), "ServiceAccountToken"] ↦{dq} v.(v1.VolumeProjection.ServiceAccountToken') ∗
+      "ClusterTrustBundle" ∷ l.[(v1.VolumeProjection.t), "ClusterTrustBundle"] ↦{dq} v.(v1.VolumeProjection.ClusterTrustBundle') ∗
+      "PodCertificate" ∷ l.[(v1.VolumeProjection.t), "PodCertificate"] ↦{dq} v.(v1.VolumeProjection.PodCertificate') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VolumeProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.VolumeProjection.t) (v1.VolumeProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VolumeProjection_access_load_Secret l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "Secret"] ↦{dq} (v.(v1.VolumeProjection.Secret')))
+    (l.[(v1.VolumeProjection.t), "Secret"] ↦{dq} (v.(v1.VolumeProjection.Secret')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_Secret l (v : (v1.VolumeProjection.t)) Secret' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "Secret"] ↦ (v.(v1.VolumeProjection.Secret')))
+    (l.[(v1.VolumeProjection.t), "Secret"] ↦ Secret')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.Secret') := Secret'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeProjection_access_load_DownwardAPI l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "DownwardAPI"] ↦{dq} (v.(v1.VolumeProjection.DownwardAPI')))
+    (l.[(v1.VolumeProjection.t), "DownwardAPI"] ↦{dq} (v.(v1.VolumeProjection.DownwardAPI')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_DownwardAPI l (v : (v1.VolumeProjection.t)) DownwardAPI' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "DownwardAPI"] ↦ (v.(v1.VolumeProjection.DownwardAPI')))
+    (l.[(v1.VolumeProjection.t), "DownwardAPI"] ↦ DownwardAPI')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.DownwardAPI') := DownwardAPI'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeProjection_access_load_ConfigMap l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ConfigMap"] ↦{dq} (v.(v1.VolumeProjection.ConfigMap')))
+    (l.[(v1.VolumeProjection.t), "ConfigMap"] ↦{dq} (v.(v1.VolumeProjection.ConfigMap')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_ConfigMap l (v : (v1.VolumeProjection.t)) ConfigMap' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ConfigMap"] ↦ (v.(v1.VolumeProjection.ConfigMap')))
+    (l.[(v1.VolumeProjection.t), "ConfigMap"] ↦ ConfigMap')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.ConfigMap') := ConfigMap'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeProjection_access_load_ServiceAccountToken l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ServiceAccountToken"] ↦{dq} (v.(v1.VolumeProjection.ServiceAccountToken')))
+    (l.[(v1.VolumeProjection.t), "ServiceAccountToken"] ↦{dq} (v.(v1.VolumeProjection.ServiceAccountToken')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_ServiceAccountToken l (v : (v1.VolumeProjection.t)) ServiceAccountToken' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ServiceAccountToken"] ↦ (v.(v1.VolumeProjection.ServiceAccountToken')))
+    (l.[(v1.VolumeProjection.t), "ServiceAccountToken"] ↦ ServiceAccountToken')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.ServiceAccountToken') := ServiceAccountToken'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeProjection_access_load_ClusterTrustBundle l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ClusterTrustBundle"] ↦{dq} (v.(v1.VolumeProjection.ClusterTrustBundle')))
+    (l.[(v1.VolumeProjection.t), "ClusterTrustBundle"] ↦{dq} (v.(v1.VolumeProjection.ClusterTrustBundle')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_ClusterTrustBundle l (v : (v1.VolumeProjection.t)) ClusterTrustBundle' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "ClusterTrustBundle"] ↦ (v.(v1.VolumeProjection.ClusterTrustBundle')))
+    (l.[(v1.VolumeProjection.t), "ClusterTrustBundle"] ↦ ClusterTrustBundle')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.ClusterTrustBundle') := ClusterTrustBundle'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeProjection_access_load_PodCertificate l (v : (v1.VolumeProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "PodCertificate"] ↦{dq} (v.(v1.VolumeProjection.PodCertificate')))
+    (l.[(v1.VolumeProjection.t), "PodCertificate"] ↦{dq} (v.(v1.VolumeProjection.PodCertificate')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeProjection_access_store_PodCertificate l (v : (v1.VolumeProjection.t)) PodCertificate' :
+  AccessStrict
+    (l.[(v1.VolumeProjection.t), "PodCertificate"] ↦ (v.(v1.VolumeProjection.PodCertificate')))
+    (l.[(v1.VolumeProjection.t), "PodCertificate"] ↦ PodCertificate')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeProjection.PodCertificate') := PodCertificate'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End VolumeProjection.
@@ -3740,13 +7046,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance KeyToPath_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.KeyToPath.t). Admitted.
+#[global]Program Instance KeyToPath_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.KeyToPath.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Key" ∷ l.[(v1.KeyToPath.t), "Key"] ↦{dq} v.(v1.KeyToPath.Key') ∗
+      "Path" ∷ l.[(v1.KeyToPath.t), "Path"] ↦{dq} v.(v1.KeyToPath.Path') ∗
+      "Mode" ∷ l.[(v1.KeyToPath.t), "Mode"] ↦{dq} v.(v1.KeyToPath.Mode') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance KeyToPath_into_val_typed
    :
   IntoValTypedUnderlying (v1.KeyToPath.t) (v1.KeyToPathⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance KeyToPath_access_load_Key l (v : (v1.KeyToPath.t)) dq :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Key"] ↦{dq} (v.(v1.KeyToPath.Key')))
+    (l.[(v1.KeyToPath.t), "Key"] ↦{dq} (v.(v1.KeyToPath.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance KeyToPath_access_store_Key l (v : (v1.KeyToPath.t)) Key' :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Key"] ↦ (v.(v1.KeyToPath.Key')))
+    (l.[(v1.KeyToPath.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.KeyToPath.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance KeyToPath_access_load_Path l (v : (v1.KeyToPath.t)) dq :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Path"] ↦{dq} (v.(v1.KeyToPath.Path')))
+    (l.[(v1.KeyToPath.t), "Path"] ↦{dq} (v.(v1.KeyToPath.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance KeyToPath_access_store_Path l (v : (v1.KeyToPath.t)) Path' :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Path"] ↦ (v.(v1.KeyToPath.Path')))
+    (l.[(v1.KeyToPath.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.KeyToPath.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance KeyToPath_access_load_Mode l (v : (v1.KeyToPath.t)) dq :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Mode"] ↦{dq} (v.(v1.KeyToPath.Mode')))
+    (l.[(v1.KeyToPath.t), "Mode"] ↦{dq} (v.(v1.KeyToPath.Mode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance KeyToPath_access_store_Mode l (v : (v1.KeyToPath.t)) Mode' :
+  AccessStrict
+    (l.[(v1.KeyToPath.t), "Mode"] ↦ (v.(v1.KeyToPath.Mode')))
+    (l.[(v1.KeyToPath.t), "Mode"] ↦ Mode')
+    (l ↦ v) (l ↦ (v <|(v1.KeyToPath.Mode') := Mode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End KeyToPath.
@@ -3800,13 +7155,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance CSIVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.CSIVolumeSource.t). Admitted.
+#[global]Program Instance CSIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.CSIVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Driver" ∷ l.[(v1.CSIVolumeSource.t), "Driver"] ↦{dq} v.(v1.CSIVolumeSource.Driver') ∗
+      "ReadOnly" ∷ l.[(v1.CSIVolumeSource.t), "ReadOnly"] ↦{dq} v.(v1.CSIVolumeSource.ReadOnly') ∗
+      "FSType" ∷ l.[(v1.CSIVolumeSource.t), "FSType"] ↦{dq} v.(v1.CSIVolumeSource.FSType') ∗
+      "VolumeAttributes" ∷ l.[(v1.CSIVolumeSource.t), "VolumeAttributes"] ↦{dq} v.(v1.CSIVolumeSource.VolumeAttributes') ∗
+      "NodePublishSecretRef" ∷ l.[(v1.CSIVolumeSource.t), "NodePublishSecretRef"] ↦{dq} v.(v1.CSIVolumeSource.NodePublishSecretRef') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance CSIVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.CSIVolumeSource.t) (v1.CSIVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance CSIVolumeSource_access_load_Driver l (v : (v1.CSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "Driver"] ↦{dq} (v.(v1.CSIVolumeSource.Driver')))
+    (l.[(v1.CSIVolumeSource.t), "Driver"] ↦{dq} (v.(v1.CSIVolumeSource.Driver')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CSIVolumeSource_access_store_Driver l (v : (v1.CSIVolumeSource.t)) Driver' :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "Driver"] ↦ (v.(v1.CSIVolumeSource.Driver')))
+    (l.[(v1.CSIVolumeSource.t), "Driver"] ↦ Driver')
+    (l ↦ v) (l ↦ (v <|(v1.CSIVolumeSource.Driver') := Driver'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CSIVolumeSource_access_load_ReadOnly l (v : (v1.CSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CSIVolumeSource.ReadOnly')))
+    (l.[(v1.CSIVolumeSource.t), "ReadOnly"] ↦{dq} (v.(v1.CSIVolumeSource.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CSIVolumeSource_access_store_ReadOnly l (v : (v1.CSIVolumeSource.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "ReadOnly"] ↦ (v.(v1.CSIVolumeSource.ReadOnly')))
+    (l.[(v1.CSIVolumeSource.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.CSIVolumeSource.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CSIVolumeSource_access_load_FSType l (v : (v1.CSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "FSType"] ↦{dq} (v.(v1.CSIVolumeSource.FSType')))
+    (l.[(v1.CSIVolumeSource.t), "FSType"] ↦{dq} (v.(v1.CSIVolumeSource.FSType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CSIVolumeSource_access_store_FSType l (v : (v1.CSIVolumeSource.t)) FSType' :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "FSType"] ↦ (v.(v1.CSIVolumeSource.FSType')))
+    (l.[(v1.CSIVolumeSource.t), "FSType"] ↦ FSType')
+    (l ↦ v) (l ↦ (v <|(v1.CSIVolumeSource.FSType') := FSType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CSIVolumeSource_access_load_VolumeAttributes l (v : (v1.CSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "VolumeAttributes"] ↦{dq} (v.(v1.CSIVolumeSource.VolumeAttributes')))
+    (l.[(v1.CSIVolumeSource.t), "VolumeAttributes"] ↦{dq} (v.(v1.CSIVolumeSource.VolumeAttributes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CSIVolumeSource_access_store_VolumeAttributes l (v : (v1.CSIVolumeSource.t)) VolumeAttributes' :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "VolumeAttributes"] ↦ (v.(v1.CSIVolumeSource.VolumeAttributes')))
+    (l.[(v1.CSIVolumeSource.t), "VolumeAttributes"] ↦ VolumeAttributes')
+    (l ↦ v) (l ↦ (v <|(v1.CSIVolumeSource.VolumeAttributes') := VolumeAttributes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance CSIVolumeSource_access_load_NodePublishSecretRef l (v : (v1.CSIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "NodePublishSecretRef"] ↦{dq} (v.(v1.CSIVolumeSource.NodePublishSecretRef')))
+    (l.[(v1.CSIVolumeSource.t), "NodePublishSecretRef"] ↦{dq} (v.(v1.CSIVolumeSource.NodePublishSecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance CSIVolumeSource_access_store_NodePublishSecretRef l (v : (v1.CSIVolumeSource.t)) NodePublishSecretRef' :
+  AccessStrict
+    (l.[(v1.CSIVolumeSource.t), "NodePublishSecretRef"] ↦ (v.(v1.CSIVolumeSource.NodePublishSecretRef')))
+    (l.[(v1.CSIVolumeSource.t), "NodePublishSecretRef"] ↦ NodePublishSecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.CSIVolumeSource.NodePublishSecretRef') := NodePublishSecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End CSIVolumeSource.
@@ -3820,13 +7252,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EphemeralVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EphemeralVolumeSource.t). Admitted.
+#[global]Program Instance EphemeralVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeClaimTemplate" ∷ l.[(v1.EphemeralVolumeSource.t), "VolumeClaimTemplate"] ↦{dq} v.(v1.EphemeralVolumeSource.VolumeClaimTemplate') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EphemeralVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.EphemeralVolumeSource.t) (v1.EphemeralVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EphemeralVolumeSource_access_load_VolumeClaimTemplate l (v : (v1.EphemeralVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralVolumeSource.t), "VolumeClaimTemplate"] ↦{dq} (v.(v1.EphemeralVolumeSource.VolumeClaimTemplate')))
+    (l.[(v1.EphemeralVolumeSource.t), "VolumeClaimTemplate"] ↦{dq} (v.(v1.EphemeralVolumeSource.VolumeClaimTemplate')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EphemeralVolumeSource_access_store_VolumeClaimTemplate l (v : (v1.EphemeralVolumeSource.t)) VolumeClaimTemplate' :
+  AccessStrict
+    (l.[(v1.EphemeralVolumeSource.t), "VolumeClaimTemplate"] ↦ (v.(v1.EphemeralVolumeSource.VolumeClaimTemplate')))
+    (l.[(v1.EphemeralVolumeSource.t), "VolumeClaimTemplate"] ↦ VolumeClaimTemplate')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralVolumeSource.VolumeClaimTemplate') := VolumeClaimTemplate'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EphemeralVolumeSource.
@@ -3840,13 +7293,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PersistentVolumeClaimTemplate_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimTemplate.t). Admitted.
+#[global]Program Instance PersistentVolumeClaimTemplate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimTemplate.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ObjectMeta" ∷ l.[(v1.PersistentVolumeClaimTemplate.t), "ObjectMeta"] ↦{dq} v.(v1.PersistentVolumeClaimTemplate.ObjectMeta') ∗
+      "Spec" ∷ l.[(v1.PersistentVolumeClaimTemplate.t), "Spec"] ↦{dq} v.(v1.PersistentVolumeClaimTemplate.Spec') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PersistentVolumeClaimTemplate_into_val_typed
    :
   IntoValTypedUnderlying (v1.PersistentVolumeClaimTemplate.t) (v1.PersistentVolumeClaimTemplateⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PersistentVolumeClaimTemplate_access_load_ObjectMeta l (v : (v1.PersistentVolumeClaimTemplate.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "ObjectMeta"] ↦{dq} (v.(v1.PersistentVolumeClaimTemplate.ObjectMeta')))
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "ObjectMeta"] ↦{dq} (v.(v1.PersistentVolumeClaimTemplate.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimTemplate_access_store_ObjectMeta l (v : (v1.PersistentVolumeClaimTemplate.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "ObjectMeta"] ↦ (v.(v1.PersistentVolumeClaimTemplate.ObjectMeta')))
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimTemplate.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PersistentVolumeClaimTemplate_access_load_Spec l (v : (v1.PersistentVolumeClaimTemplate.t)) dq :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "Spec"] ↦{dq} (v.(v1.PersistentVolumeClaimTemplate.Spec')))
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "Spec"] ↦{dq} (v.(v1.PersistentVolumeClaimTemplate.Spec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PersistentVolumeClaimTemplate_access_store_Spec l (v : (v1.PersistentVolumeClaimTemplate.t)) Spec' :
+  AccessStrict
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "Spec"] ↦ (v.(v1.PersistentVolumeClaimTemplate.Spec')))
+    (l.[(v1.PersistentVolumeClaimTemplate.t), "Spec"] ↦ Spec')
+    (l ↦ v) (l ↦ (v <|(v1.PersistentVolumeClaimTemplate.Spec') := Spec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PersistentVolumeClaimTemplate.
@@ -3860,13 +7348,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerPort_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerPort.t). Admitted.
+#[global]Program Instance ContainerPort_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerPort.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.ContainerPort.t), "Name"] ↦{dq} v.(v1.ContainerPort.Name') ∗
+      "HostPort" ∷ l.[(v1.ContainerPort.t), "HostPort"] ↦{dq} v.(v1.ContainerPort.HostPort') ∗
+      "ContainerPort" ∷ l.[(v1.ContainerPort.t), "ContainerPort"] ↦{dq} v.(v1.ContainerPort.ContainerPort') ∗
+      "Protocol" ∷ l.[(v1.ContainerPort.t), "Protocol"] ↦{dq} v.(v1.ContainerPort.Protocol') ∗
+      "HostIP" ∷ l.[(v1.ContainerPort.t), "HostIP"] ↦{dq} v.(v1.ContainerPort.HostIP') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerPort_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerPort.t) (v1.ContainerPortⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerPort_access_load_Name l (v : (v1.ContainerPort.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "Name"] ↦{dq} (v.(v1.ContainerPort.Name')))
+    (l.[(v1.ContainerPort.t), "Name"] ↦{dq} (v.(v1.ContainerPort.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerPort_access_store_Name l (v : (v1.ContainerPort.t)) Name' :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "Name"] ↦ (v.(v1.ContainerPort.Name')))
+    (l.[(v1.ContainerPort.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerPort.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerPort_access_load_HostPort l (v : (v1.ContainerPort.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "HostPort"] ↦{dq} (v.(v1.ContainerPort.HostPort')))
+    (l.[(v1.ContainerPort.t), "HostPort"] ↦{dq} (v.(v1.ContainerPort.HostPort')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerPort_access_store_HostPort l (v : (v1.ContainerPort.t)) HostPort' :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "HostPort"] ↦ (v.(v1.ContainerPort.HostPort')))
+    (l.[(v1.ContainerPort.t), "HostPort"] ↦ HostPort')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerPort.HostPort') := HostPort'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerPort_access_load_ContainerPort l (v : (v1.ContainerPort.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "ContainerPort"] ↦{dq} (v.(v1.ContainerPort.ContainerPort')))
+    (l.[(v1.ContainerPort.t), "ContainerPort"] ↦{dq} (v.(v1.ContainerPort.ContainerPort')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerPort_access_store_ContainerPort l (v : (v1.ContainerPort.t)) ContainerPort' :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "ContainerPort"] ↦ (v.(v1.ContainerPort.ContainerPort')))
+    (l.[(v1.ContainerPort.t), "ContainerPort"] ↦ ContainerPort')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerPort.ContainerPort') := ContainerPort'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerPort_access_load_Protocol l (v : (v1.ContainerPort.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "Protocol"] ↦{dq} (v.(v1.ContainerPort.Protocol')))
+    (l.[(v1.ContainerPort.t), "Protocol"] ↦{dq} (v.(v1.ContainerPort.Protocol')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerPort_access_store_Protocol l (v : (v1.ContainerPort.t)) Protocol' :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "Protocol"] ↦ (v.(v1.ContainerPort.Protocol')))
+    (l.[(v1.ContainerPort.t), "Protocol"] ↦ Protocol')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerPort.Protocol') := Protocol'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerPort_access_load_HostIP l (v : (v1.ContainerPort.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "HostIP"] ↦{dq} (v.(v1.ContainerPort.HostIP')))
+    (l.[(v1.ContainerPort.t), "HostIP"] ↦{dq} (v.(v1.ContainerPort.HostIP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerPort_access_store_HostIP l (v : (v1.ContainerPort.t)) HostIP' :
+  AccessStrict
+    (l.[(v1.ContainerPort.t), "HostIP"] ↦ (v.(v1.ContainerPort.HostIP')))
+    (l.[(v1.ContainerPort.t), "HostIP"] ↦ HostIP')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerPort.HostIP') := HostIP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerPort.
@@ -3880,56 +7445,121 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VolumeMount_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeMount.t). Admitted.
+#[global]Program Instance VolumeMount_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeMount.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.VolumeMount.t), "Name"] ↦{dq} v.(v1.VolumeMount.Name') ∗
+      "ReadOnly" ∷ l.[(v1.VolumeMount.t), "ReadOnly"] ↦{dq} v.(v1.VolumeMount.ReadOnly') ∗
+      "RecursiveReadOnly" ∷ l.[(v1.VolumeMount.t), "RecursiveReadOnly"] ↦{dq} v.(v1.VolumeMount.RecursiveReadOnly') ∗
+      "MountPath" ∷ l.[(v1.VolumeMount.t), "MountPath"] ↦{dq} v.(v1.VolumeMount.MountPath') ∗
+      "SubPath" ∷ l.[(v1.VolumeMount.t), "SubPath"] ↦{dq} v.(v1.VolumeMount.SubPath') ∗
+      "MountPropagation" ∷ l.[(v1.VolumeMount.t), "MountPropagation"] ↦{dq} v.(v1.VolumeMount.MountPropagation') ∗
+      "SubPathExpr" ∷ l.[(v1.VolumeMount.t), "SubPathExpr"] ↦{dq} v.(v1.VolumeMount.SubPathExpr') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VolumeMount_into_val_typed
    :
   IntoValTypedUnderlying (v1.VolumeMount.t) (v1.VolumeMountⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VolumeMount_access_load_Name l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "Name"] ↦{dq} (v.(v1.VolumeMount.Name')))
+    (l.[(v1.VolumeMount.t), "Name"] ↦{dq} (v.(v1.VolumeMount.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_Name l (v : (v1.VolumeMount.t)) Name' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "Name"] ↦ (v.(v1.VolumeMount.Name')))
+    (l.[(v1.VolumeMount.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_ReadOnly l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "ReadOnly"] ↦{dq} (v.(v1.VolumeMount.ReadOnly')))
+    (l.[(v1.VolumeMount.t), "ReadOnly"] ↦{dq} (v.(v1.VolumeMount.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_ReadOnly l (v : (v1.VolumeMount.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "ReadOnly"] ↦ (v.(v1.VolumeMount.ReadOnly')))
+    (l.[(v1.VolumeMount.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_RecursiveReadOnly l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "RecursiveReadOnly"] ↦{dq} (v.(v1.VolumeMount.RecursiveReadOnly')))
+    (l.[(v1.VolumeMount.t), "RecursiveReadOnly"] ↦{dq} (v.(v1.VolumeMount.RecursiveReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_RecursiveReadOnly l (v : (v1.VolumeMount.t)) RecursiveReadOnly' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "RecursiveReadOnly"] ↦ (v.(v1.VolumeMount.RecursiveReadOnly')))
+    (l.[(v1.VolumeMount.t), "RecursiveReadOnly"] ↦ RecursiveReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.RecursiveReadOnly') := RecursiveReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_MountPath l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "MountPath"] ↦{dq} (v.(v1.VolumeMount.MountPath')))
+    (l.[(v1.VolumeMount.t), "MountPath"] ↦{dq} (v.(v1.VolumeMount.MountPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_MountPath l (v : (v1.VolumeMount.t)) MountPath' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "MountPath"] ↦ (v.(v1.VolumeMount.MountPath')))
+    (l.[(v1.VolumeMount.t), "MountPath"] ↦ MountPath')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.MountPath') := MountPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_SubPath l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "SubPath"] ↦{dq} (v.(v1.VolumeMount.SubPath')))
+    (l.[(v1.VolumeMount.t), "SubPath"] ↦{dq} (v.(v1.VolumeMount.SubPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_SubPath l (v : (v1.VolumeMount.t)) SubPath' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "SubPath"] ↦ (v.(v1.VolumeMount.SubPath')))
+    (l.[(v1.VolumeMount.t), "SubPath"] ↦ SubPath')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.SubPath') := SubPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_MountPropagation l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "MountPropagation"] ↦{dq} (v.(v1.VolumeMount.MountPropagation')))
+    (l.[(v1.VolumeMount.t), "MountPropagation"] ↦{dq} (v.(v1.VolumeMount.MountPropagation')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_MountPropagation l (v : (v1.VolumeMount.t)) MountPropagation' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "MountPropagation"] ↦ (v.(v1.VolumeMount.MountPropagation')))
+    (l.[(v1.VolumeMount.t), "MountPropagation"] ↦ MountPropagation')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.MountPropagation') := MountPropagation'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMount_access_load_SubPathExpr l (v : (v1.VolumeMount.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "SubPathExpr"] ↦{dq} (v.(v1.VolumeMount.SubPathExpr')))
+    (l.[(v1.VolumeMount.t), "SubPathExpr"] ↦{dq} (v.(v1.VolumeMount.SubPathExpr')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMount_access_store_SubPathExpr l (v : (v1.VolumeMount.t)) SubPathExpr' :
+  AccessStrict
+    (l.[(v1.VolumeMount.t), "SubPathExpr"] ↦ (v.(v1.VolumeMount.SubPathExpr')))
+    (l.[(v1.VolumeMount.t), "SubPathExpr"] ↦ SubPathExpr')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMount.SubPathExpr') := SubPathExpr'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End VolumeMount.
-
-Module MountPropagationMode.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance MountPropagationMode_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.MountPropagationMode.t). Admitted.
-
-#[global] Instance MountPropagationMode_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.MountPropagationMode.t) (v1.MountPropagationModeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End MountPropagationMode.
-
-Module RecursiveReadOnlyMode.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance RecursiveReadOnlyMode_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.RecursiveReadOnlyMode.t). Admitted.
-
-#[global] Instance RecursiveReadOnlyMode_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.RecursiveReadOnlyMode.t) (v1.RecursiveReadOnlyModeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End RecursiveReadOnlyMode.
 
 Module VolumeDevice.
 Section def.
@@ -3940,13 +7570,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VolumeDevice_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeDevice.t). Admitted.
+#[global]Program Instance VolumeDevice_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeDevice.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.VolumeDevice.t), "Name"] ↦{dq} v.(v1.VolumeDevice.Name') ∗
+      "DevicePath" ∷ l.[(v1.VolumeDevice.t), "DevicePath"] ↦{dq} v.(v1.VolumeDevice.DevicePath') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VolumeDevice_into_val_typed
    :
   IntoValTypedUnderlying (v1.VolumeDevice.t) (v1.VolumeDeviceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VolumeDevice_access_load_Name l (v : (v1.VolumeDevice.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeDevice.t), "Name"] ↦{dq} (v.(v1.VolumeDevice.Name')))
+    (l.[(v1.VolumeDevice.t), "Name"] ↦{dq} (v.(v1.VolumeDevice.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeDevice_access_store_Name l (v : (v1.VolumeDevice.t)) Name' :
+  AccessStrict
+    (l.[(v1.VolumeDevice.t), "Name"] ↦ (v.(v1.VolumeDevice.Name')))
+    (l.[(v1.VolumeDevice.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeDevice.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeDevice_access_load_DevicePath l (v : (v1.VolumeDevice.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeDevice.t), "DevicePath"] ↦{dq} (v.(v1.VolumeDevice.DevicePath')))
+    (l.[(v1.VolumeDevice.t), "DevicePath"] ↦{dq} (v.(v1.VolumeDevice.DevicePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeDevice_access_store_DevicePath l (v : (v1.VolumeDevice.t)) DevicePath' :
+  AccessStrict
+    (l.[(v1.VolumeDevice.t), "DevicePath"] ↦ (v.(v1.VolumeDevice.DevicePath')))
+    (l.[(v1.VolumeDevice.t), "DevicePath"] ↦ DevicePath')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeDevice.DevicePath') := DevicePath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End VolumeDevice.
@@ -3960,13 +7625,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EnvVar_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EnvVar.t). Admitted.
+#[global]Program Instance EnvVar_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvVar.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.EnvVar.t), "Name"] ↦{dq} v.(v1.EnvVar.Name') ∗
+      "Value" ∷ l.[(v1.EnvVar.t), "Value"] ↦{dq} v.(v1.EnvVar.Value') ∗
+      "ValueFrom" ∷ l.[(v1.EnvVar.t), "ValueFrom"] ↦{dq} v.(v1.EnvVar.ValueFrom') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EnvVar_into_val_typed
    :
   IntoValTypedUnderlying (v1.EnvVar.t) (v1.EnvVarⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EnvVar_access_load_Name l (v : (v1.EnvVar.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "Name"] ↦{dq} (v.(v1.EnvVar.Name')))
+    (l.[(v1.EnvVar.t), "Name"] ↦{dq} (v.(v1.EnvVar.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVar_access_store_Name l (v : (v1.EnvVar.t)) Name' :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "Name"] ↦ (v.(v1.EnvVar.Name')))
+    (l.[(v1.EnvVar.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVar.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVar_access_load_Value l (v : (v1.EnvVar.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "Value"] ↦{dq} (v.(v1.EnvVar.Value')))
+    (l.[(v1.EnvVar.t), "Value"] ↦{dq} (v.(v1.EnvVar.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVar_access_store_Value l (v : (v1.EnvVar.t)) Value' :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "Value"] ↦ (v.(v1.EnvVar.Value')))
+    (l.[(v1.EnvVar.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVar.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVar_access_load_ValueFrom l (v : (v1.EnvVar.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "ValueFrom"] ↦{dq} (v.(v1.EnvVar.ValueFrom')))
+    (l.[(v1.EnvVar.t), "ValueFrom"] ↦{dq} (v.(v1.EnvVar.ValueFrom')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVar_access_store_ValueFrom l (v : (v1.EnvVar.t)) ValueFrom' :
+  AccessStrict
+    (l.[(v1.EnvVar.t), "ValueFrom"] ↦ (v.(v1.EnvVar.ValueFrom')))
+    (l.[(v1.EnvVar.t), "ValueFrom"] ↦ ValueFrom')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVar.ValueFrom') := ValueFrom'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EnvVar.
@@ -3980,13 +7694,90 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EnvVarSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EnvVarSource.t). Admitted.
+#[global]Program Instance EnvVarSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvVarSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "FieldRef" ∷ l.[(v1.EnvVarSource.t), "FieldRef"] ↦{dq} v.(v1.EnvVarSource.FieldRef') ∗
+      "ResourceFieldRef" ∷ l.[(v1.EnvVarSource.t), "ResourceFieldRef"] ↦{dq} v.(v1.EnvVarSource.ResourceFieldRef') ∗
+      "ConfigMapKeyRef" ∷ l.[(v1.EnvVarSource.t), "ConfigMapKeyRef"] ↦{dq} v.(v1.EnvVarSource.ConfigMapKeyRef') ∗
+      "SecretKeyRef" ∷ l.[(v1.EnvVarSource.t), "SecretKeyRef"] ↦{dq} v.(v1.EnvVarSource.SecretKeyRef') ∗
+      "FileKeyRef" ∷ l.[(v1.EnvVarSource.t), "FileKeyRef"] ↦{dq} v.(v1.EnvVarSource.FileKeyRef') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EnvVarSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.EnvVarSource.t) (v1.EnvVarSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EnvVarSource_access_load_FieldRef l (v : (v1.EnvVarSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "FieldRef"] ↦{dq} (v.(v1.EnvVarSource.FieldRef')))
+    (l.[(v1.EnvVarSource.t), "FieldRef"] ↦{dq} (v.(v1.EnvVarSource.FieldRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVarSource_access_store_FieldRef l (v : (v1.EnvVarSource.t)) FieldRef' :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "FieldRef"] ↦ (v.(v1.EnvVarSource.FieldRef')))
+    (l.[(v1.EnvVarSource.t), "FieldRef"] ↦ FieldRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVarSource.FieldRef') := FieldRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVarSource_access_load_ResourceFieldRef l (v : (v1.EnvVarSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "ResourceFieldRef"] ↦{dq} (v.(v1.EnvVarSource.ResourceFieldRef')))
+    (l.[(v1.EnvVarSource.t), "ResourceFieldRef"] ↦{dq} (v.(v1.EnvVarSource.ResourceFieldRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVarSource_access_store_ResourceFieldRef l (v : (v1.EnvVarSource.t)) ResourceFieldRef' :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "ResourceFieldRef"] ↦ (v.(v1.EnvVarSource.ResourceFieldRef')))
+    (l.[(v1.EnvVarSource.t), "ResourceFieldRef"] ↦ ResourceFieldRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVarSource.ResourceFieldRef') := ResourceFieldRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVarSource_access_load_ConfigMapKeyRef l (v : (v1.EnvVarSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "ConfigMapKeyRef"] ↦{dq} (v.(v1.EnvVarSource.ConfigMapKeyRef')))
+    (l.[(v1.EnvVarSource.t), "ConfigMapKeyRef"] ↦{dq} (v.(v1.EnvVarSource.ConfigMapKeyRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVarSource_access_store_ConfigMapKeyRef l (v : (v1.EnvVarSource.t)) ConfigMapKeyRef' :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "ConfigMapKeyRef"] ↦ (v.(v1.EnvVarSource.ConfigMapKeyRef')))
+    (l.[(v1.EnvVarSource.t), "ConfigMapKeyRef"] ↦ ConfigMapKeyRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVarSource.ConfigMapKeyRef') := ConfigMapKeyRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVarSource_access_load_SecretKeyRef l (v : (v1.EnvVarSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "SecretKeyRef"] ↦{dq} (v.(v1.EnvVarSource.SecretKeyRef')))
+    (l.[(v1.EnvVarSource.t), "SecretKeyRef"] ↦{dq} (v.(v1.EnvVarSource.SecretKeyRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVarSource_access_store_SecretKeyRef l (v : (v1.EnvVarSource.t)) SecretKeyRef' :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "SecretKeyRef"] ↦ (v.(v1.EnvVarSource.SecretKeyRef')))
+    (l.[(v1.EnvVarSource.t), "SecretKeyRef"] ↦ SecretKeyRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVarSource.SecretKeyRef') := SecretKeyRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvVarSource_access_load_FileKeyRef l (v : (v1.EnvVarSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "FileKeyRef"] ↦{dq} (v.(v1.EnvVarSource.FileKeyRef')))
+    (l.[(v1.EnvVarSource.t), "FileKeyRef"] ↦{dq} (v.(v1.EnvVarSource.FileKeyRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvVarSource_access_store_FileKeyRef l (v : (v1.EnvVarSource.t)) FileKeyRef' :
+  AccessStrict
+    (l.[(v1.EnvVarSource.t), "FileKeyRef"] ↦ (v.(v1.EnvVarSource.FileKeyRef')))
+    (l.[(v1.EnvVarSource.t), "FileKeyRef"] ↦ FileKeyRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvVarSource.FileKeyRef') := FileKeyRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EnvVarSource.
@@ -4000,13 +7791,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance FileKeySelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.FileKeySelector.t). Admitted.
+#[global]Program Instance FileKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.FileKeySelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "VolumeName" ∷ l.[(v1.FileKeySelector.t), "VolumeName"] ↦{dq} v.(v1.FileKeySelector.VolumeName') ∗
+      "Path" ∷ l.[(v1.FileKeySelector.t), "Path"] ↦{dq} v.(v1.FileKeySelector.Path') ∗
+      "Key" ∷ l.[(v1.FileKeySelector.t), "Key"] ↦{dq} v.(v1.FileKeySelector.Key') ∗
+      "Optional" ∷ l.[(v1.FileKeySelector.t), "Optional"] ↦{dq} v.(v1.FileKeySelector.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance FileKeySelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.FileKeySelector.t) (v1.FileKeySelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance FileKeySelector_access_load_VolumeName l (v : (v1.FileKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "VolumeName"] ↦{dq} (v.(v1.FileKeySelector.VolumeName')))
+    (l.[(v1.FileKeySelector.t), "VolumeName"] ↦{dq} (v.(v1.FileKeySelector.VolumeName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FileKeySelector_access_store_VolumeName l (v : (v1.FileKeySelector.t)) VolumeName' :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "VolumeName"] ↦ (v.(v1.FileKeySelector.VolumeName')))
+    (l.[(v1.FileKeySelector.t), "VolumeName"] ↦ VolumeName')
+    (l ↦ v) (l ↦ (v <|(v1.FileKeySelector.VolumeName') := VolumeName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FileKeySelector_access_load_Path l (v : (v1.FileKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Path"] ↦{dq} (v.(v1.FileKeySelector.Path')))
+    (l.[(v1.FileKeySelector.t), "Path"] ↦{dq} (v.(v1.FileKeySelector.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FileKeySelector_access_store_Path l (v : (v1.FileKeySelector.t)) Path' :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Path"] ↦ (v.(v1.FileKeySelector.Path')))
+    (l.[(v1.FileKeySelector.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.FileKeySelector.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FileKeySelector_access_load_Key l (v : (v1.FileKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Key"] ↦{dq} (v.(v1.FileKeySelector.Key')))
+    (l.[(v1.FileKeySelector.t), "Key"] ↦{dq} (v.(v1.FileKeySelector.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FileKeySelector_access_store_Key l (v : (v1.FileKeySelector.t)) Key' :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Key"] ↦ (v.(v1.FileKeySelector.Key')))
+    (l.[(v1.FileKeySelector.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.FileKeySelector.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance FileKeySelector_access_load_Optional l (v : (v1.FileKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Optional"] ↦{dq} (v.(v1.FileKeySelector.Optional')))
+    (l.[(v1.FileKeySelector.t), "Optional"] ↦{dq} (v.(v1.FileKeySelector.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance FileKeySelector_access_store_Optional l (v : (v1.FileKeySelector.t)) Optional' :
+  AccessStrict
+    (l.[(v1.FileKeySelector.t), "Optional"] ↦ (v.(v1.FileKeySelector.Optional')))
+    (l.[(v1.FileKeySelector.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.FileKeySelector.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End FileKeySelector.
@@ -4020,13 +7874,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ObjectFieldSelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ObjectFieldSelector.t). Admitted.
+#[global]Program Instance ObjectFieldSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ObjectFieldSelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "APIVersion" ∷ l.[(v1.ObjectFieldSelector.t), "APIVersion"] ↦{dq} v.(v1.ObjectFieldSelector.APIVersion') ∗
+      "FieldPath" ∷ l.[(v1.ObjectFieldSelector.t), "FieldPath"] ↦{dq} v.(v1.ObjectFieldSelector.FieldPath') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ObjectFieldSelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.ObjectFieldSelector.t) (v1.ObjectFieldSelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ObjectFieldSelector_access_load_APIVersion l (v : (v1.ObjectFieldSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ObjectFieldSelector.t), "APIVersion"] ↦{dq} (v.(v1.ObjectFieldSelector.APIVersion')))
+    (l.[(v1.ObjectFieldSelector.t), "APIVersion"] ↦{dq} (v.(v1.ObjectFieldSelector.APIVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ObjectFieldSelector_access_store_APIVersion l (v : (v1.ObjectFieldSelector.t)) APIVersion' :
+  AccessStrict
+    (l.[(v1.ObjectFieldSelector.t), "APIVersion"] ↦ (v.(v1.ObjectFieldSelector.APIVersion')))
+    (l.[(v1.ObjectFieldSelector.t), "APIVersion"] ↦ APIVersion')
+    (l ↦ v) (l ↦ (v <|(v1.ObjectFieldSelector.APIVersion') := APIVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ObjectFieldSelector_access_load_FieldPath l (v : (v1.ObjectFieldSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ObjectFieldSelector.t), "FieldPath"] ↦{dq} (v.(v1.ObjectFieldSelector.FieldPath')))
+    (l.[(v1.ObjectFieldSelector.t), "FieldPath"] ↦{dq} (v.(v1.ObjectFieldSelector.FieldPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ObjectFieldSelector_access_store_FieldPath l (v : (v1.ObjectFieldSelector.t)) FieldPath' :
+  AccessStrict
+    (l.[(v1.ObjectFieldSelector.t), "FieldPath"] ↦ (v.(v1.ObjectFieldSelector.FieldPath')))
+    (l.[(v1.ObjectFieldSelector.t), "FieldPath"] ↦ FieldPath')
+    (l ↦ v) (l ↦ (v <|(v1.ObjectFieldSelector.FieldPath') := FieldPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ObjectFieldSelector.
@@ -4040,13 +7929,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ResourceFieldSelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceFieldSelector.t). Admitted.
+#[global]Program Instance ResourceFieldSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceFieldSelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ContainerName" ∷ l.[(v1.ResourceFieldSelector.t), "ContainerName"] ↦{dq} v.(v1.ResourceFieldSelector.ContainerName') ∗
+      "Resource" ∷ l.[(v1.ResourceFieldSelector.t), "Resource"] ↦{dq} v.(v1.ResourceFieldSelector.Resource') ∗
+      "Divisor" ∷ l.[(v1.ResourceFieldSelector.t), "Divisor"] ↦{dq} v.(v1.ResourceFieldSelector.Divisor') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ResourceFieldSelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.ResourceFieldSelector.t) (v1.ResourceFieldSelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ResourceFieldSelector_access_load_ContainerName l (v : (v1.ResourceFieldSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "ContainerName"] ↦{dq} (v.(v1.ResourceFieldSelector.ContainerName')))
+    (l.[(v1.ResourceFieldSelector.t), "ContainerName"] ↦{dq} (v.(v1.ResourceFieldSelector.ContainerName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceFieldSelector_access_store_ContainerName l (v : (v1.ResourceFieldSelector.t)) ContainerName' :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "ContainerName"] ↦ (v.(v1.ResourceFieldSelector.ContainerName')))
+    (l.[(v1.ResourceFieldSelector.t), "ContainerName"] ↦ ContainerName')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceFieldSelector.ContainerName') := ContainerName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceFieldSelector_access_load_Resource l (v : (v1.ResourceFieldSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "Resource"] ↦{dq} (v.(v1.ResourceFieldSelector.Resource')))
+    (l.[(v1.ResourceFieldSelector.t), "Resource"] ↦{dq} (v.(v1.ResourceFieldSelector.Resource')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceFieldSelector_access_store_Resource l (v : (v1.ResourceFieldSelector.t)) Resource' :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "Resource"] ↦ (v.(v1.ResourceFieldSelector.Resource')))
+    (l.[(v1.ResourceFieldSelector.t), "Resource"] ↦ Resource')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceFieldSelector.Resource') := Resource'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceFieldSelector_access_load_Divisor l (v : (v1.ResourceFieldSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "Divisor"] ↦{dq} (v.(v1.ResourceFieldSelector.Divisor')))
+    (l.[(v1.ResourceFieldSelector.t), "Divisor"] ↦{dq} (v.(v1.ResourceFieldSelector.Divisor')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceFieldSelector_access_store_Divisor l (v : (v1.ResourceFieldSelector.t)) Divisor' :
+  AccessStrict
+    (l.[(v1.ResourceFieldSelector.t), "Divisor"] ↦ (v.(v1.ResourceFieldSelector.Divisor')))
+    (l.[(v1.ResourceFieldSelector.t), "Divisor"] ↦ Divisor')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceFieldSelector.Divisor') := Divisor'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ResourceFieldSelector.
@@ -4060,13 +7998,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ConfigMapKeySelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConfigMapKeySelector.t). Admitted.
+#[global]Program Instance ConfigMapKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapKeySelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.ConfigMapKeySelector.t), "LocalObjectReference"] ↦{dq} v.(v1.ConfigMapKeySelector.LocalObjectReference') ∗
+      "Key" ∷ l.[(v1.ConfigMapKeySelector.t), "Key"] ↦{dq} v.(v1.ConfigMapKeySelector.Key') ∗
+      "Optional" ∷ l.[(v1.ConfigMapKeySelector.t), "Optional"] ↦{dq} v.(v1.ConfigMapKeySelector.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ConfigMapKeySelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.ConfigMapKeySelector.t) (v1.ConfigMapKeySelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ConfigMapKeySelector_access_load_LocalObjectReference l (v : (v1.ConfigMapKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapKeySelector.LocalObjectReference')))
+    (l.[(v1.ConfigMapKeySelector.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapKeySelector.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapKeySelector_access_store_LocalObjectReference l (v : (v1.ConfigMapKeySelector.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "LocalObjectReference"] ↦ (v.(v1.ConfigMapKeySelector.LocalObjectReference')))
+    (l.[(v1.ConfigMapKeySelector.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapKeySelector.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapKeySelector_access_load_Key l (v : (v1.ConfigMapKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "Key"] ↦{dq} (v.(v1.ConfigMapKeySelector.Key')))
+    (l.[(v1.ConfigMapKeySelector.t), "Key"] ↦{dq} (v.(v1.ConfigMapKeySelector.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapKeySelector_access_store_Key l (v : (v1.ConfigMapKeySelector.t)) Key' :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "Key"] ↦ (v.(v1.ConfigMapKeySelector.Key')))
+    (l.[(v1.ConfigMapKeySelector.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapKeySelector.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapKeySelector_access_load_Optional l (v : (v1.ConfigMapKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "Optional"] ↦{dq} (v.(v1.ConfigMapKeySelector.Optional')))
+    (l.[(v1.ConfigMapKeySelector.t), "Optional"] ↦{dq} (v.(v1.ConfigMapKeySelector.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapKeySelector_access_store_Optional l (v : (v1.ConfigMapKeySelector.t)) Optional' :
+  AccessStrict
+    (l.[(v1.ConfigMapKeySelector.t), "Optional"] ↦ (v.(v1.ConfigMapKeySelector.Optional')))
+    (l.[(v1.ConfigMapKeySelector.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapKeySelector.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ConfigMapKeySelector.
@@ -4080,13 +8067,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SecretKeySelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SecretKeySelector.t). Admitted.
+#[global]Program Instance SecretKeySelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretKeySelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.SecretKeySelector.t), "LocalObjectReference"] ↦{dq} v.(v1.SecretKeySelector.LocalObjectReference') ∗
+      "Key" ∷ l.[(v1.SecretKeySelector.t), "Key"] ↦{dq} v.(v1.SecretKeySelector.Key') ∗
+      "Optional" ∷ l.[(v1.SecretKeySelector.t), "Optional"] ↦{dq} v.(v1.SecretKeySelector.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SecretKeySelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.SecretKeySelector.t) (v1.SecretKeySelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SecretKeySelector_access_load_LocalObjectReference l (v : (v1.SecretKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretKeySelector.LocalObjectReference')))
+    (l.[(v1.SecretKeySelector.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretKeySelector.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretKeySelector_access_store_LocalObjectReference l (v : (v1.SecretKeySelector.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "LocalObjectReference"] ↦ (v.(v1.SecretKeySelector.LocalObjectReference')))
+    (l.[(v1.SecretKeySelector.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.SecretKeySelector.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretKeySelector_access_load_Key l (v : (v1.SecretKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "Key"] ↦{dq} (v.(v1.SecretKeySelector.Key')))
+    (l.[(v1.SecretKeySelector.t), "Key"] ↦{dq} (v.(v1.SecretKeySelector.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretKeySelector_access_store_Key l (v : (v1.SecretKeySelector.t)) Key' :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "Key"] ↦ (v.(v1.SecretKeySelector.Key')))
+    (l.[(v1.SecretKeySelector.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.SecretKeySelector.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretKeySelector_access_load_Optional l (v : (v1.SecretKeySelector.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "Optional"] ↦{dq} (v.(v1.SecretKeySelector.Optional')))
+    (l.[(v1.SecretKeySelector.t), "Optional"] ↦{dq} (v.(v1.SecretKeySelector.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretKeySelector_access_store_Optional l (v : (v1.SecretKeySelector.t)) Optional' :
+  AccessStrict
+    (l.[(v1.SecretKeySelector.t), "Optional"] ↦ (v.(v1.SecretKeySelector.Optional')))
+    (l.[(v1.SecretKeySelector.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.SecretKeySelector.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SecretKeySelector.
@@ -4100,13 +8136,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EnvFromSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EnvFromSource.t). Admitted.
+#[global]Program Instance EnvFromSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EnvFromSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Prefix" ∷ l.[(v1.EnvFromSource.t), "Prefix"] ↦{dq} v.(v1.EnvFromSource.Prefix') ∗
+      "ConfigMapRef" ∷ l.[(v1.EnvFromSource.t), "ConfigMapRef"] ↦{dq} v.(v1.EnvFromSource.ConfigMapRef') ∗
+      "SecretRef" ∷ l.[(v1.EnvFromSource.t), "SecretRef"] ↦{dq} v.(v1.EnvFromSource.SecretRef') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EnvFromSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.EnvFromSource.t) (v1.EnvFromSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EnvFromSource_access_load_Prefix l (v : (v1.EnvFromSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "Prefix"] ↦{dq} (v.(v1.EnvFromSource.Prefix')))
+    (l.[(v1.EnvFromSource.t), "Prefix"] ↦{dq} (v.(v1.EnvFromSource.Prefix')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvFromSource_access_store_Prefix l (v : (v1.EnvFromSource.t)) Prefix' :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "Prefix"] ↦ (v.(v1.EnvFromSource.Prefix')))
+    (l.[(v1.EnvFromSource.t), "Prefix"] ↦ Prefix')
+    (l ↦ v) (l ↦ (v <|(v1.EnvFromSource.Prefix') := Prefix'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvFromSource_access_load_ConfigMapRef l (v : (v1.EnvFromSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "ConfigMapRef"] ↦{dq} (v.(v1.EnvFromSource.ConfigMapRef')))
+    (l.[(v1.EnvFromSource.t), "ConfigMapRef"] ↦{dq} (v.(v1.EnvFromSource.ConfigMapRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvFromSource_access_store_ConfigMapRef l (v : (v1.EnvFromSource.t)) ConfigMapRef' :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "ConfigMapRef"] ↦ (v.(v1.EnvFromSource.ConfigMapRef')))
+    (l.[(v1.EnvFromSource.t), "ConfigMapRef"] ↦ ConfigMapRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvFromSource.ConfigMapRef') := ConfigMapRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EnvFromSource_access_load_SecretRef l (v : (v1.EnvFromSource.t)) dq :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "SecretRef"] ↦{dq} (v.(v1.EnvFromSource.SecretRef')))
+    (l.[(v1.EnvFromSource.t), "SecretRef"] ↦{dq} (v.(v1.EnvFromSource.SecretRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EnvFromSource_access_store_SecretRef l (v : (v1.EnvFromSource.t)) SecretRef' :
+  AccessStrict
+    (l.[(v1.EnvFromSource.t), "SecretRef"] ↦ (v.(v1.EnvFromSource.SecretRef')))
+    (l.[(v1.EnvFromSource.t), "SecretRef"] ↦ SecretRef')
+    (l ↦ v) (l ↦ (v <|(v1.EnvFromSource.SecretRef') := SecretRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EnvFromSource.
@@ -4120,13 +8205,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ConfigMapEnvSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ConfigMapEnvSource.t). Admitted.
+#[global]Program Instance ConfigMapEnvSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ConfigMapEnvSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.ConfigMapEnvSource.t), "LocalObjectReference"] ↦{dq} v.(v1.ConfigMapEnvSource.LocalObjectReference') ∗
+      "Optional" ∷ l.[(v1.ConfigMapEnvSource.t), "Optional"] ↦{dq} v.(v1.ConfigMapEnvSource.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ConfigMapEnvSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ConfigMapEnvSource.t) (v1.ConfigMapEnvSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ConfigMapEnvSource_access_load_LocalObjectReference l (v : (v1.ConfigMapEnvSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapEnvSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapEnvSource.LocalObjectReference')))
+    (l.[(v1.ConfigMapEnvSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.ConfigMapEnvSource.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapEnvSource_access_store_LocalObjectReference l (v : (v1.ConfigMapEnvSource.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.ConfigMapEnvSource.t), "LocalObjectReference"] ↦ (v.(v1.ConfigMapEnvSource.LocalObjectReference')))
+    (l.[(v1.ConfigMapEnvSource.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapEnvSource.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ConfigMapEnvSource_access_load_Optional l (v : (v1.ConfigMapEnvSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ConfigMapEnvSource.t), "Optional"] ↦{dq} (v.(v1.ConfigMapEnvSource.Optional')))
+    (l.[(v1.ConfigMapEnvSource.t), "Optional"] ↦{dq} (v.(v1.ConfigMapEnvSource.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ConfigMapEnvSource_access_store_Optional l (v : (v1.ConfigMapEnvSource.t)) Optional' :
+  AccessStrict
+    (l.[(v1.ConfigMapEnvSource.t), "Optional"] ↦ (v.(v1.ConfigMapEnvSource.Optional')))
+    (l.[(v1.ConfigMapEnvSource.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.ConfigMapEnvSource.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ConfigMapEnvSource.
@@ -4140,13 +8260,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SecretEnvSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SecretEnvSource.t). Admitted.
+#[global]Program Instance SecretEnvSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecretEnvSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LocalObjectReference" ∷ l.[(v1.SecretEnvSource.t), "LocalObjectReference"] ↦{dq} v.(v1.SecretEnvSource.LocalObjectReference') ∗
+      "Optional" ∷ l.[(v1.SecretEnvSource.t), "Optional"] ↦{dq} v.(v1.SecretEnvSource.Optional') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SecretEnvSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.SecretEnvSource.t) (v1.SecretEnvSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SecretEnvSource_access_load_LocalObjectReference l (v : (v1.SecretEnvSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretEnvSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretEnvSource.LocalObjectReference')))
+    (l.[(v1.SecretEnvSource.t), "LocalObjectReference"] ↦{dq} (v.(v1.SecretEnvSource.LocalObjectReference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretEnvSource_access_store_LocalObjectReference l (v : (v1.SecretEnvSource.t)) LocalObjectReference' :
+  AccessStrict
+    (l.[(v1.SecretEnvSource.t), "LocalObjectReference"] ↦ (v.(v1.SecretEnvSource.LocalObjectReference')))
+    (l.[(v1.SecretEnvSource.t), "LocalObjectReference"] ↦ LocalObjectReference')
+    (l ↦ v) (l ↦ (v <|(v1.SecretEnvSource.LocalObjectReference') := LocalObjectReference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SecretEnvSource_access_load_Optional l (v : (v1.SecretEnvSource.t)) dq :
+  AccessStrict
+    (l.[(v1.SecretEnvSource.t), "Optional"] ↦{dq} (v.(v1.SecretEnvSource.Optional')))
+    (l.[(v1.SecretEnvSource.t), "Optional"] ↦{dq} (v.(v1.SecretEnvSource.Optional')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SecretEnvSource_access_store_Optional l (v : (v1.SecretEnvSource.t)) Optional' :
+  AccessStrict
+    (l.[(v1.SecretEnvSource.t), "Optional"] ↦ (v.(v1.SecretEnvSource.Optional')))
+    (l.[(v1.SecretEnvSource.t), "Optional"] ↦ Optional')
+    (l ↦ v) (l ↦ (v <|(v1.SecretEnvSource.Optional') := Optional'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SecretEnvSource.
@@ -4160,13 +8315,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance HTTPHeader_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HTTPHeader.t). Admitted.
+#[global]Program Instance HTTPHeader_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HTTPHeader.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.HTTPHeader.t), "Name"] ↦{dq} v.(v1.HTTPHeader.Name') ∗
+      "Value" ∷ l.[(v1.HTTPHeader.t), "Value"] ↦{dq} v.(v1.HTTPHeader.Value') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance HTTPHeader_into_val_typed
    :
   IntoValTypedUnderlying (v1.HTTPHeader.t) (v1.HTTPHeaderⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance HTTPHeader_access_load_Name l (v : (v1.HTTPHeader.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPHeader.t), "Name"] ↦{dq} (v.(v1.HTTPHeader.Name')))
+    (l.[(v1.HTTPHeader.t), "Name"] ↦{dq} (v.(v1.HTTPHeader.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPHeader_access_store_Name l (v : (v1.HTTPHeader.t)) Name' :
+  AccessStrict
+    (l.[(v1.HTTPHeader.t), "Name"] ↦ (v.(v1.HTTPHeader.Name')))
+    (l.[(v1.HTTPHeader.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPHeader.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HTTPHeader_access_load_Value l (v : (v1.HTTPHeader.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPHeader.t), "Value"] ↦{dq} (v.(v1.HTTPHeader.Value')))
+    (l.[(v1.HTTPHeader.t), "Value"] ↦{dq} (v.(v1.HTTPHeader.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPHeader_access_store_Value l (v : (v1.HTTPHeader.t)) Value' :
+  AccessStrict
+    (l.[(v1.HTTPHeader.t), "Value"] ↦ (v.(v1.HTTPHeader.Value')))
+    (l.[(v1.HTTPHeader.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPHeader.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End HTTPHeader.
@@ -4180,36 +8370,93 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance HTTPGetAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HTTPGetAction.t). Admitted.
+#[global]Program Instance HTTPGetAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HTTPGetAction.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Path" ∷ l.[(v1.HTTPGetAction.t), "Path"] ↦{dq} v.(v1.HTTPGetAction.Path') ∗
+      "Port" ∷ l.[(v1.HTTPGetAction.t), "Port"] ↦{dq} v.(v1.HTTPGetAction.Port') ∗
+      "Host" ∷ l.[(v1.HTTPGetAction.t), "Host"] ↦{dq} v.(v1.HTTPGetAction.Host') ∗
+      "Scheme" ∷ l.[(v1.HTTPGetAction.t), "Scheme"] ↦{dq} v.(v1.HTTPGetAction.Scheme') ∗
+      "HTTPHeaders" ∷ l.[(v1.HTTPGetAction.t), "HTTPHeaders"] ↦{dq} v.(v1.HTTPGetAction.HTTPHeaders') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance HTTPGetAction_into_val_typed
    :
   IntoValTypedUnderlying (v1.HTTPGetAction.t) (v1.HTTPGetActionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance HTTPGetAction_access_load_Path l (v : (v1.HTTPGetAction.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Path"] ↦{dq} (v.(v1.HTTPGetAction.Path')))
+    (l.[(v1.HTTPGetAction.t), "Path"] ↦{dq} (v.(v1.HTTPGetAction.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPGetAction_access_store_Path l (v : (v1.HTTPGetAction.t)) Path' :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Path"] ↦ (v.(v1.HTTPGetAction.Path')))
+    (l.[(v1.HTTPGetAction.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPGetAction.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HTTPGetAction_access_load_Port l (v : (v1.HTTPGetAction.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Port"] ↦{dq} (v.(v1.HTTPGetAction.Port')))
+    (l.[(v1.HTTPGetAction.t), "Port"] ↦{dq} (v.(v1.HTTPGetAction.Port')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPGetAction_access_store_Port l (v : (v1.HTTPGetAction.t)) Port' :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Port"] ↦ (v.(v1.HTTPGetAction.Port')))
+    (l.[(v1.HTTPGetAction.t), "Port"] ↦ Port')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPGetAction.Port') := Port'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HTTPGetAction_access_load_Host l (v : (v1.HTTPGetAction.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Host"] ↦{dq} (v.(v1.HTTPGetAction.Host')))
+    (l.[(v1.HTTPGetAction.t), "Host"] ↦{dq} (v.(v1.HTTPGetAction.Host')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPGetAction_access_store_Host l (v : (v1.HTTPGetAction.t)) Host' :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Host"] ↦ (v.(v1.HTTPGetAction.Host')))
+    (l.[(v1.HTTPGetAction.t), "Host"] ↦ Host')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPGetAction.Host') := Host'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HTTPGetAction_access_load_Scheme l (v : (v1.HTTPGetAction.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Scheme"] ↦{dq} (v.(v1.HTTPGetAction.Scheme')))
+    (l.[(v1.HTTPGetAction.t), "Scheme"] ↦{dq} (v.(v1.HTTPGetAction.Scheme')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPGetAction_access_store_Scheme l (v : (v1.HTTPGetAction.t)) Scheme' :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "Scheme"] ↦ (v.(v1.HTTPGetAction.Scheme')))
+    (l.[(v1.HTTPGetAction.t), "Scheme"] ↦ Scheme')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPGetAction.Scheme') := Scheme'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HTTPGetAction_access_load_HTTPHeaders l (v : (v1.HTTPGetAction.t)) dq :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "HTTPHeaders"] ↦{dq} (v.(v1.HTTPGetAction.HTTPHeaders')))
+    (l.[(v1.HTTPGetAction.t), "HTTPHeaders"] ↦{dq} (v.(v1.HTTPGetAction.HTTPHeaders')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HTTPGetAction_access_store_HTTPHeaders l (v : (v1.HTTPGetAction.t)) HTTPHeaders' :
+  AccessStrict
+    (l.[(v1.HTTPGetAction.t), "HTTPHeaders"] ↦ (v.(v1.HTTPGetAction.HTTPHeaders')))
+    (l.[(v1.HTTPGetAction.t), "HTTPHeaders"] ↦ HTTPHeaders')
+    (l ↦ v) (l ↦ (v <|(v1.HTTPGetAction.HTTPHeaders') := HTTPHeaders'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End HTTPGetAction.
-
-Module URIScheme.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance URIScheme_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.URIScheme.t). Admitted.
-
-#[global] Instance URIScheme_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.URIScheme.t) (v1.URISchemeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End URIScheme.
 
 Module TCPSocketAction.
 Section def.
@@ -4220,13 +8467,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance TCPSocketAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TCPSocketAction.t). Admitted.
+#[global]Program Instance TCPSocketAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TCPSocketAction.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Port" ∷ l.[(v1.TCPSocketAction.t), "Port"] ↦{dq} v.(v1.TCPSocketAction.Port') ∗
+      "Host" ∷ l.[(v1.TCPSocketAction.t), "Host"] ↦{dq} v.(v1.TCPSocketAction.Host') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance TCPSocketAction_into_val_typed
    :
   IntoValTypedUnderlying (v1.TCPSocketAction.t) (v1.TCPSocketActionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance TCPSocketAction_access_load_Port l (v : (v1.TCPSocketAction.t)) dq :
+  AccessStrict
+    (l.[(v1.TCPSocketAction.t), "Port"] ↦{dq} (v.(v1.TCPSocketAction.Port')))
+    (l.[(v1.TCPSocketAction.t), "Port"] ↦{dq} (v.(v1.TCPSocketAction.Port')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TCPSocketAction_access_store_Port l (v : (v1.TCPSocketAction.t)) Port' :
+  AccessStrict
+    (l.[(v1.TCPSocketAction.t), "Port"] ↦ (v.(v1.TCPSocketAction.Port')))
+    (l.[(v1.TCPSocketAction.t), "Port"] ↦ Port')
+    (l ↦ v) (l ↦ (v <|(v1.TCPSocketAction.Port') := Port'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TCPSocketAction_access_load_Host l (v : (v1.TCPSocketAction.t)) dq :
+  AccessStrict
+    (l.[(v1.TCPSocketAction.t), "Host"] ↦{dq} (v.(v1.TCPSocketAction.Host')))
+    (l.[(v1.TCPSocketAction.t), "Host"] ↦{dq} (v.(v1.TCPSocketAction.Host')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TCPSocketAction_access_store_Host l (v : (v1.TCPSocketAction.t)) Host' :
+  AccessStrict
+    (l.[(v1.TCPSocketAction.t), "Host"] ↦ (v.(v1.TCPSocketAction.Host')))
+    (l.[(v1.TCPSocketAction.t), "Host"] ↦ Host')
+    (l ↦ v) (l ↦ (v <|(v1.TCPSocketAction.Host') := Host'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End TCPSocketAction.
@@ -4240,13 +8522,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance GRPCAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.GRPCAction.t). Admitted.
+#[global]Program Instance GRPCAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.GRPCAction.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Port" ∷ l.[(v1.GRPCAction.t), "Port"] ↦{dq} v.(v1.GRPCAction.Port') ∗
+      "Service" ∷ l.[(v1.GRPCAction.t), "Service"] ↦{dq} v.(v1.GRPCAction.Service') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance GRPCAction_into_val_typed
    :
   IntoValTypedUnderlying (v1.GRPCAction.t) (v1.GRPCActionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance GRPCAction_access_load_Port l (v : (v1.GRPCAction.t)) dq :
+  AccessStrict
+    (l.[(v1.GRPCAction.t), "Port"] ↦{dq} (v.(v1.GRPCAction.Port')))
+    (l.[(v1.GRPCAction.t), "Port"] ↦{dq} (v.(v1.GRPCAction.Port')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GRPCAction_access_store_Port l (v : (v1.GRPCAction.t)) Port' :
+  AccessStrict
+    (l.[(v1.GRPCAction.t), "Port"] ↦ (v.(v1.GRPCAction.Port')))
+    (l.[(v1.GRPCAction.t), "Port"] ↦ Port')
+    (l ↦ v) (l ↦ (v <|(v1.GRPCAction.Port') := Port'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance GRPCAction_access_load_Service l (v : (v1.GRPCAction.t)) dq :
+  AccessStrict
+    (l.[(v1.GRPCAction.t), "Service"] ↦{dq} (v.(v1.GRPCAction.Service')))
+    (l.[(v1.GRPCAction.t), "Service"] ↦{dq} (v.(v1.GRPCAction.Service')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance GRPCAction_access_store_Service l (v : (v1.GRPCAction.t)) Service' :
+  AccessStrict
+    (l.[(v1.GRPCAction.t), "Service"] ↦ (v.(v1.GRPCAction.Service')))
+    (l.[(v1.GRPCAction.t), "Service"] ↦ Service')
+    (l ↦ v) (l ↦ (v <|(v1.GRPCAction.Service') := Service'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End GRPCAction.
@@ -4260,13 +8577,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ExecAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ExecAction.t). Admitted.
+#[global]Program Instance ExecAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ExecAction.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Command" ∷ l.[(v1.ExecAction.t), "Command"] ↦{dq} v.(v1.ExecAction.Command') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ExecAction_into_val_typed
    :
   IntoValTypedUnderlying (v1.ExecAction.t) (v1.ExecActionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ExecAction_access_load_Command l (v : (v1.ExecAction.t)) dq :
+  AccessStrict
+    (l.[(v1.ExecAction.t), "Command"] ↦{dq} (v.(v1.ExecAction.Command')))
+    (l.[(v1.ExecAction.t), "Command"] ↦{dq} (v.(v1.ExecAction.Command')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ExecAction_access_store_Command l (v : (v1.ExecAction.t)) Command' :
+  AccessStrict
+    (l.[(v1.ExecAction.t), "Command"] ↦ (v.(v1.ExecAction.Command')))
+    (l.[(v1.ExecAction.t), "Command"] ↦ Command')
+    (l ↦ v) (l ↦ (v <|(v1.ExecAction.Command') := Command'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ExecAction.
@@ -4280,16 +8618,120 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SleepAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SleepAction.t). Admitted.
+#[global]Program Instance SleepAction_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SleepAction.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Seconds" ∷ l.[(v1.SleepAction.t), "Seconds"] ↦{dq} v.(v1.SleepAction.Seconds') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SleepAction_into_val_typed
    :
   IntoValTypedUnderlying (v1.SleepAction.t) (v1.SleepActionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SleepAction_access_load_Seconds l (v : (v1.SleepAction.t)) dq :
+  AccessStrict
+    (l.[(v1.SleepAction.t), "Seconds"] ↦{dq} (v.(v1.SleepAction.Seconds')))
+    (l.[(v1.SleepAction.t), "Seconds"] ↦{dq} (v.(v1.SleepAction.Seconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SleepAction_access_store_Seconds l (v : (v1.SleepAction.t)) Seconds' :
+  AccessStrict
+    (l.[(v1.SleepAction.t), "Seconds"] ↦ (v.(v1.SleepAction.Seconds')))
+    (l.[(v1.SleepAction.t), "Seconds"] ↦ Seconds')
+    (l ↦ v) (l ↦ (v <|(v1.SleepAction.Seconds') := Seconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SleepAction.
+
+Module ProbeHandler.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance ProbeHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ProbeHandler.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Exec" ∷ l.[(v1.ProbeHandler.t), "Exec"] ↦{dq} v.(v1.ProbeHandler.Exec') ∗
+      "HTTPGet" ∷ l.[(v1.ProbeHandler.t), "HTTPGet"] ↦{dq} v.(v1.ProbeHandler.HTTPGet') ∗
+      "TCPSocket" ∷ l.[(v1.ProbeHandler.t), "TCPSocket"] ↦{dq} v.(v1.ProbeHandler.TCPSocket') ∗
+      "GRPC" ∷ l.[(v1.ProbeHandler.t), "GRPC"] ↦{dq} v.(v1.ProbeHandler.GRPC') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance ProbeHandler_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.ProbeHandler.t) (v1.ProbeHandlerⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ProbeHandler_access_load_Exec l (v : (v1.ProbeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "Exec"] ↦{dq} (v.(v1.ProbeHandler.Exec')))
+    (l.[(v1.ProbeHandler.t), "Exec"] ↦{dq} (v.(v1.ProbeHandler.Exec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProbeHandler_access_store_Exec l (v : (v1.ProbeHandler.t)) Exec' :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "Exec"] ↦ (v.(v1.ProbeHandler.Exec')))
+    (l.[(v1.ProbeHandler.t), "Exec"] ↦ Exec')
+    (l ↦ v) (l ↦ (v <|(v1.ProbeHandler.Exec') := Exec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ProbeHandler_access_load_HTTPGet l (v : (v1.ProbeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "HTTPGet"] ↦{dq} (v.(v1.ProbeHandler.HTTPGet')))
+    (l.[(v1.ProbeHandler.t), "HTTPGet"] ↦{dq} (v.(v1.ProbeHandler.HTTPGet')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProbeHandler_access_store_HTTPGet l (v : (v1.ProbeHandler.t)) HTTPGet' :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "HTTPGet"] ↦ (v.(v1.ProbeHandler.HTTPGet')))
+    (l.[(v1.ProbeHandler.t), "HTTPGet"] ↦ HTTPGet')
+    (l ↦ v) (l ↦ (v <|(v1.ProbeHandler.HTTPGet') := HTTPGet'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ProbeHandler_access_load_TCPSocket l (v : (v1.ProbeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "TCPSocket"] ↦{dq} (v.(v1.ProbeHandler.TCPSocket')))
+    (l.[(v1.ProbeHandler.t), "TCPSocket"] ↦{dq} (v.(v1.ProbeHandler.TCPSocket')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProbeHandler_access_store_TCPSocket l (v : (v1.ProbeHandler.t)) TCPSocket' :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "TCPSocket"] ↦ (v.(v1.ProbeHandler.TCPSocket')))
+    (l.[(v1.ProbeHandler.t), "TCPSocket"] ↦ TCPSocket')
+    (l ↦ v) (l ↦ (v <|(v1.ProbeHandler.TCPSocket') := TCPSocket'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ProbeHandler_access_load_GRPC l (v : (v1.ProbeHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "GRPC"] ↦{dq} (v.(v1.ProbeHandler.GRPC')))
+    (l.[(v1.ProbeHandler.t), "GRPC"] ↦{dq} (v.(v1.ProbeHandler.GRPC')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ProbeHandler_access_store_GRPC l (v : (v1.ProbeHandler.t)) GRPC' :
+  AccessStrict
+    (l.[(v1.ProbeHandler.t), "GRPC"] ↦ (v.(v1.ProbeHandler.GRPC')))
+    (l.[(v1.ProbeHandler.t), "GRPC"] ↦ GRPC')
+    (l ↦ v) (l ↦ (v <|(v1.ProbeHandler.GRPC') := GRPC'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End ProbeHandler.
 
 Module Probe.
 Section def.
@@ -4300,56 +8742,121 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Probe_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Probe.t). Admitted.
+#[global]Program Instance Probe_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Probe.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ProbeHandler" ∷ l.[(v1.Probe.t), "ProbeHandler"] ↦{dq} v.(v1.Probe.ProbeHandler') ∗
+      "InitialDelaySeconds" ∷ l.[(v1.Probe.t), "InitialDelaySeconds"] ↦{dq} v.(v1.Probe.InitialDelaySeconds') ∗
+      "TimeoutSeconds" ∷ l.[(v1.Probe.t), "TimeoutSeconds"] ↦{dq} v.(v1.Probe.TimeoutSeconds') ∗
+      "PeriodSeconds" ∷ l.[(v1.Probe.t), "PeriodSeconds"] ↦{dq} v.(v1.Probe.PeriodSeconds') ∗
+      "SuccessThreshold" ∷ l.[(v1.Probe.t), "SuccessThreshold"] ↦{dq} v.(v1.Probe.SuccessThreshold') ∗
+      "FailureThreshold" ∷ l.[(v1.Probe.t), "FailureThreshold"] ↦{dq} v.(v1.Probe.FailureThreshold') ∗
+      "TerminationGracePeriodSeconds" ∷ l.[(v1.Probe.t), "TerminationGracePeriodSeconds"] ↦{dq} v.(v1.Probe.TerminationGracePeriodSeconds') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Probe_into_val_typed
    :
   IntoValTypedUnderlying (v1.Probe.t) (v1.Probeⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Probe_access_load_ProbeHandler l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "ProbeHandler"] ↦{dq} (v.(v1.Probe.ProbeHandler')))
+    (l.[(v1.Probe.t), "ProbeHandler"] ↦{dq} (v.(v1.Probe.ProbeHandler')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_ProbeHandler l (v : (v1.Probe.t)) ProbeHandler' :
+  AccessStrict
+    (l.[(v1.Probe.t), "ProbeHandler"] ↦ (v.(v1.Probe.ProbeHandler')))
+    (l.[(v1.Probe.t), "ProbeHandler"] ↦ ProbeHandler')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.ProbeHandler') := ProbeHandler'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_InitialDelaySeconds l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "InitialDelaySeconds"] ↦{dq} (v.(v1.Probe.InitialDelaySeconds')))
+    (l.[(v1.Probe.t), "InitialDelaySeconds"] ↦{dq} (v.(v1.Probe.InitialDelaySeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_InitialDelaySeconds l (v : (v1.Probe.t)) InitialDelaySeconds' :
+  AccessStrict
+    (l.[(v1.Probe.t), "InitialDelaySeconds"] ↦ (v.(v1.Probe.InitialDelaySeconds')))
+    (l.[(v1.Probe.t), "InitialDelaySeconds"] ↦ InitialDelaySeconds')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.InitialDelaySeconds') := InitialDelaySeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_TimeoutSeconds l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "TimeoutSeconds"] ↦{dq} (v.(v1.Probe.TimeoutSeconds')))
+    (l.[(v1.Probe.t), "TimeoutSeconds"] ↦{dq} (v.(v1.Probe.TimeoutSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_TimeoutSeconds l (v : (v1.Probe.t)) TimeoutSeconds' :
+  AccessStrict
+    (l.[(v1.Probe.t), "TimeoutSeconds"] ↦ (v.(v1.Probe.TimeoutSeconds')))
+    (l.[(v1.Probe.t), "TimeoutSeconds"] ↦ TimeoutSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.TimeoutSeconds') := TimeoutSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_PeriodSeconds l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "PeriodSeconds"] ↦{dq} (v.(v1.Probe.PeriodSeconds')))
+    (l.[(v1.Probe.t), "PeriodSeconds"] ↦{dq} (v.(v1.Probe.PeriodSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_PeriodSeconds l (v : (v1.Probe.t)) PeriodSeconds' :
+  AccessStrict
+    (l.[(v1.Probe.t), "PeriodSeconds"] ↦ (v.(v1.Probe.PeriodSeconds')))
+    (l.[(v1.Probe.t), "PeriodSeconds"] ↦ PeriodSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.PeriodSeconds') := PeriodSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_SuccessThreshold l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "SuccessThreshold"] ↦{dq} (v.(v1.Probe.SuccessThreshold')))
+    (l.[(v1.Probe.t), "SuccessThreshold"] ↦{dq} (v.(v1.Probe.SuccessThreshold')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_SuccessThreshold l (v : (v1.Probe.t)) SuccessThreshold' :
+  AccessStrict
+    (l.[(v1.Probe.t), "SuccessThreshold"] ↦ (v.(v1.Probe.SuccessThreshold')))
+    (l.[(v1.Probe.t), "SuccessThreshold"] ↦ SuccessThreshold')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.SuccessThreshold') := SuccessThreshold'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_FailureThreshold l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "FailureThreshold"] ↦{dq} (v.(v1.Probe.FailureThreshold')))
+    (l.[(v1.Probe.t), "FailureThreshold"] ↦{dq} (v.(v1.Probe.FailureThreshold')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_FailureThreshold l (v : (v1.Probe.t)) FailureThreshold' :
+  AccessStrict
+    (l.[(v1.Probe.t), "FailureThreshold"] ↦ (v.(v1.Probe.FailureThreshold')))
+    (l.[(v1.Probe.t), "FailureThreshold"] ↦ FailureThreshold')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.FailureThreshold') := FailureThreshold'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Probe_access_load_TerminationGracePeriodSeconds l (v : (v1.Probe.t)) dq :
+  AccessStrict
+    (l.[(v1.Probe.t), "TerminationGracePeriodSeconds"] ↦{dq} (v.(v1.Probe.TerminationGracePeriodSeconds')))
+    (l.[(v1.Probe.t), "TerminationGracePeriodSeconds"] ↦{dq} (v.(v1.Probe.TerminationGracePeriodSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Probe_access_store_TerminationGracePeriodSeconds l (v : (v1.Probe.t)) TerminationGracePeriodSeconds' :
+  AccessStrict
+    (l.[(v1.Probe.t), "TerminationGracePeriodSeconds"] ↦ (v.(v1.Probe.TerminationGracePeriodSeconds')))
+    (l.[(v1.Probe.t), "TerminationGracePeriodSeconds"] ↦ TerminationGracePeriodSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.Probe.TerminationGracePeriodSeconds') := TerminationGracePeriodSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Probe.
-
-Module PullPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PullPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PullPolicy.t). Admitted.
-
-#[global] Instance PullPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PullPolicy.t) (v1.PullPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PullPolicy.
-
-Module ResourceResizeRestartPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ResourceResizeRestartPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceResizeRestartPolicy.t). Admitted.
-
-#[global] Instance ResourceResizeRestartPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ResourceResizeRestartPolicy.t) (v1.ResourceResizeRestartPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ResourceResizeRestartPolicy.
 
 Module ContainerResizePolicy.
 Section def.
@@ -4360,76 +8867,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerResizePolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerResizePolicy.t). Admitted.
+#[global]Program Instance ContainerResizePolicy_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerResizePolicy.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ResourceName" ∷ l.[(v1.ContainerResizePolicy.t), "ResourceName"] ↦{dq} v.(v1.ContainerResizePolicy.ResourceName') ∗
+      "RestartPolicy" ∷ l.[(v1.ContainerResizePolicy.t), "RestartPolicy"] ↦{dq} v.(v1.ContainerResizePolicy.RestartPolicy') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerResizePolicy_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerResizePolicy.t) (v1.ContainerResizePolicyⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerResizePolicy_access_load_ResourceName l (v : (v1.ContainerResizePolicy.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerResizePolicy.t), "ResourceName"] ↦{dq} (v.(v1.ContainerResizePolicy.ResourceName')))
+    (l.[(v1.ContainerResizePolicy.t), "ResourceName"] ↦{dq} (v.(v1.ContainerResizePolicy.ResourceName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerResizePolicy_access_store_ResourceName l (v : (v1.ContainerResizePolicy.t)) ResourceName' :
+  AccessStrict
+    (l.[(v1.ContainerResizePolicy.t), "ResourceName"] ↦ (v.(v1.ContainerResizePolicy.ResourceName')))
+    (l.[(v1.ContainerResizePolicy.t), "ResourceName"] ↦ ResourceName')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerResizePolicy.ResourceName') := ResourceName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerResizePolicy_access_load_RestartPolicy l (v : (v1.ContainerResizePolicy.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerResizePolicy.t), "RestartPolicy"] ↦{dq} (v.(v1.ContainerResizePolicy.RestartPolicy')))
+    (l.[(v1.ContainerResizePolicy.t), "RestartPolicy"] ↦{dq} (v.(v1.ContainerResizePolicy.RestartPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerResizePolicy_access_store_RestartPolicy l (v : (v1.ContainerResizePolicy.t)) RestartPolicy' :
+  AccessStrict
+    (l.[(v1.ContainerResizePolicy.t), "RestartPolicy"] ↦ (v.(v1.ContainerResizePolicy.RestartPolicy')))
+    (l.[(v1.ContainerResizePolicy.t), "RestartPolicy"] ↦ RestartPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerResizePolicy.RestartPolicy') := RestartPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerResizePolicy.
-
-Module PreemptionPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PreemptionPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PreemptionPolicy.t). Admitted.
-
-#[global] Instance PreemptionPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PreemptionPolicy.t) (v1.PreemptionPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PreemptionPolicy.
-
-Module TerminationMessagePolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance TerminationMessagePolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TerminationMessagePolicy.t). Admitted.
-
-#[global] Instance TerminationMessagePolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.TerminationMessagePolicy.t) (v1.TerminationMessagePolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End TerminationMessagePolicy.
-
-Module Capability.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance Capability_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Capability.t). Admitted.
-
-#[global] Instance Capability_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.Capability.t) (v1.Capabilityⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End Capability.
 
 Module Capabilities.
 Section def.
@@ -4440,13 +8922,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Capabilities_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Capabilities.t). Admitted.
+#[global]Program Instance Capabilities_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Capabilities.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Add" ∷ l.[(v1.Capabilities.t), "Add"] ↦{dq} v.(v1.Capabilities.Add') ∗
+      "Drop" ∷ l.[(v1.Capabilities.t), "Drop"] ↦{dq} v.(v1.Capabilities.Drop') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Capabilities_into_val_typed
    :
   IntoValTypedUnderlying (v1.Capabilities.t) (v1.Capabilitiesⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Capabilities_access_load_Add l (v : (v1.Capabilities.t)) dq :
+  AccessStrict
+    (l.[(v1.Capabilities.t), "Add"] ↦{dq} (v.(v1.Capabilities.Add')))
+    (l.[(v1.Capabilities.t), "Add"] ↦{dq} (v.(v1.Capabilities.Add')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Capabilities_access_store_Add l (v : (v1.Capabilities.t)) Add' :
+  AccessStrict
+    (l.[(v1.Capabilities.t), "Add"] ↦ (v.(v1.Capabilities.Add')))
+    (l.[(v1.Capabilities.t), "Add"] ↦ Add')
+    (l ↦ v) (l ↦ (v <|(v1.Capabilities.Add') := Add'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Capabilities_access_load_Drop l (v : (v1.Capabilities.t)) dq :
+  AccessStrict
+    (l.[(v1.Capabilities.t), "Drop"] ↦{dq} (v.(v1.Capabilities.Drop')))
+    (l.[(v1.Capabilities.t), "Drop"] ↦{dq} (v.(v1.Capabilities.Drop')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Capabilities_access_store_Drop l (v : (v1.Capabilities.t)) Drop' :
+  AccessStrict
+    (l.[(v1.Capabilities.t), "Drop"] ↦ (v.(v1.Capabilities.Drop')))
+    (l.[(v1.Capabilities.t), "Drop"] ↦ Drop')
+    (l ↦ v) (l ↦ (v <|(v1.Capabilities.Drop') := Drop'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Capabilities.
@@ -4460,36 +8977,65 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ResourceRequirements_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceRequirements.t). Admitted.
+#[global]Program Instance ResourceRequirements_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceRequirements.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Limits" ∷ l.[(v1.ResourceRequirements.t), "Limits"] ↦{dq} v.(v1.ResourceRequirements.Limits') ∗
+      "Requests" ∷ l.[(v1.ResourceRequirements.t), "Requests"] ↦{dq} v.(v1.ResourceRequirements.Requests') ∗
+      "Claims" ∷ l.[(v1.ResourceRequirements.t), "Claims"] ↦{dq} v.(v1.ResourceRequirements.Claims') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ResourceRequirements_into_val_typed
    :
   IntoValTypedUnderlying (v1.ResourceRequirements.t) (v1.ResourceRequirementsⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ResourceRequirements_access_load_Limits l (v : (v1.ResourceRequirements.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Limits"] ↦{dq} (v.(v1.ResourceRequirements.Limits')))
+    (l.[(v1.ResourceRequirements.t), "Limits"] ↦{dq} (v.(v1.ResourceRequirements.Limits')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceRequirements_access_store_Limits l (v : (v1.ResourceRequirements.t)) Limits' :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Limits"] ↦ (v.(v1.ResourceRequirements.Limits')))
+    (l.[(v1.ResourceRequirements.t), "Limits"] ↦ Limits')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceRequirements.Limits') := Limits'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceRequirements_access_load_Requests l (v : (v1.ResourceRequirements.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Requests"] ↦{dq} (v.(v1.ResourceRequirements.Requests')))
+    (l.[(v1.ResourceRequirements.t), "Requests"] ↦{dq} (v.(v1.ResourceRequirements.Requests')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceRequirements_access_store_Requests l (v : (v1.ResourceRequirements.t)) Requests' :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Requests"] ↦ (v.(v1.ResourceRequirements.Requests')))
+    (l.[(v1.ResourceRequirements.t), "Requests"] ↦ Requests')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceRequirements.Requests') := Requests'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceRequirements_access_load_Claims l (v : (v1.ResourceRequirements.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Claims"] ↦{dq} (v.(v1.ResourceRequirements.Claims')))
+    (l.[(v1.ResourceRequirements.t), "Claims"] ↦{dq} (v.(v1.ResourceRequirements.Claims')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceRequirements_access_store_Claims l (v : (v1.ResourceRequirements.t)) Claims' :
+  AccessStrict
+    (l.[(v1.ResourceRequirements.t), "Claims"] ↦ (v.(v1.ResourceRequirements.Claims')))
+    (l.[(v1.ResourceRequirements.t), "Claims"] ↦ Claims')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceRequirements.Claims') := Claims'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ResourceRequirements.
-
-Module VolumeResourceRequirements.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance VolumeResourceRequirements_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeResourceRequirements.t). Admitted.
-
-#[global] Instance VolumeResourceRequirements_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.VolumeResourceRequirements.t) (v1.VolumeResourceRequirementsⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End VolumeResourceRequirements.
 
 Module ResourceClaim.
 Section def.
@@ -4500,13 +9046,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ResourceClaim_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceClaim.t). Admitted.
+#[global]Program Instance ResourceClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceClaim.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.ResourceClaim.t), "Name"] ↦{dq} v.(v1.ResourceClaim.Name') ∗
+      "Request" ∷ l.[(v1.ResourceClaim.t), "Request"] ↦{dq} v.(v1.ResourceClaim.Request') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ResourceClaim_into_val_typed
    :
   IntoValTypedUnderlying (v1.ResourceClaim.t) (v1.ResourceClaimⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ResourceClaim_access_load_Name l (v : (v1.ResourceClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceClaim.t), "Name"] ↦{dq} (v.(v1.ResourceClaim.Name')))
+    (l.[(v1.ResourceClaim.t), "Name"] ↦{dq} (v.(v1.ResourceClaim.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceClaim_access_store_Name l (v : (v1.ResourceClaim.t)) Name' :
+  AccessStrict
+    (l.[(v1.ResourceClaim.t), "Name"] ↦ (v.(v1.ResourceClaim.Name')))
+    (l.[(v1.ResourceClaim.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceClaim.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceClaim_access_load_Request l (v : (v1.ResourceClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceClaim.t), "Request"] ↦{dq} (v.(v1.ResourceClaim.Request')))
+    (l.[(v1.ResourceClaim.t), "Request"] ↦{dq} (v.(v1.ResourceClaim.Request')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceClaim_access_store_Request l (v : (v1.ResourceClaim.t)) Request' :
+  AccessStrict
+    (l.[(v1.ResourceClaim.t), "Request"] ↦ (v.(v1.ResourceClaim.Request')))
+    (l.[(v1.ResourceClaim.t), "Request"] ↦ Request')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceClaim.Request') := Request'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ResourceClaim.
@@ -4520,36 +9101,1720 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Container_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Container.t). Admitted.
+#[global]Program Instance Container_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Container.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.Container.t), "Name"] ↦{dq} v.(v1.Container.Name') ∗
+      "Image" ∷ l.[(v1.Container.t), "Image"] ↦{dq} v.(v1.Container.Image') ∗
+      "Command" ∷ l.[(v1.Container.t), "Command"] ↦{dq} v.(v1.Container.Command') ∗
+      "Args" ∷ l.[(v1.Container.t), "Args"] ↦{dq} v.(v1.Container.Args') ∗
+      "WorkingDir" ∷ l.[(v1.Container.t), "WorkingDir"] ↦{dq} v.(v1.Container.WorkingDir') ∗
+      "Ports" ∷ l.[(v1.Container.t), "Ports"] ↦{dq} v.(v1.Container.Ports') ∗
+      "EnvFrom" ∷ l.[(v1.Container.t), "EnvFrom"] ↦{dq} v.(v1.Container.EnvFrom') ∗
+      "Env" ∷ l.[(v1.Container.t), "Env"] ↦{dq} v.(v1.Container.Env') ∗
+      "Resources" ∷ l.[(v1.Container.t), "Resources"] ↦{dq} v.(v1.Container.Resources') ∗
+      "ResizePolicy" ∷ l.[(v1.Container.t), "ResizePolicy"] ↦{dq} v.(v1.Container.ResizePolicy') ∗
+      "RestartPolicy" ∷ l.[(v1.Container.t), "RestartPolicy"] ↦{dq} v.(v1.Container.RestartPolicy') ∗
+      "RestartPolicyRules" ∷ l.[(v1.Container.t), "RestartPolicyRules"] ↦{dq} v.(v1.Container.RestartPolicyRules') ∗
+      "VolumeMounts" ∷ l.[(v1.Container.t), "VolumeMounts"] ↦{dq} v.(v1.Container.VolumeMounts') ∗
+      "VolumeDevices" ∷ l.[(v1.Container.t), "VolumeDevices"] ↦{dq} v.(v1.Container.VolumeDevices') ∗
+      "LivenessProbe" ∷ l.[(v1.Container.t), "LivenessProbe"] ↦{dq} v.(v1.Container.LivenessProbe') ∗
+      "ReadinessProbe" ∷ l.[(v1.Container.t), "ReadinessProbe"] ↦{dq} v.(v1.Container.ReadinessProbe') ∗
+      "StartupProbe" ∷ l.[(v1.Container.t), "StartupProbe"] ↦{dq} v.(v1.Container.StartupProbe') ∗
+      "Lifecycle" ∷ l.[(v1.Container.t), "Lifecycle"] ↦{dq} v.(v1.Container.Lifecycle') ∗
+      "TerminationMessagePath" ∷ l.[(v1.Container.t), "TerminationMessagePath"] ↦{dq} v.(v1.Container.TerminationMessagePath') ∗
+      "TerminationMessagePolicy" ∷ l.[(v1.Container.t), "TerminationMessagePolicy"] ↦{dq} v.(v1.Container.TerminationMessagePolicy') ∗
+      "ImagePullPolicy" ∷ l.[(v1.Container.t), "ImagePullPolicy"] ↦{dq} v.(v1.Container.ImagePullPolicy') ∗
+      "SecurityContext" ∷ l.[(v1.Container.t), "SecurityContext"] ↦{dq} v.(v1.Container.SecurityContext') ∗
+      "Stdin" ∷ l.[(v1.Container.t), "Stdin"] ↦{dq} v.(v1.Container.Stdin') ∗
+      "StdinOnce" ∷ l.[(v1.Container.t), "StdinOnce"] ↦{dq} v.(v1.Container.StdinOnce') ∗
+      "TTY" ∷ l.[(v1.Container.t), "TTY"] ↦{dq} v.(v1.Container.TTY') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Container_into_val_typed
    :
   IntoValTypedUnderlying (v1.Container.t) (v1.Containerⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "Name" go.string
+      (fun v => v.(v1.Container.Name'))
+      (fun v x => v <|(v1.Container.Name') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Image" go.string
+      (fun v => v.(v1.Container.Image'))
+      (fun v x => v <|(v1.Container.Image') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Command" (go.SliceType go.string)
+      (fun v => v.(v1.Container.Command'))
+      (fun v x => v <|(v1.Container.Command') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Args" (go.SliceType go.string)
+      (fun v => v.(v1.Container.Args'))
+      (fun v x => v <|(v1.Container.Args') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "WorkingDir" go.string
+      (fun v => v.(v1.Container.WorkingDir'))
+      (fun v x => v <|(v1.Container.WorkingDir') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Ports" (go.SliceType v1.ContainerPort)
+      (fun v => v.(v1.Container.Ports'))
+      (fun v x => v <|(v1.Container.Ports') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "EnvFrom" (go.SliceType v1.EnvFromSource)
+      (fun v => v.(v1.Container.EnvFrom'))
+      (fun v x => v <|(v1.Container.EnvFrom') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Env" (go.SliceType v1.EnvVar)
+      (fun v => v.(v1.Container.Env'))
+      (fun v x => v <|(v1.Container.Env') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Resources" v1.ResourceRequirements
+      (fun v => v.(v1.Container.Resources'))
+      (fun v x => v <|(v1.Container.Resources') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ResizePolicy" (go.SliceType v1.ContainerResizePolicy)
+      (fun v => v.(v1.Container.ResizePolicy'))
+      (fun v x => v <|(v1.Container.ResizePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RestartPolicy" (go.PointerType v1.ContainerRestartPolicy)
+      (fun v => v.(v1.Container.RestartPolicy'))
+      (fun v x => v <|(v1.Container.RestartPolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RestartPolicyRules" (go.SliceType v1.ContainerRestartRule)
+      (fun v => v.(v1.Container.RestartPolicyRules'))
+      (fun v x => v <|(v1.Container.RestartPolicyRules') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeMounts" (go.SliceType v1.VolumeMount)
+      (fun v => v.(v1.Container.VolumeMounts'))
+      (fun v x => v <|(v1.Container.VolumeMounts') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeDevices" (go.SliceType v1.VolumeDevice)
+      (fun v => v.(v1.Container.VolumeDevices'))
+      (fun v x => v <|(v1.Container.VolumeDevices') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "LivenessProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.Container.LivenessProbe'))
+      (fun v x => v <|(v1.Container.LivenessProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ReadinessProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.Container.ReadinessProbe'))
+      (fun v x => v <|(v1.Container.ReadinessProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StartupProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.Container.StartupProbe'))
+      (fun v x => v <|(v1.Container.StartupProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Lifecycle" (go.PointerType v1.Lifecycle)
+      (fun v => v.(v1.Container.Lifecycle'))
+      (fun v x => v <|(v1.Container.Lifecycle') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TerminationMessagePath" go.string
+      (fun v => v.(v1.Container.TerminationMessagePath'))
+      (fun v x => v <|(v1.Container.TerminationMessagePath') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TerminationMessagePolicy" v1.TerminationMessagePolicy
+      (fun v => v.(v1.Container.TerminationMessagePolicy'))
+      (fun v x => v <|(v1.Container.TerminationMessagePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ImagePullPolicy" v1.PullPolicy
+      (fun v => v.(v1.Container.ImagePullPolicy'))
+      (fun v x => v <|(v1.Container.ImagePullPolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SecurityContext" (go.PointerType v1.SecurityContext)
+      (fun v => v.(v1.Container.SecurityContext'))
+      (fun v x => v <|(v1.Container.SecurityContext') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Stdin" go.bool
+      (fun v => v.(v1.Container.Stdin'))
+      (fun v x => v <|(v1.Container.Stdin') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StdinOnce" go.bool
+      (fun v => v.(v1.Container.StdinOnce'))
+      (fun v x => v <|(v1.Container.StdinOnce') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TTY" go.bool
+      (fun v => v.(v1.Container.TTY'))
+      (fun v x => v <|(v1.Container.TTY') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.Container.t v1.Containerⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.Container'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.Container'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance Container_access_load_Name l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Name"] ↦{dq} (v.(v1.Container.Name')))
+    (l.[(v1.Container.t), "Name"] ↦{dq} (v.(v1.Container.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Name l (v : (v1.Container.t)) Name' :
+  AccessStrict
+    (l.[(v1.Container.t), "Name"] ↦ (v.(v1.Container.Name')))
+    (l.[(v1.Container.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Name') := Name'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Image l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Image"] ↦{dq} (v.(v1.Container.Image')))
+    (l.[(v1.Container.t), "Image"] ↦{dq} (v.(v1.Container.Image')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Image l (v : (v1.Container.t)) Image' :
+  AccessStrict
+    (l.[(v1.Container.t), "Image"] ↦ (v.(v1.Container.Image')))
+    (l.[(v1.Container.t), "Image"] ↦ Image')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Image') := Image'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Command l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Command"] ↦{dq} (v.(v1.Container.Command')))
+    (l.[(v1.Container.t), "Command"] ↦{dq} (v.(v1.Container.Command')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Command l (v : (v1.Container.t)) Command' :
+  AccessStrict
+    (l.[(v1.Container.t), "Command"] ↦ (v.(v1.Container.Command')))
+    (l.[(v1.Container.t), "Command"] ↦ Command')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Command') := Command'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Args l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Args"] ↦{dq} (v.(v1.Container.Args')))
+    (l.[(v1.Container.t), "Args"] ↦{dq} (v.(v1.Container.Args')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Args l (v : (v1.Container.t)) Args' :
+  AccessStrict
+    (l.[(v1.Container.t), "Args"] ↦ (v.(v1.Container.Args')))
+    (l.[(v1.Container.t), "Args"] ↦ Args')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Args') := Args'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_WorkingDir l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "WorkingDir"] ↦{dq} (v.(v1.Container.WorkingDir')))
+    (l.[(v1.Container.t), "WorkingDir"] ↦{dq} (v.(v1.Container.WorkingDir')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_WorkingDir l (v : (v1.Container.t)) WorkingDir' :
+  AccessStrict
+    (l.[(v1.Container.t), "WorkingDir"] ↦ (v.(v1.Container.WorkingDir')))
+    (l.[(v1.Container.t), "WorkingDir"] ↦ WorkingDir')
+    (l ↦ v) (l ↦ (v <|(v1.Container.WorkingDir') := WorkingDir'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Ports l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Ports"] ↦{dq} (v.(v1.Container.Ports')))
+    (l.[(v1.Container.t), "Ports"] ↦{dq} (v.(v1.Container.Ports')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Ports l (v : (v1.Container.t)) Ports' :
+  AccessStrict
+    (l.[(v1.Container.t), "Ports"] ↦ (v.(v1.Container.Ports')))
+    (l.[(v1.Container.t), "Ports"] ↦ Ports')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Ports') := Ports'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_EnvFrom l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "EnvFrom"] ↦{dq} (v.(v1.Container.EnvFrom')))
+    (l.[(v1.Container.t), "EnvFrom"] ↦{dq} (v.(v1.Container.EnvFrom')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_EnvFrom l (v : (v1.Container.t)) EnvFrom' :
+  AccessStrict
+    (l.[(v1.Container.t), "EnvFrom"] ↦ (v.(v1.Container.EnvFrom')))
+    (l.[(v1.Container.t), "EnvFrom"] ↦ EnvFrom')
+    (l ↦ v) (l ↦ (v <|(v1.Container.EnvFrom') := EnvFrom'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Env l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Env"] ↦{dq} (v.(v1.Container.Env')))
+    (l.[(v1.Container.t), "Env"] ↦{dq} (v.(v1.Container.Env')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Env l (v : (v1.Container.t)) Env' :
+  AccessStrict
+    (l.[(v1.Container.t), "Env"] ↦ (v.(v1.Container.Env')))
+    (l.[(v1.Container.t), "Env"] ↦ Env')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Env') := Env'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Resources l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Resources"] ↦{dq} (v.(v1.Container.Resources')))
+    (l.[(v1.Container.t), "Resources"] ↦{dq} (v.(v1.Container.Resources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Resources l (v : (v1.Container.t)) Resources' :
+  AccessStrict
+    (l.[(v1.Container.t), "Resources"] ↦ (v.(v1.Container.Resources')))
+    (l.[(v1.Container.t), "Resources"] ↦ Resources')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Resources') := Resources'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_ResizePolicy l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "ResizePolicy"] ↦{dq} (v.(v1.Container.ResizePolicy')))
+    (l.[(v1.Container.t), "ResizePolicy"] ↦{dq} (v.(v1.Container.ResizePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_ResizePolicy l (v : (v1.Container.t)) ResizePolicy' :
+  AccessStrict
+    (l.[(v1.Container.t), "ResizePolicy"] ↦ (v.(v1.Container.ResizePolicy')))
+    (l.[(v1.Container.t), "ResizePolicy"] ↦ ResizePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.Container.ResizePolicy') := ResizePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_RestartPolicy l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "RestartPolicy"] ↦{dq} (v.(v1.Container.RestartPolicy')))
+    (l.[(v1.Container.t), "RestartPolicy"] ↦{dq} (v.(v1.Container.RestartPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_RestartPolicy l (v : (v1.Container.t)) RestartPolicy' :
+  AccessStrict
+    (l.[(v1.Container.t), "RestartPolicy"] ↦ (v.(v1.Container.RestartPolicy')))
+    (l.[(v1.Container.t), "RestartPolicy"] ↦ RestartPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.Container.RestartPolicy') := RestartPolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_RestartPolicyRules l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "RestartPolicyRules"] ↦{dq} (v.(v1.Container.RestartPolicyRules')))
+    (l.[(v1.Container.t), "RestartPolicyRules"] ↦{dq} (v.(v1.Container.RestartPolicyRules')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_RestartPolicyRules l (v : (v1.Container.t)) RestartPolicyRules' :
+  AccessStrict
+    (l.[(v1.Container.t), "RestartPolicyRules"] ↦ (v.(v1.Container.RestartPolicyRules')))
+    (l.[(v1.Container.t), "RestartPolicyRules"] ↦ RestartPolicyRules')
+    (l ↦ v) (l ↦ (v <|(v1.Container.RestartPolicyRules') := RestartPolicyRules'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_VolumeMounts l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "VolumeMounts"] ↦{dq} (v.(v1.Container.VolumeMounts')))
+    (l.[(v1.Container.t), "VolumeMounts"] ↦{dq} (v.(v1.Container.VolumeMounts')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_VolumeMounts l (v : (v1.Container.t)) VolumeMounts' :
+  AccessStrict
+    (l.[(v1.Container.t), "VolumeMounts"] ↦ (v.(v1.Container.VolumeMounts')))
+    (l.[(v1.Container.t), "VolumeMounts"] ↦ VolumeMounts')
+    (l ↦ v) (l ↦ (v <|(v1.Container.VolumeMounts') := VolumeMounts'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_VolumeDevices l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "VolumeDevices"] ↦{dq} (v.(v1.Container.VolumeDevices')))
+    (l.[(v1.Container.t), "VolumeDevices"] ↦{dq} (v.(v1.Container.VolumeDevices')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_VolumeDevices l (v : (v1.Container.t)) VolumeDevices' :
+  AccessStrict
+    (l.[(v1.Container.t), "VolumeDevices"] ↦ (v.(v1.Container.VolumeDevices')))
+    (l.[(v1.Container.t), "VolumeDevices"] ↦ VolumeDevices')
+    (l ↦ v) (l ↦ (v <|(v1.Container.VolumeDevices') := VolumeDevices'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_LivenessProbe l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "LivenessProbe"] ↦{dq} (v.(v1.Container.LivenessProbe')))
+    (l.[(v1.Container.t), "LivenessProbe"] ↦{dq} (v.(v1.Container.LivenessProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_LivenessProbe l (v : (v1.Container.t)) LivenessProbe' :
+  AccessStrict
+    (l.[(v1.Container.t), "LivenessProbe"] ↦ (v.(v1.Container.LivenessProbe')))
+    (l.[(v1.Container.t), "LivenessProbe"] ↦ LivenessProbe')
+    (l ↦ v) (l ↦ (v <|(v1.Container.LivenessProbe') := LivenessProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_ReadinessProbe l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "ReadinessProbe"] ↦{dq} (v.(v1.Container.ReadinessProbe')))
+    (l.[(v1.Container.t), "ReadinessProbe"] ↦{dq} (v.(v1.Container.ReadinessProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_ReadinessProbe l (v : (v1.Container.t)) ReadinessProbe' :
+  AccessStrict
+    (l.[(v1.Container.t), "ReadinessProbe"] ↦ (v.(v1.Container.ReadinessProbe')))
+    (l.[(v1.Container.t), "ReadinessProbe"] ↦ ReadinessProbe')
+    (l ↦ v) (l ↦ (v <|(v1.Container.ReadinessProbe') := ReadinessProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_StartupProbe l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "StartupProbe"] ↦{dq} (v.(v1.Container.StartupProbe')))
+    (l.[(v1.Container.t), "StartupProbe"] ↦{dq} (v.(v1.Container.StartupProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_StartupProbe l (v : (v1.Container.t)) StartupProbe' :
+  AccessStrict
+    (l.[(v1.Container.t), "StartupProbe"] ↦ (v.(v1.Container.StartupProbe')))
+    (l.[(v1.Container.t), "StartupProbe"] ↦ StartupProbe')
+    (l ↦ v) (l ↦ (v <|(v1.Container.StartupProbe') := StartupProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Lifecycle l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Lifecycle"] ↦{dq} (v.(v1.Container.Lifecycle')))
+    (l.[(v1.Container.t), "Lifecycle"] ↦{dq} (v.(v1.Container.Lifecycle')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Lifecycle l (v : (v1.Container.t)) Lifecycle' :
+  AccessStrict
+    (l.[(v1.Container.t), "Lifecycle"] ↦ (v.(v1.Container.Lifecycle')))
+    (l.[(v1.Container.t), "Lifecycle"] ↦ Lifecycle')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Lifecycle') := Lifecycle'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_TerminationMessagePath l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "TerminationMessagePath"] ↦{dq} (v.(v1.Container.TerminationMessagePath')))
+    (l.[(v1.Container.t), "TerminationMessagePath"] ↦{dq} (v.(v1.Container.TerminationMessagePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_TerminationMessagePath l (v : (v1.Container.t)) TerminationMessagePath' :
+  AccessStrict
+    (l.[(v1.Container.t), "TerminationMessagePath"] ↦ (v.(v1.Container.TerminationMessagePath')))
+    (l.[(v1.Container.t), "TerminationMessagePath"] ↦ TerminationMessagePath')
+    (l ↦ v) (l ↦ (v <|(v1.Container.TerminationMessagePath') := TerminationMessagePath'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_TerminationMessagePolicy l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "TerminationMessagePolicy"] ↦{dq} (v.(v1.Container.TerminationMessagePolicy')))
+    (l.[(v1.Container.t), "TerminationMessagePolicy"] ↦{dq} (v.(v1.Container.TerminationMessagePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_TerminationMessagePolicy l (v : (v1.Container.t)) TerminationMessagePolicy' :
+  AccessStrict
+    (l.[(v1.Container.t), "TerminationMessagePolicy"] ↦ (v.(v1.Container.TerminationMessagePolicy')))
+    (l.[(v1.Container.t), "TerminationMessagePolicy"] ↦ TerminationMessagePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.Container.TerminationMessagePolicy') := TerminationMessagePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_ImagePullPolicy l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "ImagePullPolicy"] ↦{dq} (v.(v1.Container.ImagePullPolicy')))
+    (l.[(v1.Container.t), "ImagePullPolicy"] ↦{dq} (v.(v1.Container.ImagePullPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_ImagePullPolicy l (v : (v1.Container.t)) ImagePullPolicy' :
+  AccessStrict
+    (l.[(v1.Container.t), "ImagePullPolicy"] ↦ (v.(v1.Container.ImagePullPolicy')))
+    (l.[(v1.Container.t), "ImagePullPolicy"] ↦ ImagePullPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.Container.ImagePullPolicy') := ImagePullPolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_SecurityContext l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "SecurityContext"] ↦{dq} (v.(v1.Container.SecurityContext')))
+    (l.[(v1.Container.t), "SecurityContext"] ↦{dq} (v.(v1.Container.SecurityContext')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_SecurityContext l (v : (v1.Container.t)) SecurityContext' :
+  AccessStrict
+    (l.[(v1.Container.t), "SecurityContext"] ↦ (v.(v1.Container.SecurityContext')))
+    (l.[(v1.Container.t), "SecurityContext"] ↦ SecurityContext')
+    (l ↦ v) (l ↦ (v <|(v1.Container.SecurityContext') := SecurityContext'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_Stdin l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "Stdin"] ↦{dq} (v.(v1.Container.Stdin')))
+    (l.[(v1.Container.t), "Stdin"] ↦{dq} (v.(v1.Container.Stdin')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_Stdin l (v : (v1.Container.t)) Stdin' :
+  AccessStrict
+    (l.[(v1.Container.t), "Stdin"] ↦ (v.(v1.Container.Stdin')))
+    (l.[(v1.Container.t), "Stdin"] ↦ Stdin')
+    (l ↦ v) (l ↦ (v <|(v1.Container.Stdin') := Stdin'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_StdinOnce l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "StdinOnce"] ↦{dq} (v.(v1.Container.StdinOnce')))
+    (l.[(v1.Container.t), "StdinOnce"] ↦{dq} (v.(v1.Container.StdinOnce')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_StdinOnce l (v : (v1.Container.t)) StdinOnce' :
+  AccessStrict
+    (l.[(v1.Container.t), "StdinOnce"] ↦ (v.(v1.Container.StdinOnce')))
+    (l.[(v1.Container.t), "StdinOnce"] ↦ StdinOnce')
+    (l ↦ v) (l ↦ (v <|(v1.Container.StdinOnce') := StdinOnce'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+#[global] Instance Container_access_load_TTY l (v : (v1.Container.t)) dq :
+  AccessStrict
+    (l.[(v1.Container.t), "TTY"] ↦{dq} (v.(v1.Container.TTY')))
+    (l.[(v1.Container.t), "TTY"] ↦{dq} (v.(v1.Container.TTY')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
+
+#[global] Instance Container_access_store_TTY l (v : (v1.Container.t)) TTY' :
+  AccessStrict
+    (l.[(v1.Container.t), "TTY"] ↦ (v.(v1.Container.TTY')))
+    (l.[(v1.Container.t), "TTY"] ↦ TTY')
+    (l ↦ v) (l ↦ (v <|(v1.Container.TTY') := TTY'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
 
 End def.
 End Container.
-
-Module ProbeHandler.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ProbeHandler_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ProbeHandler.t). Admitted.
-
-#[global] Instance ProbeHandler_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ProbeHandler.t) (v1.ProbeHandlerⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ProbeHandler.
 
 Module LifecycleHandler.
 Section def.
@@ -4560,36 +10825,79 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance LifecycleHandler_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.LifecycleHandler.t). Admitted.
+#[global]Program Instance LifecycleHandler_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LifecycleHandler.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Exec" ∷ l.[(v1.LifecycleHandler.t), "Exec"] ↦{dq} v.(v1.LifecycleHandler.Exec') ∗
+      "HTTPGet" ∷ l.[(v1.LifecycleHandler.t), "HTTPGet"] ↦{dq} v.(v1.LifecycleHandler.HTTPGet') ∗
+      "TCPSocket" ∷ l.[(v1.LifecycleHandler.t), "TCPSocket"] ↦{dq} v.(v1.LifecycleHandler.TCPSocket') ∗
+      "Sleep" ∷ l.[(v1.LifecycleHandler.t), "Sleep"] ↦{dq} v.(v1.LifecycleHandler.Sleep') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance LifecycleHandler_into_val_typed
    :
   IntoValTypedUnderlying (v1.LifecycleHandler.t) (v1.LifecycleHandlerⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance LifecycleHandler_access_load_Exec l (v : (v1.LifecycleHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "Exec"] ↦{dq} (v.(v1.LifecycleHandler.Exec')))
+    (l.[(v1.LifecycleHandler.t), "Exec"] ↦{dq} (v.(v1.LifecycleHandler.Exec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LifecycleHandler_access_store_Exec l (v : (v1.LifecycleHandler.t)) Exec' :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "Exec"] ↦ (v.(v1.LifecycleHandler.Exec')))
+    (l.[(v1.LifecycleHandler.t), "Exec"] ↦ Exec')
+    (l ↦ v) (l ↦ (v <|(v1.LifecycleHandler.Exec') := Exec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance LifecycleHandler_access_load_HTTPGet l (v : (v1.LifecycleHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "HTTPGet"] ↦{dq} (v.(v1.LifecycleHandler.HTTPGet')))
+    (l.[(v1.LifecycleHandler.t), "HTTPGet"] ↦{dq} (v.(v1.LifecycleHandler.HTTPGet')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LifecycleHandler_access_store_HTTPGet l (v : (v1.LifecycleHandler.t)) HTTPGet' :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "HTTPGet"] ↦ (v.(v1.LifecycleHandler.HTTPGet')))
+    (l.[(v1.LifecycleHandler.t), "HTTPGet"] ↦ HTTPGet')
+    (l ↦ v) (l ↦ (v <|(v1.LifecycleHandler.HTTPGet') := HTTPGet'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance LifecycleHandler_access_load_TCPSocket l (v : (v1.LifecycleHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "TCPSocket"] ↦{dq} (v.(v1.LifecycleHandler.TCPSocket')))
+    (l.[(v1.LifecycleHandler.t), "TCPSocket"] ↦{dq} (v.(v1.LifecycleHandler.TCPSocket')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LifecycleHandler_access_store_TCPSocket l (v : (v1.LifecycleHandler.t)) TCPSocket' :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "TCPSocket"] ↦ (v.(v1.LifecycleHandler.TCPSocket')))
+    (l.[(v1.LifecycleHandler.t), "TCPSocket"] ↦ TCPSocket')
+    (l ↦ v) (l ↦ (v <|(v1.LifecycleHandler.TCPSocket') := TCPSocket'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance LifecycleHandler_access_load_Sleep l (v : (v1.LifecycleHandler.t)) dq :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "Sleep"] ↦{dq} (v.(v1.LifecycleHandler.Sleep')))
+    (l.[(v1.LifecycleHandler.t), "Sleep"] ↦{dq} (v.(v1.LifecycleHandler.Sleep')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LifecycleHandler_access_store_Sleep l (v : (v1.LifecycleHandler.t)) Sleep' :
+  AccessStrict
+    (l.[(v1.LifecycleHandler.t), "Sleep"] ↦ (v.(v1.LifecycleHandler.Sleep')))
+    (l.[(v1.LifecycleHandler.t), "Sleep"] ↦ Sleep')
+    (l ↦ v) (l ↦ (v <|(v1.LifecycleHandler.Sleep') := Sleep'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End LifecycleHandler.
-
-Module Signal.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance Signal_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Signal.t). Admitted.
-
-#[global] Instance Signal_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.Signal.t) (v1.Signalⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End Signal.
 
 Module Lifecycle.
 Section def.
@@ -4600,13 +10908,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Lifecycle_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Lifecycle.t). Admitted.
+#[global]Program Instance Lifecycle_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Lifecycle.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "PostStart" ∷ l.[(v1.Lifecycle.t), "PostStart"] ↦{dq} v.(v1.Lifecycle.PostStart') ∗
+      "PreStop" ∷ l.[(v1.Lifecycle.t), "PreStop"] ↦{dq} v.(v1.Lifecycle.PreStop') ∗
+      "StopSignal" ∷ l.[(v1.Lifecycle.t), "StopSignal"] ↦{dq} v.(v1.Lifecycle.StopSignal') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Lifecycle_into_val_typed
    :
   IntoValTypedUnderlying (v1.Lifecycle.t) (v1.Lifecycleⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Lifecycle_access_load_PostStart l (v : (v1.Lifecycle.t)) dq :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "PostStart"] ↦{dq} (v.(v1.Lifecycle.PostStart')))
+    (l.[(v1.Lifecycle.t), "PostStart"] ↦{dq} (v.(v1.Lifecycle.PostStart')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Lifecycle_access_store_PostStart l (v : (v1.Lifecycle.t)) PostStart' :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "PostStart"] ↦ (v.(v1.Lifecycle.PostStart')))
+    (l.[(v1.Lifecycle.t), "PostStart"] ↦ PostStart')
+    (l ↦ v) (l ↦ (v <|(v1.Lifecycle.PostStart') := PostStart'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Lifecycle_access_load_PreStop l (v : (v1.Lifecycle.t)) dq :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "PreStop"] ↦{dq} (v.(v1.Lifecycle.PreStop')))
+    (l.[(v1.Lifecycle.t), "PreStop"] ↦{dq} (v.(v1.Lifecycle.PreStop')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Lifecycle_access_store_PreStop l (v : (v1.Lifecycle.t)) PreStop' :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "PreStop"] ↦ (v.(v1.Lifecycle.PreStop')))
+    (l.[(v1.Lifecycle.t), "PreStop"] ↦ PreStop')
+    (l ↦ v) (l ↦ (v <|(v1.Lifecycle.PreStop') := PreStop'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Lifecycle_access_load_StopSignal l (v : (v1.Lifecycle.t)) dq :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "StopSignal"] ↦{dq} (v.(v1.Lifecycle.StopSignal')))
+    (l.[(v1.Lifecycle.t), "StopSignal"] ↦{dq} (v.(v1.Lifecycle.StopSignal')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Lifecycle_access_store_StopSignal l (v : (v1.Lifecycle.t)) StopSignal' :
+  AccessStrict
+    (l.[(v1.Lifecycle.t), "StopSignal"] ↦ (v.(v1.Lifecycle.StopSignal')))
+    (l.[(v1.Lifecycle.t), "StopSignal"] ↦ StopSignal')
+    (l ↦ v) (l ↦ (v <|(v1.Lifecycle.StopSignal') := StopSignal'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Lifecycle.
@@ -4620,13 +10977,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerStateWaiting_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerStateWaiting.t). Admitted.
+#[global]Program Instance ContainerStateWaiting_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateWaiting.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Reason" ∷ l.[(v1.ContainerStateWaiting.t), "Reason"] ↦{dq} v.(v1.ContainerStateWaiting.Reason') ∗
+      "Message" ∷ l.[(v1.ContainerStateWaiting.t), "Message"] ↦{dq} v.(v1.ContainerStateWaiting.Message') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerStateWaiting_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerStateWaiting.t) (v1.ContainerStateWaitingⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerStateWaiting_access_load_Reason l (v : (v1.ContainerStateWaiting.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateWaiting.t), "Reason"] ↦{dq} (v.(v1.ContainerStateWaiting.Reason')))
+    (l.[(v1.ContainerStateWaiting.t), "Reason"] ↦{dq} (v.(v1.ContainerStateWaiting.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateWaiting_access_store_Reason l (v : (v1.ContainerStateWaiting.t)) Reason' :
+  AccessStrict
+    (l.[(v1.ContainerStateWaiting.t), "Reason"] ↦ (v.(v1.ContainerStateWaiting.Reason')))
+    (l.[(v1.ContainerStateWaiting.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateWaiting.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateWaiting_access_load_Message l (v : (v1.ContainerStateWaiting.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateWaiting.t), "Message"] ↦{dq} (v.(v1.ContainerStateWaiting.Message')))
+    (l.[(v1.ContainerStateWaiting.t), "Message"] ↦{dq} (v.(v1.ContainerStateWaiting.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateWaiting_access_store_Message l (v : (v1.ContainerStateWaiting.t)) Message' :
+  AccessStrict
+    (l.[(v1.ContainerStateWaiting.t), "Message"] ↦ (v.(v1.ContainerStateWaiting.Message')))
+    (l.[(v1.ContainerStateWaiting.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateWaiting.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerStateWaiting.
@@ -4640,13 +11032,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerStateRunning_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerStateRunning.t). Admitted.
+#[global]Program Instance ContainerStateRunning_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateRunning.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "StartedAt" ∷ l.[(v1.ContainerStateRunning.t), "StartedAt"] ↦{dq} v.(v1.ContainerStateRunning.StartedAt') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerStateRunning_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerStateRunning.t) (v1.ContainerStateRunningⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerStateRunning_access_load_StartedAt l (v : (v1.ContainerStateRunning.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateRunning.t), "StartedAt"] ↦{dq} (v.(v1.ContainerStateRunning.StartedAt')))
+    (l.[(v1.ContainerStateRunning.t), "StartedAt"] ↦{dq} (v.(v1.ContainerStateRunning.StartedAt')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateRunning_access_store_StartedAt l (v : (v1.ContainerStateRunning.t)) StartedAt' :
+  AccessStrict
+    (l.[(v1.ContainerStateRunning.t), "StartedAt"] ↦ (v.(v1.ContainerStateRunning.StartedAt')))
+    (l.[(v1.ContainerStateRunning.t), "StartedAt"] ↦ StartedAt')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateRunning.StartedAt') := StartedAt'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerStateRunning.
@@ -4660,13 +11073,118 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerStateTerminated_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerStateTerminated.t). Admitted.
+#[global]Program Instance ContainerStateTerminated_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStateTerminated.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ExitCode" ∷ l.[(v1.ContainerStateTerminated.t), "ExitCode"] ↦{dq} v.(v1.ContainerStateTerminated.ExitCode') ∗
+      "Signal" ∷ l.[(v1.ContainerStateTerminated.t), "Signal"] ↦{dq} v.(v1.ContainerStateTerminated.Signal') ∗
+      "Reason" ∷ l.[(v1.ContainerStateTerminated.t), "Reason"] ↦{dq} v.(v1.ContainerStateTerminated.Reason') ∗
+      "Message" ∷ l.[(v1.ContainerStateTerminated.t), "Message"] ↦{dq} v.(v1.ContainerStateTerminated.Message') ∗
+      "StartedAt" ∷ l.[(v1.ContainerStateTerminated.t), "StartedAt"] ↦{dq} v.(v1.ContainerStateTerminated.StartedAt') ∗
+      "FinishedAt" ∷ l.[(v1.ContainerStateTerminated.t), "FinishedAt"] ↦{dq} v.(v1.ContainerStateTerminated.FinishedAt') ∗
+      "ContainerID" ∷ l.[(v1.ContainerStateTerminated.t), "ContainerID"] ↦{dq} v.(v1.ContainerStateTerminated.ContainerID') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerStateTerminated_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerStateTerminated.t) (v1.ContainerStateTerminatedⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_ExitCode l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "ExitCode"] ↦{dq} (v.(v1.ContainerStateTerminated.ExitCode')))
+    (l.[(v1.ContainerStateTerminated.t), "ExitCode"] ↦{dq} (v.(v1.ContainerStateTerminated.ExitCode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_ExitCode l (v : (v1.ContainerStateTerminated.t)) ExitCode' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "ExitCode"] ↦ (v.(v1.ContainerStateTerminated.ExitCode')))
+    (l.[(v1.ContainerStateTerminated.t), "ExitCode"] ↦ ExitCode')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.ExitCode') := ExitCode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_Signal l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Signal"] ↦{dq} (v.(v1.ContainerStateTerminated.Signal')))
+    (l.[(v1.ContainerStateTerminated.t), "Signal"] ↦{dq} (v.(v1.ContainerStateTerminated.Signal')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_Signal l (v : (v1.ContainerStateTerminated.t)) Signal' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Signal"] ↦ (v.(v1.ContainerStateTerminated.Signal')))
+    (l.[(v1.ContainerStateTerminated.t), "Signal"] ↦ Signal')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.Signal') := Signal'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_Reason l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Reason"] ↦{dq} (v.(v1.ContainerStateTerminated.Reason')))
+    (l.[(v1.ContainerStateTerminated.t), "Reason"] ↦{dq} (v.(v1.ContainerStateTerminated.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_Reason l (v : (v1.ContainerStateTerminated.t)) Reason' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Reason"] ↦ (v.(v1.ContainerStateTerminated.Reason')))
+    (l.[(v1.ContainerStateTerminated.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_Message l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Message"] ↦{dq} (v.(v1.ContainerStateTerminated.Message')))
+    (l.[(v1.ContainerStateTerminated.t), "Message"] ↦{dq} (v.(v1.ContainerStateTerminated.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_Message l (v : (v1.ContainerStateTerminated.t)) Message' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "Message"] ↦ (v.(v1.ContainerStateTerminated.Message')))
+    (l.[(v1.ContainerStateTerminated.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_StartedAt l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "StartedAt"] ↦{dq} (v.(v1.ContainerStateTerminated.StartedAt')))
+    (l.[(v1.ContainerStateTerminated.t), "StartedAt"] ↦{dq} (v.(v1.ContainerStateTerminated.StartedAt')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_StartedAt l (v : (v1.ContainerStateTerminated.t)) StartedAt' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "StartedAt"] ↦ (v.(v1.ContainerStateTerminated.StartedAt')))
+    (l.[(v1.ContainerStateTerminated.t), "StartedAt"] ↦ StartedAt')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.StartedAt') := StartedAt'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_FinishedAt l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "FinishedAt"] ↦{dq} (v.(v1.ContainerStateTerminated.FinishedAt')))
+    (l.[(v1.ContainerStateTerminated.t), "FinishedAt"] ↦{dq} (v.(v1.ContainerStateTerminated.FinishedAt')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_FinishedAt l (v : (v1.ContainerStateTerminated.t)) FinishedAt' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "FinishedAt"] ↦ (v.(v1.ContainerStateTerminated.FinishedAt')))
+    (l.[(v1.ContainerStateTerminated.t), "FinishedAt"] ↦ FinishedAt')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.FinishedAt') := FinishedAt'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerStateTerminated_access_load_ContainerID l (v : (v1.ContainerStateTerminated.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "ContainerID"] ↦{dq} (v.(v1.ContainerStateTerminated.ContainerID')))
+    (l.[(v1.ContainerStateTerminated.t), "ContainerID"] ↦{dq} (v.(v1.ContainerStateTerminated.ContainerID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerStateTerminated_access_store_ContainerID l (v : (v1.ContainerStateTerminated.t)) ContainerID' :
+  AccessStrict
+    (l.[(v1.ContainerStateTerminated.t), "ContainerID"] ↦ (v.(v1.ContainerStateTerminated.ContainerID')))
+    (l.[(v1.ContainerStateTerminated.t), "ContainerID"] ↦ ContainerID')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStateTerminated.ContainerID') := ContainerID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerStateTerminated.
@@ -4680,13 +11198,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerState_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerState.t). Admitted.
+#[global]Program Instance ContainerState_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerState.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Waiting" ∷ l.[(v1.ContainerState.t), "Waiting"] ↦{dq} v.(v1.ContainerState.Waiting') ∗
+      "Running" ∷ l.[(v1.ContainerState.t), "Running"] ↦{dq} v.(v1.ContainerState.Running') ∗
+      "Terminated" ∷ l.[(v1.ContainerState.t), "Terminated"] ↦{dq} v.(v1.ContainerState.Terminated') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerState_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerState.t) (v1.ContainerStateⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerState_access_load_Waiting l (v : (v1.ContainerState.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Waiting"] ↦{dq} (v.(v1.ContainerState.Waiting')))
+    (l.[(v1.ContainerState.t), "Waiting"] ↦{dq} (v.(v1.ContainerState.Waiting')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerState_access_store_Waiting l (v : (v1.ContainerState.t)) Waiting' :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Waiting"] ↦ (v.(v1.ContainerState.Waiting')))
+    (l.[(v1.ContainerState.t), "Waiting"] ↦ Waiting')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerState.Waiting') := Waiting'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerState_access_load_Running l (v : (v1.ContainerState.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Running"] ↦{dq} (v.(v1.ContainerState.Running')))
+    (l.[(v1.ContainerState.t), "Running"] ↦{dq} (v.(v1.ContainerState.Running')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerState_access_store_Running l (v : (v1.ContainerState.t)) Running' :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Running"] ↦ (v.(v1.ContainerState.Running')))
+    (l.[(v1.ContainerState.t), "Running"] ↦ Running')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerState.Running') := Running'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerState_access_load_Terminated l (v : (v1.ContainerState.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Terminated"] ↦{dq} (v.(v1.ContainerState.Terminated')))
+    (l.[(v1.ContainerState.t), "Terminated"] ↦{dq} (v.(v1.ContainerState.Terminated')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerState_access_store_Terminated l (v : (v1.ContainerState.t)) Terminated' :
+  AccessStrict
+    (l.[(v1.ContainerState.t), "Terminated"] ↦ (v.(v1.ContainerState.Terminated')))
+    (l.[(v1.ContainerState.t), "Terminated"] ↦ Terminated')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerState.Terminated') := Terminated'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerState.
@@ -4700,13 +11267,897 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerStatus.t). Admitted.
+#[global]Program Instance ContainerStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.ContainerStatus.t), "Name"] ↦{dq} v.(v1.ContainerStatus.Name') ∗
+      "State" ∷ l.[(v1.ContainerStatus.t), "State"] ↦{dq} v.(v1.ContainerStatus.State') ∗
+      "LastTerminationState" ∷ l.[(v1.ContainerStatus.t), "LastTerminationState"] ↦{dq} v.(v1.ContainerStatus.LastTerminationState') ∗
+      "Ready" ∷ l.[(v1.ContainerStatus.t), "Ready"] ↦{dq} v.(v1.ContainerStatus.Ready') ∗
+      "RestartCount" ∷ l.[(v1.ContainerStatus.t), "RestartCount"] ↦{dq} v.(v1.ContainerStatus.RestartCount') ∗
+      "Image" ∷ l.[(v1.ContainerStatus.t), "Image"] ↦{dq} v.(v1.ContainerStatus.Image') ∗
+      "ImageID" ∷ l.[(v1.ContainerStatus.t), "ImageID"] ↦{dq} v.(v1.ContainerStatus.ImageID') ∗
+      "ContainerID" ∷ l.[(v1.ContainerStatus.t), "ContainerID"] ↦{dq} v.(v1.ContainerStatus.ContainerID') ∗
+      "Started" ∷ l.[(v1.ContainerStatus.t), "Started"] ↦{dq} v.(v1.ContainerStatus.Started') ∗
+      "AllocatedResources" ∷ l.[(v1.ContainerStatus.t), "AllocatedResources"] ↦{dq} v.(v1.ContainerStatus.AllocatedResources') ∗
+      "Resources" ∷ l.[(v1.ContainerStatus.t), "Resources"] ↦{dq} v.(v1.ContainerStatus.Resources') ∗
+      "VolumeMounts" ∷ l.[(v1.ContainerStatus.t), "VolumeMounts"] ↦{dq} v.(v1.ContainerStatus.VolumeMounts') ∗
+      "User" ∷ l.[(v1.ContainerStatus.t), "User"] ↦{dq} v.(v1.ContainerStatus.User') ∗
+      "AllocatedResourcesStatus" ∷ l.[(v1.ContainerStatus.t), "AllocatedResourcesStatus"] ↦{dq} v.(v1.ContainerStatus.AllocatedResourcesStatus') ∗
+      "StopSignal" ∷ l.[(v1.ContainerStatus.t), "StopSignal"] ↦{dq} v.(v1.ContainerStatus.StopSignal') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerStatus.t) (v1.ContainerStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "Name" go.string
+      (fun v => v.(v1.ContainerStatus.Name'))
+      (fun v x => v <|(v1.ContainerStatus.Name') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "State" v1.ContainerState
+      (fun v => v.(v1.ContainerStatus.State'))
+      (fun v x => v <|(v1.ContainerStatus.State') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "LastTerminationState" v1.ContainerState
+      (fun v => v.(v1.ContainerStatus.LastTerminationState'))
+      (fun v x => v <|(v1.ContainerStatus.LastTerminationState') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Ready" go.bool
+      (fun v => v.(v1.ContainerStatus.Ready'))
+      (fun v x => v <|(v1.ContainerStatus.Ready') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RestartCount" go.int32
+      (fun v => v.(v1.ContainerStatus.RestartCount'))
+      (fun v x => v <|(v1.ContainerStatus.RestartCount') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Image" go.string
+      (fun v => v.(v1.ContainerStatus.Image'))
+      (fun v x => v <|(v1.ContainerStatus.Image') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ImageID" go.string
+      (fun v => v.(v1.ContainerStatus.ImageID'))
+      (fun v x => v <|(v1.ContainerStatus.ImageID') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ContainerID" go.string
+      (fun v => v.(v1.ContainerStatus.ContainerID'))
+      (fun v x => v <|(v1.ContainerStatus.ContainerID') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Started" (go.PointerType go.bool)
+      (fun v => v.(v1.ContainerStatus.Started'))
+      (fun v x => v <|(v1.ContainerStatus.Started') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AllocatedResources" v1.ResourceList
+      (fun v => v.(v1.ContainerStatus.AllocatedResources'))
+      (fun v x => v <|(v1.ContainerStatus.AllocatedResources') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Resources" (go.PointerType v1.ResourceRequirements)
+      (fun v => v.(v1.ContainerStatus.Resources'))
+      (fun v x => v <|(v1.ContainerStatus.Resources') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeMounts" (go.SliceType v1.VolumeMountStatus)
+      (fun v => v.(v1.ContainerStatus.VolumeMounts'))
+      (fun v x => v <|(v1.ContainerStatus.VolumeMounts') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "User" (go.PointerType v1.ContainerUser)
+      (fun v => v.(v1.ContainerStatus.User'))
+      (fun v x => v <|(v1.ContainerStatus.User') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AllocatedResourcesStatus" (go.SliceType v1.ResourceStatus)
+      (fun v => v.(v1.ContainerStatus.AllocatedResourcesStatus'))
+      (fun v x => v <|(v1.ContainerStatus.AllocatedResourcesStatus') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StopSignal" (go.PointerType v1.Signal)
+      (fun v => v.(v1.ContainerStatus.StopSignal'))
+      (fun v x => v <|(v1.ContainerStatus.StopSignal') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.ContainerStatus.t v1.ContainerStatusⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.ContainerStatus'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.ContainerStatus'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance ContainerStatus_access_load_Name l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Name"] ↦{dq} (v.(v1.ContainerStatus.Name')))
+    (l.[(v1.ContainerStatus.t), "Name"] ↦{dq} (v.(v1.ContainerStatus.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_Name l (v : (v1.ContainerStatus.t)) Name' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Name"] ↦ (v.(v1.ContainerStatus.Name')))
+    (l.[(v1.ContainerStatus.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.Name') := Name'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_State l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "State"] ↦{dq} (v.(v1.ContainerStatus.State')))
+    (l.[(v1.ContainerStatus.t), "State"] ↦{dq} (v.(v1.ContainerStatus.State')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_State l (v : (v1.ContainerStatus.t)) State' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "State"] ↦ (v.(v1.ContainerStatus.State')))
+    (l.[(v1.ContainerStatus.t), "State"] ↦ State')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.State') := State'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_LastTerminationState l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "LastTerminationState"] ↦{dq} (v.(v1.ContainerStatus.LastTerminationState')))
+    (l.[(v1.ContainerStatus.t), "LastTerminationState"] ↦{dq} (v.(v1.ContainerStatus.LastTerminationState')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_LastTerminationState l (v : (v1.ContainerStatus.t)) LastTerminationState' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "LastTerminationState"] ↦ (v.(v1.ContainerStatus.LastTerminationState')))
+    (l.[(v1.ContainerStatus.t), "LastTerminationState"] ↦ LastTerminationState')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.LastTerminationState') := LastTerminationState'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_Ready l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Ready"] ↦{dq} (v.(v1.ContainerStatus.Ready')))
+    (l.[(v1.ContainerStatus.t), "Ready"] ↦{dq} (v.(v1.ContainerStatus.Ready')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_Ready l (v : (v1.ContainerStatus.t)) Ready' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Ready"] ↦ (v.(v1.ContainerStatus.Ready')))
+    (l.[(v1.ContainerStatus.t), "Ready"] ↦ Ready')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.Ready') := Ready'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_RestartCount l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "RestartCount"] ↦{dq} (v.(v1.ContainerStatus.RestartCount')))
+    (l.[(v1.ContainerStatus.t), "RestartCount"] ↦{dq} (v.(v1.ContainerStatus.RestartCount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_RestartCount l (v : (v1.ContainerStatus.t)) RestartCount' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "RestartCount"] ↦ (v.(v1.ContainerStatus.RestartCount')))
+    (l.[(v1.ContainerStatus.t), "RestartCount"] ↦ RestartCount')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.RestartCount') := RestartCount'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_Image l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Image"] ↦{dq} (v.(v1.ContainerStatus.Image')))
+    (l.[(v1.ContainerStatus.t), "Image"] ↦{dq} (v.(v1.ContainerStatus.Image')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_Image l (v : (v1.ContainerStatus.t)) Image' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Image"] ↦ (v.(v1.ContainerStatus.Image')))
+    (l.[(v1.ContainerStatus.t), "Image"] ↦ Image')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.Image') := Image'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_ImageID l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "ImageID"] ↦{dq} (v.(v1.ContainerStatus.ImageID')))
+    (l.[(v1.ContainerStatus.t), "ImageID"] ↦{dq} (v.(v1.ContainerStatus.ImageID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_ImageID l (v : (v1.ContainerStatus.t)) ImageID' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "ImageID"] ↦ (v.(v1.ContainerStatus.ImageID')))
+    (l.[(v1.ContainerStatus.t), "ImageID"] ↦ ImageID')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.ImageID') := ImageID'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_ContainerID l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "ContainerID"] ↦{dq} (v.(v1.ContainerStatus.ContainerID')))
+    (l.[(v1.ContainerStatus.t), "ContainerID"] ↦{dq} (v.(v1.ContainerStatus.ContainerID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_ContainerID l (v : (v1.ContainerStatus.t)) ContainerID' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "ContainerID"] ↦ (v.(v1.ContainerStatus.ContainerID')))
+    (l.[(v1.ContainerStatus.t), "ContainerID"] ↦ ContainerID')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.ContainerID') := ContainerID'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_Started l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Started"] ↦{dq} (v.(v1.ContainerStatus.Started')))
+    (l.[(v1.ContainerStatus.t), "Started"] ↦{dq} (v.(v1.ContainerStatus.Started')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_Started l (v : (v1.ContainerStatus.t)) Started' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Started"] ↦ (v.(v1.ContainerStatus.Started')))
+    (l.[(v1.ContainerStatus.t), "Started"] ↦ Started')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.Started') := Started'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_AllocatedResources l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.ContainerStatus.AllocatedResources')))
+    (l.[(v1.ContainerStatus.t), "AllocatedResources"] ↦{dq} (v.(v1.ContainerStatus.AllocatedResources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_AllocatedResources l (v : (v1.ContainerStatus.t)) AllocatedResources' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "AllocatedResources"] ↦ (v.(v1.ContainerStatus.AllocatedResources')))
+    (l.[(v1.ContainerStatus.t), "AllocatedResources"] ↦ AllocatedResources')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.AllocatedResources') := AllocatedResources'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_Resources l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Resources"] ↦{dq} (v.(v1.ContainerStatus.Resources')))
+    (l.[(v1.ContainerStatus.t), "Resources"] ↦{dq} (v.(v1.ContainerStatus.Resources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_Resources l (v : (v1.ContainerStatus.t)) Resources' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "Resources"] ↦ (v.(v1.ContainerStatus.Resources')))
+    (l.[(v1.ContainerStatus.t), "Resources"] ↦ Resources')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.Resources') := Resources'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_VolumeMounts l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "VolumeMounts"] ↦{dq} (v.(v1.ContainerStatus.VolumeMounts')))
+    (l.[(v1.ContainerStatus.t), "VolumeMounts"] ↦{dq} (v.(v1.ContainerStatus.VolumeMounts')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_VolumeMounts l (v : (v1.ContainerStatus.t)) VolumeMounts' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "VolumeMounts"] ↦ (v.(v1.ContainerStatus.VolumeMounts')))
+    (l.[(v1.ContainerStatus.t), "VolumeMounts"] ↦ VolumeMounts')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.VolumeMounts') := VolumeMounts'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_User l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "User"] ↦{dq} (v.(v1.ContainerStatus.User')))
+    (l.[(v1.ContainerStatus.t), "User"] ↦{dq} (v.(v1.ContainerStatus.User')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_User l (v : (v1.ContainerStatus.t)) User' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "User"] ↦ (v.(v1.ContainerStatus.User')))
+    (l.[(v1.ContainerStatus.t), "User"] ↦ User')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.User') := User'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_AllocatedResourcesStatus l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "AllocatedResourcesStatus"] ↦{dq} (v.(v1.ContainerStatus.AllocatedResourcesStatus')))
+    (l.[(v1.ContainerStatus.t), "AllocatedResourcesStatus"] ↦{dq} (v.(v1.ContainerStatus.AllocatedResourcesStatus')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_AllocatedResourcesStatus l (v : (v1.ContainerStatus.t)) AllocatedResourcesStatus' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "AllocatedResourcesStatus"] ↦ (v.(v1.ContainerStatus.AllocatedResourcesStatus')))
+    (l.[(v1.ContainerStatus.t), "AllocatedResourcesStatus"] ↦ AllocatedResourcesStatus')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.AllocatedResourcesStatus') := AllocatedResourcesStatus'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+#[global] Instance ContainerStatus_access_load_StopSignal l (v : (v1.ContainerStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "StopSignal"] ↦{dq} (v.(v1.ContainerStatus.StopSignal')))
+    (l.[(v1.ContainerStatus.t), "StopSignal"] ↦{dq} (v.(v1.ContainerStatus.StopSignal')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+
+#[global] Instance ContainerStatus_access_store_StopSignal l (v : (v1.ContainerStatus.t)) StopSignal' :
+  AccessStrict
+    (l.[(v1.ContainerStatus.t), "StopSignal"] ↦ (v.(v1.ContainerStatus.StopSignal')))
+    (l.[(v1.ContainerStatus.t), "StopSignal"] ↦ StopSignal')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerStatus.StopSignal') := StopSignal'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
 
 End def.
 End ContainerStatus.
@@ -4720,56 +12171,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ResourceStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceStatus.t). Admitted.
+#[global]Program Instance ResourceStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.ResourceStatus.t), "Name"] ↦{dq} v.(v1.ResourceStatus.Name') ∗
+      "Resources" ∷ l.[(v1.ResourceStatus.t), "Resources"] ↦{dq} v.(v1.ResourceStatus.Resources') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ResourceStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.ResourceStatus.t) (v1.ResourceStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ResourceStatus_access_load_Name l (v : (v1.ResourceStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceStatus.t), "Name"] ↦{dq} (v.(v1.ResourceStatus.Name')))
+    (l.[(v1.ResourceStatus.t), "Name"] ↦{dq} (v.(v1.ResourceStatus.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceStatus_access_store_Name l (v : (v1.ResourceStatus.t)) Name' :
+  AccessStrict
+    (l.[(v1.ResourceStatus.t), "Name"] ↦ (v.(v1.ResourceStatus.Name')))
+    (l.[(v1.ResourceStatus.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceStatus.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceStatus_access_load_Resources l (v : (v1.ResourceStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceStatus.t), "Resources"] ↦{dq} (v.(v1.ResourceStatus.Resources')))
+    (l.[(v1.ResourceStatus.t), "Resources"] ↦{dq} (v.(v1.ResourceStatus.Resources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceStatus_access_store_Resources l (v : (v1.ResourceStatus.t)) Resources' :
+  AccessStrict
+    (l.[(v1.ResourceStatus.t), "Resources"] ↦ (v.(v1.ResourceStatus.Resources')))
+    (l.[(v1.ResourceStatus.t), "Resources"] ↦ Resources')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceStatus.Resources') := Resources'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ResourceStatus.
-
-Module ResourceHealthStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ResourceHealthStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceHealthStatus.t). Admitted.
-
-#[global] Instance ResourceHealthStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ResourceHealthStatus.t) (v1.ResourceHealthStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ResourceHealthStatus.
-
-Module ResourceID.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ResourceID_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceID.t). Admitted.
-
-#[global] Instance ResourceID_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ResourceID.t) (v1.ResourceIDⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ResourceID.
 
 Module ResourceHealth.
 Section def.
@@ -4780,13 +12226,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ResourceHealth_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceHealth.t). Admitted.
+#[global]Program Instance ResourceHealth_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ResourceHealth.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ResourceID" ∷ l.[(v1.ResourceHealth.t), "ResourceID"] ↦{dq} v.(v1.ResourceHealth.ResourceID') ∗
+      "Health" ∷ l.[(v1.ResourceHealth.t), "Health"] ↦{dq} v.(v1.ResourceHealth.Health') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ResourceHealth_into_val_typed
    :
   IntoValTypedUnderlying (v1.ResourceHealth.t) (v1.ResourceHealthⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ResourceHealth_access_load_ResourceID l (v : (v1.ResourceHealth.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceHealth.t), "ResourceID"] ↦{dq} (v.(v1.ResourceHealth.ResourceID')))
+    (l.[(v1.ResourceHealth.t), "ResourceID"] ↦{dq} (v.(v1.ResourceHealth.ResourceID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceHealth_access_store_ResourceID l (v : (v1.ResourceHealth.t)) ResourceID' :
+  AccessStrict
+    (l.[(v1.ResourceHealth.t), "ResourceID"] ↦ (v.(v1.ResourceHealth.ResourceID')))
+    (l.[(v1.ResourceHealth.t), "ResourceID"] ↦ ResourceID')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceHealth.ResourceID') := ResourceID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ResourceHealth_access_load_Health l (v : (v1.ResourceHealth.t)) dq :
+  AccessStrict
+    (l.[(v1.ResourceHealth.t), "Health"] ↦{dq} (v.(v1.ResourceHealth.Health')))
+    (l.[(v1.ResourceHealth.t), "Health"] ↦{dq} (v.(v1.ResourceHealth.Health')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ResourceHealth_access_store_Health l (v : (v1.ResourceHealth.t)) Health' :
+  AccessStrict
+    (l.[(v1.ResourceHealth.t), "Health"] ↦ (v.(v1.ResourceHealth.Health')))
+    (l.[(v1.ResourceHealth.t), "Health"] ↦ Health')
+    (l ↦ v) (l ↦ (v <|(v1.ResourceHealth.Health') := Health'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ResourceHealth.
@@ -4800,13 +12281,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerUser_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerUser.t). Admitted.
+#[global]Program Instance ContainerUser_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerUser.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Linux" ∷ l.[(v1.ContainerUser.t), "Linux"] ↦{dq} v.(v1.ContainerUser.Linux') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerUser_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerUser.t) (v1.ContainerUserⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerUser_access_load_Linux l (v : (v1.ContainerUser.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerUser.t), "Linux"] ↦{dq} (v.(v1.ContainerUser.Linux')))
+    (l.[(v1.ContainerUser.t), "Linux"] ↦{dq} (v.(v1.ContainerUser.Linux')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerUser_access_store_Linux l (v : (v1.ContainerUser.t)) Linux' :
+  AccessStrict
+    (l.[(v1.ContainerUser.t), "Linux"] ↦ (v.(v1.ContainerUser.Linux')))
+    (l.[(v1.ContainerUser.t), "Linux"] ↦ Linux')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerUser.Linux') := Linux'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerUser.
@@ -4820,36 +12322,65 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance LinuxContainerUser_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.LinuxContainerUser.t). Admitted.
+#[global]Program Instance LinuxContainerUser_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.LinuxContainerUser.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "UID" ∷ l.[(v1.LinuxContainerUser.t), "UID"] ↦{dq} v.(v1.LinuxContainerUser.UID') ∗
+      "GID" ∷ l.[(v1.LinuxContainerUser.t), "GID"] ↦{dq} v.(v1.LinuxContainerUser.GID') ∗
+      "SupplementalGroups" ∷ l.[(v1.LinuxContainerUser.t), "SupplementalGroups"] ↦{dq} v.(v1.LinuxContainerUser.SupplementalGroups') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance LinuxContainerUser_into_val_typed
    :
   IntoValTypedUnderlying (v1.LinuxContainerUser.t) (v1.LinuxContainerUserⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance LinuxContainerUser_access_load_UID l (v : (v1.LinuxContainerUser.t)) dq :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "UID"] ↦{dq} (v.(v1.LinuxContainerUser.UID')))
+    (l.[(v1.LinuxContainerUser.t), "UID"] ↦{dq} (v.(v1.LinuxContainerUser.UID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LinuxContainerUser_access_store_UID l (v : (v1.LinuxContainerUser.t)) UID' :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "UID"] ↦ (v.(v1.LinuxContainerUser.UID')))
+    (l.[(v1.LinuxContainerUser.t), "UID"] ↦ UID')
+    (l ↦ v) (l ↦ (v <|(v1.LinuxContainerUser.UID') := UID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance LinuxContainerUser_access_load_GID l (v : (v1.LinuxContainerUser.t)) dq :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "GID"] ↦{dq} (v.(v1.LinuxContainerUser.GID')))
+    (l.[(v1.LinuxContainerUser.t), "GID"] ↦{dq} (v.(v1.LinuxContainerUser.GID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LinuxContainerUser_access_store_GID l (v : (v1.LinuxContainerUser.t)) GID' :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "GID"] ↦ (v.(v1.LinuxContainerUser.GID')))
+    (l.[(v1.LinuxContainerUser.t), "GID"] ↦ GID')
+    (l ↦ v) (l ↦ (v <|(v1.LinuxContainerUser.GID') := GID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance LinuxContainerUser_access_load_SupplementalGroups l (v : (v1.LinuxContainerUser.t)) dq :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "SupplementalGroups"] ↦{dq} (v.(v1.LinuxContainerUser.SupplementalGroups')))
+    (l.[(v1.LinuxContainerUser.t), "SupplementalGroups"] ↦{dq} (v.(v1.LinuxContainerUser.SupplementalGroups')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance LinuxContainerUser_access_store_SupplementalGroups l (v : (v1.LinuxContainerUser.t)) SupplementalGroups' :
+  AccessStrict
+    (l.[(v1.LinuxContainerUser.t), "SupplementalGroups"] ↦ (v.(v1.LinuxContainerUser.SupplementalGroups')))
+    (l.[(v1.LinuxContainerUser.t), "SupplementalGroups"] ↦ SupplementalGroups')
+    (l ↦ v) (l ↦ (v <|(v1.LinuxContainerUser.SupplementalGroups') := SupplementalGroups'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End LinuxContainerUser.
-
-Module PodPhase.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodPhase_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodPhase.t). Admitted.
-
-#[global] Instance PodPhase_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodPhase.t) (v1.PodPhaseⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodPhase.
 
 Module PodCondition.
 Section def.
@@ -4976,26 +12507,6 @@ Proof. solve_pointsto_access_struct. Qed.
 End def.
 End PodCondition.
 
-Module PodResizeStatus.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodResizeStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodResizeStatus.t). Admitted.
-
-#[global] Instance PodResizeStatus_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodResizeStatus.t) (v1.PodResizeStatusⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodResizeStatus.
-
 Module VolumeMountStatus.
 Section def.
 
@@ -5005,56 +12516,79 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance VolumeMountStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.VolumeMountStatus.t). Admitted.
+#[global]Program Instance VolumeMountStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.VolumeMountStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.VolumeMountStatus.t), "Name"] ↦{dq} v.(v1.VolumeMountStatus.Name') ∗
+      "MountPath" ∷ l.[(v1.VolumeMountStatus.t), "MountPath"] ↦{dq} v.(v1.VolumeMountStatus.MountPath') ∗
+      "ReadOnly" ∷ l.[(v1.VolumeMountStatus.t), "ReadOnly"] ↦{dq} v.(v1.VolumeMountStatus.ReadOnly') ∗
+      "RecursiveReadOnly" ∷ l.[(v1.VolumeMountStatus.t), "RecursiveReadOnly"] ↦{dq} v.(v1.VolumeMountStatus.RecursiveReadOnly') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance VolumeMountStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.VolumeMountStatus.t) (v1.VolumeMountStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance VolumeMountStatus_access_load_Name l (v : (v1.VolumeMountStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "Name"] ↦{dq} (v.(v1.VolumeMountStatus.Name')))
+    (l.[(v1.VolumeMountStatus.t), "Name"] ↦{dq} (v.(v1.VolumeMountStatus.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMountStatus_access_store_Name l (v : (v1.VolumeMountStatus.t)) Name' :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "Name"] ↦ (v.(v1.VolumeMountStatus.Name')))
+    (l.[(v1.VolumeMountStatus.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMountStatus.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMountStatus_access_load_MountPath l (v : (v1.VolumeMountStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "MountPath"] ↦{dq} (v.(v1.VolumeMountStatus.MountPath')))
+    (l.[(v1.VolumeMountStatus.t), "MountPath"] ↦{dq} (v.(v1.VolumeMountStatus.MountPath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMountStatus_access_store_MountPath l (v : (v1.VolumeMountStatus.t)) MountPath' :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "MountPath"] ↦ (v.(v1.VolumeMountStatus.MountPath')))
+    (l.[(v1.VolumeMountStatus.t), "MountPath"] ↦ MountPath')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMountStatus.MountPath') := MountPath'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMountStatus_access_load_ReadOnly l (v : (v1.VolumeMountStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "ReadOnly"] ↦{dq} (v.(v1.VolumeMountStatus.ReadOnly')))
+    (l.[(v1.VolumeMountStatus.t), "ReadOnly"] ↦{dq} (v.(v1.VolumeMountStatus.ReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMountStatus_access_store_ReadOnly l (v : (v1.VolumeMountStatus.t)) ReadOnly' :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "ReadOnly"] ↦ (v.(v1.VolumeMountStatus.ReadOnly')))
+    (l.[(v1.VolumeMountStatus.t), "ReadOnly"] ↦ ReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMountStatus.ReadOnly') := ReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance VolumeMountStatus_access_load_RecursiveReadOnly l (v : (v1.VolumeMountStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "RecursiveReadOnly"] ↦{dq} (v.(v1.VolumeMountStatus.RecursiveReadOnly')))
+    (l.[(v1.VolumeMountStatus.t), "RecursiveReadOnly"] ↦{dq} (v.(v1.VolumeMountStatus.RecursiveReadOnly')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance VolumeMountStatus_access_store_RecursiveReadOnly l (v : (v1.VolumeMountStatus.t)) RecursiveReadOnly' :
+  AccessStrict
+    (l.[(v1.VolumeMountStatus.t), "RecursiveReadOnly"] ↦ (v.(v1.VolumeMountStatus.RecursiveReadOnly')))
+    (l.[(v1.VolumeMountStatus.t), "RecursiveReadOnly"] ↦ RecursiveReadOnly')
+    (l ↦ v) (l ↦ (v <|(v1.VolumeMountStatus.RecursiveReadOnly') := RecursiveReadOnly'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End VolumeMountStatus.
-
-Module RestartPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance RestartPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.RestartPolicy.t). Admitted.
-
-#[global] Instance RestartPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.RestartPolicy.t) (v1.RestartPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End RestartPolicy.
-
-Module ContainerRestartPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ContainerRestartPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerRestartPolicy.t). Admitted.
-
-#[global] Instance ContainerRestartPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ContainerRestartPolicy.t) (v1.ContainerRestartPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ContainerRestartPolicy.
 
 Module ContainerRestartRule.
 Section def.
@@ -5065,36 +12599,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerRestartRule_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRule.t). Admitted.
+#[global]Program Instance ContainerRestartRule_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRule.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Action" ∷ l.[(v1.ContainerRestartRule.t), "Action"] ↦{dq} v.(v1.ContainerRestartRule.Action') ∗
+      "ExitCodes" ∷ l.[(v1.ContainerRestartRule.t), "ExitCodes"] ↦{dq} v.(v1.ContainerRestartRule.ExitCodes') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerRestartRule_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerRestartRule.t) (v1.ContainerRestartRuleⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerRestartRule_access_load_Action l (v : (v1.ContainerRestartRule.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerRestartRule.t), "Action"] ↦{dq} (v.(v1.ContainerRestartRule.Action')))
+    (l.[(v1.ContainerRestartRule.t), "Action"] ↦{dq} (v.(v1.ContainerRestartRule.Action')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerRestartRule_access_store_Action l (v : (v1.ContainerRestartRule.t)) Action' :
+  AccessStrict
+    (l.[(v1.ContainerRestartRule.t), "Action"] ↦ (v.(v1.ContainerRestartRule.Action')))
+    (l.[(v1.ContainerRestartRule.t), "Action"] ↦ Action')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerRestartRule.Action') := Action'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerRestartRule_access_load_ExitCodes l (v : (v1.ContainerRestartRule.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerRestartRule.t), "ExitCodes"] ↦{dq} (v.(v1.ContainerRestartRule.ExitCodes')))
+    (l.[(v1.ContainerRestartRule.t), "ExitCodes"] ↦{dq} (v.(v1.ContainerRestartRule.ExitCodes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerRestartRule_access_store_ExitCodes l (v : (v1.ContainerRestartRule.t)) ExitCodes' :
+  AccessStrict
+    (l.[(v1.ContainerRestartRule.t), "ExitCodes"] ↦ (v.(v1.ContainerRestartRule.ExitCodes')))
+    (l.[(v1.ContainerRestartRule.t), "ExitCodes"] ↦ ExitCodes')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerRestartRule.ExitCodes') := ExitCodes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerRestartRule.
-
-Module ContainerRestartRuleAction.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ContainerRestartRuleAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleAction.t). Admitted.
-
-#[global] Instance ContainerRestartRuleAction_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ContainerRestartRuleAction.t) (v1.ContainerRestartRuleActionⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ContainerRestartRuleAction.
 
 Module ContainerRestartRuleOnExitCodes.
 Section def.
@@ -5105,56 +12654,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerRestartRuleOnExitCodes_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleOnExitCodes.t). Admitted.
+#[global]Program Instance ContainerRestartRuleOnExitCodes_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleOnExitCodes.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Operator" ∷ l.[(v1.ContainerRestartRuleOnExitCodes.t), "Operator"] ↦{dq} v.(v1.ContainerRestartRuleOnExitCodes.Operator') ∗
+      "Values" ∷ l.[(v1.ContainerRestartRuleOnExitCodes.t), "Values"] ↦{dq} v.(v1.ContainerRestartRuleOnExitCodes.Values') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerRestartRuleOnExitCodes_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerRestartRuleOnExitCodes.t) (v1.ContainerRestartRuleOnExitCodesⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerRestartRuleOnExitCodes_access_load_Operator l (v : (v1.ContainerRestartRuleOnExitCodes.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Operator"] ↦{dq} (v.(v1.ContainerRestartRuleOnExitCodes.Operator')))
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Operator"] ↦{dq} (v.(v1.ContainerRestartRuleOnExitCodes.Operator')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerRestartRuleOnExitCodes_access_store_Operator l (v : (v1.ContainerRestartRuleOnExitCodes.t)) Operator' :
+  AccessStrict
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Operator"] ↦ (v.(v1.ContainerRestartRuleOnExitCodes.Operator')))
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Operator"] ↦ Operator')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerRestartRuleOnExitCodes.Operator') := Operator'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerRestartRuleOnExitCodes_access_load_Values l (v : (v1.ContainerRestartRuleOnExitCodes.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Values"] ↦{dq} (v.(v1.ContainerRestartRuleOnExitCodes.Values')))
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Values"] ↦{dq} (v.(v1.ContainerRestartRuleOnExitCodes.Values')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerRestartRuleOnExitCodes_access_store_Values l (v : (v1.ContainerRestartRuleOnExitCodes.t)) Values' :
+  AccessStrict
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Values"] ↦ (v.(v1.ContainerRestartRuleOnExitCodes.Values')))
+    (l.[(v1.ContainerRestartRuleOnExitCodes.t), "Values"] ↦ Values')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerRestartRuleOnExitCodes.Values') := Values'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerRestartRuleOnExitCodes.
-
-Module ContainerRestartRuleOnExitCodesOperator.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ContainerRestartRuleOnExitCodesOperator_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerRestartRuleOnExitCodesOperator.t). Admitted.
-
-#[global] Instance ContainerRestartRuleOnExitCodesOperator_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ContainerRestartRuleOnExitCodesOperator.t) (v1.ContainerRestartRuleOnExitCodesOperatorⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ContainerRestartRuleOnExitCodesOperator.
-
-Module DNSPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DNSPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DNSPolicy.t). Admitted.
-
-#[global] Instance DNSPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DNSPolicy.t) (v1.DNSPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DNSPolicy.
 
 Module NodeSelector.
 Section def.
@@ -5165,13 +12709,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSelector_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSelector.t). Admitted.
+#[global]Program Instance NodeSelector_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelector.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "NodeSelectorTerms" ∷ l.[(v1.NodeSelector.t), "NodeSelectorTerms"] ↦{dq} v.(v1.NodeSelector.NodeSelectorTerms') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSelector_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSelector.t) (v1.NodeSelectorⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSelector_access_load_NodeSelectorTerms l (v : (v1.NodeSelector.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelector.t), "NodeSelectorTerms"] ↦{dq} (v.(v1.NodeSelector.NodeSelectorTerms')))
+    (l.[(v1.NodeSelector.t), "NodeSelectorTerms"] ↦{dq} (v.(v1.NodeSelector.NodeSelectorTerms')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelector_access_store_NodeSelectorTerms l (v : (v1.NodeSelector.t)) NodeSelectorTerms' :
+  AccessStrict
+    (l.[(v1.NodeSelector.t), "NodeSelectorTerms"] ↦ (v.(v1.NodeSelector.NodeSelectorTerms')))
+    (l.[(v1.NodeSelector.t), "NodeSelectorTerms"] ↦ NodeSelectorTerms')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelector.NodeSelectorTerms') := NodeSelectorTerms'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSelector.
@@ -5185,13 +12750,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSelectorTerm_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSelectorTerm.t). Admitted.
+#[global]Program Instance NodeSelectorTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelectorTerm.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "MatchExpressions" ∷ l.[(v1.NodeSelectorTerm.t), "MatchExpressions"] ↦{dq} v.(v1.NodeSelectorTerm.MatchExpressions') ∗
+      "MatchFields" ∷ l.[(v1.NodeSelectorTerm.t), "MatchFields"] ↦{dq} v.(v1.NodeSelectorTerm.MatchFields') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSelectorTerm_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSelectorTerm.t) (v1.NodeSelectorTermⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSelectorTerm_access_load_MatchExpressions l (v : (v1.NodeSelectorTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelectorTerm.t), "MatchExpressions"] ↦{dq} (v.(v1.NodeSelectorTerm.MatchExpressions')))
+    (l.[(v1.NodeSelectorTerm.t), "MatchExpressions"] ↦{dq} (v.(v1.NodeSelectorTerm.MatchExpressions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelectorTerm_access_store_MatchExpressions l (v : (v1.NodeSelectorTerm.t)) MatchExpressions' :
+  AccessStrict
+    (l.[(v1.NodeSelectorTerm.t), "MatchExpressions"] ↦ (v.(v1.NodeSelectorTerm.MatchExpressions')))
+    (l.[(v1.NodeSelectorTerm.t), "MatchExpressions"] ↦ MatchExpressions')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelectorTerm.MatchExpressions') := MatchExpressions'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSelectorTerm_access_load_MatchFields l (v : (v1.NodeSelectorTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelectorTerm.t), "MatchFields"] ↦{dq} (v.(v1.NodeSelectorTerm.MatchFields')))
+    (l.[(v1.NodeSelectorTerm.t), "MatchFields"] ↦{dq} (v.(v1.NodeSelectorTerm.MatchFields')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelectorTerm_access_store_MatchFields l (v : (v1.NodeSelectorTerm.t)) MatchFields' :
+  AccessStrict
+    (l.[(v1.NodeSelectorTerm.t), "MatchFields"] ↦ (v.(v1.NodeSelectorTerm.MatchFields')))
+    (l.[(v1.NodeSelectorTerm.t), "MatchFields"] ↦ MatchFields')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelectorTerm.MatchFields') := MatchFields'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSelectorTerm.
@@ -5205,36 +12805,65 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeSelectorRequirement_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSelectorRequirement.t). Admitted.
+#[global]Program Instance NodeSelectorRequirement_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeSelectorRequirement.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Key" ∷ l.[(v1.NodeSelectorRequirement.t), "Key"] ↦{dq} v.(v1.NodeSelectorRequirement.Key') ∗
+      "Operator" ∷ l.[(v1.NodeSelectorRequirement.t), "Operator"] ↦{dq} v.(v1.NodeSelectorRequirement.Operator') ∗
+      "Values" ∷ l.[(v1.NodeSelectorRequirement.t), "Values"] ↦{dq} v.(v1.NodeSelectorRequirement.Values') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeSelectorRequirement_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeSelectorRequirement.t) (v1.NodeSelectorRequirementⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeSelectorRequirement_access_load_Key l (v : (v1.NodeSelectorRequirement.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Key"] ↦{dq} (v.(v1.NodeSelectorRequirement.Key')))
+    (l.[(v1.NodeSelectorRequirement.t), "Key"] ↦{dq} (v.(v1.NodeSelectorRequirement.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelectorRequirement_access_store_Key l (v : (v1.NodeSelectorRequirement.t)) Key' :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Key"] ↦ (v.(v1.NodeSelectorRequirement.Key')))
+    (l.[(v1.NodeSelectorRequirement.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelectorRequirement.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSelectorRequirement_access_load_Operator l (v : (v1.NodeSelectorRequirement.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Operator"] ↦{dq} (v.(v1.NodeSelectorRequirement.Operator')))
+    (l.[(v1.NodeSelectorRequirement.t), "Operator"] ↦{dq} (v.(v1.NodeSelectorRequirement.Operator')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelectorRequirement_access_store_Operator l (v : (v1.NodeSelectorRequirement.t)) Operator' :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Operator"] ↦ (v.(v1.NodeSelectorRequirement.Operator')))
+    (l.[(v1.NodeSelectorRequirement.t), "Operator"] ↦ Operator')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelectorRequirement.Operator') := Operator'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeSelectorRequirement_access_load_Values l (v : (v1.NodeSelectorRequirement.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Values"] ↦{dq} (v.(v1.NodeSelectorRequirement.Values')))
+    (l.[(v1.NodeSelectorRequirement.t), "Values"] ↦{dq} (v.(v1.NodeSelectorRequirement.Values')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeSelectorRequirement_access_store_Values l (v : (v1.NodeSelectorRequirement.t)) Values' :
+  AccessStrict
+    (l.[(v1.NodeSelectorRequirement.t), "Values"] ↦ (v.(v1.NodeSelectorRequirement.Values')))
+    (l.[(v1.NodeSelectorRequirement.t), "Values"] ↦ Values')
+    (l ↦ v) (l ↦ (v <|(v1.NodeSelectorRequirement.Values') := Values'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeSelectorRequirement.
-
-Module NodeSelectorOperator.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance NodeSelectorOperator_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeSelectorOperator.t). Admitted.
-
-#[global] Instance NodeSelectorOperator_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.NodeSelectorOperator.t) (v1.NodeSelectorOperatorⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End NodeSelectorOperator.
 
 Module TopologySelectorTerm.
 Section def.
@@ -5285,13 +12914,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Affinity_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Affinity.t). Admitted.
+#[global]Program Instance Affinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Affinity.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "NodeAffinity" ∷ l.[(v1.Affinity.t), "NodeAffinity"] ↦{dq} v.(v1.Affinity.NodeAffinity') ∗
+      "PodAffinity" ∷ l.[(v1.Affinity.t), "PodAffinity"] ↦{dq} v.(v1.Affinity.PodAffinity') ∗
+      "PodAntiAffinity" ∷ l.[(v1.Affinity.t), "PodAntiAffinity"] ↦{dq} v.(v1.Affinity.PodAntiAffinity') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Affinity_into_val_typed
    :
   IntoValTypedUnderlying (v1.Affinity.t) (v1.Affinityⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Affinity_access_load_NodeAffinity l (v : (v1.Affinity.t)) dq :
+  AccessStrict
+    (l.[(v1.Affinity.t), "NodeAffinity"] ↦{dq} (v.(v1.Affinity.NodeAffinity')))
+    (l.[(v1.Affinity.t), "NodeAffinity"] ↦{dq} (v.(v1.Affinity.NodeAffinity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Affinity_access_store_NodeAffinity l (v : (v1.Affinity.t)) NodeAffinity' :
+  AccessStrict
+    (l.[(v1.Affinity.t), "NodeAffinity"] ↦ (v.(v1.Affinity.NodeAffinity')))
+    (l.[(v1.Affinity.t), "NodeAffinity"] ↦ NodeAffinity')
+    (l ↦ v) (l ↦ (v <|(v1.Affinity.NodeAffinity') := NodeAffinity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Affinity_access_load_PodAffinity l (v : (v1.Affinity.t)) dq :
+  AccessStrict
+    (l.[(v1.Affinity.t), "PodAffinity"] ↦{dq} (v.(v1.Affinity.PodAffinity')))
+    (l.[(v1.Affinity.t), "PodAffinity"] ↦{dq} (v.(v1.Affinity.PodAffinity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Affinity_access_store_PodAffinity l (v : (v1.Affinity.t)) PodAffinity' :
+  AccessStrict
+    (l.[(v1.Affinity.t), "PodAffinity"] ↦ (v.(v1.Affinity.PodAffinity')))
+    (l.[(v1.Affinity.t), "PodAffinity"] ↦ PodAffinity')
+    (l ↦ v) (l ↦ (v <|(v1.Affinity.PodAffinity') := PodAffinity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Affinity_access_load_PodAntiAffinity l (v : (v1.Affinity.t)) dq :
+  AccessStrict
+    (l.[(v1.Affinity.t), "PodAntiAffinity"] ↦{dq} (v.(v1.Affinity.PodAntiAffinity')))
+    (l.[(v1.Affinity.t), "PodAntiAffinity"] ↦{dq} (v.(v1.Affinity.PodAntiAffinity')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Affinity_access_store_PodAntiAffinity l (v : (v1.Affinity.t)) PodAntiAffinity' :
+  AccessStrict
+    (l.[(v1.Affinity.t), "PodAntiAffinity"] ↦ (v.(v1.Affinity.PodAntiAffinity')))
+    (l.[(v1.Affinity.t), "PodAntiAffinity"] ↦ PodAntiAffinity')
+    (l ↦ v) (l ↦ (v <|(v1.Affinity.PodAntiAffinity') := PodAntiAffinity'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Affinity.
@@ -5305,13 +12983,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodAffinity_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodAffinity.t). Admitted.
+#[global]Program Instance PodAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAffinity.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "RequiredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.PodAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution') ∗
+      "PreferredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.PodAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodAffinity_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodAffinity.t) (v1.PodAffinityⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodAffinity_access_load_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinity_access_store_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAffinity.t)) RequiredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.PodAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ RequiredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution') := RequiredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinity_access_load_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinity_access_store_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAffinity.t)) PreferredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.PodAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ PreferredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution') := PreferredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodAffinity.
@@ -5325,36 +13038,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodAntiAffinity_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodAntiAffinity.t). Admitted.
+#[global]Program Instance PodAntiAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAntiAffinity.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "RequiredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.PodAntiAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution') ∗
+      "PreferredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.PodAntiAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodAntiAffinity_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodAntiAffinity.t) (v1.PodAntiAffinityⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodAntiAffinity_access_load_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAntiAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAntiAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAntiAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAntiAffinity_access_store_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAntiAffinity.t)) RequiredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.PodAntiAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAntiAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ RequiredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution') := RequiredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAntiAffinity_access_load_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAntiAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAntiAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAntiAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAntiAffinity_access_store_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.PodAntiAffinity.t)) PreferredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.PodAntiAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.PodAntiAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ PreferredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution') := PreferredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodAntiAffinity.
-
-Module WeightedPodAffinityTerm.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance WeightedPodAffinityTerm_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.WeightedPodAffinityTerm.t). Admitted.
-
-#[global] Instance WeightedPodAffinityTerm_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.WeightedPodAffinityTerm.t) (v1.WeightedPodAffinityTermⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End WeightedPodAffinityTerm.
 
 Module PodAffinityTerm.
 Section def.
@@ -5365,16 +13093,162 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodAffinityTerm_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodAffinityTerm.t). Admitted.
+#[global]Program Instance PodAffinityTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodAffinityTerm.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "LabelSelector" ∷ l.[(v1.PodAffinityTerm.t), "LabelSelector"] ↦{dq} v.(v1.PodAffinityTerm.LabelSelector') ∗
+      "Namespaces" ∷ l.[(v1.PodAffinityTerm.t), "Namespaces"] ↦{dq} v.(v1.PodAffinityTerm.Namespaces') ∗
+      "TopologyKey" ∷ l.[(v1.PodAffinityTerm.t), "TopologyKey"] ↦{dq} v.(v1.PodAffinityTerm.TopologyKey') ∗
+      "NamespaceSelector" ∷ l.[(v1.PodAffinityTerm.t), "NamespaceSelector"] ↦{dq} v.(v1.PodAffinityTerm.NamespaceSelector') ∗
+      "MatchLabelKeys" ∷ l.[(v1.PodAffinityTerm.t), "MatchLabelKeys"] ↦{dq} v.(v1.PodAffinityTerm.MatchLabelKeys') ∗
+      "MismatchLabelKeys" ∷ l.[(v1.PodAffinityTerm.t), "MismatchLabelKeys"] ↦{dq} v.(v1.PodAffinityTerm.MismatchLabelKeys') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodAffinityTerm_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodAffinityTerm.t) (v1.PodAffinityTermⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_LabelSelector l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "LabelSelector"] ↦{dq} (v.(v1.PodAffinityTerm.LabelSelector')))
+    (l.[(v1.PodAffinityTerm.t), "LabelSelector"] ↦{dq} (v.(v1.PodAffinityTerm.LabelSelector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_LabelSelector l (v : (v1.PodAffinityTerm.t)) LabelSelector' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "LabelSelector"] ↦ (v.(v1.PodAffinityTerm.LabelSelector')))
+    (l.[(v1.PodAffinityTerm.t), "LabelSelector"] ↦ LabelSelector')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.LabelSelector') := LabelSelector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_Namespaces l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "Namespaces"] ↦{dq} (v.(v1.PodAffinityTerm.Namespaces')))
+    (l.[(v1.PodAffinityTerm.t), "Namespaces"] ↦{dq} (v.(v1.PodAffinityTerm.Namespaces')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_Namespaces l (v : (v1.PodAffinityTerm.t)) Namespaces' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "Namespaces"] ↦ (v.(v1.PodAffinityTerm.Namespaces')))
+    (l.[(v1.PodAffinityTerm.t), "Namespaces"] ↦ Namespaces')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.Namespaces') := Namespaces'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_TopologyKey l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "TopologyKey"] ↦{dq} (v.(v1.PodAffinityTerm.TopologyKey')))
+    (l.[(v1.PodAffinityTerm.t), "TopologyKey"] ↦{dq} (v.(v1.PodAffinityTerm.TopologyKey')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_TopologyKey l (v : (v1.PodAffinityTerm.t)) TopologyKey' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "TopologyKey"] ↦ (v.(v1.PodAffinityTerm.TopologyKey')))
+    (l.[(v1.PodAffinityTerm.t), "TopologyKey"] ↦ TopologyKey')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.TopologyKey') := TopologyKey'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_NamespaceSelector l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "NamespaceSelector"] ↦{dq} (v.(v1.PodAffinityTerm.NamespaceSelector')))
+    (l.[(v1.PodAffinityTerm.t), "NamespaceSelector"] ↦{dq} (v.(v1.PodAffinityTerm.NamespaceSelector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_NamespaceSelector l (v : (v1.PodAffinityTerm.t)) NamespaceSelector' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "NamespaceSelector"] ↦ (v.(v1.PodAffinityTerm.NamespaceSelector')))
+    (l.[(v1.PodAffinityTerm.t), "NamespaceSelector"] ↦ NamespaceSelector')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.NamespaceSelector') := NamespaceSelector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_MatchLabelKeys l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "MatchLabelKeys"] ↦{dq} (v.(v1.PodAffinityTerm.MatchLabelKeys')))
+    (l.[(v1.PodAffinityTerm.t), "MatchLabelKeys"] ↦{dq} (v.(v1.PodAffinityTerm.MatchLabelKeys')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_MatchLabelKeys l (v : (v1.PodAffinityTerm.t)) MatchLabelKeys' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "MatchLabelKeys"] ↦ (v.(v1.PodAffinityTerm.MatchLabelKeys')))
+    (l.[(v1.PodAffinityTerm.t), "MatchLabelKeys"] ↦ MatchLabelKeys')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.MatchLabelKeys') := MatchLabelKeys'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodAffinityTerm_access_load_MismatchLabelKeys l (v : (v1.PodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "MismatchLabelKeys"] ↦{dq} (v.(v1.PodAffinityTerm.MismatchLabelKeys')))
+    (l.[(v1.PodAffinityTerm.t), "MismatchLabelKeys"] ↦{dq} (v.(v1.PodAffinityTerm.MismatchLabelKeys')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodAffinityTerm_access_store_MismatchLabelKeys l (v : (v1.PodAffinityTerm.t)) MismatchLabelKeys' :
+  AccessStrict
+    (l.[(v1.PodAffinityTerm.t), "MismatchLabelKeys"] ↦ (v.(v1.PodAffinityTerm.MismatchLabelKeys')))
+    (l.[(v1.PodAffinityTerm.t), "MismatchLabelKeys"] ↦ MismatchLabelKeys')
+    (l ↦ v) (l ↦ (v <|(v1.PodAffinityTerm.MismatchLabelKeys') := MismatchLabelKeys'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodAffinityTerm.
+
+Module WeightedPodAffinityTerm.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : v1.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance WeightedPodAffinityTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.WeightedPodAffinityTerm.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Weight" ∷ l.[(v1.WeightedPodAffinityTerm.t), "Weight"] ↦{dq} v.(v1.WeightedPodAffinityTerm.Weight') ∗
+      "PodAffinityTerm" ∷ l.[(v1.WeightedPodAffinityTerm.t), "PodAffinityTerm"] ↦{dq} v.(v1.WeightedPodAffinityTerm.PodAffinityTerm') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance WeightedPodAffinityTerm_into_val_typed
+   :
+  IntoValTypedUnderlying (v1.WeightedPodAffinityTerm.t) (v1.WeightedPodAffinityTermⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance WeightedPodAffinityTerm_access_load_Weight l (v : (v1.WeightedPodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.WeightedPodAffinityTerm.t), "Weight"] ↦{dq} (v.(v1.WeightedPodAffinityTerm.Weight')))
+    (l.[(v1.WeightedPodAffinityTerm.t), "Weight"] ↦{dq} (v.(v1.WeightedPodAffinityTerm.Weight')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WeightedPodAffinityTerm_access_store_Weight l (v : (v1.WeightedPodAffinityTerm.t)) Weight' :
+  AccessStrict
+    (l.[(v1.WeightedPodAffinityTerm.t), "Weight"] ↦ (v.(v1.WeightedPodAffinityTerm.Weight')))
+    (l.[(v1.WeightedPodAffinityTerm.t), "Weight"] ↦ Weight')
+    (l ↦ v) (l ↦ (v <|(v1.WeightedPodAffinityTerm.Weight') := Weight'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance WeightedPodAffinityTerm_access_load_PodAffinityTerm l (v : (v1.WeightedPodAffinityTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.WeightedPodAffinityTerm.t), "PodAffinityTerm"] ↦{dq} (v.(v1.WeightedPodAffinityTerm.PodAffinityTerm')))
+    (l.[(v1.WeightedPodAffinityTerm.t), "PodAffinityTerm"] ↦{dq} (v.(v1.WeightedPodAffinityTerm.PodAffinityTerm')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WeightedPodAffinityTerm_access_store_PodAffinityTerm l (v : (v1.WeightedPodAffinityTerm.t)) PodAffinityTerm' :
+  AccessStrict
+    (l.[(v1.WeightedPodAffinityTerm.t), "PodAffinityTerm"] ↦ (v.(v1.WeightedPodAffinityTerm.PodAffinityTerm')))
+    (l.[(v1.WeightedPodAffinityTerm.t), "PodAffinityTerm"] ↦ PodAffinityTerm')
+    (l ↦ v) (l ↦ (v <|(v1.WeightedPodAffinityTerm.PodAffinityTerm') := PodAffinityTerm'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End WeightedPodAffinityTerm.
 
 Module NodeAffinity.
 Section def.
@@ -5385,13 +13259,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance NodeAffinity_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeAffinity.t). Admitted.
+#[global]Program Instance NodeAffinity_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.NodeAffinity.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "RequiredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.NodeAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution') ∗
+      "PreferredDuringSchedulingIgnoredDuringExecution" ∷ l.[(v1.NodeAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} v.(v1.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance NodeAffinity_into_val_typed
    :
   IntoValTypedUnderlying (v1.NodeAffinity.t) (v1.NodeAffinityⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance NodeAffinity_access_load_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.NodeAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.NodeAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeAffinity_access_store_RequiredDuringSchedulingIgnoredDuringExecution l (v : (v1.NodeAffinity.t)) RequiredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.NodeAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.NodeAffinity.t), "RequiredDuringSchedulingIgnoredDuringExecution"] ↦ RequiredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution') := RequiredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance NodeAffinity_access_load_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.NodeAffinity.t)) dq :
+  AccessStrict
+    (l.[(v1.NodeAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.NodeAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦{dq} (v.(v1.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance NodeAffinity_access_store_PreferredDuringSchedulingIgnoredDuringExecution l (v : (v1.NodeAffinity.t)) PreferredDuringSchedulingIgnoredDuringExecution' :
+  AccessStrict
+    (l.[(v1.NodeAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ (v.(v1.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution')))
+    (l.[(v1.NodeAffinity.t), "PreferredDuringSchedulingIgnoredDuringExecution"] ↦ PreferredDuringSchedulingIgnoredDuringExecution')
+    (l ↦ v) (l ↦ (v <|(v1.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution') := PreferredDuringSchedulingIgnoredDuringExecution'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End NodeAffinity.
@@ -5405,13 +13314,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PreferredSchedulingTerm_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PreferredSchedulingTerm.t). Admitted.
+#[global]Program Instance PreferredSchedulingTerm_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PreferredSchedulingTerm.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Weight" ∷ l.[(v1.PreferredSchedulingTerm.t), "Weight"] ↦{dq} v.(v1.PreferredSchedulingTerm.Weight') ∗
+      "Preference" ∷ l.[(v1.PreferredSchedulingTerm.t), "Preference"] ↦{dq} v.(v1.PreferredSchedulingTerm.Preference') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PreferredSchedulingTerm_into_val_typed
    :
   IntoValTypedUnderlying (v1.PreferredSchedulingTerm.t) (v1.PreferredSchedulingTermⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PreferredSchedulingTerm_access_load_Weight l (v : (v1.PreferredSchedulingTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PreferredSchedulingTerm.t), "Weight"] ↦{dq} (v.(v1.PreferredSchedulingTerm.Weight')))
+    (l.[(v1.PreferredSchedulingTerm.t), "Weight"] ↦{dq} (v.(v1.PreferredSchedulingTerm.Weight')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PreferredSchedulingTerm_access_store_Weight l (v : (v1.PreferredSchedulingTerm.t)) Weight' :
+  AccessStrict
+    (l.[(v1.PreferredSchedulingTerm.t), "Weight"] ↦ (v.(v1.PreferredSchedulingTerm.Weight')))
+    (l.[(v1.PreferredSchedulingTerm.t), "Weight"] ↦ Weight')
+    (l ↦ v) (l ↦ (v <|(v1.PreferredSchedulingTerm.Weight') := Weight'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PreferredSchedulingTerm_access_load_Preference l (v : (v1.PreferredSchedulingTerm.t)) dq :
+  AccessStrict
+    (l.[(v1.PreferredSchedulingTerm.t), "Preference"] ↦{dq} (v.(v1.PreferredSchedulingTerm.Preference')))
+    (l.[(v1.PreferredSchedulingTerm.t), "Preference"] ↦{dq} (v.(v1.PreferredSchedulingTerm.Preference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PreferredSchedulingTerm_access_store_Preference l (v : (v1.PreferredSchedulingTerm.t)) Preference' :
+  AccessStrict
+    (l.[(v1.PreferredSchedulingTerm.t), "Preference"] ↦ (v.(v1.PreferredSchedulingTerm.Preference')))
+    (l.[(v1.PreferredSchedulingTerm.t), "Preference"] ↦ Preference')
+    (l ↦ v) (l ↦ (v <|(v1.PreferredSchedulingTerm.Preference') := Preference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PreferredSchedulingTerm.
@@ -5436,26 +13380,6 @@ Proof. Admitted.
 End def.
 End Taint.
 
-Module TaintEffect.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance TaintEffect_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TaintEffect.t). Admitted.
-
-#[global] Instance TaintEffect_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.TaintEffect.t) (v1.TaintEffectⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End TaintEffect.
-
 Module Toleration.
 Section def.
 
@@ -5465,36 +13389,93 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Toleration_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Toleration.t). Admitted.
+#[global]Program Instance Toleration_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Toleration.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Key" ∷ l.[(v1.Toleration.t), "Key"] ↦{dq} v.(v1.Toleration.Key') ∗
+      "Operator" ∷ l.[(v1.Toleration.t), "Operator"] ↦{dq} v.(v1.Toleration.Operator') ∗
+      "Value" ∷ l.[(v1.Toleration.t), "Value"] ↦{dq} v.(v1.Toleration.Value') ∗
+      "Effect" ∷ l.[(v1.Toleration.t), "Effect"] ↦{dq} v.(v1.Toleration.Effect') ∗
+      "TolerationSeconds" ∷ l.[(v1.Toleration.t), "TolerationSeconds"] ↦{dq} v.(v1.Toleration.TolerationSeconds') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Toleration_into_val_typed
    :
   IntoValTypedUnderlying (v1.Toleration.t) (v1.Tolerationⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Toleration_access_load_Key l (v : (v1.Toleration.t)) dq :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Key"] ↦{dq} (v.(v1.Toleration.Key')))
+    (l.[(v1.Toleration.t), "Key"] ↦{dq} (v.(v1.Toleration.Key')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Toleration_access_store_Key l (v : (v1.Toleration.t)) Key' :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Key"] ↦ (v.(v1.Toleration.Key')))
+    (l.[(v1.Toleration.t), "Key"] ↦ Key')
+    (l ↦ v) (l ↦ (v <|(v1.Toleration.Key') := Key'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Toleration_access_load_Operator l (v : (v1.Toleration.t)) dq :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Operator"] ↦{dq} (v.(v1.Toleration.Operator')))
+    (l.[(v1.Toleration.t), "Operator"] ↦{dq} (v.(v1.Toleration.Operator')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Toleration_access_store_Operator l (v : (v1.Toleration.t)) Operator' :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Operator"] ↦ (v.(v1.Toleration.Operator')))
+    (l.[(v1.Toleration.t), "Operator"] ↦ Operator')
+    (l ↦ v) (l ↦ (v <|(v1.Toleration.Operator') := Operator'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Toleration_access_load_Value l (v : (v1.Toleration.t)) dq :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Value"] ↦{dq} (v.(v1.Toleration.Value')))
+    (l.[(v1.Toleration.t), "Value"] ↦{dq} (v.(v1.Toleration.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Toleration_access_store_Value l (v : (v1.Toleration.t)) Value' :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Value"] ↦ (v.(v1.Toleration.Value')))
+    (l.[(v1.Toleration.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.Toleration.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Toleration_access_load_Effect l (v : (v1.Toleration.t)) dq :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Effect"] ↦{dq} (v.(v1.Toleration.Effect')))
+    (l.[(v1.Toleration.t), "Effect"] ↦{dq} (v.(v1.Toleration.Effect')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Toleration_access_store_Effect l (v : (v1.Toleration.t)) Effect' :
+  AccessStrict
+    (l.[(v1.Toleration.t), "Effect"] ↦ (v.(v1.Toleration.Effect')))
+    (l.[(v1.Toleration.t), "Effect"] ↦ Effect')
+    (l ↦ v) (l ↦ (v <|(v1.Toleration.Effect') := Effect'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Toleration_access_load_TolerationSeconds l (v : (v1.Toleration.t)) dq :
+  AccessStrict
+    (l.[(v1.Toleration.t), "TolerationSeconds"] ↦{dq} (v.(v1.Toleration.TolerationSeconds')))
+    (l.[(v1.Toleration.t), "TolerationSeconds"] ↦{dq} (v.(v1.Toleration.TolerationSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Toleration_access_store_TolerationSeconds l (v : (v1.Toleration.t)) TolerationSeconds' :
+  AccessStrict
+    (l.[(v1.Toleration.t), "TolerationSeconds"] ↦ (v.(v1.Toleration.TolerationSeconds')))
+    (l.[(v1.Toleration.t), "TolerationSeconds"] ↦ TolerationSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.Toleration.TolerationSeconds') := TolerationSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Toleration.
-
-Module TolerationOperator.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance TolerationOperator_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TolerationOperator.t). Admitted.
-
-#[global] Instance TolerationOperator_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.TolerationOperator.t) (v1.TolerationOperatorⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End TolerationOperator.
 
 Module PodReadinessGate.
 Section def.
@@ -5505,36 +13486,37 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodReadinessGate_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodReadinessGate.t). Admitted.
+#[global]Program Instance PodReadinessGate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodReadinessGate.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ConditionType" ∷ l.[(v1.PodReadinessGate.t), "ConditionType"] ↦{dq} v.(v1.PodReadinessGate.ConditionType') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodReadinessGate_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodReadinessGate.t) (v1.PodReadinessGateⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodReadinessGate_access_load_ConditionType l (v : (v1.PodReadinessGate.t)) dq :
+  AccessStrict
+    (l.[(v1.PodReadinessGate.t), "ConditionType"] ↦{dq} (v.(v1.PodReadinessGate.ConditionType')))
+    (l.[(v1.PodReadinessGate.t), "ConditionType"] ↦{dq} (v.(v1.PodReadinessGate.ConditionType')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodReadinessGate_access_store_ConditionType l (v : (v1.PodReadinessGate.t)) ConditionType' :
+  AccessStrict
+    (l.[(v1.PodReadinessGate.t), "ConditionType"] ↦ (v.(v1.PodReadinessGate.ConditionType')))
+    (l.[(v1.PodReadinessGate.t), "ConditionType"] ↦ ConditionType')
+    (l ↦ v) (l ↦ (v <|(v1.PodReadinessGate.ConditionType') := ConditionType'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodReadinessGate.
-
-Module ResourceList.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ResourceList_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceList.t). Admitted.
-
-#[global] Instance ResourceList_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ResourceList.t) (v1.ResourceListⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ResourceList.
 
 Module PodSpec.
 Section def.
@@ -8997,13 +16979,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodResourceClaim_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodResourceClaim.t). Admitted.
+#[global]Program Instance PodResourceClaim_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodResourceClaim.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.PodResourceClaim.t), "Name"] ↦{dq} v.(v1.PodResourceClaim.Name') ∗
+      "ResourceClaimName" ∷ l.[(v1.PodResourceClaim.t), "ResourceClaimName"] ↦{dq} v.(v1.PodResourceClaim.ResourceClaimName') ∗
+      "ResourceClaimTemplateName" ∷ l.[(v1.PodResourceClaim.t), "ResourceClaimTemplateName"] ↦{dq} v.(v1.PodResourceClaim.ResourceClaimTemplateName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodResourceClaim_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodResourceClaim.t) (v1.PodResourceClaimⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodResourceClaim_access_load_Name l (v : (v1.PodResourceClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "Name"] ↦{dq} (v.(v1.PodResourceClaim.Name')))
+    (l.[(v1.PodResourceClaim.t), "Name"] ↦{dq} (v.(v1.PodResourceClaim.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodResourceClaim_access_store_Name l (v : (v1.PodResourceClaim.t)) Name' :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "Name"] ↦ (v.(v1.PodResourceClaim.Name')))
+    (l.[(v1.PodResourceClaim.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.PodResourceClaim.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodResourceClaim_access_load_ResourceClaimName l (v : (v1.PodResourceClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodResourceClaim.ResourceClaimName')))
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodResourceClaim.ResourceClaimName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodResourceClaim_access_store_ResourceClaimName l (v : (v1.PodResourceClaim.t)) ResourceClaimName' :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimName"] ↦ (v.(v1.PodResourceClaim.ResourceClaimName')))
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimName"] ↦ ResourceClaimName')
+    (l ↦ v) (l ↦ (v <|(v1.PodResourceClaim.ResourceClaimName') := ResourceClaimName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodResourceClaim_access_load_ResourceClaimTemplateName l (v : (v1.PodResourceClaim.t)) dq :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimTemplateName"] ↦{dq} (v.(v1.PodResourceClaim.ResourceClaimTemplateName')))
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimTemplateName"] ↦{dq} (v.(v1.PodResourceClaim.ResourceClaimTemplateName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodResourceClaim_access_store_ResourceClaimTemplateName l (v : (v1.PodResourceClaim.t)) ResourceClaimTemplateName' :
+  AccessStrict
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimTemplateName"] ↦ (v.(v1.PodResourceClaim.ResourceClaimTemplateName')))
+    (l.[(v1.PodResourceClaim.t), "ResourceClaimTemplateName"] ↦ ResourceClaimTemplateName')
+    (l ↦ v) (l ↦ (v <|(v1.PodResourceClaim.ResourceClaimTemplateName') := ResourceClaimTemplateName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodResourceClaim.
@@ -9017,13 +17048,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodResourceClaimStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodResourceClaimStatus.t). Admitted.
+#[global]Program Instance PodResourceClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodResourceClaimStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.PodResourceClaimStatus.t), "Name"] ↦{dq} v.(v1.PodResourceClaimStatus.Name') ∗
+      "ResourceClaimName" ∷ l.[(v1.PodResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} v.(v1.PodResourceClaimStatus.ResourceClaimName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodResourceClaimStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodResourceClaimStatus.t) (v1.PodResourceClaimStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodResourceClaimStatus_access_load_Name l (v : (v1.PodResourceClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodResourceClaimStatus.t), "Name"] ↦{dq} (v.(v1.PodResourceClaimStatus.Name')))
+    (l.[(v1.PodResourceClaimStatus.t), "Name"] ↦{dq} (v.(v1.PodResourceClaimStatus.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodResourceClaimStatus_access_store_Name l (v : (v1.PodResourceClaimStatus.t)) Name' :
+  AccessStrict
+    (l.[(v1.PodResourceClaimStatus.t), "Name"] ↦ (v.(v1.PodResourceClaimStatus.Name')))
+    (l.[(v1.PodResourceClaimStatus.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.PodResourceClaimStatus.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodResourceClaimStatus_access_load_ResourceClaimName l (v : (v1.PodResourceClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodResourceClaimStatus.ResourceClaimName')))
+    (l.[(v1.PodResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodResourceClaimStatus.ResourceClaimName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodResourceClaimStatus_access_store_ResourceClaimName l (v : (v1.PodResourceClaimStatus.t)) ResourceClaimName' :
+  AccessStrict
+    (l.[(v1.PodResourceClaimStatus.t), "ResourceClaimName"] ↦ (v.(v1.PodResourceClaimStatus.ResourceClaimName')))
+    (l.[(v1.PodResourceClaimStatus.t), "ResourceClaimName"] ↦ ResourceClaimName')
+    (l ↦ v) (l ↦ (v <|(v1.PodResourceClaimStatus.ResourceClaimName') := ResourceClaimName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodResourceClaimStatus.
@@ -9037,13 +17103,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodExtendedResourceClaimStatus_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodExtendedResourceClaimStatus.t). Admitted.
+#[global]Program Instance PodExtendedResourceClaimStatus_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodExtendedResourceClaimStatus.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "RequestMappings" ∷ l.[(v1.PodExtendedResourceClaimStatus.t), "RequestMappings"] ↦{dq} v.(v1.PodExtendedResourceClaimStatus.RequestMappings') ∗
+      "ResourceClaimName" ∷ l.[(v1.PodExtendedResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} v.(v1.PodExtendedResourceClaimStatus.ResourceClaimName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodExtendedResourceClaimStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodExtendedResourceClaimStatus.t) (v1.PodExtendedResourceClaimStatusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodExtendedResourceClaimStatus_access_load_RequestMappings l (v : (v1.PodExtendedResourceClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "RequestMappings"] ↦{dq} (v.(v1.PodExtendedResourceClaimStatus.RequestMappings')))
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "RequestMappings"] ↦{dq} (v.(v1.PodExtendedResourceClaimStatus.RequestMappings')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodExtendedResourceClaimStatus_access_store_RequestMappings l (v : (v1.PodExtendedResourceClaimStatus.t)) RequestMappings' :
+  AccessStrict
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "RequestMappings"] ↦ (v.(v1.PodExtendedResourceClaimStatus.RequestMappings')))
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "RequestMappings"] ↦ RequestMappings')
+    (l ↦ v) (l ↦ (v <|(v1.PodExtendedResourceClaimStatus.RequestMappings') := RequestMappings'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodExtendedResourceClaimStatus_access_load_ResourceClaimName l (v : (v1.PodExtendedResourceClaimStatus.t)) dq :
+  AccessStrict
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodExtendedResourceClaimStatus.ResourceClaimName')))
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "ResourceClaimName"] ↦{dq} (v.(v1.PodExtendedResourceClaimStatus.ResourceClaimName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodExtendedResourceClaimStatus_access_store_ResourceClaimName l (v : (v1.PodExtendedResourceClaimStatus.t)) ResourceClaimName' :
+  AccessStrict
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "ResourceClaimName"] ↦ (v.(v1.PodExtendedResourceClaimStatus.ResourceClaimName')))
+    (l.[(v1.PodExtendedResourceClaimStatus.t), "ResourceClaimName"] ↦ ResourceClaimName')
+    (l ↦ v) (l ↦ (v <|(v1.PodExtendedResourceClaimStatus.ResourceClaimName') := ResourceClaimName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodExtendedResourceClaimStatus.
@@ -9057,36 +17158,65 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ContainerExtendedResourceRequest_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ContainerExtendedResourceRequest.t). Admitted.
+#[global]Program Instance ContainerExtendedResourceRequest_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ContainerExtendedResourceRequest.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "ContainerName" ∷ l.[(v1.ContainerExtendedResourceRequest.t), "ContainerName"] ↦{dq} v.(v1.ContainerExtendedResourceRequest.ContainerName') ∗
+      "ResourceName" ∷ l.[(v1.ContainerExtendedResourceRequest.t), "ResourceName"] ↦{dq} v.(v1.ContainerExtendedResourceRequest.ResourceName') ∗
+      "RequestName" ∷ l.[(v1.ContainerExtendedResourceRequest.t), "RequestName"] ↦{dq} v.(v1.ContainerExtendedResourceRequest.RequestName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ContainerExtendedResourceRequest_into_val_typed
    :
   IntoValTypedUnderlying (v1.ContainerExtendedResourceRequest.t) (v1.ContainerExtendedResourceRequestⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ContainerExtendedResourceRequest_access_load_ContainerName l (v : (v1.ContainerExtendedResourceRequest.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ContainerName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.ContainerName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ContainerName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.ContainerName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerExtendedResourceRequest_access_store_ContainerName l (v : (v1.ContainerExtendedResourceRequest.t)) ContainerName' :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ContainerName"] ↦ (v.(v1.ContainerExtendedResourceRequest.ContainerName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ContainerName"] ↦ ContainerName')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerExtendedResourceRequest.ContainerName') := ContainerName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerExtendedResourceRequest_access_load_ResourceName l (v : (v1.ContainerExtendedResourceRequest.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ResourceName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.ResourceName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ResourceName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.ResourceName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerExtendedResourceRequest_access_store_ResourceName l (v : (v1.ContainerExtendedResourceRequest.t)) ResourceName' :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ResourceName"] ↦ (v.(v1.ContainerExtendedResourceRequest.ResourceName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "ResourceName"] ↦ ResourceName')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerExtendedResourceRequest.ResourceName') := ResourceName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ContainerExtendedResourceRequest_access_load_RequestName l (v : (v1.ContainerExtendedResourceRequest.t)) dq :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "RequestName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.RequestName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "RequestName"] ↦{dq} (v.(v1.ContainerExtendedResourceRequest.RequestName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ContainerExtendedResourceRequest_access_store_RequestName l (v : (v1.ContainerExtendedResourceRequest.t)) RequestName' :
+  AccessStrict
+    (l.[(v1.ContainerExtendedResourceRequest.t), "RequestName"] ↦ (v.(v1.ContainerExtendedResourceRequest.RequestName')))
+    (l.[(v1.ContainerExtendedResourceRequest.t), "RequestName"] ↦ RequestName')
+    (l ↦ v) (l ↦ (v <|(v1.ContainerExtendedResourceRequest.RequestName') := RequestName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ContainerExtendedResourceRequest.
-
-Module OSName.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance OSName_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.OSName.t). Admitted.
-
-#[global] Instance OSName_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.OSName.t) (v1.OSNameⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End OSName.
 
 Module PodOS.
 Section def.
@@ -9097,13 +17227,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodOS_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodOS.t). Admitted.
+#[global]Program Instance PodOS_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodOS.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.PodOS.t), "Name"] ↦{dq} v.(v1.PodOS.Name') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodOS_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodOS.t) (v1.PodOSⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodOS_access_load_Name l (v : (v1.PodOS.t)) dq :
+  AccessStrict
+    (l.[(v1.PodOS.t), "Name"] ↦{dq} (v.(v1.PodOS.Name')))
+    (l.[(v1.PodOS.t), "Name"] ↦{dq} (v.(v1.PodOS.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodOS_access_store_Name l (v : (v1.PodOS.t)) Name' :
+  AccessStrict
+    (l.[(v1.PodOS.t), "Name"] ↦ (v.(v1.PodOS.Name')))
+    (l.[(v1.PodOS.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.PodOS.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodOS.
@@ -9117,56 +17268,37 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodSchedulingGate_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodSchedulingGate.t). Admitted.
+#[global]Program Instance PodSchedulingGate_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSchedulingGate.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.PodSchedulingGate.t), "Name"] ↦{dq} v.(v1.PodSchedulingGate.Name') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodSchedulingGate_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodSchedulingGate.t) (v1.PodSchedulingGateⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodSchedulingGate_access_load_Name l (v : (v1.PodSchedulingGate.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSchedulingGate.t), "Name"] ↦{dq} (v.(v1.PodSchedulingGate.Name')))
+    (l.[(v1.PodSchedulingGate.t), "Name"] ↦{dq} (v.(v1.PodSchedulingGate.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodSchedulingGate_access_store_Name l (v : (v1.PodSchedulingGate.t)) Name' :
+  AccessStrict
+    (l.[(v1.PodSchedulingGate.t), "Name"] ↦ (v.(v1.PodSchedulingGate.Name')))
+    (l.[(v1.PodSchedulingGate.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.PodSchedulingGate.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodSchedulingGate.
-
-Module UnsatisfiableConstraintAction.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance UnsatisfiableConstraintAction_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.UnsatisfiableConstraintAction.t). Admitted.
-
-#[global] Instance UnsatisfiableConstraintAction_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.UnsatisfiableConstraintAction.t) (v1.UnsatisfiableConstraintActionⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End UnsatisfiableConstraintAction.
-
-Module NodeInclusionPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance NodeInclusionPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.NodeInclusionPolicy.t). Admitted.
-
-#[global] Instance NodeInclusionPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.NodeInclusionPolicy.t) (v1.NodeInclusionPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End NodeInclusionPolicy.
 
 Module TopologySpreadConstraint.
 Section def.
@@ -9177,13 +17309,132 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance TopologySpreadConstraint_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TopologySpreadConstraint.t). Admitted.
+#[global]Program Instance TopologySpreadConstraint_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TopologySpreadConstraint.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "MaxSkew" ∷ l.[(v1.TopologySpreadConstraint.t), "MaxSkew"] ↦{dq} v.(v1.TopologySpreadConstraint.MaxSkew') ∗
+      "TopologyKey" ∷ l.[(v1.TopologySpreadConstraint.t), "TopologyKey"] ↦{dq} v.(v1.TopologySpreadConstraint.TopologyKey') ∗
+      "WhenUnsatisfiable" ∷ l.[(v1.TopologySpreadConstraint.t), "WhenUnsatisfiable"] ↦{dq} v.(v1.TopologySpreadConstraint.WhenUnsatisfiable') ∗
+      "LabelSelector" ∷ l.[(v1.TopologySpreadConstraint.t), "LabelSelector"] ↦{dq} v.(v1.TopologySpreadConstraint.LabelSelector') ∗
+      "MinDomains" ∷ l.[(v1.TopologySpreadConstraint.t), "MinDomains"] ↦{dq} v.(v1.TopologySpreadConstraint.MinDomains') ∗
+      "NodeAffinityPolicy" ∷ l.[(v1.TopologySpreadConstraint.t), "NodeAffinityPolicy"] ↦{dq} v.(v1.TopologySpreadConstraint.NodeAffinityPolicy') ∗
+      "NodeTaintsPolicy" ∷ l.[(v1.TopologySpreadConstraint.t), "NodeTaintsPolicy"] ↦{dq} v.(v1.TopologySpreadConstraint.NodeTaintsPolicy') ∗
+      "MatchLabelKeys" ∷ l.[(v1.TopologySpreadConstraint.t), "MatchLabelKeys"] ↦{dq} v.(v1.TopologySpreadConstraint.MatchLabelKeys') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance TopologySpreadConstraint_into_val_typed
    :
   IntoValTypedUnderlying (v1.TopologySpreadConstraint.t) (v1.TopologySpreadConstraintⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_MaxSkew l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MaxSkew"] ↦{dq} (v.(v1.TopologySpreadConstraint.MaxSkew')))
+    (l.[(v1.TopologySpreadConstraint.t), "MaxSkew"] ↦{dq} (v.(v1.TopologySpreadConstraint.MaxSkew')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_MaxSkew l (v : (v1.TopologySpreadConstraint.t)) MaxSkew' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MaxSkew"] ↦ (v.(v1.TopologySpreadConstraint.MaxSkew')))
+    (l.[(v1.TopologySpreadConstraint.t), "MaxSkew"] ↦ MaxSkew')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.MaxSkew') := MaxSkew'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_TopologyKey l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "TopologyKey"] ↦{dq} (v.(v1.TopologySpreadConstraint.TopologyKey')))
+    (l.[(v1.TopologySpreadConstraint.t), "TopologyKey"] ↦{dq} (v.(v1.TopologySpreadConstraint.TopologyKey')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_TopologyKey l (v : (v1.TopologySpreadConstraint.t)) TopologyKey' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "TopologyKey"] ↦ (v.(v1.TopologySpreadConstraint.TopologyKey')))
+    (l.[(v1.TopologySpreadConstraint.t), "TopologyKey"] ↦ TopologyKey')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.TopologyKey') := TopologyKey'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_WhenUnsatisfiable l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "WhenUnsatisfiable"] ↦{dq} (v.(v1.TopologySpreadConstraint.WhenUnsatisfiable')))
+    (l.[(v1.TopologySpreadConstraint.t), "WhenUnsatisfiable"] ↦{dq} (v.(v1.TopologySpreadConstraint.WhenUnsatisfiable')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_WhenUnsatisfiable l (v : (v1.TopologySpreadConstraint.t)) WhenUnsatisfiable' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "WhenUnsatisfiable"] ↦ (v.(v1.TopologySpreadConstraint.WhenUnsatisfiable')))
+    (l.[(v1.TopologySpreadConstraint.t), "WhenUnsatisfiable"] ↦ WhenUnsatisfiable')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.WhenUnsatisfiable') := WhenUnsatisfiable'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_LabelSelector l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "LabelSelector"] ↦{dq} (v.(v1.TopologySpreadConstraint.LabelSelector')))
+    (l.[(v1.TopologySpreadConstraint.t), "LabelSelector"] ↦{dq} (v.(v1.TopologySpreadConstraint.LabelSelector')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_LabelSelector l (v : (v1.TopologySpreadConstraint.t)) LabelSelector' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "LabelSelector"] ↦ (v.(v1.TopologySpreadConstraint.LabelSelector')))
+    (l.[(v1.TopologySpreadConstraint.t), "LabelSelector"] ↦ LabelSelector')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.LabelSelector') := LabelSelector'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_MinDomains l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MinDomains"] ↦{dq} (v.(v1.TopologySpreadConstraint.MinDomains')))
+    (l.[(v1.TopologySpreadConstraint.t), "MinDomains"] ↦{dq} (v.(v1.TopologySpreadConstraint.MinDomains')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_MinDomains l (v : (v1.TopologySpreadConstraint.t)) MinDomains' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MinDomains"] ↦ (v.(v1.TopologySpreadConstraint.MinDomains')))
+    (l.[(v1.TopologySpreadConstraint.t), "MinDomains"] ↦ MinDomains')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.MinDomains') := MinDomains'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_NodeAffinityPolicy l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "NodeAffinityPolicy"] ↦{dq} (v.(v1.TopologySpreadConstraint.NodeAffinityPolicy')))
+    (l.[(v1.TopologySpreadConstraint.t), "NodeAffinityPolicy"] ↦{dq} (v.(v1.TopologySpreadConstraint.NodeAffinityPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_NodeAffinityPolicy l (v : (v1.TopologySpreadConstraint.t)) NodeAffinityPolicy' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "NodeAffinityPolicy"] ↦ (v.(v1.TopologySpreadConstraint.NodeAffinityPolicy')))
+    (l.[(v1.TopologySpreadConstraint.t), "NodeAffinityPolicy"] ↦ NodeAffinityPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.NodeAffinityPolicy') := NodeAffinityPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_NodeTaintsPolicy l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "NodeTaintsPolicy"] ↦{dq} (v.(v1.TopologySpreadConstraint.NodeTaintsPolicy')))
+    (l.[(v1.TopologySpreadConstraint.t), "NodeTaintsPolicy"] ↦{dq} (v.(v1.TopologySpreadConstraint.NodeTaintsPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_NodeTaintsPolicy l (v : (v1.TopologySpreadConstraint.t)) NodeTaintsPolicy' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "NodeTaintsPolicy"] ↦ (v.(v1.TopologySpreadConstraint.NodeTaintsPolicy')))
+    (l.[(v1.TopologySpreadConstraint.t), "NodeTaintsPolicy"] ↦ NodeTaintsPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.NodeTaintsPolicy') := NodeTaintsPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TopologySpreadConstraint_access_load_MatchLabelKeys l (v : (v1.TopologySpreadConstraint.t)) dq :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MatchLabelKeys"] ↦{dq} (v.(v1.TopologySpreadConstraint.MatchLabelKeys')))
+    (l.[(v1.TopologySpreadConstraint.t), "MatchLabelKeys"] ↦{dq} (v.(v1.TopologySpreadConstraint.MatchLabelKeys')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TopologySpreadConstraint_access_store_MatchLabelKeys l (v : (v1.TopologySpreadConstraint.t)) MatchLabelKeys' :
+  AccessStrict
+    (l.[(v1.TopologySpreadConstraint.t), "MatchLabelKeys"] ↦ (v.(v1.TopologySpreadConstraint.MatchLabelKeys')))
+    (l.[(v1.TopologySpreadConstraint.t), "MatchLabelKeys"] ↦ MatchLabelKeys')
+    (l ↦ v) (l ↦ (v <|(v1.TopologySpreadConstraint.MatchLabelKeys') := MatchLabelKeys'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End TopologySpreadConstraint.
@@ -9197,76 +17448,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance HostAlias_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HostAlias.t). Admitted.
+#[global]Program Instance HostAlias_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostAlias.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "IP" ∷ l.[(v1.HostAlias.t), "IP"] ↦{dq} v.(v1.HostAlias.IP') ∗
+      "Hostnames" ∷ l.[(v1.HostAlias.t), "Hostnames"] ↦{dq} v.(v1.HostAlias.Hostnames') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance HostAlias_into_val_typed
    :
   IntoValTypedUnderlying (v1.HostAlias.t) (v1.HostAliasⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance HostAlias_access_load_IP l (v : (v1.HostAlias.t)) dq :
+  AccessStrict
+    (l.[(v1.HostAlias.t), "IP"] ↦{dq} (v.(v1.HostAlias.IP')))
+    (l.[(v1.HostAlias.t), "IP"] ↦{dq} (v.(v1.HostAlias.IP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HostAlias_access_store_IP l (v : (v1.HostAlias.t)) IP' :
+  AccessStrict
+    (l.[(v1.HostAlias.t), "IP"] ↦ (v.(v1.HostAlias.IP')))
+    (l.[(v1.HostAlias.t), "IP"] ↦ IP')
+    (l ↦ v) (l ↦ (v <|(v1.HostAlias.IP') := IP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance HostAlias_access_load_Hostnames l (v : (v1.HostAlias.t)) dq :
+  AccessStrict
+    (l.[(v1.HostAlias.t), "Hostnames"] ↦{dq} (v.(v1.HostAlias.Hostnames')))
+    (l.[(v1.HostAlias.t), "Hostnames"] ↦{dq} (v.(v1.HostAlias.Hostnames')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HostAlias_access_store_Hostnames l (v : (v1.HostAlias.t)) Hostnames' :
+  AccessStrict
+    (l.[(v1.HostAlias.t), "Hostnames"] ↦ (v.(v1.HostAlias.Hostnames')))
+    (l.[(v1.HostAlias.t), "Hostnames"] ↦ Hostnames')
+    (l ↦ v) (l ↦ (v <|(v1.HostAlias.Hostnames') := Hostnames'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End HostAlias.
-
-Module PodFSGroupChangePolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodFSGroupChangePolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodFSGroupChangePolicy.t). Admitted.
-
-#[global] Instance PodFSGroupChangePolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodFSGroupChangePolicy.t) (v1.PodFSGroupChangePolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodFSGroupChangePolicy.
-
-Module SupplementalGroupsPolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance SupplementalGroupsPolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SupplementalGroupsPolicy.t). Admitted.
-
-#[global] Instance SupplementalGroupsPolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.SupplementalGroupsPolicy.t) (v1.SupplementalGroupsPolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End SupplementalGroupsPolicy.
-
-Module PodSELinuxChangePolicy.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodSELinuxChangePolicy_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodSELinuxChangePolicy.t). Admitted.
-
-#[global] Instance PodSELinuxChangePolicy_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodSELinuxChangePolicy.t) (v1.PodSELinuxChangePolicyⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodSELinuxChangePolicy.
 
 Module PodSecurityContext.
 Section def.
@@ -9277,13 +17503,757 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodSecurityContext_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodSecurityContext.t). Admitted.
+#[global]Program Instance PodSecurityContext_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodSecurityContext.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SELinuxOptions" ∷ l.[(v1.PodSecurityContext.t), "SELinuxOptions"] ↦{dq} v.(v1.PodSecurityContext.SELinuxOptions') ∗
+      "WindowsOptions" ∷ l.[(v1.PodSecurityContext.t), "WindowsOptions"] ↦{dq} v.(v1.PodSecurityContext.WindowsOptions') ∗
+      "RunAsUser" ∷ l.[(v1.PodSecurityContext.t), "RunAsUser"] ↦{dq} v.(v1.PodSecurityContext.RunAsUser') ∗
+      "RunAsGroup" ∷ l.[(v1.PodSecurityContext.t), "RunAsGroup"] ↦{dq} v.(v1.PodSecurityContext.RunAsGroup') ∗
+      "RunAsNonRoot" ∷ l.[(v1.PodSecurityContext.t), "RunAsNonRoot"] ↦{dq} v.(v1.PodSecurityContext.RunAsNonRoot') ∗
+      "SupplementalGroups" ∷ l.[(v1.PodSecurityContext.t), "SupplementalGroups"] ↦{dq} v.(v1.PodSecurityContext.SupplementalGroups') ∗
+      "SupplementalGroupsPolicy" ∷ l.[(v1.PodSecurityContext.t), "SupplementalGroupsPolicy"] ↦{dq} v.(v1.PodSecurityContext.SupplementalGroupsPolicy') ∗
+      "FSGroup" ∷ l.[(v1.PodSecurityContext.t), "FSGroup"] ↦{dq} v.(v1.PodSecurityContext.FSGroup') ∗
+      "Sysctls" ∷ l.[(v1.PodSecurityContext.t), "Sysctls"] ↦{dq} v.(v1.PodSecurityContext.Sysctls') ∗
+      "FSGroupChangePolicy" ∷ l.[(v1.PodSecurityContext.t), "FSGroupChangePolicy"] ↦{dq} v.(v1.PodSecurityContext.FSGroupChangePolicy') ∗
+      "SeccompProfile" ∷ l.[(v1.PodSecurityContext.t), "SeccompProfile"] ↦{dq} v.(v1.PodSecurityContext.SeccompProfile') ∗
+      "AppArmorProfile" ∷ l.[(v1.PodSecurityContext.t), "AppArmorProfile"] ↦{dq} v.(v1.PodSecurityContext.AppArmorProfile') ∗
+      "SELinuxChangePolicy" ∷ l.[(v1.PodSecurityContext.t), "SELinuxChangePolicy"] ↦{dq} v.(v1.PodSecurityContext.SELinuxChangePolicy') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodSecurityContext_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodSecurityContext.t) (v1.PodSecurityContextⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "SELinuxOptions" (go.PointerType v1.SELinuxOptions)
+      (fun v => v.(v1.PodSecurityContext.SELinuxOptions'))
+      (fun v x => v <|(v1.PodSecurityContext.SELinuxOptions') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "WindowsOptions" (go.PointerType v1.WindowsSecurityContextOptions)
+      (fun v => v.(v1.PodSecurityContext.WindowsOptions'))
+      (fun v x => v <|(v1.PodSecurityContext.WindowsOptions') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsUser" (go.PointerType go.int64)
+      (fun v => v.(v1.PodSecurityContext.RunAsUser'))
+      (fun v x => v <|(v1.PodSecurityContext.RunAsUser') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsGroup" (go.PointerType go.int64)
+      (fun v => v.(v1.PodSecurityContext.RunAsGroup'))
+      (fun v x => v <|(v1.PodSecurityContext.RunAsGroup') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsNonRoot" (go.PointerType go.bool)
+      (fun v => v.(v1.PodSecurityContext.RunAsNonRoot'))
+      (fun v x => v <|(v1.PodSecurityContext.RunAsNonRoot') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SupplementalGroups" (go.SliceType go.int64)
+      (fun v => v.(v1.PodSecurityContext.SupplementalGroups'))
+      (fun v x => v <|(v1.PodSecurityContext.SupplementalGroups') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SupplementalGroupsPolicy" (go.PointerType v1.SupplementalGroupsPolicy)
+      (fun v => v.(v1.PodSecurityContext.SupplementalGroupsPolicy'))
+      (fun v x => v <|(v1.PodSecurityContext.SupplementalGroupsPolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FSGroup" (go.PointerType go.int64)
+      (fun v => v.(v1.PodSecurityContext.FSGroup'))
+      (fun v x => v <|(v1.PodSecurityContext.FSGroup') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Sysctls" (go.SliceType v1.Sysctl)
+      (fun v => v.(v1.PodSecurityContext.Sysctls'))
+      (fun v x => v <|(v1.PodSecurityContext.Sysctls') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "FSGroupChangePolicy" (go.PointerType v1.PodFSGroupChangePolicy)
+      (fun v => v.(v1.PodSecurityContext.FSGroupChangePolicy'))
+      (fun v x => v <|(v1.PodSecurityContext.FSGroupChangePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SeccompProfile" (go.PointerType v1.SeccompProfile)
+      (fun v => v.(v1.PodSecurityContext.SeccompProfile'))
+      (fun v x => v <|(v1.PodSecurityContext.SeccompProfile') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AppArmorProfile" (go.PointerType v1.AppArmorProfile)
+      (fun v => v.(v1.PodSecurityContext.AppArmorProfile'))
+      (fun v x => v <|(v1.PodSecurityContext.AppArmorProfile') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SELinuxChangePolicy" (go.PointerType v1.PodSELinuxChangePolicy)
+      (fun v => v.(v1.PodSecurityContext.SELinuxChangePolicy'))
+      (fun v x => v <|(v1.PodSecurityContext.SELinuxChangePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.PodSecurityContext.t v1.PodSecurityContextⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.PodSecurityContext'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.PodSecurityContext'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance PodSecurityContext_access_load_SELinuxOptions l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SELinuxOptions"] ↦{dq} (v.(v1.PodSecurityContext.SELinuxOptions')))
+    (l.[(v1.PodSecurityContext.t), "SELinuxOptions"] ↦{dq} (v.(v1.PodSecurityContext.SELinuxOptions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_SELinuxOptions l (v : (v1.PodSecurityContext.t)) SELinuxOptions' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SELinuxOptions"] ↦ (v.(v1.PodSecurityContext.SELinuxOptions')))
+    (l.[(v1.PodSecurityContext.t), "SELinuxOptions"] ↦ SELinuxOptions')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.SELinuxOptions') := SELinuxOptions'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_WindowsOptions l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "WindowsOptions"] ↦{dq} (v.(v1.PodSecurityContext.WindowsOptions')))
+    (l.[(v1.PodSecurityContext.t), "WindowsOptions"] ↦{dq} (v.(v1.PodSecurityContext.WindowsOptions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_WindowsOptions l (v : (v1.PodSecurityContext.t)) WindowsOptions' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "WindowsOptions"] ↦ (v.(v1.PodSecurityContext.WindowsOptions')))
+    (l.[(v1.PodSecurityContext.t), "WindowsOptions"] ↦ WindowsOptions')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.WindowsOptions') := WindowsOptions'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_RunAsUser l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsUser"] ↦{dq} (v.(v1.PodSecurityContext.RunAsUser')))
+    (l.[(v1.PodSecurityContext.t), "RunAsUser"] ↦{dq} (v.(v1.PodSecurityContext.RunAsUser')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_RunAsUser l (v : (v1.PodSecurityContext.t)) RunAsUser' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsUser"] ↦ (v.(v1.PodSecurityContext.RunAsUser')))
+    (l.[(v1.PodSecurityContext.t), "RunAsUser"] ↦ RunAsUser')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.RunAsUser') := RunAsUser'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_RunAsGroup l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsGroup"] ↦{dq} (v.(v1.PodSecurityContext.RunAsGroup')))
+    (l.[(v1.PodSecurityContext.t), "RunAsGroup"] ↦{dq} (v.(v1.PodSecurityContext.RunAsGroup')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_RunAsGroup l (v : (v1.PodSecurityContext.t)) RunAsGroup' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsGroup"] ↦ (v.(v1.PodSecurityContext.RunAsGroup')))
+    (l.[(v1.PodSecurityContext.t), "RunAsGroup"] ↦ RunAsGroup')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.RunAsGroup') := RunAsGroup'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_RunAsNonRoot l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsNonRoot"] ↦{dq} (v.(v1.PodSecurityContext.RunAsNonRoot')))
+    (l.[(v1.PodSecurityContext.t), "RunAsNonRoot"] ↦{dq} (v.(v1.PodSecurityContext.RunAsNonRoot')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_RunAsNonRoot l (v : (v1.PodSecurityContext.t)) RunAsNonRoot' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "RunAsNonRoot"] ↦ (v.(v1.PodSecurityContext.RunAsNonRoot')))
+    (l.[(v1.PodSecurityContext.t), "RunAsNonRoot"] ↦ RunAsNonRoot')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.RunAsNonRoot') := RunAsNonRoot'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_SupplementalGroups l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroups"] ↦{dq} (v.(v1.PodSecurityContext.SupplementalGroups')))
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroups"] ↦{dq} (v.(v1.PodSecurityContext.SupplementalGroups')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_SupplementalGroups l (v : (v1.PodSecurityContext.t)) SupplementalGroups' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroups"] ↦ (v.(v1.PodSecurityContext.SupplementalGroups')))
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroups"] ↦ SupplementalGroups')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.SupplementalGroups') := SupplementalGroups'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_SupplementalGroupsPolicy l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroupsPolicy"] ↦{dq} (v.(v1.PodSecurityContext.SupplementalGroupsPolicy')))
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroupsPolicy"] ↦{dq} (v.(v1.PodSecurityContext.SupplementalGroupsPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_SupplementalGroupsPolicy l (v : (v1.PodSecurityContext.t)) SupplementalGroupsPolicy' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroupsPolicy"] ↦ (v.(v1.PodSecurityContext.SupplementalGroupsPolicy')))
+    (l.[(v1.PodSecurityContext.t), "SupplementalGroupsPolicy"] ↦ SupplementalGroupsPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.SupplementalGroupsPolicy') := SupplementalGroupsPolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_FSGroup l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "FSGroup"] ↦{dq} (v.(v1.PodSecurityContext.FSGroup')))
+    (l.[(v1.PodSecurityContext.t), "FSGroup"] ↦{dq} (v.(v1.PodSecurityContext.FSGroup')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_FSGroup l (v : (v1.PodSecurityContext.t)) FSGroup' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "FSGroup"] ↦ (v.(v1.PodSecurityContext.FSGroup')))
+    (l.[(v1.PodSecurityContext.t), "FSGroup"] ↦ FSGroup')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.FSGroup') := FSGroup'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_Sysctls l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "Sysctls"] ↦{dq} (v.(v1.PodSecurityContext.Sysctls')))
+    (l.[(v1.PodSecurityContext.t), "Sysctls"] ↦{dq} (v.(v1.PodSecurityContext.Sysctls')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_Sysctls l (v : (v1.PodSecurityContext.t)) Sysctls' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "Sysctls"] ↦ (v.(v1.PodSecurityContext.Sysctls')))
+    (l.[(v1.PodSecurityContext.t), "Sysctls"] ↦ Sysctls')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.Sysctls') := Sysctls'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_FSGroupChangePolicy l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "FSGroupChangePolicy"] ↦{dq} (v.(v1.PodSecurityContext.FSGroupChangePolicy')))
+    (l.[(v1.PodSecurityContext.t), "FSGroupChangePolicy"] ↦{dq} (v.(v1.PodSecurityContext.FSGroupChangePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_FSGroupChangePolicy l (v : (v1.PodSecurityContext.t)) FSGroupChangePolicy' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "FSGroupChangePolicy"] ↦ (v.(v1.PodSecurityContext.FSGroupChangePolicy')))
+    (l.[(v1.PodSecurityContext.t), "FSGroupChangePolicy"] ↦ FSGroupChangePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.FSGroupChangePolicy') := FSGroupChangePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_SeccompProfile l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SeccompProfile"] ↦{dq} (v.(v1.PodSecurityContext.SeccompProfile')))
+    (l.[(v1.PodSecurityContext.t), "SeccompProfile"] ↦{dq} (v.(v1.PodSecurityContext.SeccompProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_SeccompProfile l (v : (v1.PodSecurityContext.t)) SeccompProfile' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SeccompProfile"] ↦ (v.(v1.PodSecurityContext.SeccompProfile')))
+    (l.[(v1.PodSecurityContext.t), "SeccompProfile"] ↦ SeccompProfile')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.SeccompProfile') := SeccompProfile'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_AppArmorProfile l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "AppArmorProfile"] ↦{dq} (v.(v1.PodSecurityContext.AppArmorProfile')))
+    (l.[(v1.PodSecurityContext.t), "AppArmorProfile"] ↦{dq} (v.(v1.PodSecurityContext.AppArmorProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_AppArmorProfile l (v : (v1.PodSecurityContext.t)) AppArmorProfile' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "AppArmorProfile"] ↦ (v.(v1.PodSecurityContext.AppArmorProfile')))
+    (l.[(v1.PodSecurityContext.t), "AppArmorProfile"] ↦ AppArmorProfile')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.AppArmorProfile') := AppArmorProfile'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+#[global] Instance PodSecurityContext_access_load_SELinuxChangePolicy l (v : (v1.PodSecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SELinuxChangePolicy"] ↦{dq} (v.(v1.PodSecurityContext.SELinuxChangePolicy')))
+    (l.[(v1.PodSecurityContext.t), "SELinuxChangePolicy"] ↦{dq} (v.(v1.PodSecurityContext.SELinuxChangePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+
+#[global] Instance PodSecurityContext_access_store_SELinuxChangePolicy l (v : (v1.PodSecurityContext.t)) SELinuxChangePolicy' :
+  AccessStrict
+    (l.[(v1.PodSecurityContext.t), "SELinuxChangePolicy"] ↦ (v.(v1.PodSecurityContext.SELinuxChangePolicy')))
+    (l.[(v1.PodSecurityContext.t), "SELinuxChangePolicy"] ↦ SELinuxChangePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.PodSecurityContext.SELinuxChangePolicy') := SELinuxChangePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
 
 End def.
 End PodSecurityContext.
@@ -9297,36 +18267,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SeccompProfile_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SeccompProfile.t). Admitted.
+#[global]Program Instance SeccompProfile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SeccompProfile.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.SeccompProfile.t), "Type"] ↦{dq} v.(v1.SeccompProfile.Type') ∗
+      "LocalhostProfile" ∷ l.[(v1.SeccompProfile.t), "LocalhostProfile"] ↦{dq} v.(v1.SeccompProfile.LocalhostProfile') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SeccompProfile_into_val_typed
    :
   IntoValTypedUnderlying (v1.SeccompProfile.t) (v1.SeccompProfileⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SeccompProfile_access_load_Type l (v : (v1.SeccompProfile.t)) dq :
+  AccessStrict
+    (l.[(v1.SeccompProfile.t), "Type"] ↦{dq} (v.(v1.SeccompProfile.Type')))
+    (l.[(v1.SeccompProfile.t), "Type"] ↦{dq} (v.(v1.SeccompProfile.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SeccompProfile_access_store_Type l (v : (v1.SeccompProfile.t)) Type' :
+  AccessStrict
+    (l.[(v1.SeccompProfile.t), "Type"] ↦ (v.(v1.SeccompProfile.Type')))
+    (l.[(v1.SeccompProfile.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.SeccompProfile.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SeccompProfile_access_load_LocalhostProfile l (v : (v1.SeccompProfile.t)) dq :
+  AccessStrict
+    (l.[(v1.SeccompProfile.t), "LocalhostProfile"] ↦{dq} (v.(v1.SeccompProfile.LocalhostProfile')))
+    (l.[(v1.SeccompProfile.t), "LocalhostProfile"] ↦{dq} (v.(v1.SeccompProfile.LocalhostProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SeccompProfile_access_store_LocalhostProfile l (v : (v1.SeccompProfile.t)) LocalhostProfile' :
+  AccessStrict
+    (l.[(v1.SeccompProfile.t), "LocalhostProfile"] ↦ (v.(v1.SeccompProfile.LocalhostProfile')))
+    (l.[(v1.SeccompProfile.t), "LocalhostProfile"] ↦ LocalhostProfile')
+    (l ↦ v) (l ↦ (v <|(v1.SeccompProfile.LocalhostProfile') := LocalhostProfile'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SeccompProfile.
-
-Module SeccompProfileType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance SeccompProfileType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SeccompProfileType.t). Admitted.
-
-#[global] Instance SeccompProfileType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.SeccompProfileType.t) (v1.SeccompProfileTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End SeccompProfileType.
 
 Module AppArmorProfile.
 Section def.
@@ -9337,56 +18322,51 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance AppArmorProfile_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AppArmorProfile.t). Admitted.
+#[global]Program Instance AppArmorProfile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.AppArmorProfile.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.AppArmorProfile.t), "Type"] ↦{dq} v.(v1.AppArmorProfile.Type') ∗
+      "LocalhostProfile" ∷ l.[(v1.AppArmorProfile.t), "LocalhostProfile"] ↦{dq} v.(v1.AppArmorProfile.LocalhostProfile') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance AppArmorProfile_into_val_typed
    :
   IntoValTypedUnderlying (v1.AppArmorProfile.t) (v1.AppArmorProfileⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance AppArmorProfile_access_load_Type l (v : (v1.AppArmorProfile.t)) dq :
+  AccessStrict
+    (l.[(v1.AppArmorProfile.t), "Type"] ↦{dq} (v.(v1.AppArmorProfile.Type')))
+    (l.[(v1.AppArmorProfile.t), "Type"] ↦{dq} (v.(v1.AppArmorProfile.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AppArmorProfile_access_store_Type l (v : (v1.AppArmorProfile.t)) Type' :
+  AccessStrict
+    (l.[(v1.AppArmorProfile.t), "Type"] ↦ (v.(v1.AppArmorProfile.Type')))
+    (l.[(v1.AppArmorProfile.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.AppArmorProfile.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance AppArmorProfile_access_load_LocalhostProfile l (v : (v1.AppArmorProfile.t)) dq :
+  AccessStrict
+    (l.[(v1.AppArmorProfile.t), "LocalhostProfile"] ↦{dq} (v.(v1.AppArmorProfile.LocalhostProfile')))
+    (l.[(v1.AppArmorProfile.t), "LocalhostProfile"] ↦{dq} (v.(v1.AppArmorProfile.LocalhostProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance AppArmorProfile_access_store_LocalhostProfile l (v : (v1.AppArmorProfile.t)) LocalhostProfile' :
+  AccessStrict
+    (l.[(v1.AppArmorProfile.t), "LocalhostProfile"] ↦ (v.(v1.AppArmorProfile.LocalhostProfile')))
+    (l.[(v1.AppArmorProfile.t), "LocalhostProfile"] ↦ LocalhostProfile')
+    (l ↦ v) (l ↦ (v <|(v1.AppArmorProfile.LocalhostProfile') := LocalhostProfile'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End AppArmorProfile.
-
-Module AppArmorProfileType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance AppArmorProfileType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.AppArmorProfileType.t). Admitted.
-
-#[global] Instance AppArmorProfileType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.AppArmorProfileType.t) (v1.AppArmorProfileTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End AppArmorProfileType.
-
-Module PodQOSClass.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PodQOSClass_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodQOSClass.t). Admitted.
-
-#[global] Instance PodQOSClass_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PodQOSClass.t) (v1.PodQOSClassⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PodQOSClass.
 
 Module PodDNSConfig.
 Section def.
@@ -9397,13 +18377,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodDNSConfig_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodDNSConfig.t). Admitted.
+#[global]Program Instance PodDNSConfig_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodDNSConfig.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Nameservers" ∷ l.[(v1.PodDNSConfig.t), "Nameservers"] ↦{dq} v.(v1.PodDNSConfig.Nameservers') ∗
+      "Searches" ∷ l.[(v1.PodDNSConfig.t), "Searches"] ↦{dq} v.(v1.PodDNSConfig.Searches') ∗
+      "Options" ∷ l.[(v1.PodDNSConfig.t), "Options"] ↦{dq} v.(v1.PodDNSConfig.Options') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodDNSConfig_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodDNSConfig.t) (v1.PodDNSConfigⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodDNSConfig_access_load_Nameservers l (v : (v1.PodDNSConfig.t)) dq :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Nameservers"] ↦{dq} (v.(v1.PodDNSConfig.Nameservers')))
+    (l.[(v1.PodDNSConfig.t), "Nameservers"] ↦{dq} (v.(v1.PodDNSConfig.Nameservers')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodDNSConfig_access_store_Nameservers l (v : (v1.PodDNSConfig.t)) Nameservers' :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Nameservers"] ↦ (v.(v1.PodDNSConfig.Nameservers')))
+    (l.[(v1.PodDNSConfig.t), "Nameservers"] ↦ Nameservers')
+    (l ↦ v) (l ↦ (v <|(v1.PodDNSConfig.Nameservers') := Nameservers'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodDNSConfig_access_load_Searches l (v : (v1.PodDNSConfig.t)) dq :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Searches"] ↦{dq} (v.(v1.PodDNSConfig.Searches')))
+    (l.[(v1.PodDNSConfig.t), "Searches"] ↦{dq} (v.(v1.PodDNSConfig.Searches')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodDNSConfig_access_store_Searches l (v : (v1.PodDNSConfig.t)) Searches' :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Searches"] ↦ (v.(v1.PodDNSConfig.Searches')))
+    (l.[(v1.PodDNSConfig.t), "Searches"] ↦ Searches')
+    (l ↦ v) (l ↦ (v <|(v1.PodDNSConfig.Searches') := Searches'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodDNSConfig_access_load_Options l (v : (v1.PodDNSConfig.t)) dq :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Options"] ↦{dq} (v.(v1.PodDNSConfig.Options')))
+    (l.[(v1.PodDNSConfig.t), "Options"] ↦{dq} (v.(v1.PodDNSConfig.Options')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodDNSConfig_access_store_Options l (v : (v1.PodDNSConfig.t)) Options' :
+  AccessStrict
+    (l.[(v1.PodDNSConfig.t), "Options"] ↦ (v.(v1.PodDNSConfig.Options')))
+    (l.[(v1.PodDNSConfig.t), "Options"] ↦ Options')
+    (l ↦ v) (l ↦ (v <|(v1.PodDNSConfig.Options') := Options'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodDNSConfig.
@@ -9417,13 +18446,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodDNSConfigOption_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodDNSConfigOption.t). Admitted.
+#[global]Program Instance PodDNSConfigOption_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodDNSConfigOption.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.PodDNSConfigOption.t), "Name"] ↦{dq} v.(v1.PodDNSConfigOption.Name') ∗
+      "Value" ∷ l.[(v1.PodDNSConfigOption.t), "Value"] ↦{dq} v.(v1.PodDNSConfigOption.Value') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodDNSConfigOption_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodDNSConfigOption.t) (v1.PodDNSConfigOptionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodDNSConfigOption_access_load_Name l (v : (v1.PodDNSConfigOption.t)) dq :
+  AccessStrict
+    (l.[(v1.PodDNSConfigOption.t), "Name"] ↦{dq} (v.(v1.PodDNSConfigOption.Name')))
+    (l.[(v1.PodDNSConfigOption.t), "Name"] ↦{dq} (v.(v1.PodDNSConfigOption.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodDNSConfigOption_access_store_Name l (v : (v1.PodDNSConfigOption.t)) Name' :
+  AccessStrict
+    (l.[(v1.PodDNSConfigOption.t), "Name"] ↦ (v.(v1.PodDNSConfigOption.Name')))
+    (l.[(v1.PodDNSConfigOption.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.PodDNSConfigOption.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodDNSConfigOption_access_load_Value l (v : (v1.PodDNSConfigOption.t)) dq :
+  AccessStrict
+    (l.[(v1.PodDNSConfigOption.t), "Value"] ↦{dq} (v.(v1.PodDNSConfigOption.Value')))
+    (l.[(v1.PodDNSConfigOption.t), "Value"] ↦{dq} (v.(v1.PodDNSConfigOption.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodDNSConfigOption_access_store_Value l (v : (v1.PodDNSConfigOption.t)) Value' :
+  AccessStrict
+    (l.[(v1.PodDNSConfigOption.t), "Value"] ↦ (v.(v1.PodDNSConfigOption.Value')))
+    (l.[(v1.PodDNSConfigOption.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.PodDNSConfigOption.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodDNSConfigOption.
@@ -9437,13 +18501,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance PodIP_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PodIP.t). Admitted.
+#[global]Program Instance PodIP_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.PodIP.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "IP" ∷ l.[(v1.PodIP.t), "IP"] ↦{dq} v.(v1.PodIP.IP') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance PodIP_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodIP.t) (v1.PodIPⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodIP_access_load_IP l (v : (v1.PodIP.t)) dq :
+  AccessStrict
+    (l.[(v1.PodIP.t), "IP"] ↦{dq} (v.(v1.PodIP.IP')))
+    (l.[(v1.PodIP.t), "IP"] ↦{dq} (v.(v1.PodIP.IP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodIP_access_store_IP l (v : (v1.PodIP.t)) IP' :
+  AccessStrict
+    (l.[(v1.PodIP.t), "IP"] ↦ (v.(v1.PodIP.IP')))
+    (l.[(v1.PodIP.t), "IP"] ↦ IP')
+    (l ↦ v) (l ↦ (v <|(v1.PodIP.IP') := IP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End PodIP.
@@ -9457,13 +18542,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance HostIP_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.HostIP.t). Admitted.
+#[global]Program Instance HostIP_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.HostIP.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "IP" ∷ l.[(v1.HostIP.t), "IP"] ↦{dq} v.(v1.HostIP.IP') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance HostIP_into_val_typed
    :
   IntoValTypedUnderlying (v1.HostIP.t) (v1.HostIPⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance HostIP_access_load_IP l (v : (v1.HostIP.t)) dq :
+  AccessStrict
+    (l.[(v1.HostIP.t), "IP"] ↦{dq} (v.(v1.HostIP.IP')))
+    (l.[(v1.HostIP.t), "IP"] ↦{dq} (v.(v1.HostIP.IP')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance HostIP_access_store_IP l (v : (v1.HostIP.t)) IP' :
+  AccessStrict
+    (l.[(v1.HostIP.t), "IP"] ↦ (v.(v1.HostIP.IP')))
+    (l.[(v1.HostIP.t), "IP"] ↦ IP')
+    (l ↦ v) (l ↦ (v <|(v1.HostIP.IP') := IP'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End HostIP.
@@ -9477,13 +18583,1717 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EphemeralContainerCommon_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EphemeralContainerCommon.t). Admitted.
+#[global]Program Instance EphemeralContainerCommon_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralContainerCommon.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.EphemeralContainerCommon.t), "Name"] ↦{dq} v.(v1.EphemeralContainerCommon.Name') ∗
+      "Image" ∷ l.[(v1.EphemeralContainerCommon.t), "Image"] ↦{dq} v.(v1.EphemeralContainerCommon.Image') ∗
+      "Command" ∷ l.[(v1.EphemeralContainerCommon.t), "Command"] ↦{dq} v.(v1.EphemeralContainerCommon.Command') ∗
+      "Args" ∷ l.[(v1.EphemeralContainerCommon.t), "Args"] ↦{dq} v.(v1.EphemeralContainerCommon.Args') ∗
+      "WorkingDir" ∷ l.[(v1.EphemeralContainerCommon.t), "WorkingDir"] ↦{dq} v.(v1.EphemeralContainerCommon.WorkingDir') ∗
+      "Ports" ∷ l.[(v1.EphemeralContainerCommon.t), "Ports"] ↦{dq} v.(v1.EphemeralContainerCommon.Ports') ∗
+      "EnvFrom" ∷ l.[(v1.EphemeralContainerCommon.t), "EnvFrom"] ↦{dq} v.(v1.EphemeralContainerCommon.EnvFrom') ∗
+      "Env" ∷ l.[(v1.EphemeralContainerCommon.t), "Env"] ↦{dq} v.(v1.EphemeralContainerCommon.Env') ∗
+      "Resources" ∷ l.[(v1.EphemeralContainerCommon.t), "Resources"] ↦{dq} v.(v1.EphemeralContainerCommon.Resources') ∗
+      "ResizePolicy" ∷ l.[(v1.EphemeralContainerCommon.t), "ResizePolicy"] ↦{dq} v.(v1.EphemeralContainerCommon.ResizePolicy') ∗
+      "RestartPolicy" ∷ l.[(v1.EphemeralContainerCommon.t), "RestartPolicy"] ↦{dq} v.(v1.EphemeralContainerCommon.RestartPolicy') ∗
+      "RestartPolicyRules" ∷ l.[(v1.EphemeralContainerCommon.t), "RestartPolicyRules"] ↦{dq} v.(v1.EphemeralContainerCommon.RestartPolicyRules') ∗
+      "VolumeMounts" ∷ l.[(v1.EphemeralContainerCommon.t), "VolumeMounts"] ↦{dq} v.(v1.EphemeralContainerCommon.VolumeMounts') ∗
+      "VolumeDevices" ∷ l.[(v1.EphemeralContainerCommon.t), "VolumeDevices"] ↦{dq} v.(v1.EphemeralContainerCommon.VolumeDevices') ∗
+      "LivenessProbe" ∷ l.[(v1.EphemeralContainerCommon.t), "LivenessProbe"] ↦{dq} v.(v1.EphemeralContainerCommon.LivenessProbe') ∗
+      "ReadinessProbe" ∷ l.[(v1.EphemeralContainerCommon.t), "ReadinessProbe"] ↦{dq} v.(v1.EphemeralContainerCommon.ReadinessProbe') ∗
+      "StartupProbe" ∷ l.[(v1.EphemeralContainerCommon.t), "StartupProbe"] ↦{dq} v.(v1.EphemeralContainerCommon.StartupProbe') ∗
+      "Lifecycle" ∷ l.[(v1.EphemeralContainerCommon.t), "Lifecycle"] ↦{dq} v.(v1.EphemeralContainerCommon.Lifecycle') ∗
+      "TerminationMessagePath" ∷ l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePath"] ↦{dq} v.(v1.EphemeralContainerCommon.TerminationMessagePath') ∗
+      "TerminationMessagePolicy" ∷ l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePolicy"] ↦{dq} v.(v1.EphemeralContainerCommon.TerminationMessagePolicy') ∗
+      "ImagePullPolicy" ∷ l.[(v1.EphemeralContainerCommon.t), "ImagePullPolicy"] ↦{dq} v.(v1.EphemeralContainerCommon.ImagePullPolicy') ∗
+      "SecurityContext" ∷ l.[(v1.EphemeralContainerCommon.t), "SecurityContext"] ↦{dq} v.(v1.EphemeralContainerCommon.SecurityContext') ∗
+      "Stdin" ∷ l.[(v1.EphemeralContainerCommon.t), "Stdin"] ↦{dq} v.(v1.EphemeralContainerCommon.Stdin') ∗
+      "StdinOnce" ∷ l.[(v1.EphemeralContainerCommon.t), "StdinOnce"] ↦{dq} v.(v1.EphemeralContainerCommon.StdinOnce') ∗
+      "TTY" ∷ l.[(v1.EphemeralContainerCommon.t), "TTY"] ↦{dq} v.(v1.EphemeralContainerCommon.TTY') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EphemeralContainerCommon_into_val_typed
    :
   IntoValTypedUnderlying (v1.EphemeralContainerCommon.t) (v1.EphemeralContainerCommonⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "Name" go.string
+      (fun v => v.(v1.EphemeralContainerCommon.Name'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Name') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Image" go.string
+      (fun v => v.(v1.EphemeralContainerCommon.Image'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Image') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Command" (go.SliceType go.string)
+      (fun v => v.(v1.EphemeralContainerCommon.Command'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Command') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Args" (go.SliceType go.string)
+      (fun v => v.(v1.EphemeralContainerCommon.Args'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Args') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "WorkingDir" go.string
+      (fun v => v.(v1.EphemeralContainerCommon.WorkingDir'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.WorkingDir') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Ports" (go.SliceType v1.ContainerPort)
+      (fun v => v.(v1.EphemeralContainerCommon.Ports'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Ports') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "EnvFrom" (go.SliceType v1.EnvFromSource)
+      (fun v => v.(v1.EphemeralContainerCommon.EnvFrom'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.EnvFrom') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Env" (go.SliceType v1.EnvVar)
+      (fun v => v.(v1.EphemeralContainerCommon.Env'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Env') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Resources" v1.ResourceRequirements
+      (fun v => v.(v1.EphemeralContainerCommon.Resources'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Resources') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ResizePolicy" (go.SliceType v1.ContainerResizePolicy)
+      (fun v => v.(v1.EphemeralContainerCommon.ResizePolicy'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.ResizePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RestartPolicy" (go.PointerType v1.ContainerRestartPolicy)
+      (fun v => v.(v1.EphemeralContainerCommon.RestartPolicy'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.RestartPolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RestartPolicyRules" (go.SliceType v1.ContainerRestartRule)
+      (fun v => v.(v1.EphemeralContainerCommon.RestartPolicyRules'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.RestartPolicyRules') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeMounts" (go.SliceType v1.VolumeMount)
+      (fun v => v.(v1.EphemeralContainerCommon.VolumeMounts'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.VolumeMounts') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "VolumeDevices" (go.SliceType v1.VolumeDevice)
+      (fun v => v.(v1.EphemeralContainerCommon.VolumeDevices'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.VolumeDevices') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "LivenessProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.EphemeralContainerCommon.LivenessProbe'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.LivenessProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ReadinessProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.EphemeralContainerCommon.ReadinessProbe'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.ReadinessProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StartupProbe" (go.PointerType v1.Probe)
+      (fun v => v.(v1.EphemeralContainerCommon.StartupProbe'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.StartupProbe') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Lifecycle" (go.PointerType v1.Lifecycle)
+      (fun v => v.(v1.EphemeralContainerCommon.Lifecycle'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Lifecycle') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TerminationMessagePath" go.string
+      (fun v => v.(v1.EphemeralContainerCommon.TerminationMessagePath'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.TerminationMessagePath') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TerminationMessagePolicy" v1.TerminationMessagePolicy
+      (fun v => v.(v1.EphemeralContainerCommon.TerminationMessagePolicy'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.TerminationMessagePolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ImagePullPolicy" v1.PullPolicy
+      (fun v => v.(v1.EphemeralContainerCommon.ImagePullPolicy'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.ImagePullPolicy') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SecurityContext" (go.PointerType v1.SecurityContext)
+      (fun v => v.(v1.EphemeralContainerCommon.SecurityContext'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.SecurityContext') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Stdin" go.bool
+      (fun v => v.(v1.EphemeralContainerCommon.Stdin'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.Stdin') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StdinOnce" go.bool
+      (fun v => v.(v1.EphemeralContainerCommon.StdinOnce'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.StdinOnce') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "TTY" go.bool
+      (fun v => v.(v1.EphemeralContainerCommon.TTY'))
+      (fun v x => v <|(v1.EphemeralContainerCommon.TTY') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.EphemeralContainerCommon.t v1.EphemeralContainerCommonⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.EphemeralContainerCommon'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.EphemeralContainerCommon'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Name l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Name"] ↦{dq} (v.(v1.EphemeralContainerCommon.Name')))
+    (l.[(v1.EphemeralContainerCommon.t), "Name"] ↦{dq} (v.(v1.EphemeralContainerCommon.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Name l (v : (v1.EphemeralContainerCommon.t)) Name' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Name"] ↦ (v.(v1.EphemeralContainerCommon.Name')))
+    (l.[(v1.EphemeralContainerCommon.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Name') := Name'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Image l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Image"] ↦{dq} (v.(v1.EphemeralContainerCommon.Image')))
+    (l.[(v1.EphemeralContainerCommon.t), "Image"] ↦{dq} (v.(v1.EphemeralContainerCommon.Image')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Image l (v : (v1.EphemeralContainerCommon.t)) Image' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Image"] ↦ (v.(v1.EphemeralContainerCommon.Image')))
+    (l.[(v1.EphemeralContainerCommon.t), "Image"] ↦ Image')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Image') := Image'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Command l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Command"] ↦{dq} (v.(v1.EphemeralContainerCommon.Command')))
+    (l.[(v1.EphemeralContainerCommon.t), "Command"] ↦{dq} (v.(v1.EphemeralContainerCommon.Command')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Command l (v : (v1.EphemeralContainerCommon.t)) Command' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Command"] ↦ (v.(v1.EphemeralContainerCommon.Command')))
+    (l.[(v1.EphemeralContainerCommon.t), "Command"] ↦ Command')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Command') := Command'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Args l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Args"] ↦{dq} (v.(v1.EphemeralContainerCommon.Args')))
+    (l.[(v1.EphemeralContainerCommon.t), "Args"] ↦{dq} (v.(v1.EphemeralContainerCommon.Args')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Args l (v : (v1.EphemeralContainerCommon.t)) Args' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Args"] ↦ (v.(v1.EphemeralContainerCommon.Args')))
+    (l.[(v1.EphemeralContainerCommon.t), "Args"] ↦ Args')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Args') := Args'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_WorkingDir l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "WorkingDir"] ↦{dq} (v.(v1.EphemeralContainerCommon.WorkingDir')))
+    (l.[(v1.EphemeralContainerCommon.t), "WorkingDir"] ↦{dq} (v.(v1.EphemeralContainerCommon.WorkingDir')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_WorkingDir l (v : (v1.EphemeralContainerCommon.t)) WorkingDir' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "WorkingDir"] ↦ (v.(v1.EphemeralContainerCommon.WorkingDir')))
+    (l.[(v1.EphemeralContainerCommon.t), "WorkingDir"] ↦ WorkingDir')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.WorkingDir') := WorkingDir'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Ports l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Ports"] ↦{dq} (v.(v1.EphemeralContainerCommon.Ports')))
+    (l.[(v1.EphemeralContainerCommon.t), "Ports"] ↦{dq} (v.(v1.EphemeralContainerCommon.Ports')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Ports l (v : (v1.EphemeralContainerCommon.t)) Ports' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Ports"] ↦ (v.(v1.EphemeralContainerCommon.Ports')))
+    (l.[(v1.EphemeralContainerCommon.t), "Ports"] ↦ Ports')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Ports') := Ports'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_EnvFrom l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "EnvFrom"] ↦{dq} (v.(v1.EphemeralContainerCommon.EnvFrom')))
+    (l.[(v1.EphemeralContainerCommon.t), "EnvFrom"] ↦{dq} (v.(v1.EphemeralContainerCommon.EnvFrom')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_EnvFrom l (v : (v1.EphemeralContainerCommon.t)) EnvFrom' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "EnvFrom"] ↦ (v.(v1.EphemeralContainerCommon.EnvFrom')))
+    (l.[(v1.EphemeralContainerCommon.t), "EnvFrom"] ↦ EnvFrom')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.EnvFrom') := EnvFrom'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Env l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Env"] ↦{dq} (v.(v1.EphemeralContainerCommon.Env')))
+    (l.[(v1.EphemeralContainerCommon.t), "Env"] ↦{dq} (v.(v1.EphemeralContainerCommon.Env')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Env l (v : (v1.EphemeralContainerCommon.t)) Env' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Env"] ↦ (v.(v1.EphemeralContainerCommon.Env')))
+    (l.[(v1.EphemeralContainerCommon.t), "Env"] ↦ Env')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Env') := Env'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Resources l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Resources"] ↦{dq} (v.(v1.EphemeralContainerCommon.Resources')))
+    (l.[(v1.EphemeralContainerCommon.t), "Resources"] ↦{dq} (v.(v1.EphemeralContainerCommon.Resources')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Resources l (v : (v1.EphemeralContainerCommon.t)) Resources' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Resources"] ↦ (v.(v1.EphemeralContainerCommon.Resources')))
+    (l.[(v1.EphemeralContainerCommon.t), "Resources"] ↦ Resources')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Resources') := Resources'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_ResizePolicy l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ResizePolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.ResizePolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "ResizePolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.ResizePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_ResizePolicy l (v : (v1.EphemeralContainerCommon.t)) ResizePolicy' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ResizePolicy"] ↦ (v.(v1.EphemeralContainerCommon.ResizePolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "ResizePolicy"] ↦ ResizePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.ResizePolicy') := ResizePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_RestartPolicy l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.RestartPolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.RestartPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_RestartPolicy l (v : (v1.EphemeralContainerCommon.t)) RestartPolicy' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicy"] ↦ (v.(v1.EphemeralContainerCommon.RestartPolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicy"] ↦ RestartPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.RestartPolicy') := RestartPolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_RestartPolicyRules l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicyRules"] ↦{dq} (v.(v1.EphemeralContainerCommon.RestartPolicyRules')))
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicyRules"] ↦{dq} (v.(v1.EphemeralContainerCommon.RestartPolicyRules')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_RestartPolicyRules l (v : (v1.EphemeralContainerCommon.t)) RestartPolicyRules' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicyRules"] ↦ (v.(v1.EphemeralContainerCommon.RestartPolicyRules')))
+    (l.[(v1.EphemeralContainerCommon.t), "RestartPolicyRules"] ↦ RestartPolicyRules')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.RestartPolicyRules') := RestartPolicyRules'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_VolumeMounts l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeMounts"] ↦{dq} (v.(v1.EphemeralContainerCommon.VolumeMounts')))
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeMounts"] ↦{dq} (v.(v1.EphemeralContainerCommon.VolumeMounts')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_VolumeMounts l (v : (v1.EphemeralContainerCommon.t)) VolumeMounts' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeMounts"] ↦ (v.(v1.EphemeralContainerCommon.VolumeMounts')))
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeMounts"] ↦ VolumeMounts')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.VolumeMounts') := VolumeMounts'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_VolumeDevices l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeDevices"] ↦{dq} (v.(v1.EphemeralContainerCommon.VolumeDevices')))
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeDevices"] ↦{dq} (v.(v1.EphemeralContainerCommon.VolumeDevices')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_VolumeDevices l (v : (v1.EphemeralContainerCommon.t)) VolumeDevices' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeDevices"] ↦ (v.(v1.EphemeralContainerCommon.VolumeDevices')))
+    (l.[(v1.EphemeralContainerCommon.t), "VolumeDevices"] ↦ VolumeDevices')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.VolumeDevices') := VolumeDevices'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_LivenessProbe l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "LivenessProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.LivenessProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "LivenessProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.LivenessProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_LivenessProbe l (v : (v1.EphemeralContainerCommon.t)) LivenessProbe' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "LivenessProbe"] ↦ (v.(v1.EphemeralContainerCommon.LivenessProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "LivenessProbe"] ↦ LivenessProbe')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.LivenessProbe') := LivenessProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_ReadinessProbe l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ReadinessProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.ReadinessProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "ReadinessProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.ReadinessProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_ReadinessProbe l (v : (v1.EphemeralContainerCommon.t)) ReadinessProbe' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ReadinessProbe"] ↦ (v.(v1.EphemeralContainerCommon.ReadinessProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "ReadinessProbe"] ↦ ReadinessProbe')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.ReadinessProbe') := ReadinessProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_StartupProbe l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "StartupProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.StartupProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "StartupProbe"] ↦{dq} (v.(v1.EphemeralContainerCommon.StartupProbe')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_StartupProbe l (v : (v1.EphemeralContainerCommon.t)) StartupProbe' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "StartupProbe"] ↦ (v.(v1.EphemeralContainerCommon.StartupProbe')))
+    (l.[(v1.EphemeralContainerCommon.t), "StartupProbe"] ↦ StartupProbe')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.StartupProbe') := StartupProbe'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Lifecycle l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Lifecycle"] ↦{dq} (v.(v1.EphemeralContainerCommon.Lifecycle')))
+    (l.[(v1.EphemeralContainerCommon.t), "Lifecycle"] ↦{dq} (v.(v1.EphemeralContainerCommon.Lifecycle')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Lifecycle l (v : (v1.EphemeralContainerCommon.t)) Lifecycle' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Lifecycle"] ↦ (v.(v1.EphemeralContainerCommon.Lifecycle')))
+    (l.[(v1.EphemeralContainerCommon.t), "Lifecycle"] ↦ Lifecycle')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Lifecycle') := Lifecycle'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_TerminationMessagePath l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePath"] ↦{dq} (v.(v1.EphemeralContainerCommon.TerminationMessagePath')))
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePath"] ↦{dq} (v.(v1.EphemeralContainerCommon.TerminationMessagePath')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_TerminationMessagePath l (v : (v1.EphemeralContainerCommon.t)) TerminationMessagePath' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePath"] ↦ (v.(v1.EphemeralContainerCommon.TerminationMessagePath')))
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePath"] ↦ TerminationMessagePath')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.TerminationMessagePath') := TerminationMessagePath'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_TerminationMessagePolicy l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.TerminationMessagePolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.TerminationMessagePolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_TerminationMessagePolicy l (v : (v1.EphemeralContainerCommon.t)) TerminationMessagePolicy' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePolicy"] ↦ (v.(v1.EphemeralContainerCommon.TerminationMessagePolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "TerminationMessagePolicy"] ↦ TerminationMessagePolicy')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.TerminationMessagePolicy') := TerminationMessagePolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_ImagePullPolicy l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ImagePullPolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.ImagePullPolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "ImagePullPolicy"] ↦{dq} (v.(v1.EphemeralContainerCommon.ImagePullPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_ImagePullPolicy l (v : (v1.EphemeralContainerCommon.t)) ImagePullPolicy' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "ImagePullPolicy"] ↦ (v.(v1.EphemeralContainerCommon.ImagePullPolicy')))
+    (l.[(v1.EphemeralContainerCommon.t), "ImagePullPolicy"] ↦ ImagePullPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.ImagePullPolicy') := ImagePullPolicy'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_SecurityContext l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "SecurityContext"] ↦{dq} (v.(v1.EphemeralContainerCommon.SecurityContext')))
+    (l.[(v1.EphemeralContainerCommon.t), "SecurityContext"] ↦{dq} (v.(v1.EphemeralContainerCommon.SecurityContext')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_SecurityContext l (v : (v1.EphemeralContainerCommon.t)) SecurityContext' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "SecurityContext"] ↦ (v.(v1.EphemeralContainerCommon.SecurityContext')))
+    (l.[(v1.EphemeralContainerCommon.t), "SecurityContext"] ↦ SecurityContext')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.SecurityContext') := SecurityContext'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_Stdin l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Stdin"] ↦{dq} (v.(v1.EphemeralContainerCommon.Stdin')))
+    (l.[(v1.EphemeralContainerCommon.t), "Stdin"] ↦{dq} (v.(v1.EphemeralContainerCommon.Stdin')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_Stdin l (v : (v1.EphemeralContainerCommon.t)) Stdin' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "Stdin"] ↦ (v.(v1.EphemeralContainerCommon.Stdin')))
+    (l.[(v1.EphemeralContainerCommon.t), "Stdin"] ↦ Stdin')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.Stdin') := Stdin'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_StdinOnce l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "StdinOnce"] ↦{dq} (v.(v1.EphemeralContainerCommon.StdinOnce')))
+    (l.[(v1.EphemeralContainerCommon.t), "StdinOnce"] ↦{dq} (v.(v1.EphemeralContainerCommon.StdinOnce')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_StdinOnce l (v : (v1.EphemeralContainerCommon.t)) StdinOnce' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "StdinOnce"] ↦ (v.(v1.EphemeralContainerCommon.StdinOnce')))
+    (l.[(v1.EphemeralContainerCommon.t), "StdinOnce"] ↦ StdinOnce')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.StdinOnce') := StdinOnce'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 Hfield Hrest".
+Qed.
+#[global] Instance EphemeralContainerCommon_access_load_TTY l (v : (v1.EphemeralContainerCommon.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TTY"] ↦{dq} (v.(v1.EphemeralContainerCommon.TTY')))
+    (l.[(v1.EphemeralContainerCommon.t), "TTY"] ↦{dq} (v.(v1.EphemeralContainerCommon.TTY')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
+
+#[global] Instance EphemeralContainerCommon_access_store_TTY l (v : (v1.EphemeralContainerCommon.t)) TTY' :
+  AccessStrict
+    (l.[(v1.EphemeralContainerCommon.t), "TTY"] ↦ (v.(v1.EphemeralContainerCommon.TTY')))
+    (l.[(v1.EphemeralContainerCommon.t), "TTY"] ↦ TTY')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainerCommon.TTY') := TTY'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[H17 H]".
+  iDestruct "H" as "[H18 H]".
+  iDestruct "H" as "[H19 H]".
+  iDestruct "H" as "[H20 H]".
+  iDestruct "H" as "[H21 H]".
+  iDestruct "H" as "[H22 H]".
+  iDestruct "H" as "[H23 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 Hfield Hrest".
+Qed.
 
 End def.
 End EphemeralContainerCommon.
@@ -9497,13 +20307,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance EphemeralContainer_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.EphemeralContainer.t). Admitted.
+#[global]Program Instance EphemeralContainer_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.EphemeralContainer.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "EphemeralContainerCommon" ∷ l.[(v1.EphemeralContainer.t), "EphemeralContainerCommon"] ↦{dq} v.(v1.EphemeralContainer.EphemeralContainerCommon') ∗
+      "TargetContainerName" ∷ l.[(v1.EphemeralContainer.t), "TargetContainerName"] ↦{dq} v.(v1.EphemeralContainer.TargetContainerName') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance EphemeralContainer_into_val_typed
    :
   IntoValTypedUnderlying (v1.EphemeralContainer.t) (v1.EphemeralContainerⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance EphemeralContainer_access_load_EphemeralContainerCommon l (v : (v1.EphemeralContainer.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainer.t), "EphemeralContainerCommon"] ↦{dq} (v.(v1.EphemeralContainer.EphemeralContainerCommon')))
+    (l.[(v1.EphemeralContainer.t), "EphemeralContainerCommon"] ↦{dq} (v.(v1.EphemeralContainer.EphemeralContainerCommon')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EphemeralContainer_access_store_EphemeralContainerCommon l (v : (v1.EphemeralContainer.t)) EphemeralContainerCommon' :
+  AccessStrict
+    (l.[(v1.EphemeralContainer.t), "EphemeralContainerCommon"] ↦ (v.(v1.EphemeralContainer.EphemeralContainerCommon')))
+    (l.[(v1.EphemeralContainer.t), "EphemeralContainerCommon"] ↦ EphemeralContainerCommon')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainer.EphemeralContainerCommon') := EphemeralContainerCommon'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance EphemeralContainer_access_load_TargetContainerName l (v : (v1.EphemeralContainer.t)) dq :
+  AccessStrict
+    (l.[(v1.EphemeralContainer.t), "TargetContainerName"] ↦{dq} (v.(v1.EphemeralContainer.TargetContainerName')))
+    (l.[(v1.EphemeralContainer.t), "TargetContainerName"] ↦{dq} (v.(v1.EphemeralContainer.TargetContainerName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance EphemeralContainer_access_store_TargetContainerName l (v : (v1.EphemeralContainer.t)) TargetContainerName' :
+  AccessStrict
+    (l.[(v1.EphemeralContainer.t), "TargetContainerName"] ↦ (v.(v1.EphemeralContainer.TargetContainerName')))
+    (l.[(v1.EphemeralContainer.t), "TargetContainerName"] ↦ TargetContainerName')
+    (l ↦ v) (l ↦ (v <|(v1.EphemeralContainer.TargetContainerName') := TargetContainerName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End EphemeralContainer.
@@ -9548,241 +20393,1091 @@ Final Obligation. solve_typed_pointsto_agree. Qed.
 #[global] Instance PodStatus_into_val_typed
    :
   IntoValTypedUnderlying (v1.PodStatus.t) (v1.PodStatusⁱᵐᵖˡ).
-Proof. solve_into_val_typed_struct. Qed.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "ObservedGeneration" go.int64
+      (fun v => v.(v1.PodStatus.ObservedGeneration'))
+      (fun v x => v <|(v1.PodStatus.ObservedGeneration') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Phase" v1.PodPhase
+      (fun v => v.(v1.PodStatus.Phase'))
+      (fun v x => v <|(v1.PodStatus.Phase') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Conditions" (go.SliceType v1.PodCondition)
+      (fun v => v.(v1.PodStatus.Conditions'))
+      (fun v x => v <|(v1.PodStatus.Conditions') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Message" go.string
+      (fun v => v.(v1.PodStatus.Message'))
+      (fun v x => v <|(v1.PodStatus.Message') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Reason" go.string
+      (fun v => v.(v1.PodStatus.Reason'))
+      (fun v x => v <|(v1.PodStatus.Reason') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "NominatedNodeName" go.string
+      (fun v => v.(v1.PodStatus.NominatedNodeName'))
+      (fun v x => v <|(v1.PodStatus.NominatedNodeName') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "HostIP" go.string
+      (fun v => v.(v1.PodStatus.HostIP'))
+      (fun v x => v <|(v1.PodStatus.HostIP') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "HostIPs" (go.SliceType v1.HostIP)
+      (fun v => v.(v1.PodStatus.HostIPs'))
+      (fun v x => v <|(v1.PodStatus.HostIPs') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "PodIP" go.string
+      (fun v => v.(v1.PodStatus.PodIP'))
+      (fun v x => v <|(v1.PodStatus.PodIP') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "PodIPs" (go.SliceType v1.PodIP)
+      (fun v => v.(v1.PodStatus.PodIPs'))
+      (fun v x => v <|(v1.PodStatus.PodIPs') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "StartTime" (go.PointerType v1.Time)
+      (fun v => v.(v1.PodStatus.StartTime'))
+      (fun v x => v <|(v1.PodStatus.StartTime') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "InitContainerStatuses" (go.SliceType v1.ContainerStatus)
+      (fun v => v.(v1.PodStatus.InitContainerStatuses'))
+      (fun v x => v <|(v1.PodStatus.InitContainerStatuses') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ContainerStatuses" (go.SliceType v1.ContainerStatus)
+      (fun v => v.(v1.PodStatus.ContainerStatuses'))
+      (fun v x => v <|(v1.PodStatus.ContainerStatuses') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "QOSClass" v1.PodQOSClass
+      (fun v => v.(v1.PodStatus.QOSClass'))
+      (fun v x => v <|(v1.PodStatus.QOSClass') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "EphemeralContainerStatuses" (go.SliceType v1.ContainerStatus)
+      (fun v => v.(v1.PodStatus.EphemeralContainerStatuses'))
+      (fun v x => v <|(v1.PodStatus.EphemeralContainerStatuses') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Resize" v1.PodResizeStatus
+      (fun v => v.(v1.PodStatus.Resize'))
+      (fun v x => v <|(v1.PodStatus.Resize') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ResourceClaimStatuses" (go.SliceType v1.PodResourceClaimStatus)
+      (fun v => v.(v1.PodStatus.ResourceClaimStatuses'))
+      (fun v x => v <|(v1.PodStatus.ResourceClaimStatuses') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ExtendedResourceClaimStatus" (go.PointerType v1.PodExtendedResourceClaimStatus)
+      (fun v => v.(v1.PodStatus.ExtendedResourceClaimStatus'))
+      (fun v x => v <|(v1.PodStatus.ExtendedResourceClaimStatus') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.PodStatus.t v1.PodStatusⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.PodStatus'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.PodStatus'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
 #[global] Instance PodStatus_access_load_ObservedGeneration l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodStatus.ObservedGeneration')))
     (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦{dq} (v.(v1.PodStatus.ObservedGeneration')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_ObservedGeneration l (v : (v1.PodStatus.t)) ObservedGeneration' :
   AccessStrict
     (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦ (v.(v1.PodStatus.ObservedGeneration')))
     (l.[(v1.PodStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.ObservedGeneration') := ObservedGeneration'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_Phase l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "Phase"] ↦{dq} (v.(v1.PodStatus.Phase')))
     (l.[(v1.PodStatus.t), "Phase"] ↦{dq} (v.(v1.PodStatus.Phase')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_Phase l (v : (v1.PodStatus.t)) Phase' :
   AccessStrict
     (l.[(v1.PodStatus.t), "Phase"] ↦ (v.(v1.PodStatus.Phase')))
     (l.[(v1.PodStatus.t), "Phase"] ↦ Phase')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.Phase') := Phase'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_Conditions l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "Conditions"] ↦{dq} (v.(v1.PodStatus.Conditions')))
     (l.[(v1.PodStatus.t), "Conditions"] ↦{dq} (v.(v1.PodStatus.Conditions')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_Conditions l (v : (v1.PodStatus.t)) Conditions' :
   AccessStrict
     (l.[(v1.PodStatus.t), "Conditions"] ↦ (v.(v1.PodStatus.Conditions')))
     (l.[(v1.PodStatus.t), "Conditions"] ↦ Conditions')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.Conditions') := Conditions'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_Message l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "Message"] ↦{dq} (v.(v1.PodStatus.Message')))
     (l.[(v1.PodStatus.t), "Message"] ↦{dq} (v.(v1.PodStatus.Message')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_Message l (v : (v1.PodStatus.t)) Message' :
   AccessStrict
     (l.[(v1.PodStatus.t), "Message"] ↦ (v.(v1.PodStatus.Message')))
     (l.[(v1.PodStatus.t), "Message"] ↦ Message')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.Message') := Message'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_Reason l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "Reason"] ↦{dq} (v.(v1.PodStatus.Reason')))
     (l.[(v1.PodStatus.t), "Reason"] ↦{dq} (v.(v1.PodStatus.Reason')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_Reason l (v : (v1.PodStatus.t)) Reason' :
   AccessStrict
     (l.[(v1.PodStatus.t), "Reason"] ↦ (v.(v1.PodStatus.Reason')))
     (l.[(v1.PodStatus.t), "Reason"] ↦ Reason')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.Reason') := Reason'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_NominatedNodeName l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦{dq} (v.(v1.PodStatus.NominatedNodeName')))
     (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦{dq} (v.(v1.PodStatus.NominatedNodeName')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_NominatedNodeName l (v : (v1.PodStatus.t)) NominatedNodeName' :
   AccessStrict
     (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦ (v.(v1.PodStatus.NominatedNodeName')))
     (l.[(v1.PodStatus.t), "NominatedNodeName"] ↦ NominatedNodeName')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.NominatedNodeName') := NominatedNodeName'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_HostIP l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "HostIP"] ↦{dq} (v.(v1.PodStatus.HostIP')))
     (l.[(v1.PodStatus.t), "HostIP"] ↦{dq} (v.(v1.PodStatus.HostIP')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_HostIP l (v : (v1.PodStatus.t)) HostIP' :
   AccessStrict
     (l.[(v1.PodStatus.t), "HostIP"] ↦ (v.(v1.PodStatus.HostIP')))
     (l.[(v1.PodStatus.t), "HostIP"] ↦ HostIP')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.HostIP') := HostIP'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_HostIPs l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "HostIPs"] ↦{dq} (v.(v1.PodStatus.HostIPs')))
     (l.[(v1.PodStatus.t), "HostIPs"] ↦{dq} (v.(v1.PodStatus.HostIPs')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_HostIPs l (v : (v1.PodStatus.t)) HostIPs' :
   AccessStrict
     (l.[(v1.PodStatus.t), "HostIPs"] ↦ (v.(v1.PodStatus.HostIPs')))
     (l.[(v1.PodStatus.t), "HostIPs"] ↦ HostIPs')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.HostIPs') := HostIPs'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_PodIP l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "PodIP"] ↦{dq} (v.(v1.PodStatus.PodIP')))
     (l.[(v1.PodStatus.t), "PodIP"] ↦{dq} (v.(v1.PodStatus.PodIP')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_PodIP l (v : (v1.PodStatus.t)) PodIP' :
   AccessStrict
     (l.[(v1.PodStatus.t), "PodIP"] ↦ (v.(v1.PodStatus.PodIP')))
     (l.[(v1.PodStatus.t), "PodIP"] ↦ PodIP')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.PodIP') := PodIP'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_PodIPs l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "PodIPs"] ↦{dq} (v.(v1.PodStatus.PodIPs')))
     (l.[(v1.PodStatus.t), "PodIPs"] ↦{dq} (v.(v1.PodStatus.PodIPs')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_PodIPs l (v : (v1.PodStatus.t)) PodIPs' :
   AccessStrict
     (l.[(v1.PodStatus.t), "PodIPs"] ↦ (v.(v1.PodStatus.PodIPs')))
     (l.[(v1.PodStatus.t), "PodIPs"] ↦ PodIPs')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.PodIPs') := PodIPs'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_StartTime l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "StartTime"] ↦{dq} (v.(v1.PodStatus.StartTime')))
     (l.[(v1.PodStatus.t), "StartTime"] ↦{dq} (v.(v1.PodStatus.StartTime')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_StartTime l (v : (v1.PodStatus.t)) StartTime' :
   AccessStrict
     (l.[(v1.PodStatus.t), "StartTime"] ↦ (v.(v1.PodStatus.StartTime')))
     (l.[(v1.PodStatus.t), "StartTime"] ↦ StartTime')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.StartTime') := StartTime'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_InitContainerStatuses l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦{dq} (v.(v1.PodStatus.InitContainerStatuses')))
     (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦{dq} (v.(v1.PodStatus.InitContainerStatuses')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_InitContainerStatuses l (v : (v1.PodStatus.t)) InitContainerStatuses' :
   AccessStrict
     (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦ (v.(v1.PodStatus.InitContainerStatuses')))
     (l.[(v1.PodStatus.t), "InitContainerStatuses"] ↦ InitContainerStatuses')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.InitContainerStatuses') := InitContainerStatuses'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_ContainerStatuses l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦{dq} (v.(v1.PodStatus.ContainerStatuses')))
     (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦{dq} (v.(v1.PodStatus.ContainerStatuses')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_ContainerStatuses l (v : (v1.PodStatus.t)) ContainerStatuses' :
   AccessStrict
     (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦ (v.(v1.PodStatus.ContainerStatuses')))
     (l.[(v1.PodStatus.t), "ContainerStatuses"] ↦ ContainerStatuses')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.ContainerStatuses') := ContainerStatuses'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_QOSClass l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "QOSClass"] ↦{dq} (v.(v1.PodStatus.QOSClass')))
     (l.[(v1.PodStatus.t), "QOSClass"] ↦{dq} (v.(v1.PodStatus.QOSClass')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_QOSClass l (v : (v1.PodStatus.t)) QOSClass' :
   AccessStrict
     (l.[(v1.PodStatus.t), "QOSClass"] ↦ (v.(v1.PodStatus.QOSClass')))
     (l.[(v1.PodStatus.t), "QOSClass"] ↦ QOSClass')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.QOSClass') := QOSClass'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_EphemeralContainerStatuses l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦{dq} (v.(v1.PodStatus.EphemeralContainerStatuses')))
     (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦{dq} (v.(v1.PodStatus.EphemeralContainerStatuses')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_EphemeralContainerStatuses l (v : (v1.PodStatus.t)) EphemeralContainerStatuses' :
   AccessStrict
     (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦ (v.(v1.PodStatus.EphemeralContainerStatuses')))
     (l.[(v1.PodStatus.t), "EphemeralContainerStatuses"] ↦ EphemeralContainerStatuses')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.EphemeralContainerStatuses') := EphemeralContainerStatuses'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_Resize l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "Resize"] ↦{dq} (v.(v1.PodStatus.Resize')))
     (l.[(v1.PodStatus.t), "Resize"] ↦{dq} (v.(v1.PodStatus.Resize')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_Resize l (v : (v1.PodStatus.t)) Resize' :
   AccessStrict
     (l.[(v1.PodStatus.t), "Resize"] ↦ (v.(v1.PodStatus.Resize')))
     (l.[(v1.PodStatus.t), "Resize"] ↦ Resize')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.Resize') := Resize'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_ResourceClaimStatuses l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦{dq} (v.(v1.PodStatus.ResourceClaimStatuses')))
     (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦{dq} (v.(v1.PodStatus.ResourceClaimStatuses')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_ResourceClaimStatuses l (v : (v1.PodStatus.t)) ResourceClaimStatuses' :
   AccessStrict
     (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦ (v.(v1.PodStatus.ResourceClaimStatuses')))
     (l.[(v1.PodStatus.t), "ResourceClaimStatuses"] ↦ ResourceClaimStatuses')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.ResourceClaimStatuses') := ResourceClaimStatuses'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 Hfield Hrest".
+Qed.
 #[global] Instance PodStatus_access_load_ExtendedResourceClaimStatus l (v : (v1.PodStatus.t)) dq :
   AccessStrict
     (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦{dq} (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
     (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦{dq} (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
     (l ↦{dq} v) (l ↦{dq} v)%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
 
 #[global] Instance PodStatus_access_store_ExtendedResourceClaimStatus l (v : (v1.PodStatus.t)) ExtendedResourceClaimStatus' :
   AccessStrict
     (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦ (v.(v1.PodStatus.ExtendedResourceClaimStatus')))
     (l.[(v1.PodStatus.t), "ExtendedResourceClaimStatus"] ↦ ExtendedResourceClaimStatus')
     (l ↦ v) (l ↦ (v <|(v1.PodStatus.ExtendedResourceClaimStatus') := ExtendedResourceClaimStatus'|>))%I.
-Proof. solve_pointsto_access_struct. Qed.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[H11 H]".
+  iDestruct "H" as "[H12 H]".
+  iDestruct "H" as "[H13 H]".
+  iDestruct "H" as "[H14 H]".
+  iDestruct "H" as "[H15 H]".
+  iDestruct "H" as "[H16 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 Hfield Hrest".
+Qed.
 
 End def.
 End PodStatus.
@@ -11102,26 +22797,6 @@ Proof. Admitted.
 End def.
 End NodeAddress.
 
-Module ResourceName.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ResourceName_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ResourceName.t). Admitted.
-
-#[global] Instance ResourceName_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ResourceName.t) (v1.ResourceNameⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ResourceName.
-
 Module Node.
 Section def.
 
@@ -11522,26 +23197,6 @@ Proof. Admitted.
 End def.
 End ObjectReference.
 
-Module LocalObjectReference.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance LocalObjectReference_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.LocalObjectReference.t). Admitted.
-
-#[global] Instance LocalObjectReference_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.LocalObjectReference.t) (v1.LocalObjectReferenceⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End LocalObjectReference.
-
 Module TypedLocalObjectReference.
 Section def.
 
@@ -11551,13 +23206,62 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance TypedLocalObjectReference_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.TypedLocalObjectReference.t). Admitted.
+#[global]Program Instance TypedLocalObjectReference_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.TypedLocalObjectReference.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "APIGroup" ∷ l.[(v1.TypedLocalObjectReference.t), "APIGroup"] ↦{dq} v.(v1.TypedLocalObjectReference.APIGroup') ∗
+      "Kind" ∷ l.[(v1.TypedLocalObjectReference.t), "Kind"] ↦{dq} v.(v1.TypedLocalObjectReference.Kind') ∗
+      "Name" ∷ l.[(v1.TypedLocalObjectReference.t), "Name"] ↦{dq} v.(v1.TypedLocalObjectReference.Name') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance TypedLocalObjectReference_into_val_typed
    :
   IntoValTypedUnderlying (v1.TypedLocalObjectReference.t) (v1.TypedLocalObjectReferenceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance TypedLocalObjectReference_access_load_APIGroup l (v : (v1.TypedLocalObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "APIGroup"] ↦{dq} (v.(v1.TypedLocalObjectReference.APIGroup')))
+    (l.[(v1.TypedLocalObjectReference.t), "APIGroup"] ↦{dq} (v.(v1.TypedLocalObjectReference.APIGroup')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedLocalObjectReference_access_store_APIGroup l (v : (v1.TypedLocalObjectReference.t)) APIGroup' :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "APIGroup"] ↦ (v.(v1.TypedLocalObjectReference.APIGroup')))
+    (l.[(v1.TypedLocalObjectReference.t), "APIGroup"] ↦ APIGroup')
+    (l ↦ v) (l ↦ (v <|(v1.TypedLocalObjectReference.APIGroup') := APIGroup'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TypedLocalObjectReference_access_load_Kind l (v : (v1.TypedLocalObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "Kind"] ↦{dq} (v.(v1.TypedLocalObjectReference.Kind')))
+    (l.[(v1.TypedLocalObjectReference.t), "Kind"] ↦{dq} (v.(v1.TypedLocalObjectReference.Kind')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedLocalObjectReference_access_store_Kind l (v : (v1.TypedLocalObjectReference.t)) Kind' :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "Kind"] ↦ (v.(v1.TypedLocalObjectReference.Kind')))
+    (l.[(v1.TypedLocalObjectReference.t), "Kind"] ↦ Kind')
+    (l ↦ v) (l ↦ (v <|(v1.TypedLocalObjectReference.Kind') := Kind'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance TypedLocalObjectReference_access_load_Name l (v : (v1.TypedLocalObjectReference.t)) dq :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "Name"] ↦{dq} (v.(v1.TypedLocalObjectReference.Name')))
+    (l.[(v1.TypedLocalObjectReference.t), "Name"] ↦{dq} (v.(v1.TypedLocalObjectReference.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance TypedLocalObjectReference_access_store_Name l (v : (v1.TypedLocalObjectReference.t)) Name' :
+  AccessStrict
+    (l.[(v1.TypedLocalObjectReference.t), "Name"] ↦ (v.(v1.TypedLocalObjectReference.Name')))
+    (l.[(v1.TypedLocalObjectReference.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.TypedLocalObjectReference.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End TypedLocalObjectReference.
@@ -12131,13 +23835,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DownwardAPIVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeSource.t). Admitted.
+#[global]Program Instance DownwardAPIVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Items" ∷ l.[(v1.DownwardAPIVolumeSource.t), "Items"] ↦{dq} v.(v1.DownwardAPIVolumeSource.Items') ∗
+      "DefaultMode" ∷ l.[(v1.DownwardAPIVolumeSource.t), "DefaultMode"] ↦{dq} v.(v1.DownwardAPIVolumeSource.DefaultMode') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DownwardAPIVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.DownwardAPIVolumeSource.t) (v1.DownwardAPIVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DownwardAPIVolumeSource_access_load_Items l (v : (v1.DownwardAPIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeSource.t), "Items"] ↦{dq} (v.(v1.DownwardAPIVolumeSource.Items')))
+    (l.[(v1.DownwardAPIVolumeSource.t), "Items"] ↦{dq} (v.(v1.DownwardAPIVolumeSource.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeSource_access_store_Items l (v : (v1.DownwardAPIVolumeSource.t)) Items' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeSource.t), "Items"] ↦ (v.(v1.DownwardAPIVolumeSource.Items')))
+    (l.[(v1.DownwardAPIVolumeSource.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeSource.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DownwardAPIVolumeSource_access_load_DefaultMode l (v : (v1.DownwardAPIVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.DownwardAPIVolumeSource.DefaultMode')))
+    (l.[(v1.DownwardAPIVolumeSource.t), "DefaultMode"] ↦{dq} (v.(v1.DownwardAPIVolumeSource.DefaultMode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeSource_access_store_DefaultMode l (v : (v1.DownwardAPIVolumeSource.t)) DefaultMode' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeSource.t), "DefaultMode"] ↦ (v.(v1.DownwardAPIVolumeSource.DefaultMode')))
+    (l.[(v1.DownwardAPIVolumeSource.t), "DefaultMode"] ↦ DefaultMode')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeSource.DefaultMode') := DefaultMode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DownwardAPIVolumeSource.
@@ -12151,13 +23890,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DownwardAPIVolumeFile_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeFile.t). Admitted.
+#[global]Program Instance DownwardAPIVolumeFile_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIVolumeFile.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Path" ∷ l.[(v1.DownwardAPIVolumeFile.t), "Path"] ↦{dq} v.(v1.DownwardAPIVolumeFile.Path') ∗
+      "FieldRef" ∷ l.[(v1.DownwardAPIVolumeFile.t), "FieldRef"] ↦{dq} v.(v1.DownwardAPIVolumeFile.FieldRef') ∗
+      "ResourceFieldRef" ∷ l.[(v1.DownwardAPIVolumeFile.t), "ResourceFieldRef"] ↦{dq} v.(v1.DownwardAPIVolumeFile.ResourceFieldRef') ∗
+      "Mode" ∷ l.[(v1.DownwardAPIVolumeFile.t), "Mode"] ↦{dq} v.(v1.DownwardAPIVolumeFile.Mode') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DownwardAPIVolumeFile_into_val_typed
    :
   IntoValTypedUnderlying (v1.DownwardAPIVolumeFile.t) (v1.DownwardAPIVolumeFileⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DownwardAPIVolumeFile_access_load_Path l (v : (v1.DownwardAPIVolumeFile.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "Path"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.Path')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "Path"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.Path')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeFile_access_store_Path l (v : (v1.DownwardAPIVolumeFile.t)) Path' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "Path"] ↦ (v.(v1.DownwardAPIVolumeFile.Path')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "Path"] ↦ Path')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeFile.Path') := Path'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DownwardAPIVolumeFile_access_load_FieldRef l (v : (v1.DownwardAPIVolumeFile.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "FieldRef"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.FieldRef')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "FieldRef"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.FieldRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeFile_access_store_FieldRef l (v : (v1.DownwardAPIVolumeFile.t)) FieldRef' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "FieldRef"] ↦ (v.(v1.DownwardAPIVolumeFile.FieldRef')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "FieldRef"] ↦ FieldRef')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeFile.FieldRef') := FieldRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DownwardAPIVolumeFile_access_load_ResourceFieldRef l (v : (v1.DownwardAPIVolumeFile.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "ResourceFieldRef"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.ResourceFieldRef')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "ResourceFieldRef"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.ResourceFieldRef')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeFile_access_store_ResourceFieldRef l (v : (v1.DownwardAPIVolumeFile.t)) ResourceFieldRef' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "ResourceFieldRef"] ↦ (v.(v1.DownwardAPIVolumeFile.ResourceFieldRef')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "ResourceFieldRef"] ↦ ResourceFieldRef')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeFile.ResourceFieldRef') := ResourceFieldRef'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance DownwardAPIVolumeFile_access_load_Mode l (v : (v1.DownwardAPIVolumeFile.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "Mode"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.Mode')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "Mode"] ↦{dq} (v.(v1.DownwardAPIVolumeFile.Mode')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIVolumeFile_access_store_Mode l (v : (v1.DownwardAPIVolumeFile.t)) Mode' :
+  AccessStrict
+    (l.[(v1.DownwardAPIVolumeFile.t), "Mode"] ↦ (v.(v1.DownwardAPIVolumeFile.Mode')))
+    (l.[(v1.DownwardAPIVolumeFile.t), "Mode"] ↦ Mode')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIVolumeFile.Mode') := Mode'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DownwardAPIVolumeFile.
@@ -12171,13 +23973,34 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance DownwardAPIProjection_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DownwardAPIProjection.t). Admitted.
+#[global]Program Instance DownwardAPIProjection_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.DownwardAPIProjection.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Items" ∷ l.[(v1.DownwardAPIProjection.t), "Items"] ↦{dq} v.(v1.DownwardAPIProjection.Items') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance DownwardAPIProjection_into_val_typed
    :
   IntoValTypedUnderlying (v1.DownwardAPIProjection.t) (v1.DownwardAPIProjectionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance DownwardAPIProjection_access_load_Items l (v : (v1.DownwardAPIProjection.t)) dq :
+  AccessStrict
+    (l.[(v1.DownwardAPIProjection.t), "Items"] ↦{dq} (v.(v1.DownwardAPIProjection.Items')))
+    (l.[(v1.DownwardAPIProjection.t), "Items"] ↦{dq} (v.(v1.DownwardAPIProjection.Items')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance DownwardAPIProjection_access_store_Items l (v : (v1.DownwardAPIProjection.t)) Items' :
+  AccessStrict
+    (l.[(v1.DownwardAPIProjection.t), "Items"] ↦ (v.(v1.DownwardAPIProjection.Items')))
+    (l.[(v1.DownwardAPIProjection.t), "Items"] ↦ Items')
+    (l ↦ v) (l ↦ (v <|(v1.DownwardAPIProjection.Items') := Items'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End DownwardAPIProjection.
@@ -12191,36 +24014,693 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SecurityContext_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SecurityContext.t). Admitted.
+#[global]Program Instance SecurityContext_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SecurityContext.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Capabilities" ∷ l.[(v1.SecurityContext.t), "Capabilities"] ↦{dq} v.(v1.SecurityContext.Capabilities') ∗
+      "Privileged" ∷ l.[(v1.SecurityContext.t), "Privileged"] ↦{dq} v.(v1.SecurityContext.Privileged') ∗
+      "SELinuxOptions" ∷ l.[(v1.SecurityContext.t), "SELinuxOptions"] ↦{dq} v.(v1.SecurityContext.SELinuxOptions') ∗
+      "WindowsOptions" ∷ l.[(v1.SecurityContext.t), "WindowsOptions"] ↦{dq} v.(v1.SecurityContext.WindowsOptions') ∗
+      "RunAsUser" ∷ l.[(v1.SecurityContext.t), "RunAsUser"] ↦{dq} v.(v1.SecurityContext.RunAsUser') ∗
+      "RunAsGroup" ∷ l.[(v1.SecurityContext.t), "RunAsGroup"] ↦{dq} v.(v1.SecurityContext.RunAsGroup') ∗
+      "RunAsNonRoot" ∷ l.[(v1.SecurityContext.t), "RunAsNonRoot"] ↦{dq} v.(v1.SecurityContext.RunAsNonRoot') ∗
+      "ReadOnlyRootFilesystem" ∷ l.[(v1.SecurityContext.t), "ReadOnlyRootFilesystem"] ↦{dq} v.(v1.SecurityContext.ReadOnlyRootFilesystem') ∗
+      "AllowPrivilegeEscalation" ∷ l.[(v1.SecurityContext.t), "AllowPrivilegeEscalation"] ↦{dq} v.(v1.SecurityContext.AllowPrivilegeEscalation') ∗
+      "ProcMount" ∷ l.[(v1.SecurityContext.t), "ProcMount"] ↦{dq} v.(v1.SecurityContext.ProcMount') ∗
+      "SeccompProfile" ∷ l.[(v1.SecurityContext.t), "SeccompProfile"] ↦{dq} v.(v1.SecurityContext.SeccompProfile') ∗
+      "AppArmorProfile" ∷ l.[(v1.SecurityContext.t), "AppArmorProfile"] ↦{dq} v.(v1.SecurityContext.AppArmorProfile') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SecurityContext_into_val_typed
    :
   IntoValTypedUnderlying (v1.SecurityContext.t) (v1.SecurityContextⁱᵐᵖˡ).
-Proof. Admitted.
+Proof.
+  pose (fields := ([
+    build_generated_struct_field
+      "Capabilities" (go.PointerType v1.Capabilities)
+      (fun v => v.(v1.SecurityContext.Capabilities'))
+      (fun v x => v <|(v1.SecurityContext.Capabilities') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "Privileged" (go.PointerType go.bool)
+      (fun v => v.(v1.SecurityContext.Privileged'))
+      (fun v x => v <|(v1.SecurityContext.Privileged') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SELinuxOptions" (go.PointerType v1.SELinuxOptions)
+      (fun v => v.(v1.SecurityContext.SELinuxOptions'))
+      (fun v x => v <|(v1.SecurityContext.SELinuxOptions') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "WindowsOptions" (go.PointerType v1.WindowsSecurityContextOptions)
+      (fun v => v.(v1.SecurityContext.WindowsOptions'))
+      (fun v x => v <|(v1.SecurityContext.WindowsOptions') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsUser" (go.PointerType go.int64)
+      (fun v => v.(v1.SecurityContext.RunAsUser'))
+      (fun v x => v <|(v1.SecurityContext.RunAsUser') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsGroup" (go.PointerType go.int64)
+      (fun v => v.(v1.SecurityContext.RunAsGroup'))
+      (fun v x => v <|(v1.SecurityContext.RunAsGroup') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "RunAsNonRoot" (go.PointerType go.bool)
+      (fun v => v.(v1.SecurityContext.RunAsNonRoot'))
+      (fun v x => v <|(v1.SecurityContext.RunAsNonRoot') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ReadOnlyRootFilesystem" (go.PointerType go.bool)
+      (fun v => v.(v1.SecurityContext.ReadOnlyRootFilesystem'))
+      (fun v x => v <|(v1.SecurityContext.ReadOnlyRootFilesystem') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AllowPrivilegeEscalation" (go.PointerType go.bool)
+      (fun v => v.(v1.SecurityContext.AllowPrivilegeEscalation'))
+      (fun v x => v <|(v1.SecurityContext.AllowPrivilegeEscalation') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "ProcMount" (go.PointerType v1.ProcMountType)
+      (fun v => v.(v1.SecurityContext.ProcMount'))
+      (fun v x => v <|(v1.SecurityContext.ProcMount') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "SeccompProfile" (go.PointerType v1.SeccompProfile)
+      (fun v => v.(v1.SecurityContext.SeccompProfile'))
+      (fun v x => v <|(v1.SecurityContext.SeccompProfile') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve));
+    build_generated_struct_field
+      "AppArmorProfile" (go.PointerType v1.AppArmorProfile)
+      (fun v => v.(v1.SecurityContext.AppArmorProfile'))
+      (fun v x => v <|(v1.SecurityContext.AppArmorProfile') := x|>)
+      (ltac:(tc_solve)) (ltac:(tc_solve))
+  ] : list (generated_struct_field v1.SecurityContext.t v1.SecurityContextⁱᵐᵖˡ))).
+  assert (fields_unfold :
+    v1.SecurityContext'fds =→ generated_fields_decl fields).
+  {
+    constructor.
+    unfold fields.
+    rewrite /v1.SecurityContext'fds seal_eq.
+    reflexivity.
+  }
+  eapply (generated_struct_into_val_typed
+    (fields_unfold:=fields_unfold) fields).
+  - intros l v dq.
+    unfold fields.
+    simpl.
+    rewrite /named.
+    done.
+  - intros v.
+    unfold fields.
+    destruct v.
+    reflexivity.
+Qed.
+#[global] Instance SecurityContext_access_load_Capabilities l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "Capabilities"] ↦{dq} (v.(v1.SecurityContext.Capabilities')))
+    (l.[(v1.SecurityContext.t), "Capabilities"] ↦{dq} (v.(v1.SecurityContext.Capabilities')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_Capabilities l (v : (v1.SecurityContext.t)) Capabilities' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "Capabilities"] ↦ (v.(v1.SecurityContext.Capabilities')))
+    (l.[(v1.SecurityContext.t), "Capabilities"] ↦ Capabilities')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.Capabilities') := Capabilities'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_Privileged l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "Privileged"] ↦{dq} (v.(v1.SecurityContext.Privileged')))
+    (l.[(v1.SecurityContext.t), "Privileged"] ↦{dq} (v.(v1.SecurityContext.Privileged')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_Privileged l (v : (v1.SecurityContext.t)) Privileged' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "Privileged"] ↦ (v.(v1.SecurityContext.Privileged')))
+    (l.[(v1.SecurityContext.t), "Privileged"] ↦ Privileged')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.Privileged') := Privileged'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_SELinuxOptions l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "SELinuxOptions"] ↦{dq} (v.(v1.SecurityContext.SELinuxOptions')))
+    (l.[(v1.SecurityContext.t), "SELinuxOptions"] ↦{dq} (v.(v1.SecurityContext.SELinuxOptions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_SELinuxOptions l (v : (v1.SecurityContext.t)) SELinuxOptions' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "SELinuxOptions"] ↦ (v.(v1.SecurityContext.SELinuxOptions')))
+    (l.[(v1.SecurityContext.t), "SELinuxOptions"] ↦ SELinuxOptions')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.SELinuxOptions') := SELinuxOptions'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_WindowsOptions l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "WindowsOptions"] ↦{dq} (v.(v1.SecurityContext.WindowsOptions')))
+    (l.[(v1.SecurityContext.t), "WindowsOptions"] ↦{dq} (v.(v1.SecurityContext.WindowsOptions')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_WindowsOptions l (v : (v1.SecurityContext.t)) WindowsOptions' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "WindowsOptions"] ↦ (v.(v1.SecurityContext.WindowsOptions')))
+    (l.[(v1.SecurityContext.t), "WindowsOptions"] ↦ WindowsOptions')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.WindowsOptions') := WindowsOptions'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_RunAsUser l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsUser"] ↦{dq} (v.(v1.SecurityContext.RunAsUser')))
+    (l.[(v1.SecurityContext.t), "RunAsUser"] ↦{dq} (v.(v1.SecurityContext.RunAsUser')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_RunAsUser l (v : (v1.SecurityContext.t)) RunAsUser' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsUser"] ↦ (v.(v1.SecurityContext.RunAsUser')))
+    (l.[(v1.SecurityContext.t), "RunAsUser"] ↦ RunAsUser')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.RunAsUser') := RunAsUser'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_RunAsGroup l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsGroup"] ↦{dq} (v.(v1.SecurityContext.RunAsGroup')))
+    (l.[(v1.SecurityContext.t), "RunAsGroup"] ↦{dq} (v.(v1.SecurityContext.RunAsGroup')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_RunAsGroup l (v : (v1.SecurityContext.t)) RunAsGroup' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsGroup"] ↦ (v.(v1.SecurityContext.RunAsGroup')))
+    (l.[(v1.SecurityContext.t), "RunAsGroup"] ↦ RunAsGroup')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.RunAsGroup') := RunAsGroup'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_RunAsNonRoot l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsNonRoot"] ↦{dq} (v.(v1.SecurityContext.RunAsNonRoot')))
+    (l.[(v1.SecurityContext.t), "RunAsNonRoot"] ↦{dq} (v.(v1.SecurityContext.RunAsNonRoot')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_RunAsNonRoot l (v : (v1.SecurityContext.t)) RunAsNonRoot' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "RunAsNonRoot"] ↦ (v.(v1.SecurityContext.RunAsNonRoot')))
+    (l.[(v1.SecurityContext.t), "RunAsNonRoot"] ↦ RunAsNonRoot')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.RunAsNonRoot') := RunAsNonRoot'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_ReadOnlyRootFilesystem l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "ReadOnlyRootFilesystem"] ↦{dq} (v.(v1.SecurityContext.ReadOnlyRootFilesystem')))
+    (l.[(v1.SecurityContext.t), "ReadOnlyRootFilesystem"] ↦{dq} (v.(v1.SecurityContext.ReadOnlyRootFilesystem')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_ReadOnlyRootFilesystem l (v : (v1.SecurityContext.t)) ReadOnlyRootFilesystem' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "ReadOnlyRootFilesystem"] ↦ (v.(v1.SecurityContext.ReadOnlyRootFilesystem')))
+    (l.[(v1.SecurityContext.t), "ReadOnlyRootFilesystem"] ↦ ReadOnlyRootFilesystem')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.ReadOnlyRootFilesystem') := ReadOnlyRootFilesystem'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_AllowPrivilegeEscalation l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "AllowPrivilegeEscalation"] ↦{dq} (v.(v1.SecurityContext.AllowPrivilegeEscalation')))
+    (l.[(v1.SecurityContext.t), "AllowPrivilegeEscalation"] ↦{dq} (v.(v1.SecurityContext.AllowPrivilegeEscalation')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_AllowPrivilegeEscalation l (v : (v1.SecurityContext.t)) AllowPrivilegeEscalation' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "AllowPrivilegeEscalation"] ↦ (v.(v1.SecurityContext.AllowPrivilegeEscalation')))
+    (l.[(v1.SecurityContext.t), "AllowPrivilegeEscalation"] ↦ AllowPrivilegeEscalation')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.AllowPrivilegeEscalation') := AllowPrivilegeEscalation'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_ProcMount l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "ProcMount"] ↦{dq} (v.(v1.SecurityContext.ProcMount')))
+    (l.[(v1.SecurityContext.t), "ProcMount"] ↦{dq} (v.(v1.SecurityContext.ProcMount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_ProcMount l (v : (v1.SecurityContext.t)) ProcMount' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "ProcMount"] ↦ (v.(v1.SecurityContext.ProcMount')))
+    (l.[(v1.SecurityContext.t), "ProcMount"] ↦ ProcMount')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.ProcMount') := ProcMount'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_SeccompProfile l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "SeccompProfile"] ↦{dq} (v.(v1.SecurityContext.SeccompProfile')))
+    (l.[(v1.SecurityContext.t), "SeccompProfile"] ↦{dq} (v.(v1.SecurityContext.SeccompProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_SeccompProfile l (v : (v1.SecurityContext.t)) SeccompProfile' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "SeccompProfile"] ↦ (v.(v1.SecurityContext.SeccompProfile')))
+    (l.[(v1.SecurityContext.t), "SeccompProfile"] ↦ SeccompProfile')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.SeccompProfile') := SeccompProfile'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+Qed.
+#[global] Instance SecurityContext_access_load_AppArmorProfile l (v : (v1.SecurityContext.t)) dq :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "AppArmorProfile"] ↦{dq} (v.(v1.SecurityContext.AppArmorProfile')))
+    (l.[(v1.SecurityContext.t), "AppArmorProfile"] ↦{dq} (v.(v1.SecurityContext.AppArmorProfile')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
+
+#[global] Instance SecurityContext_access_store_AppArmorProfile l (v : (v1.SecurityContext.t)) AppArmorProfile' :
+  AccessStrict
+    (l.[(v1.SecurityContext.t), "AppArmorProfile"] ↦ (v.(v1.SecurityContext.AppArmorProfile')))
+    (l.[(v1.SecurityContext.t), "AppArmorProfile"] ↦ AppArmorProfile')
+    (l ↦ v) (l ↦ (v <|(v1.SecurityContext.AppArmorProfile') := AppArmorProfile'|>))%I.
+Proof.
+  constructor.
+  iIntros "H".
+  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
+  iDestruct (typed_pointsto_split with "H") as "H".
+  rewrite /= /named.
+  iDestruct "H" as "[H0 H]".
+  iDestruct "H" as "[H1 H]".
+  iDestruct "H" as "[H2 H]".
+  iDestruct "H" as "[H3 H]".
+  iDestruct "H" as "[H4 H]".
+  iDestruct "H" as "[H5 H]".
+  iDestruct "H" as "[H6 H]".
+  iDestruct "H" as "[H7 H]".
+  iDestruct "H" as "[H8 H]".
+  iDestruct "H" as "[H9 H]".
+  iDestruct "H" as "[H10 H]".
+  iDestruct "H" as "[Hfield Hrest]".
+  iSplitL "Hfield"; first iExact "Hfield".
+  iIntros "Hfield".
+  iApply typed_pointsto_combine; first done.
+  simpl. rewrite /named.
+  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 Hfield Hrest".
+Qed.
 
 End def.
 End SecurityContext.
-
-Module ProcMountType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ProcMountType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ProcMountType.t). Admitted.
-
-#[global] Instance ProcMountType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ProcMountType.t) (v1.ProcMountTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ProcMountType.
 
 Module SELinuxOptions.
 Section def.
@@ -12231,13 +24711,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance SELinuxOptions_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.SELinuxOptions.t). Admitted.
+#[global]Program Instance SELinuxOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.SELinuxOptions.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "User" ∷ l.[(v1.SELinuxOptions.t), "User"] ↦{dq} v.(v1.SELinuxOptions.User') ∗
+      "Role" ∷ l.[(v1.SELinuxOptions.t), "Role"] ↦{dq} v.(v1.SELinuxOptions.Role') ∗
+      "Type" ∷ l.[(v1.SELinuxOptions.t), "Type"] ↦{dq} v.(v1.SELinuxOptions.Type') ∗
+      "Level" ∷ l.[(v1.SELinuxOptions.t), "Level"] ↦{dq} v.(v1.SELinuxOptions.Level') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance SELinuxOptions_into_val_typed
    :
   IntoValTypedUnderlying (v1.SELinuxOptions.t) (v1.SELinuxOptionsⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance SELinuxOptions_access_load_User l (v : (v1.SELinuxOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "User"] ↦{dq} (v.(v1.SELinuxOptions.User')))
+    (l.[(v1.SELinuxOptions.t), "User"] ↦{dq} (v.(v1.SELinuxOptions.User')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SELinuxOptions_access_store_User l (v : (v1.SELinuxOptions.t)) User' :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "User"] ↦ (v.(v1.SELinuxOptions.User')))
+    (l.[(v1.SELinuxOptions.t), "User"] ↦ User')
+    (l ↦ v) (l ↦ (v <|(v1.SELinuxOptions.User') := User'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SELinuxOptions_access_load_Role l (v : (v1.SELinuxOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Role"] ↦{dq} (v.(v1.SELinuxOptions.Role')))
+    (l.[(v1.SELinuxOptions.t), "Role"] ↦{dq} (v.(v1.SELinuxOptions.Role')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SELinuxOptions_access_store_Role l (v : (v1.SELinuxOptions.t)) Role' :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Role"] ↦ (v.(v1.SELinuxOptions.Role')))
+    (l.[(v1.SELinuxOptions.t), "Role"] ↦ Role')
+    (l ↦ v) (l ↦ (v <|(v1.SELinuxOptions.Role') := Role'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SELinuxOptions_access_load_Type l (v : (v1.SELinuxOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Type"] ↦{dq} (v.(v1.SELinuxOptions.Type')))
+    (l.[(v1.SELinuxOptions.t), "Type"] ↦{dq} (v.(v1.SELinuxOptions.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SELinuxOptions_access_store_Type l (v : (v1.SELinuxOptions.t)) Type' :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Type"] ↦ (v.(v1.SELinuxOptions.Type')))
+    (l.[(v1.SELinuxOptions.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.SELinuxOptions.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance SELinuxOptions_access_load_Level l (v : (v1.SELinuxOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Level"] ↦{dq} (v.(v1.SELinuxOptions.Level')))
+    (l.[(v1.SELinuxOptions.t), "Level"] ↦{dq} (v.(v1.SELinuxOptions.Level')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance SELinuxOptions_access_store_Level l (v : (v1.SELinuxOptions.t)) Level' :
+  AccessStrict
+    (l.[(v1.SELinuxOptions.t), "Level"] ↦ (v.(v1.SELinuxOptions.Level')))
+    (l.[(v1.SELinuxOptions.t), "Level"] ↦ Level')
+    (l ↦ v) (l ↦ (v <|(v1.SELinuxOptions.Level') := Level'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End SELinuxOptions.
@@ -12251,13 +24794,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance WindowsSecurityContextOptions_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.WindowsSecurityContextOptions.t). Admitted.
+#[global]Program Instance WindowsSecurityContextOptions_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.WindowsSecurityContextOptions.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "GMSACredentialSpecName" ∷ l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpecName"] ↦{dq} v.(v1.WindowsSecurityContextOptions.GMSACredentialSpecName') ∗
+      "GMSACredentialSpec" ∷ l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpec"] ↦{dq} v.(v1.WindowsSecurityContextOptions.GMSACredentialSpec') ∗
+      "RunAsUserName" ∷ l.[(v1.WindowsSecurityContextOptions.t), "RunAsUserName"] ↦{dq} v.(v1.WindowsSecurityContextOptions.RunAsUserName') ∗
+      "HostProcess" ∷ l.[(v1.WindowsSecurityContextOptions.t), "HostProcess"] ↦{dq} v.(v1.WindowsSecurityContextOptions.HostProcess') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance WindowsSecurityContextOptions_into_val_typed
    :
   IntoValTypedUnderlying (v1.WindowsSecurityContextOptions.t) (v1.WindowsSecurityContextOptionsⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance WindowsSecurityContextOptions_access_load_GMSACredentialSpecName l (v : (v1.WindowsSecurityContextOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpecName"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpecName')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpecName"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpecName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WindowsSecurityContextOptions_access_store_GMSACredentialSpecName l (v : (v1.WindowsSecurityContextOptions.t)) GMSACredentialSpecName' :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpecName"] ↦ (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpecName')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpecName"] ↦ GMSACredentialSpecName')
+    (l ↦ v) (l ↦ (v <|(v1.WindowsSecurityContextOptions.GMSACredentialSpecName') := GMSACredentialSpecName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance WindowsSecurityContextOptions_access_load_GMSACredentialSpec l (v : (v1.WindowsSecurityContextOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpec"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpec')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpec"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpec')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WindowsSecurityContextOptions_access_store_GMSACredentialSpec l (v : (v1.WindowsSecurityContextOptions.t)) GMSACredentialSpec' :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpec"] ↦ (v.(v1.WindowsSecurityContextOptions.GMSACredentialSpec')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "GMSACredentialSpec"] ↦ GMSACredentialSpec')
+    (l ↦ v) (l ↦ (v <|(v1.WindowsSecurityContextOptions.GMSACredentialSpec') := GMSACredentialSpec'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance WindowsSecurityContextOptions_access_load_RunAsUserName l (v : (v1.WindowsSecurityContextOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "RunAsUserName"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.RunAsUserName')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "RunAsUserName"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.RunAsUserName')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WindowsSecurityContextOptions_access_store_RunAsUserName l (v : (v1.WindowsSecurityContextOptions.t)) RunAsUserName' :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "RunAsUserName"] ↦ (v.(v1.WindowsSecurityContextOptions.RunAsUserName')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "RunAsUserName"] ↦ RunAsUserName')
+    (l ↦ v) (l ↦ (v <|(v1.WindowsSecurityContextOptions.RunAsUserName') := RunAsUserName'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance WindowsSecurityContextOptions_access_load_HostProcess l (v : (v1.WindowsSecurityContextOptions.t)) dq :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "HostProcess"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.HostProcess')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "HostProcess"] ↦{dq} (v.(v1.WindowsSecurityContextOptions.HostProcess')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance WindowsSecurityContextOptions_access_store_HostProcess l (v : (v1.WindowsSecurityContextOptions.t)) HostProcess' :
+  AccessStrict
+    (l.[(v1.WindowsSecurityContextOptions.t), "HostProcess"] ↦ (v.(v1.WindowsSecurityContextOptions.HostProcess')))
+    (l.[(v1.WindowsSecurityContextOptions.t), "HostProcess"] ↦ HostProcess')
+    (l ↦ v) (l ↦ (v <|(v1.WindowsSecurityContextOptions.HostProcess') := HostProcess'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End WindowsSecurityContextOptions.
@@ -12291,13 +24897,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Sysctl_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Sysctl.t). Admitted.
+#[global]Program Instance Sysctl_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Sysctl.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.Sysctl.t), "Name"] ↦{dq} v.(v1.Sysctl.Name') ∗
+      "Value" ∷ l.[(v1.Sysctl.t), "Value"] ↦{dq} v.(v1.Sysctl.Value') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Sysctl_into_val_typed
    :
   IntoValTypedUnderlying (v1.Sysctl.t) (v1.Sysctlⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Sysctl_access_load_Name l (v : (v1.Sysctl.t)) dq :
+  AccessStrict
+    (l.[(v1.Sysctl.t), "Name"] ↦{dq} (v.(v1.Sysctl.Name')))
+    (l.[(v1.Sysctl.t), "Name"] ↦{dq} (v.(v1.Sysctl.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Sysctl_access_store_Name l (v : (v1.Sysctl.t)) Name' :
+  AccessStrict
+    (l.[(v1.Sysctl.t), "Name"] ↦ (v.(v1.Sysctl.Name')))
+    (l.[(v1.Sysctl.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.Sysctl.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Sysctl_access_load_Value l (v : (v1.Sysctl.t)) dq :
+  AccessStrict
+    (l.[(v1.Sysctl.t), "Value"] ↦{dq} (v.(v1.Sysctl.Value')))
+    (l.[(v1.Sysctl.t), "Value"] ↦{dq} (v.(v1.Sysctl.Value')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Sysctl_access_store_Value l (v : (v1.Sysctl.t)) Value' :
+  AccessStrict
+    (l.[(v1.Sysctl.t), "Value"] ↦ (v.(v1.Sysctl.Value')))
+    (l.[(v1.Sysctl.t), "Value"] ↦ Value')
+    (l ↦ v) (l ↦ (v <|(v1.Sysctl.Value') := Value'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Sysctl.
@@ -12351,13 +24992,48 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ImageVolumeSource_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ImageVolumeSource.t). Admitted.
+#[global]Program Instance ImageVolumeSource_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ImageVolumeSource.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Reference" ∷ l.[(v1.ImageVolumeSource.t), "Reference"] ↦{dq} v.(v1.ImageVolumeSource.Reference') ∗
+      "PullPolicy" ∷ l.[(v1.ImageVolumeSource.t), "PullPolicy"] ↦{dq} v.(v1.ImageVolumeSource.PullPolicy') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ImageVolumeSource_into_val_typed
    :
   IntoValTypedUnderlying (v1.ImageVolumeSource.t) (v1.ImageVolumeSourceⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ImageVolumeSource_access_load_Reference l (v : (v1.ImageVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ImageVolumeSource.t), "Reference"] ↦{dq} (v.(v1.ImageVolumeSource.Reference')))
+    (l.[(v1.ImageVolumeSource.t), "Reference"] ↦{dq} (v.(v1.ImageVolumeSource.Reference')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ImageVolumeSource_access_store_Reference l (v : (v1.ImageVolumeSource.t)) Reference' :
+  AccessStrict
+    (l.[(v1.ImageVolumeSource.t), "Reference"] ↦ (v.(v1.ImageVolumeSource.Reference')))
+    (l.[(v1.ImageVolumeSource.t), "Reference"] ↦ Reference')
+    (l ↦ v) (l ↦ (v <|(v1.ImageVolumeSource.Reference') := Reference'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ImageVolumeSource_access_load_PullPolicy l (v : (v1.ImageVolumeSource.t)) dq :
+  AccessStrict
+    (l.[(v1.ImageVolumeSource.t), "PullPolicy"] ↦{dq} (v.(v1.ImageVolumeSource.PullPolicy')))
+    (l.[(v1.ImageVolumeSource.t), "PullPolicy"] ↦{dq} (v.(v1.ImageVolumeSource.PullPolicy')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ImageVolumeSource_access_store_PullPolicy l (v : (v1.ImageVolumeSource.t)) PullPolicy' :
+  AccessStrict
+    (l.[(v1.ImageVolumeSource.t), "PullPolicy"] ↦ (v.(v1.ImageVolumeSource.PullPolicy')))
+    (l.[(v1.ImageVolumeSource.t), "PullPolicy"] ↦ PullPolicy')
+    (l ↦ v) (l ↦ (v <|(v1.ImageVolumeSource.PullPolicy') := PullPolicy'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ImageVolumeSource.

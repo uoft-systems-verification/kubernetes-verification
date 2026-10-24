@@ -253,11 +253,55 @@ Proof.
     pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); apply _.
 Defined.
 
-Definition without_statefulset_fields (_ : PodSpecV.t) : PodSpecV.t := {|
-  PodSpecV.Volumes' := None;
-  PodSpecV.Hostname' := ""%go;
-  PodSpecV.Subdomain' := ""%go;
-|}.
+Definition storage_claim_volume (set : StatefulSetV.t) (ordinal : nat)
+    (claim_template_name : go_string) : VolumeV.t :=
+  {| VolumeV.Name' := claim_template_name;
+     VolumeV.VolumeSource' :=
+       (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' :=
+            Some
+              {| v1.PersistentVolumeClaimVolumeSource.ClaimName' :=
+                   desired_pvc_name
+                     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+                     claim_template_name ordinal;
+                 v1.PersistentVolumeClaimVolumeSource.ReadOnly' := false |}
+       |>)
+  |}.
+
+Definition init_storage_volumes (set : StatefulSetV.t) (pod : PodV.t)
+    (ordinal : nat) (claim_template_names : list go_string) :
+    list VolumeV.t :=
+  (storage_claim_volume set ordinal <$> claim_template_names) ++
+  filter
+    (λ volume, volume.(VolumeV.Name') ∉ claim_template_names)
+    (PodSpecV.volumes_list pod.(PodV.Spec')).
+
+(* The map iteration order is exposed as [claim_template_names].  Its set is
+   fixed by the StatefulSet, while its order is intentionally unspecified by
+   Go.  Existing Pod volumes controlled by a claim template are replaced;
+   all other volumes retain their original order. *)
+Definition init_storage (set : StatefulSetV.t) (pod : PodV.t)
+    (ordinal : nat) (claim_template_names : list go_string) : PodV.t :=
+  pod <| PodV.Spec' :=
+    pod.(PodV.Spec') <| PodSpecV.Volumes' :=
+      Some (init_storage_volumes set pod ordinal claim_template_names) |> |>.
+
+Definition without_statefulset_fields := PodAPI.without_managed.
+
+Definition desired_pod_labels (sts : StatefulSetV.t) (ordinal : nat) : PodAPI.string_map :=
+  let meta := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.ObjectMeta') in
+  Some (<[pod_index_label := decimal_string ordinal]>
+    (<[statefulset_pod_name_label := desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal]>
+      (default ∅ meta.(ObjectMetaV.Labels')))).
+
+Definition desired_pod_annotations (sts : StatefulSetV.t) : PodAPI.string_map :=
+  let meta := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.ObjectMeta') in
+  Some (default ∅ meta.(ObjectMetaV.Annotations')).
+
+Definition desired_prepared_spec (sts : StatefulSetV.t) (pod_name : go_string) : PodSpecV.t :=
+  let ordinal := default 0%nat (parse_pod_ordinal pod_name) in
+  without_statefulset_fields (PodAPI.create_spec (desired_pod_labels sts ordinal)
+    (desired_pod_annotations sts)
+    (without_statefulset_fields sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec'))).
 
 Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
   pod.(PodV.Spec').(PodSpecV.Hostname') =
@@ -266,9 +310,7 @@ Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
     sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
   pod_storage_matches sts pod ∧
   without_statefulset_fields pod.(PodV.Spec') =
-    without_statefulset_fields
-      sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(
-        PodTemplateSpecV.Spec').
+    desired_prepared_spec sts pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
 
 #[global] Instance pod_immutable_matches_decision sts pod :
     Decision (pod_immutable_matches sts pod).
@@ -285,11 +327,77 @@ Proof.
   2: { right. intros (_ & H & _). contradiction. }
   destruct (decide (pod_storage_matches sts pod)) as [Hstorage|Hstorage].
   2: { right. intros (_ & _ & H & _). contradiction. }
-  left. split_and!; try done.
+  destruct (decide (without_statefulset_fields pod.(PodV.Spec') =
+    desired_prepared_spec sts pod.(PodV.ObjectMeta').(ObjectMetaV.Name')))
+    as [Hrest|Hrest].
+  2: { right. intros (_ & _ & _ & H). contradiction. }
+  left. split_and!; done.
 Defined.
 
 Definition pod_match (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
   pod_identity_matches sts pod ∧ pod_immutable_matches sts pod.
+
+(** A constructor produces a create request. API preparation has not yet
+    happened, so this deliberately differs from the stored-Pod invariant. *)
+Definition pod_creation_request_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
+  pod_identity_matches sts pod ∧
+  pod.(PodV.Spec').(PodSpecV.Hostname') = pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
+  pod.(PodV.Spec').(PodSpecV.Subdomain') = sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
+  pod_storage_matches sts pod ∧
+  without_statefulset_fields pod.(PodV.Spec') =
+    without_statefulset_fields sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec') ∧
+  ∃ ordinal,
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
+      desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ∧
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') = desired_pod_labels sts ordinal ∧
+    pod.(PodV.ObjectMeta').(ObjectMetaV.Annotations') = desired_pod_annotations sts.
+
+Lemma create_volumes_map_fold volumes (initial : gmap go_string VolumeV.t) :
+  fold_left pod_volumes_map_insert (PodAPI.create_volume <$> volumes) (PodAPI.create_volume <$> initial) =
+  PodAPI.create_volume <$> fold_left pod_volumes_map_insert volumes initial.
+Proof.
+  revert initial. induction volumes as [|volume volumes IH]; intros initial; simpl; first done.
+  rewrite /pod_volumes_map_insert /= -fmap_insert. apply IH.
+Qed.
+
+Lemma create_volumes_map volumes :
+  pod_volumes_map_of_list (PodAPI.create_volume <$> volumes) =
+  PodAPI.create_volume <$> pod_volumes_map_of_list volumes.
+Proof.
+  unfold pod_volumes_map_of_list.
+  rewrite -(create_volumes_map_fold volumes ∅) fmap_empty. done.
+Qed.
+
+Lemma create_volume_claim_matches volumes set_name ordinal claim_name :
+  pod_volume_claim_matches (pod_volumes_map_of_list (PodAPI.create_volume <$> volumes))
+    set_name ordinal claim_name ↔
+  pod_volume_claim_matches (pod_volumes_map_of_list volumes) set_name ordinal claim_name.
+Proof.
+  rewrite create_volumes_map /pod_volume_claim_matches lookup_fmap.
+  destruct (pod_volumes_map_of_list volumes !! claim_name) as [volume|]; last done.
+  rewrite /PodAPI.create_volume /=. done.
+Qed.
+
+Lemma pod_storage_matches_prepared set pod :
+  pod_storage_matches set (pod <| PodV.Spec' := PodV.prepared_spec pod |>) ↔ pod_storage_matches set pod.
+Proof.
+  unfold pod_storage_matches. simpl.
+  destruct (parse_pod_ordinal pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); last done.
+  rewrite /PodV.prepared_spec /PodAPI.create_spec /PodSpecV.volumes_list /=.
+  destruct pod.(PodV.Spec').(PodSpecV.Volumes') as [volumes|]; simpl; last done.
+  split; intros [Hbound Hclaims]; split; try exact Hbound.
+  - eapply Forall_impl; last exact Hclaims.
+    intros name Hclaim. by apply (proj1 (create_volume_claim_matches volumes _ _ _)).
+  - eapply Forall_impl; last exact Hclaims.
+    intros name Hclaim. by apply (proj2 (create_volume_claim_matches volumes _ _ _)).
+Qed.
+
+Definition stateful_pod_request_spec (sts : StatefulSetV.t) ordinal claim_names : PodSpecV.t :=
+  let spec := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec') in
+  spec <| PodSpecV.Volumes' := Some ((storage_claim_volume sts ordinal <$> claim_names) ++
+      filter (λ volume, volume.(VolumeV.Name') ∉ claim_names) (PodSpecV.volumes_list spec)) |>
+    <| PodSpecV.Hostname' := desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal |>
+    <| PodSpecV.Subdomain' := sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>.
 
 #[global] Instance pod_match_decision sts pod : Decision (pod_match sts pod).
 Proof. unfold pod_match. apply _. Defined.
@@ -406,8 +514,17 @@ Definition input_requirement (sts : StatefulSetV.t) : Prop :=
         PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
           sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
           (new_persistent_volume_claim sts claim_template ordinal))
-    (StatefulSetSpecV.volume_claim_templates_list
-      sts.(StatefulSetV.Spec')).
+    (StatefulSetSpecV.volume_claim_templates_list sts.(StatefulSetV.Spec')) ∧
+  (∀ ordinal claim_names,
+    (ordinal < statefulset_replicas sts)%nat →
+    NoDup claim_names →
+    list_to_set (C:=gset go_string) claim_names = list_to_set (pvc_claim_template_names sts) →
+    let spec := stateful_pod_request_spec sts ordinal claim_names in
+    PodAPI.validate_spec (PodAPI.schema_defaults spec) = true ∧
+    PodAPI.validate_annotations (desired_pod_annotations sts)
+      (PodAPI.create_spec (desired_pod_labels sts ordinal) (desired_pod_annotations sts) spec) = true ∧
+    PodAPI.validate_spec
+      (PodAPI.create_spec (desired_pod_labels sts ordinal) (desired_pod_annotations sts) spec) = true).
 
 Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.

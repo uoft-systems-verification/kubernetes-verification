@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof Require Import util.
 From New.proof.kubernetes_model Require Export list.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels.
@@ -30,13 +30,13 @@ Proof.
   iAssert (is_pkg_init sync) as "#Hsync".
   { iPkgInit. }
   wp_method_call. rewrite /apimodel.State__objListⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock.
   { iFrame "#". }
   iIntros "[Hown_Mutex H]".
   iDestruct "H" as (phys_state_l phys_used_uid_l phys_used_rv_l phys_state
     phys_used_uid phys_used_rv abs_state used_uid used_reference) "H".
-  iNamedPrefix "H" "Hinv_". wp_auto.
+  iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_State__objListLocked γ l kind namespace
     phys_state_l phys_state abs_state used_uid with
     "[$Hpkg $Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
@@ -59,7 +59,7 @@ Proof.
     destruct Hobj_valid as [Hkey_eq _].
     rewrite Hkey_eq in Hkey_kind.
     destruct obj; exact Hkey_kind. }
-  wp_auto.
+  wp_auto_keep.
   iCombineNamed "Hinv_*" as "H".
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l)
     with "[$Hown_Mutex H]").
@@ -118,16 +118,16 @@ Lemma wp_State__objListBySelector_weak γ l (kind namespace : go_string)
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__objListBySelectorⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__objList_weak γ l kind namespace with
     "[$Hpkg $Hisk]").
   iIntros (sl interfaces objs)
     "(Hsl & Hobjs & %Hvalid & %Hextra_valid & %Hkind)".
-  wp_auto.
+  wp_auto_keep.
   wp_bind (@! apimodel.filterByLabelSelector #sl #selector)%E.
   iApply (wp_filterByLabelSelector_weak kind sl interfaces objs selector P
     Hvalid Hextra_valid Hkind with "[$Hpkg $Hselector $Hsl $Hobjs]").
-  iNext. iIntros (sl' interfaces' objs') "Hpost". wp_auto.
+  iNext. iIntros (sl' interfaces' objs') "Hpost". wp_auto_keep.
   iApply "HΦ". iExact "Hpost".
 Qed.
 
@@ -147,7 +147,7 @@ Local Lemma wp_State__ReplicaSetMutList_weak γ l (namespace : go_string)
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__ReplicaSetMutListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__objListBySelector_weak γ l ReplicaSetV.kind
     namespace selector P with "[$Hpkg $Hselector $Hisk]").
   iIntros (objs_sl interfaces objs)
@@ -160,14 +160,14 @@ Proof.
   iDestruct (replica_set_interfaces_to_ptrs with "Hobjs") as
     (ptrs) "[%Hinterfaces Hreplica_sets]".
   subst interfaces.
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hobjs_sl") as %(Hobjs_len1 & Hobjs_len2).
   rewrite !map_length in Hobjs_len1.
   iDestruct (own_slice_wf with "Hobjs_sl") as %Hobjs_cap.
   iDestruct (big_sepL2_length with "Hreplica_sets") as %Hptrs_len.
   wp_apply (wp_slice_make3 (V:=loc) (t:=go.PointerType v1.ReplicaSet)); first word.
   iIntros (rss_sl) "(Hrss & Hrss_cap & %Hrss_cap_eq)".
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (i : w64) (obj : interface.t) (rss_sl' : slice.t)
       (ptrs' : list loc),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
@@ -199,20 +199,20 @@ Proof.
       (interface.ok (interface.mk
         (go.PointerType v1.ReplicaSet) #this_ptr)) with "[$Hobjs_sl]");
       [word|iPureIntro; exact Hinterface_lookup|].
-    iIntros "Hobjs_sl". wp_auto.
+    iIntros "Hobjs_sl". wp_auto_keep.
     rewrite decide_True;
       [change (go.PointerType api_apps_v1.ReplicaSet)
         with (go.PointerType v1.ReplicaSet); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     rewrite bool_decide_true;
       [change (go.PointerType api_apps_v1.ReplicaSet)
         with (go.PointerType v1.ReplicaSet); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (sl_one) "[Hsl_one _]". wp_auto.
+    iIntros (sl_one) "[Hsl_one _]". wp_auto_keep.
     wp_apply (wp_slice_append with "[$Hrss $Hrss_cap $Hsl_one]").
-    iIntros (rss_sl'') "(Hrss & Hrss_cap & Hsl_one)". wp_auto.
-    iApply wp_for_post_do. wp_auto.
+    iIntros (rss_sl'') "(Hrss & Hrss_cap & Hsl_one)". wp_auto_keep.
+    iApply wp_for_post_do. wp_auto_keep.
     iFrame "Hobjs_sl HΦ Hreplica_sets".
     iExists (word.add i (W64 1)),
       (interface.ok (interface.mk (go.PointerType v1.ReplicaSet) #this_ptr)),
@@ -249,12 +249,12 @@ Lemma wp_State__ReplicaSetList_weak γ l (namespace : go_string)
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__ReplicaSetListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_bind (l @! (go.PointerType apimodel.State) @! "ReplicaSetMutList"
     #namespace #selector)%E.
   iApply (wp_State__ReplicaSetMutList_weak γ l namespace selector P
     with "[$Hpkg $Hselector $Hisk]").
-  iNext. iIntros (sl ptrs replica_sets) "Hpost". wp_auto.
+  iNext. iIntros (sl ptrs replica_sets) "Hpost". wp_auto_keep.
   iApply "HΦ". iExact "Hpost".
 Qed.
 
@@ -304,7 +304,7 @@ Local Lemma wp_State__PodMutList_weak γ l (namespace : go_string)
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__PodMutListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_State__objListBySelector_weak γ l PodV.kind
     namespace selector P with "[$Hpkg $Hselector $Hisk]").
   iIntros (objs_sl interfaces objs)
@@ -315,14 +315,14 @@ Proof.
   iDestruct (pod_interfaces_to_ptrs with "Hobjs") as
     (ptrs) "[%Hinterfaces Hpods]".
   subst interfaces.
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hobjs_sl") as %(Hobjs_len1 & Hobjs_len2).
   rewrite !map_length in Hobjs_len1.
   iDestruct (own_slice_wf with "Hobjs_sl") as %Hobjs_cap.
   iDestruct (big_sepL2_length with "Hpods") as %Hptrs_len.
   wp_apply (wp_slice_make3 (V:=loc) (t:=go.PointerType v1.Pod)); first word.
   iIntros (pods_sl) "(Hpods_sl & Hpods_cap & %Hpods_cap_eq)".
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (i : w64) (obj : interface.t) (pods_sl' : slice.t)
       (ptrs' : list loc),
     "Hi_ptr" ∷ i_ptr ↦ i ∗
@@ -355,20 +355,20 @@ Proof.
       (interface.ok (interface.mk
         (go.PointerType v1.Pod) #this_ptr)) with "[$Hobjs_sl]");
       [word|iPureIntro; exact Hinterface_lookup|].
-    iIntros "Hobjs_sl". wp_auto.
+    iIntros "Hobjs_sl". wp_auto_keep.
     rewrite decide_True;
       [change (go.PointerType api_core_v1.Pod)
         with (go.PointerType v1.Pod); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     rewrite bool_decide_true;
       [change (go.PointerType api_core_v1.Pod)
         with (go.PointerType v1.Pod); reflexivity|].
-    wp_auto.
+    wp_auto_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (sl_one) "[Hsl_one _]". wp_auto.
+    iIntros (sl_one) "[Hsl_one _]". wp_auto_keep.
     wp_apply (wp_slice_append with "[$Hpods_sl $Hpods_cap $Hsl_one]").
-    iIntros (pods_sl'') "(Hpods_sl & Hpods_cap & Hsl_one)". wp_auto.
-    iApply wp_for_post_do. wp_auto.
+    iIntros (pods_sl'') "(Hpods_sl & Hpods_cap & Hsl_one)". wp_auto_keep.
+    iApply wp_for_post_do. wp_auto_keep.
     iFrame "Hobjs_sl HΦ Hpods".
     iExists (word.add i (W64 1)),
       (interface.ok (interface.mk (go.PointerType v1.Pod) #this_ptr)),
@@ -402,12 +402,12 @@ Lemma wp_State__PodList_weak γ l (namespace : go_string)
 Proof.
   iIntros (Φ) "(#Hpkg & #Hselector & #Hisk) HΦ".
   wp_method_call. rewrite /apimodel.State__PodListⁱᵐᵖˡ. wp_call.
-  wp_auto.
+  wp_auto_keep.
   wp_bind (l @! (go.PointerType apimodel.State) @! "PodMutList"
     #namespace #selector)%E.
   iApply (wp_State__PodMutList_weak γ l namespace selector P
     with "[$Hpkg $Hselector $Hisk]").
-  iNext. iIntros (sl ptrs pods) "Hpost". wp_auto.
+  iNext. iIntros (sl ptrs pods) "Hpost". wp_auto_keep.
   iApply "HΦ". iExact "Hpost".
 Qed.
 

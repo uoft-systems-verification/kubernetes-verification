@@ -1,6 +1,9 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export update_release.
 From New.proof.kubernetes_model Require Import common_delete.
+
+(* Collect transient import allocations before checking the large API proof. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -33,7 +36,7 @@ Lemma wp_State__update_release_terminating_au γ l kind namespace i kobj :
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & H)". iNamed "H". iNamed "Hkinv".
   destruct (Classical_Prop.classic (
-      KObjectV.valid_create kind namespace kobj ∧
+      KObjectV.valid_update_input kind namespace kobj ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
       valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -49,42 +52,43 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /=;
+        /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
   destruct Hvalid_update_input as
     (Hvalid & Hname_nonempty & Hvalid_typemeta & Huid_nonempty & Hrv_valid &
       Hns_matches).
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
-  { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+  { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|].
   iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_".
-  wp_auto.
-  wp_method_call. rewrite /apimodel.State__updateLockedⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_auto_keep.
+  wp_method_call. rewrite /apimodel.State__updateLockedⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_deepCopy i kobj (DfracOwn 1) with "[Hdeepown_i]").
   { iFrame "#". iExact "Hdeepown_i". }
-  iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto.
+  iIntros (i1) "[Hdeepown_i1 Hdeepown_i]". wp_auto_keep.
   iDestruct "Hdeepown_i1" as (l1) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hl1_not_null & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_m_l]").
   { iPureIntro. split; [done|]. right. done. }
-  iIntros "Hdeepown_m_l". wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
   wp_apply (wp_GetName_deepown_kobject i1 l1 kobj with "[$Hdeepown_m_l]"). 1: done.
-  iIntros "Hdeepown_m_l". wp_auto.
-  rewrite bool_decide_false //. wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
+  rewrite bool_decide_false //. wp_auto_keep.
   wp_apply (wp_map_lookup2 apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
-  iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   set key := {|
     KKey.Kind' := kind;
@@ -99,11 +103,11 @@ Proof.
     assert (phys_state !! key = None) as Hlookup_phys.
     { destruct (phys_state !! key) as [i'|] eqn:Hlookup_phys; [|done].
       exfalso. apply Hdecide. done. }
-    rewrite /is_Some Hlookup_phys. wp_auto.
+    rewrite /is_Some Hlookup_phys. wp_auto_keep.
     wp_apply (wp_NewNotFound
       {| schema.GroupResource.Group' := ""%go;
          schema.GroupResource.Resource' := key.(KKey.Kind') |} key.(KKey.Name')).
-    iIntros (err_l) "%Hnot_found". wp_auto.
+    iIntros (err_l) "%Hnot_found". wp_auto_keep.
     set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (not_found_error_not_nil err Hnot_found) as Herr_ne.
     pose proof (not_found_error_not_conflict err Hnot_found) as Hnot_conflict.
@@ -114,7 +118,7 @@ Proof.
     { iPureIntro. exact Herr_ne. }
     iModIntro.
     iCombineNamed "Hinv_*" as "H".
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
@@ -125,35 +129,36 @@ Proof.
   iDestruct (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs
     with "Hinv_Hphys_abs_rep") as "(Hdeepown_old_i & Hother_rep)".
   destruct old_i as [old_i|]. 2: { iExFalso. iExact "Hdeepown_old_i". }
-  rewrite Hlookup_phys. wp_auto.
+  rewrite Hlookup_phys. wp_auto_keep.
   wp_apply (wp_deepCopy old_i old_kobj (DfracOwn 1) with "[Hdeepown_old_i]").
   { iFrame "#". iExact "Hdeepown_old_i". }
-  iIntros (old_i1) "[Hdeepown_old_i1 Hdeepown_old_i]". wp_auto.
+  iIntros (old_i1) "[Hdeepown_old_i1 Hdeepown_old_i]". wp_auto_keep.
   iDestruct "Hdeepown_old_i1" as (old_l1) "[%Hvalid_interface_old Hdeepown_old_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_old_l") as
     "(%Hold_l1_not_null & Hdeepown_t_old_l & Hdeepown_m_old_l & Hdeepown_s_old_l & Hdeepown_st_old_l)".
   wp_apply (wp_GetUID_deepown_kobject i1 l1 kobj with "[$Hdeepown_m_l]"). 1: done.
-  iIntros "Hdeepown_m_l". wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
   wp_if_destruct. 1: { exfalso. done. }
-  rewrite bool_decide_false //. wp_auto.
+  rewrite bool_decide_false //. wp_auto_keep.
   wp_apply (wp_GetUID_deepown_kobject old_i1 old_l1 old_kobj with
     "[$Hdeepown_m_old_l]"). 1: done.
-  iIntros "Hdeepown_m_old_l". wp_auto.
+  iIntros "Hdeepown_m_old_l". wp_auto_keep.
   wp_if_destruct.
   2: {
     wp_apply (wp_GetUID_deepown_kobject old_i1 old_l1 old_kobj with
       "[$Hdeepown_m_old_l]"). 1: done.
-    iIntros "Hdeepown_m_old_l". wp_auto.
+    iIntros "Hdeepown_m_old_l". wp_auto_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+    iIntros (error_args_sl) "[Herror_args _]". wp_auto_keep.
     wp_apply (wp_Errorf with "[$Herror_args]").
-    iIntros (error_cause) "_". wp_auto.
+    iIntros (error_cause) "_". wp_auto_keep.
     wp_apply (wp_NewConflict
       {| schema.GroupResource.Group' := ""%go;
          schema.GroupResource.Resource' := KObjectV.kind kobj |}
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') (interface.ok error_cause)).
-    iIntros (err_l) "%Herr_conflict". wp_auto.
+    iIntros (err_l) "%Herr_conflict". wp_auto_keep.
     set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (conflict_error_not_nil err Herr_conflict) as Herr_ne.
     iApply fupd_wp.
@@ -169,36 +174,36 @@ Proof.
       end)%I) with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
     { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
   wp_apply (wp_GetResourceVersion_deepown_kobject i1 l1 kobj with
     "[$Hdeepown_m_l]"). 1: done.
-  iIntros "Hdeepown_m_l". wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
   wp_apply (wp_GetResourceVersion_deepown_kobject old_i1 old_l1 old_kobj with
     "[$Hdeepown_m_old_l]"). 1: done.
-  iIntros "Hdeepown_m_old_l". wp_auto.
+  iIntros "Hdeepown_m_old_l". wp_auto_keep.
   wp_if_destruct.
   { exfalso. eapply valid_resource_version_non_empty; done. }
-  rewrite bool_decide_false //. wp_auto.
+  rewrite bool_decide_false //. wp_auto_keep.
   wp_apply wp_parseResourceVersion.
   { iPureIntro. exact Hrv_valid. }
-  iIntros (ret) "_". wp_auto.
+  iIntros (ret) "_". wp_auto_keep.
   wp_apply (wp_GetResourceVersion_deepown_kobject i1 l1 kobj with
     "[$Hdeepown_m_l]"). 1: done.
-  iIntros "Hdeepown_m_l". wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
   wp_if_destruct.
   2: {
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (error_args_sl) "[Herror_args _]". wp_auto.
+    iIntros (error_args_sl) "[Herror_args _]". wp_auto_keep.
     wp_apply (wp_Errorf with "[$Herror_args]").
-    iIntros (error_cause) "_". wp_auto.
+    iIntros (error_cause) "_". wp_auto_keep.
     wp_apply (wp_NewConflict
       {| schema.GroupResource.Group' := ""%go;
          schema.GroupResource.Resource' := KObjectV.kind kobj |}
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') (interface.ok error_cause)).
-    iIntros (err_l) "%Herr_conflict". wp_auto.
+    iIntros (err_l) "%Herr_conflict". wp_auto_keep.
     set err := interface.mk_ok (go.PointerType api_errors.StatusError) #err_l.
     pose proof (conflict_error_not_nil err Herr_conflict) as Herr_ne.
     iApply fupd_wp.
@@ -214,7 +219,7 @@ Proof.
       end)%I) with "[Hdeepown_old_i Hother_rep]" as "Hinv_Hphys_abs_rep".
     { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
@@ -267,7 +272,7 @@ Proof.
   2: {
     iDestruct "Hvalidation" as
       (failed_kobj) "(Hdeepown_l & Hdeepown_old_l & %Hvalid_interface_failed)".
-    wp_auto.
+    wp_auto_keep.
     iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
@@ -276,14 +281,14 @@ Proof.
     { rewrite (big_sepM2_delete _ phys_state abs_state key _ _ Hlookup_phys Hlookup_abs). iFrame. }
     iCombineNamed "Hinv_*" as "H".
     change (err ≠ interface.nil) in Herr_ne.
-    destruct err as [err_ok|]; [|done]. wp_auto.
+    destruct err as [err_ok|]; [|done]. wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (witness_meta witness_spec)
       "(#Hdeletion_observed & %Hvalid_update_witness & [_ Hclose])".
     iMod ("Hclose" $! interface.nil (interface.ok err_ok) with "[]") as "HΦ".
     { iPureIntro. exact Herr_ne. }
     iModIntro.
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
@@ -301,18 +306,18 @@ Proof.
   pose proof (Hhelper_result_updated kobj updated_kobj Hprepared Hequiv_updated_refl)
     as Hupdated_kobj.
   assert (KObjectV.same_kind kobj updated_kobj) as Hsame_kind_updated.
-  { destruct kobj, updated_kobj; simpl in Hupdated_kobj |- *; try contradiction; done. }
+  { destruct old_kobj, kobj, updated_kobj; simpl in Hupdated_kobj |- *; try contradiction; done. }
   pose proof (Hhelper_result_valid Hvalid_old_kobj Hvalid_typemeta)
     as Hvalid_updated_kobj.
   pose proof (Hhelper_result_extra_valid Hextra_valid_old) as Hextra_valid_updated_kobj.
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_shouldDeleteDuringUpdate_general with "[$Hdeepown_l $Hdeepown_old_l]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (should_delete) "(Hdeepown_l & Hdeepown_old_l & %Hshould_delete)".
-  destruct should_delete; wp_auto.
+  destruct should_delete; wp_auto_keep.
   {
     wp_apply (wp_map_delete _ _ key apimodel.KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
-    iIntros "Hinv_Hown_phys". wp_auto.
+    iIntros "Hinv_Hown_phys". wp_auto_keep.
     iMod (kview.delete_terminating_kobj_vs Hlookup_abs Hold_terminating with "Hinv_Hown_abs")
       as "Hinv_Hown_abs".
     iMod (cview.delete_orphan_vs key old_kobj with "Hinv_Hown_children") as "Hinv_Hown_children".
@@ -337,7 +342,7 @@ Proof.
     { iPureIntro. exact Hsame_kind_updated. }
     iModIntro.
     iCombineNamed "Hinv_*" as "H".
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
@@ -360,26 +365,26 @@ Proof.
       unfold storage_object_normalize in Hsame; simpl in Hsame; congruence. }
     iModIntro.
     iCombineNamed "Hinv_*" as "H".
-    rewrite ?return_val_unseal /return_val_def. try wp_auto.
+    rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
     wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
     { iNamed "H". iFrame. iFrame "#". done. }
     iExact "HΦ". }
   wp_apply (wp_State__generateNewRVAndUpdate with "[$Hinv_Hstate_used_rv_addr $Hinv_Hown_used_rv]").
-  iIntros (rv) "(%Hlookup_phys_used_rv & %Hvalid_rv & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto.
+  iIntros (rv) "(%Hlookup_phys_used_rv & %Hvalid_rv & Hinv_Hstate_used_rv_addr & Hinv_Hown_used_rv)". wp_auto_keep.
   iPoseProof (KObjectV.deepown_i_yields_deepown_l with "[$Hdeepown_i1]") as "Hdeepown_l". 1: done.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hl1_not_null1 & Hdeepown_t_l & Hdeepown_m_l & Hdeepown_s_l & Hdeepown_st_l)".
   wp_apply (wp_SetResourceVersion_deepown_kobject i1 l1 updated_kobj with
     "[$Hdeepown_m_l]"). 1: done.
-  iIntros "Hdeepown_m_l". wp_auto.
-  wp_apply (wp_map_insert apimodel.KKey with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hdeepown_m_l". wp_auto_keep.
+  wp_apply (wp_map_insert apimodel.KKey with "[$Hinv_Hown_phys]"). iIntros "Hinv_Hown_phys". wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_merge _ _ _ _ Hl1_not_null1 with
     "[$Hdeepown_t_l $Hdeepown_m_l $Hdeepown_s_l $Hdeepown_st_l]") as "Hdeepown_l".
   set new_kmeta := KObjectV.objectmeta updated_kobj <| ObjectMetaV.ResourceVersion' := rv |>.
   set new_kobj := KObjectV.update_objectmeta updated_kobj new_kmeta.
   wp_apply (wp_deepCopy i1 new_kobj (DfracOwn 1) with "[Hdeepown_l]").
   { iFrame. iPureIntro. unfold new_kobj, new_kmeta. destruct updated_kobj; done. }
-  iIntros (i1') "[Hdeepown_i1' Hdeepown_i1]". wp_auto.
+  iIntros (i1') "[Hdeepown_i1' Hdeepown_i1]". wp_auto_keep.
   assert (update_objects_equiv_except_resource_version updated_kobj new_kobj)
     as Hequiv_updated_new.
   { unfold new_kobj, new_kmeta, update_objects_equiv_except_resource_version.
@@ -399,24 +404,15 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp'))
     as (Hsame_kind_new & Hname_new & Hnamespace_stored_new & Huid_new &
       Hdeletion_timestamp_new).
-  { destruct kobj, new_kobj;
+  { destruct old_kobj, kobj, new_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
         /DeploymentV.updated /= in Hupdated_new |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated_new |- *; tauto. }
   assert (KObjectV.valid new_kobj) as Hvalid_new.
   { unfold new_kobj, new_kmeta.
-    pose proof Hvalid_updated_kobj as
-      (Hupdated_valid_typemeta & _ & Hupdated_valid_meta & Hupdated_valid_spec &
-        Hupdated_valid_status).
-    split_and!.
-    - rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-      exact Hupdated_valid_typemeta.
-    - rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
-    - rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-      destruct (KObjectV.objectmeta updated_kobj); simpl in *; done.
-    - rewrite KObjectV.spec_update_objectmeta. exact Hupdated_valid_spec.
-    - rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status. }
+    eapply KObjectV.valid_update_resource_version;
+            [exact Hvalid_updated_kobj|exact Hvalid_rv]. }
   assert (kview.valid_k_uid_obj key (ObjectMetaV.UID' (KObjectV.objectmeta old_kobj)) new_kobj)
     as Hvalid_kuid_new.
   { unfold kview.valid_k_uid_obj. split.
@@ -472,7 +468,7 @@ Proof.
   { iPureIntro. exact Hsame_kind_new. }
   iModIntro.
   iCombineNamed "Hinv_*" as "H".
-  rewrite ?return_val_unseal /return_val_def. try wp_auto.
+  rewrite ?return_val_unseal /return_val_def. try wp_auto_keep.
   wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
   { iNamed "H". iFrame. iFrame "#". done. }
   iExact "HΦ".
@@ -482,7 +478,8 @@ Qed.
 Lemma wp_State__update_release_terminating γ l kind namespace i kobj :
   {{{ "#Hpkg" ∷ is_pkg_init apimodel ∗
       "#Hkinv" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ KObjectV.valid_create kind namespace kobj ⌝ ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_update_input kind namespace kobj ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -509,7 +506,7 @@ Proof.
   { rewrite /ObjectMetaV.valid_update. split.
     - left. rewrite /ObjectMetaV.valid_simple_update. done.
     - destruct kobj as [pod|rs|pvc|sts|d]; simpl in Hvalid, Hname_nonempty |- *;
-        rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
           ?/DeploymentV.valid_create in Hvalid;
         destruct Hvalid as (_ & _ & _ & _ & Hvalid_meta & _);
@@ -518,11 +515,11 @@ Proof.
   assert (ObjectSpecV.valid_update
       (KObjectV.spec kobj) (KObjectV.spec kobj)) as Hvalid_spec_update.
   { destruct kobj as [pod|rs|pvc|sts|d]; simpl in Hvalid |- *;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       destruct Hvalid as (_ & _ & _ & _ & _ & Hvalid_spec).
-    - apply PodSpecV.valid_update_refl. exact Hvalid_spec.
+    - apply PodSpecV.valid_update_refl. destruct Hvalid_body as (_ & _ & _ & Hbody & _). exact (proj1 Hbody).
     - apply ReplicaSetSpecV.valid_update_refl. exact Hvalid_spec.
     - apply PersistentVolumeClaimSpecV.valid_update_refl. exact Hvalid_spec.
     - apply StatefulSetSpecV.valid_update_refl. exact Hvalid_spec.
@@ -533,7 +530,10 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update;
-      split_and!; assumption. }
+      split_and!; try assumption.
+    destruct Hvalid_body as (_ & _ & _ & [Hspec Hannotations] & _).
+    pose proof Hspec as (_ & _ & Hfixed & _).
+    rewrite Hfixed. exact Hannotations. }
   iApply wp_State__update_release_terminating_au.
   iFrame "#". iFrame "%". iFrame "Hdeepown_i".
   iApply fupd_mask_intro.

@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export update_release update_release_terminating.
 From New.proof.kubernetes_model Require Import common_update get get_observed.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
@@ -29,7 +29,7 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
       "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}),
@@ -39,7 +39,7 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
 Proof.
   iIntros (Φ) "(#Hinit & #Hkinv & H)". iNamed "H".
   destruct (Classical_Prop.classic (
-      KObjectV.valid_create kind namespace kobj ∧
+      KObjectV.valid_update_input kind namespace kobj ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
       valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -56,23 +56,23 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /=;
+        /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
   destruct Hvalid_update_input as
     (Hvalid & Hname_nonempty & Hvalid_typemeta & Huid_nonempty & Hrv_valid &
       Hns_matches).
   assert (kind = KObjectV.kind kobj) as Hkind_matches.
-  { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+  { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   set I := (∃ i_orig,
     "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
     "Hdeepown_i_orig" ∷ KObjectV.deepown_i i_orig kobj 1 ∗
@@ -89,7 +89,7 @@ Proof.
         ⌜ KObjectV.spec kobj = old_spec ⌝
     }> @ ⊤, ∅ <{ ∀∀ i' kobj',
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "%Hspec_unchanged" ∷
         ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
@@ -104,21 +104,22 @@ Proof.
   wp_apply (wp_deepCopy i_orig kobj (DfracOwn 1) with "[Hdeepown_i_orig]").
   { iFrame "#". iExact "Hdeepown_i_orig". }
   iIntros (i_copy)
-    "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
+    "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto_keep.
   iDestruct "Hdeepown_i_copy" as
     (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata &
       Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with
     "[$Hdeepown_metadata]").
   { iPureIntro. split; [done|]. right. done. }
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
-  rewrite bool_decide_false //. wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
+  rewrite bool_decide_false //. wp_auto_keep.
   set key := {|
     KKey.Kind' := kind;
     KKey.Name' :=
@@ -148,12 +149,13 @@ Proof.
     "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
     as "Hau".
   { iFrame. iFrame "%". }
-  iModIntro. iNext. wp_auto.
+  iModIntro. iNext. wp_auto_keep.
   clear old_meta old_spec children Hvalid_update Hchild Hspec_eq Hmeta_eq.
   iDestruct "Hdeepown_existing_i" as
     (existing_l)
     "[%Hvalid_interface_existing Hdeepown_existing_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof
     (KObjectV.deepown_l_split with "Hdeepown_existing_l")
     as "(%Hexisting_l_not_null & Htypemeta_existing &
@@ -161,10 +163,10 @@ Proof.
       Hdeepown_existing_status)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto.
+  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj <|
       ObjectMetaV.Namespace' := namespace |>) =
     KObjectV.objectmeta kobj) as Hnamespace_noop.
@@ -190,7 +192,7 @@ Proof.
     (ObjectMetaV.ResourceVersion'
       (KObjectV.objectmeta existing_kobj)))
     as Hexisting_rv_valid.
-  { destruct Hvalid_existing as (_ & Hrv_existing & _).
+  { pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv_existing & _).
     done. }
   assert (obj_parent_ref kobj_rv = None)
     as Hnew_parent_rv.
@@ -211,7 +213,7 @@ Proof.
   iFrame "Hown_meta_frag Hown_spec_frag Hown_children_frag".
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
-    assert (KObjectV.valid_create kind namespace kobj ∧
+    assert (KObjectV.valid_update_input kind namespace kobj ∧
         (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ∧
         valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ∧
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ∧
@@ -225,12 +227,12 @@ Proof.
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
           ?/DeploymentV.valid_update
-          ?/PodV.valid_create ?/ReplicaSetV.valid_create
+          ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
           ?/DeploymentV.valid_create
-          /KObjectV.valid_create /=;
+          /KObjectV.valid_update_input /=;
         try contradiction; tauto. }
-    assert (KObjectV.valid_create kind namespace
+    assert (KObjectV.valid_update_input kind namespace
         (KObjectV.update_objectmeta kobj
           ((KObjectV.objectmeta kobj) <| ObjectMetaV.ResourceVersion' :=
             ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj) |>))) as Hcreate_rv.
@@ -238,7 +240,7 @@ Proof.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]]; simpl;
-        rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
           ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
           ?/DeploymentV.valid_create;
         intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
@@ -263,10 +265,10 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update
-        ?/PodV.valid_create ?/ReplicaSetV.valid_create
+        ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create
-        /KObjectV.valid_create /= in Hcreate_rv |- *;
+        /KObjectV.valid_update_input /= in Hcreate_rv Hvalid_update |- *;
       try contradiction; tauto. }
   iSplit.
   { iPureIntro. exact Hchild. }
@@ -277,10 +279,10 @@ Proof.
   - iIntros (i' kobj') "Hsuccess".
     iDestruct "Hsuccess" as
       "(%Hvalid' & %Hupdated & %Hspec_unchanged & Hdeepown_i & Hrelease_result)".
-    assert (KObjectV.updated kobj kobj') as Hupdated_original.
+    assert (KObjectV.updated old_spec kobj kobj') as Hupdated_original.
     { subst kobj_rv kmeta_rv.
       revert Hupdated.
-      destruct kobj, kobj'; simpl; try done;
+      destruct old_spec, kobj, kobj'; simpl; try done;
         intros (Htypemeta & Hmeta & Hspec); split_and!; try done.
       all: rewrite /ObjectMetaV.updated in Hmeta |- *;
         destruct ObjectMeta', ObjectMeta'0; simpl in *; intuition congruence. }
@@ -292,13 +294,13 @@ Proof.
       iSplit; first done.
       iFrame. }
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict interface.nil with "[]").
     replace (bool_decide (conflict_error interface.nil))
       with false by
       (symmetry; apply bool_decide_false;
        exact conflict_error_nil).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iApply "HΦ".
   - iIntros (err) "Hconflict".
@@ -312,11 +314,11 @@ Proof.
       as "Hau".
     { iFrame. iFrame "%". }
     iModIntro. iNext.
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_IsConflict err with "[]").
     replace (bool_decide (conflict_error err)) with true by
       (symmetry; apply bool_decide_true; done).
-    wp_auto.
+    wp_auto_keep.
     wp_for_post.
     iFrame "s kind namespace".
     iExists i_orig. iFrame.
@@ -338,7 +340,7 @@ Lemma wp_State__updateTx_release γ l kind namespace i kobj
     l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
   {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
       "%Hvalid'" ∷ ⌜ KObjectV.valid kobj' ⌝ ∗
-      "%Hupdated" ∷ ⌜ KObjectV.updated kobj kobj' ⌝ ∗
+      "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]})
@@ -391,7 +393,7 @@ Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
     l @! (go.PointerType apimodel.State) @! "PodUpdateTx" #namespace #pod_l
   {{{ pod_l' pod', RET (#pod_l', #interface.nil);
       "%Hvalid'" ∷ ⌜ PodV.valid pod' ⌝ ∗
-      "%Hupdated" ∷ ⌜ PodV.updated pod pod' ⌝ ∗
+      "%Hupdated" ∷ ⌜ PodV.updated old_spec pod pod' ⌝ ∗
       "%Hspec_unchanged" ∷ ⌜ pod'.(PodV.Spec') = old_spec ⌝ ∗
       "%Hparent_released" ∷ ⌜ meta_parent_ref pod'.(PodV.ObjectMeta') = None ⌝ ∗
       "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
@@ -403,7 +405,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call.
   rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i
       (interface.mk (go.PointerType v1.Pod) #pod_l)
       (KObjectV.Pod pod) 1)
@@ -443,7 +445,7 @@ Proof.
   destruct kobj' as [pod'|rs'|pvc'|sts'|d']; simpl in Hupdated; try done.
   iDestruct "Hdeepown_i" as
     (pod_l') "[%Hi' Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod)
     with (go.PointerType v1.Pod).
@@ -458,7 +460,7 @@ Proof.
       (go.PointerType v1.Pod = go.PointerType v1.Pod))
     with true by
       (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   assert (pod'.(PodV.Spec') = old_spec)
     as Hpod_spec_unchanged.
   { injection Hspec_unchanged. done. }
@@ -473,7 +475,7 @@ Proof.
   { rewrite Huid_eq. simpl in Huid_updated. exact Huid_updated. }
   iEval (rewrite Hkobj_key) in "Hrelease_result".
   iApply "HΦ". iSplit.
-  { iPureIntro. rewrite KObjectV.valid_eq_valid2 /= in Hvalid'. done. }
+  { iPureIntro. simpl in Hvalid'. done. }
   iFrame. iFrame "%".
 Qed.
 
@@ -485,7 +487,8 @@ Qed.
 Lemma wp_State__updateTx_release_terminating γ l kind namespace i kobj :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ KObjectV.valid_create kind namespace kobj ⌝ ∗
+      "%Hvalid" ∷ ⌜ KObjectV.valid_update_input kind namespace kobj ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -505,7 +508,7 @@ Lemma wp_State__updateTx_release_terminating γ l kind namespace i kobj :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__updateTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iApply (wp_fupd _).
   set I := (∃ i_orig,
     "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
@@ -515,20 +518,21 @@ Proof.
   wp_for "Hloop_inv".
   wp_apply (wp_deepCopy i_orig kobj (DfracOwn 1) with "[Hdeepown_i_orig]").
   { iFrame "#". iExact "Hdeepown_i_orig". }
-  iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto.
+  iIntros (i_copy) "[Hdeepown_i_copy Hdeepown_i_orig]". wp_auto_keep.
   iDestruct "Hdeepown_i_copy" as (kobj_l) "[%Hvalid_interface Hdeepown_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_l") as
     "(%Hkobj_l_not_null & Htypemeta & Hdeepown_metadata & Hdeepown_spec & Hdeepown_status)".
   wp_apply (wp_EnsureObjectNamespaceMatchesRequestNamespace with "[$Hdeepown_metadata]").
   { iPureIntro. split; [done|]. right. done. }
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   wp_apply (wp_GetName_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go) as Hname_not_empty.
   { exact Hname_nonempty. }
-  rewrite bool_decide_false //. wp_auto.
+  rewrite bool_decide_false //. wp_auto_keep.
   set key := {| KKey.Kind' := kind; KKey.Name' := (KObjectV.objectmeta kobj).(ObjectMetaV.Name');
     KKey.Namespace' := namespace |}.
   assert (key = KObjectV.key kobj) as Hkey.
@@ -539,25 +543,26 @@ Proof.
   iDestruct "Hget" as "[%Hnot_found | Hget]".
   { destruct Hnot_found as [-> Hnot_found].
     pose proof (not_found_error_not_nil _ Hnot_found) as Hget_err_ne.
-    wp_auto.
+    wp_auto_keep.
     destruct get_err as [get_err_ok|]; [|done].
-    wp_auto. wp_for_post.
+    wp_auto_keep. wp_for_post.
     iApply ("HΦ" $! interface.nil (interface.ok get_err_ok)). iRight. done. }
   iDestruct "Hget" as (existing_i existing_kobj)
     "[(%Hret & %Hget_err & %Hvalid_existing & %Hextra_valid_existing &
       %Hkey_existing & %Hexisting_terminating) Hdeepown_existing_i]".
-  subst existing_ret get_err. wp_auto.
+  subst existing_ret get_err. wp_auto_keep.
   iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
-  wp_apply wp_Accessor. 1: iPureIntro; done.
+  wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
+  wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
     "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
       Hdeepown_existing_status)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto.
+  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
-  iIntros "Hdeepown_metadata". wp_auto.
+  iIntros "Hdeepown_metadata". wp_auto_keep.
   assert ((KObjectV.objectmeta kobj <| ObjectMetaV.Namespace' := namespace |>) = KObjectV.objectmeta kobj)
     as Hnamespace_noop by (rewrite Hns_matches; destruct (KObjectV.objectmeta kobj); done).
   iEval (rewrite Hnamespace_noop) in "Hdeepown_metadata".
@@ -571,18 +576,20 @@ Proof.
     { iPureIntro. subst kobj_rv kmeta_rv. destruct kobj; exact Hvalid_interface. }
     iFrame. }
   assert (valid_resource_version (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta existing_kobj)))
-    as Hexisting_rv_valid by (destruct Hvalid_existing as (_ & Hrv & _); done).
-  assert (KObjectV.valid_create kind namespace kobj_rv) as Hvalid_create_rv.
+    as Hexisting_rv_valid by (pose proof (KObjectV.valid_components _ Hvalid_existing) as (_ & Hrv & _); done).
+  assert (KObjectV.valid_update_input kind namespace kobj_rv) as Hvalid_create_rv.
   { subst kobj_rv kmeta_rv.
     revert Hvalid.
     destruct kobj as [[tm meta spec status]|[tm meta spec status]|
       [tm meta spec status]|[tm meta spec status]|
       [tm meta spec status]]; simpl;
-      rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
+      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
         ?/DeploymentV.valid_create;
       intros (Hkind & Hns_nonempty & Hns_valid & Htypemeta_create & Hmeta_create & Hspec_create);
       split_and!; try done; destruct meta; done. }
+  assert (KObjectV.valid kobj_rv) as Hvalid_body_rv.
+  { subst kobj_rv kmeta_rv. eapply KObjectV.valid_update_resource_version; [exact Hvalid_body|exact Hexisting_rv_valid]. }
   assert ((KObjectV.objectmeta kobj_rv).(ObjectMetaV.Name') ≠ ""%go) as Hname_nonempty_rv.
   { subst kobj_rv kmeta_rv. rewrite objectmeta_update_objectmeta. exact Hname_nonempty. }
   assert (valid_typemeta (KObjectV.kind kobj_rv) (KObjectV.typemeta kobj_rv))
@@ -619,31 +626,32 @@ Proof.
   iDestruct "Hupdate" as "[Hsuccess | %Herror]".
   - iDestruct "Hsuccess" as (updated_i updated_kobj)
       "[(%Hupdated_ret & %Hupdate_nil & %Hsame_kind) Hdeepown_updated_i]".
-    subst updated_ret update_err. wp_auto.
+    subst updated_ret update_err. wp_auto_keep.
     wp_apply (wp_IsConflict interface.nil with "[]").
     replace (bool_decide (conflict_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact conflict_error_nil).
-    wp_auto. wp_for_post. iApply ("HΦ" $! (interface.ok updated_i) interface.nil).
+    wp_auto_keep. wp_for_post. iApply ("HΦ" $! (interface.ok updated_i) interface.nil).
     iLeft. iExists updated_i, updated_kobj. iFrame. iPureIntro. split_and!; try done.
     subst kobj_rv. destruct kobj, updated_kobj; simpl in *; done.
   - destruct (Classical_Prop.classic (conflict_error update_err)) as
       [Hconflict|Hnot_conflict].
     + pose proof (conflict_error_not_nil _ Hconflict) as Hupdate_err_ne.
-      wp_auto. wp_apply (wp_IsConflict update_err with "[]").
+      wp_auto_keep. wp_apply (wp_IsConflict update_err with "[]").
       replace (bool_decide (conflict_error update_err)) with true by
         (symmetry; apply bool_decide_true; done).
-      wp_auto. wp_for_post. iFrame "HΦ s kind namespace". iExists i_orig. iFrame.
+      wp_auto_keep. wp_for_post. iFrame "HΦ s kind namespace". iExists i_orig. iFrame.
     + pose proof Herror as Hupdate_err_ne.
-      wp_auto. wp_apply (wp_IsConflict update_err with "[]").
+      wp_auto_keep. wp_apply (wp_IsConflict update_err with "[]").
       replace (bool_decide (conflict_error update_err)) with false by
         (symmetry; apply bool_decide_false; done).
-      wp_auto. wp_for_post. iApply ("HΦ" $! updated_ret update_err). iRight. done.
+      wp_auto_keep. wp_for_post. iApply ("HΦ" $! updated_ret update_err). iRight. done.
 Qed.
 
 Lemma wp_State__PodUpdateTx_release_terminating γ l namespace pod_l pod :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
-      "%Hvalid" ∷ ⌜ PodV.valid_create PodV.kind namespace pod ⌝ ∗
+      "%Hvalid" ∷ ⌜ PodV.valid_update_input PodV.kind namespace pod ⌝ ∗
+      "%Hvalid_body" ∷ ⌜ PodV.valid pod ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta PodV.kind pod.(PodV.TypeMeta') ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ pod.(PodV.ObjectMeta').(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -660,7 +668,7 @@ Lemma wp_State__PodUpdateTx_release_terminating γ l namespace pod_l pod :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodUpdateTxⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iAssert (KObjectV.deepown_i (interface.mk (go.PointerType v1.Pod) #pod_l) (KObjectV.Pod pod) 1)
     with "[Hdeepown_l]" as "Hdeepown_i".
   { iExists pod_l. iSplit; [iPureIntro; apply KObjectV.valid_interface_Pod|]. iFrame. }
@@ -669,11 +677,11 @@ Proof.
     "[$Hinit $Hisk $Hdeepown_i $Hown_deletion_observed_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (ret err) "[Hsuccess | %Herr]".
-  2: { wp_auto. destruct err as [err_ok|]; [|done]. wp_auto.
+  2: { wp_auto_keep. destruct err as [err_ok|]; [|done]. wp_auto_keep.
     iApply ("HΦ" $! null (interface.ok err_ok)). iRight. done. }
   iDestruct "Hsuccess" as (updated_i updated_kobj)
     "[(%Hret & %Herr_nil & %Hsame_kind) Hdeepown_updated_i]".
-  subst ret err. wp_auto.
+  subst ret err. wp_auto_keep.
   iDestruct "Hdeepown_updated_i" as (updated_l) "[%Hvalid_updated Hdeepown_updated_l]".
   destruct updated_kobj as [updated_pod| | | |]; try done.
   unfold KObjectV.valid_interface in Hvalid_updated.
@@ -683,7 +691,7 @@ Proof.
     with (#updated_l)%V by (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto. iApply ("HΦ" $! updated_l interface.nil). iLeft.
+  wp_auto_keep. iApply ("HΦ" $! updated_l interface.nil). iLeft.
   iExists updated_pod. iSplit; first done. iFrame.
 Qed.
 

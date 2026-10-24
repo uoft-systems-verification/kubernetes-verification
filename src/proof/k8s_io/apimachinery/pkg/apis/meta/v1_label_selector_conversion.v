@@ -1,6 +1,6 @@
 From New.proof Require Import prelude empty_ffi.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_add.
-From New.proof.kubernetes_types Require Import labelselector.
+From New.object_specs Require Import labelselector.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -107,7 +107,7 @@ Proof.
   all: destruct labels_set as [label_map|]; simpl.
   all: try destruct (label_map !! api.(LabelSelectorRequirementV.Key'));
     simpl.
-  Timeout 10 all: set_solver.
+  all: intuition (simplify_eq/=; word).
 Qed.
 
 Lemma map_label_requirement_matches key value labels_set :

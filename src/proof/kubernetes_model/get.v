@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common_get.
 
 Section proof.
@@ -43,10 +43,10 @@ Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer".
-  simpl subst. wp_auto.
-  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  simpl subst. wp_auto_keep.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   wp_apply (wp_map_lookup2_KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
-  iIntros "Hinv_Hown_phys". wp_auto.
+  iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
   2: {
@@ -74,9 +74,9 @@ Proof.
   as "(Hdeepown_i & Hother_rep)".
   destruct i as [i_ok|].
   2: { simpl. iDestruct "Hdeepown_i" as %[]. }
-  rewrite Hlookup_phys. wp_auto.
+  rewrite Hlookup_phys. wp_auto_keep.
   wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
-  iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto.
+  iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto_keep.
   iApply fupd_wp.
   iMod "Hau" as (uid dq dq_status kmeta kspec_o kstatus_o) "H". iNamed "H".
   iPoseProof (kview.own_auth_valid key kobj with "Hinv_Hown_abs") as "%Hin_auth".
@@ -186,7 +186,7 @@ Lemma wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
-  wp_method_call. rewrite /apimodel.State__PodMutGetⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodMutGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq dq kmeta (Some (ObjectSpecV.PodSpec kspec)) (Some (ObjectStatusV.PodStatus kstatus))
@@ -201,7 +201,7 @@ Proof.
   rename Hspec_eq' into Hspec_eq.
   rename Hstatus_eq' into Hstatus_eq.
   iDestruct "Hdeepown_i" as (pod_l) "[%Hi Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).
   cbn [interface.ty interface.v].
@@ -210,7 +210,7 @@ Proof.
     (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.Pod = go.PointerType v1.Pod)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -240,12 +240,12 @@ Lemma wp_State__PodGet γ l key namespace name uid dq kmeta kspec kstatus :
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__PodGetⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__PodGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (pod_l pod) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 
@@ -278,7 +278,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta 
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
-  wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq dq_status kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec))
@@ -294,7 +294,7 @@ Proof.
   rename Hspec_eq' into Hspec_eq.
   rename Hstatus_eq' into Hstatus_eq.
   iDestruct "Hdeepown_i" as (rs_l) "[%Hi Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.ReplicaSet) with (go.PointerType v1.ReplicaSet).
   cbn [interface.ty interface.v].
@@ -303,7 +303,7 @@ Proof.
     (rewrite decide_True; done).
   replace (bool_decide (go.PointerType v1.ReplicaSet = go.PointerType v1.ReplicaSet)) with true by
     (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -334,12 +334,12 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta ksp
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
-  wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
   wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (rs_l rs) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 
@@ -365,7 +365,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call.
   rewrite /apimodel.State__PersistentVolumeClaimMutGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   iAssert (is_pkg_init apimodel ∗
       is_kubernetes γ l ∗
       own_meta_frag γ
@@ -393,7 +393,7 @@ Proof.
     ].
   simpl in Hvalid', Hkey_eq, Hmeta_eq.
   iDestruct "Hdeepown_i" as (pvc_l) "[%Hi Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_core_v1.PersistentVolumeClaim) with
     (go.PointerType v1.PersistentVolumeClaim).
@@ -409,7 +409,7 @@ Proof.
       (go.PointerType v1.PersistentVolumeClaim =
        go.PointerType v1.PersistentVolumeClaim))
     with true by (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -435,13 +435,13 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call.
   rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__PersistentVolumeClaimMutGet
     γ l key namespace name uid dq kmeta
     with "[$Hinit $Hisk $Hown_meta_frag]").
   { iPureIntro. done. }
   iIntros (pvc_l pvc) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 
@@ -471,7 +471,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call.
   rewrite /apimodel.State__StatefulSetMutGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "StatefulSet"%go;
        KKey.Namespace' := namespace;
@@ -486,7 +486,7 @@ Proof.
   assert (Hspec_eq' : kspec = sts.(StatefulSetV.Spec')) by congruence.
   clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (sts_l) "[%Hi Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.StatefulSet)
     with (go.PointerType v1.StatefulSet).
@@ -498,7 +498,7 @@ Proof.
   replace (bool_decide
       (go.PointerType v1.StatefulSet = go.PointerType v1.StatefulSet))
     with true by (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -528,13 +528,13 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call.
   rewrite /apimodel.State__StatefulSetGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__StatefulSetMutGet
     γ l key namespace name uid dq kmeta kspec
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. done. }
   iIntros (sts_l sts) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 
@@ -564,7 +564,7 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call.
   rewrite /apimodel.State__DeploymentMutGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__get_some γ l
     {| KKey.Kind' := "Deployment"%go;
        KKey.Namespace' := namespace;
@@ -579,7 +579,7 @@ Proof.
   assert (Hspec_eq' : kspec = d.(DeploymentV.Spec')) by congruence.
   clear Hspec_eq. rename Hspec_eq' into Hspec_eq.
   iDestruct "Hdeepown_i" as (d_l) "[%Hi Hdeepown_l]".
-  wp_auto.
+  wp_auto_keep.
   unfold KObjectV.valid_interface in Hi. destruct Hi as [Hi _]. rewrite Hi.
   change (go.PointerType api_apps_v1.Deployment)
     with (go.PointerType v1.Deployment).
@@ -591,7 +591,7 @@ Proof.
   replace (bool_decide
       (go.PointerType v1.Deployment = go.PointerType v1.Deployment))
     with true by (symmetry; apply bool_decide_eq_true_2; done).
-  wp_auto.
+  wp_auto_keep.
   iApply "HΦ". iFrame. iPureIntro. split_and!; done.
 Qed.
 
@@ -621,13 +621,13 @@ Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call.
   rewrite /apimodel.State__DeploymentGetⁱᵐᵖˡ.
-  wp_call. wp_auto.
+  wp_call. wp_auto_keep.
   wp_apply (wp_State__DeploymentMutGet
     γ l key namespace name uid dq kmeta kspec
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. done. }
   iIntros (d_l d) "Hpost".
-  wp_auto.
+  wp_auto_keep.
   iApply ("HΦ" with "Hpost").
 Qed.
 

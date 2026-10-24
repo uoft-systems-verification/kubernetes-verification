@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi wp_helpers.
 From New.proof.k8s_io.utils Require Import ptr.
 From New.proof Require Import reflect.
@@ -6,6 +7,8 @@ From New.proof.controllers.replicaset Require Import top_level.
 
 Module goreflect := code.reflect.reflect.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -108,26 +111,26 @@ Proof.
   iAssert (opt_ptr_rep rs_phy.(v1.ReplicaSet.Status').(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
     rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
   { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
-  wp_auto.
+  wp_auto_keep.
   (* The no-op check evaluates to some boolean. *)
   wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
     FuncResolve goreflect.DeepEqual [] #() "$a0" "$a1") else #false)%E.
   iApply (wp_wand _ _ _ (λ v, ∃ b : bool, ⌜ v = #b ⌝ ∗
       "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
-  { repeat (split_bool; try wp_auto; try (iExists false; iFrame; done)).
+  { repeat (split_bool; try wp_auto_keep; try (iExists false; iFrame; done)).
     all: wp_apply (wp_Equal_int32 with "[]");
       [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
     all: iIntros (r) "_".
-    all: destruct r; try wp_auto; try (iExists false; iFrame; done).
-    all: split_bool; try wp_auto; try (iExists false; iFrame; done).
+    all: destruct r; try wp_auto_keep; try (iExists false; iFrame; done).
+    all: split_bool; try wp_auto_keep; try (iExists false; iFrame; done).
     all: wp_apply wp_DeepEqual.
     all: iIntros (r) "_". all: iExists r; iFrame; done. }
   iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
   destruct b.
   { (* already up to date: nothing is written *)
-    wp_auto. iApply ("HΦ" $! rs_l rs). iModIntro. iFrame. iPureIntro. done. }
-  wp_auto.
+    wp_auto_keep. iApply ("HΦ" $! rs_l rs). iModIntro. iFrame. iPureIntro. done. }
+  wp_auto_keep.
   iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
   set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
@@ -157,9 +160,9 @@ Proof.
   iMod (ReplicaSetV.deepown_persist with "Hcur") as "Hcur".
   iDestruct "Hcur" as "(%Hcur_tm & #Hcur_meta_own & Hcur_spec_own & #Hcur_st)".
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  wp_pures.
-  wp_load. wp_pures.
-  wp_load. wp_pures.
+  wp_pures_keep.
+  wp_load. wp_pures_keep.
+  wp_load. wp_pures_keep.
   wp_load.
   (* The current object with the requested status, read-only from now on. *)
   iPersist "Hcur_l".
@@ -186,7 +189,7 @@ Proof.
   iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
   iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".
   destruct Hchanged as (Hmeta_changed & Hspec_changed).
-  wp_auto. iApply wp_for_post_return. wp_auto.
+  wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
   iApply ("HΦ" $! result_l rs'). rewrite Hspec_changed Hcur_spec. iModIntro. iFrame.
   iPureIntro. split.
   - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.

@@ -1,7 +1,13 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export get_replica_sets_with_same_controller.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export
   v1_label_selector_as_selector.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -54,16 +60,16 @@ Proof.
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
-  wp_auto.
+  wp_auto_keep.
   wp_apply wp_slice_literal. iSplitR; first done.
-  iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto.
+  iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto_keep.
   wp_apply wp_map_make1 as (seen_l) "Hseen".
   wp_apply (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
     "[$Hrs $Hisk $Hglobal_l]").
   iIntros (related_sets_sl related_set_ptrs related_sets related_dq)
     "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid &
       %Hrelated_sets_extra_valid & Hrs)".
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hrelated_sets_sl") as
     %(Hrelated_sets_len1 & Hrelated_sets_len2).
   iDestruct (big_sepL2_length with "Hrelated_sets") as
@@ -99,7 +105,7 @@ Proof.
       [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hrelated_sets_sl]");
       [word|iPureIntro; exact Hthis_rs_l_lookup|].
-    iIntros "Hrelated_sets_sl". wp_auto.
+    iIntros "Hrelated_sets_sl". wp_auto_keep.
     assert (∃ this_rs, related_sets !! sint.nat i = Some this_rs) as
       [this_rs Hthis_rs_lookup].
     { apply lookup_lt_is_Some_2.
@@ -135,7 +141,7 @@ Proof.
     iNamedPrefix "Hthis_rs_spec" "Hthis_rs_spec_deepown_".
     iEval (rewrite Hapi_selector_eq) in
       "Hthis_rs_spec_deepown_Hdeepown_selector_some".
-    wp_auto.
+    wp_auto_keep.
     wp_apply (wp_LabelSelectorAsSelector with
       "[$Hmeta_init
         $Hthis_rs_spec_deepown_Hdeepown_selector_some]").
@@ -174,7 +180,7 @@ Proof.
       "[Hthis_rs_meta_fields %Hthis_rs_meta_nonnull]".
     iNamedPrefix "Hthis_rs_meta_fields" "Hthis_rs_meta_field_".
     iNamedPrefix "Hthis_rs_meta" "Hthis_rs_meta_deepown_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hthis_rs_meta_deepown_Hdeepown_namespace.
     wp_apply (wp_State__PodList_weak γ l
       this_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') selector
@@ -211,7 +217,7 @@ Proof.
         $Hthis_rs_status]") as "Hthis_rs".
     iPoseProof ("Hrestore_related_sets" with "Hthis_rs") as
       "Hrelated_sets".
-    wp_auto.
+    wp_auto_keep.
     iDestruct (own_slice_len with "Hpods_sl") as
       %(Hpods_len1 & Hpods_len2).
     iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.
@@ -242,7 +248,7 @@ Proof.
         Hresult_cap Hresult_pods Hseen Hpods Hrelated_sets]" as "Hinner".
     { iExists (W64 0), null, result_sl', result_ptrs, result_pods, seen.
       iFrame. iPureIntro. word. }
-    wp_auto.
+    wp_auto_keep.
     wp_for "Hinner". wp_if_destruct.
     + list_elem pod_ptrs (sint.Z j) as this_pod_l.
       destruct (decide
@@ -250,7 +256,7 @@ Proof.
         [_|Hpod_bounds]; last word.
       wp_apply (wp_load_slice_index with "[$Hpods_sl]");
         [word|iPureIntro; exact Hthis_pod_l_lookup|].
-      iIntros "Hpods_sl". wp_auto.
+      iIntros "Hpods_sl". wp_auto_keep.
       assert (∃ this_pod, pods !! sint.nat j = Some this_pod) as
         [this_pod Hthis_pod_lookup].
       { apply lookup_lt_is_Some_2.
@@ -268,14 +274,14 @@ Proof.
         "[Hthis_pod_meta_fields %Hthis_pod_meta_nonnull]".
       iNamedPrefix "Hthis_pod_meta_fields" "Hthis_pod_meta_field_".
       iNamedPrefix "Hthis_pod_meta" "Hthis_pod_meta_deepown_".
-      wp_auto.
+      wp_auto_keep.
       rewrite Hthis_pod_meta_deepown_Hdeepown_uid.
       wp_apply (wp_map_lookup2 types.UID
         (go.PointerType api_apps_v1.ReplicaSet) with "[$Hseen]").
       iIntros "Hseen".
       destruct (seen' !!
         this_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) as
-        [seen_rs_l|] eqn:Hseen_lookup; wp_auto.
+        [seen_rs_l|] eqn:Hseen_lookup; rewrite Hseen_lookup /=; wp_auto_keep.
       * iCombineNamed "Hthis_pod_meta_field_*" as
           "Hthis_pod_meta_fields".
         iAssert (typed_pointsto_def (PodV.objectmeta_ptr this_pod_l)
@@ -302,7 +308,7 @@ Proof.
         iPoseProof (PodV.deepown_l_restore _ _ _ Hthis_pod_nonnull with
           "[$Hthis_pod_type $Hthis_pod_meta_l $Hthis_pod_spec
             $Hthis_pod_status]") as "Hthis_pod".
-        iApply wp_for_post_continue. wp_auto.
+        iApply wp_for_post_continue. wp_auto_keep.
         iFrame "Hpods_sl Hrelated_sets_sl HΦ Hrs".
         iFrame "Hi_ptr".
         iExists (word.add j (W64 1)), this_pod_l, result_sl'',
@@ -338,18 +344,18 @@ Proof.
             $Hthis_pod_status]") as "Hthis_pod".
         wp_apply (wp_map_insert types.UID with "[$Hseen]") as "Hseen".
         wp_apply wp_slice_literal. iSplitR; first done.
-        iIntros (one_sl) "[Hone_sl _]". wp_auto.
+        iIntros (one_sl) "[Hone_sl _]". wp_auto_keep.
         wp_apply (wp_slice_append with
           "[$Hresult_sl $Hresult_cap $Hone_sl]").
         iIntros (result_sl''')
-          "(Hresult_sl & Hresult_cap & Hone_sl)". wp_auto.
+          "(Hresult_sl & Hresult_cap & Hone_sl)". wp_auto_keep.
         iAssert (([∗ list] ptr;pod ∈
             result_ptrs' ++ [this_pod_l];result_pods' ++ [this_pod],
             PodV.deepown_l ptr pod 1))%I
           with "[Hresult_pods Hthis_pod]" as "Hresult_pods".
         { iApply (big_sepL2_app with "[$Hresult_pods]").
           simpl. iFrame. }
-        iApply wp_for_post_do. wp_auto.
+        iApply wp_for_post_do. wp_auto_keep.
         iFrame "Hpods_sl Hrelated_sets_sl HΦ Hrs".
         iFrame "Hi_ptr".
         iExists (word.add j (W64 1)), this_pod_l, result_sl''',
@@ -361,13 +367,13 @@ Proof.
           -> by word.
         rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro. word.
     + clear J.
-      iApply wp_for_post_do. wp_auto.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "Hrelated_sets_sl HΦ Hrs".
       iExists (word.add i (W64 1)), this_rs_l, result_sl'',
         result_ptrs', result_pods', seen'.
       iFrame.
       iPureIntro. word.
-  - clear I. wp_auto.
+  - clear I. wp_auto_keep.
     iApply ("HΦ" $! result_sl' result_ptrs result_pods (DfracOwn 1)).
     iFrame.
 

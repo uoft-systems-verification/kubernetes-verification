@@ -334,8 +334,13 @@ func podSpecMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
 		!storageMatches(set, pod) {
 		return false
 	}
-	podSpec := withoutStatefulSetFields(pod.Spec)
-	templateSpec := withoutStatefulSetFields(set.Spec.Template.Spec)
+	// Copy both sides before comparison: Quantity.DeepCopy can normalize an
+	// empty internal big.Int buffer without changing its words or API value.
+	podSpec := withoutStatefulSetFields(*pod.Spec.DeepCopy())
+	templateSpec := withoutStatefulSetFields(*set.Spec.Template.Spec.DeepCopy())
+	// TODO: Use ControllerRevision labels to detect outdated Pods, as upstream
+	// does. Full-spec equality can reject a freshly created Pod because of
+	// API-server defaults and admission mutations, or later scheduler changes.
 	return reflect.DeepEqual(podSpec, templateSpec)
 }
 

@@ -1,14 +1,17 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model.tx Require Export update.
 From New.proof Require Export util.
 From New.proof Require Export wp_helpers.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.controllers.deployment Require Export deployment_init.
 From New.proof.k8s_io.api.apps Require Export v1.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.controllers.deployment Require Export common replica_sets.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}
@@ -87,13 +90,14 @@ Lemma wp_scaleReplicaSet γ model_l rs_l (rs : ReplicaSetV.t)
         ( "%Hscaled" ∷ ⌜ rs_replicas rs ≠ new_scale ∧ scaled = true ⌝ ∗
           "Hrs'" ∷ ReplicaSetV.deepown_l rs'_l rs' 1 ∗
           "%Hspec_updated" ∷ ⌜ ObjectSpecV.updated
+              (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
               (ObjectSpecV.ReplicaSetSpec (rs_scaled_spec rs new_scale))
               (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply (wp_replicasOfRS rs_l (Some rs) dq with "[$Hrs]").
-  iIntros "Hrs". simpl. wp_auto.
+  iIntros "Hrs". simpl. wp_auto_keep.
   wp_if_destruct.
   - (* Already at the target count: scaleReplicaSet returns before the deep
        copy, so no fragment at 1 is needed and nothing is written. *)
@@ -109,12 +113,12 @@ Proof.
     iIntros (copy_l) "(Hcopy & Hrs_ptr & Hrs)".
     iAssert (ReplicaSetV.deepown_l rs_l rs dq) with "[Hrs_ptr Hrs]" as "Hrs".
     { iExists rs_phy. iFrame. }
-    wp_auto.
+    wp_auto_keep.
     iPoseProof (ReplicaSetV.deepown_l_split with "Hcopy") as
       "(%Hcopy_nn & Hc_tm & Hc_om & Hc_spec & Hc_st)".
     iDestruct "Hc_spec" as (spec_c) "[Hspec_field Hspec]".
     iNamedPrefix "Hspec" "Hsp_".
-    wp_auto.
+    wp_auto_keep.
     (* The store put the *local* newScale cell into the copy's Spec.Replicas
        field, so ownership of that local moves into the object. Nothing reads
        it again. *)
@@ -143,7 +147,7 @@ Proof.
     iAssert ⌜ meta_c.(v1.ObjectMeta.Namespace') =
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝%I as %Hns.
     { iNamed "Hmeta". iPureIntro. exact Hdeepown_namespace. }
-    wp_auto.
+    wp_auto_keep.
     rewrite Hns.
     iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr copy_l)
         (rs_scaled rs new_scale).(ReplicaSetV.ObjectMeta') 1)
@@ -180,7 +184,7 @@ Proof.
         apply rs_scaled_spec_valid_create; [exact (proj1 Hspec_valid)|done].
       - exact Hdeletion. }
     iIntros (rs'_l rs') "Hupd". iNamedPrefix "Hupd" "Hu_".
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! true rs'_l rs').
     iFrame "Hrs Hu_Hown_meta_frag Hu_Hown_spec_frag".
     iSplit; [iPureIntro; exact Hu_Hkey_eq'|].

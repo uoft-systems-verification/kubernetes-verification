@@ -1,7 +1,9 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof Require Import util.
 From New.proof.k8s_io.kubernetes.pkg Require Import controller.
 From New.proof.kubernetes_model Require Export inv common list new.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -39,15 +41,15 @@ Proof.
   pose proof Hi as Hpod_interface.
   unfold KObjectV.valid_interface in Hi.
   destruct Hi as [Hi Hobject]. subst i.
-  wp_auto.
+  wp_auto_keep.
   rewrite decide_True;
     [change (go.PointerType api_core_v1.Pod) with
       (go.PointerType v1.Pod); reflexivity|].
-  wp_auto.
+  wp_auto_keep.
   rewrite bool_decide_true;
     [change (go.PointerType api_core_v1.Pod) with
       (go.PointerType v1.Pod); reflexivity|].
-  wp_auto.
+  wp_auto_keep.
   iPoseProof (PodV.deepown_l_split with "Hpod") as
     "(%Hpod_l_nonnull & Hpod_type & Hpod_meta_l & Hpod_spec & Hpod_status)".
   iDestruct "Hpod_meta_l" as (pod_meta_c) "[Hpod_meta_l Hpod_meta]".
@@ -55,7 +57,7 @@ Proof.
     "Hpod_meta_l") as "[Hpod_meta_fields %Hpod_meta_nonnull]".
   iNamedPrefix "Hpod_meta_fields" "Hpod_meta_field_".
   iNamedPrefix "Hpod_meta" "Hpod_meta_deepown_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hpod_meta_deepown_Hdeepown_namespace.
   iCombineNamed "Hpod_meta_field_*" as "Hpod_meta_fields".
   iAssert (typed_pointsto_def (PodV.objectmeta_ptr pod_l) pod_meta_c dq)
@@ -91,7 +93,7 @@ Proof.
     wp_apply (controller.wp_PodControllerIndexKey_nil with
       "[$Hcontroller_init]").
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (sl_ptr) "[Hsl _]". wp_auto.
+    iIntros (sl_ptr) "[Hsl _]". wp_auto_keep.
     iApply ("HΦ" $! (slice.mk sl_ptr (W64 1) (W64 1))).
     unfold podController_indexed_value. rewrite Hparent_none.
     iFrame "Hsl". iExists pod_l. iFrame. done.
@@ -104,9 +106,9 @@ Proof.
     iNamedPrefix "Hcontroller_ref" "Hcontroller_ref_deepown_".
     wp_apply (controller.wp_PodControllerIndexKey with
       "[$Hcontroller_init $Hcontroller_ref_l]").
-    iIntros (index_key) "%Hindex_key". wp_auto.
+    iIntros (index_key) "%Hindex_key". wp_auto_keep.
     wp_apply wp_slice_literal. iSplitR; first done.
-    iIntros (sl_ptr) "[Hsl _]". wp_auto.
+    iIntros (sl_ptr) "[Hsl _]". wp_auto_keep.
     assert (meta_parent_ref pod.(PodV.ObjectMeta') = Some ({|
       KKey.Kind' := controller_ref.(OwnerReferenceV.Kind');
       KKey.Namespace' := pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace');
@@ -867,16 +869,16 @@ Lemma wp_State__ByIndex_podController_au γ l indexed_value :
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__ByIndexⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]".
   iDestruct "H" as (phys_state_l phys_used_uid_l phys_used_rv_l phys_state
     phys_used_uid phys_used_rv abs_state used_uid used_reference) "H".
   iNamedPrefix "H" "Hinv_".
-  subst used_uid. wp_auto.
+  subst used_uid. wp_auto_keep.
   wp_apply (wp_State__objListLocked_Pod_NamespaceAll with "[$Hinv_Hstate_m_addr $Hinv_Hown_phys $Hinv_Hown_abs
     $Hinv_Hphys_abs_rep]").
   iIntros (sl interfaces pods) "(Hsl & Hdeepown_i_interfaces & %Hlist_result & %Hpods_valid & %Hpods_nodup &
-    Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto.
+    Hinv_Hstate_m_addr & Hinv_Hown_phys & Hinv_Hown_abs & Hinv_Hphys_abs_rep)". wp_auto_keep.
   iPoseProof own_slice_nil as "Hslice_nil".
   iPoseProof own_slice_cap_nil as "Hown_slice_nil_cap".
   iDestruct (own_slice_len with "Hsl") as %(Hsl_len1 & Hsl_len2).
@@ -906,7 +908,7 @@ Proof.
     destruct (decide (0 ≤ sint.Z i < sint.Z (slice.len sl))) as [_|Hbounds]; last lia.
     wp_apply (wp_load_slice_index with "[$Hsl]"); [word| | ].
     { rewrite list_lookup_fmap Hthis_interface_lookup. done. }
-    iIntros "Hsl". wp_auto.
+    iIntros "Hsl". wp_auto_keep.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2.
       rewrite -Hlen_pods.
@@ -922,8 +924,8 @@ Proof.
       eapply list_elem_of_lookup_2. exact Hthis_pod_lookup. }
     wp_apply (wp_index_of_podController with
       "[$Hpkg $Hthis_i_pod //]").
-    iIntros (sl0) "(Hsl0 & Hthis_i_pod)". wp_auto.
-    wp_alloc j_ptr as "Hj_ptr". wp_auto.
+    iIntros (sl0) "(Hsl0 & Hthis_i_pod)". wp_auto_keep.
+    wp_alloc j_ptr as "Hj_ptr". wp_auto_keep.
     iDestruct (own_slice_len with "Hsl0") as %(Hsl0_len1 & _). simpl in Hsl0_len1.
     set I0 := (∃ (j: w64) (v: go_string) (sl': slice.t),
       "Hj_ptr" ∷ j_ptr ↦ j ∗
@@ -941,11 +943,11 @@ Proof.
     + destruct (decide (0 ≤ sint.Z j < sint.Z (slice.len sl0))) as [_|Hbounds]; last lia.
       wp_apply (wp_load_slice_index with "[$Hsl0]"); [word| | ].
       { iPureIntro. assert (sint.nat j = 0%nat) as -> by word. done. }
-      iIntros "Hsl0". wp_auto.
-      destruct (bool_decide (podController_indexed_value this_pod = indexed_value)) as [|] eqn:Heq; wp_auto.
-      * wp_apply wp_slice_literal. iSplitR; first done. iIntros (sl1) "[Hsl1 _]". wp_auto.
+      iIntros "Hsl0". wp_auto_keep.
+      destruct (bool_decide (podController_indexed_value this_pod = indexed_value)) as [|] eqn:Heq; wp_auto_keep.
+      * wp_apply wp_slice_literal. iSplitR; first done. iIntros (sl1) "[Hsl1 _]". wp_auto_keep.
         wp_apply (wp_slice_append with "[$Hsl' $Hcap_sl' $Hsl1]").
-        iIntros (sl'') "(Hsl'' & Hcap_sl'' & Hsl1)". wp_auto.
+        iIntros (sl'') "(Hsl'' & Hcap_sl'' & Hsl1)". wp_auto_keep.
         wp_for_post.
         wp_for_post.
         iAssert (I) with "[Hi_ptr Hval_ptr Hitems_ptr Hsl'' Hlist_pre Hthis_i_pod Hother_i_pod Hcap_sl'']" as "Hloop_inv".

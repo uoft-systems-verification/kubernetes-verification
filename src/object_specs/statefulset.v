@@ -1,27 +1,24 @@
+From New.generatedviews Require Export statefulset.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export labelselector pod persistentvolumeclaim.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Export labelselector pod persistentvolumeclaim.
+From New.object_specs Require Import top_level.
+
+
+(* These adapter lemmas compare canonical ownership with the included views. *)
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
+Local Transparent StatefulSetView.StatefulSetSpecV.deepown StatefulSetView.StatefulSetStatusV.deepown.
 
 Module StatefulSetSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  Replicas' : option w32;
-  Selector' : option LabelSelectorV.t;
-  Template' : PodTemplateSpecV.t;
-  VolumeClaimTemplates' : option (list PersistentVolumeClaimV.t);
-  ServiceName' : go_string;
-  (* PodManagementPolicy' : v1.PodManagementPolicyType.t; *)
-  (* UpdateStrategy' : v1.StatefulSetUpdateStrategy.t; *)
-  (* RevisionHistoryLimit' : loc; *)
-  (* MinReadySeconds' : w32; *)
-  (* PersistentVolumeClaimRetentionPolicy' : loc; *)
-  (* Ordinals' : loc; *)
-}.
+Include StatefulSetView.StatefulSetSpecV.
+
+Local Transparent deepown.
+(** Imported Kubernetes schema defaulting, feature-gated preparation, and
+    validation for the additional represented fields. These functions use the
+    checked-out model's feature configuration. As with [PodAPI], their semantics
+    remain a trusted library boundary; the representation and ownership are
+    fully concrete. *)
+Parameter validate_additional_create_fields : t → bool.
+Parameter additional_storage_normalized : t → bool.
 
 (* Kubernetes validation and semantic equality treat nil and allocated empty
    volume-claim-template slices identically. Preserve that representation
@@ -42,6 +39,18 @@ Definition preserved_template_volumes (spec : t) : list VolumeV.t :=
     (λ volume, volume.(VolumeV.Name') ∉ volume_claim_template_names spec)
     (PodSpecV.volumes_list spec.(Template').(PodTemplateSpecV.Spec')).
 
+Definition effective_template_spec (spec : t) : PodSpecV.t :=
+  let template_spec := (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec') in
+  let names := elements (list_to_set (C:=gset go_string) (volume_claim_template_names spec)) in
+  let claims := (λ name, VolumeV.mk name
+    (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' :=
+      Some (v1.PersistentVolumeClaimVolumeSource.mk name false) |>)) <$> names in
+  let volumes := if decide (names = []) then template_spec.(PodSpecV.Volumes')
+    else Some (claims ++ filter (λ volume, volume.(VolumeV.Name') ∉ names)
+      (PodSpecV.volumes_list template_spec)) in
+  template_spec <| PodSpecV.Volumes' := volumes |>
+    <| PodSpecV.Hostname' := ""%go |> <| PodSpecV.Subdomain' := ""%go |>.
+
 (* The projection of StatefulSet's effective Pod-template validation onto the
    represented metadata and PodSpec fields. Kubernetes clears the template's
    Hostname and Subdomain because the controller overwrites them, so neither
@@ -53,7 +62,12 @@ Definition valid_template (spec : t) : Prop :=
   valid_labels spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels') ∧
   valid_annotations spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations') ∧
   Forall VolumeV.valid (preserved_template_volumes spec) ∧
-  NoDup (VolumeV.Name' <$> preserved_template_volumes spec).
+  NoDup (VolumeV.Name' <$> preserved_template_volumes spec) ∧
+  PodAPI.validate_template spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')
+    (drop_legacy_init_container_annotations
+      spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Annotations')) (effective_template_spec spec) = true ∧
+  (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec').(PodSpecV.RestartPolicy') = "Always"%go ∧
+  (PodTemplateSpecV.normalized spec.(Template')).(PodTemplateSpecV.Spec').(PodSpecV.ActiveDeadlineSeconds') = None.
 
 Global Instance valid_template_dec spec : Decision (valid_template spec).
 Proof. unfold valid_template. apply _. Defined.
@@ -78,11 +92,13 @@ Definition valid_create (spec : t) : Prop :=
     (volume_claim_templates_list spec) ∧
   Forall (λ pvc, PersistentVolumeClaimSpecV.valid_create pvc.(PersistentVolumeClaimV.Spec'))
     (volume_claim_templates_list spec) ∧
-  (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')).
+  (spec.(ServiceName') = ""%go ∨ valid_dns1123_label spec.(ServiceName')) ∧
+  validate_additional_create_fields spec = true.
 
 (* A stored StatefulSet spec satisfies admission validation. Schema defaulting
    has additionally made [Replicas'] non-nil, zeroed the TypeMeta of embedded
-   PVC templates, and normalized those embedded PVC specs.
+   PVC templates, and normalized those embedded PVC specs. Its Pod template is
+   already prepared in the model's fixed feature configuration.
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L117-L178 *)
 Definition valid (spec : t) : Prop :=
   valid_create spec ∧
@@ -90,7 +106,9 @@ Definition valid (spec : t) : Prop :=
   Forall (λ pvc,
     pvc.(PersistentVolumeClaimV.TypeMeta') = zero_val v1.TypeMeta.t ∧
     PersistentVolumeClaimSpecV.valid_embedded pvc.(PersistentVolumeClaimV.Spec'))
-    (volume_claim_templates_list spec).
+    (volume_claim_templates_list spec) ∧
+  PodTemplateSpecV.normalized spec.(Template') = spec.(Template') ∧
+  additional_storage_normalized spec = true.
 
 (* Of the represented fields, Kubernetes permits updates to Replicas and the
    Pod template. Selector, volume-claim templates, and service name remain
@@ -99,7 +117,8 @@ Definition valid_update (old input : t) : Prop :=
   valid_create input ∧
   input.(Selector') = old.(Selector') ∧
   volume_claim_templates_list input = volume_claim_templates_list old ∧
-  input.(ServiceName') = old.(ServiceName').
+  input.(ServiceName') = old.(ServiceName') ∧
+  input.(PodManagementPolicy') = old.(PodManagementPolicy').
 
 Global Instance valid_update_dec old input :
   Decision (valid_update old input).
@@ -124,14 +143,12 @@ Proof. unfold valid_update. done. Qed.
 
 (* StatefulSet creation defaults an omitted replica count, removes obsolete
    init-container annotations from its Pod template, and normalizes each
-   embedded PVC template. The PVC spec relation is necessarily abstract until
-   those fields are translated. *)
+   embedded PVC template. The PVC spec relation uses the existing imported defaulting contract. *)
 Definition created (input stored : t) : Prop :=
   stored.(Replicas') = Some (default (W32 1) input.(Replicas')) ∧
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') =
-    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
-      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |> ∧
+    PodTemplateSpecV.normalized input.(Template') ∧
   stored.(ServiceName') = input.(ServiceName') ∧
   (stored.(VolumeClaimTemplates') = None ↔ input.(VolumeClaimTemplates') = None) ∧
   Forall2
@@ -142,7 +159,9 @@ Definition created (input stored : t) : Prop :=
         input_claim.(PersistentVolumeClaimV.Spec') stored_claim.(PersistentVolumeClaimV.Spec') ∧
       stored_claim.(PersistentVolumeClaimV.Status') = input_claim.(PersistentVolumeClaimV.Status'))
     (volume_claim_templates_list input)
-    (volume_claim_templates_list stored).
+    (volume_claim_templates_list stored) ∧
+  validate_additional_create_fields stored = true ∧
+  additional_storage_normalized stored = true.
 
 (* Update decoding applies the represented replica default and embedded-PVC
    normalization to a create-valid submitted spec, as it does on create. *)
@@ -153,76 +172,31 @@ Lemma valid_replicas v :
   valid v → ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
 Proof. intros (_ & Hreplicas & _). exact Hreplicas. Qed.
 
-Definition deepown (c: v1.StatefulSetSpec.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_replicas_none" ∷ ⌜c.(v1.StatefulSetSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
-  "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-  | Some i => ∃ replicas, c.(v1.StatefulSetSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
-  | None => True%I
-  end) ∗
-  "%Hdeepown_selector_none" ∷
-    ⌜c.(v1.StatefulSetSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
-  "Hdeepown_selector_some" ∷
-    (match v.(Selector') with
-    | Some selector =>
-        ∃ selector_c,
-          c.(v1.StatefulSetSpec.Selector') ↦{dq} selector_c ∗
-          LabelSelectorV.deepown selector_c selector dq
-    | None => True%I
-    end) ∗
-  "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.StatefulSetSpec.Template') v.(Template') dq ∗
-  "%Hdeepown_volumeclaimtemplates_none" ∷
-    ⌜c.(v1.StatefulSetSpec.VolumeClaimTemplates') = slice.nil ↔
-      v.(VolumeClaimTemplates') = None⌝ ∗
-  "Hdeepown_volumeclaimtemplates" ∷
-    (∃ claim_templates,
-      deepown_list c.(v1.StatefulSetSpec.VolumeClaimTemplates') claim_templates
-        (volume_claim_templates_list v)
-        (λ claim_template pure_claim_template,
-          PersistentVolumeClaimV.deepown claim_template pure_claim_template dq)
-        (DfracOwn 1)) ∗
-  "%Hdeepown_servicename" ∷ ⌜c.(v1.StatefulSetSpec.ServiceName') = v.(ServiceName')⌝.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End StatefulSetSpecV.
+Local Transparent StatefulSetSpecV.deepown.
 
 Module StatefulSetStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
+Include StatefulSetView.StatefulSetStatusV.
+
+Local Transparent deepown.
 Axiom valid: t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom deepown : v1.StatefulSetStatus.t → t → dfrac → iProp Σ.
-Axiom created : t → t → Prop.
+Definition created (_input stored : t) : Prop := stored = zero.
 Axiom updated : t → t → Prop.
 
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End StatefulSetStatusV.
+Local Transparent StatefulSetStatusV.deepown.
 
 Module StatefulSetV.
+Include StatefulSetView.StatefulSetV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : StatefulSetSpecV.t;
-  Status' : StatefulSetStatusV.t;
-}.
 
 Definition kind : go_string :=
   "StatefulSet"%go.
@@ -313,15 +287,6 @@ Definition updated (input stored : t) : Prop :=
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
   StatefulSetSpecV.updated input.(Spec') stored.(Spec').
 
-Definition deepown (c: v1.StatefulSet.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.StatefulSet.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.StatefulSet.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ StatefulSetSpecV.deepown c.(v1.StatefulSet.Spec') v.(Spec') dq ∗
-  "Hdeepown_status" ∷ StatefulSetStatusV.deepown c.(v1.StatefulSet.Status') v.(Status') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 #[global]
 Instance top_level_instance : top_level Σ t :=
   Build_top_level Σ t ObjectMetaV.t StatefulSetSpecV.t StatefulSetStatusV.t
@@ -331,7 +296,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

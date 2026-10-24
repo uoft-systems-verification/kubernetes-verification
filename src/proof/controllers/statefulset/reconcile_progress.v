@@ -1,6 +1,10 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export distance.
 From New.proof.controllers.statefulset Require Import pod create_pod create_pvc
   update_pod condemned outdated delete_pod common.
+
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -2297,7 +2301,7 @@ Lemma desired_pvc_name_valid set ordinal name :
     (desired_pvc_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') name ordinal).
 Proof.
-  intros (_ & _ & Hpvc_valid) Hordinal Hname.
+  intros (_ & _ & Hpvc_valid & _) Hordinal Hname.
   unfold pvc_claim_template_names in Hname.
   apply list_elem_of_fmap_1 in Hname as (claim & -> & Hclaim).
   rewrite Forall_forall in Hpvc_valid.
@@ -2356,19 +2360,29 @@ Lemma new_statefulset_pod_requirements set ordinal controller_ref
   obj_parent_ref_is (KObjectV.Pod pod) StatefulSetV.kind
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ∧
-  pod_match set pod.
+  pod_creation_request_matches set pod.
 Proof.
   intros Hset_valid Hinput Hordinal Hcontroller Hcontroller_valid
     [Hclaim_names_nodup Hclaim_names].
-  destruct Hset_valid as
+  pose proof Hset_valid as
     (_ & _ & Hset_meta & Hset_spec & _).
   destruct Hset_spec as [Hset_spec_create _].
   destruct Hset_spec_create as
-    (_ & _ & Htemplate & Hclaim_name_valid & _ & Hservice_valid).
+    (_ & _ & Htemplate & Hclaim_name_valid & _ & Hservice_valid & _).
   destruct Htemplate as
     (Htemplate_labels & Htemplate_annotations & Hpreserved_valid & _).
   destruct Hinput as
-    (Hpod_names_valid & Htemplate_finalizers & Hpvc_valid).
+    (Hpod_names_valid & Htemplate_finalizers & Hpvc_valid & Hpod_create_fields).
+  pose proof (Hpod_create_fields ordinal claim_template_names Hordinal
+    Hclaim_names_nodup Hclaim_names) as (Hspec_fields & Hann_fields & Hprepared_fields).
+  change (PodAPI.validate_spec (PodAPI.schema_defaults
+    (new_statefulset_pod set ordinal controller_ref claim_template_names).(PodV.Spec')) = true) in Hspec_fields.
+  change (PodAPI.validate_annotations
+    (new_statefulset_pod set ordinal controller_ref claim_template_names).(PodV.ObjectMeta').(ObjectMetaV.Annotations')
+    (PodV.prepared_spec (new_statefulset_pod set ordinal controller_ref claim_template_names)) = true) in Hann_fields.
+  change (PodAPI.validate_spec
+    (PodV.prepared_spec (new_statefulset_pod set ordinal controller_ref claim_template_names)) = true)
+    in Hprepared_fields.
   pose proof (Hpod_names_valid ordinal Hordinal) as Hpod_name_valid.
   assert ((ordinal ≤ go_int32_max_nat)%nat) as Hordinal_bound.
   { pose proof (statefulset_replicas_le_go_int32_max set). lia. }
@@ -2520,6 +2534,9 @@ Proof.
       * destruct Hservice_valid as [->|Hservice].
         -- left. done.
         -- right. exact Hservice.
+      * exact Hspec_fields.
+    + exact Hann_fields.
+    + exact Hprepared_fields.
   - destruct Hcontroller as
       (Hcontroller_kind & Hcontroller_name & Hcontroller_uid &
        Hblock & Hcontroller_flag).
@@ -2529,7 +2546,7 @@ Proof.
       controller.generated_pod_meta. simpl.
     rewrite Hcontroller_flag. simpl.
     rewrite Hcontroller_kind Hcontroller_name Hcontroller_uid. done.
-  - split.
+  - unfold pod_creation_request_matches. split.
     + unfold pod_identity_matches, new_statefulset_pod, init_storage,
         init_identity, update_identity, PodV.update_objectmeta,
         controller.generated_pod, controller.generated_pod_meta.
@@ -2545,12 +2562,16 @@ Proof.
            intros Hlabels. inversion Hlabels.
         -- rewrite lookup_insert_eq. done.
       * rewrite lookup_insert_eq. done.
-    + unfold pod_immutable_matches, new_statefulset_pod, init_storage,
-        init_identity. simpl. split_and!; try done.
+    + unfold new_statefulset_pod, init_storage, init_identity,
+        without_statefulset_fields, PodAPI.without_managed.
+      simpl. split_and!; try done.
+      exists ordinal. unfold update_identity, controller.generated_pod,
+        controller.generated_pod_meta, PodV.update_objectmeta,
+        desired_pod_labels, desired_pod_annotations. simpl. done.
 Qed.
 
 Lemma created_statefulset_pod_properties set ordinal pod pod' :
-  pod_match set pod →
+  pod_creation_request_matches set pod →
   pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
     desired_pod_name
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal →
@@ -2558,14 +2579,31 @@ Lemma created_statefulset_pod_properties set ordinal pod pod' :
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
     (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta'))
     pod'.(PodV.ObjectMeta') →
-  ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
-    (ObjectSpecV.PodSpec pod'.(PodV.Spec')) →
+  pod'.(PodV.Spec') = PodV.prepared_spec pod →
   PodV.key pod' = desired_pod_key set ordinal ∧
   is_pod_alive pod' ∧
   pod_has_int32_member_key set pod' ∧
   pod_match set pod'.
 Proof.
-  intros [Hidentity Himmutable] Hpod_name Hmeta_created Hspec_created.
+  intros (Hidentity & Hhostname & Hsubdomain & Hstorage & Hraw_spec &
+    request_ordinal & Hrequest_name & Hrequest_labels & Hrequest_annotations)
+    Hpod_name Hmeta_created Hprepared_spec.
+  assert (request_ordinal = ordinal) as ->.
+  { pose proof (parse_member_name_complete
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') _ request_ordinal Hrequest_name) as Hrequest_parse.
+    pose proof (parse_member_name_complete
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') _ ordinal Hpod_name) as Hpod_parse.
+    congruence. }
+  assert (Hparse : parse_pod_ordinal pod.(PodV.ObjectMeta').(ObjectMetaV.Name') = Some ordinal).
+  { rewrite Hpod_name /parse_pod_ordinal.
+    rewrite (pod_ordinal_suffix_last_dash
+      (desired_pod_name set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
+      set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') (decimal_string ordinal)).
+    - rewrite /desired_pod_name. change "-"%go with [byte_dash]. by rewrite List.app_assoc.
+    - intros Hin. pose proof (decimal_string_dash_free ordinal) as Hfree.
+      unfold dash_free in Hfree. rewrite Forall_forall in Hfree.
+      apply (Hfree byte_dash); [by rewrite -list_elem_of_In|done].
+    - simpl. apply parse_decimal_string_decimal_string. }
   unfold ObjectMetaV.created in Hmeta_created.
   destruct Hmeta_created as
     (Hname & Hnamespace & Hgenerate_name & Hdeletion & Hannotations &
@@ -2577,8 +2615,6 @@ Proof.
   rewrite decide_False in Hname.
   1: exact Hpod_name_nonempty.
   simpl in Hname, Hnamespace, Hdeletion, Hlabels.
-  unfold ObjectSpecV.created in Hspec_created. simpl in Hspec_created.
-  unfold PodSpecV.created in Hspec_created.
   assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
     as Hpod_namespace.
@@ -2613,9 +2649,16 @@ Proof.
       rewrite Hname Hlabels Hnamespace.
       unfold pod_identity_matches in Hidentity.
       rewrite Hpod_namespace in Hidentity. exact Hidentity.
-    + apply (proj1 (pod_immutable_matches_key_spec_eq set pod pod'
-        (eq_sym Hkey) (eq_sym Hspec_created))).
-      exact Himmutable.
+    + unfold pod_immutable_matches. split_and!.
+      * rewrite Hprepared_spec /PodV.prepared_spec /PodAPI.create_spec /= Hname. exact Hhostname.
+      * rewrite Hprepared_spec /PodV.prepared_spec /PodAPI.create_spec /=. exact Hsubdomain.
+      * pose proof (proj2 (pod_storage_matches_prepared set pod) Hstorage) as Hprepared_storage.
+        unfold pod_storage_matches in Hprepared_storage |- *.
+        rewrite Hname Hprepared_spec. exact Hprepared_storage.
+      * rewrite Hname Hprepared_spec /PodV.prepared_spec Hrequest_labels Hrequest_annotations.
+        unfold desired_prepared_spec. rewrite Hparse /=.
+        unfold without_statefulset_fields in Hraw_spec |- *.
+        rewrite PodAPI.create_spec_without_managed Hraw_spec. done.
 Qed.
 
 Lemma pod_distance_append_matching set pods pod :
@@ -2897,8 +2940,8 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
           ⌜ progress_or_complete set pods pvcs pods' pvcs' ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as
     (Hset_typemeta_valid & Hset_rv_valid & Hset_meta_valid &
       Hset_spec_valid & Hset_status_valid).
   pose proof (statefulset_replicas_le_go_int32_max set)
@@ -2948,7 +2991,7 @@ Proof.
       by rewrite elem_of_list_to_set in Hrequired. }
   wp_apply (wp_endOrdinalOf set_l set dq_set with "[$Hset //]").
   iIntros (end_ordinal) "[%Hend_ordinal Hset]".
-  wp_auto.
+  wp_auto_keep.
   set I := (∃ (ordinal : w64) (current_pods : list PodV.t)
       (pvc_map : gmap KKey.t PersistentVolumeClaimV.t)
       (reserved_pvcs : list KKey.t),
@@ -3115,15 +3158,15 @@ Proof.
       iPoseProof (PodV.deepown_l_restore _ _ _ Hpod_l_not_null
         with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
         as "Hlocal_pod".
-      wp_auto. wp_if_destruct; first contradiction.
+      wp_auto_keep. wp_if_destruct; first contradiction.
       wp_apply (wp_isTerminating pod_l local_pod dq_pods
         with "Hlocal_pod").
       iIntros (terminating) "[%Hterminating Hlocal_pod]".
       destruct terminating.
       { exfalso. apply (proj1 Hterminating eq_refl). exact Hlocal_alive. }
-      wp_auto.
+      wp_auto_keep.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (∀ name claim_template,
           persistent_volume_claim_templates_by_name
             (StatefulSetSpecV.volume_claim_templates_list
@@ -3187,7 +3230,7 @@ Proof.
         big_sepL_app big_sepL_cons) in "Hoccupied_pods".
       iDestruct "Hoccupied_pods" as
         "[Hoccupied_before [Hlocal_occupied Hoccupied_after]]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_updateStatefulPod γ model_l set_l pod_l set local_pod
         (sint.nat ordinal) dq_set dq_pods
         with "[$Hset $Hlocal_pod $Hlocal_meta $Hlocal_spec]").
@@ -3330,8 +3373,8 @@ Proof.
            exact Hupdate_Hpod_key|exact Hstored_deletion|
            exact Hupdate_Hpod_spec|exact Hstored_identity|exact Hpvc_wf|
            exact Hpvc_wf'|exact Hpvc_dom_mono]. }
-      wp_auto.
-      iApply wp_for_post_do. wp_auto.
+      wp_auto_keep.
+      iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ".
       iExists (word.add ordinal (W64 1)), current_pods', pvc_map',
         reserved_pvcs'.
@@ -3353,12 +3396,12 @@ Proof.
     + simpl in Hfind. subst pod_l.
       pose proof Hinput_requirement as Hinput_requirement'.
       destruct Hinput_requirement as
-        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid).
+        (Hgenerated_names & Htemplate_finalizers & Hclaim_valid & Hpod_create_fields).
       assert (StatefulSetV.valid set) as Hset_valid'.
       { split_and!; done. }
       pose proof (Hgenerated_names (sint.nat ordinal) Hordinal_lt)
         as Hgenerated_name_valid.
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_newStatefulSetPod set_l set ordinal dq_set
         with "[$Hset]").
       { iFrame "#". iPureIntro. split_and!.
@@ -3380,7 +3423,7 @@ Proof.
         obj_parent_ref_is (KObjectV.Pod new_pod) StatefulSetV.kind
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') ∧
-        pod_match set new_pod) as Hnew_pod_requirements.
+        pod_creation_request_matches set new_pod) as Hnew_pod_requirements.
       { apply new_statefulset_pod_requirements; done. }
       destruct Hnew_pod_requirements as
         (Hnew_pod_name & Hnew_pod_valid_create & Hnew_pod_parent &
@@ -3433,7 +3476,7 @@ Proof.
         ltac:(intros; by eapply desired_pvc_key_name_inj)
         Hclaim_valid_lookup with "Hown_pvcs Hreserved_pvcs")
         as "[Hpvc_states Hpvc_finish]".
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_createStatefulPod γ model_l set_l new_pod_l
         set new_pod (sint.nat ordinal)
         (list_to_set (PodV.key <$> current_pods)) dq_set
@@ -3457,7 +3500,7 @@ Proof.
       pose proof (created_statefulset_pod_properties set
         (sint.nat ordinal) new_pod stored_pod'
         Hnew_pod_match Hnew_pod_name Hcreate_Hpod_meta_created
-        Hcreate_Hpod_spec_created) as
+        Hcreate_Hpod_prepared_spec) as
         (Hstored_pod_key & Hstored_pod_alive & Hstored_pod_member &
           Hstored_pod_match).
       set current_pods' := current_pods ++ [stored_pod'].
@@ -3536,8 +3579,8 @@ Proof.
         iIntros (key Hkey) "Hkey". by iLeft. }
       iPoseProof (own_reserved_pvcs_finish γ set pvc_map' reserved_pvcs'
         Hpvc_wf' Hreserved_pvcs_nodup' Hpvc_coverage' with "Hreserved_pvcs") as "Hreserved_pvcs".
-      wp_auto.
-      iApply wp_for_post_return. wp_auto.
+      wp_auto_keep.
+      iApply wp_for_post_return. wp_auto_keep.
       iApply ("HΦ" $! false current_pods' (pvc_list_of_map pvc_map')).
       iFrame. iPureIntro. split; first exact Hdistance'.
       split; first exact Hcurrent_members'.
@@ -3673,8 +3716,8 @@ Lemma wp_reconcileCondemnedPod γ model_l set_l pods_sl
           ⌜ progress_or_complete set local_pods initial_pvcs pods' pvcs ⌝))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
       pod_has_int32_member_name
@@ -3700,7 +3743,7 @@ Proof.
   destruct Hcondemned as
     [[-> Hnone_local]|(idx & local_pod & Hptr_lookup & Hlocal_lookup &
       Hlocal_condemned)].
-  - wp_auto.
+  - wp_auto_keep.
     assert (Forall (λ pod, ¬ pod_is_condemned set pod) pods)
       as Hnone_stored.
     { eapply local_pods_match_stored_no_condemned; done. }
@@ -3766,14 +3809,14 @@ Proof.
     iPoseProof (PodV.deepown_l_restore _ _ _ Hcondemned_not_null
       with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
       as "Hlocal_pod".
-    wp_auto. wp_if_destruct; first contradiction.
+    wp_auto_keep. wp_if_destruct; first contradiction.
     wp_apply (wp_isTerminating condemned_l local_pod dq_pods
       with "Hlocal_pod").
     iIntros (terminating) "[%Hterminating Hlocal_pod]".
     destruct terminating.
     { exfalso. apply (proj1 Hterminating eq_refl).
       exact Hlocal_pod_alive. }
-    wp_auto.
+    wp_auto_keep.
 
     set before := take idx pods.
     set after := drop (S idx) pods.
@@ -3868,7 +3911,7 @@ Proof.
       rewrite -Hpods_decomp. exact Hstored_members. }
     assert (NoDup (PodV.key <$> (before ++ after))) as Hnodup'.
     { apply (pod_keys_nodup_remove before stored_pod after Hdecomp_nodup). }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! false (before ++ after)
       (Some (PodV.key stored_pod,
         stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
@@ -3985,8 +4028,8 @@ Lemma wp_reconcileOutdatedPod γ model_l set_l pods_sl
             match_distance set local_pods initial_pvcs) ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as
     (_ & _ & _ & Hset_spec_valid & _).
   assert (Forall (λ pod,
       pod_has_int32_member_name
@@ -4038,7 +4081,7 @@ Proof.
       rewrite Forall_forall in Hstored_alive.
       intros pod Hpod. apply Hstored_alive.
       by rewrite -list_elem_of_In. }
-    wp_auto.
+    wp_auto_keep.
     iApply ("HΦ" $! pods None).
     rewrite /own_started_deletion /terminating_bound_after_deletion /=.
     iFrame. iPureIntro. split; first done.
@@ -4082,14 +4125,14 @@ Proof.
     iPoseProof (PodV.deepown_l_restore _ _ _ Houtdated_not_null
       with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec $Hlocal_status]")
       as "Hlocal_pod".
-    wp_auto. wp_if_destruct; first contradiction.
+    wp_auto_keep. wp_if_destruct; first contradiction.
     wp_apply (wp_isTerminating outdated_l local_pod dq_pods
       with "Hlocal_pod").
     iIntros (terminating) "[%Hterminating Hlocal_pod]".
     destruct terminating.
     { exfalso. apply (proj1 Hterminating eq_refl).
       exact Hlocal_pod_alive. }
-    wp_auto.
+    wp_auto_keep.
 
     set before := take idx pods.
     set after := drop (S idx) pods.
@@ -4193,7 +4236,7 @@ Proof.
         - rewrite -Hpods_decomp. exact Hdesired_reconciled.
         - exact Hdecomp_nodup.
         - exact Hdesired. }
-      wp_auto.
+      wp_auto_keep.
       iApply ("HΦ" $! (before ++ after)
         (Some (PodV.key stored_pod,
           stored_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')))).
@@ -4307,7 +4350,7 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
       "%Hprogress" ∷ ⌜ progress_or_complete set pods pvcs pods' pvcs' ⌝
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply (wp_reconcileDesiredPods γ model_l set_l pods_sl set ptrs pods
     pvcs dq_set dq_pods terminating_bound with
     "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
@@ -4321,7 +4364,7 @@ Proof.
   iDestruct "Hdesired_result" as "[Hdesired_continue|Hdesired_stop]".
   - iDestruct "Hdesired_continue" as
       "(%Hcontinue_desired & %Hlocal_stored & %Hdesired_reconciled)".
-    subst continue_desired. wp_auto.
+    subst continue_desired. wp_auto_keep.
     wp_apply (wp_reconcileCondemnedPod γ model_l set_l pods_sl set ptrs
       pods pods1 pvcs1 pvcs dq_set dq_pods terminating_bound with
       "[$Hset $Hpods_sl $Hpods $Hown_pods $Hoccupied_pods $Hown_pvcs
@@ -4344,7 +4387,7 @@ Proof.
       "[Hcondemned_continue|Hcondemned_stop]".
     + iDestruct "Hcondemned_continue" as
         "(%Hcontinue_condemned & %Hdeletion2 & %Hpods2 & %Hno_condemned)".
-      subst continue_condemned. subst deletion2. subst pods2. wp_auto.
+      subst continue_condemned. subst deletion2. subst pods2. wp_auto_keep.
       iClear "Hstarted_deletion".
       wp_apply (wp_reconcileOutdatedPod γ model_l set_l pods_sl set ptrs
         pods pods1 pvcs1 pvcs dq_set dq_pods terminating_bound with
@@ -4367,7 +4410,7 @@ Proof.
         - rewrite big_sepS_singleton /own_started_deletion /=.
           iRight. by iExists uid.
         - rewrite big_sepS_empty /own_started_deletion. done. }
-      wp_auto. iApply ("HΦ" $! pods3 pvcs1 deletion3). iFrame.
+      wp_auto_keep. iApply ("HΦ" $! pods3 pvcs1 deletion3). iFrame.
       iPureIntro. split.
       { destruct deletion3 as [[key uid]|]; simpl in *; [by left|done]. }
       split; first exact Hdistance3.
@@ -4377,7 +4420,7 @@ Proof.
         [by left|by right].
     + iDestruct "Hcondemned_stop" as
         "(%Hcontinue_condemned & %Hdeletion2_some & %Hprogress2)".
-      subst continue_condemned. wp_auto.
+      subst continue_condemned. wp_auto_keep.
       iClear "Hstarted_deletion".
       iAssert (([∗ list] key ∈ missing_pod_keys set pods2,
           own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid)%I)
@@ -4392,7 +4435,7 @@ Proof.
       split; first exact Hmembers2. exact Hprogress2.
   - iDestruct "Hdesired_stop" as
       "(%Hcontinue_desired & %Hprogress1)".
-    subst continue_desired. wp_auto.
+    subst continue_desired. wp_auto_keep.
     iApply ("HΦ" $! pods1 pvcs1 None).
     rewrite /own_started_deletion /terminating_bound_after_deletion /=.
     iFrame. iPureIntro. split; first done.

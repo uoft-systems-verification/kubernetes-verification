@@ -1,6 +1,9 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -71,7 +74,7 @@ Lemma wp_firstCondemnedPod set_l pods_sl
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as
     %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
@@ -103,7 +106,7 @@ Proof.
       as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hpods_sl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hpods_sl". wp_auto.
+    iIntros "Hpods_sl". wp_auto_keep.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as
       [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2.
@@ -125,7 +128,7 @@ Proof.
     iDestruct "Hthis_objectmeta_l" as
       (this_meta_c) "[Hthis_objectmeta_field Hthis_objectmeta]".
     iNamedPrefix "Hthis_objectmeta" "Hthis_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hthis_meta_Hdeepown_name.
     wp_apply (wp_ordinalOf
       this_pod.(PodV.ObjectMeta').(ObjectMetaV.Name') this_ordinal
@@ -135,10 +138,10 @@ Proof.
         by apply list_elem_of_lookup_2 in Hthis_pod_lookup.
       - split; done. }
     iIntros (ordinal) "%Hordinal".
-    wp_auto.
+    wp_auto_keep.
     replace (bool_decide (sint.Z ordinal < sint.Z (W64 0))) with false by
       (symmetry; apply bool_decide_eq_false_2; rewrite Hordinal; word).
-    wp_auto.
+    wp_auto_keep.
     rewrite Hthis_meta_Hdeepown_name.
     wp_apply (wp_podInOrdinalRange set_l set
       this_pod.(PodV.ObjectMeta').(ObjectMetaV.Name') this_ordinal
@@ -166,7 +169,7 @@ Proof.
     iSpecialize ("Hpods_restore" with "Hthis").
     iRename "Hpods_restore" into "Hpods".
     destruct in_range eqn:Hin_range_value.
-    + wp_auto.
+    + wp_auto_keep.
       assert (¬ C this_pod) as Hthis_not_condemned.
       { intros (other_ordinal & _ & Hother_name & Hother_condemned).
         assert (other_ordinal = this_ordinal) as ->.
@@ -174,7 +177,7 @@ Proof.
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')).
           rewrite -Hother_name. exact Hthis_name. }
         pose proof (proj1 Hin_range eq_refl). lia. }
-      iApply wp_for_post_continue. wp_auto.
+      iApply wp_for_post_continue. wp_auto_keep.
       iFrame "Hpods_sl HΦ".
       iExists (word.add i (W64 1)), this_ptr, condemned_l.
       iFrame.
@@ -188,7 +191,7 @@ Proof.
         -- apply Forall_app. split; [exact Hnone|].
            constructor; [exact Hthis_not_condemned|constructor].
       * right. exact Hsome.
-    + wp_auto.
+    + wp_auto_keep.
       assert (C this_pod) as Hthis_condemned.
       { exists this_ordinal. split; [exact Hthis_ordinal_bound|].
         split; [exact Hthis_name|].
@@ -198,10 +201,10 @@ Proof.
           congruence. }
         lia. }
       destruct Hselected as [[Hnull Hnone]|Hsome].
-      * subst condemned_l. wp_auto.
+      * subst condemned_l. wp_auto_keep.
         replace (bool_decide (null = null)) with true by
           (symmetry; apply bool_decide_eq_true_2; done).
-        iApply wp_for_post_do. wp_auto.
+        iApply wp_for_post_do. wp_auto_keep.
         iFrame "Hpods_sl HΦ".
         iExists (word.add i (W64 1)), this_ptr, this_ptr.
         iFrame.
@@ -230,7 +233,7 @@ Proof.
           (selected_ordinal & Hselected_ordinal_bound & Hselected_name).
         replace (bool_decide (condemned_l = null)) with false by
           (symmetry; apply bool_decide_eq_false_2; exact Hselected_not_null).
-        wp_auto.
+        wp_auto_keep.
         rewrite Hselected_meta_Hdeepown_name.
         wp_apply (wp_ordinalOf
           selected_pod.(PodV.ObjectMeta').(ObjectMetaV.Name')
@@ -256,14 +259,14 @@ Proof.
           as "Hselected".
         iSpecialize ("Hpods_restore" with "Hselected").
         iRename "Hpods_restore" into "Hpods".
-        wp_auto. wp_if_destruct.
-        -- iApply wp_for_post_do. wp_auto.
+        wp_auto_keep. wp_if_destruct.
+        -- iApply wp_for_post_do. wp_auto_keep.
            iFrame "Hpods_sl HΦ".
            iExists (word.add i (W64 1)), this_ptr, this_ptr.
            iFrame.
            iPureIntro. split; [word|].
            right. exists (sint.nat i), this_pod. repeat split; done.
-        -- iApply wp_for_post_do. wp_auto.
+        -- iApply wp_for_post_do. wp_auto_keep.
            iFrame "Hpods_sl HΦ".
            iExists (word.add i (W64 1)), this_ptr, condemned_l.
            iFrame.

@@ -1,8 +1,11 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export reconcile_preservation.
 From New.proof.controllers.statefulset Require Export top_level.
 From New.proof.controllers.statefulset Require Import common.
 From New.proof.controllers.statefulset Require Import release.
 From New.proof.kubernetes_model Require Import get.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -197,7 +200,7 @@ Proof.
   iPoseProof (kview.own_meta_valid with "Hown_sts_meta_frag") as "%Hsts_meta_valid".
   destruct Hsts_meta_valid as (_ & _ & _ & _ & Hdeletion_timestamp_eq).
   iPoseProof (own_pod_frags_living with "Hown_pod_frags") as "%Hpods_living".
-  wp_auto.
+  wp_auto_keep.
   iAssert (is_pkg_init common) as "#Hcommon_init".
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
@@ -211,13 +214,13 @@ Proof.
   iRename "Hget_Hdeepown_l" into "Hset".
   iRename "Hget_Hown_meta_frag" into "Hown_sts_meta_frag".
   iRename "Hget_Hown_spec_frag" into "Hown_sts_spec_frag".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact not_found_error_nil).
-  wp_auto.
+  wp_auto_keep.
 
-  rewrite KObjectV.valid_eq_valid2 in Hget_Hvalid'.
+  simpl in Hget_Hvalid'.
   assert (StatefulSetV.valid set) as Hset_valid by exact Hget_Hvalid'.
   destruct Hset_valid as
     (Hset_typemeta_valid & Hset_resource_version_valid &
@@ -329,7 +332,7 @@ Proof.
       None) as Hset_deletion_timestamp_none.
   { rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
-  wp_auto. rewrite Hset_deletion_timestamp_null. wp_auto.
+  wp_auto_keep. rewrite Hset_deletion_timestamp_null. wp_auto_keep.
   iEval (rewrite Hset_deletion_timestamp_none) in
     "Hset_meta_Hdeepown_deletiontimestamp_some".
   iAssert (ObjectMetaV.deepown set_meta_c
@@ -337,9 +340,10 @@ Proof.
     with "[Hset_meta_Hdeepown_creationtimestamp
       Hset_meta_Hdeepown_deletiongraceperiodseconds_some
       Hset_meta_Hdeepown_labels_some Hset_meta_Hdeepown_annotations_some
-      Hset_meta_Hdeepown_ownerreferences_some
+      Hset_meta_Hdeepown_ownerreferences
       Hset_meta_Hdeepown_finalizers_some
-      Hset_meta_Hdeepown_managedfields_some]" as "Hset_meta_deepown".
+      Hset_meta_Hdeepown_managedfields
+      Hset_meta_Hdeepown_finalizers_cap]" as "Hset_meta_deepown".
   { rewrite /ObjectMetaV.deepown Hset_deletion_timestamp_none.
     iFrame "%". iFrame. done. }
   iAssert (ObjectMetaV.deepown_l (StatefulSetV.objectmeta_ptr set_l)
@@ -395,7 +399,7 @@ Proof.
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (released err) "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
   destruct err as [err_ok|].
-  { wp_auto.
+  { wp_auto_keep.
     set remaining_bad := filter BadLiving (drop released all_pods).
     set remaining_pods := good_living ++ remaining_bad.
     assert (Hremaining_children :
@@ -604,7 +608,7 @@ Proof.
       Hown_pvc_frags Hoccupied_pvc_frags Hremaining_children Hrelease_Hown_terminating_children_frag
       Hreserved_pod_frags Hreserved_pvc_frags".
     iPureIntro. split; done. }
-  specialize (Hrelease_Hdone eq_refl). subst released. wp_auto.
+  specialize (Hrelease_Hdone eq_refl). subst released. wp_auto_keep.
   assert (Htake_all_pods : take (length all_pods) all_pods = all_pods).
   { apply take_ge. lia. }
   iEval (rewrite Htake_all_pods Hbad_living_eq) in "Hrelease_Hown_children".
@@ -691,7 +695,7 @@ Proof.
   iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
   iCombine "Hown_pvc_frags Hoccupied_pvc_frags" as "Hown_pvcs".
   iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_reconcileReplicas_preservation γ l set_l good_sl set
     good_ptrs good_pods pending_actual pvcs 1 pod_dq terminating_bound
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_owned
@@ -699,7 +703,7 @@ Proof.
       $Hreserved_pod_frags $Hreserved_pvc_frags]").
   { iFrame "#". iPureIntro. split_and!; try done. }
   iIntros (pods1 pvcs' terminating_bound') "Hreconcile".
-  iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto.
+  iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto_keep.
 
   set pods' := unreserved_pods pending_actual pods1.
   assert (Hfinal_storage_perm :

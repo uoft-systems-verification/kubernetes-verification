@@ -1,6 +1,9 @@
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export update_status_locked.
 From New.proof Require Import wp_helpers.
+
+(* Collect transient import allocations before checking the large API proof. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -223,17 +226,8 @@ Proof.
       + rewrite Huid_eq. symmetry. exact Huid_new.
       + unfold new_kobj, update_status_stored.
         split.
-        * pose proof Hvalid_updated_kobj as
-            (Hupdated_valid_typemeta & _ & Hupdated_valid_meta & Hupdated_valid_spec &
-              Hupdated_valid_status).
-          split_and!.
-          -- rewrite KObjectV.kind_update_objectmeta KObjectV.typemeta_update_objectmeta.
-             exact Hupdated_valid_typemeta.
-          -- rewrite objectmeta_update_objectmeta. exact Hvalid_rv.
-          -- rewrite KObjectV.kind_update_objectmeta objectmeta_update_objectmeta.
-             destruct (KObjectV.objectmeta updated); simpl in *; done.
-          -- rewrite KObjectV.spec_update_objectmeta. exact Hupdated_valid_spec.
-          -- rewrite KObjectV.status_update_objectmeta. exact Hupdated_valid_status.
+        * eapply KObjectV.valid_update_resource_version;
+            [exact Hvalid_updated_kobj|exact Hvalid_rv].
         * apply KObjectV.extra_valid_update_objectmeta.
           rewrite /KObjectV.extra_valid Hspec_eq.
           exact Hextra_valid_old. }
@@ -344,8 +338,8 @@ Proof.
       as "%Huid_nonempty".
     exfalso. done. }
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
-  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   assert (update_status_key kind namespace kobj = KObjectV.key kobj) as Hkey.
   { rewrite /update_status_key Hkind_matches Hns_matches. destruct kobj; done. }
   wp_apply (wp_State__updateStatusLocked γ l kind namespace i kobj with
@@ -362,7 +356,7 @@ Proof.
       Hinv_Hown_used_rv & Hinv_Hphys_abs_rep)]]]".
   - (* Only the resource version check rejects a valid request. *)
     destruct Hfail as (-> & Herr_ne & Hreason).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct (kview.own_meta_exists with "Hinv_Hown_abs Hown_meta_frag")
@@ -394,7 +388,7 @@ Proof.
     iExact "HΦ".
   - (* The validated request stores the same as the stored object, which is kept. *)
     destruct Hkept as (-> & -> & Hvalidated & Hstorage_eq).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
@@ -431,7 +425,7 @@ Proof.
     exfalso. exact (Hterminating Hold_living).
   - (* The validated request is written at a fresh resource version. *)
     destruct Hwritten as (-> & -> & Hvalidated & _ & Hvalid_rv).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
@@ -496,8 +490,8 @@ Proof.
     exfalso. destruct Hvalid_meta as (_ & _ & _ & _ & _ & Hvalid_uid & _).
     apply (valid_uid_non_empty _ Hvalid_uid). rewrite -Huid_meta -Huid. exact Huid_empty. }
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
-  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   (* No object at the requested key carries the request's UID: UIDs are unique,
      and the object at [key] carries it. *)
   destruct (Classical_Prop.classic (∃ old, abs_state !! update_status_key kind namespace kobj = Some old ∧
@@ -528,7 +522,7 @@ Proof.
       destruct Hout as (_ & _ & (Hlookup & _ & _ & Huid_eq & _) & _);
       iPureIntro; apply Hno_uid; eauto. }
   destruct Hfail as (-> & Herr_ne & _).
-  wp_auto.
+  wp_auto_keep.
   iApply fupd_wp.
   iMod "Hau" as (uid dq kmeta) "H". iNamed "H".
   iMod ("Hclose" $! err with "[$Hown_meta_frag]") as "HΦ".
@@ -618,8 +612,8 @@ Proof.
       as "%Huid_nonempty".
     exfalso. done. }
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto.
-  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto.
+  wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
+  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
   assert (update_status_key kind namespace kobj = KObjectV.key kobj) as Hkey by exact Hkey_matches.
   wp_apply (wp_State__updateStatusLocked γ l kind namespace i kobj with
     "[$Hdeepown_i $Hinv_Hstate_m_addr $Hinv_Hstate_used_rv_addr $Hinv_Hown_phys $Hinv_Hown_used_rv
@@ -635,7 +629,7 @@ Proof.
       Hinv_Hown_used_rv & Hinv_Hphys_abs_rep)]]]".
   - (* A rejected request leaves the stored object and both fragments unchanged. *)
     destruct Hfail as (-> & Herr_ne & _).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct "Hclose" as "[_ Hclose_err]".
@@ -648,7 +642,7 @@ Proof.
     iExact "HΦ".
   - (* The validated request stores the same as the stored object, which is kept. *)
     destruct Hkept as (-> & -> & Hvalidated & Hstorage_eq).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
@@ -677,7 +671,7 @@ Proof.
     exfalso. exact (Hterminating Hold_living).
   - (* The validated request is written at a fresh resource version. *)
     destruct Hwritten as (-> & -> & Hvalidated & _ & Hvalid_rv).
-    wp_auto.
+    wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
     iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta

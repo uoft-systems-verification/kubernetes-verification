@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get.
 From New.proof.kubernetes_model.replicaset Require Export update_status.
@@ -79,7 +80,7 @@ Definition is_rs_client (c : interface.t) (namespace : go_string) : iProp Σ :=
 #[global] Instance is_rs_client_persistent c namespace : Persistent (is_rs_client c namespace).
 Proof. apply _. Qed.
 
-(* [kubeClient.AppsV1().ReplicaSets(namespace)], in the form [wp_auto] leaves it
+(* [kubeClient.AppsV1().ReplicaSets(namespace)], in the form [wp_auto_keep] leaves it
    once the [AppsV1()] method on the clientset has been resolved. *)
 Lemma wp_AppsV1_ReplicaSets (kube_client : loc) namespace :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset }}}
@@ -90,8 +91,8 @@ Lemma wp_AppsV1_ReplicaSets (kube_client : loc) namespace :
 Proof.
   iIntros (Φ) "#Hpkg HΦ".
   iApply wp_fupd.
-  wp_method_call. rewrite /kubernetes.Clientset__AppsV1ⁱᵐᵖˡ. wp_call. wp_auto.
-  wp_method_call. rewrite /trusted_client_apps_v1.AppsV1Client__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto.
+  wp_method_call. rewrite /kubernetes.Clientset__AppsV1ⁱᵐᵖˡ. wp_call. wp_auto_keep.
+  wp_method_call. rewrite /trusted_client_apps_v1.AppsV1Client__ReplicaSetsⁱᵐᵖˡ. wp_call. wp_auto_keep.
   iPersist "replicaSetClient".
   iModIntro. iApply "HΦ". iExists _, _. iFrame "#". done.
 Qed.
@@ -135,14 +136,14 @@ Lemma wp_ReplicaSetInterface__UpdateStatus γ l c namespace (ctx opts : val)
 Proof.
   iIntros (Φ) "(#Hpkg & H) HΦ". iNamed "H".
   iDestruct "Hclient" as (cl v) "(-> & %Hns & #Hcl)".
-  wp_bind (MethodResolve client_apps_v1.ReplicaSetInterface _ _). wp_pure. wp_pures.
+  wp_bind (MethodResolve client_apps_v1.ReplicaSetInterface _ _). wp_pure. wp_pures_keep.
   wp_method_call. rewrite /trusted_client_gentype.Client__UpdateStatusⁱᵐᵖˡ decide_True; try reflexivity.
   rewrite /trusted_client_gentype.clientCreate. wp_call.
-  rewrite /trusted_client_gentype.clientType. wp_auto.
+  rewrite /trusted_client_gentype.clientType. wp_auto_keep.
   change (go.PointerType trusted_code.k8s_io.client_go.gentype.api_apps_v1.ReplicaSet)
     with (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet).
   try (rewrite !decide_True; try reflexivity).
-  try wp_auto.
+  try wp_auto_keep.
   rewrite Hns.
   set input := rs <| ReplicaSetV.Status' := requested |>.
   pose proof Hvalid as (Hvalid_typemeta & Hvalid_rv & Hvalid_meta & Hvalid_spec & _).
@@ -161,7 +162,7 @@ Proof.
     with "[$Hisk $Hinput $Hmeta $Hstatus]").
   { iFrame "#". iPureIntro. split; done. }
   iIntros (result_l rs_c) "(Hinput & Hmeta & %Hvalid' & %Hupdated & %Hmeta_eq & _ & Hstatus)".
-  wp_auto. rewrite decide_True; try reflexivity. wp_auto.
+  wp_auto_keep. rewrite decide_True; try reflexivity. wp_auto_keep.
   (* [rs'] is [rs] with the stored metadata and status. *)
   iApply ("HΦ" $! result_l
     (rs <| ReplicaSetV.ObjectMeta' := rs_c.(ReplicaSetV.ObjectMeta') |>

@@ -1,27 +1,22 @@
+From New.generatedviews Require Export persistentvolumeclaim.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export objectmeta.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Export objectmeta.
+From New.object_specs Require Import top_level.
+
+
+(* These adapter lemmas compare canonical ownership with the included views. *)
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module PersistentVolumeClaimSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
-Axiom eq_dec : EqDecision t.
-Global Existing Instance eq_dec.
+Include PersistentVolumeClaimView.PersistentVolumeClaimSpecV.
 
-(* The admission predicate used for both create validation and the general
-   validation phase of update. PVC schema defaulting, including the default
-   VolumeMode, is not yet expressible because [t] is abstract. *)
+(* Imported admission validation acts on the complete concrete PVC spec. *)
 Axiom valid_create: t → Prop.
 Axiom valid_create_dec : ∀ spec, Decision (valid_create spec).
 Global Existing Instance valid_create_dec.
 
-(* The currently abstract fields prevent us from spelling out the two storage
-   normalization relations. A standalone PVC receives both schema defaults and
+(* The two imported storage-normalization predicates distinguish API writes
+   from embedded claim templates. A standalone PVC receives both schema defaults and
    the PVC strategy's data-source normalization; a StatefulSet
    volumeClaimTemplate receives schema defaults but not that REST strategy. *)
 Axiom standalone_storage_normalized : t → Prop.
@@ -35,16 +30,15 @@ Definition valid_embedded (spec : t) : Prop :=
 
 (** Top-level PVC update validation over the stored old spec and submitted
     input spec. It includes PVC's private-old preparation and input
-    normalization abstractly because the relevant fields are not represented
-    by this view. *)
+    normalization through the existing imported semantic contract. *)
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
 Axiom valid_update_refl : ∀ spec, valid_create spec → valid_update spec spec.
 
-(* The translated PVC spec is still abstract, so the strongest concrete
-   create relation currently expressible is that the output has received all
-   standalone storage normalization. *)
+(* The existing conservative create contract exposes standalone storage
+   normalization. Concrete fields and ownership are generated independently
+   of these imported semantic contracts. *)
 Definition created (_input stored : t) : Prop :=
   valid stored.
 
@@ -54,60 +48,33 @@ Definition embedded_created (_input stored : t) : Prop :=
   valid_embedded stored.
 
 (* A PVC update applies schema defaults and the PVC strategy's data-source
-   normalization just like creation. The abstract view cannot yet express how
-   that normalization depends on the existing PVC, so reuse the strongest
-   currently expressible standalone-storage relation. *)
+   normalization just like creation. The existing imported contract exposes standalone storage normalization
+   conservatively; it does not specify individual field transformations. *)
 Definition updated (input stored : t) : Prop :=
   valid stored.
 
-Axiom deepown : v1.PersistentVolumeClaimSpec.t → t → dfrac → iProp Σ.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End PersistentVolumeClaimSpecV.
 
 Module PersistentVolumeClaimStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Axiom t : Type.
-Axiom eq_dec : EqDecision t.
-Global Existing Instance eq_dec.
+Include PersistentVolumeClaimView.PersistentVolumeClaimStatusV.
+
 Axiom valid: t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom deepown : v1.PersistentVolumeClaimStatus.t → t → dfrac → iProp Σ.
-Axiom created : t → t → Prop.
+Definition created (_input stored : t) : Prop := stored = zero <| Phase' := "Pending"%go |>.
 Axiom updated : t → t → Prop.
 
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End PersistentVolumeClaimStatusV.
 
 Module PersistentVolumeClaimV.
+Include PersistentVolumeClaimView.PersistentVolumeClaimV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : PersistentVolumeClaimSpecV.t;
-  Status' : PersistentVolumeClaimStatusV.t;
-}.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Defined.
 
 Definition kind : go_string :=
   "PersistentVolumeClaim"%go.
@@ -204,15 +171,6 @@ Definition updated (input stored : t) : Prop :=
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
   PersistentVolumeClaimSpecV.updated input.(Spec') stored.(Spec').
 
-Definition deepown (c: v1.PersistentVolumeClaim.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.PersistentVolumeClaim.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.PersistentVolumeClaim.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ PersistentVolumeClaimSpecV.deepown c.(v1.PersistentVolumeClaim.Spec') v.(Spec') dq ∗
-  "Hdeepown_status" ∷ PersistentVolumeClaimStatusV.deepown c.(v1.PersistentVolumeClaim.Status') v.(Status') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 #[global]
 Instance top_level_instance : top_level Σ t :=
   Build_top_level Σ t ObjectMetaV.t PersistentVolumeClaimSpecV.t PersistentVolumeClaimStatusV.t
@@ -222,7 +180,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

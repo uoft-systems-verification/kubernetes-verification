@@ -1,7 +1,10 @@
-# Views (`V`) of Kubernetes types
+# Kubernetes object specifications
 
-The `V` types in this directory are the abstract representations of the Go
-objects used by the model. The generated Goose types describe how those
+This directory defines validation and create/update relations for Kubernetes
+object views, together with the shared `top_level` interface and `KObjectV`
+dispatchers. The generated `V` types live in [`../generatedviews`](../generatedviews)
+and are the abstract representations of the Go objects used by the model.
+The generated Goose types describe how those
 objects are laid out in Go memory; the `V` types describe their pure,
 value-level meaning in Rocq.
 

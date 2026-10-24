@@ -1,8 +1,10 @@
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Import prelude.
+From New.object_specs Require Import prelude.
 From New.proof.k8s_io.apimachinery.pkg Require Import labels.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Import schema.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -24,10 +26,11 @@ Lemma wp_Now :
   }}}.
 Proof.
   wp_start as "#Hinit".
-  wp_apply New.proof.time.wp_Now.
-  iIntros (t) "_". wp_auto.
-  iApply ("HΦ" $! (v1.Time.mk t) (TimeV.of_go (v1.Time.mk t))).
-  rewrite /TimeV.deepown /TimeV.of_go /=. done.
+  wp_apply New.proof.time.wp_Now_full.
+  iIntros (t view) "Htime". wp_auto.
+  iApply ("HΦ" $! (v1.Time.mk t) (TimeV.mk view)).
+  rewrite /TimeV.deepown /TimeV.of_go /=.
+  iDestruct "Htime" as %Htime. iPureIntro. by rewrite Htime.
 Qed.
 
 Lemma wp_GetName l m dq :
@@ -547,22 +550,12 @@ Proof.
   iNamed "Hdeepown".
   iApply "HΦ".
   iSplit. 1: done.
-  destruct m.(ObjectMetaV.Finalizers') as [|] eqn:Heq.
-  - iDestruct "Hdeepown_finalizers_some" as (cfs) "[Hcfs_ptr <-]".
-    iExists cfs. iFrame. iSplit. 1: done.
+  destruct m.(ObjectMetaV.Finalizers') as [fs|] eqn:Heq.
+  - iExists fs. iFrame "Hdeepown_finalizers_some". iSplit; first done.
     iIntros "Hdeepown_finalizers_some".
-    iFrame. iFrame "%".
-    iSplit.
-    + iPureIntro. split.
-      * intros H. apply (proj1 Hdeepown_finalizers_none) in H. done.
-      * intros H. rewrite Heq in H. done.
-    + rewrite Heq. iFrame. done.
-  - iFrame. iFrame "%".
-    iSplit.
-    + iPureIntro. split.
-      * intros H. apply (proj1 Hdeepown_finalizers_none) in H. done.
-      * intros H. apply (proj2 Hdeepown_finalizers_none). done.
-    + rewrite Heq. iFrame.
+    iExists c. iFrame "Hl". rewrite /ObjectMetaV.deepown Heq. iFrame. done.
+  - iExists c. iFrame "Hl". rewrite /ObjectMetaV.deepown Heq. iFrame. done.
+
 Qed.
 
 Lemma wp_SetFinalizers l m fs :
@@ -578,6 +571,7 @@ Proof. wp_start as "H". wp_auto. iApply "HΦ". iFrame. Qed.
 Lemma wp_SetFinalizers_deepown l m fs pure_fs :
   {{{ is_pkg_init v1 ∗
       ObjectMetaV.deepown_l l m 1 ∗
+      own_slice_cap go_string fs (DfracOwn 1) ∗
       ⌜ fs = slice.nil ↔ pure_fs = None ⌝ ∗
       (match pure_fs with
        | Some vfs => ∃ cfs, fs ↦* cfs ∗ ⌜ cfs = vfs ⌝
@@ -589,16 +583,17 @@ Lemma wp_SetFinalizers_deepown l m fs pure_fs :
       ObjectMetaV.deepown_l l (m <| ObjectMetaV.Finalizers' := pure_fs |>) 1
   }}}.
 Proof.
-  iIntros (Φ) "(#? & Hdeepown_l & %Hfs_none & Hfs_some) HΦ".
+  iIntros (Φ) "(#? & Hdeepown_l & Hfs_cap & %Hfs_none & Hfs_some) HΦ".
   iDestruct "Hdeepown_l" as (c) "[Hl Hdeepown]".
   wp_apply (wp_SetFinalizers with "[$Hl]").
   iIntros "Hl".
   iNamed "Hdeepown".
   iApply "HΦ".
   iExists (c <| v1.ObjectMeta.Finalizers' := fs |>).
-  iFrame.
-  iPureIntro.
-  done.
+  rewrite /ObjectMetaV.deepown /=.
+  destruct pure_fs as [values|]; last (iFrame; done).
+  iDestruct "Hfs_some" as (values_c) "[Hfs ->]". iFrame. done.
+
 Qed.
 
 Lemma wp_SetUID l m uid :
@@ -678,17 +673,20 @@ Proof.
   iIntros (Φ) "(#? & Hmeta) HΦ".
   iDestruct "Hmeta" as (c) "[Hl Hmeta]".
   wp_method_call. rewrite /v1.ObjectMeta__GetOwnerReferencesⁱᵐᵖˡ. wp_call.
-  iNamed "Hmeta". wp_auto.
+  iNamed "Hmeta".
+  iDestruct (deepown_slice_nil_iff with "Hdeepown_ownerreferences") as %Hnil.
+  iDestruct "Hdeepown_ownerreferences" as "(_ & %cs & Hsl & Hcap & Hrefs)".
+  wp_auto.
   iApply "HΦ". iSplit; first done.
-  destruct m.(ObjectMetaV.OwnerReferences') as [refs|] eqn:Hrefs.
-  - iDestruct "Hdeepown_ownerreferences_some" as (cs) "[Hsl Hrefs]".
-    iExists cs. iFrame. iIntros (cs') "[Hsl Hrefs]".
-    iExists c. iFrame. iFrame "%". iSplit.
-    + iPureIntro. rewrite Hrefs. exact Hdeepown_ownerreferences_none.
-    + rewrite Hrefs. iExists cs'. iFrame.
-  - iExists c. iFrame. iFrame "%". iSplit.
-    + iPureIntro. rewrite Hrefs. exact Hdeepown_ownerreferences_none.
-    + rewrite Hrefs. iFrame.
+  destruct m.(ObjectMetaV.OwnerReferences') as [refs|] eqn:Hrefs_opt.
+  - iExists cs. iFrame. iIntros (cs') "[Hsl Hrefs]".
+    iExists c. iFrame. iFrame "%".
+    rewrite /deepown_slice Hrefs_opt. iSplit; first done.
+    iFrame.
+  - iExists c. iFrame. iFrame "%".
+    rewrite /deepown_slice Hrefs_opt. iSplit; first done.
+    iFrame.
+
 Qed.
 
 Definition is_controller_reference_of (m : ObjectMetaV.t) (ref : OwnerReferenceV.t) : Prop :=
@@ -889,9 +887,9 @@ Proof.
       rewrite -> bool_decide_true by exact Hcontroller_null.
       wp_auto.
       iAssert (OwnerReferenceV.deepown this_c this_ref dq)
-        with "[Hthis_Hdeepown_blockownerdeleton_some]" as "Hthis".
+        with "[Hthis_Hdeepown_blockownerdeletion_some]" as "Hthis".
       { unfold OwnerReferenceV.deepown.
-        iFrame "% Hthis_Hdeepown_blockownerdeleton_some".
+        iFrame "% Hthis_Hdeepown_blockownerdeletion_some".
         iSplit.
         - iPureIntro. rewrite Hcontroller.
           exact Hthis_Hdeepown_controller_none.
@@ -967,7 +965,7 @@ Proof.
     wp_func_call. wp_call. wp_auto.
     destruct controller_ref.(OwnerReferenceV.BlockOwnerDeletion') as [block|]
       eqn:Hblock.
-    + iDestruct "Href_Hdeepown_blockownerdeleton_some" as
+    + iDestruct "Href_Hdeepown_blockownerdeletion_some" as
         (block_c) "[Hblock_c %Hblock_c]". subst block_c.
       iDestruct (typed_pointsto_not_null with "Hblock_c") as %Hblock_nonnull.
       rewrite -> bool_decide_false by exact Hblock_nonnull.
@@ -982,7 +980,7 @@ Proof.
         - iExists true. iFrame. done.
         - iSplitL "".
           + iPureIntro. rewrite Hblock.
-            exact Href_Hdeepown_blockownerdeleton_none.
+            exact Href_Hdeepown_blockownerdeletion_none.
           + rewrite Hblock. iExists block. iFrame. done. }
       iDestruct ("Hrestore" with "[$Href_l $Href]") as "Hmeta".
       iDestruct (typed_pointsto_not_null with "v") as %Hv_nonnull.
@@ -1005,7 +1003,7 @@ Proof.
         iExists block. iFrame. done.
     + assert (controller_c.(v1.OwnerReference.BlockOwnerDeletion') = null)
         as Hblock_null.
-      { apply Href_Hdeepown_blockownerdeleton_none. done. }
+      { apply Href_Hdeepown_blockownerdeletion_none. done. }
       rewrite -> bool_decide_true by exact Hblock_null.
       wp_auto.
       iAssert (OwnerReferenceV.deepown controller_c controller_ref dq)
@@ -1014,7 +1012,7 @@ Proof.
         rewrite Hcontroller Hblock. iSplitL "Hcontroller_b".
         - iExists true. iFrame. done.
         - iSplitL "".
-          + iPureIntro. exact Href_Hdeepown_blockownerdeleton_none.
+          + iPureIntro. exact Href_Hdeepown_blockownerdeletion_none.
           + done. }
       iDestruct ("Hrestore" with "[$Href_l $Href]") as "Hmeta".
       iDestruct (typed_pointsto_not_null with "v") as %Hv_nonnull.

@@ -1,33 +1,29 @@
+From New.generatedviews Require Export deployment.
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export replicaset.
-From New.proof.kubernetes_types Require Import top_level.
+From New.object_specs Require Export replicaset.
+From New.object_specs Require Import top_level.
+
+
+(* These adapter lemmas compare canonical ownership with the included views. *)
+Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module DeploymentSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  Replicas' : option w32;
-  MinReadySeconds' : w32;
-  Selector' : option LabelSelectorV.t;
-  Template' : PodTemplateSpecV.t;
-  (* The rollout strategy is not represented: the simplified controller
-     ignores maxSurge/maxUnavailable and scales ReplicaSets straight to their
-     target counts. *)
-  (* Strategy' : v1.DeploymentStrategy.t; *)
-  (* RevisionHistoryLimit' : loc; *)
-  (* Paused' : bool; *)
-  (* ProgressDeadlineSeconds' : loc; *)
-}.
+Include DeploymentView.DeploymentSpecV.
+
+(** Imported Kubernetes schema defaulting, feature-gated preparation, and
+    validation for the additional represented fields. These functions use the
+    checked-out model's feature configuration. As with [PodAPI], their semantics
+    remain a trusted library boundary; the representation and ownership are
+    fully concrete. *)
+Parameter validate_additional_create_fields : t → bool.
+Parameter additional_storage_normalized : t → bool.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/validation/validation.go#L638-L675 *)
 (* This is the projection of Kubernetes' Deployment spec validation onto the
    represented fields. The template is validated exactly as a ReplicaSet's is
-   (both go through ValidatePodTemplateSpecForReplicaSet); checks on unmodeled
-   PodSpec fields are outside this projection. *)
+   (both go through ValidatePodTemplateSpecForReplicaSet). PodSpec fields are
+   complete; the remaining Deployment fields are checked by the imported boundary below. Stored
+   templates are prepared in the model's fixed feature configuration. *)
 Definition valid (spec : t) : Prop :=
   (∃ replicas, spec.(Replicas') = Some replicas ∧ 0 ≤ sint.Z replicas) ∧
   0 ≤ sint.Z spec.(MinReadySeconds') ∧
@@ -36,7 +32,10 @@ Definition valid (spec : t) : Prop :=
     LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid spec.(Template').
+  PodTemplateSpecV.valid spec.(Template') ∧
+  PodTemplateSpecV.normalized spec.(Template') = spec.(Template') ∧
+  validate_additional_create_fields spec = true ∧
+  additional_storage_normalized spec = true.
 
 (* On create the replica count may be omitted; defaulting fills in 1:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/apps/v1/defaults.go#L38-L43 *)
@@ -51,7 +50,8 @@ Definition valid_create (spec : t) : Prop :=
     LabelSelectorV.valid selector ∧
     ¬ LabelSelectorV.empty selector ∧
     LabelSelectorV.matches selector spec.(Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels')) ∧
-  PodTemplateSpecV.valid spec.(Template').
+  PodTemplateSpecV.valid spec.(Template') ∧
+  validate_additional_create_fields spec = true.
 
 (* Kubernetes allows the represented replica count, minimum-ready duration, and
    Pod template to change, but keeps the selector immutable. This relation is
@@ -86,7 +86,7 @@ Proof. intros (Hreplicas & _). exact Hreplicas. Qed.
 
 Lemma valid_template v :
   valid v → PodTemplateSpecV.valid v.(Template').
-Proof. intros (_ & _ & _ & Htemplate). exact Htemplate. Qed.
+Proof. intros (_ & _ & _ & Htemplate & _). exact Htemplate. Qed.
 
 (* Creation fills an omitted replica count with one and removes obsolete
    init-container annotations from the Pod template during version conversion.
@@ -100,8 +100,9 @@ Definition created (input stored : t) : Prop :=
   stored.(MinReadySeconds') = input.(MinReadySeconds') ∧
   stored.(Selector') = input.(Selector') ∧
   stored.(Template') =
-    input.(Template') <| PodTemplateSpecV.ObjectMeta' :=
-      pod_objectmeta_after_conversion input.(Template').(PodTemplateSpecV.ObjectMeta') |>.
+    PodTemplateSpecV.normalized input.(Template') ∧
+  validate_additional_create_fields stored = true ∧
+  additional_storage_normalized stored = true.
 
 (* Likewise on update: decoder defaulting precedes PrepareForUpdate, which
    restores the old status and bumps the generation without otherwise changing
@@ -111,97 +112,39 @@ Definition created (input stored : t) : Prop :=
 Definition updated (input stored : t) : Prop :=
   created input stored.
 
-(* A created spec has an explicit, nonnegative replica count, so a spec that
-   passes create validation is valid once stored. *)
-Lemma valid_create_created spec spec' :
-  valid_create spec →
-  created spec spec' →
-  valid spec'.
-Proof.
-  intros (Hreplicas & Hminready & Hselector & Htemplate)
-    (Hreplicas' & Hminready' & Hselector' & Htemplate').
-  split_and!.
-  - destruct spec.(Replicas') as [replicas|].
-    + exists replicas. split; [exact Hreplicas'|exact Hreplicas].
-    + exists (W32 1). split; [exact Hreplicas'|word].
-  - rewrite Hminready'. exact Hminready.
-  - rewrite Hselector' Htemplate'. exact Hselector.
-  - rewrite Htemplate'. apply PodTemplateSpecV.valid_after_conversion. exact Htemplate.
-Qed.
-
-Definition deepown (c: v1.DeploymentSpec.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_replicas_none" ∷ ⌜c.(v1.DeploymentSpec.Replicas') = null ↔ v.(Replicas') = None⌝ ∗
-  "Hdeepown_replicas_some" ∷ (match v.(Replicas') with
-    | Some i => ∃ replicas, c.(v1.DeploymentSpec.Replicas') ↦{dq} replicas ∗ ⌜ replicas = i ⌝
-    | None => True%I
-    end) ∗
-  "%Hdeepown_minreadyseconds" ∷ ⌜ c.(v1.DeploymentSpec.MinReadySeconds') = v.(MinReadySeconds') ⌝ ∗
-  "%Hdeepown_selector_none" ∷ ⌜c.(v1.DeploymentSpec.Selector') = null ↔ v.(Selector') = None⌝ ∗
-  "Hdeepown_selector_some" ∷ (match v.(Selector') with
-    | Some selector =>
-        ∃ selector_c,
-          c.(v1.DeploymentSpec.Selector') ↦{dq} selector_c ∗
-          LabelSelectorV.deepown selector_c selector dq
-    | None => True%I
-    end) ∗
-  "Hdeepown_template" ∷ PodTemplateSpecV.deepown c.(v1.DeploymentSpec.Template') v.(Template') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End DeploymentSpecV.
 
 Module DeploymentStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {}.
-(* This includes validation and normalization of the unmodeled status fields. *)
+Include DeploymentView.DeploymentStatusV.
+
+(* Imported validation covers every field of the concrete status view. *)
 Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
 Global Existing Instance valid_update_dec.
-Axiom deepown : v1.DeploymentStatus.t → t → dfrac → iProp Σ.
 
 (* PrepareForCreate discards any submitted status, so the stored status is
    whatever the registry produces rather than the input:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L74-L80 *)
 Definition created (_input stored : t) : Prop :=
-  valid stored.
+  stored = zero.
 
-(* The status subresource keeps the submitted status; its PrepareForUpdate only
-   restores the spec and labels and then drops disabled fields, which today
-   means [TerminatingReplicas] alone:
-   https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/apps/deployment/strategy.go#L171-L177
-   No dropped field is represented in [t], so equality holds on this
-   projection. Revisit once a status field that PrepareForUpdate normalizes
-   becomes represented. *)
+(* PrepareForUpdate may clear the feature-gated TerminatingReplicas field.
+   Every other status field is preserved; this relation conservatively permits
+   both outcomes, matching ReplicaSetStatusV.updated. *)
 Definition updated (input stored : t) : Prop :=
-  stored = input.
+  stored = input ∨ stored = input <| TerminatingReplicas' := None |>.
 
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
-End def.
 End DeploymentStatusV.
 
 Module DeploymentV.
+Include DeploymentView.DeploymentV.
 Section def.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
-Record t := mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : ObjectMetaV.t;
-  Spec' : DeploymentSpecV.t;
-  Status' : DeploymentStatusV.t;
-}.
 
 Definition kind : go_string :=
    "Deployment"%go.
@@ -274,15 +217,6 @@ Definition status_updated (input stored : t) : Prop :=
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
   DeploymentStatusV.updated input.(Status') stored.(Status').
 
-Definition deepown (c: v1.Deployment.t) (v: t) dq: iProp Σ :=
-  "%Hdeepown_typemeta" ∷ ⌜ c.(v1.Deployment.TypeMeta') = v.(TypeMeta') ⌝ ∗
-  "Hdeepown_objectmeta" ∷ ObjectMetaV.deepown c.(v1.Deployment.ObjectMeta') v.(ObjectMeta') dq ∗
-  "Hdeepown_spec" ∷ DeploymentSpecV.deepown c.(v1.Deployment.Spec') v.(Spec') dq ∗
-  "Hdeepown_status" ∷ DeploymentStatusV.deepown c.(v1.Deployment.Status') v.(Status') dq.
-
-Definition deepown_l l v dq: iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 #[global]
 Instance top_level_instance : top_level Σ t :=
   Build_top_level Σ t ObjectMetaV.t DeploymentSpecV.t DeploymentStatusV.t
@@ -292,7 +226,7 @@ Instance top_level_instance : top_level Σ t :=
     valid_update
     valid_status_update
     created
-    updated
+    (λ _, updated)
     status_updated
     deepown_l.
 

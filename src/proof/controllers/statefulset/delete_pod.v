@@ -1,7 +1,10 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
 From New.proof.kubernetes_model Require Export delete_reserved.
 
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
@@ -79,21 +82,21 @@ Lemma wp_deletePod γ model_l pod_l
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ parent_key parent_uid (S terminating_bound)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   iPoseProof (PodV.deepown_l_split with "Hpod") as
     "(%Hpod_l_not_null & Hpod_typemeta & Hpod_objectmeta_l &
       Hpod_spec_l & Hpod_status_l)".
   wp_apply (v1.wp_GetUID_deepown with "[$Hpod_objectmeta_l]").
   iIntros "Hpod_objectmeta_l".
-  wp_auto.
+  wp_auto_keep.
   iDestruct "Hpod_objectmeta_l" as
     (pod_meta_c) "[Hpod_objectmeta_field Hpod_objectmeta]".
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hpod_meta_Hdeepown_namespace Hpod_meta_Hdeepown_name.
   wp_apply (common.wp_NewDeleteOptionsWithUID).
   iIntros (options_c) "[Hoptions %Hvalid_options]".
-  wp_auto.
+  wp_auto_keep.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
   wp_apply (wp_State__PodDelete_reserved γ model_l
@@ -126,7 +129,7 @@ Proof.
     iFrame. }
   iIntros "Hdelete".
   iNamed "Hdelete".
-  wp_auto.
+  wp_auto_keep.
   iCombineNamed "Hpod_meta_*" as "Hpod_objectmeta".
   iAssert (ObjectMetaV.deepown pod_meta_c
       local_pod.(PodV.ObjectMeta') dq_pod)

@@ -1,5 +1,13 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -122,6 +130,7 @@ Proof.
     "[Hpod_objectmeta_field Hpod_objectmeta]".
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c) "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
   Ltac restore_identity_objects set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
@@ -158,7 +167,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
         pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
@@ -177,7 +186,7 @@ Proof.
     split; [done | intros; contradiction].
   Ltac finish_identity_false_with_labels set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-      Hpod_l_not_null labels Hlabels Hlabels_none Hmanagedfields_none :=
+      Hpod_l_not_null labels Hlabels Hlabels_none :=
     iAssert (match pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') with
         | Some vl => ∃ cl,
             v1.ObjectMeta.Labels' pod_meta_c ↦${dq_pod} cl ∗ ⌜ cl = vl ⌝
@@ -211,8 +220,7 @@ Proof.
       repeat (iSplit; first (iPureIntro; done));
       iSplit;
       [ iPureIntro; rewrite Hlabels; exact Hlabels_none | ];
-      repeat (iSplit; first (iPureIntro; done));
-      iPureIntro; exact Hmanagedfields_none
+      repeat (iSplit; first (iPureIntro; done)); iFrame "%"
     | ];
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         pod.(PodV.ObjectMeta') dq_pod)
@@ -221,7 +229,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
     [ iExists pod_spec_c; iFrame | ];
@@ -234,7 +242,7 @@ Proof.
     split; [done | intros; contradiction].
   Ltac finish_identity_false_without_labels set_meta_c set dq_set set_l
       set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-      Hpod_l_not_null Hlabels Hlabels_none Hmanagedfields_none :=
+      Hpod_l_not_null Hlabels Hlabels_none :=
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta";
     iAssert (ObjectMetaV.deepown set_meta_c
         set.(StatefulSetV.ObjectMeta') dq_set)
@@ -263,8 +271,7 @@ Proof.
       iSplit;
       [ iPureIntro; rewrite Hlabels; exact Hlabels_none | ];
       iSplit; [ rewrite Hlabels; done | ];
-      do 3 (iSplit; first (iPureIntro; assumption));
-      iPureIntro; exact Hmanagedfields_none
+      repeat (iSplit; first (iPureIntro; assumption)); iFrame "%"
     | ];
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         pod.(PodV.ObjectMeta') dq_pod)
@@ -273,7 +280,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec";
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec]" as "Hpod_spec";
-    [ iNamed "Hpod_spec"; iFrame; done | ];
+    [ rewrite PodSpecV.deepown_split; iNamed "Hpod_spec"; iFrame; done | ];
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l";
     [ iExists pod_spec_c; iFrame | ];
@@ -284,11 +291,11 @@ Proof.
     iFrame;
     iPureIntro;
     split; [done | intros; contradiction].
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_parentNameAndOrdinal with "[]").
   { iPureIntro. rewrite Hpod_meta_Hdeepown_name. exact Hpod_name_len. }
   iIntros (parent ordinal) "%Hparent".
-  wp_auto.
+  wp_auto_keep.
   destruct (decide (pod_identity_matches set pod)) as [Hmatches|Hnot_matches].
   2: {
     wp_if_destruct.
@@ -315,8 +322,7 @@ Proof.
       2: {
         finish_identity_false_with_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none.
       }
       wp_apply (wp_map_lookup1 with "Hpod_labels") as "Hpod_labels".
       wp_apply (wp_strconv_Itoa with "[]").
@@ -326,8 +332,7 @@ Proof.
       2: {
         finish_identity_false_with_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null labels Hlabels Hpod_meta_Hdeepown_labels_none.
       }
       exfalso.
       apply Hnot_matches.
@@ -383,10 +388,10 @@ Proof.
     - assert (Hlabels_nil : v1.ObjectMeta.Labels' pod_meta_c = null).
       { apply Hpod_meta_Hdeepown_labels_none. reflexivity. }
       rewrite Hlabels_nil.
-      wp_auto.
+      wp_auto_keep.
       wp_if_destruct.
       + rewrite Hlabels_nil.
-        wp_auto.
+        wp_auto_keep.
         wp_apply (wp_strconv_Itoa with "[]").
         { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
           iPureIntro. word. }
@@ -400,12 +405,10 @@ Proof.
           end.
         * finish_identity_false_without_labels set_meta_c set dq_set set_l
             set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-            Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none
-            Hpod_meta_Hdeepown_managedfields_none.
+            Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none.
       + finish_identity_false_without_labels set_meta_c set dq_set set_l
           set_spec_c Hset_l_not_null pod_meta_c pod dq_pod pod_l pod_spec_c
-          Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none
-          Hpod_meta_Hdeepown_managedfields_none.
+          Hpod_l_not_null Hlabels Hpod_meta_Hdeepown_labels_none.
   }
   unfold pod_identity_matches in Hmatches.
   destruct (parse_member_name
@@ -504,7 +507,7 @@ Proof.
     iSplit.
     { iPureIntro. rewrite Hlabels. exact Hpod_meta_Hdeepown_labels_none. }
     repeat (iSplit; first (iPureIntro; done)).
-    iPureIntro. exact Hpod_meta_Hdeepown_managedfields_none. }
+    all: iFrame "%". }
   iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
       pod.(PodV.ObjectMeta') dq_pod)
     with "[Hpod_objectmeta_field Hpod_objectmeta]" as "Hpod_objectmeta_l".
@@ -512,7 +515,7 @@ Proof.
   iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
   iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') dq_pod)
     with "[Hpod_spec]" as "Hpod_spec".
-  { iNamed "Hpod_spec". iFrame. done. }
+  { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') dq_pod)
     with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
   { iExists pod_spec_c. iFrame. }
@@ -563,8 +566,9 @@ Proof.
     "[Hpod_objectmeta_field Hpod_objectmeta]".
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c) "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_ordinalOf
     (v1.ObjectMeta.Name' pod_meta_c) ordinal
     (v1.ObjectMeta.Name' set_meta_c) with "[]").
@@ -574,11 +578,11 @@ Proof.
       rewrite Hpod_meta_Hdeepown_name Hset_meta_Hdeepown_name.
       exact Hpod_name. }
   iIntros (ordinal_ret) "%Hordinal_ret".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_podName
     (v1.ObjectMeta.Name' set_meta_c) ordinal_ret with "[]").
   { iPureIntro. rewrite Hordinal_ret. lia. }
-  wp_pures.
+  wp_pures_keep.
   assert (Hordinal_ret_nat : sint.nat ordinal_ret = ordinal) by word.
   subst ordinal.
   destruct pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') as [labels|]
@@ -587,16 +591,16 @@ Proof.
     assert (Hlabels_nil : v1.ObjectMeta.Labels' pod_meta_c = map.nil).
     { apply Hpod_meta_Hdeepown_labels_none. reflexivity. }
     rewrite Hlabels_nil.
-    wp_pures.
+    wp_pures_keep.
     wp_apply wp_map_make1 as "%labels_l Hpod_labels".
-    wp_pures.
+    wp_pures_keep.
     wp_apply (wp_map_insert go.string with "Hpod_labels") as "Hpod_labels".
-    wp_pures.
+    wp_pures_keep.
     wp_apply (wp_strconv_Itoa with "[]").
     { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
       iPureIntro. rewrite Hordinal_ret. lia. }
     wp_apply (wp_map_insert go.string with "Hpod_labels") as "Hpod_labels".
-    wp_pures.
+    wp_pures_keep.
     iPoseProof (own_map_not_nil with "Hpod_labels") as "%Hlabels_not_nil".
     iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
     iAssert (ObjectMetaV.deepown set_meta_c
@@ -663,8 +667,7 @@ Proof.
       rewrite /ObjectMetaV.deepown /=.
       iFrame.
       repeat (iSplit; first (iPureIntro; simpl; try done)).
-      - apply Hpod_meta_Hdeepown_managedfields_none.
-      - iPureIntro. apply Hpod_meta_Hdeepown_managedfields_none.
+      all: try iPureIntro; tauto.
     }
     iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
         (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' :=
@@ -690,7 +693,7 @@ Proof.
     iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
     iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
       with "[Hpod_spec]" as "Hpod_spec".
-    { iNamed "Hpod_spec". iFrame. done. }
+    { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
     iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
       with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
     { iExists pod_spec_c. iFrame. }
@@ -703,14 +706,14 @@ Proof.
   iPoseProof (own_map_not_nil with "Hpod_labels") as "%Hlabels_not_nil".
   wp_if_destruct.
   { exfalso. done. }
-  wp_pures.
+  wp_pures_keep.
   wp_apply (wp_map_insert go.string with "Hpod_labels") as "Hpod_labels".
-  wp_pures.
+  wp_pures_keep.
   wp_apply (wp_strconv_Itoa with "[]").
   { iSplit; first by iEval (rewrite is_pkg_init_unfold /=).
     iPureIntro. rewrite Hordinal_ret. lia. }
   wp_apply (wp_map_insert go.string with "Hpod_labels") as "Hpod_labels".
-  wp_pures.
+  wp_pures_keep.
   iCombineNamed "Hset_meta_*" as "Hset_objectmeta".
   iAssert (ObjectMetaV.deepown set_meta_c
       set.(StatefulSetV.ObjectMeta') dq_set)
@@ -775,8 +778,7 @@ Proof.
     rewrite /ObjectMetaV.deepown /=.
     iFrame.
     repeat (iSplit; first (iPureIntro; simpl; try done)).
-    - apply Hpod_meta_Hdeepown_managedfields_none.
-    - iPureIntro. apply Hpod_meta_Hdeepown_managedfields_none.
+    all: try iPureIntro; tauto.
   }
   iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr pod_l)
       (pod.(PodV.ObjectMeta') <| ObjectMetaV.Name' :=
@@ -801,7 +803,7 @@ Proof.
   iCombineNamed "Hpod_spec_H*" as "Hpod_spec".
   iAssert (PodSpecV.deepown pod_spec_c pod.(PodV.Spec') 1)
     with "[Hpod_spec]" as "Hpod_spec".
-  { iNamed "Hpod_spec". iFrame. done. }
+  { rewrite PodSpecV.deepown_split. iNamed "Hpod_spec". iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l) pod.(PodV.Spec') 1)
     with "[Hpod_spec_field Hpod_spec]" as "Hpod_spec_l".
   { iExists pod_spec_c. iFrame. }
@@ -834,7 +836,7 @@ Lemma wp_initIdentity set_l pod_l (set : StatefulSetV.t) (pod : PodV.t)
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_updateIdentity set_l pod_l set pod ordinal dq_set
     with "[$Hset $Hpod]").
   { iFrame "%". }
@@ -853,8 +855,9 @@ Proof.
   iNamedPrefix "Hpod_objectmeta" "Hpod_meta_".
   iDestruct "Hpod_spec_l" as (pod_spec_c)
     "[Hpod_spec_field Hpod_spec]".
+  iEval (rewrite PodSpecV.deepown_split) in "Hpod_spec".
   iNamedPrefix "Hpod_spec" "Hpod_spec_".
-  wp_auto.
+  wp_auto_keep.
   iEval (rewrite Hpod_meta_Hdeepown_name
     Hset_spec_Hdeepown_servicename) in "Hpod_spec_field".
   iCombineNamed "Hset_spec_H*" as "Hset_spec".
@@ -893,7 +896,7 @@ Proof.
         <| PodSpecV.Subdomain' :=
             set.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>) 1)
     with "[Hpod_spec]" as "Hpod_spec".
-  { rewrite /PodSpecV.deepown /=. iFrame. done. }
+  { iNamed "Hpod_spec". iEval (rewrite PodSpecV.deepown_split /=). iFrame. done. }
   iAssert (PodSpecV.deepown_l (PodV.spec_ptr pod_l)
       ((update_identity set pod ordinal).(PodV.Spec')
         <| PodSpecV.Hostname' :=

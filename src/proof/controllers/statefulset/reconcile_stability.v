@@ -1,8 +1,16 @@
+From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export reconcile_progress.
 From New.proof.controllers.statefulset Require Import create_pvc update_pod
   release condemned outdated.
 From New.proof.kubernetes_model Require Import get.
 From New.proof.map Require Import for_range.
+
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+
+Local Transparent StatefulSetSpecV.deepown StatefulSetView.StatefulSetSpecV.deepown.
+(* Collect transient allocations from imports before checking large program proofs. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -168,13 +176,13 @@ Lemma wp_updateStatefulPod_stability set_l pod_l
       PodV.deepown_l pod_l pod dq_pod
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply (wp_identityMatches set_l pod_l set pod dq_set dq_pod
     with "[$Hset $Hpod]").
   { iPureIntro. exact Hpod_name_len. }
   iIntros (identity_ret) "(Hset & Hpod & %Hidentity_ret)".
   destruct identity_ret.
-  - wp_auto. iApply "HΦ". iFrame.
+  - wp_auto_keep. iApply "HΦ". iFrame.
   - exfalso. apply Hidentity_ret in Hidentity. done.
 Qed.
 
@@ -203,7 +211,7 @@ Lemma wp_releasePodsWithBadNames_stability set_l pods_sl
         PodV.deepown_l ptr pod dq_pods)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   iDestruct (own_slice_len with "Hpods_sl") as
     %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
@@ -227,7 +235,7 @@ Proof.
       as [_|Hbounds]; last word.
     wp_apply (wp_load_slice_index with "[$Hpods_sl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
-    iIntros "Hpods_sl". wp_auto.
+    iIntros "Hpods_sl". wp_auto_keep.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod)
       as [this_pod Hthis_pod_lookup].
     { apply lookup_lt_is_Some_2.
@@ -247,7 +255,7 @@ Proof.
     iDestruct "Hset_meta_l" as (set_meta_c)
       "[Hset_objectmeta_field Hset_meta]".
     iNamedPrefix "Hset_meta" "Hset_meta_".
-    wp_auto.
+    wp_auto_keep.
     rewrite Hset_meta_Hdeepown_name Hthis_meta_Hdeepown_name.
     wp_apply (wp_isMemberOf with "[]").
     { iPureIntro. rewrite Forall_forall in Hname_lengths.
@@ -287,9 +295,9 @@ Proof.
       rewrite -list_elem_of_In.
       by apply list_elem_of_lookup_2 in Hthis_pod_lookup. }
     destruct member.
-    + wp_auto.
+    + wp_auto_keep.
       iSpecialize ("Hpods_restore" with "Hthis").
-      iApply wp_for_post_continue. wp_auto. iFrame "HΦ".
+      iApply wp_for_post_continue. wp_auto_keep. iFrame "HΦ".
       iExists (word.add i (W64 1)), this_ptr. iFrame.
       iPureIntro. word.
     + exfalso. apply Hmember in Hthis_member. done.
@@ -349,7 +357,7 @@ Lemma wp_createPersistentVolumeClaim_stability_without_claim_templates
         existing_claim.(PersistentVolumeClaimV.ObjectMeta')
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   wp_apply (wp_newPersistentVolumeClaim_without_claim_templates
     set_l pod_l claim_template_l set pod claim_template ordinal
     dq_set dq_pod dq_claim_template_ptr dq_claim_template
@@ -363,7 +371,7 @@ Proof.
   iDestruct "Hclaim_objectmeta_l" as (claim_meta_c)
     "[Hclaim_objectmeta_field Hclaim_objectmeta]".
   iNamedPrefix "Hclaim_objectmeta" "Hclaim_meta_".
-  wp_auto.
+  wp_auto_keep.
   rewrite Hclaim_meta_Hdeepown_namespace Hclaim_meta_Hdeepown_name.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
@@ -382,11 +390,11 @@ Proof.
       PersistentVolumeClaimV.key, PersistentVolumeClaimV.meta_key,
       new_persistent_volume_claim. done. }
   iIntros (existing_claim_l existing_claim') "Hget".
-  iNamedPrefix "Hget" "Hget_". wp_auto.
+  iNamedPrefix "Hget" "Hget_". wp_auto_keep.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact not_found_error_nil).
-  wp_auto. iApply "HΦ".
+  wp_auto_keep. iApply "HΦ".
   iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template Hget_Hown_meta_frag".
 Qed.
 
@@ -426,7 +434,7 @@ Lemma wp_createPersistentVolumeClaims_stability γ model_l set_l pod_l
           dq_pvc pvc.(PersistentVolumeClaimV.ObjectMeta'))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   pose proof (statefulset_replicas_le_go_int32_max set) as Hreplicas_bound.
   assert ((ordinal ≤ go_int32_max_nat)%nat) as Hordinal_bound by lia.
   wp_apply (wp_volumeClaimTemplatesByName set_l set dq_set with "Hset").
@@ -442,8 +450,7 @@ Proof.
       %Hclaim_templates_map_values & %Hclaim_templates_list_names &
       %Hclaim_templates_map_dom & %Hclaim_templates_map_eq &
       %Hdeepown_servicename &
-      Hdeepown_status & Hclaim_templates_map)".
-  iEval (rewrite /deepown_list) in "Hdeepown_volumeclaimtemplates".
+      Hdeepown_status & Hrestore_set & Hclaim_templates_map)".
   iDestruct "Hdeepown_volumeclaimtemplates" as
     "[Hclaim_templates_slice Hclaim_templates_deepown]".
   iAssert (statefulset_without_claim_templates_l
@@ -458,7 +465,7 @@ Proof.
       set.(StatefulSetV.Spec').
   set claim_templates_pure :=
     persistent_volume_claim_templates_by_name claim_templates.
-  wp_auto.
+  wp_auto_keep.
   set P := (λ (_ : list go_string) (_ : Z),
     ∃ (last_claim_template : v1.PersistentVolumeClaim.t),
       "set" ∷ set_ptr ↦ set_l ∗
@@ -470,7 +477,7 @@ Proof.
       "Hclaim_templates_slice" ∷
         set_phy.(v1.StatefulSet.Spec').(
           v1.StatefulSetSpec.VolumeClaimTemplates')
-          ↦* claim_templates_list ∗
+          ↦*{dq_set} claim_templates_list ∗
       "Hclaim_templates_deepown" ∷
         ([∗ list] claim_template_phy;claim_template ∈
           claim_templates_list;claim_templates,
@@ -524,7 +531,7 @@ Proof.
     iDestruct (big_sepL_lookup_acc with "Hown_pvcs") as
       "[Hexisting Hown_pvcs_restore]";
       first exact Hexisting_lookup.
-    wp_auto.
+    wp_auto_keep.
     iAssert (own_meta_frag γ
         (new_persistent_volume_claim_key set claim_template ordinal)
         existing_claim.(PersistentVolumeClaimV.ObjectMeta').(
@@ -557,29 +564,18 @@ Proof.
       iExact "Hexisting". }
     iSpecialize ("Hown_pvcs_restore" with "Hexisting").
     iSpecialize ("Hclaim_templates_restore" with "Hclaim_template").
-    wp_auto. iRight. iSplit; first done.
+    wp_auto_keep. iRight. iSplit; first done.
     iExists claim_template_phy.
     iFrame "set pod Hset Hpod Hclaim_template_ptr
       Hclaim_templates_slice Hclaim_templates_restore Hown_pvcs_restore".
   }
   iIntros "Hclaim_templates_map HP".
   iDestruct "HP" as (last_claim_template) "HP". iNamed "HP".
-  iNamed "Hset".
-  iAssert (StatefulSetV.deepown_l set_l set dq_set)
-    with "[Hset_ptr Hdeepown_objectmeta
-      Hset_spec_Hdeepown_replicas_some
-      Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hclaim_templates_slice
-      Hclaim_templates_deepown Hdeepown_status]" as "Hset".
-  { iExists set_phy.
-    rewrite /StatefulSetV.deepown /StatefulSetSpecV.deepown.
-    iFrame "Hset_ptr Hdeepown_objectmeta
-      Hset_spec_Hdeepown_replicas_some
-      Hset_spec_Hdeepown_selector_some
-      Hset_spec_Hdeepown_template Hdeepown_status".
-    iFrame "%". iExists claim_templates_list.
-    rewrite /deepown_list. iFrame. }
-  wp_auto. iApply "HΦ". iFrame.
+  iAssert (statefulset_claim_templates set_phy set dq_set)
+    with "[Hclaim_templates_slice Hclaim_templates_deepown]" as "Htemplates".
+  { iExists claim_templates_list. rewrite /claim_templates. iFrame. }
+  iPoseProof ("Hrestore_set" with "Hset Htemplates") as "Hset".
+  wp_auto_keep. iApply "HΦ". iFrame.
 Qed.
 
 Lemma wp_reconcileDesiredPods_stability γ model_l set_l pods_sl
@@ -629,12 +625,10 @@ Lemma wp_reconcileDesiredPods_stability γ model_l set_l pods_sl
           dq_pvc pvc.(PersistentVolumeClaimV.ObjectMeta'))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as
     (Hset_typemeta_valid & Hset_rv_valid & Hset_meta_valid &
       Hset_spec_valid & Hset_status_valid).
-  assert (StatefulSetV.valid set) as Hset_valid.
-  { split_and!; done. }
   destruct Hmatch as [Hpods_match Hpvcs_match].
   pose proof (pods_match_members set pods Hpods_match) as Hpods_members.
   destruct Hpods_match as (Hpod_keys & Hpods_alive & Hpods_match).
@@ -648,7 +642,7 @@ Proof.
   pose proof (statefulset_replicas_le_go_int32_max set)
     as Hreplicas_bound.
   wp_apply (wp_endOrdinalOf set_l set dq_set with "[$Hset //]").
-  iIntros (end_ordinal) "[%Hend_ordinal Hset]". wp_auto.
+  iIntros (end_ordinal) "[%Hend_ordinal Hset]". wp_auto_keep.
   set I := (∃ (ordinal : w64),
     "Hordinal_ptr" ∷ ordinal_ptr ↦ ordinal ∗
     "Hend_ptr" ∷ end_ptr ↦ end_ordinal ∗
@@ -725,13 +719,13 @@ Proof.
       iPoseProof (PodV.deepown_l_restore _ _ _ Hpod_l_not_null
         with "[$Hlocal_typemeta $Hlocal_meta $Hlocal_spec
           $Hlocal_status]") as "Hlocal_pod".
-      wp_auto. wp_if_destruct; first contradiction.
+      wp_auto_keep. wp_if_destruct; first contradiction.
       wp_apply (wp_isTerminating pod_l local_pod dq_pods
         with "Hlocal_pod").
       iIntros (terminating) "[%Hterminating Hlocal_pod]".
       destruct terminating.
       { exfalso. apply (proj1 Hterminating eq_refl). exact Hlocal_alive. }
-      wp_auto.
+      wp_auto_keep.
       wp_apply (wp_createPersistentVolumeClaims_stability
         γ model_l set_l pod_l set local_pod (sint.nat ordinal)
         pvcs dq_set dq_pods dq_pvc
@@ -739,7 +733,7 @@ Proof.
       { iFrame "#". iPureIntro. split_and!; try done.
         apply Hpod_name_len.
         by apply list_elem_of_lookup_2 in Hlocal_lookup. }
-      iIntros "(Hset & Hlocal_pod & Hown_pvcs)". wp_auto.
+      iIntros "(Hset & Hlocal_pod & Hown_pvcs)". wp_auto_keep.
       wp_apply (wp_updateStatefulPod_stability
         set_l pod_l set local_pod dq_set dq_pods
         with "[$Hpkg $Hset $Hlocal_pod]").
@@ -754,7 +748,7 @@ Proof.
         (statefulset_replicas set) Hordinal_nonnegative Hordinal_lt
         Hreplicas_bound) as
         (Hnext_nonnegative & Hnext_upper & Hnext_nat).
-      wp_auto. iApply wp_for_post_do. wp_auto. iFrame "HΦ".
+      wp_auto_keep. iApply wp_for_post_do. wp_auto_keep. iFrame "HΦ".
       iExists (word.add ordinal (W64 1)). iFrame.
       iPureIntro. split; done.
     + simpl in Hfind. subst pod_l.
@@ -794,8 +788,8 @@ Lemma wp_reconcileCondemnedPod_stability set_l pods_sl
         PodV.deepown_l ptr pod dq_pods)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
   pose proof (pods_match_members set pods Hpods_match) as Hmembers.
   pose proof (pods_match_no_condemned set pods Hpods_match)
     as Hno_condemned.
@@ -816,7 +810,7 @@ Proof.
   iIntros (condemned_l) "(Hset & Hpods_sl & Hpods & %Hcondemned)".
   destruct Hcondemned as
     [[Hcondemned_null Hnone]|(idx & pod & Hptr & Hlookup & Hcondemned)].
-  - subst condemned_l. wp_auto. iApply "HΦ". iFrame.
+  - subst condemned_l. wp_auto_keep. iApply "HΦ". iFrame.
   - rewrite Forall_forall in Hno_condemned.
     exfalso. apply (Hno_condemned pod); last exact Hcondemned.
     rewrite -list_elem_of_In. by apply list_elem_of_lookup_2 in Hlookup.
@@ -841,8 +835,8 @@ Lemma wp_reconcileOutdatedPod_stability set_l pods_sl
         PodV.deepown_l ptr pod dq_pods)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
-  destruct Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
+  wp_start as "H". iNamed "H". wp_auto_keep.
+  pose proof Hset_valid as (_ & _ & _ & Hset_spec_valid & _).
   pose proof (pods_match_members set pods Hpods_match) as Hmembers.
   pose proof (pods_match_no_outdated set pods Hpods_match)
     as Hno_outdated.
@@ -861,6 +855,7 @@ Proof.
   wp_apply (wp_largestOutdatedPod set_l pods_sl set ptrs pods
     dq_set dq_pods with "[$Hset $Hpods_sl $Hpods]").
   { iPureIntro. split_and!.
+    - exact Hset_valid.
     - exact Hset_spec_valid.
     - exact Hpod_name_len.
     - eapply Forall_impl; last exact Hmembers.
@@ -869,7 +864,7 @@ Proof.
   iIntros (outdated_l) "(Hset & Hpods_sl & Hpods & %Houtdated)".
   destruct Houtdated as
     [[Houtdated_null Hnone]|(idx & pod & Hptr & Hlookup & Houtdated)].
-  - subst outdated_l. wp_auto. iApply "HΦ". iFrame.
+  - subst outdated_l. wp_auto_keep. iApply "HΦ". iFrame.
   - rewrite Forall_forall in Hno_outdated.
     exfalso. apply (Hno_outdated pod); last exact Houtdated.
     rewrite -list_elem_of_In. by apply list_elem_of_lookup_2 in Hlookup.
@@ -929,7 +924,7 @@ Lemma wp_reconcileReplicas_stability γ model_l set_l pods_sl
         (list_to_set (PodV.key <$> pods))
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto.
+  wp_start as "H". iNamed "H". wp_auto_keep.
   destruct Hmatch as [Hpods_match Hpvcs_match].
   assert (current_state_matches set pods pvcs) as Hmatch.
   { split; done. }
@@ -940,17 +935,17 @@ Proof.
   { iFrame "# %". }
   iIntros
     "(Hset & Hpods_sl & Hpods & Hown_pods & Hown_pvcs)".
-  wp_auto.
+  wp_auto_keep.
   wp_apply (wp_reconcileCondemnedPod_stability
     set_l pods_sl set ptrs pods dq_set dq_pods
     with "[$Hset $Hpods_sl $Hpods]").
   { iFrame "%". }
-  iIntros "(Hset & Hpods_sl & Hpods)". wp_auto.
+  iIntros "(Hset & Hpods_sl & Hpods)". wp_auto_keep.
   wp_apply (wp_reconcileOutdatedPod_stability
     set_l pods_sl set ptrs pods dq_set dq_pods
     with "[$Hset $Hpods_sl $Hpods]").
   { iFrame "%". }
-  iIntros "(Hset & Hpods_sl & Hpods)". wp_auto.
+  iIntros "(Hset & Hpods_sl & Hpods)". wp_auto_keep.
   iApply "HΦ". iFrame.
 Qed.
 

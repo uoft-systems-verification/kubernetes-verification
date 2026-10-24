@@ -1,20 +1,9 @@
+From New.generatedviews Require Export pod.
 From New.proof Require Import prelude empty_ffi util.
-From New.proof.kubernetes_types Require Export common.
+From New.object_specs Require Export common.
 
 Module LabelSelectorRequirementV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-
-Record t := mk {
-  Key' : go_string;
-  Operator' : v1.LabelSelectorOperator.t;
-  Values' : option (list go_string);
-}.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Defined.
+Include PodView.LabelSelectorRequirementV.
 
 Definition valid_operator (operator : v1.LabelSelectorOperator.t) : Prop :=
   operator = "In"%go ∨ operator = "NotIn"%go ∨
@@ -46,52 +35,10 @@ Proof.
   destruct requirement.(Values'); apply _.
 Defined.
 
-Definition deepown (c : v1.LabelSelectorRequirement.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_key" ∷ ⌜c.(v1.LabelSelectorRequirement.Key') = v.(Key')⌝ ∗
-  "%Hdeepown_operator" ∷
-    ⌜c.(v1.LabelSelectorRequirement.Operator') = v.(Operator')⌝ ∗
-  "%Hdeepown_values_none" ∷
-    ⌜c.(v1.LabelSelectorRequirement.Values') = slice.nil ↔
-      v.(Values') = None⌝ ∗
-  "Hdeepown_values_some" ∷
-    (match v.(Values') with
-    | Some values =>
-        c.(v1.LabelSelectorRequirement.Values') ↦*{dq} values
-    | None => True%I
-    end).
-
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> match v.(Values') with
-    | Some values => c.(v1.LabelSelectorRequirement.Values') ↦*□ values
-    | None => True%I
-    end)%I with "[Hdeepown_values_some]" as ">Hvalues".
-  { destruct (v.(Values')); last done. iApply (own_slice_persist with "Hdeepown_values_some"). }
-  iModIntro. by iFrame "∗ # %".
-Qed.
-
-#[global] Instance deepown_persistent c v :
-  Persistent (deepown c v DfracDiscarded).
-Proof using All. rewrite /deepown. destruct (v.(Values')); apply _. Qed.
-
-End def.
 End LabelSelectorRequirementV.
 
 Module LabelSelectorV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-
-Record t := mk {
-  MatchLabels' : option (gmap go_string go_string);
-  MatchExpressions' : option (list LabelSelectorRequirementV.t);
-}.
-
-Global Instance eq_dec : EqDecision t.
-Proof. solve_decision. Defined.
+Include PodView.LabelSelectorV.
 
 (* As with requirement values, Kubernetes treats nil and non-nil empty
    MatchExpressions slices identically for validation and matching. *)
@@ -203,59 +150,7 @@ Defined.
 Global Instance matches_dec selector labels : Decision (matches selector labels).
 Proof. unfold matches. apply _. Defined.
 
-Definition deepown (c : v1.LabelSelector.t) (v : t) dq : iProp Σ :=
-  "%Hdeepown_matchlabels_none" ∷ ⌜c.(v1.LabelSelector.MatchLabels') = null ↔ v.(MatchLabels') = None⌝ ∗
-  "Hdeepown_matchlabels_some" ∷ (match v.(MatchLabels') with
-    | Some match_labels =>
-        ∃ match_labels_c,
-          c.(v1.LabelSelector.MatchLabels') ↦${dq} match_labels_c ∗
-          ⌜match_labels_c = match_labels⌝
-    | None => True%I
-    end) ∗
-  "%Hdeepown_matchexpressions_none" ∷
-    ⌜c.(v1.LabelSelector.MatchExpressions') = slice.nil ↔ v.(MatchExpressions') = None⌝ ∗
-  "Hdeepown_matchexpressions_some" ∷ (match v.(MatchExpressions') with
-    | Some match_expressions =>
-        ∃ match_expressions_c,
-          deepown_list c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
-            (λ requirement pure_requirement, LabelSelectorRequirementV.deepown requirement pure_requirement dq)
-            (DfracOwn 1)
-    | None => True%I
-    end).
-
-Definition deepown_l l v dq : iProp Σ :=
-  ∃ c, l ↦{dq} c ∗ deepown c v dq.
-
 (* The match-expressions slice itself stays exclusively owned (see [deepown]);
    everything else becomes read-only. *)
-Lemma deepown_persist c v dq :
-  deepown c v dq ⊢ |==> deepown c v DfracDiscarded.
-Proof using All.
-  rewrite /deepown. iNamed 1.
-  iAssert (|==> match v.(MatchLabels') with
-    | Some match_labels => ∃ match_labels_c,
-        c.(v1.LabelSelector.MatchLabels') ↦$□ match_labels_c ∗ ⌜match_labels_c = match_labels⌝
-    | None => True%I
-    end)%I with "[Hdeepown_matchlabels_some]" as ">Hlabels".
-  { destruct (v.(MatchLabels')); last done.
-    iDestruct "Hdeepown_matchlabels_some" as (mc) "[Hm %Hm]".
-    iMod (own_map_persist with "Hm") as "Hm". iModIntro. iExists mc. by iFrame "∗ %". }
-  iAssert (|==> match v.(MatchExpressions') with
-    | Some match_expressions => ∃ match_expressions_c,
-        deepown_list c.(v1.LabelSelector.MatchExpressions') match_expressions_c match_expressions
-          (λ requirement pure_requirement,
-            LabelSelectorRequirementV.deepown requirement pure_requirement DfracDiscarded)
-          (DfracOwn 1)
-    | None => True%I
-    end)%I with "[Hdeepown_matchexpressions_some]" as ">Hexpressions".
-  { destruct (v.(MatchExpressions')); last done.
-    iDestruct "Hdeepown_matchexpressions_some" as (mec) "[Hsl Hlist]".
-    iMod (big_sepL2_persist (λ r pr dq, LabelSelectorRequirementV.deepown r pr dq) with "Hlist")
-      as "Hlist".
-    { intros. apply LabelSelectorRequirementV.deepown_persist. }
-    iModIntro. iExists mec. rewrite /deepown_list. by iFrame. }
-  iModIntro. by iFrame "∗ %".
-Qed.
 
-End def.
 End LabelSelectorV.

@@ -2,13 +2,12 @@ From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export common.
 From New.proof.k8s_io.apiserver.pkg.registry Require Export rest.
 
-(** The validation/defaulting contracts assume that validation of Go fields
-    omitted from the Kubernetes view types succeeds. These contracts do not
-    require callers to own or reason about those unmodeled fields.
-
-    TODO: [KObjectV.deepown_l] must existentially own all reachable Go fields,
-    including unmodeled fields, so helper calls cannot mutate memory outside
-    their separation-logic footprint. *)
+(** Pod contracts use the complete recursive Pod view and the full-input
+    Kubernetes defaulting/validation functions in [PodAPI]. Their upstream
+    implementations remain trusted library boundaries. Other resource views
+    are still partial, so their contracts continue to assume that checks on
+    omitted fields succeed; their reachable-memory footprints also need the
+    same recursive treatment as Pod. *)
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -29,6 +28,9 @@ Lemma wp_deepCopy i obj dq:
 Proof.
 Admitted.
 
+(* Only the forward implication is needed: Go equality establishes equality
+   of the views. Equal views can still differ in abstracted runtime details
+   or in fields omitted by resource views other than Pod. *)
 Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
   {{{ is_pkg_init apimodel ∗
       KObjectV.deepown_i i1 obj1 dq1 ∗
@@ -38,7 +40,7 @@ Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
   {{{ v, RET #v;
       KObjectV.deepown_i i1 obj1 dq1 ∗
       KObjectV.deepown_i i2 obj2 dq2 ∗
-      ⌜ v = true ↔ storage_object_normalize obj1 = storage_object_normalize obj2 ⌝
+      ⌜ v = true → storage_object_normalize obj1 = storage_object_normalize obj2 ⌝
   }}}.
 Proof.
 Admitted.
@@ -197,7 +199,9 @@ Lemma wp_applyValidationAndDefaulting_ok
   }}}.
 Proof. Admitted.
 
-(** General contract used when the helper may reject an update. On failure the
+(** General contract used when the helper may reject an update. The old object
+    must be stored-valid: its spec and Pod template have already been prepared.
+    This matters even when the submitted spec equals the old spec. On failure the
     new object may already have been mutated, so the postcondition returns an
     unconstrained view of that same allocation instead of the original view. *)
 Lemma wp_applyValidationAndDefaultingOnUpdate_general
@@ -206,6 +210,7 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_general
       ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
       ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
       ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
+      ⌜ KObjectV.valid old_obj ⌝ ∗
       KObjectV.deepown_l new_l new_obj 1 ∗
       KObjectV.deepown_l old_l old_obj dq
   }}}

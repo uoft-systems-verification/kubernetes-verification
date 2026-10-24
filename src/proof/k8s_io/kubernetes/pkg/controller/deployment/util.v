@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.proof.kubernetes_types Require Export prelude.
+From New.object_specs Require Export prelude.
 From New.proof.k8s_io.api.core Require Import v1.
 From New.proof.k8s_io.kubernetes.pkg.controller.deployment Require Export util_init.
 
@@ -16,18 +16,12 @@ Definition drop_hash_label (t : PodTemplateSpecV.t) : PodTemplateSpecV.t :=
 Definition template_has_labels (t : PodTemplateSpecV.t) : Prop :=
   is_Some t.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Labels').
 
-(* TRUSTED: the comparison equality.Semantic.DeepEqual performs on two pod
-   templates. It is reflection-based, so goose cannot translate it, and it
-   compares every PodSpec field while PodSpecV models only a few, so its result
-   is not determined by the model values. It is therefore left abstract, like
-   storage_object_normalize in kubernetes_model/common.v.
-
-   TODO: model every PodSpec field in PodSpecV. Then define equality between
-   PodTemplateSpecV values (as Semantic.DeepEqual compares them, including
-   treating nil and empty slices and maps as equal), and remove this Parameter
-   and the two Axioms below. wp_Semantic_DeepEqual_PodTemplateSpec would then
-   be stated with that equality; it stays trusted, since DeepEqual is
-   reflection-based. *)
+(* TRUSTED: the imported reflection-based equality.Semantic.DeepEqual
+   operates on the complete template views. Its semantic equality treats nil
+   and empty slices/maps alike and uses custom equality for Quantity and Time;
+   it is therefore distinct from record equality on representation views.
+   TODO: define that recursive semantic equality explicitly and prove its
+   symmetry, keeping only the reflection call itself as a library contract. *)
 Parameter template_semantic_eq : PodTemplateSpecV.t → PodTemplateSpecV.t → Prop.
 Axiom template_semantic_eq_dec : ∀ t1 t2, Decision (template_semantic_eq t1 t2).
 #[global] Existing Instance template_semantic_eq_dec.
@@ -42,6 +36,8 @@ Proof. unfold template_matches. apply _. Defined.
 
 Lemma template_matches_sym t1 t2 : template_matches t1 t2 → template_matches t2 t1.
 Proof. apply template_semantic_eq_sym. Qed.
+
+Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
