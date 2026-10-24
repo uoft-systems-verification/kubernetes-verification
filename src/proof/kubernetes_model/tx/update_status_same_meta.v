@@ -5,6 +5,12 @@ From New.proof.kubernetes_model Require Import common_update get get_observed.
 From New.proof.k8s_io.apimachinery.pkg.api Require Import errors.
 From New.proof Require Import wp_helpers.
 
+(* Reclaim imported proof data before constructing the transaction proofs. *)
+Optimize Heap.
+
+(* Use the ownership API without unfolding recursive representations during proof-mode search. *)
+#[local] Typeclasses Opaque KObjectV.deepown_l ObjectMetaV.deepown_l ObjectSpecV.deepown_l ObjectStatusV.deepown_l.
+
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : apimodel.Assumptions}.
@@ -87,11 +93,10 @@ Proof.
   wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
   wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
-    "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
-      Hdeepown_existing_status)".
+    "(%Hexisting_l_not_null & _ & Hdeepown_existing_metadata & _ & _)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
+  iIntros "_". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto_keep.
@@ -285,12 +290,13 @@ Proof.
     destruct Hget as (-> & -> & _ & _). wp_auto_keep.
     iDestruct "Hdeepown_existing_i" as (existing_l) "[%Hvalid_interface_existing Hdeepown_existing_l]".
     wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
-  wp_auto_keep.
+    wp_auto_keep.
     iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
       "(%Hexisting_l_not_null & _ & Hdeepown_existing_metadata & _ & _)".
     wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
       "[$Hdeepown_existing_metadata]"). 1: done.
-    iIntros "Hdeepown_existing_metadata". wp_auto_keep.
+    (* Only the copied resource version is needed from the existing object. *)
+    iIntros "_". wp_auto_keep.
     wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
       "[$Hdeepown_metadata]"). 1: done.
     iIntros "Hdeepown_metadata". wp_auto_keep.
@@ -344,11 +350,10 @@ Proof.
   wp_apply wp_Accessor --no-auto. 1: iPureIntro; done.
   wp_auto_keep.
   iPoseProof (KObjectV.deepown_l_split with "Hdeepown_existing_l") as
-    "(%Hexisting_l_not_null & Htypemeta_existing & Hdeepown_existing_metadata & Hdeepown_existing_spec &
-      Hdeepown_existing_status)".
+    "(%Hexisting_l_not_null & _ & Hdeepown_existing_metadata & _ & _)".
   wp_apply (wp_GetResourceVersion_deepown_kobject existing_i existing_l existing_kobj with
     "[$Hdeepown_existing_metadata]"). 1: done.
-  iIntros "Hdeepown_existing_metadata". wp_auto_keep.
+  iIntros "_". wp_auto_keep.
   wp_apply (wp_SetResourceVersion_deepown_kobject i_copy kobj_l kobj with
     "[$Hdeepown_metadata]"). 1: done.
   iIntros "Hdeepown_metadata". wp_auto_keep.
