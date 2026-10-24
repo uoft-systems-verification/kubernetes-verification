@@ -63,6 +63,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End HostPathVolumeSourceV.
 
@@ -98,6 +110,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End Int64AmountV.
 
@@ -151,6 +175,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End BigIntV.
 
@@ -204,6 +240,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End DecimalV.
 
@@ -250,6 +298,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End InfDecAmountV.
 
@@ -317,6 +377,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End QuantityV.
 
@@ -370,6 +442,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EmptyDirVolumeSourceV.
 
@@ -405,6 +489,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End GCEPersistentDiskVolumeSourceV.
 
@@ -440,6 +536,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End AWSElasticBlockStoreVolumeSourceV.
 
@@ -475,6 +583,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End GitRepoVolumeSourceV.
 
@@ -535,6 +655,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End KeyToPathV.
 
@@ -608,6 +740,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SecretVolumeSourceV.
 
@@ -643,6 +787,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End NFSVolumeSourceV.
 
@@ -678,6 +834,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LocalObjectReferenceV.
 
@@ -814,6 +982,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -852,6 +1032,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End GlusterfsVolumeSourceV.
 
@@ -887,6 +1079,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimVolumeSourceV.
 
@@ -985,6 +1189,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End RBDVolumeSourceV.
 
@@ -1062,6 +1278,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End FlexVolumeSourceV.
 
@@ -1129,6 +1357,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End CinderVolumeSourceV.
 
@@ -1213,6 +1453,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End CephFSVolumeSourceV.
 
@@ -1248,6 +1500,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End FlockerVolumeSourceV.
 
@@ -1283,6 +1547,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ObjectFieldSelectorV.
 
@@ -1343,6 +1619,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ResourceFieldSelectorV.
 
@@ -1416,6 +1704,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End DownwardAPIVolumeFileV.
 
@@ -1472,6 +1772,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End DownwardAPIVolumeSourceV.
 
@@ -1552,6 +1864,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End FCVolumeSourceV.
 
@@ -1587,6 +1911,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End AzureFileVolumeSourceV.
 
@@ -1660,6 +1996,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ConfigMapVolumeSourceV.
 
@@ -1695,6 +2043,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VsphereVirtualDiskVolumeSourceV.
 
@@ -1730,6 +2090,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End QuobyteVolumeSourceV.
 
@@ -1820,6 +2192,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End AzureDiskVolumeSourceV.
 
@@ -1855,6 +2239,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PhotonPersistentDiskVolumeSourceV.
 
@@ -1918,6 +2314,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SecretProjectionV.
 
@@ -1964,6 +2372,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End DownwardAPIProjectionV.
 
@@ -2027,6 +2447,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ConfigMapProjectionV.
 
@@ -2087,6 +2519,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ServiceAccountTokenProjectionV.
 
@@ -2160,6 +2604,18 @@ Proof. rewrite /deepown.
   { destruct (v.(Values')); apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LabelSelectorRequirementV.
 
@@ -2221,6 +2677,18 @@ Proof. rewrite /deepown.
   { destruct (v.(MatchLabels')); apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LabelSelectorV.
 
@@ -2304,6 +2772,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ClusterTrustBundleProjectionV.
 
@@ -2385,6 +2865,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodCertificateProjectionV.
 
@@ -2481,6 +2973,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeProjectionV.
 
@@ -2537,6 +3041,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ProjectedVolumeSourceV.
 
@@ -2572,6 +3088,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PortworxVolumeSourceV.
 
@@ -2694,6 +3222,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -2771,6 +3311,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StorageOSVolumeSourceV.
 
@@ -2854,6 +3406,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End CSIVolumeSourceV.
 
@@ -2910,6 +3474,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeResourceRequirementsV.
 
@@ -2970,6 +3546,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End TypedLocalObjectReferenceV.
 
@@ -3040,6 +3628,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End TypedObjectReferenceV.
 
@@ -3163,6 +3763,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimSpecV.
 
@@ -3219,6 +3831,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimTemplateV.
 
@@ -3265,6 +3889,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EphemeralVolumeSourceV.
 
@@ -3300,6 +3936,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ImageVolumeSourceV.
 
@@ -3669,6 +4317,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -3725,6 +4385,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeV.
 
@@ -3760,6 +4432,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerPortV.
 
@@ -3813,6 +4497,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ConfigMapEnvSourceV.
 
@@ -3866,6 +4562,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SecretEnvSourceV.
 
@@ -3929,6 +4637,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EnvFromSourceV.
 
@@ -3989,6 +4709,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ConfigMapKeySelectorV.
 
@@ -4049,6 +4781,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SecretKeySelectorV.
 
@@ -4116,6 +4860,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End FileKeySelectorV.
 
@@ -4202,6 +4958,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EnvVarSourceV.
 
@@ -4262,6 +5030,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EnvVarV.
 
@@ -4297,6 +5077,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ResourceClaimV.
 
@@ -4363,6 +5155,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ResourceRequirementsV.
 
@@ -4398,6 +5202,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerResizePolicyV.
 
@@ -4451,6 +5267,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerRestartRuleOnExitCodesV.
 
@@ -4504,6 +5332,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerRestartRuleV.
 
@@ -4595,6 +5435,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeMountV.
 
@@ -4630,6 +5482,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeDeviceV.
 
@@ -4676,6 +5540,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ExecActionV.
 
@@ -4711,6 +5587,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End IntOrStringV.
 
@@ -4746,6 +5634,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End HTTPHeaderV.
 
@@ -4820,6 +5720,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End HTTPGetActionV.
 
@@ -4855,6 +5767,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End TCPSocketActionV.
 
@@ -4908,6 +5832,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End GRPCActionV.
 
@@ -4984,6 +5920,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ProbeHandlerV.
 
@@ -5075,6 +6023,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ProbeV.
 
@@ -5110,6 +6070,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SleepActionV.
 
@@ -5186,6 +6158,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LifecycleHandlerV.
 
@@ -5252,6 +6236,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LifecycleV.
 
@@ -5308,6 +6304,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End CapabilitiesV.
 
@@ -5343,6 +6351,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SELinuxOptionsV.
 
@@ -5419,6 +6439,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End WindowsSecurityContextOptionsV.
 
@@ -5472,6 +6504,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SeccompProfileV.
 
@@ -5525,6 +6569,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End AppArmorProfileV.
 
@@ -5696,6 +6752,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -5986,6 +7054,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -6276,6 +7356,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -6332,6 +7424,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End EphemeralContainerV.
 
@@ -6367,6 +7471,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End SysctlV.
 
@@ -6549,6 +7665,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -6612,6 +7740,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End NodeSelectorRequirementV.
 
@@ -6668,6 +7808,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End NodeSelectorTermV.
 
@@ -6714,6 +7866,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End NodeSelectorV.
 
@@ -6767,6 +7931,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PreferredSchedulingTermV.
 
@@ -6823,6 +7999,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End NodeAffinityV.
 
@@ -6916,6 +8104,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodAffinityTermV.
 
@@ -6969,6 +8169,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End WeightedPodAffinityTermV.
 
@@ -7025,6 +8237,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodAffinityV.
 
@@ -7081,6 +8305,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodAntiAffinityV.
 
@@ -7147,6 +8383,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End AffinityV.
 
@@ -7221,6 +8469,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End TolerationV.
 
@@ -7274,6 +8534,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End HostAliasV.
 
@@ -7327,6 +8599,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodDNSConfigOptionV.
 
@@ -7393,6 +8677,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodDNSConfigV.
 
@@ -7428,6 +8724,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodReadinessGateV.
 
@@ -7535,6 +8843,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End TopologySpreadConstraintV.
 
@@ -7570,6 +8890,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodOSV.
 
@@ -7605,6 +8937,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodSchedulingGateV.
 
@@ -7668,6 +9012,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodResourceClaimV.
 
@@ -8122,6 +9478,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -8186,6 +9554,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodConditionV.
 
@@ -8221,6 +9601,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End HostIPV.
 
@@ -8256,6 +9648,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodIPV.
 
@@ -8291,6 +9695,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerStateWaitingV.
 
@@ -8334,6 +9750,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerStateRunningV.
 
@@ -8395,6 +9823,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerStateTerminatedV.
 
@@ -8461,6 +9901,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerStateV.
 
@@ -8528,6 +9980,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End VolumeMountStatusV.
 
@@ -8588,6 +10052,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End LinuxContainerUserV.
 
@@ -8634,6 +10110,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerUserV.
 
@@ -8669,6 +10157,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ResourceHealthV.
 
@@ -8722,6 +10222,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ResourceStatusV.
 
@@ -8908,6 +10420,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -8964,6 +10488,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodResourceClaimStatusV.
 
@@ -8999,6 +10535,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ContainerExtendedResourceRequestV.
 
@@ -9052,6 +10600,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodExtendedResourceClaimStatusV.
 
@@ -9262,6 +10822,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -9338,6 +10910,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodV.
 
@@ -9394,6 +10978,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PodTemplateSpecV.
 

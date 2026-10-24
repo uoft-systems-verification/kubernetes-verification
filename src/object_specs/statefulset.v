@@ -10,14 +10,8 @@ Local Transparent StatefulSetView.StatefulSetSpecV.deepown StatefulSetView.State
 
 Module StatefulSetSpecV.
 Include StatefulSetView.StatefulSetSpecV.
-Local Transparent deepown.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
+Local Transparent deepown.
 (** Imported Kubernetes schema defaulting, feature-gated preparation, and
     validation for the additional represented fields. These functions use the
     checked-out model's feature configuration. As with [PodAPI], their semantics
@@ -178,19 +172,13 @@ Lemma valid_replicas v :
   valid v → ∃ (i: w32), v.(Replicas') = Some i ∧ 0 ≤ sint.Z i.
 Proof. intros (_ & Hreplicas & _). exact Hreplicas. Qed.
 
-End def.
 End StatefulSetSpecV.
 Local Transparent StatefulSetSpecV.deepown.
 
 Module StatefulSetStatusV.
 Include StatefulSetView.StatefulSetStatusV.
+
 Local Transparent deepown.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 Axiom valid: t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
@@ -198,7 +186,6 @@ Global Existing Instance valid_update_dec.
 Definition created (_input stored : t) : Prop := stored = zero.
 Axiom updated : t → t → Prop.
 
-End def.
 End StatefulSetStatusV.
 Local Transparent StatefulSetStatusV.deepown.
 

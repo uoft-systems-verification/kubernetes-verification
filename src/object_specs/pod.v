@@ -571,32 +571,11 @@ Proof.
   iFrame.
 Qed.
 
-(* Pods are only read by the controllers, so their ownership can be made
-   read-only and shared, e.g. between the active and terminating filters. *)
-
-Lemma deepown_l_persist l v dq :
-  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
-Proof using All.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
-  iModIntro. iExists c. by iFrame "∗ #".
-Qed.
-
-#[global] Instance deepown_l_persistent l v :
-  Persistent (deepown_l l v DfracDiscarded).
-Proof using All. rewrite /deepown_l. apply _. Qed.
-
 End proof.
 End PodV.
 
 Module PodTemplateSpecV.
 Include PodView.PodTemplateSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/apis/core/validation/validation.go#L6795-L6810 *)
 (* This is the projection of Kubernetes' ValidatePodTemplateSpec onto the
@@ -656,20 +635,18 @@ Axiom generated_spec_valid : ∀ template,
   PodAPI.validate_annotations annotations (PodAPI.create_spec labels annotations template.(Spec')) = true ∧
   PodAPI.validate_spec (PodAPI.create_spec labels annotations template.(Spec')) = true.
 
-Definition objectmeta_ptr l : loc :=
-  struct_field_ref v1.PodTemplateSpec.t "ObjectMeta" l.
-
-Definition spec_ptr l : loc :=
-  struct_field_ref v1.PodTemplateSpec.t "Spec" l.
-
-End def.
-
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
+Definition objectmeta_ptr l : loc :=
+  struct_field_ref v1.PodTemplateSpec.t "ObjectMeta" l.
+
+Definition spec_ptr l : loc :=
+  struct_field_ref v1.PodTemplateSpec.t "Spec" l.
 
 Lemma deepown_l_split l v dq :
   deepown_l l v dq ⊢
@@ -709,18 +686,8 @@ Proof.
   iExists (v1.PodTemplateSpec.mk cmeta cspec). iFrame.
 Qed.
 
-Lemma deepown_l_persist l v dq :
-  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
-Proof using All.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
-  iModIntro. iExists c. by iFrame "∗ #".
-Qed.
-
-#[global] Instance deepown_l_persistent l v :
-  Persistent (deepown_l l v DfracDiscarded).
-Proof using All. rewrite /deepown_l. apply _. Qed.
 End proof.
+
 End PodTemplateSpecV.
 
 (* Keep routine proof automation from recursively expanding hundreds of Pod

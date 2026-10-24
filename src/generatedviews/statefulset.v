@@ -68,6 +68,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End RollingUpdateStatefulSetStrategyV.
 
@@ -122,6 +134,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StatefulSetUpdateStrategyV.
 
@@ -158,6 +182,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StatefulSetPersistentVolumeClaimRetentionPolicyV.
 
@@ -194,6 +230,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StatefulSetOrdinalsV.
 
@@ -376,6 +424,18 @@ Proof. rewrite /deepown.
   { apply _. }
   destruct (v.(Ordinals')); apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -435,6 +495,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StatefulSetConditionV.
 
@@ -561,6 +633,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 
 (* Avoid unfolding unrelated large ownership predicates during proof search. *)
@@ -638,6 +722,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End StatefulSetV.
 

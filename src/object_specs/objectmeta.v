@@ -5,11 +5,6 @@ From New.object_specs Require Export common.
 
 Module OwnerReferenceV.
 Include ObjectMetaView.OwnerReferenceV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/objectmeta.go#L69-L90
    Kubernetes requires an owner reference to have a nonempty API version,
@@ -27,9 +22,6 @@ Definition list_valid (os: list t) : Prop :=
     os !! i1 = Some o1 ∧ o1.(Controller') = Some true ∧
     os !! i2 = Some o2 ∧ o2.(Controller') = Some true →
       i1 = i2.
-
-
-End def.
 
 Definition refers_to_controller v kind name uid : Prop :=
   v.(Kind') = kind ∧
@@ -92,13 +84,8 @@ Axiom valid_managed_fields_none : valid_managed_fields None.
 
 Module ObjectMetaV.
 Include ObjectMetaView.ObjectMetaV.
+
 Local Transparent deepown.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
-
-
 Definition without_resource_version (m : t) : t :=
   m <| ResourceVersion' := ""%go |>.
 
@@ -243,21 +230,5 @@ Definition updated m m' : Prop :=
   m'.(OwnerReferences') = m.(OwnerReferences') ∧
   m'.(Finalizers') = m.(Finalizers') ∧
   m'.(ManagedFields') = m.(ManagedFields').
-
-
-
-Lemma deepown_l_persist l v dq :
-  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
-Proof using All.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
-  iModIntro. iExists c. by iFrame "∗ #".
-Qed.
-
-#[global] Instance deepown_l_persistent l v :
-  Persistent (deepown_l l v DfracDiscarded).
-Proof using All. rewrite /deepown_l. apply _. Qed.
-End def.
-
 
 End ObjectMetaV.

@@ -4,10 +4,6 @@ From New.object_specs Require Export common.
 
 Module LabelSelectorRequirementV.
 Include PodView.LabelSelectorRequirementV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 
 Definition valid_operator (operator : v1.LabelSelectorOperator.t) : Prop :=
   operator = "In"%go ∨ operator = "NotIn"%go ∨
@@ -39,15 +35,10 @@ Proof.
   destruct requirement.(Values'); apply _.
 Defined.
 
-End def.
 End LabelSelectorRequirementV.
 
 Module LabelSelectorV.
 Include PodView.LabelSelectorV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}.
 
 (* As with requirement values, Kubernetes treats nil and non-nil empty
    MatchExpressions slices identically for validation and matching. *)
@@ -162,5 +153,4 @@ Proof. unfold matches. apply _. Defined.
 (* The match-expressions slice itself stays exclusively owned (see [deepown]);
    everything else becomes read-only. *)
 
-End def.
 End LabelSelectorV.

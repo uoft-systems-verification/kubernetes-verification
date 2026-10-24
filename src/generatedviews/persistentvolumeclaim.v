@@ -68,6 +68,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimConditionV.
 
@@ -103,6 +115,18 @@ Qed.
 Proof. rewrite /deepown.
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End ModifyVolumeStatusV.
 
@@ -216,6 +240,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimStatusV.
 
@@ -289,6 +325,18 @@ Proof. rewrite /deepown.
   { apply _. }
   apply _.
 Qed.
+
+Lemma deepown_l_persist l v dq :
+  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
+Proof.
+  iDestruct 1 as (c) "[Hl Hdeepown]".
+  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
+  iModIntro. iExists c. by iFrame "∗ #".
+Qed.
+
+#[global] Instance deepown_l_persistent l v :
+  Persistent (deepown_l l v DfracDiscarded).
+Proof. rewrite /deepown_l. apply _. Qed.
 End def.
 End PersistentVolumeClaimV.
 

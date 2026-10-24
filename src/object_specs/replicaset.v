@@ -10,12 +10,6 @@ Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module ReplicaSetSpecV.
 Include ReplicaSetView.ReplicaSetSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 (* Conditions required by verified controller implementations but not enforced
    by Kubernetes API admission. Keep this separate from [valid_create]. *)
@@ -121,21 +115,14 @@ Proof.
   exact Htemplate.
 Qed.
 
-End def.
 End ReplicaSetSpecV.
 
 Module ReplicaSetConditionV.
 Include ReplicaSetView.ReplicaSetConditionV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 (* Every field is a plain value (the transition time is only its instant, see
    [TimeV]), so the view is a function of the Go struct. *)
-End def.
+
 End ReplicaSetConditionV.
 
 Module ReplicaSetStatusV.
@@ -360,14 +347,6 @@ Definition status_updated (input stored : t) : Prop :=
   stored.(TypeMeta') = input.(TypeMeta') ∧
   ObjectMetaV.updated input.(ObjectMeta') stored.(ObjectMeta') ∧
   ReplicaSetStatusV.updated input.(Status') stored.(Status').
-
-Lemma deepown_l_persist l v dq :
-  deepown_l l v dq ⊢ |==> deepown_l l v DfracDiscarded.
-Proof using All.
-  iDestruct 1 as (c) "[Hl Hdeepown]".
-  iPersist "Hl". iMod (deepown_persist with "Hdeepown") as "Hdeepown".
-  iModIntro. iExists c. by iFrame "∗ #".
-Qed.
 
 #[global]
 Instance top_level_instance : top_level Σ t :=

@@ -9,12 +9,6 @@ Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module DeploymentSpecV.
 Include DeploymentView.DeploymentSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 (** Imported Kubernetes schema defaulting, feature-gated preparation, and
     validation for the additional represented fields. These functions use the
@@ -118,18 +112,11 @@ Definition created (input stored : t) : Prop :=
 Definition updated (input stored : t) : Prop :=
   created input stored.
 
-
-End def.
 End DeploymentSpecV.
 
 Module DeploymentStatusV.
 Include DeploymentView.DeploymentStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
 (* Imported validation covers every field of the concrete status view. *)
 Axiom valid : t → Prop.
 Axiom valid_update : t → t → Prop.
@@ -148,7 +135,6 @@ Definition created (_input stored : t) : Prop :=
 Definition updated (input stored : t) : Prop :=
   stored = input ∨ stored = input <| TerminatingReplicas' := None |>.
 
-End def.
 End DeploymentStatusV.
 
 Module DeploymentV.

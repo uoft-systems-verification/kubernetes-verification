@@ -9,12 +9,6 @@ Local Transparent ObjectMetaView.ObjectMetaV.deepown ObjectMetaV.deepown.
 
 Module PersistentVolumeClaimSpecV.
 Include PersistentVolumeClaimView.PersistentVolumeClaimSpecV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
 (* Imported admission validation acts on the complete concrete PVC spec. *)
 Axiom valid_create: t → Prop.
@@ -59,17 +53,11 @@ Definition embedded_created (_input stored : t) : Prop :=
 Definition updated (input stored : t) : Prop :=
   valid stored.
 
-End def.
 End PersistentVolumeClaimSpecV.
 
 Module PersistentVolumeClaimStatusV.
 Include PersistentVolumeClaimView.PersistentVolumeClaimStatusV.
-Section def.
-Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}
-  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
-  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
+
 Axiom valid: t → Prop.
 Axiom valid_update : t → t → Prop.
 Axiom valid_update_dec : ∀ old input, Decision (valid_update old input).
@@ -77,7 +65,6 @@ Global Existing Instance valid_update_dec.
 Definition created (_input stored : t) : Prop := stored = zero <| Phase' := "Pending"%go |>.
 Axiom updated : t → t → Prop.
 
-End def.
 End PersistentVolumeClaimStatusV.
 
 Module PersistentVolumeClaimV.

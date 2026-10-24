@@ -3,7 +3,6 @@ From New.object_specs Require Export pod persistentvolumeclaim replicaset statef
 From New.object_specs Require Import top_level.
 
 Module KObject.
-Section def.
 Inductive t :=
 | Pod (p : v1.Pod.t)
 | ReplicaSet (rs : v1.ReplicaSet.t)
@@ -38,7 +37,6 @@ Definition update_objectmeta o m: t :=
   | Deployment d => Deployment (d <| v1.Deployment.ObjectMeta' := m |>)
   end.
 
-End def.
 End KObject.
 
 Module ObjectSpecV.
