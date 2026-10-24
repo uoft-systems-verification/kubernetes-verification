@@ -269,7 +269,7 @@ Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
       (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
     "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
     "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
-      "%Hpod_spec_created" ∷
+    "%Hpod_spec_created" ∷
       ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec')) (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
     "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
       (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
@@ -336,7 +336,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
           (pod_objectmeta_after_conversion pod.(PodV.ObjectMeta')) pod'.(PodV.ObjectMeta') ⌝ ∗
         "%Hpod_generation" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.Generation') = W64 1 ⌝ ∗
         "%Hpod_prepared_spec" ∷ ⌜ pod'.(PodV.Spec') = PodV.prepared_spec pod ⌝ ∗
-      "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
+        "%Hpod_spec_created" ∷ ⌜ ObjectSpecV.created (ObjectSpecV.PodSpec pod.(PodV.Spec'))
           (ObjectSpecV.PodSpec pod'.(PodV.Spec')) ⌝ ∗
         "%Hpod_status_created" ∷ ⌜ ObjectStatusV.created (ObjectStatusV.PodStatus pod.(PodV.Status'))
           (ObjectStatusV.PodStatus pod'.(PodV.Status')) ⌝ ∗
