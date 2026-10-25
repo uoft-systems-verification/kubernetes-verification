@@ -2,8 +2,8 @@
 
 [`scripts/generate_views.py`](../scripts/generate_views.py) generates pure views
 and ownership predicates from the checked-out Kubernetes Go structs. The resource
-views cover Pod, PersistentVolumeClaim, ReplicaSet, StatefulSet, and Deployment,
-including nested spec and status fields.
+views cover Pod, PersistentVolumeClaim, ReplicaSet, StatefulSet, Deployment,
+DaemonSet, and Node, including nested spec and status fields.
 
 The generator runs [`scripts/extract_schema.go`](../scripts/extract_schema.go)
 from the Kubernetes module to reflect the configured root types and their nested

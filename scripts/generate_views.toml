@@ -91,6 +91,16 @@ module = "DeploymentView"
 roots = ["k8s.io/api/apps/v1/Deployment"]
 context = "apps"
 
+[groups.daemonset]
+module = "DaemonSetView"
+roots = ["k8s.io/api/apps/v1/DaemonSet"]
+context = "apps"
+
+[groups.node]
+module = "NodeView"
+roots = ["k8s.io/api/core/v1/Node"]
+context = "core"
+
 # Fields below are omitted from both the view and deepown. Keys are fully
 # qualified Go type IDs and exact Go field names. Every exclusion needs an
 # explanation, also emitted as a comment in the generated view.
