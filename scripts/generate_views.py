@@ -20,7 +20,9 @@ import functools
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
+import tempfile
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,37 +31,55 @@ APPS = "k8s.io/api/apps/v1"
 META = "k8s.io/apimachinery/pkg/apis/meta/v1"
 BIG_NAT = "math/big/nat"
 PACKAGES = {
-    CORE: ("api_core_v1", "k8s_io/api/core/v1"),
-    APPS: ("api_apps_v1", "k8s_io/api/apps/v1"),
-    META: ("meta_v1", "k8s_io/apimachinery/pkg/apis/meta/v1"),
-    "k8s.io/apimachinery/pkg/api/resource": ("resource", "k8s_io/apimachinery/pkg/api/resource"),
-    "k8s.io/apimachinery/pkg/util/intstr": ("intstr", "k8s_io/apimachinery/pkg/util/intstr"),
-    "gopkg.in/inf.v0": ("inf", "gopkg_in/inf_v0"),
-    "math/big": ("big", "math/big"),
-    "time": ("runtime_time", "time"),
+    # Go package: (local Rocq alias, generated file path, Goose module name).
+    CORE: ("api_core_v1", "k8s_io/api/core/v1", "v1"),
+    APPS: ("api_apps_v1", "k8s_io/api/apps/v1", "v1"),
+    META: ("meta_v1", "k8s_io/apimachinery/pkg/apis/meta/v1", "v1"),
+    "k8s.io/apimachinery/pkg/api/resource": ("resource", "k8s_io/apimachinery/pkg/api/resource", "resource"),
+    "k8s.io/apimachinery/pkg/util/intstr": ("intstr", "k8s_io/apimachinery/pkg/util/intstr", "intstr"),
+    "gopkg.in/inf.v0": ("inf", "gopkg_in/inf_v0", "inf"),
+    "math/big": ("big", "math/big", "big"),
+    "time": ("runtime_time", "time", "time"),
 }
 SCALARS = {
     "string": "go_string", "bool": "bool", "int": "w64", "uint": "w64",
     "int64": "w64", "uint64": "w64", "int32": "w32", "uint32": "w32",
     "int16": "w16", "uint16": "w16", "int8": "w8", "uint8": "w8",
 }
-GROUPS = {
-    "runtime_time": "TimeView", "time": "MetaTimeView",
-    "typemeta": "TypeMetaView", "objectmeta": "ObjectMetaView",
-    "delete_options": "DeleteOptionsView",
-    "pod": "PodView", "persistentvolumeclaim": "PersistentVolumeClaimView",
-    "replicaset": "ReplicaSetView", "statefulset": "StatefulSetView",
-    "deployment": "DeploymentView",
-}
-# Preserve useful named ownership components used by existing program proofs.
-# These are representation choices only; configuration exclusions still apply.
-NAMED_COLLECTIONS = {
-    META + "/Preconditions", META + "/DeleteOptions",
-    META + "/ObjectMeta", META + "/OwnerReference", META + "/ManagedFieldsEntry", META + "/FieldsV1",
-    META + "/LabelSelector", META + "/LabelSelectorRequirement",
-    APPS + "/ReplicaSetSpec", APPS + "/ReplicaSetStatus",
-    APPS + "/StatefulSetSpec", APPS + "/DeploymentSpec",
-}
+
+
+def extract_schema(groups):
+    """Reflect configured named roots using a temporary Go entry point."""
+    imports = {}
+    roots = []
+    for name, group in groups.items():
+        types = []
+        for root in group["roots"]:
+            package, _, typ = root.rpartition("/")
+            alias = imports.setdefault(package, "pkg" + str(len(imports)))
+            types.append(f"reflect.TypeFor[{alias}.{typ}]()")
+        roots.append("{name: " + json.dumps(name) + ", types: []reflect.Type{" + ", ".join(types) + "}}")
+    driver = '\n'.join([
+        'package main', 'import (', '"reflect"',
+        *(f'{alias} {json.dumps(package)}' for package, alias in imports.items()),
+        ')', 'func main() {', 'extractSchema([]rootGroup{',
+        *(root + ',' for root in roots), '})', '}',
+    ])
+    env = dict(os.environ)
+    env.setdefault("GOCACHE", "/tmp/go-build")
+    # Match scripts/goose.sh even when the installed Go version differs.
+    env["GOTOOLCHAIN"] = "go" + next(
+        line.split()[1] for line in (ROOT / "go.mod").read_text().splitlines()
+        if line.startswith("go ")
+    )
+    with tempfile.TemporaryDirectory(prefix="generate-views-") as directory:
+        helper = Path(directory) / "extract_schema.go"
+        helper.write_text((ROOT / "scripts/extract_schema.go").read_text())
+        main = Path(directory) / "main.go"
+        main.write_text(driver)
+        return json.loads(subprocess.check_output(
+            ["go", "run", str(helper), str(main)], cwd=ROOT / "kubernetes", env=env, text=True,
+        ))
 
 
 def main():
@@ -68,31 +88,78 @@ def main():
     parser.add_argument("--check", action="store_true", help="check views without writing files")
     parser.add_argument("--schema", type=Path, help="reuse a reflection schema for development")
     parser.add_argument("--view-config", type=Path, default=ROOT / "scripts/generate_views.toml",
-                        help="view configuration (default: scripts/generate_views.toml)")
+                        help="roots, output groups, and ownership configuration (default: scripts/generate_views.toml)")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "src/generatedviews",
                         help="directory for generated views (default: src/generatedviews)")
     args = parser.parse_args()
     if args.config and args.check:
         parser.error("--config and --check cannot be combined")
+    config = tomllib.loads(args.view_config.read_text())
+    if set(config) - {"groups", "contexts", "named_collections", "exclude_fields"}:
+        parser.error("unknown view configuration section")
+    groups = config.get("groups", {})
+    contexts = config.get("contexts", {})
+    if not isinstance(groups, dict) or not groups:
+        parser.error("groups must be a nonempty table")
+    if not isinstance(contexts, dict):
+        parser.error("contexts must be a table")
+
+    def identifier(value):
+        return isinstance(value, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_']*", value)
+
+    def qualified(value):
+        return isinstance(value, str) and "." in value and all(identifier(part) for part in value.split("."))
+
+    package_modules = {
+        alias: "code." + path.replace("/", ".") + "." + module
+        for alias, path, module in PACKAGES.values()
+    }
+    for name, context in contexts.items():
+        if not isinstance(context, dict) or set(context) != {"imports", "aliases", "assumptions"}:
+            parser.error(f"context {name} needs imports, aliases, and assumptions")
+        if not isinstance(context["imports"], list) or not all(qualified(v) for v in context["imports"]):
+            parser.error(f"context {name} imports must be qualified Rocq modules")
+        if (not isinstance(context["aliases"], list)
+                or not all(isinstance(v, str) and v in package_modules for v in context["aliases"])):
+            parser.error(f"context {name} aliases must refer to PACKAGES aliases")
+        assumptions = context["assumptions"]
+        if (not isinstance(assumptions, dict) or not assumptions
+                or not all(identifier(k) and isinstance(v, str) and v in context["aliases"]
+                           for k, v in assumptions.items())):
+            parser.error(f"context {name} assumptions must map binder names to its package aliases")
+    modules = set()
+    for name, group in groups.items():
+        if (not identifier(name) or not isinstance(group, dict)
+                or not {"module", "roots", "context"} <= set(group)
+                or set(group) - {"module", "roots", "context", "exports"}):
+            parser.error(f"group {name} needs module, roots, and context; exports is optional")
+        if not identifier(group["module"]) or group["module"] in modules:
+            parser.error(f"group {name} needs a unique Rocq module name")
+        modules.add(group["module"])
+        if not isinstance(group["context"], str) or group["context"] not in contexts:
+            parser.error(f"unknown context for group {name}")
+        if not isinstance(group["roots"], list) or not group["roots"]:
+            parser.error(f"group {name} roots must be a nonempty list of Go type IDs")
+        for root in group["roots"]:
+            package, _, typ = root.rpartition("/") if isinstance(root, str) else ("", "", "")
+            if package not in PACKAGES or not re.fullmatch(r"[A-Z][A-Za-z0-9_]*", typ):
+                parser.error(f"invalid root {root!r}: use a PACKAGES Go path followed by /ExportedType")
+        exports = group.get("exports", {})
+        if not isinstance(exports, dict) or not all(identifier(k) and qualified(v) for k, v in exports.items()):
+            parser.error(f"group {name} exports must map alias names to qualified Rocq modules")
+    named_collections = config.get("named_collections", [])
+    if not isinstance(named_collections, list) or not all(isinstance(v, str) for v in named_collections):
+        parser.error("named_collections must be a list of Go type IDs")
+    named_collections = set(named_collections)
     if args.schema:
         schema = json.loads(args.schema.read_text())
     else:
-        env = dict(os.environ)
-        env.setdefault("GOCACHE", "/tmp/go-build")
-        # Match scripts/goose.sh even when the installed Go version differs.
-        env["GOTOOLCHAIN"] = "go" + next(
-            line.split()[1] for line in (ROOT / "go.mod").read_text().splitlines()
-            if line.startswith("go ")
-        )
-        schema = json.loads(subprocess.check_output(
-            ["go", "run", str(ROOT / "scripts/extract_schema.go")],
-            cwd=ROOT / "kubernetes", env=env, text=True,
-        ))
+        schema = extract_schema(groups)
     nodes = schema["Nodes"]
-    order = schema["Order"]
-    config = tomllib.loads(args.view_config.read_text())
-    if set(config) - {"exclude_fields"}:
-        parser.error("unknown view configuration section")
+    if schema["Roots"] != {name: group["roots"] for name, group in groups.items()}:
+        parser.error("reflection schema roots do not match configured groups; omit --schema to reflect them again")
+    if any(nodes[root]["Kind"] != "struct" for roots in schema["Roots"].values() for root in roots):
+        parser.error("view roots must be Go structs")
     exclusions = config.get("exclude_fields", {})
     if not isinstance(exclusions, dict):
         parser.error("exclude_fields must be a table of Go types and fields")
@@ -117,6 +184,7 @@ def main():
     }
 
     owners = {}
+    order = []
 
     def assign(key, group):
         if key in owners:
@@ -128,8 +196,9 @@ def main():
         for child in (n.get("Key"), n.get("Elem")):
             if child:
                 assign(child, group)
+        order.append(key)
 
-    for group in GROUPS:
+    for group in groups:
         for key in schema["Roots"][group]:
             assign(key, group)
     current_group = None
@@ -139,7 +208,7 @@ def main():
         result = {"math/big/Int": "BigIntV", "gopkg.in/inf.v0/Dec": "DecimalV"}.get(
             key, n["Name"][0].upper() + n["Name"][1:] + "V")
         if current_group is not None and owners[key] != current_group:
-            result = GROUPS[owners[key]] + "." + result
+            result = groups[owners[key]]["module"] + "." + result
         return result
 
     def physical(key):
@@ -243,7 +312,7 @@ def main():
         c = "c.(" + physical(key)[:-2] + "." + field["Name"] + "')"
         v = "v.(" + field["Name"] + "')"
         expression = predicate(child_key) + " " + c + " " + v + " dq"
-        if key not in NAMED_COLLECTIONS or child["Kind"] not in {"ptr", "slice", "map"}:
+        if key not in named_collections or child["Kind"] not in {"ptr", "slice", "map"}:
             proof = ""
             # Keep nontrivial struct predicates named even when exclusions make
             # them heap-free, so clients can use their abstraction unchanged.
@@ -301,7 +370,7 @@ def main():
         return result
 
     def update_configs():
-        for pkg, (_, path) in PACKAGES.items():
+        for pkg, (_, path, _) in PACKAGES.items():
             names = sorted(n["Name"] for n in nodes.values() if n["Pkg"] == pkg and n["Name"])
             config_path = ROOT / "src/code" / (path + ".v.toml")
             config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -341,38 +410,22 @@ def main():
         "(* Generated by scripts/generate_views.py; edit the generator rather than this file. *)",
         "From New.proof Require Import prelude empty_ffi util.",
         "From New.proof Require Export deepown.",
-        "Module api_core_v1 := code.k8s_io.api.core.v1.v1.",
-        "Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.",
-        "Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.",
-        "Module resource := code.k8s_io.apimachinery.pkg.api.resource.resource.",
-        "Module intstr := code.k8s_io.apimachinery.pkg.util.intstr.intstr.",
-        "Module inf := code.gopkg_in.inf_v0.inf.",
-        "Module big := code.math.big.big.",
-        "Module runtime_time := code.time.time.",
-        "",
     ]
     structs = [key for key in order if nodes[key]["Kind"] == "struct"]
     outputs = {}
+    for name, group in groups.items():
+        context = contexts[group["context"]]
+        imports = ["From " + module.rsplit(".", 1)[0] + " Require Export " + module.rsplit(".", 1)[1] + "."
+                   for module in context["imports"]]
+        aliases = ["Module " + alias + " := " + package_modules[alias] + "." for alias in context["aliases"]]
+        dependencies = list(groups)[:list(groups).index(name)]
+        outputs[name] = header + imports
+        if dependencies:
+            outputs[name].append("From New.generatedviews Require Export " + " ".join(dependencies) + ".")
+        outputs[name] += aliases + ["", "Module " + group["module"] + "."]
     for key in structs:
         current_group = owners[key]
-        if current_group not in outputs:
-            if current_group == "runtime_time":
-                imports = ["From New.generatedproof Require Export time."]
-                aliases = ["Module runtime_time := code.time.time."]
-            elif current_group in {"time", "typemeta", "objectmeta", "delete_options"}:
-                imports = ["From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init."]
-                aliases = ["Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1."]
-            else:
-                imports = ["From New.proof.k8s_io.api." + ("core" if current_group in {"pod", "persistentvolumeclaim"} else "apps") + " Require Export v1_init."]
-                aliases = header[3:-1]
-                if current_group in {"pod", "persistentvolumeclaim"}:
-                    aliases = [line for line in aliases if not line.startswith("Module api_apps_v1")]
-            dependencies = list(GROUPS)[:list(GROUPS).index(current_group)]
-            outputs[current_group] = header[:3] + imports
-            if dependencies:
-                outputs[current_group].append("From New.generatedviews Require Export " + " ".join(dependencies) + ".")
-            outputs[current_group] += aliases + [""]
-            outputs[current_group].append("Module " + GROUPS[current_group] + ".")
+        context = contexts[groups[current_group]["context"]]
         lines = outputs[current_group]
         n = nodes[key]
         mod = module(key)
@@ -383,14 +436,9 @@ def main():
             "", "Module " + mod + ".", "Section def.",
             "Context `{hG : !heapGS Σ} `{!ffi_semantics _ _}.",
             "Context {sem : go.Semantics}",
-            *(["  {time_sem : code.time.time.Assumptions}."] if current_group == "runtime_time" else [
-                "  {meta_v1_sem : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions}" + ("." if current_group in {"time", "typemeta", "objectmeta", "delete_options"} else ""),
-                *([] if current_group in {"time", "typemeta", "objectmeta", "delete_options"} else [
-                    "  {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}" + ("." if current_group in {"pod", "persistentvolumeclaim"} else ""),
-                    *([] if current_group in {"pod", "persistentvolumeclaim"} else [
-                        "  {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}."]),
-                ]),
-            ]),
+            *("  {" + binder + " : " + package_modules[alias] + ".Assumptions}"
+              + ("." if index == len(context["assumptions"]) - 1 else "")
+              for index, (binder, alias) in enumerate(context["assumptions"].items())),
             'Local Set Default Proof Using "All".', "",
         ])
         for name, reason in exclusions.get(key, {}).items():
@@ -506,15 +554,18 @@ def main():
         # without duplicating the shared representation or introducing cycles.
         aliases = {}
         for root in schema["Roots"][group]:
+            if owners[root] != group:
+                canonical = module(root)
+                aliases[canonical.rsplit(".", 1)[-1]] = canonical
             for field in view_fields[root]:
                 child = field["Type"]
                 if field["Name"] in {"Spec", "Status"} and nodes[child]["Kind"] == "struct" and owners[child] != group:
                     aliases[nodes[child]["Name"] + "V"] = module(child)
         for name, canonical in aliases.items():
             lines.extend(["", "Module " + name + " := " + canonical + "."])
-        lines.extend(["", "End " + GROUPS[group] + ".", ""])
-        if group == "time":
-            lines.extend(["Module TimeV := MetaTimeView.TimeV.", ""])
+        lines.extend(["", "End " + groups[group]["module"] + ".", ""])
+        for name, target in groups[group].get("exports", {}).items():
+            lines.extend(["Module " + name + " := " + target + ".", ""])
         target = args.output_dir / (group + ".v")
         generated = "\n".join(lines)
         if args.check:

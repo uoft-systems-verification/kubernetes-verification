@@ -1,18 +1,13 @@
 //go:build ignore
 
-// Run from the Kubernetes module; this helper is not a package of the root
-// tooling module.
+// generate_views.py runs this helper from the Kubernetes module together with
+// a temporary main function selecting the configured root types.
 package main
 
 import (
 	"encoding/json"
 	"os"
 	"reflect"
-	"time"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type node struct {
@@ -29,7 +24,12 @@ type field struct {
 	Type string
 }
 
-func main() {
+type rootGroup struct {
+	name  string
+	types []reflect.Type
+}
+
+func extractSchema(groups []rootGroup) {
 	nodes := map[string]node{}
 	var order []string
 	var visit func(reflect.Type) string
@@ -60,21 +60,7 @@ func main() {
 		return id
 	}
 	roots := map[string][]string{}
-	for _, group := range []struct {
-		name  string
-		types []reflect.Type
-	}{
-		{"runtime_time", []reflect.Type{reflect.TypeOf(time.Time{})}},
-		{"time", []reflect.Type{reflect.TypeOf(metav1.Time{})}},
-		{"typemeta", []reflect.Type{reflect.TypeOf(metav1.TypeMeta{})}},
-		{"objectmeta", []reflect.Type{reflect.TypeOf(metav1.ObjectMeta{})}},
-		{"delete_options", []reflect.Type{reflect.TypeOf(metav1.DeleteOptions{})}},
-		{"pod", []reflect.Type{reflect.TypeOf(corev1.Pod{}), reflect.TypeOf(corev1.PodTemplateSpec{})}},
-		{"persistentvolumeclaim", []reflect.Type{reflect.TypeOf(corev1.PersistentVolumeClaim{})}},
-		{"replicaset", []reflect.Type{reflect.TypeOf(appsv1.ReplicaSet{})}},
-		{"statefulset", []reflect.Type{reflect.TypeOf(appsv1.StatefulSet{})}},
-		{"deployment", []reflect.Type{reflect.TypeOf(appsv1.Deployment{})}},
-	} {
+	for _, group := range groups {
 		for _, typ := range group.types {
 			roots[group.name] = append(roots[group.name], visit(typ))
 		}

@@ -18,16 +18,15 @@ go tool perennial-cli goose --config goose-iam.toml
 go tool perennial-cli goose --config goose-benchmark.toml
 
 # Limit post-processing to these generated proof files. The value may contain
-# multiple whitespace-separated paths; core/v1.v is the default target.
-GOOSE_PROOF_OPTIMIZER_TARGETS="${GOOSE_PROOF_OPTIMIZER_TARGETS:-src/generatedproof/k8s_io/api/core/v1.v}"
+# multiple whitespace-separated paths; core/v1.v and apps/v1.v are the default targets.
+GOOSE_PROOF_OPTIMIZER_TARGETS="${GOOSE_PROOF_OPTIMIZER_TARGETS:-src/generatedproof/k8s_io/api/core/v1.v src/generatedproof/k8s_io/api/apps/v1.v}"
 
-# Optimize Pod records with at least ten fields.
+# Optimize records with at least ten fields.
 # Lists are comma-separated.
 # Set an explicit empty value to disable either optimization independently.
-POD_LARGE_STRUCTS="PodSpec,VolumeSource,Container,ContainerStatus,EphemeralContainerCommon,PodStatus"
-POD_LARGE_STRUCTS+=",PodSecurityContext,SecurityContext,ISCSIVolumeSource,ScaleIOVolumeSource"
-GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED="${GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED-$POD_LARGE_STRUCTS}"
-GOOSE_PROOF_OPTIMIZER_ACCESS="${GOOSE_PROOF_OPTIMIZER_ACCESS-$POD_LARGE_STRUCTS}"
+LARGE_STRUCTS="PodSpec,VolumeSource,Container,ContainerStatus,EphemeralContainerCommon,PodStatus,PodSecurityContext,SecurityContext,ISCSIVolumeSource,ScaleIOVolumeSource,StatefulSetSpec,StatefulSetStatus"
+GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED="${GOOSE_PROOF_OPTIMIZER_INTO_VAL_TYPED-$LARGE_STRUCTS}"
+GOOSE_PROOF_OPTIMIZER_ACCESS="${GOOSE_PROOF_OPTIMIZER_ACCESS-$LARGE_STRUCTS}"
 
 # Add each optional flag only when at least one struct is selected.
 OPTIMIZER_ARGS=()
@@ -46,11 +45,5 @@ fi
 python3 scripts/optimize_generated_proofs.py \
   "${OPTIMIZER_ARGS[@]}" \
   $GOOSE_PROOF_OPTIMIZER_TARGETS
-
-# Apply the same optimization to apps records with at least ten fields.
-python3 scripts/optimize_generated_proofs.py \
-  --optimize-into-val-typed StatefulSetSpec,StatefulSetStatus \
-  --optimize-access StatefulSetSpec,StatefulSetStatus \
-  src/generatedproof/k8s_io/api/apps/v1.v
 
 python3 scripts/generate_views.py

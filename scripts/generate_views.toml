@@ -1,3 +1,96 @@
+# Types whose collection fields retain named nilness/contents/capacity ownership
+# components used by existing proofs, rather than only a deepown helper.
+named_collections = [
+    "k8s.io/apimachinery/pkg/apis/meta/v1/Preconditions",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/DeleteOptions",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/ObjectMeta",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/OwnerReference",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/ManagedFieldsEntry",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/FieldsV1",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/LabelSelector",
+    "k8s.io/apimachinery/pkg/apis/meta/v1/LabelSelectorRequirement",
+    "k8s.io/api/apps/v1/ReplicaSetSpec",
+    "k8s.io/api/apps/v1/ReplicaSetStatus",
+    "k8s.io/api/apps/v1/StatefulSetSpec",
+    "k8s.io/api/apps/v1/DeploymentSpec",
+]
+
+# Shared Rocq imports, package aliases, and assumptions for generated sections.
+# Alias names refer to PACKAGES in generate_views.py. Assumption order is kept.
+[contexts.runtime_time]
+imports = ["New.generatedproof.time"]
+aliases = ["runtime_time"]
+assumptions = { time_sem = "runtime_time" }
+
+[contexts.meta]
+imports = ["New.proof.k8s_io.apimachinery.pkg.apis.meta.v1_init"]
+aliases = ["meta_v1"]
+assumptions = { meta_v1_sem = "meta_v1" }
+
+[contexts.core]
+imports = ["New.proof.k8s_io.api.core.v1_init"]
+aliases = ["api_core_v1", "meta_v1", "resource", "intstr", "inf", "big", "runtime_time"]
+assumptions = { meta_v1_sem = "meta_v1", core_v1_sem = "api_core_v1" }
+
+[contexts.apps]
+imports = ["New.proof.k8s_io.api.apps.v1_init"]
+aliases = ["api_core_v1", "api_apps_v1", "meta_v1", "resource", "intstr", "inf", "big", "runtime_time"]
+assumptions = { meta_v1_sem = "meta_v1", core_v1_sem = "api_core_v1", apps_v1_sem = "api_apps_v1" }
+
+# Groups are visited in declaration order. The first group reaching a nested
+# type owns its view; later groups reuse it. Each group writes <name>.v.
+# Root IDs are Go package paths followed by /TypeName.
+[groups.runtime_time]
+module = "TimeView"
+roots = ["time/Time"]
+context = "runtime_time"
+
+[groups.time]
+module = "MetaTimeView"
+roots = ["k8s.io/apimachinery/pkg/apis/meta/v1/Time"]
+context = "meta"
+exports = { TimeV = "MetaTimeView.TimeV" }
+
+[groups.typemeta]
+module = "TypeMetaView"
+roots = ["k8s.io/apimachinery/pkg/apis/meta/v1/TypeMeta"]
+context = "meta"
+
+[groups.objectmeta]
+module = "ObjectMetaView"
+roots = ["k8s.io/apimachinery/pkg/apis/meta/v1/ObjectMeta"]
+context = "meta"
+
+[groups.delete_options]
+module = "DeleteOptionsView"
+roots = ["k8s.io/apimachinery/pkg/apis/meta/v1/DeleteOptions"]
+context = "meta"
+
+[groups.pod]
+module = "PodView"
+roots = ["k8s.io/api/core/v1/Pod", "k8s.io/api/core/v1/PodTemplateSpec"]
+context = "core"
+
+[groups.persistentvolumeclaim]
+module = "PersistentVolumeClaimView"
+roots = ["k8s.io/api/core/v1/PersistentVolumeClaim"]
+context = "core"
+
+[groups.replicaset]
+module = "ReplicaSetView"
+roots = ["k8s.io/api/apps/v1/ReplicaSet"]
+context = "apps"
+
+[groups.statefulset]
+module = "StatefulSetView"
+roots = ["k8s.io/api/apps/v1/StatefulSet"]
+context = "apps"
+
+[groups.deployment]
+module = "DeploymentView"
+roots = ["k8s.io/api/apps/v1/Deployment"]
+context = "apps"
+
 # Fields below are omitted from both the view and deepown. Keys are fully
 # qualified Go type IDs and exact Go field names. Every exclusion needs an
 # explanation, also emitted as a comment in the generated view.
