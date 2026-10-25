@@ -77,8 +77,10 @@ Definition update_status_rejected (kind namespace : go_string) (kobj : KObjectV.
        if err != nil { return nil, err }
        ...
      } else {
-       if _, err = parseResourceVersion(rv); err != nil {
-         return nil, malformedUpdateResourceVersionError(err)
+       if _, err = strconv.ParseUint(rv, 10, 64); err != nil {
+         return nil, &errors.StatusError{ErrStatus: metav1.Status{
+           Status: metav1.StatusFailure, Code: 500, Message: err.Error(),
+         }}
        }
      }
      rejects an empty resource version only for a kind without unconditional
@@ -468,20 +470,21 @@ Proof.
     - rewrite (bool_decide_eq_false_2 _ Hrv_nonempty). wp_auto_keep.
       destruct (Classical_Prop.classic (valid_resource_version
           (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta kobj)))) as [Hrv_valid|Hrv_invalid].
-      + wp_apply wp_parseResourceVersion.
+      + wp_apply wp_ParseUint_resource_version_valid.
         { iPureIntro. exact Hrv_valid. }
         iIntros (ret) "_". wp_auto_keep.
         iLeft. iSplit; first done.
         iExists (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta kobj)), interface.nil.
         rewrite Hrv_noop. iFrame. iPureIntro. right. done.
-      + wp_apply wp_parseResourceVersion_general.
-        iIntros (ret err_parse) "_". wp_auto_keep.
+      + wp_apply wp_ParseUint_decimal.
+        iIntros (ret err_parse) "(_ & Hparse_error)". wp_auto_keep.
         destruct err_parse as [err_parse_ok|]; wp_auto_keep.
         * (* A resource version that does not parse is rejected. *)
-          wp_apply (wp_malformedUpdateResourceVersionError (interface.ok err_parse_ok)).
-          { iPureIntro. done. }
-          iIntros (err_malformed) "%Herr_malformed_ne". wp_auto_keep.
-          iRight. iExists err_malformed. done.
+          iEval (rewrite /error_message_spec) in "Hparse_error".
+          wp_apply ("Hparse_error" with "[]").
+          iIntros (message) "_". wp_auto_keep.
+          wp_alloc status_error_l as "_". wp_auto_keep.
+          iRight. iExists _. done.
         * iLeft. iSplit; first done.
           iExists (ObjectMetaV.ResourceVersion' (KObjectV.objectmeta kobj)), interface.nil.
           rewrite Hrv_noop. iFrame. iPureIntro. right. done. }

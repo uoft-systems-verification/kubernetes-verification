@@ -187,7 +187,7 @@ Proof.
   wp_if_destruct.
   { exfalso. eapply valid_resource_version_non_empty; done. }
   rewrite bool_decide_false //. wp_auto_keep.
-  wp_apply wp_parseResourceVersion.
+  wp_apply wp_ParseUint_resource_version_valid.
   { iPureIntro. exact Hrv_valid. }
   iIntros (ret) "_". wp_auto_keep.
   wp_apply (wp_GetResourceVersion_deepown_kobject i1 l1 kobj with

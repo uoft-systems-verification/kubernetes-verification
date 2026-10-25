@@ -1,4 +1,11 @@
 translate = [
+    "Status",
+    "StatusFailure",
+    "StatusReason",
+    "StatusDetails",
+    "StatusCause",
+    "CauseType",
+    "ListMeta",
     "TypeMeta",
     "ObjectMeta",
     "OwnerReference",

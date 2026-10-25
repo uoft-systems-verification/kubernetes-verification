@@ -304,8 +304,6 @@ Axiom MicroTimeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext},
 
 Axiom Timestampⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ListMetaⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom ListOptionsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ResourceVersionMatchⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -319,16 +317,6 @@ Axiom PatchOptionsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContex
 Axiom ApplyOptionsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom UpdateOptionsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom Statusⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatusDetailsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatusReasonⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatusCauseⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom CauseTypeⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom Listⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -432,7 +420,7 @@ Axiom FieldValidationStrict : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
 
 Axiom StatusSuccess : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
-Axiom StatusFailure : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition StatusFailure {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Failure"%go.
 
 Axiom StatusReasonUnknown : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -1801,17 +1789,44 @@ Class TypeMeta_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCont
 Module ListMeta.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  SelfLink' : go_string;
+  ResourceVersion' : go_string;
+  Continue' : go_string;
+  RemainingItemCount' : loc;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End ListMeta.
+
+Definition ListMeta'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "SelfLink"%go go.string);
+  (go.FieldDecl "ResourceVersion"%go go.string);
+  (go.FieldDecl "Continue"%go go.string);
+  (go.FieldDecl "RemainingItemCount"%go (go.PointerType go.int64))
+].
+Program Definition ListMeta'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ListMeta'fds_unsealed).
+Global Instance equals_unfold_ListMeta {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ListMeta'fds =→ ListMeta'fds_unsealed.
+Proof. rewrite /ListMeta'fds seal_eq //. Qed.
+
+Definition ListMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ListMeta'fds).
 
 Class ListMeta_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ListMeta_type_repr  :: go.TypeReprUnderlying ListMetaⁱᵐᵖˡ ListMeta.t;
   #[global] ListMeta_underlying :: (ListMeta) <u (ListMetaⁱᵐᵖˡ);
-  #[global] ListMetaⁱᵐᵖˡ_underlying :: (ListMetaⁱᵐᵖˡ) ↓u (ListMetaⁱᵐᵖˡ);
+  #[global] ListMeta_get_SelfLink (x : ListMeta.t) :: ⟦StructFieldGet (ListMetaⁱᵐᵖˡ) "SelfLink", #x⟧ ⤳[under] #x.(ListMeta.SelfLink');
+  #[global] ListMeta_set_SelfLink (x : ListMeta.t) y :: ⟦StructFieldSet (ListMetaⁱᵐᵖˡ) "SelfLink", (#x, #y)⟧ ⤳[under] #(x <|ListMeta.SelfLink' := y|>);
+  #[global] ListMeta_get_ResourceVersion (x : ListMeta.t) :: ⟦StructFieldGet (ListMetaⁱᵐᵖˡ) "ResourceVersion", #x⟧ ⤳[under] #x.(ListMeta.ResourceVersion');
+  #[global] ListMeta_set_ResourceVersion (x : ListMeta.t) y :: ⟦StructFieldSet (ListMetaⁱᵐᵖˡ) "ResourceVersion", (#x, #y)⟧ ⤳[under] #(x <|ListMeta.ResourceVersion' := y|>);
+  #[global] ListMeta_get_Continue (x : ListMeta.t) :: ⟦StructFieldGet (ListMetaⁱᵐᵖˡ) "Continue", #x⟧ ⤳[under] #x.(ListMeta.Continue');
+  #[global] ListMeta_set_Continue (x : ListMeta.t) y :: ⟦StructFieldSet (ListMetaⁱᵐᵖˡ) "Continue", (#x, #y)⟧ ⤳[under] #(x <|ListMeta.Continue' := y|>);
+  #[global] ListMeta_get_RemainingItemCount (x : ListMeta.t) :: ⟦StructFieldGet (ListMetaⁱᵐᵖˡ) "RemainingItemCount", #x⟧ ⤳[under] #x.(ListMeta.RemainingItemCount');
+  #[global] ListMeta_set_RemainingItemCount (x : ListMeta.t) y :: ⟦StructFieldSet (ListMetaⁱᵐᵖˡ) "RemainingItemCount", (#x, #y)⟧ ⤳[under] #(x <|ListMeta.RemainingItemCount' := y|>);
 }.
 
 Module ObjectMeta.
@@ -2199,84 +2214,179 @@ Class Preconditions_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLoca
   #[global] Preconditions_set_ResourceVersion (x : Preconditions.t) y :: ⟦StructFieldSet (Preconditionsⁱᵐᵖˡ) "ResourceVersion", (#x, #y)⟧ ⤳[under] #(x <|Preconditions.ResourceVersion' := y|>);
 }.
 
+Module StatusReason.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
+End def.
+End StatusReason.
+
+Definition StatusReasonⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
+Class StatusReason_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatusReason_underlying :: (StatusReason) <u (StatusReasonⁱᵐᵖˡ);
+}.
+
 Module Status.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  TypeMeta' : v1.TypeMeta.t;
+  ListMeta' : v1.ListMeta.t;
+  Status' : go_string;
+  Message' : go_string;
+  Reason' : v1.StatusReason.t;
+  Details' : loc;
+  Code' : w32;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End Status.
+
+Definition Status'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go TypeMeta);
+  (go.EmbeddedField "ListMeta"%go ListMeta);
+  (go.FieldDecl "Status"%go go.string);
+  (go.FieldDecl "Message"%go go.string);
+  (go.FieldDecl "Reason"%go StatusReason);
+  (go.FieldDecl "Details"%go (go.PointerType StatusDetails));
+  (go.FieldDecl "Code"%go go.int32)
+].
+Program Definition Status'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Status'fds_unsealed).
+Global Instance equals_unfold_Status {ext : ffi_syntax} {go_gctx : GoGlobalContext} : Status'fds =→ Status'fds_unsealed.
+Proof. rewrite /Status'fds seal_eq //. Qed.
+
+Definition Statusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (Status'fds).
 
 Class Status_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] Status_type_repr  :: go.TypeReprUnderlying Statusⁱᵐᵖˡ Status.t;
   #[global] Status_underlying :: (Status) <u (Statusⁱᵐᵖˡ);
-  #[global] Statusⁱᵐᵖˡ_underlying :: (Statusⁱᵐᵖˡ) ↓u (Statusⁱᵐᵖˡ);
+  #[global] Status_get_TypeMeta (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(Status.TypeMeta');
+  #[global] Status_set_TypeMeta (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|Status.TypeMeta' := y|>);
+  #[global] Status_get_ListMeta (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "ListMeta", #x⟧ ⤳[under] #x.(Status.ListMeta');
+  #[global] Status_set_ListMeta (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "ListMeta", (#x, #y)⟧ ⤳[under] #(x <|Status.ListMeta' := y|>);
+  #[global] Status_get_Status (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(Status.Status');
+  #[global] Status_set_Status (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|Status.Status' := y|>);
+  #[global] Status_get_Message (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(Status.Message');
+  #[global] Status_set_Message (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|Status.Message' := y|>);
+  #[global] Status_get_Reason (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "Reason", #x⟧ ⤳[under] #x.(Status.Reason');
+  #[global] Status_set_Reason (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "Reason", (#x, #y)⟧ ⤳[under] #(x <|Status.Reason' := y|>);
+  #[global] Status_get_Details (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "Details", #x⟧ ⤳[under] #x.(Status.Details');
+  #[global] Status_set_Details (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "Details", (#x, #y)⟧ ⤳[under] #(x <|Status.Details' := y|>);
+  #[global] Status_get_Code (x : Status.t) :: ⟦StructFieldGet (Statusⁱᵐᵖˡ) "Code", #x⟧ ⤳[under] #x.(Status.Code');
+  #[global] Status_set_Code (x : Status.t) y :: ⟦StructFieldSet (Statusⁱᵐᵖˡ) "Code", (#x, #y)⟧ ⤳[under] #(x <|Status.Code' := y|>);
 }.
 
 Module StatusDetails.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Name' : go_string;
+  Group' : go_string;
+  Kind' : go_string;
+  UID' : code.k8s_io.apimachinery.pkg.types.types.UID.t;
+  Causes' : slice.t;
+  RetryAfterSeconds' : w32;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End StatusDetails.
+
+Definition StatusDetails'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Name"%go go.string);
+  (go.FieldDecl "Group"%go go.string);
+  (go.FieldDecl "Kind"%go go.string);
+  (go.FieldDecl "UID"%go code.k8s_io.apimachinery.pkg.types.types.UID);
+  (go.FieldDecl "Causes"%go (go.SliceType StatusCause));
+  (go.FieldDecl "RetryAfterSeconds"%go go.int32)
+].
+Program Definition StatusDetails'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatusDetails'fds_unsealed).
+Global Instance equals_unfold_StatusDetails {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatusDetails'fds =→ StatusDetails'fds_unsealed.
+Proof. rewrite /StatusDetails'fds seal_eq //. Qed.
+
+Definition StatusDetailsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatusDetails'fds).
 
 Class StatusDetails_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] StatusDetails_type_repr  :: go.TypeReprUnderlying StatusDetailsⁱᵐᵖˡ StatusDetails.t;
   #[global] StatusDetails_underlying :: (StatusDetails) <u (StatusDetailsⁱᵐᵖˡ);
-  #[global] StatusDetailsⁱᵐᵖˡ_underlying :: (StatusDetailsⁱᵐᵖˡ) ↓u (StatusDetailsⁱᵐᵖˡ);
-}.
-
-Module StatusReason.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatusReason.
-
-Class StatusReason_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatusReason_type_repr  :: go.TypeReprUnderlying StatusReasonⁱᵐᵖˡ StatusReason.t;
-  #[global] StatusReason_underlying :: (StatusReason) <u (StatusReasonⁱᵐᵖˡ);
-  #[global] StatusReasonⁱᵐᵖˡ_underlying :: (StatusReasonⁱᵐᵖˡ) ↓u (StatusReasonⁱᵐᵖˡ);
-}.
-
-Module StatusCause.
-Section def.
-Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
-End def.
-End StatusCause.
-
-Class StatusCause_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
-{
-  #[global] StatusCause_type_repr  :: go.TypeReprUnderlying StatusCauseⁱᵐᵖˡ StatusCause.t;
-  #[global] StatusCause_underlying :: (StatusCause) <u (StatusCauseⁱᵐᵖˡ);
-  #[global] StatusCauseⁱᵐᵖˡ_underlying :: (StatusCauseⁱᵐᵖˡ) ↓u (StatusCauseⁱᵐᵖˡ);
+  #[global] StatusDetails_get_Name (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "Name", #x⟧ ⤳[under] #x.(StatusDetails.Name');
+  #[global] StatusDetails_set_Name (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "Name", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.Name' := y|>);
+  #[global] StatusDetails_get_Group (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "Group", #x⟧ ⤳[under] #x.(StatusDetails.Group');
+  #[global] StatusDetails_set_Group (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "Group", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.Group' := y|>);
+  #[global] StatusDetails_get_Kind (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "Kind", #x⟧ ⤳[under] #x.(StatusDetails.Kind');
+  #[global] StatusDetails_set_Kind (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "Kind", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.Kind' := y|>);
+  #[global] StatusDetails_get_UID (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "UID", #x⟧ ⤳[under] #x.(StatusDetails.UID');
+  #[global] StatusDetails_set_UID (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "UID", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.UID' := y|>);
+  #[global] StatusDetails_get_Causes (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "Causes", #x⟧ ⤳[under] #x.(StatusDetails.Causes');
+  #[global] StatusDetails_set_Causes (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "Causes", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.Causes' := y|>);
+  #[global] StatusDetails_get_RetryAfterSeconds (x : StatusDetails.t) :: ⟦StructFieldGet (StatusDetailsⁱᵐᵖˡ) "RetryAfterSeconds", #x⟧ ⤳[under] #x.(StatusDetails.RetryAfterSeconds');
+  #[global] StatusDetails_set_RetryAfterSeconds (x : StatusDetails.t) y :: ⟦StructFieldSet (StatusDetailsⁱᵐᵖˡ) "RetryAfterSeconds", (#x, #y)⟧ ⤳[under] #(x <|StatusDetails.RetryAfterSeconds' := y|>);
 }.
 
 Module CauseType.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := go_string.
+#[global] Arguments t : clear implicits.
 End def.
 End CauseType.
 
+Definition CauseTypeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.string.
+
 Class CauseType_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] CauseType_type_repr  :: go.TypeReprUnderlying CauseTypeⁱᵐᵖˡ CauseType.t;
   #[global] CauseType_underlying :: (CauseType) <u (CauseTypeⁱᵐᵖˡ);
-  #[global] CauseTypeⁱᵐᵖˡ_underlying :: (CauseTypeⁱᵐᵖˡ) ↓u (CauseTypeⁱᵐᵖˡ);
+}.
+
+Module StatusCause.
+Section def.
+Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
+Record t :=
+mk {
+  Type' : v1.CauseType.t;
+  Message' : go_string;
+  Field' : go_string;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
+End def.
+End StatusCause.
+
+Definition StatusCause'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Type"%go CauseType);
+  (go.FieldDecl "Message"%go go.string);
+  (go.FieldDecl "Field"%go go.string)
+].
+Program Definition StatusCause'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (StatusCause'fds_unsealed).
+Global Instance equals_unfold_StatusCause {ext : ffi_syntax} {go_gctx : GoGlobalContext} : StatusCause'fds =→ StatusCause'fds_unsealed.
+Proof. rewrite /StatusCause'fds seal_eq //. Qed.
+
+Definition StatusCauseⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (StatusCause'fds).
+
+Class StatusCause_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
+{
+  #[global] StatusCause_type_repr  :: go.TypeReprUnderlying StatusCauseⁱᵐᵖˡ StatusCause.t;
+  #[global] StatusCause_underlying :: (StatusCause) <u (StatusCauseⁱᵐᵖˡ);
+  #[global] StatusCause_get_Type (x : StatusCause.t) :: ⟦StructFieldGet (StatusCauseⁱᵐᵖˡ) "Type", #x⟧ ⤳[under] #x.(StatusCause.Type');
+  #[global] StatusCause_set_Type (x : StatusCause.t) y :: ⟦StructFieldSet (StatusCauseⁱᵐᵖˡ) "Type", (#x, #y)⟧ ⤳[under] #(x <|StatusCause.Type' := y|>);
+  #[global] StatusCause_get_Message (x : StatusCause.t) :: ⟦StructFieldGet (StatusCauseⁱᵐᵖˡ) "Message", #x⟧ ⤳[under] #x.(StatusCause.Message');
+  #[global] StatusCause_set_Message (x : StatusCause.t) y :: ⟦StructFieldSet (StatusCauseⁱᵐᵖˡ) "Message", (#x, #y)⟧ ⤳[under] #(x <|StatusCause.Message' := y|>);
+  #[global] StatusCause_get_Field (x : StatusCause.t) :: ⟦StructFieldGet (StatusCauseⁱᵐᵖˡ) "Field", #x⟧ ⤳[under] #x.(StatusCause.Field');
+  #[global] StatusCause_set_Field (x : StatusCause.t) y :: ⟦StructFieldSet (StatusCauseⁱᵐᵖˡ) "Field", (#x, #y)⟧ ⤳[under] #(x <|StatusCause.Field' := y|>);
 }.
 
 Module List.

@@ -2,10 +2,9 @@ From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Import schema_init.
 From New.proof Require Import prelude empty_ffi.
 
-(* [StatusError] and the Kubernetes API error helpers are external to the
-   executable model.  These predicates record the semantic classes exposed by
-   the corresponding Kubernetes error classifiers, independently of the
-   physical StatusError encoding. *)
+(* The StatusError record is translated; API error constructors and classifiers
+   remain external. These predicates describe their semantic classes
+   independently of the physical StatusError encoding. *)
 Axiom conflict_error: interface.t → Prop.
 Axiom conflict_error_dec: ∀ err, Decision (conflict_error err).
 Global Existing Instance conflict_error_dec.
@@ -84,8 +83,7 @@ Lemma wp_IsAlreadyExists err:
 Proof.
 Admitted.
 
-(* Trusted boundary for the untranslated Kubernetes StatusError
-   representation and constructor. *)
+(* Trusted boundary for the untranslated Kubernetes error constructor. *)
 Lemma wp_NewNotFound (resource : schema.GroupResource.t) (name : go_string) :
   {{{ is_pkg_init api_errors_pkg.errors }}}
     @! api_errors.NewNotFound #resource #name
@@ -96,8 +94,7 @@ Lemma wp_NewNotFound (resource : schema.GroupResource.t) (name : go_string) :
 Proof.
 Admitted.
 
-(* Trusted boundary for the untranslated Kubernetes StatusError
-   representation and constructor. *)
+(* Trusted boundary for the untranslated Kubernetes error constructor. *)
 Lemma wp_NewAlreadyExistsError
     (resource : schema.GroupResource.t) (name : go_string) :
   {{{ is_pkg_init api_errors_pkg.errors }}}
@@ -109,8 +106,7 @@ Lemma wp_NewAlreadyExistsError
 Proof.
 Admitted.
 
-(* Trusted boundary for the untranslated Kubernetes StatusError
-   representation and constructor. *)
+(* Trusted boundary for the untranslated Kubernetes error constructor. *)
 Lemma wp_NewConflict (resource : schema.GroupResource.t) (name : go_string)
     (cause : error.t) :
   {{{ is_pkg_init api_errors_pkg.errors }}}
@@ -122,8 +118,7 @@ Lemma wp_NewConflict (resource : schema.GroupResource.t) (name : go_string)
 Proof.
 Admitted.
 
-(* Trusted boundary for the untranslated Kubernetes StatusError
-   representation and constructor. *)
+(* Trusted boundary for the untranslated Kubernetes error constructor. *)
 Lemma wp_NewBadRequest (reason : go_string) :
   {{{ is_pkg_init api_errors_pkg.errors }}}
     @! api_errors.NewBadRequest #reason
