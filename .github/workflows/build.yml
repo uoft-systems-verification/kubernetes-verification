@@ -7,13 +7,27 @@ on:
   pull_request:
 
 jobs:
+  proof-groups-coverage:
+    name: Check proof group coverage
+    runs-on: ubuntu-latest
+    outputs:
+      groups: ${{ steps.groups.outputs.groups }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check coverage and list proof groups
+        id: groups
+        run: |
+          groups="$(make --silent proof-groups)"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+
   build:
     name: Rocq (${{ matrix.proof-group }})
+    needs: proof-groups-coverage
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rocq-version: ["9.1.0"]
-        proof-group: [base, apimodel, controllers]
+        proof-group: ${{ fromJSON(needs.proof-groups.outputs.groups) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
