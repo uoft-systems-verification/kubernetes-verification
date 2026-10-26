@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         rocq-version: ["9.1.0"]
-        proof-group: ${{ fromJSON(needs.proof-groups.outputs.groups) }}
+        proof-group: ${{ fromJSON(needs.proof-groups-coverage.outputs.groups) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
