@@ -46,7 +46,16 @@ Lemma wp_Time__Before t_l u_l tc uc dq1 dq2 :
       u_l ↦{dq2} uc
   }}}.
 Proof.
-Admitted.
+  wp_start as "(Ht & Hu)".
+  iDestruct (typed_pointsto_not_null with "Ht") as %Ht_nn.
+  iDestruct (typed_pointsto_not_null with "Hu") as %Hu_nn.
+  wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Hu_nn). wp_auto.
+  wp_method_call. wp_auto.
+  wp_apply New.proof.time.wp_Time__Before.
+  iApply "HΦ". iFrame.
+Qed.
 
 Lemma wp_Time__Equal t_l u_l tc uc dq1 dq2 :
   {{{ is_pkg_init v1 ∗
@@ -59,7 +68,18 @@ Lemma wp_Time__Equal t_l u_l tc uc dq1 dq2 :
       u_l ↦{dq2} uc
   }}}.
 Proof.
-Admitted.
+  wp_start as "(Ht & Hu)".
+  iDestruct (typed_pointsto_not_null with "Ht") as %Ht_nn.
+  iDestruct (typed_pointsto_not_null with "Hu") as %Hu_nn.
+  wp_auto.
+  (* The both-nil check fails on [t]; the both-non-nil check then passes. *)
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Hu_nn). wp_auto.
+  wp_method_call. wp_auto.
+  wp_apply New.proof.time.wp_Time__Equal.
+  iApply "HΦ". iFrame.
+Qed.
 
 Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗

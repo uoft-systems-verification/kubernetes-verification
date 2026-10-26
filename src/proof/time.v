@@ -71,7 +71,8 @@ Lemma wp_Time__sec (t : loc) (tv : time.Time.t) dq :
     t @! (go.PointerType time.Time) @! "sec" #()
   {{{ RET #(time_sec (TimeView.TimeV.of_go tv)); t ↦{dq} tv }}}.
 Proof.
-  wp_start. wp_auto. wp_if_destruct; by iApply "HΦ".
+  wp_start. wp_auto. rewrite /time_sec /time_has_monotonic_bit /=.
+  wp_if_destruct; case_decide; try contradiction; by iApply "HΦ".
 Qed.
 
 #[local]
@@ -80,7 +81,7 @@ Lemma wp_Time__unixSec (t : loc) (tv : time.Time.t) :
     t @! (go.PointerType time.Time) @! "unixSec" #()
   {{{ (x : w64), RET #x; t ↦ tv }}}.
 Proof.
-  wp_start. wp_auto. wp_apply (wp_Time__sec with "[$]") as "% ?". by iApply "HΦ".
+  wp_start. wp_auto. wp_apply (wp_Time__sec with "[$]") as "?". by iApply "HΦ".
 Qed.
 
 #[local]
@@ -98,7 +99,7 @@ Lemma wp_Time__UnixNano' (t : time.Time.t) :
   {{{ (x : w64), RET #x; True }}}.
 Proof.
   wp_start. wp_auto. wp_apply (wp_Time__unixSec with "[$]") as "% ?".
-  wp_apply (wp_Time__nsec with "[$]") as "% ?". by iApply "HΦ".
+  wp_apply (wp_Time__nsec with "[$]") as "?". by iApply "HΦ".
 Qed.
 
 Lemma wp_Time__UnixNano l (t : time.Time.t) :
@@ -169,14 +170,55 @@ Lemma wp_Time__Before (t u : time.Time.t) :
     t @! time.Time @! "Before" #u
   {{{ RET #(bool_decide (time_before (TimeView.TimeV.of_go t) (TimeView.TimeV.of_go u))); True }}}.
 Proof.
-Admitted.
+  wp_start. wp_auto. iSpecialize ("HΦ" with "[//]").
+  wp_if_destruct.
+  - wp_apply (wp_Time__sec with "[$t]") as "t".
+    wp_apply (wp_Time__sec with "[$u]") as "u".
+    assert (time_before (TimeView.TimeV.of_go t) (TimeView.TimeV.of_go u) ↔
+      sint.Z (time_sec (TimeView.TimeV.of_go t)) < sint.Z (time_sec (TimeView.TimeV.of_go u)) ∨
+      (time_sec (TimeView.TimeV.of_go t) = time_sec (TimeView.TimeV.of_go u) ∧
+       sint.Z (time_nsec (TimeView.TimeV.of_go t)) < sint.Z (time_nsec (TimeView.TimeV.of_go u))))
+      as Hbefore.
+    { rewrite /time_before /time_both_monotonic /time_has_monotonic_bit decide_False //.
+      intros Hne. apply Hne. exact e. }
+    wp_if_destruct.
+    + iExactEq "HΦ". do 2 f_equal. apply bool_decide_eq_true_2.
+      apply Hbefore. left. done.
+    + wp_if_destruct.
+      * wp_apply (wp_Time__nsec with "[$t]") as "t".
+        wp_apply (wp_Time__nsec with "[$u]") as "u".
+        iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+        rewrite Hbefore. split; [intros [?|[_ ?]]; [lia|done]|intros; right; done].
+      * iExactEq "HΦ". do 2 f_equal. apply bool_decide_eq_false_2.
+        rewrite Hbefore. intros [?|[? _]]; [lia|contradiction].
+  - iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+    rewrite /time_before /time_both_monotonic /time_has_monotonic_bit decide_True //.
+Qed.
 
 Lemma wp_Time__Equal (t u : time.Time.t) :
   {{{ True }}}
     t @! time.Time @! "Equal" #u
   {{{ RET #(bool_decide (time_equal (TimeView.TimeV.of_go t) (TimeView.TimeV.of_go u))); True }}}.
 Proof.
-Admitted.
+  wp_start. wp_auto. iSpecialize ("HΦ" with "[//]").
+  wp_if_destruct.
+  - assert (time_equal (TimeView.TimeV.of_go t) (TimeView.TimeV.of_go u) ↔
+      time_sec (TimeView.TimeV.of_go t) = time_sec (TimeView.TimeV.of_go u) ∧
+      time_nsec (TimeView.TimeV.of_go t) = time_nsec (TimeView.TimeV.of_go u)) as Hequal.
+    { rewrite /time_equal /time_both_monotonic /time_has_monotonic_bit decide_False //.
+      intros Hne. apply Hne. exact e. }
+    wp_apply (wp_Time__sec with "[$t]") as "t".
+    wp_apply (wp_Time__sec with "[$u]") as "u".
+    wp_if_destruct.
+    + wp_apply (wp_Time__nsec with "[$t]") as "t".
+      wp_apply (wp_Time__nsec with "[$u]") as "u".
+      iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+      rewrite Hequal. split; [intros [_ ?]; done|intros; split; done].
+    + iExactEq "HΦ". do 2 f_equal. apply bool_decide_eq_false_2.
+      rewrite Hequal. intros [? _]. contradiction.
+  - iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+    rewrite /time_equal /time_both_monotonic /time_has_monotonic_bit decide_True //.
+Qed.
 
 End wps.
 
