@@ -378,13 +378,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ListMeta_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ListMeta.t). Admitted.
+#[global]Program Instance ListMeta_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ListMeta.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "SelfLink" ∷ l.[(v1.ListMeta.t), "SelfLink"] ↦{dq} v.(v1.ListMeta.SelfLink') ∗
+      "ResourceVersion" ∷ l.[(v1.ListMeta.t), "ResourceVersion"] ↦{dq} v.(v1.ListMeta.ResourceVersion') ∗
+      "Continue" ∷ l.[(v1.ListMeta.t), "Continue"] ↦{dq} v.(v1.ListMeta.Continue') ∗
+      "RemainingItemCount" ∷ l.[(v1.ListMeta.t), "RemainingItemCount"] ↦{dq} v.(v1.ListMeta.RemainingItemCount') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ListMeta_into_val_typed
    :
   IntoValTypedUnderlying (v1.ListMeta.t) (v1.ListMetaⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ListMeta_access_load_SelfLink l (v : (v1.ListMeta.t)) dq :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "SelfLink"] ↦{dq} (v.(v1.ListMeta.SelfLink')))
+    (l.[(v1.ListMeta.t), "SelfLink"] ↦{dq} (v.(v1.ListMeta.SelfLink')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ListMeta_access_store_SelfLink l (v : (v1.ListMeta.t)) SelfLink' :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "SelfLink"] ↦ (v.(v1.ListMeta.SelfLink')))
+    (l.[(v1.ListMeta.t), "SelfLink"] ↦ SelfLink')
+    (l ↦ v) (l ↦ (v <|(v1.ListMeta.SelfLink') := SelfLink'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ListMeta_access_load_ResourceVersion l (v : (v1.ListMeta.t)) dq :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "ResourceVersion"] ↦{dq} (v.(v1.ListMeta.ResourceVersion')))
+    (l.[(v1.ListMeta.t), "ResourceVersion"] ↦{dq} (v.(v1.ListMeta.ResourceVersion')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ListMeta_access_store_ResourceVersion l (v : (v1.ListMeta.t)) ResourceVersion' :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "ResourceVersion"] ↦ (v.(v1.ListMeta.ResourceVersion')))
+    (l.[(v1.ListMeta.t), "ResourceVersion"] ↦ ResourceVersion')
+    (l ↦ v) (l ↦ (v <|(v1.ListMeta.ResourceVersion') := ResourceVersion'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ListMeta_access_load_Continue l (v : (v1.ListMeta.t)) dq :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "Continue"] ↦{dq} (v.(v1.ListMeta.Continue')))
+    (l.[(v1.ListMeta.t), "Continue"] ↦{dq} (v.(v1.ListMeta.Continue')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ListMeta_access_store_Continue l (v : (v1.ListMeta.t)) Continue' :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "Continue"] ↦ (v.(v1.ListMeta.Continue')))
+    (l.[(v1.ListMeta.t), "Continue"] ↦ Continue')
+    (l ↦ v) (l ↦ (v <|(v1.ListMeta.Continue') := Continue'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ListMeta_access_load_RemainingItemCount l (v : (v1.ListMeta.t)) dq :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "RemainingItemCount"] ↦{dq} (v.(v1.ListMeta.RemainingItemCount')))
+    (l.[(v1.ListMeta.t), "RemainingItemCount"] ↦{dq} (v.(v1.ListMeta.RemainingItemCount')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ListMeta_access_store_RemainingItemCount l (v : (v1.ListMeta.t)) RemainingItemCount' :
+  AccessStrict
+    (l.[(v1.ListMeta.t), "RemainingItemCount"] ↦ (v.(v1.ListMeta.RemainingItemCount')))
+    (l.[(v1.ListMeta.t), "RemainingItemCount"] ↦ RemainingItemCount')
+    (l ↦ v) (l ↦ (v <|(v1.ListMeta.RemainingItemCount') := RemainingItemCount'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ListMeta.
@@ -1066,13 +1129,118 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance Status_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.Status.t). Admitted.
+#[global]Program Instance Status_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.Status.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.Status.t), "TypeMeta"] ↦{dq} v.(v1.Status.TypeMeta') ∗
+      "ListMeta" ∷ l.[(v1.Status.t), "ListMeta"] ↦{dq} v.(v1.Status.ListMeta') ∗
+      "Status" ∷ l.[(v1.Status.t), "Status"] ↦{dq} v.(v1.Status.Status') ∗
+      "Message" ∷ l.[(v1.Status.t), "Message"] ↦{dq} v.(v1.Status.Message') ∗
+      "Reason" ∷ l.[(v1.Status.t), "Reason"] ↦{dq} v.(v1.Status.Reason') ∗
+      "Details" ∷ l.[(v1.Status.t), "Details"] ↦{dq} v.(v1.Status.Details') ∗
+      "Code" ∷ l.[(v1.Status.t), "Code"] ↦{dq} v.(v1.Status.Code') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance Status_into_val_typed
    :
   IntoValTypedUnderlying (v1.Status.t) (v1.Statusⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance Status_access_load_TypeMeta l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "TypeMeta"] ↦{dq} (v.(v1.Status.TypeMeta')))
+    (l.[(v1.Status.t), "TypeMeta"] ↦{dq} (v.(v1.Status.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_TypeMeta l (v : (v1.Status.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.Status.t), "TypeMeta"] ↦ (v.(v1.Status.TypeMeta')))
+    (l.[(v1.Status.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Status.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_ListMeta l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "ListMeta"] ↦{dq} (v.(v1.Status.ListMeta')))
+    (l.[(v1.Status.t), "ListMeta"] ↦{dq} (v.(v1.Status.ListMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_ListMeta l (v : (v1.Status.t)) ListMeta' :
+  AccessStrict
+    (l.[(v1.Status.t), "ListMeta"] ↦ (v.(v1.Status.ListMeta')))
+    (l.[(v1.Status.t), "ListMeta"] ↦ ListMeta')
+    (l ↦ v) (l ↦ (v <|(v1.Status.ListMeta') := ListMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_Status l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "Status"] ↦{dq} (v.(v1.Status.Status')))
+    (l.[(v1.Status.t), "Status"] ↦{dq} (v.(v1.Status.Status')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_Status l (v : (v1.Status.t)) Status' :
+  AccessStrict
+    (l.[(v1.Status.t), "Status"] ↦ (v.(v1.Status.Status')))
+    (l.[(v1.Status.t), "Status"] ↦ Status')
+    (l ↦ v) (l ↦ (v <|(v1.Status.Status') := Status'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_Message l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "Message"] ↦{dq} (v.(v1.Status.Message')))
+    (l.[(v1.Status.t), "Message"] ↦{dq} (v.(v1.Status.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_Message l (v : (v1.Status.t)) Message' :
+  AccessStrict
+    (l.[(v1.Status.t), "Message"] ↦ (v.(v1.Status.Message')))
+    (l.[(v1.Status.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.Status.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_Reason l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "Reason"] ↦{dq} (v.(v1.Status.Reason')))
+    (l.[(v1.Status.t), "Reason"] ↦{dq} (v.(v1.Status.Reason')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_Reason l (v : (v1.Status.t)) Reason' :
+  AccessStrict
+    (l.[(v1.Status.t), "Reason"] ↦ (v.(v1.Status.Reason')))
+    (l.[(v1.Status.t), "Reason"] ↦ Reason')
+    (l ↦ v) (l ↦ (v <|(v1.Status.Reason') := Reason'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_Details l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "Details"] ↦{dq} (v.(v1.Status.Details')))
+    (l.[(v1.Status.t), "Details"] ↦{dq} (v.(v1.Status.Details')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_Details l (v : (v1.Status.t)) Details' :
+  AccessStrict
+    (l.[(v1.Status.t), "Details"] ↦ (v.(v1.Status.Details')))
+    (l.[(v1.Status.t), "Details"] ↦ Details')
+    (l ↦ v) (l ↦ (v <|(v1.Status.Details') := Details'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance Status_access_load_Code l (v : (v1.Status.t)) dq :
+  AccessStrict
+    (l.[(v1.Status.t), "Code"] ↦{dq} (v.(v1.Status.Code')))
+    (l.[(v1.Status.t), "Code"] ↦{dq} (v.(v1.Status.Code')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance Status_access_store_Code l (v : (v1.Status.t)) Code' :
+  AccessStrict
+    (l.[(v1.Status.t), "Code"] ↦ (v.(v1.Status.Code')))
+    (l.[(v1.Status.t), "Code"] ↦ Code')
+    (l ↦ v) (l ↦ (v <|(v1.Status.Code') := Code'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End Status.
@@ -1086,36 +1254,107 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StatusDetails_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatusDetails.t). Admitted.
+#[global]Program Instance StatusDetails_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatusDetails.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Name" ∷ l.[(v1.StatusDetails.t), "Name"] ↦{dq} v.(v1.StatusDetails.Name') ∗
+      "Group" ∷ l.[(v1.StatusDetails.t), "Group"] ↦{dq} v.(v1.StatusDetails.Group') ∗
+      "Kind" ∷ l.[(v1.StatusDetails.t), "Kind"] ↦{dq} v.(v1.StatusDetails.Kind') ∗
+      "UID" ∷ l.[(v1.StatusDetails.t), "UID"] ↦{dq} v.(v1.StatusDetails.UID') ∗
+      "Causes" ∷ l.[(v1.StatusDetails.t), "Causes"] ↦{dq} v.(v1.StatusDetails.Causes') ∗
+      "RetryAfterSeconds" ∷ l.[(v1.StatusDetails.t), "RetryAfterSeconds"] ↦{dq} v.(v1.StatusDetails.RetryAfterSeconds') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StatusDetails_into_val_typed
    :
   IntoValTypedUnderlying (v1.StatusDetails.t) (v1.StatusDetailsⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StatusDetails_access_load_Name l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Name"] ↦{dq} (v.(v1.StatusDetails.Name')))
+    (l.[(v1.StatusDetails.t), "Name"] ↦{dq} (v.(v1.StatusDetails.Name')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_Name l (v : (v1.StatusDetails.t)) Name' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Name"] ↦ (v.(v1.StatusDetails.Name')))
+    (l.[(v1.StatusDetails.t), "Name"] ↦ Name')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.Name') := Name'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusDetails_access_load_Group l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Group"] ↦{dq} (v.(v1.StatusDetails.Group')))
+    (l.[(v1.StatusDetails.t), "Group"] ↦{dq} (v.(v1.StatusDetails.Group')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_Group l (v : (v1.StatusDetails.t)) Group' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Group"] ↦ (v.(v1.StatusDetails.Group')))
+    (l.[(v1.StatusDetails.t), "Group"] ↦ Group')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.Group') := Group'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusDetails_access_load_Kind l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Kind"] ↦{dq} (v.(v1.StatusDetails.Kind')))
+    (l.[(v1.StatusDetails.t), "Kind"] ↦{dq} (v.(v1.StatusDetails.Kind')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_Kind l (v : (v1.StatusDetails.t)) Kind' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Kind"] ↦ (v.(v1.StatusDetails.Kind')))
+    (l.[(v1.StatusDetails.t), "Kind"] ↦ Kind')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.Kind') := Kind'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusDetails_access_load_UID l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "UID"] ↦{dq} (v.(v1.StatusDetails.UID')))
+    (l.[(v1.StatusDetails.t), "UID"] ↦{dq} (v.(v1.StatusDetails.UID')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_UID l (v : (v1.StatusDetails.t)) UID' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "UID"] ↦ (v.(v1.StatusDetails.UID')))
+    (l.[(v1.StatusDetails.t), "UID"] ↦ UID')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.UID') := UID'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusDetails_access_load_Causes l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Causes"] ↦{dq} (v.(v1.StatusDetails.Causes')))
+    (l.[(v1.StatusDetails.t), "Causes"] ↦{dq} (v.(v1.StatusDetails.Causes')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_Causes l (v : (v1.StatusDetails.t)) Causes' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "Causes"] ↦ (v.(v1.StatusDetails.Causes')))
+    (l.[(v1.StatusDetails.t), "Causes"] ↦ Causes')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.Causes') := Causes'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusDetails_access_load_RetryAfterSeconds l (v : (v1.StatusDetails.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "RetryAfterSeconds"] ↦{dq} (v.(v1.StatusDetails.RetryAfterSeconds')))
+    (l.[(v1.StatusDetails.t), "RetryAfterSeconds"] ↦{dq} (v.(v1.StatusDetails.RetryAfterSeconds')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusDetails_access_store_RetryAfterSeconds l (v : (v1.StatusDetails.t)) RetryAfterSeconds' :
+  AccessStrict
+    (l.[(v1.StatusDetails.t), "RetryAfterSeconds"] ↦ (v.(v1.StatusDetails.RetryAfterSeconds')))
+    (l.[(v1.StatusDetails.t), "RetryAfterSeconds"] ↦ RetryAfterSeconds')
+    (l ↦ v) (l ↦ (v <|(v1.StatusDetails.RetryAfterSeconds') := RetryAfterSeconds'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatusDetails.
-
-Module StatusReason.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatusReason_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatusReason.t). Admitted.
-
-#[global] Instance StatusReason_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatusReason.t) (v1.StatusReasonⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatusReason.
 
 Module StatusCause.
 Section def.
@@ -1126,36 +1365,65 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance StatusCause_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatusCause.t). Admitted.
+#[global]Program Instance StatusCause_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.StatusCause.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Type" ∷ l.[(v1.StatusCause.t), "Type"] ↦{dq} v.(v1.StatusCause.Type') ∗
+      "Message" ∷ l.[(v1.StatusCause.t), "Message"] ↦{dq} v.(v1.StatusCause.Message') ∗
+      "Field" ∷ l.[(v1.StatusCause.t), "Field"] ↦{dq} v.(v1.StatusCause.Field') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance StatusCause_into_val_typed
    :
   IntoValTypedUnderlying (v1.StatusCause.t) (v1.StatusCauseⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance StatusCause_access_load_Type l (v : (v1.StatusCause.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Type"] ↦{dq} (v.(v1.StatusCause.Type')))
+    (l.[(v1.StatusCause.t), "Type"] ↦{dq} (v.(v1.StatusCause.Type')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusCause_access_store_Type l (v : (v1.StatusCause.t)) Type' :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Type"] ↦ (v.(v1.StatusCause.Type')))
+    (l.[(v1.StatusCause.t), "Type"] ↦ Type')
+    (l ↦ v) (l ↦ (v <|(v1.StatusCause.Type') := Type'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusCause_access_load_Message l (v : (v1.StatusCause.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Message"] ↦{dq} (v.(v1.StatusCause.Message')))
+    (l.[(v1.StatusCause.t), "Message"] ↦{dq} (v.(v1.StatusCause.Message')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusCause_access_store_Message l (v : (v1.StatusCause.t)) Message' :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Message"] ↦ (v.(v1.StatusCause.Message')))
+    (l.[(v1.StatusCause.t), "Message"] ↦ Message')
+    (l ↦ v) (l ↦ (v <|(v1.StatusCause.Message') := Message'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance StatusCause_access_load_Field l (v : (v1.StatusCause.t)) dq :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Field"] ↦{dq} (v.(v1.StatusCause.Field')))
+    (l.[(v1.StatusCause.t), "Field"] ↦{dq} (v.(v1.StatusCause.Field')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance StatusCause_access_store_Field l (v : (v1.StatusCause.t)) Field' :
+  AccessStrict
+    (l.[(v1.StatusCause.t), "Field"] ↦ (v.(v1.StatusCause.Field')))
+    (l.[(v1.StatusCause.t), "Field"] ↦ Field')
+    (l ↦ v) (l ↦ (v <|(v1.StatusCause.Field') := Field'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End StatusCause.
-
-Module CauseType.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance CauseType_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.CauseType.t). Admitted.
-
-#[global] Instance CauseType_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.CauseType.t) (v1.CauseTypeⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End CauseType.
 
 Module List.
 Section def.

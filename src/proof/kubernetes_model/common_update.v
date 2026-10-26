@@ -36,6 +36,23 @@ Proof.
     try contradiction; rewrite -?Hannotations; intuition.
 Qed.
 
+(** Specialize the imported parser contract to a stored-valid resource version. *)
+Local Transparent valid_resource_version.
+Lemma wp_ParseUint_resource_version_valid (rv : go_string) :
+  {{{ is_pkg_init strconv ∗
+      ⌜ valid_resource_version rv ⌝
+  }}}
+    @! strconv.ParseUint #rv #(W64 10) #(W64 64)
+  {{{ (ret : w64), RET (#ret, #interface.nil); True }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & %Hvalid) HΦ".
+  wp_apply (wp_ParseUint_decimal with "Hinit").
+  iIntros (ret err) "(%Hparsed & _)".
+  unfold valid_resource_version in Hvalid.
+  rewrite (Hparsed Hvalid). iApply "HΦ". done.
+Qed.
+Local Opaque valid_resource_version.
+
 Lemma wp_allowUnconditionalUpdate (kind : go_string) :
   {{{ is_pkg_init apimodel }}}
     @! apimodel.allowUnconditionalUpdate #kind
@@ -186,6 +203,47 @@ Proof.
     new_i new_l new_obj old_i old_l old_obj dq request_kind namespace input with "Hpre").
   iIntros (updated_obj) "(Hnew & Hold & Hinterface & Hupdated & _)".
   iApply ("HΦ" $! updated_obj). iFrame.
+Qed.
+
+(** General contract used when the status-update helper may reject an update.
+    On failure the new object may already have been mutated, so the
+    postcondition returns an unconstrained view of that same allocation instead
+    of the original view. *)
+Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general
+    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
+  {{{ is_pkg_init apimodel ∗
+      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
+      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
+      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
+      KObjectV.deepown_l new_l new_obj 1 ∗
+      KObjectV.deepown_l old_l old_obj dq
+  }}}
+    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
+      #(interface.ok new_i) #(interface.ok old_i) #namespace
+  {{{ (err : interface.t), RET #err;
+      (⌜ err = interface.nil ⌝ ∗
+        ∃ updated_obj,
+          KObjectV.deepown_l new_l updated_obj 1 ∗
+          KObjectV.deepown_l old_l old_obj dq ∗
+          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
+          ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
+              namespace old_obj new_obj updated_obj ⌝) ∨
+      (⌜ err ≠ interface.nil ⌝ ∗
+        ⌜ ¬ conflict_error err ⌝ ∗
+        ∃ failed_obj,
+          KObjectV.deepown_l new_l failed_obj 1 ∗
+          KObjectV.deepown_l old_l old_obj dq ∗
+          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
+  }}}.
+Proof.
+  iIntros (Φ) "Hpre HΦ".
+  wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_general_same_meta
+    new_i new_l new_obj old_i old_l old_obj dq namespace with "Hpre").
+  iIntros (err) "[Hsuccess | Hfailure]".
+  - iDestruct "Hsuccess" as "(%Herr & %updated_obj & Hnew & Hold & Hinterface & Hupdated & _)".
+    iApply ("HΦ" $! err). iLeft. iSplit; first done.
+    iExists updated_obj. iFrame.
+  - iApply ("HΦ" $! err). iRight. iExact "Hfailure".
 Qed.
 
 Lemma own_update_frag_identity γ state used_uid key uid {dq} request_kind namespace old_meta old_spec input :

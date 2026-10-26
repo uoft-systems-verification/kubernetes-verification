@@ -45,21 +45,6 @@ Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ used_rv
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewRVAndUpdate" #()
-  {{{ rv, RET #rv;
-      ⌜ used_rv !! rv = None ⌝ ∗
-      ⌜ valid_resource_version rv ⌝ ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ <[rv:=()]> used_rv
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_validateObjectMeta i (kind : go_string) l o m dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ KObjectV.valid_interface i l o ⌝ ∗
@@ -72,38 +57,6 @@ Lemma wp_validateObjectMeta i (kind : go_string) l o m dq :
   }}}.
 Proof.
 Admitted.
-
-Lemma wp_parseResourceVersion rv :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ valid_resource_version rv ⌝
-  }}}
-    @! apimodel.parseResourceVersion #rv
-  {{{ (ret : w64), RET (#ret, #interface.nil);
-    True
-  }}}.
-Proof. Admitted.
-
-(* A variant of [wp_parseResourceVersion] for any resource version:
-   [strconv.ParseUint] is untranslated, so parsing may fail. *)
-Lemma wp_parseResourceVersion_general (rv : go_string) :
-  {{{ is_pkg_init apimodel }}}
-    @! apimodel.parseResourceVersion #rv
-  {{{ (ret : w64) (err : interface.t), RET (#ret, #err);
-    True
-  }}}.
-Proof. Admitted.
-
-(* The error reports the parse error's message, which calls [Error] on an
-   error value of an untranslated type. *)
-Lemma wp_malformedUpdateResourceVersionError (err : interface.t) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ err ≠ interface.nil ⌝
-  }}}
-    @! apimodel.malformedUpdateResourceVersionError #err
-  {{{ (err' : interface.t), RET #err';
-    ⌜ err' ≠ interface.nil ⌝
-  }}}.
-Proof. Admitted.
 
 (* delete_graceful and delete_pending_graceful abstract the result of checkGracefulDelete *)
 Axiom delete_graceful : KObjectV.t -> DeleteOptionsV.t -> bool.
@@ -130,21 +83,6 @@ Proof.
 Admitted.
 
 Context `{!kubernetesModelG Σ}.
-
-Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ used_uid
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewUIDAndUpdate" #()
-  {{{ uid, RET #uid;
-      ⌜ used_uid !! uid = None ⌝ ∗
-      ⌜ valid_uid uid ⌝ ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ <[uid:=()]> used_uid
-  }}}.
-Proof.
-Admitted.
 
 Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
@@ -258,37 +196,6 @@ Lemma wp_applyValidationAndDefaultingOnUpdate_ok
   }}}.
 Proof. Admitted.
 
-(** General contract used when the status-update helper may reject an update.
-    On failure the new object may already have been mutated, so the
-    postcondition returns an unconstrained view of that same allocation instead
-    of the original view. *)
-Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general
-    new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
-  {{{ is_pkg_init apimodel ∗
-      ⌜ KObjectV.valid_interface new_i new_l new_obj ⌝ ∗
-      ⌜ KObjectV.valid_interface old_i old_l old_obj ⌝ ∗
-      ⌜ KObjectV.same_kind old_obj new_obj ⌝ ∗
-      KObjectV.deepown_l new_l new_obj 1 ∗
-      KObjectV.deepown_l old_l old_obj dq
-  }}}
-    @! apimodel.applyValidationAndDefaultingOnStatusUpdate
-      #(interface.ok new_i) #(interface.ok old_i) #namespace
-  {{{ (err : interface.t), RET #err;
-      (⌜ err = interface.nil ⌝ ∗
-        ∃ updated_obj,
-          KObjectV.deepown_l new_l updated_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l updated_obj ⌝ ∗
-          ⌜ applyValidationAndDefaultingOnStatusUpdate_updated
-              namespace old_obj new_obj updated_obj ⌝) ∨
-      (⌜ err ≠ interface.nil ⌝ ∗
-        ⌜ ¬ conflict_error err ⌝ ∗
-        ∃ failed_obj,
-          KObjectV.deepown_l new_l failed_obj 1 ∗
-          KObjectV.deepown_l old_l old_obj dq ∗
-          ⌜ KObjectV.valid_interface new_i new_l failed_obj ⌝)
-  }}}.
-Proof. Admitted.
 
 (** Trusted: the metadata half of a successful status-update helper call, used
     only by [wp_State__update_status_same_meta_au] and
@@ -340,9 +247,9 @@ Lemma wp_applyValidationAndDefaultingOnStatusUpdate_ok_same_meta
   }}}.
 Proof. Admitted.
 
-(** Trusted: [wp_applyValidationAndDefaultingOnStatusUpdate_general] together
-    with [applyValidationAndDefaultingOnStatusUpdate_meta_preserved] on success.
-    The request status need not be valid, so the helper may reject it. *)
+(** Trusted general contract including metadata preservation on success.
+    The request status need not be valid, so the helper may reject it.
+    The weaker general contract is derived in [common_update.v]. *)
 Lemma wp_applyValidationAndDefaultingOnStatusUpdate_general_same_meta
     new_i new_l new_obj old_i old_l old_obj dq (namespace : go_string) :
   {{{ is_pkg_init apimodel ∗

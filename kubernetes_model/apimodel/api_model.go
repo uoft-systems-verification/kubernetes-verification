@@ -668,18 +668,6 @@ func allowUnconditionalUpdate(kind string) (bool, error) {
 	}
 }
 
-func malformedUpdateResourceVersionError(err error) error {
-	return &errors.StatusError{ErrStatus: metav1.Status{
-		Status:  metav1.StatusFailure,
-		Code:    500,
-		Message: err.Error(),
-	}}
-}
-
-func parseResourceVersion(resourceVersion string) (uint64, error) {
-	return strconv.ParseUint(resourceVersion, 10, 64)
-}
-
 func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, error) {
 	switch obj.(type) {
 	case *core.ServiceAccount:
@@ -1084,8 +1072,12 @@ func (s *State) updateLocked(kind, namespace string, obj interface{}, uidPrecond
 		// resourceVersion before optimistic-lock comparison. A malformed value therefore
 		// fails before it can become a normal stale-resourceVersion conflict.
 		// Reference: https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go#L659-L666
-		if _, err = parseResourceVersion(rv); err != nil {
-			return nil, malformedUpdateResourceVersionError(err)
+		if _, err = strconv.ParseUint(rv, 10, 64); err != nil {
+			return nil, &errors.StatusError{ErrStatus: metav1.Status{
+				Status:  metav1.StatusFailure,
+				Code:    500,
+				Message: err.Error(),
+			}}
 		}
 	}
 
@@ -1191,8 +1183,12 @@ func (s *State) updateStatusLocked(kind, namespace string, obj interface{}, uidP
 		}
 		metadata.SetResourceVersion(existingRv)
 	} else {
-		if _, err = parseResourceVersion(rv); err != nil {
-			return nil, malformedUpdateResourceVersionError(err)
+		if _, err = strconv.ParseUint(rv, 10, 64); err != nil {
+			return nil, &errors.StatusError{ErrStatus: metav1.Status{
+				Status:  metav1.StatusFailure,
+				Code:    500,
+				Message: err.Error(),
+			}}
 		}
 	}
 

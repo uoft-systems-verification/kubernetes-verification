@@ -1,5 +1,7 @@
 From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof.math Require Import rand.
+From New.proof.k8s_io.apimachinery.pkg.util Require Import uuid.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Import v1.
 From New.object_specs Require Export prelude.
@@ -277,4 +279,88 @@ Proof.
   rewrite /storage_object_normalize !KObjectV.spec_update_objectmeta in Hspec_eq.
   exact Hspec_eq.
 Qed.
+
+Local Transparent valid_resource_version.
+
+(** Collision retries preserve the original map. Only the successful iteration
+    inserts a key, so no probabilistic freshness assumption is needed. *)
+Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
+  {{{ is_pkg_init apimodel ∗
+      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
+      used_rv_l ↦$ used_rv
+  }}}
+    l @! (go.PointerType apimodel.State) @! "generateNewRVAndUpdate" #()
+  {{{ rv, RET #rv;
+      ⌜ used_rv !! rv = None ⌝ ∗
+      ⌜ valid_resource_version rv ⌝ ∗
+      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
+      used_rv_l ↦$ <[rv:=()]> used_rv
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hfield & Hmap) HΦ".
+  wp_method_call. rewrite /apimodel.State__generateNewRVAndUpdateⁱᵐᵖˡ. wp_call.
+  iAssert (is_pkg_init rand) as "#Hrand".
+  { iPkgInit. }
+  iAssert (is_pkg_init strconv) as "#Hstrconv".
+  { iPkgInit. }
+  wp_auto_keep.
+  set I := ("Hfield" ∷ l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
+    "Hmap" ∷ used_rv_l ↦$ used_rv)%I.
+  iAssert I with "[$Hfield $Hmap]" as "Hloop".
+  wp_for "Hloop".
+  wp_apply (wp_Int63 with "Hrand"). iIntros (n) "%Hnonneg". wp_auto_keep.
+  wp_apply (wp_FormatInt_decimal n with "[$Hstrconv //]").
+  wp_apply (wp_map_lookup2 with "Hmap"). iIntros "Hmap". wp_auto_keep.
+  destruct (used_rv !! decimal_string (Z.to_nat (sint.Z n))) as [u|] eqn:Hlookup.
+  - wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
+    iFrame.
+  - wp_auto_keep.
+    wp_apply (wp_map_insert with "Hmap"). iIntros "Hmap". wp_auto_keep.
+    iApply wp_for_post_return.
+    rewrite return_val_unseal /return_val_def.
+    rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+    iApply "HΦ". iFrame. iPureIntro. split; first exact Hlookup.
+    unfold valid_resource_version, uint64_decimal.
+    exists (Z.to_nat (sint.Z n)). split.
+    + apply parse_decimal_string_decimal_string.
+    + rewrite (Z2Nat.id (sint.Z n) Hnonneg). word.
+Qed.
+
+Local Opaque valid_resource_version.
+
+Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
+  {{{ is_pkg_init apimodel ∗
+      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
+      used_uid_l ↦$ used_uid
+  }}}
+    l @! (go.PointerType apimodel.State) @! "generateNewUIDAndUpdate" #()
+  {{{ uid, RET #uid;
+      ⌜ used_uid !! uid = None ⌝ ∗
+      ⌜ valid_uid uid ⌝ ∗
+      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
+      used_uid_l ↦$ <[uid:=()]> used_uid
+  }}}.
+Proof.
+  iIntros (Φ) "(#Hinit & Hfield & Hmap) HΦ".
+  wp_method_call. rewrite /apimodel.State__generateNewUIDAndUpdateⁱᵐᵖˡ. wp_call.
+  iAssert (is_pkg_init uuid) as "#Huuid".
+  { iPkgInit. }
+  wp_auto_keep.
+  set I := ("Hfield" ∷ l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
+    "Hmap" ∷ used_uid_l ↦$ used_uid)%I.
+  iAssert I with "[$Hfield $Hmap]" as "Hloop".
+  wp_for "Hloop".
+  wp_apply (wp_NewUUID with "Huuid"). iIntros (uid) "%Hvalid". wp_auto_keep.
+  wp_apply (wp_map_lookup2 with "Hmap"). iIntros "Hmap". wp_auto_keep.
+  destruct (used_uid !! uid) as [u|] eqn:Hlookup.
+  - wp_auto_keep. iApply wp_for_post_do. wp_auto_keep.
+    iFrame.
+  - wp_auto_keep.
+    wp_apply (wp_map_insert with "Hmap"). iIntros "Hmap". wp_auto_keep.
+    iApply wp_for_post_return.
+    rewrite return_val_unseal /return_val_def.
+    rewrite exception_do_unseal /exception_do_def. wp_auto_keep.
+    iApply "HΦ". iFrame. done.
+Qed.
+
 End proof.

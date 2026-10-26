@@ -5,6 +5,7 @@ From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export time.
+From New.proof Require Export strconv.
 From New.proof.string Require Export prefix_suffix.
 From New.proof Require Export struct.
 From New.proof Require Import prelude empty_ffi.
@@ -375,7 +376,7 @@ Axiom valid_uid_slash_free: ∀ uid, valid_uid uid → slash_free uid.
 
 (* This predicate describes a resource version assigned to a persisted object,
    rather than the empty resource version accepted in some request paths. *)
-Axiom valid_resource_version: go_string → Prop.
+Definition valid_resource_version : go_string → Prop := uint64_decimal.
 
 (* etcd's MVCC revision counter starts at 1 and advances on writes:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/vendor/go.etcd.io/etcd/server/v3/storage/mvcc/kvstore.go#L96-L104
@@ -385,7 +386,10 @@ Axiom valid_resource_version: go_string → Prop.
    base-10 string, so the assigned resource version is nonempty:
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/etcd3/decoder.go#L59-L74
    https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apiserver/pkg/storage/api_object_versioner.go#L32-L43 *)
-Axiom valid_resource_version_non_empty: ∀ rv, valid_resource_version rv → rv ≠ ""%go.
+Lemma valid_resource_version_non_empty : ∀ rv, valid_resource_version rv → rv ≠ ""%go.
+Proof. exact uint64_decimal_non_empty. Qed.
+
+#[global] Opaque valid_resource_version.
 
 (* https://github.com/kubernetes/kubernetes/blob/release-1.34/staging/src/k8s.io/apimachinery/pkg/api/validation/generic.go#L82 *)
 Definition valid_generation (generation: w64) : Prop :=
