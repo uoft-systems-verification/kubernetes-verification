@@ -1418,6 +1418,37 @@ Definition Nowⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :
     exception_do (return: (let: "$v0" := ((FuncResolve code.time.time.Now [] #()) #()) in
      CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression code.time.time.Time "$v0")]))).
 
+(* Before reports whether the time instant t is before u.
+
+   go: time.go:69:16 *)
+Definition Time__Beforeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "t" "u",
+    exception_do (let: "t" := (GoAlloc (go.PointerType Time) "t") in
+    let: "u" := (GoAlloc (go.PointerType Time) "u") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType Time] "t") ≠⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)) && ((![go.PointerType Time] "u") ≠⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)))
+    then
+      return: (let: "$a0" := (![code.time.time.Time] (StructFieldRef Time "Time"%go (![go.PointerType Time] "u"))) in
+       (MethodResolve (go.PointerType code.time.time.Time) "Before"%go (StructFieldRef Time "Time"%go (![go.PointerType Time] "t"))) "$a0")
+    else do:  #());;;
+    return: (#false)).
+
+(* Equal reports whether the time instant t is equal to u.
+
+   go: time.go:77:16 *)
+Definition Time__Equalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "t" "u",
+    exception_do (let: "t" := (GoAlloc (go.PointerType Time) "t") in
+    let: "u" := (GoAlloc (go.PointerType Time) "u") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType Time] "t") =⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)) && ((![go.PointerType Time] "u") =⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)))
+    then return: (#true)
+    else do:  #());;;
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType Time] "t") ≠⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)) && ((![go.PointerType Time] "u") ≠⟨go.PointerType Time⟩ (Convert go.untyped_nil (go.PointerType Time) UntypedNil)))
+    then
+      return: (let: "$a0" := (![code.time.time.Time] (StructFieldRef Time "Time"%go (![go.PointerType Time] "u"))) in
+       (MethodResolve (go.PointerType code.time.time.Time) "Equal"%go (StructFieldRef Time "Time"%go (![go.PointerType Time] "t"))) "$a0")
+    else do:  #());;;
+    return: (#false)).
+
 #[global] Instance info' : PkgInfo pkg_id.v1 :=
 {|
   pkg_imported_pkgs := [code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema; code.k8s_io.utils.ptr.pkg_id.ptr; code.fmt.pkg_id.fmt; code.k8s_io.apimachinery.pkg.labels.pkg_id.labels; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.time.pkg_id.time; code.k8s_io.apimachinery.pkg.selection.pkg_id.selection]
@@ -1733,6 +1764,8 @@ Class Time_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext}
   #[global] Time_set_Time (x : Time.t) y :: ⟦StructFieldSet (Timeⁱᵐᵖˡ) "Time", (#x, #y)⟧ ⤳[under] #(x <|Time.Time' := y|>);
   #[global] Time_Add_unfold :: MethodUnfold (Time) "Add" (λ: "$r", MethodResolve code.time.time.Time "Add" (StructFieldGet (Time) "Time" "$r" ))%V;
   #[global] Time'ptr_Add_unfold :: MethodUnfold (go.PointerType (Time)) "Add" (λ: "$r", MethodResolve (go.PointerType code.time.time.Time) "Add" (StructFieldRef Time "Time"%go "$r"));
+  #[global] Time'ptr_Before_unfold :: MethodUnfold (go.PointerType (Time)) "Before" (Time__Beforeⁱᵐᵖˡ);
+  #[global] Time'ptr_Equal_unfold :: MethodUnfold (go.PointerType (Time)) "Equal" (Time__Equalⁱᵐᵖˡ);
 }.
 
 Module Timestamp.

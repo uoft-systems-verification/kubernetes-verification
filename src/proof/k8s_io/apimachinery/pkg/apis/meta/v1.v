@@ -33,6 +33,34 @@ Proof.
   iDestruct "Htime" as %Htime. iPureIntro. by rewrite Htime.
 Qed.
 
+(* Both pointers are non-nil (they are owned), so these are [time.Time]'s
+   Before and Equal on the embedded times. *)
+Lemma wp_Time__Before t_l u_l tc uc dq1 dq2 :
+  {{{ is_pkg_init v1 ∗
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}
+    t_l @! (go.PointerType v1.Time) @! "Before" #u_l
+  {{{ RET #(bool_decide (time_before (TimeV.of_go tc).(TimeV.Time') (TimeV.of_go uc).(TimeV.Time')));
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}.
+Proof.
+Admitted.
+
+Lemma wp_Time__Equal t_l u_l tc uc dq1 dq2 :
+  {{{ is_pkg_init v1 ∗
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}
+    t_l @! (go.PointerType v1.Time) @! "Equal" #u_l
+  {{{ RET #(bool_decide (time_equal (TimeV.of_go tc).(TimeV.Time') (TimeV.of_go uc).(TimeV.Time')));
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}.
+Proof.
+Admitted.
+
 Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m

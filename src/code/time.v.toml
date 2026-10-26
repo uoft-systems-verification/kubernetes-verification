@@ -19,6 +19,8 @@ translate = [
   "Nanosecond",
   "Timer",
   "Time.UnixNano",
+  "Time.Before",
+  "Time.Equal",
   "Time.nsec",
   "Time.unixSec",
   "Time.sec",
